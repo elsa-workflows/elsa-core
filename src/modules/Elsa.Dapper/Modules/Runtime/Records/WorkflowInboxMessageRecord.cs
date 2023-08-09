@@ -36,6 +36,11 @@ public class WorkflowInboxMessageRecord
     public string? CorrelationId { get; set; }
 
     /// <summary>
+    /// An optional activity instance ID to select the workflow instance to deliver the message to.
+    /// </summary>
+    public string? ActivityInstanceId { get; set; }
+
+    /// <summary>
     /// An optional set of inputs to deliver to the workflow instance.
     /// </summary>
     public string? Input { get; set; }

@@ -6,7 +6,7 @@ namespace Elsa.ProtoActor.Mappers;
 /// <summary>
 /// Maps between <see cref="WorkflowFaultState"/> and <see cref="ProtoWorkflowFault"/>.
 /// </summary>
-public class WorkflowFaultStateMapper
+internal class WorkflowFaultStateMapper
 {
     private readonly ExceptionMapper _exceptionMapper;
 

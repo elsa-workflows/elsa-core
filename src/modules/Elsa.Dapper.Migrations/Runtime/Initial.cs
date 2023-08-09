@@ -21,15 +21,31 @@ public class Initial : Migration
             .WithColumn("Hash").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable();
 
-        Create
+        IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
+            .Create
             .Table("Bookmarks")
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("ActivityTypeName").AsString().NotNullable()
             .WithColumn("WorkflowInstanceId").AsString().NotNullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("ActivityId").AsString().NotNullable()
+            .WithColumn("ActivityInstanceId").AsString().NotNullable()
             .WithColumn("Hash").AsString().Nullable()
-            .WithColumn("SerializedPayload").AsString().Nullable();
+            .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable();
+        
+        IfDatabase("Sqlite")
+            .Create
+            .Table("Bookmarks")
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("ActivityTypeName").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
+            .WithColumn("ActivityId").AsString().NotNullable()
+            .WithColumn("ActivityInstanceId").AsString().NotNullable()
+            .WithColumn("Hash").AsString().Nullable()
+            .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("CreatedAt").AsDateTime2().NotNullable();
 
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create

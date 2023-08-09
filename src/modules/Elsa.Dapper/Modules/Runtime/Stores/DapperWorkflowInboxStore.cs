@@ -6,6 +6,7 @@ using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 
@@ -57,6 +58,7 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
             .Is(nameof(WorkflowInboxMessageRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
             .Is(nameof(WorkflowInboxMessageRecord.CorrelationId), filter.CorrelationId)
             .Is(nameof(WorkflowInboxMessageRecord.ActivityTypeName), filter.ActivityTypeName)
+            .Is(nameof(WorkflowInboxMessageRecord.ActivityInstanceId), filter.ActivityInstanceId)
             .Is(nameof(WorkflowInboxMessageRecord.IsHandled), filter.IsHandled)
             ;
     }
@@ -71,6 +73,7 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
             ActivityTypeName = source.ActivityTypeName,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
+            ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
             BookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
             Input = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
@@ -90,6 +93,7 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
             ActivityTypeName = source.ActivityTypeName,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
+            ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
             BookmarkPayload = _payloadSerializer.Deserialize(source.BookmarkPayload),
             AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? JsonSerializer.Deserialize<List<string>>(source.AffectedWorkflowInstancesIds) : default,

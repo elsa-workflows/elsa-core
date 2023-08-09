@@ -98,7 +98,7 @@ public class TransferCall : Activity<CallPayload>
     {
         await TransferCallAsync(context);
 
-        var initiatedBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallInitiated, null, context.Id);
+        var initiatedBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallInitiated);
         context.CreateBookmark(initiatedBookmark, InitiatedAsync);
     }
 
@@ -106,8 +106,8 @@ public class TransferCall : Activity<CallPayload>
     {
         var payload = context.GetInput<CallInitiatedPayload>();
         var callControlId = payload.CallControlId;
-        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId, context.Id);
-        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, callControlId, context.Id);
+        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId);
+        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, callControlId);
         context.CreateBookmark(answeredBookmark, AnsweredAsync);
         context.CreateBookmark(hangupBookmark, HangupAsync);
         return default;

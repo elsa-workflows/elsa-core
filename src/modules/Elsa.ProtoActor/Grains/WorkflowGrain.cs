@@ -18,7 +18,7 @@ namespace Elsa.ProtoActor.Grains;
 /// <summary>
 /// Executes a workflow.
 /// </summary>
-public class WorkflowGrain : WorkflowGrainBase
+internal class WorkflowGrain : WorkflowGrainBase
 {
     private const int MaxSnapshotsToKeep = 5;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;

@@ -42,7 +42,7 @@ public class WorkflowState : Entity
     /// <summary>
     /// Collected bookmarks.
     /// </summary>
-    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+    [NotMapped]public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
 
     /// <summary>
     /// The serialized workflow state, if any. 

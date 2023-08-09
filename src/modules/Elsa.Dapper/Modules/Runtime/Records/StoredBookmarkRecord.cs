@@ -7,5 +7,7 @@ internal class StoredBookmarkRecord
     public string Hash { get; set; } = default!;
     public string WorkflowInstanceId { get; set; } = default!;
     public string? CorrelationId { get; set; }
+    public string? ActivityInstanceId { get; set; }
     public string? SerializedPayload { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 }

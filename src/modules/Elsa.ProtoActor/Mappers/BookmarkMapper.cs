@@ -8,7 +8,7 @@ namespace Elsa.ProtoActor.Mappers;
 /// <summary>
 /// Maps between <see cref="Bookmark"/> and <see cref="ProtoBookmark"/>.
 /// </summary>
-public class BookmarkMapper
+internal class BookmarkMapper
 {
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
@@ -20,9 +20,6 @@ public class BookmarkMapper
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
     }
     
-    public Bookmark Map(ProtoBookmark bookmark) =>
-        new(bookmark.Id, bookmark.Name, bookmark.Hash, bookmark.Payload, bookmark.ActivityNodeId, bookmark.ActivityInstanceId, bookmark.AutoBurn, bookmark.CallbackMethodName);
-
     
     public IEnumerable<ProtoBookmark> Map(IEnumerable<Bookmark> source) =>   
         source.Select(x =>
@@ -32,10 +29,12 @@ public class BookmarkMapper
                 Name = x.Name,
                 Hash = x.Hash,
                 Payload = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : string.Empty,
+                ActivityId = x.ActivityId,
                 ActivityNodeId = x.ActivityNodeId,
                 ActivityInstanceId = x.ActivityInstanceId,
                 AutoBurn = x.AutoBurn,
-                CallbackMethodName = x.CallbackMethodName.EmptyIfNull()
+                CallbackMethodName = x.CallbackMethodName.EmptyIfNull(),
+                CreatedAt = x.CreatedAt.ToString("O")
             });
     
     public IEnumerable<Bookmark> Map(IEnumerable<ProtoBookmark> source) =>
@@ -45,8 +44,10 @@ public class BookmarkMapper
                 x.Name,
                 x.Hash,
                 x.Payload.NullIfEmpty(),
+                x.ActivityId,
                 x.ActivityNodeId,
                 x.ActivityInstanceId,
+                DateTimeOffset.Parse(x.CreatedAt),
                 x.AutoBurn,
                 x.CallbackMethodName.NullIfEmpty()));
 }

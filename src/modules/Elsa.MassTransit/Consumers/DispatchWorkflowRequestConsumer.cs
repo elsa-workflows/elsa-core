@@ -54,7 +54,7 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchTriggerWorkflows> context)
     {
         var message = context.Message;
-        var options = new TriggerWorkflowsRuntimeOptions(message.CorrelationId, message.WorkflowInstanceId, message.Input);
+        var options = new TriggerWorkflowsRuntimeOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input);
         await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
     }
 

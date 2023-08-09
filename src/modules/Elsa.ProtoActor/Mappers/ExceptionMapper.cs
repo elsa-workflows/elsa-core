@@ -3,7 +3,7 @@ using ProtoException = Elsa.ProtoActor.Protos.ExceptionState;
 
 namespace Elsa.ProtoActor.Mappers;
 
-public class ExceptionMapper
+internal class ExceptionMapper
 {
     public ExceptionState Map(ProtoException exception) =>
         new(Type.GetType(exception.Type)!, exception.Message, exception.StackTrace, exception.InnerException != null ? Map(exception.InnerException) : null);

@@ -48,7 +48,7 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>
             await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
 
             // Create a bookmark so we can resume the workflow when the call is answered.
-            context.CreateBookmark(new AnswerCallBookmarkPayload(callControlId, context.Id), ResumeAsync);
+            context.CreateBookmark(new AnswerCallBookmarkPayload(callControlId), ResumeAsync);
         }
         catch (ApiException e)
         {

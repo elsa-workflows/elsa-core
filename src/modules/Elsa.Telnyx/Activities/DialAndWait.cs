@@ -1,4 +1,5 @@
-﻿using Elsa.Extensions;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Extensions;
 using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
@@ -24,7 +25,7 @@ namespace Elsa.Telnyx.Activities;
 public class DialAndWait : Activity<CallPayload>
 {
     /// <inheritdoc />
-    public DialAndWait(string? source = default, int? line = default) : base(source, line)
+    public DialAndWait([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 

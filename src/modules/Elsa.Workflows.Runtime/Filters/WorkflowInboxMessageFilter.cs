@@ -1,3 +1,4 @@
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Filters;
@@ -28,6 +29,11 @@ public class WorkflowInboxMessageFilter
     public string? CorrelationId { get; set; }
 
     /// <summary>
+    /// The ID of the activity instance to filter by.
+    /// </summary>
+    public string? ActivityInstanceId { get; set; }
+
+    /// <summary>
     /// A flag indicating whether to filter by messages that have been handled.
     /// </summary>
     public bool? IsHandled { get; set; }
@@ -44,6 +50,7 @@ public class WorkflowInboxMessageFilter
         if (filter.WorkflowInstanceId != null) query = query.Where(x => filter.WorkflowInstanceId == x.WorkflowInstanceId);
         if (filter.Hash != null) query = query.Where(x => filter.Hash == x.Hash);
         if (filter.ActivityTypeName != null) query = query.Where(x => filter.ActivityTypeName == x.ActivityTypeName);
+        if (filter.ActivityInstanceId != null) query = query.Where(x => filter.ActivityInstanceId == x.ActivityInstanceId);
 
         return query;
     }

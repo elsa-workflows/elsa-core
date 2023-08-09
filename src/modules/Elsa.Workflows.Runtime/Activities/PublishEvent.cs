@@ -54,7 +54,7 @@ public class PublishEvent : Activity
         var input = Input.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
 
-        await publisher.DispatchAsync(eventName, correlationId, workflowInstanceId, input, context.CancellationToken);
+        await publisher.DispatchAsync(eventName, correlationId, workflowInstanceId, null, input, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }

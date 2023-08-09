@@ -2,6 +2,7 @@ using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
@@ -57,6 +58,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             Id = _identityGenerator.GenerateId(),
             CreatedAt = now,
             ExpiresAt = now + newMessage.TimeToLive,
+            ActivityInstanceId = newMessage.ActivityInstanceId,
             CorrelationId = newMessage.CorrelationId,
             WorkflowInstanceId = newMessage.WorkflowInstanceId,
             ActivityTypeName = newMessage.ActivityTypeName,
@@ -84,9 +86,10 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityTypeName = message.ActivityTypeName;
         var correlationId = message.CorrelationId;
         var workflowInstanceId = message.WorkflowInstanceId;
+        var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, input);
+        var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, activityInstanceId, input);
         var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
         
         message.IsHandled = result.TriggeredWorkflows.Any();

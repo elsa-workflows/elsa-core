@@ -23,7 +23,7 @@ namespace Elsa.ProtoActor.Services;
 /// <summary>
 /// A Proto.Actor implementation of <see cref="IWorkflowRuntime"/>.
 /// </summary>
-public class ProtoActorWorkflowRuntime : IWorkflowRuntime
+internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
     private readonly Cluster _cluster;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
@@ -291,7 +291,7 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         foreach (var bookmark in bookmarks)
         {
-            var storedBookmark = new StoredBookmark(bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.Id, correlationId, bookmark.Payload);
+            var storedBookmark = new StoredBookmark(bookmark.Id, bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.CreatedAt, bookmark.ActivityInstanceId, correlationId, bookmark.Payload);
             await _bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }
@@ -334,7 +334,8 @@ public class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var correlationId = workflowsFilter.Options.CorrelationId;
         var workflowInstanceId = workflowsFilter.Options.WorkflowInstanceId;
-        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId };
+        var activityInstanceId = workflowsFilter.Options.ActivityInstanceId;
+        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
         var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId)).ToList();
         return collectedWorkflows;

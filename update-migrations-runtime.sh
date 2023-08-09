@@ -4,7 +4,8 @@
 mods=("Runtime")
 
 # Define the list of providers
-providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
+# providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
+providers=("Sqlite")
 
 # Connection strings for each provider
 typeset -A connStrings

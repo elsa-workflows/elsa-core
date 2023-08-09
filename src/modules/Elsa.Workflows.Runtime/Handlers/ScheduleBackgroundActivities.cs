@@ -72,10 +72,12 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
             
             // Update the bookmark.
             var storedBookmark = new StoredBookmark(
+                bookmark.Id,
                 bookmark.Name,
                 bookmark.Hash,
                 workflowExecutionContext.Id,
-                bookmark.Id,
+                bookmark.CreatedAt,
+                bookmark.ActivityInstanceId,
                 workflowExecutionContext.CorrelationId,
                 bookmark.Payload
             );
