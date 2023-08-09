@@ -28,10 +28,12 @@ public class DeliverWorkflowMessagesFromInbox : INotificationHandler<WorkflowBoo
         foreach (var bookmark in addedBookmarks)
         {
             var activityTypeName = bookmark.Name;
+            var activityInstanceId = bookmark.ActivityInstanceId;
             var hash = bookmark.Hash;
             var filter = new WorkflowInboxMessageFilter
             {
                 ActivityTypeName = activityTypeName,
+                ActivityInstanceId = activityInstanceId,
                 Hash = hash,
                 IsHandled = false
             };

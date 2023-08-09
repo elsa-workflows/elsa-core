@@ -58,6 +58,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             Id = _identityGenerator.GenerateId(),
             CreatedAt = now,
             ExpiresAt = now + newMessage.TimeToLive,
+            ActivityInstanceId = newMessage.ActivityInstanceId,
             CorrelationId = newMessage.CorrelationId,
             WorkflowInstanceId = newMessage.WorkflowInstanceId,
             ActivityTypeName = newMessage.ActivityTypeName,
