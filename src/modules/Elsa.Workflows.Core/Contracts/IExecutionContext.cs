@@ -19,7 +19,7 @@ public interface IExecutionContext
     ExpressionExecutionContext ExpressionExecutionContext { get; }
     
     /// <summary>
-    /// Returns variables declared the current execution context.
+    /// Returns variables declared in the current execution context.
     /// </summary>
     IEnumerable<Variable> Variables { get; }
 

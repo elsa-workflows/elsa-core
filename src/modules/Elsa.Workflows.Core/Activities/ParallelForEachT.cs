@@ -1,9 +1,11 @@
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Services;
 
 namespace Elsa.Workflows.Core.Activities;
 
@@ -25,7 +27,7 @@ public class ParallelForEach<T> : Activity
     /// <summary>
     /// The items to iterate.
     /// </summary>
-    [Input(Description = "The items to iterate.")]
+    [Input(Description = "The items to iterate through.")]
     public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
 
     /// <summary>
@@ -37,17 +39,27 @@ public class ParallelForEach<T> : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var items = context.Get(Items)!.Reverse().ToList();
+        var items = context.Get(Items)!.ToList();
         var tags = new List<Guid>();
 
         foreach (var item in items)
         {
-            // TODO: For each item, declare a new block of memory to store the item into.
+            // For each item, declare a new variable the work to be scheduled.
+            var variable = new Variable<T>("CurrentItem", item)
+            {
+                // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
+                StorageDriverType = typeof(WorkflowStorageDriver)
+            };
+            
+            var variables = new List<Variable<T>>
+            {
+                variable
+            };
 
             // Schedule a body of work for each item.
             var tag = Guid.NewGuid();
             tags.Add(tag);
-            await context.ScheduleActivityAsync(Body, OnChildCompleted, tag);
+            await context.ScheduleActivityAsync(Body, OnChildCompleted, tag, variables);
         }
 
         context.SetProperty(ScheduledTagsProperty, tags);
@@ -57,7 +69,7 @@ public class ParallelForEach<T> : Activity
     private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
     {
         var scheduledTags = context.GetProperty<List<Guid>>(ScheduledTagsProperty)!;
-        var completedTag = (Guid)childContext.Tag!;
+        var completedTag = childContext.Tag.ConvertTo<Guid>();
 
         var completedTags = new HashSet<Guid>(context.UpdateProperty<List<Guid>>(CompletedTagsProperty, completedTags =>
         {

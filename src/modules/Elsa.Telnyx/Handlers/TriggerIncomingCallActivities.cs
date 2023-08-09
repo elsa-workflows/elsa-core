@@ -4,7 +4,6 @@ using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
-using Elsa.Telnyx.Payloads.Abstract;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;

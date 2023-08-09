@@ -1,3 +1,5 @@
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+
 namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 
 /// <summary>
@@ -34,4 +36,9 @@ public class ActivityExecutionContextState
     /// The evaluated values of the activity's properties.
     /// </summary>
     public IDictionary<string, object>? ActivityState { get; set; }
+
+    /// <summary>
+    /// A list of dynamically created variables.
+    /// </summary>
+    public ICollection<Variable> DynamicVariables { get; set; } = new List<Variable>();
 }

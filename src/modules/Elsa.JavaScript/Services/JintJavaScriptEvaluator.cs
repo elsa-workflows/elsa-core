@@ -127,13 +127,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
     {
-        var q = from variable in EnumerateVariablesInScope(context)
-            where variable.Name == variableName
-            where variable.TryGet(context, out _)
-            select variable.Get(context);
-
-        var value = q.FirstOrDefault();
-
+        var variable = context.GetVariable(variableName);
+        var value = variable?.Get(context);
+        
         return ConvertIEnumerableToArray(value);
     }
 

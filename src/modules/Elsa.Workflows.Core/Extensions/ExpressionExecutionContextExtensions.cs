@@ -47,7 +47,7 @@ public static class ExpressionExecutionContextExtensions
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name)?.Value;
 
-    private static Variable? GetVariable(this ExpressionExecutionContext context, string name)
+    public static Variable? GetVariable(this ExpressionExecutionContext context, string name)
     {
         foreach (var block in context.Memory.Blocks.Where(b => b.Value.Metadata is VariableBlockMetadata))
         {
@@ -59,9 +59,13 @@ public static class ExpressionExecutionContextExtensions
         return context.ParentContext?.GetVariable(name);
     }
 
+    /// <summary>
+    /// Creates a named variable in the context.
+    /// </summary>
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
     {
         var existingVariable = context.GetVariable(name);
+        
         if(existingVariable != null)
             throw new Exception($"Variable {name} already exists in the context.");
         
@@ -74,17 +78,24 @@ public static class ExpressionExecutionContextExtensions
         return variable;
     }
 
+    /// <summary>
+    /// Sets the value of a named variable in the context.
+    /// </summary>
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
     {
         var variable = context.GetVariable(name);
-        if(variable is null)
-            throw new Exception($"Variable {name} not found in the context.");
+        
+        if(variable == null)
+            return CreateVariable(context, name, value, configure: configure);
 
         variable.Value = value;
         variable.Set(context, value, configure);
         return variable;
     }
 
+    /// <summary>
+    /// Sets the output to the specified value.
+    /// </summary>
     public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
     {
         if (output != null) context.Set(output.MemoryBlockReference(), value, configure);
@@ -107,11 +118,9 @@ public static class ExpressionExecutionContextExtensions
         while (currentContext != null)
         {
             var register = currentContext.Memory;
-            foreach (var entry in register.Blocks)
-            {
-                if (!memoryBlocks.ContainsKey(entry.Key))
-                    memoryBlocks.Add(entry.Key, entry.Value);
-            }
+            
+            foreach (var entry in register.Blocks) 
+                memoryBlocks.TryAdd(entry.Key, entry.Value);
 
             currentContext = currentContext.ParentContext;
         }
