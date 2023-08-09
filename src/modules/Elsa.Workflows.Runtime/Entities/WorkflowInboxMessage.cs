@@ -1,6 +1,6 @@
 using Elsa.Common.Entities;
 
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime.Entities;
 
 /// <summary>
 /// A message that can be delivered to a workflow instance.
@@ -31,6 +31,11 @@ public class WorkflowInboxMessage : Entity
     /// An optional correlation ID to select the workflow instance to deliver the message to.
     /// </summary>
     public string? CorrelationId { get; set; }
+
+    /// <summary>
+    /// An optional activity instance ID to select the workflow instance to deliver the message to.
+    /// </summary>
+    public string? ActivityInstanceId { get; set; }
 
     /// <summary>
     /// An optional set of inputs to deliver to the workflow instance.

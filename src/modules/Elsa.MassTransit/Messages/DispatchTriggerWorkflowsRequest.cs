@@ -10,5 +10,6 @@ public record DispatchTriggerWorkflows
     object BookmarkPayload,
     string? CorrelationId,
     string? WorkflowInstanceId,
+    string? ActivityInstanceId,
     IDictionary<string, object>? Input
 );

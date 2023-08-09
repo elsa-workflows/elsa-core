@@ -58,6 +58,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             request.BookmarkPayload,
             request.CorrelationId,
             request.WorkflowInstanceId,
+            request.ActivityInstanceId,
             request.Input
         ), cancellationToken);
         return new();
@@ -71,6 +72,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             request.BookmarkPayload,
             request.CorrelationId,
             request.WorkflowInstanceId,
+            request.ActivityInstanceId,
             request.Input
         ), cancellationToken);
         return new();

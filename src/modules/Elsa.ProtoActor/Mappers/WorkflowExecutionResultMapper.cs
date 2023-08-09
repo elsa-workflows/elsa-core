@@ -7,7 +7,7 @@ namespace Elsa.ProtoActor.Mappers;
 /// <summary>
 /// Maps between <see cref="WorkflowExecutionResult"/> and <see cref="ProtoWorkflowExecutionResponse"/>.
 /// </summary>
-public class WorkflowExecutionResultMapper
+internal class WorkflowExecutionResultMapper
 {
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;

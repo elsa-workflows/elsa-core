@@ -55,7 +55,8 @@ internal class TriggerAnswerCallActivities : INotificationHandler<TelnyxWebhookR
             await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
             {
                 ActivityTypeName = activityTypeName,
-                BookmarkPayload = new AnswerCallBookmarkPayload(callControlId, activityInstanceId),
+                ActivityInstanceId = activityInstanceId,
+                BookmarkPayload = new AnswerCallBookmarkPayload(callControlId),
                 CorrelationId = correlationId,
                 Input = input
             }, cancellationToken);

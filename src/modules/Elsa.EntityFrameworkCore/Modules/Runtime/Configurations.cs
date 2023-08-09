@@ -104,6 +104,8 @@ public class Configurations :
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityInstanceId)}");
+        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.CreatedAt)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash, x.WorkflowInstanceId }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
     }
@@ -121,6 +123,7 @@ public class Configurations :
         builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
         builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CorrelationId)}");
+        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
         builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
         builder.HasIndex(x => x.HandledAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.HandledAt)}");

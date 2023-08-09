@@ -56,7 +56,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.Input);
+        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.ActivityInstanceId, request.Input);
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchTriggerWorkflowsResponse();
     }
@@ -64,7 +64,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.Input);
+        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.ActivityInstanceId, request.Input);
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchResumeWorkflowsResponse();
     }

@@ -48,6 +48,11 @@ public class BookmarkFilter
     public ICollection<string>? ActivityTypeNames { get; set; }
 
     /// <summary>
+    /// Gets or sets the activity instance ID of the bookmark to find.
+    /// </summary>
+    public string? ActivityInstanceId { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     public IQueryable<StoredBookmark> Apply(IQueryable<StoredBookmark> query)
@@ -61,6 +66,7 @@ public class BookmarkFilter
         if (filter.WorkflowInstanceIds != null) query = query.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
         if (filter.ActivityTypeName != null) query = query.Where(x => x.ActivityTypeName == filter.ActivityTypeName);
         if (filter.ActivityTypeNames != null) query = query.Where(x => filter.ActivityTypeNames.Contains(x.ActivityTypeName));
+        if (filter.ActivityInstanceId != null) query = query.Where(x => x.ActivityInstanceId == filter.ActivityInstanceId);
 
         return query;
     }

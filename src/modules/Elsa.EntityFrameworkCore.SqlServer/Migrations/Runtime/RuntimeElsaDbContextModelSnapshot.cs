@@ -166,12 +166,18 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("BookmarkId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("CorrelationId")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
@@ -186,11 +192,15 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasKey("BookmarkId");
 
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
+
                     b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
 
                     b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
 
                     b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
@@ -359,9 +369,12 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
                 });
 
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.WorkflowInboxMessage", b =>
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ActivityInstanceId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ActivityTypeName")
@@ -400,6 +413,8 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_WorkflowInboxMessage_ActivityInstanceId");
 
                     b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
 

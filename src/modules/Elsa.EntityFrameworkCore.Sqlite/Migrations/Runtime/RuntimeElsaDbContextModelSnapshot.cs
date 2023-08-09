@@ -162,11 +162,18 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("BookmarkId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -182,11 +189,15 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasKey("BookmarkId");
 
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
+
                     b.HasIndex(new[] { "ActivityTypeName" }, "IX_StoredBookmark_ActivityTypeName");
 
                     b.HasIndex(new[] { "ActivityTypeName", "Hash" }, "IX_StoredBookmark_ActivityTypeName_Hash");
 
                     b.HasIndex(new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" }, "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
 
@@ -356,9 +367,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.ToTable("WorkflowExecutionLogRecords");
                 });
 
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Models.WorkflowInboxMessage", b =>
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityInstanceId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityTypeName")
@@ -399,6 +413,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_WorkflowInboxMessage_ActivityInstanceId");
 
                     b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
 

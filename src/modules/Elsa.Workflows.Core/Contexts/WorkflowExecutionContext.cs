@@ -381,7 +381,7 @@ public class WorkflowExecutionContext : IExecutionContext
         var memory = new MemoryRegister();
         var now = _systemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, _systemClock, CancellationToken);
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
         return activityExecutionContext;
     }

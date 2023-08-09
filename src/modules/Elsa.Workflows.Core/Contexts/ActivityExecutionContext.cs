@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -15,6 +16,7 @@ namespace Elsa.Workflows.Core;
 /// </summary>
 public class ActivityExecutionContext : IExecutionContext
 {
+    private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = new();
     private long _executionCount;
 
@@ -29,8 +31,10 @@ public class ActivityExecutionContext : IExecutionContext
         ActivityDescriptor activityDescriptor,
         DateTimeOffset startedAt,
         object? tag,
+        ISystemClock systemClock,
         CancellationToken cancellationToken)
     {
+        _systemClock = systemClock;
         WorkflowExecutionContext = workflowExecutionContext;
         ParentActivityExecutionContext = parentActivityExecutionContext;
         ExpressionExecutionContext = expressionExecutionContext;
@@ -281,8 +285,6 @@ public class ActivityExecutionContext : IExecutionContext
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
-        var payloadSerializer = GetRequiredService<IBookmarkPayloadSerializer>();
-        //var payloadJson = payload != null ? payloadSerializer.Serialize(payload) : default;
         var hash = bookmarkHasher.Hash(bookmarkName, payload);
 
         var bookmark = new Bookmark(
@@ -290,8 +292,10 @@ public class ActivityExecutionContext : IExecutionContext
             bookmarkName,
             hash,
             payload,
+            Activity.Id,
             ActivityNode.NodeId,
             Id,
+            _systemClock.UtcNow,
             options?.AutoBurn ?? true,
             callback?.Method.Name);
 

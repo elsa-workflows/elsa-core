@@ -1,7 +1,7 @@
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Models;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;

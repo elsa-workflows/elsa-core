@@ -56,7 +56,7 @@ public static class ActivityExecutionContextExtensions
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
         return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
     }
-    
+
     /// <summary>
     /// Sets the Result property of the specified activity.
     /// </summary>
@@ -159,7 +159,7 @@ public static class ActivityExecutionContextExtensions
         var activityDescriptor = context.ActivityDescriptor;
         var wrappedInputs = activityDescriptor.GetWrappedInputPropertyDescriptors(activity);
 
-        foreach (var inputDescriptor in wrappedInputs) 
+        foreach (var inputDescriptor in wrappedInputs)
             await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
 
         context.SetHasEvaluatedProperties();
@@ -190,7 +190,7 @@ public static class ActivityExecutionContextExtensions
 
         return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
-    
+
     private static async Task<Input?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
     {
         var activity = context.Activity;
@@ -214,11 +214,11 @@ public static class ActivityExecutionContextExtensions
             var expressionExecutionContext = context.ExpressionExecutionContext;
             value = input?.Expression != null ? await evaluator.EvaluateAsync(input, expressionExecutionContext) : defaultValue;
         }
-            
+
         var memoryReference = input?.MemoryBlockReference();
-        
+
         // When input is created from an activity provider, there may be no memory block reference.
-        if(memoryReference?.Id != null!)
+        if (memoryReference?.Id != null!)
         {
             // Declare the input memory block on the current context. 
             context.ExpressionExecutionContext.Set(memoryReference, value!);
@@ -318,14 +318,14 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
-        
+
         foreach (var ancestorContext in ancestorContexts)
         {
             var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
 
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
-            
+
             await handler.HandleSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
@@ -340,10 +340,10 @@ public static class ActivityExecutionContextExtensions
     {
         // Mark the activity as complete.
         context.Status = ActivityStatus.Completed;
-        
+
         // Add an execution log entry.
         context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
-        
+
         // Send a signal.
         await context.SendSignalAsync(new ActivityCompleted(result));
 
@@ -367,17 +367,21 @@ public static class ActivityExecutionContextExtensions
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
         var publisher = context.GetRequiredService<INotificationSender>();
+        var workflow = context.WorkflowExecutionContext.Workflow;
         context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
-        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
-        
+
+        workflow.WhenCreatedWithModernTooling(
+            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityId == context.Activity.Id),
+            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId));
+
         // Add an execution log entry.
         context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
-        
+
         await context.SendSignalAsync(new CancelSignal());
         await publisher.SendAsync(new ActivityCancelled(context));
     }
-    
+
     /// <summary>
     /// Returns the first context that is associated with a <see cref="IVariableContainer"/>.
     /// </summary>
@@ -385,7 +389,7 @@ public static class ActivityExecutionContextExtensions
     {
         return context.FindParent(x => x.Activity is IVariableContainer);
     }
-    
+
     /// <summary>
     /// Returns the first context in the hierarchy that matches the specified predicate.
     /// </summary>

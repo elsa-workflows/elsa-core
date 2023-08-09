@@ -22,21 +22,40 @@ public class EventPublisher : IEventPublisher
     }
 
     /// <inheritdoc />
-    public async Task PublishAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task PublishAsync(
+        string eventName,
+        string? correlationId = default,
+        string? workflowInstanceId = default,
+        string? activityInstanceId = default,
+        IDictionary<string, object>? input = default,
+        CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.Sequential, correlationId, workflowInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, NotificationStrategy.Sequential, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task DispatchAsync(string eventName, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    public async Task DispatchAsync(
+        string eventName,
+        string? correlationId = default,
+        string? workflowInstanceId = default,
+        string? activityInstanceId = default,
+        IDictionary<string, object>? input = default,
+        CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.Background, correlationId, workflowInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, NotificationStrategy.Background, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
-    private async Task PublishInternalAsync(string eventName, IEventPublishingStrategy publishingStrategy, string? correlationId = default, string? workflowInstanceId = default, IDictionary<string, object>? input = default, CancellationToken cancellationToken = default)
+    private async Task PublishInternalAsync(
+        string eventName,
+        IEventPublishingStrategy publishingStrategy,
+        string? correlationId = default,
+        string? workflowInstanceId = default,
+        string? activityInstanceId = default,
+        IDictionary<string, object>? input = default,
+        CancellationToken cancellationToken = default)
     {
         var eventBookmark = new EventBookmarkPayload(eventName);
-        var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, input);
+        var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, input);
         var options = new WorkflowInboxMessageDeliveryOptions
         {
             EventPublishingStrategy = publishingStrategy

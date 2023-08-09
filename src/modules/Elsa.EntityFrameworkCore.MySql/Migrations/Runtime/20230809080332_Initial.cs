@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -57,8 +58,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CorrelationId = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     Data = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
@@ -128,6 +132,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsHandled = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
@@ -258,6 +264,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 column: "WorkflowInstanceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_StoredBookmark_ActivityInstanceId",
+                schema: "Elsa",
+                table: "Bookmarks",
+                column: "ActivityInstanceId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityTypeName",
                 schema: "Elsa",
                 table: "Bookmarks",
@@ -274,6 +286,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: "Elsa",
                 table: "Bookmarks",
                 columns: new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StoredBookmark_CreatedAt",
+                schema: "Elsa",
+                table: "Bookmarks",
+                column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_Hash",
@@ -376,6 +394,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: "Elsa",
                 table: "WorkflowExecutionLogRecords",
                 column: "WorkflowVersion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WorkflowInboxMessage_ActivityInstanceId",
+                schema: "Elsa",
+                table: "WorkflowInboxMessages",
+                column: "ActivityInstanceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInboxMessage_ActivityTypeName",

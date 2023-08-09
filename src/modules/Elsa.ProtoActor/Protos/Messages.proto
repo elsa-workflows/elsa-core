@@ -96,10 +96,12 @@ message Bookmark {
   string Name = 2;
   string Hash = 3;
   optional string Payload = 4;
-  string ActivityNodeId = 5;
-  string ActivityInstanceId = 6;
-  optional bool AutoBurn = 7;
-  optional string CallbackMethodName = 8;
+  string ActivityId = 5;
+  string ActivityNodeId = 6;
+  string ActivityInstanceId = 7;
+  optional bool AutoBurn = 8;
+  optional string CallbackMethodName = 9;
+  string CreatedAt = 10; // ISO 8601
 }
 
 // RunningWorkflowsGrain.

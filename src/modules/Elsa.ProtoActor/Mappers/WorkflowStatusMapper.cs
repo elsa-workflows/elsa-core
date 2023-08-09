@@ -3,7 +3,7 @@ using ProtoWorkflowStatus = Elsa.ProtoActor.Protos.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Mappers;
 
-public class WorkflowStatusMapper
+internal class WorkflowStatusMapper
 {
     public WorkflowStatus Map(ProtoWorkflowStatus status) =>
         status switch

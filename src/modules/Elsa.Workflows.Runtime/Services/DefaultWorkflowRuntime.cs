@@ -169,7 +169,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var correlationId = options.CorrelationId;
         var workflowInstanceId = options.WorkflowInstanceId;
-        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId };
+        var activityInstanceId = options.ActivityInstanceId;
+        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
         return await ResumeWorkflowsAsync(bookmarks, new ResumeWorkflowRuntimeOptions(correlationId, Input: options.Input), cancellationToken);
     }
@@ -317,7 +318,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     {
         foreach (var bookmark in bookmarks)
         {
-            var storedBookmark = new StoredBookmark(bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.Id, correlationId, bookmark.Payload);
+            var storedBookmark = new StoredBookmark(bookmark.Id, bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.CreatedAt, bookmark.ActivityInstanceId, correlationId, bookmark.Payload);
             await _bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }

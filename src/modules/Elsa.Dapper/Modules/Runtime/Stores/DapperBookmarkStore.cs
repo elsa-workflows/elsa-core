@@ -58,6 +58,7 @@ public class DapperBookmarkStore : IBookmarkStore
             .Is(nameof(StoredBookmarkRecord.CorrelationId), filter.CorrelationId)
             .Is(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeName)
             .In(nameof(StoredBookmarkRecord.ActivityTypeName), filter.ActivityTypeNames)
+            .Is(nameof(StoredBookmarkRecord.ActivityInstanceId), filter.ActivityInstanceId)
             ;
     }
     
@@ -70,9 +71,11 @@ public class DapperBookmarkStore : IBookmarkStore
             Id = source.BookmarkId,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
+            ActivityInstanceId = source.ActivityInstanceId,
             ActivityTypeName = source.ActivityTypeName,
             Hash = source.Hash,
-            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default
+            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default,
+            CreatedAt = source.CreatedAt
         };
     }
     
@@ -83,9 +86,11 @@ public class DapperBookmarkStore : IBookmarkStore
             BookmarkId = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
+            ActivityInstanceId = source.ActivityInstanceId,
             ActivityTypeName = source.ActivityTypeName,
             Hash = source.Hash,
-            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default
+            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default,
+            CreatedAt = source.CreatedAt
         };
     }
 }
