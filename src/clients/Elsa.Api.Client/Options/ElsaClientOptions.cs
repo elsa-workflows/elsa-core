@@ -18,5 +18,5 @@ public class ElsaClientOptions
     /// <summary>
     /// Gets or sets a delegate that can be used to configure the HTTP client.
     /// </summary>
-    public Action<HttpClient>? ConfigureHttpClient { get; set; }
+    public Action<IServiceProvider, HttpClient>? ConfigureHttpClient { get; set; }
 }

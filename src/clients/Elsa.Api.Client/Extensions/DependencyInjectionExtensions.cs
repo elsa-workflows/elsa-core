@@ -71,7 +71,7 @@ public static class DependencyInjectionExtensions
     {
         var options = serviceProvider.GetRequiredService<IOptions<ElsaClientOptions>>().Value;
         httpClient.BaseAddress = options.BaseAddress;
-        options.ConfigureHttpClient?.Invoke(httpClient);
+        options.ConfigureHttpClient?.Invoke(serviceProvider, httpClient);
     }
     
     private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
