@@ -19,9 +19,9 @@ public static class ForEachWorkflow
             Activities =
             {
                 new WriteLine("Going through the shopping list..."),
-                new ForEach(shoppingList)
+                new ForEach<string>(shoppingList)
                 {
-                    CurrentValue = new Output<object>(currentValueVariable),
+                    CurrentValue = new Output<string>(currentValueVariable),
                     Body = new Sequence
                     {
                         Activities =
