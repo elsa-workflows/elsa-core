@@ -31,7 +31,16 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = request.DefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
+        var definitionId = request.DefinitionId;
+        var versionOptions = request.VersionOptions ?? VersionOptions.Published;
+
+        var exists = await _store.AnyAsync(
+            new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = versionOptions
+            },
+            cancellationToken);
 
         if (!exists)
         {
@@ -45,8 +54,8 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
         var input = (IDictionary<string, object>?)request.Input;
         var dispatchRequest = new DispatchWorkflowDefinitionRequest
         {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = VersionOptions.Published,
+            DefinitionId = definitionId,
+            VersionOptions = versionOptions,
             Input = input,
             InstanceId = instanceId,
             CorrelationId = correlationId,
