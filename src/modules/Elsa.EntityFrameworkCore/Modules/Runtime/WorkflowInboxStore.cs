@@ -31,6 +31,16 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, LoadAsync, cancellationToken);
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(query =>
+        {
+            foreach (var filter in filters) filter.Apply(query);
+            return query;
+        }, LoadAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     
     private ValueTask<WorkflowInboxMessage> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage entity, CancellationToken cancellationToken)

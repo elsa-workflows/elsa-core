@@ -314,7 +314,8 @@ public class ActivityExecutionContext : IExecutionContext
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
         var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
-        var hash = bookmarkHasher.Hash(bookmarkName, payload);
+        var includeActivityInstanceId = options?.IncludeActivityInstanceId ?? true;
+        var hash = bookmarkHasher.Hash(bookmarkName, payload, includeActivityInstanceId ? Id : null);
 
         var bookmark = new Bookmark(
             identityGenerator.GenerateId(),

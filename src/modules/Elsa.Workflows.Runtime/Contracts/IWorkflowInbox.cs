@@ -40,4 +40,12 @@ public interface IWorkflowInbox
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A list of messages that match the filter.</returns>
     ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds all messages matching the specified filter.
+    /// </summary>
+    /// <param name="filters">The filters to apply.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A list of messages that match the filter.</returns>
+    ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default);
 }

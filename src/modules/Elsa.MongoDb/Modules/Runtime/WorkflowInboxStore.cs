@@ -22,17 +22,28 @@ public class MongoWorkflowInboxStore : IWorkflowInboxStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default) => 
+    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.SaveAsync(record, s => s.Id, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => 
-        (await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken));
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => 
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(query => Filter(query, filters.ToArray()), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) =>
         await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
 
-    private IMongoQueryable<WorkflowInboxMessage> Filter(IMongoQueryable<WorkflowInboxMessage> queryable, WorkflowInboxMessageFilter filter) => 
-        (filter.Apply(queryable) as IMongoQueryable<WorkflowInboxMessage>)!;
+    private static IMongoQueryable<WorkflowInboxMessage> Filter(IMongoQueryable<WorkflowInboxMessage> queryable, params WorkflowInboxMessageFilter[] filters)
+    {
+        foreach (var filter in filters) filter.Apply(queryable);
+        return queryable;
+    }
 }

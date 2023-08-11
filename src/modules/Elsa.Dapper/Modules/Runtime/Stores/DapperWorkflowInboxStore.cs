@@ -43,23 +43,42 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return Map(records);
     }
-    
+
+    /// <inheritdoc />
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
+    {
+        var records = await _store.FindManyAsync(q => ApplyFilter(q, filters.ToArray()), cancellationToken);
+        return Map(records);
+    }
+
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
-    private void ApplyFilter(ParameterizedQuery query, WorkflowInboxMessageFilter filter)
+    private void ApplyFilter(ParameterizedQuery query, params WorkflowInboxMessageFilter[] filters)
     {
-        query
-            .Is(nameof(WorkflowInboxMessageRecord.Hash), filter.Hash)
-            .Is(nameof(WorkflowInboxMessageRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
-            .Is(nameof(WorkflowInboxMessageRecord.CorrelationId), filter.CorrelationId)
-            .Is(nameof(WorkflowInboxMessageRecord.ActivityTypeName), filter.ActivityTypeName)
-            .Is(nameof(WorkflowInboxMessageRecord.ActivityInstanceId), filter.ActivityInstanceId)
-            .Is(nameof(WorkflowInboxMessageRecord.IsHandled), filter.IsHandled)
-            ;
+        var clauses = new List<ParameterizedQuery>();
+
+        foreach (var filter in filters)
+        {
+            var clause = new ParameterizedQuery(query.Dialect);
+
+            clause
+                .Is(nameof(WorkflowInboxMessageRecord.Hash), filter.Hash)
+                .Is(nameof(WorkflowInboxMessageRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
+                .Is(nameof(WorkflowInboxMessageRecord.CorrelationId), filter.CorrelationId)
+                .Is(nameof(WorkflowInboxMessageRecord.ActivityTypeName), filter.ActivityTypeName)
+                .Is(nameof(WorkflowInboxMessageRecord.ActivityInstanceId), filter.ActivityInstanceId)
+                .Is(nameof(WorkflowInboxMessageRecord.IsHandled), filter.IsHandled)
+                ;
+
+            clauses.Add(clause);
+        }
+
+        var clausesSql = string.Join(" OR ", $"({clauses.Select(x => x.Sql)})");
+        query.Sql.AppendLine(clausesSql);
     }
 
     private IEnumerable<WorkflowInboxMessage> Map(IEnumerable<WorkflowInboxMessageRecord> source) => source.Select(Map);

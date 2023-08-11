@@ -75,7 +75,12 @@ public class Event : Trigger<object?>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmark(new EventBookmarkPayload(eventName));
+            var options = new BookmarkOptions
+            {
+                Payload = new EventBookmarkPayload(eventName),
+                IncludeActivityInstanceId = false
+            };
+            context.CreateBookmark(options);
             return;
         }
 
