@@ -26,6 +26,9 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
     /// <inheritdoc />
     public async ValueTask<Application?> ValidateAsync(string apiKey, CancellationToken cancellationToken = default)
     {
+        if(string.IsNullOrWhiteSpace(apiKey))
+            return default;
+        
         var clientId = _apiKeyParser.Parse(apiKey);
         var application = await _applicationProvider.FindByClientIdAsync(clientId, cancellationToken);
         
