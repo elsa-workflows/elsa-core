@@ -15,7 +15,7 @@ public class DeliverWorkflowMessagesFromInbox : INotificationHandler<WorkflowBoo
     /// <summary>
     /// Initializes a new instance of the <see cref="DeliverWorkflowMessagesFromInbox"/> class.
     /// </summary>
-    public DeliverWorkflowMessagesFromInbox(IWorkflowInbox workflowInbox, IWorkflowDispatcher workflowDispatcher)
+    public DeliverWorkflowMessagesFromInbox(IWorkflowInbox workflowInbox)
     {
         _workflowInbox = workflowInbox;
     }
