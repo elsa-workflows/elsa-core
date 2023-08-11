@@ -109,4 +109,10 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     {
         return await _store.FindManyAsync(filter, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
+    {
+        return await _store.FindManyAsync(filters, cancellationToken);
+    }
 }

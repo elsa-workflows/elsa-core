@@ -35,11 +35,22 @@ public class MemoryWorkflowInboxStore : IWorkflowInboxStore
     }
 
     /// <inheritdoc />
+    public ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
+    {
+        var entities = _store.Query(query => Filter(query, filters.ToArray())).ToList();
+        return new(entities);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
     {
         var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
         return _store.DeleteMany(ids);
     }
 
-    private static IQueryable<WorkflowInboxMessage> Filter(IQueryable<WorkflowInboxMessage> query, WorkflowInboxMessageFilter filter) => filter.Apply(query);
+    private static IQueryable<WorkflowInboxMessage> Filter(IQueryable<WorkflowInboxMessage> query, params WorkflowInboxMessageFilter[] filters)
+    {
+        foreach (var filter in filters) filter.Apply(query);
+        return query;
+    }
 }

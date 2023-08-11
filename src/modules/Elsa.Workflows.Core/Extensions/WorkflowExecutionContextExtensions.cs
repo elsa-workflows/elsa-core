@@ -71,7 +71,7 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
     {
-        // Construct bookmark.
+        // Get the activity execution context that owns the bookmark.
         var bookmarkedActivityContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
         
         if(bookmarkedActivityContext == null)
