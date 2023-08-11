@@ -12,6 +12,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
+using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -116,7 +117,8 @@ namespace Elsa.Activities.Http.Middleware
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
             var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!)!;
 
-            if (!await AuthorizeAsync(httpContext, options.Value, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken))
+            if (!await AuthorizeAsync(httpContext, options.Value, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken) ||
+                !await AuthorizeWithCustomHeaderAsync(httpContext, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken))
             {
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
@@ -213,6 +215,22 @@ namespace Elsa.Activities.Http.Middleware
 
             var authorizationHandler = options.HttpEndpointAuthorizationHandlerFactory(httpContext.RequestServices);
 
+            return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
+        }
+        
+        private async Task<bool> AuthorizeWithCustomHeaderAsync(
+            HttpContext httpContext,
+            IActivityBlueprintWrapper<HttpEndpoint> httpEndpoint,
+            IWorkflowBlueprint workflowBlueprint,
+            CollectedWorkflow pendingWorkflow,
+            CancellationToken cancellationToken)
+        {
+            var authorizeWithCustomHeader = await httpEndpoint.EvaluatePropertyValueAsync(x => x.AuthorizeWithCustomHeader, cancellationToken);
+
+            if (!authorizeWithCustomHeader)
+                return true;
+
+            var authorizationHandler = ActivatorUtilities.GetServiceOrCreateInstance<CustomHeaderAuthorizationHandler>(httpContext.RequestServices);
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
 

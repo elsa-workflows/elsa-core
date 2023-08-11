@@ -154,5 +154,21 @@ namespace Elsa.Activities.Http
         
         /// <inheritdoc cref="WithPolicy(ISetupActivity{HttpEndpoint}, Func{ActivityExecutionContext, ValueTask{string?}})"/>
         public static ISetupActivity<HttpEndpoint> WithPolicy(this ISetupActivity<HttpEndpoint> activity, string? value) => activity.Set(x => x.Policy, value);
+        
+        
+        /// <summary>
+        /// Sets whether or not this endpoint requires authorization with a custom header to use
+        /// </summary>
+        /// <param name="activity"></param>
+        /// <param name="value">Whether or not authorization with custom header is used.</param>
+        /// <param name="customHeaderName">The name of the custom header.</param>
+        /// <param name="customHeaderValue">The value of the custom header</param>
+        /// <returns>A <see cref="ISetupActivity"/> that can be used to further change properties of <see cref="HttpEndpoint"/></returns>
+        public static ISetupActivity<HttpEndpoint> WithAuthorizeWithCustomHeader(this ISetupActivity<HttpEndpoint> activity, bool value, string customHeaderName, string customHeaderValue)
+        {
+            return activity.Set(x => x.AuthorizeWithCustomHeader, value)
+                .Set(x => x.CustomHeaderName, customHeaderName)
+                .Set(x => x.CustomHeaderValue, customHeaderValue);
+        }
     }
 }
