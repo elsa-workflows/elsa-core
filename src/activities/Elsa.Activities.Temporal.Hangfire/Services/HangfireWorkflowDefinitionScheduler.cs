@@ -107,7 +107,7 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
         private IEnumerable<RecurringJobDto> QueryRecurringJobs()
         {
             using var connection = _jobStorage.GetConnection();
-            return connection.GetRecurringJobs().Where(x => x.Job.Type == typeof(RunHangfireWorkflowDefinitionJob));
+            return connection.GetRecurringJobs().Where(x => x?.Job?.Type == typeof(RunHangfireWorkflowDefinitionJob));
         }
 
         private void DeleteScheduledJob(RunHangfireWorkflowDefinitionJobModel data)
