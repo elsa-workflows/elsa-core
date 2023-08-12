@@ -47,7 +47,7 @@ public interface IWorkflowRuntime
     /// <param name="workflowInstanceId">The ID of the workflow instance to resume.</param>
     /// <param name="options"></param>
     /// <param name="cancellationToken"></param>
-    Task<WorkflowExecutionResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resumes all workflows that are bookmarked on the specified activity type. 

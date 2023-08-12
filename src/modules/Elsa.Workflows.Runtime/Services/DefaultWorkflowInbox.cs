@@ -25,11 +25,11 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// Initializes a new instance of the <see cref="DefaultWorkflowInbox"/> class.
     /// </summary>
     public DefaultWorkflowInbox(
-        IWorkflowRuntime workflowRuntime, 
-        IWorkflowInboxStore store, 
-        INotificationSender notificationSender, 
-        ISystemClock systemClock, 
-        IIdentityGenerator identityGenerator, 
+        IWorkflowRuntime workflowRuntime,
+        IWorkflowInboxStore store,
+        INotificationSender notificationSender,
+        ISystemClock systemClock,
+        IIdentityGenerator identityGenerator,
         IBookmarkHasher bookmarkHasher)
     {
         _workflowRuntime = workflowRuntime;
@@ -51,7 +51,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage newMessage, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default)
     {
         var now = _systemClock.UtcNow;
-        
+
         // Create a new message.
         var message = new WorkflowInboxMessage
         {
@@ -66,22 +66,38 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             Input = newMessage.Input,
             Hash = _bookmarkHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload),
         };
-        
+
         // Store the message.
         await _store.SaveAsync(message, cancellationToken);
-        
+
         // Send a notification.
         var strategy = options.EventPublishingStrategy;
         var workflowExecutionResults = new List<WorkflowExecutionResult>();
         var notification = new WorkflowInboxMessageReceived(message, workflowExecutionResults);
         await _notificationSender.SendAsync(notification, strategy, cancellationToken);
-        
+
         // Return the result.
         return new SubmitWorkflowInboxMessageResult(message, workflowExecutionResults);
     }
 
     /// <inheritdoc />
     public async ValueTask<DeliverWorkflowInboxMessageResult> DeliverAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    {
+        var triggeredWorkflows = await TriggerWorkflowsAsync(message, cancellationToken);
+
+        message.IsHandled = triggeredWorkflows.Any();
+
+        if (message.IsHandled)
+        {
+            message.AffectedWorkflowInstancesIds = triggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
+            message.HandledAt = _systemClock.UtcNow;
+            await _store.SaveAsync(message, cancellationToken);
+        }
+
+        return new DeliverWorkflowInboxMessageResult(triggeredWorkflows);
+    }
+
+    private async Task<ICollection<WorkflowExecutionResult>> TriggerWorkflowsAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
         var activityTypeName = message.ActivityTypeName;
         var correlationId = message.CorrelationId;
@@ -90,18 +106,12 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
         var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, activityInstanceId, input);
-        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
-        
-        message.IsHandled = result.TriggeredWorkflows.Any();
 
-        if (message.IsHandled)
-        {
-            message.AffectedWorkflowInstancesIds = result.TriggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
-            message.HandledAt = _systemClock.UtcNow;
-            await _store.SaveAsync(message, cancellationToken);
-        }
-        
-        return new DeliverWorkflowInboxMessageResult(result.TriggeredWorkflows);
+        if (workflowInstanceId != null)
+            return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+
+        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        return result.TriggeredWorkflows;
     }
 
     /// <inheritdoc />

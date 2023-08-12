@@ -119,14 +119,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
         await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(1), cancellationToken))
         {
             var workflowState = await _workflowStateStore.FindAsync(workflowInstanceId, cancellationToken);
 
             if (workflowState == null)
-                throw new Exception($"Workflow instance {workflowInstanceId} not found");
+                return null;
 
             var definitionId = workflowState.DefinitionId;
             var version = workflowState.DefinitionVersion;
@@ -309,7 +309,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 },
                 cancellationToken);
 
-            resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks));
+            if (resumeResult != null)
+                resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks));
         }
 
         return resumedWorkflows;
