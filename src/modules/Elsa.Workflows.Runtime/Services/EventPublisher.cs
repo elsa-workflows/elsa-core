@@ -23,7 +23,7 @@ public class EventPublisher : IEventPublisher
     }
 
     /// <inheritdoc />
-    public async Task PublishAsync(
+    public async Task<ICollection<WorkflowExecutionResult>> PublishAsync(
         string eventName,
         string? correlationId = default,
         string? workflowInstanceId = default,
@@ -31,7 +31,7 @@ public class EventPublisher : IEventPublisher
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.Sequential, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        return await PublishInternalAsync(eventName, NotificationStrategy.Sequential, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -46,7 +46,7 @@ public class EventPublisher : IEventPublisher
         await PublishInternalAsync(eventName, NotificationStrategy.FireAndForget, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
-    private async Task PublishInternalAsync(
+    private async Task<ICollection<WorkflowExecutionResult>> PublishInternalAsync(
         string eventName,
         IEventPublishingStrategy publishingStrategy,
         string? correlationId = default,
@@ -62,6 +62,7 @@ public class EventPublisher : IEventPublisher
             EventPublishingStrategy = publishingStrategy,
         };
 
-        await _workflowInbox.SubmitAsync(message, options, cancellationToken);
+        var result = await _workflowInbox.SubmitAsync(message, options, cancellationToken);
+        return result.WorkflowExecutionResults;
     }
 }
