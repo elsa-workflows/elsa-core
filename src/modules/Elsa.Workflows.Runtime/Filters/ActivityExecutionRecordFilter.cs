@@ -13,6 +13,11 @@ public class ActivityExecutionRecordFilter
     public string? WorkflowInstanceId { get; set; }
     
     /// <summary>
+    /// The IDs of the workflow instances.
+    /// </summary>
+    public ICollection<string>? WorkflowInstanceIds { get; set; }
+    
+    /// <summary>
     /// The ID of the activity.
     /// </summary>
     public string? ActivityId { get; set; }
@@ -34,6 +39,7 @@ public class ActivityExecutionRecordFilter
     {
         var filter = this;
         if (filter.WorkflowInstanceId != null) queryable = queryable.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
+        if (filter.WorkflowInstanceIds != null) queryable = queryable.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);
         if (filter.ActivityIds != null && filter.ActivityIds.Any()) queryable = queryable.Where(x => filter.ActivityIds.Contains(x.ActivityId));
         if (filter.Completed != null) queryable = filter.Completed == true ? queryable.Where(x => x.CompletedAt != null) : queryable.Where(x => x.CompletedAt == null);

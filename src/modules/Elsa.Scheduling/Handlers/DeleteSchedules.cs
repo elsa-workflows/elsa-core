@@ -10,7 +10,7 @@ namespace Elsa.Scheduling.Handlers;
 /// <summary>
 /// Deletes scheduled jobs based on deleted workflow triggers and bookmarks.
 /// </summary>
-public class DeleteSchedules : 
+public class DeleteSchedules :
     INotificationHandler<WorkflowDefinitionDeleting>,
     INotificationHandler<WorkflowDefinitionsDeleting>,
     INotificationHandler<WorkflowDefinitionVersionDeleting>,
@@ -41,8 +41,11 @@ public class DeleteSchedules :
     }
 
     async Task INotificationHandler<WorkflowDefinitionDeleting>.HandleAsync(WorkflowDefinitionDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionId = notification.DefinitionId }, cancellationToken);
-    async Task INotificationHandler<WorkflowDefinitionsDeleting>.HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter{ WorkflowDefinitionIds = notification.DefinitionIds }, cancellationToken);
-    async Task INotificationHandler<WorkflowDefinitionVersionDeleting>.HandleAsync(WorkflowDefinitionVersionDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionVersionId = notification.WorkflowDefinition.Id }, cancellationToken);
+    async Task INotificationHandler<WorkflowDefinitionsDeleting>.HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionIds = notification.DefinitionIds }, cancellationToken);
+
+    async Task INotificationHandler<WorkflowDefinitionVersionDeleting>.HandleAsync(WorkflowDefinitionVersionDeleting notification, CancellationToken cancellationToken) =>
+        await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionVersionId = notification.WorkflowDefinition.Id }, cancellationToken);
+
     async Task INotificationHandler<WorkflowDefinitionVersionsDeleting>.HandleAsync(WorkflowDefinitionVersionsDeleting notification, CancellationToken cancellationToken) => await RemoveSchedulesAsync(new TriggerFilter { WorkflowDefinitionVersionIds = notification.Ids }, cancellationToken);
 
     private async Task RemoveSchedulesAsync(TriggerFilter filter, CancellationToken cancellationToken)

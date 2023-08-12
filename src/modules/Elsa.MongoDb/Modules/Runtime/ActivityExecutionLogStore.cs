@@ -53,6 +53,12 @@ public class MongoActivityExecutionLogStore : IActivityExecutionStore
         return await _mongoDbStore.CountAsync(queryable => Filter(queryable, filter).OrderBy(x => x.StartedAt), cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.DeleteWhereAsync<string>(queryable => Filter(queryable, filter), x => x.Id, cancellationToken);
+    }
+
     private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) =>
         (filter.Apply(queryable) as IMongoQueryable<ActivityExecutionRecord>)!;
 

@@ -204,6 +204,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()
             .AddNotificationHandler<DeleteWorkflowInstances>()
+            .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
 

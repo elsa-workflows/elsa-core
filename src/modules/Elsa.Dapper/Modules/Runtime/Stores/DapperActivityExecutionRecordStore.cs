@@ -59,11 +59,17 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
-    public Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _store.CountAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
-    
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+    }
+
     private static void ApplyFilter(ParameterizedQuery query, ActivityExecutionRecordFilter filter)
     {
         query
