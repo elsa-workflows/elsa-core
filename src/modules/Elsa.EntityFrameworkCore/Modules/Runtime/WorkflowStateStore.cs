@@ -2,12 +2,10 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
@@ -15,7 +13,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowStateStore : IWorkflowStateStore
 {
     private readonly ISystemClock _systemClock;
-    private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowState> _store;
 
@@ -24,12 +21,10 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     /// </summary>
     public EFCoreWorkflowStateStore(
         EntityStore<RuntimeElsaDbContext, WorkflowState> store,
-        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
         IWorkflowStateSerializer workflowStateSerializer,
         ISystemClock systemClock)
     {
         _systemClock = systemClock;
-        _dbContextFactory = dbContextFactory;
         _workflowStateSerializer = workflowStateSerializer;
         _store = store;
     }
@@ -37,13 +32,13 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     /// <inheritdoc />
     public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(state, SaveAsync, cancellationToken: cancellationToken);
+        await _store.SaveAsync(state, OnSaveAsync, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.FindAsync(filter.Apply, LoadAsync, cancellationToken);
+        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -58,7 +53,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     }
 
-    private async ValueTask<WorkflowState> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
+    private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
     {
         var state = new WorkflowStateState(entity.Bookmarks, entity.CompletionCallbacks, entity.ActivityExecutionContexts, entity.Output, entity.Properties);
         var json = await _workflowStateSerializer.SerializeAsync(state, cancellationToken);
@@ -69,10 +64,9 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         entity.UpdatedAt = now;
 
         entry.Property<string>("Data").CurrentValue = json;
-        return entity;
     }
 
-    private async ValueTask LoadAsync(RuntimeElsaDbContext dbContext, WorkflowState? entity, CancellationToken cancellationToken)
+    private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowState? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
             return;

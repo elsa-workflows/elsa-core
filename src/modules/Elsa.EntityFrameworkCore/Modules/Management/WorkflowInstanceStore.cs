@@ -30,13 +30,13 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => Filter(query, filter), LoadAsync, cancellationToken).FirstOrDefault();
+        await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), LoadAsync, cancellationToken).ToList();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return Page.Of(entities, count);
     }
 
@@ -44,7 +44,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs), LoadAsync, cancellationToken).ToList();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return Page.Of(entities, count);
     }
 
@@ -54,7 +54,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), LoadAsync, cancellationToken).ToList().AsEnumerable();
+        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -91,22 +91,21 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
-        await _store.SaveAsync(instance, SaveAsync, cancellationToken);
+        await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
-        await _store.SaveManyAsync(instances, SaveAsync, cancellationToken);
+        await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
 
-    private async ValueTask<WorkflowInstance> SaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
+    private async ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
         var data = entity.WorkflowState;
         var json = await _workflowStateSerializer.SerializeAsync(data, cancellationToken);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        return entity;
     }
 
-    private async ValueTask LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
+    private async ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
             return;

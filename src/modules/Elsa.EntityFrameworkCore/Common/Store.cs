@@ -20,7 +20,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
-    
+
     private readonly IDbContextFactory<TDbContext> _dbContextFactory;
 
     /// <summary>
@@ -78,14 +78,17 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving, CancellationToken cancellationToken = default)
     {
         await Semaphore.WaitAsync(cancellationToken); // Asynchronous wait
 
         try
         {
             await using var dbContext = await CreateDbContextAsync(cancellationToken);
-            entity = onSaving != null ? await onSaving(dbContext, entity, cancellationToken) : entity;
+
+            if (onSaving != null)
+                await onSaving(dbContext, entity, cancellationToken);
+
             var set = dbContext.Set<TEntity>();
             var lambda = keySelector.BuildEqualsExpression(entity);
             var exists = await set.AnyAsync(lambda, cancellationToken);
@@ -116,7 +119,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task SaveManyAsync(
         IEnumerable<TEntity> entities,
         Expression<Func<TEntity, string>> keySelector,
-        Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving = default,
+        Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = default,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
@@ -125,7 +128,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         if (onSaving != null)
         {
             var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, cancellationToken).AsTask()).ToList();
-            entityList = (await Task.WhenAll(savingTasks)).ToList();
+            await Task.WhenAll(savingTasks);
         }
 
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
