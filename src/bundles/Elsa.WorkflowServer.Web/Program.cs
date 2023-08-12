@@ -14,6 +14,7 @@ using Proto.Persistence.Sqlite;
 
 const bool useMongoDb = false;
 const bool useProtoActor = false;
+const bool useHangfire = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -29,6 +30,9 @@ services
     {
         if(useMongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
+        
+        if (useHangfire)
+            elsa.UseHangfire();
         
         elsa
             .AddActivitiesFrom<Program>()
@@ -88,7 +92,11 @@ services
                 runtime.UseMassTransitDispatcher();
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
-            .UseScheduling()
+            .UseScheduling(scheduling =>
+            {
+                if (useHangfire)
+                    scheduling.UseHangfireScheduler();
+            })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
             .UseJavaScript()
