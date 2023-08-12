@@ -57,5 +57,13 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
         return Task.FromResult(count);
     }
 
+    /// <inheritdoc />
+    public Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var records = _store.Query(query => Filter(query, filter)).ToList();
+        _store.DeleteMany(records, x => x.Id);
+        return Task.FromResult(records.LongCount());
+    }
+
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
 }

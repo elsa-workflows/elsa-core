@@ -24,4 +24,7 @@ public class NoopActivityExecutionStore : IActivityExecutionStore
 
     /// <inheritdoc />
     public Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => Task.FromResult(0L);
+
+    /// <inheritdoc />
+    public Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => Task.FromResult(0L);
 }

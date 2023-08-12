@@ -48,4 +48,12 @@ public interface IActivityExecutionStore
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The number of activity execution records matching the specified filter.</returns>
     Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Deletes all activity execution records matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The number of deleted records.</returns>
+    Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
 }
