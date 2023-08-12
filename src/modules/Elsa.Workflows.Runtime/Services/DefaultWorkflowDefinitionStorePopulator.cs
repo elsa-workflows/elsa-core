@@ -135,6 +135,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
+        workflowDefinition.ToolVersion = workflow.ToolVersion;
         workflowDefinition.IsLatest = workflow.Publication.IsLatest;
         workflowDefinition.IsPublished = workflow.Publication.IsPublished;
         workflowDefinition.IsReadonly = workflow.IsReadonly;

@@ -38,7 +38,7 @@ public class Workflow : Composite<object>, ICloneable
         Outputs = outputs;
         Outcomes = outcomes;
         WorkflowMetadata = workflowMetadata;
-        ToolVersion = new Version(1, 0);
+        ToolVersion = new Version(3, 0);
         Options = options;
         Variables = variables;
         CustomProperties = customProperties;

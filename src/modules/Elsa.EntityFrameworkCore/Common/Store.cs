@@ -17,6 +17,10 @@ namespace Elsa.EntityFrameworkCore.Common;
 [PublicAPI]
 public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : class
 {
+    // ReSharper disable once StaticMemberInGenericType
+    // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
+    private static readonly SemaphoreSlim Semaphore = new(1, 1);
+    
     private readonly IDbContextFactory<TDbContext> _dbContextFactory;
 
     /// <summary>
@@ -76,16 +80,23 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(TEntity entity, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving, CancellationToken cancellationToken = default)
     {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        entity = onSaving != null ? await onSaving(dbContext, entity, cancellationToken) : entity;
-        var set = dbContext.Set<TEntity>();
-        var lambda = keySelector.BuildEqualsExpression(entity);
-        var exists = await set.AnyAsync(lambda, cancellationToken);
-        set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
+        await Semaphore.WaitAsync(cancellationToken); // Asynchronous wait
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await using var dbContext = await CreateDbContextAsync(cancellationToken);
+            entity = onSaving != null ? await onSaving(dbContext, entity, cancellationToken) : entity;
+            var set = dbContext.Set<TEntity>();
+            var lambda = keySelector.BuildEqualsExpression(entity);
+            var exists = await set.AnyAsync(lambda, cancellationToken);
+            set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        finally
+        {
+            Semaphore.Release();
+        }
     }
-
 
     /// <summary>
     /// Saves the specified entities.
@@ -102,13 +113,20 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="keySelector">The key selector to get the primary key property.</param>
     /// <param name="onSaving">The callback to invoke before saving the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveManyAsync(IEnumerable<TEntity> entities, Expression<Func<TEntity, string>> keySelector, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving = default, CancellationToken cancellationToken = default)
+    public async Task SaveManyAsync(
+        IEnumerable<TEntity> entities,
+        Expression<Func<TEntity, string>> keySelector,
+        Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onSaving = default,
+        CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var entityList = entities.ToList();
 
         if (onSaving != null)
-            entityList = (await Task.WhenAll(entityList.Select(async x => await onSaving(dbContext, x, cancellationToken)))).ToList();
+        {
+            var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, cancellationToken).AsTask()).ToList();
+            entityList = (await Task.WhenAll(savingTasks)).ToList();
+        }
 
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
@@ -131,7 +149,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<TEntity?> FindAsync(Expression<Func<TEntity, bool>> predicate, Func<TDbContext, TEntity?, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         var entity = await set.FirstOrDefaultAsync(predicate, cancellationToken);
 
         if (entity == null)
@@ -177,7 +195,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<IEnumerable<TEntity>> FindManyAsync(Expression<Func<TEntity, bool>> predicate, Func<TDbContext, TEntity?, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         var entities = await set.Where(predicate).ToListAsync(cancellationToken);
 
         if (onLoading != null)
@@ -209,7 +227,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>().Where(predicate);
+        var set = dbContext.Set<TEntity>().AsNoTracking().Where(predicate);
 
         set = orderDirection switch
         {
@@ -245,7 +263,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<long> DeleteWhereAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         return await set.Where(predicate).ExecuteDeleteAsync(cancellationToken);
     }
 
@@ -256,7 +274,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<long> DeleteWhereAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         var queryable = query(set.AsQueryable());
         return await queryable.ExecuteDeleteAsync(cancellationToken);
     }
@@ -272,13 +290,17 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask<TEntity?>>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var asNoTracking = onLoading == null;
+        var set = asNoTracking ? dbContext.Set<TEntity>().AsNoTracking() : dbContext.Set<TEntity>();
         var queryable = query(set.AsQueryable());
 
         var entities = await queryable.ToListAsync(cancellationToken);
 
         if (onLoading != null)
-            entities = (await Task.WhenAll(entities.Select(async x => await onLoading(dbContext, x, cancellationToken)))).ToList();
+        {
+            var loadingTasks = entities.Select(entity => onLoading(dbContext, entity, cancellationToken).AsTask()).ToList();
+            await Task.WhenAll(loadingTasks);
+        }
 
         return entities;
     }
@@ -289,20 +311,20 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<IEnumerable<TResult>> QueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Expression<Func<TEntity, TResult>> selector, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         var queryable = query(set.AsQueryable());
 
         queryable = query(queryable);
         return await queryable.Select(selector).ToListAsync(cancellationToken);
     }
-    
+
     /// <summary>
     /// Counts the number of entities matching a query.
     /// </summary>
     public async Task<long> CountAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         var queryable = query(set.AsQueryable());
 
         queryable = query(queryable);
@@ -315,7 +337,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         return await set.AnyAsync(predicate, cancellationToken);
     }
 
@@ -327,7 +349,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         return await set.CountAsync(predicate, cancellationToken);
     }
 
@@ -340,7 +362,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     public async Task<long> CountAsync<TProperty>(Expression<Func<TEntity, bool>> predicate, Expression<Func<TEntity, TProperty>> propertySelector, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>();
+        var set = dbContext.Set<TEntity>().AsNoTracking();
         return await set
             .Where(predicate)
             .Select(propertySelector)

@@ -72,7 +72,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions;
+        var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter);
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = Paginate(queryable, pageArgs);
@@ -85,7 +85,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions;
+        var set = dbContext.WorkflowDefinitions.AsNoTracking();
 
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
 
@@ -99,7 +99,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions;
+        var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter);
         return await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
     }
@@ -108,7 +108,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var set = dbContext.WorkflowDefinitions;
+        var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
         return await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
     }
