@@ -1,5 +1,6 @@
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
@@ -42,7 +43,7 @@ public class EventPublisher : IEventPublisher
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.Background, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, NotificationStrategy.FireAndForget, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     private async Task PublishInternalAsync(
@@ -58,7 +59,7 @@ public class EventPublisher : IEventPublisher
         var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, input);
         var options = new WorkflowInboxMessageDeliveryOptions
         {
-            EventPublishingStrategy = publishingStrategy
+            EventPublishingStrategy = publishingStrategy,
         };
 
         await _workflowInbox.SubmitAsync(message, options, cancellationToken);
