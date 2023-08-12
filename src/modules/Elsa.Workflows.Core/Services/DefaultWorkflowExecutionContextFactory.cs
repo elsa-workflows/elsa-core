@@ -53,7 +53,8 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         var root = workflow;
 
         // Build graph.
-        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
+        var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
         var flattenedList = graph.Flatten().ToList();
         
         // Register activity types.

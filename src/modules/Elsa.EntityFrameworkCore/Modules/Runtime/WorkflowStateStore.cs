@@ -1,10 +1,11 @@
+using System.Text.Json.Serialization;
 using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
@@ -12,7 +13,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowStateStore : IWorkflowStateStore
 {
     private readonly ISystemClock _systemClock;
-    private readonly IDbContextFactory<RuntimeElsaDbContext> _dbContextFactory;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowState> _store;
 
@@ -21,12 +21,10 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     /// </summary>
     public EFCoreWorkflowStateStore(
         EntityStore<RuntimeElsaDbContext, WorkflowState> store,
-        IDbContextFactory<RuntimeElsaDbContext> dbContextFactory,
         IWorkflowStateSerializer workflowStateSerializer,
         ISystemClock systemClock)
     {
         _systemClock = systemClock;
-        _dbContextFactory = dbContextFactory;
         _workflowStateSerializer = workflowStateSerializer;
         _store = store;
     }
@@ -34,15 +32,15 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
     /// <inheritdoc />
     public async ValueTask SaveAsync(string id, WorkflowState state, CancellationToken cancellationToken = default)
     {
-        await _store.SaveAsync(state, SaveAsync, cancellationToken: cancellationToken);
+        await _store.SaveAsync(state, OnSaveAsync, cancellationToken: cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<WorkflowState?> FindAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.FindAsync(filter.Apply, LoadAsync, cancellationToken);
+        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
     }
-    
+
     /// <inheritdoc />
     public async ValueTask<long> CountAsync(WorkflowStateFilter filter, CancellationToken cancellationToken = default)
     {
@@ -55,9 +53,10 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     }
 
-    private async ValueTask<WorkflowState> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
+    private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
     {
-        var json = await _workflowStateSerializer.SerializeAsync(entity, cancellationToken);
+        var state = new WorkflowStateState(entity.Bookmarks, entity.CompletionCallbacks, entity.ActivityExecutionContexts, entity.Output, entity.Properties);
+        var json = await _workflowStateSerializer.SerializeAsync(state, cancellationToken);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);
 
@@ -65,19 +64,50 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         entity.UpdatedAt = now;
 
         entry.Property<string>("Data").CurrentValue = json;
-        return entity;
     }
-    
-    private async ValueTask<WorkflowState?> LoadAsync(RuntimeElsaDbContext dbContext, WorkflowState? entity, CancellationToken cancellationToken)
+
+    private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowState? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return entity;
+            return;
 
         var entry = dbContext.Entry(entity);
         var json = entry.Property<string>("Data").CurrentValue;
-        var state = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
+        var data = await _workflowStateSerializer.DeserializeAsync<WorkflowStateState>(json, cancellationToken);
 
-        return state;
+        entity.Bookmarks = data.Bookmarks;
+        entity.CompletionCallbacks = data.CompletionCallbacks;
+        entity.ActivityExecutionContexts = data.ActivityExecutionContexts;
+        entity.Output = data.Output;
+        entity.Properties = data.Properties;
     }
 
+    private class WorkflowStateState
+    {
+        [JsonConstructor]
+        public WorkflowStateState()
+        {
+        }
+
+        public WorkflowStateState(
+            ICollection<Bookmark> bookmarks,
+            ICollection<CompletionCallbackState> completionCallbacks,
+            ICollection<ActivityExecutionContextState> activityExecutionContexts,
+            IDictionary<string, object> output,
+            IDictionary<string, object> properties
+        )
+        {
+            Bookmarks = bookmarks;
+            CompletionCallbacks = completionCallbacks;
+            ActivityExecutionContexts = activityExecutionContexts;
+            Output = output;
+            Properties = properties;
+        }
+
+        public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+        public ICollection<CompletionCallbackState> CompletionCallbacks { get; set; } = new List<CompletionCallbackState>();
+        public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
+        public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
+        public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    }
 }

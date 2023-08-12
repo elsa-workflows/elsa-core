@@ -11,7 +11,7 @@ public static class WorkflowExtensions
     /// <summary>
     /// Returns a boolean indicating whether the workflow was created with modern tooling.
     /// </summary>
-    public static bool CreatedWithModernTooling(this Workflow workflow) => workflow.ToolVersion.Major >= 3;
+    public static bool CreatedWithModernTooling(this Workflow workflow) => workflow.WorkflowMetadata.ToolVersion?.Major >= 3;
     
     /// <summary>
     /// Executes the specified action depending on whether the workflow was created with modern tooling or not.

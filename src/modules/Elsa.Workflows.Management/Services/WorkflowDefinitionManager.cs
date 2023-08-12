@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
 
@@ -130,11 +131,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         {
             VersionOptions = VersionOptions.Published
         }, cancellationToken)).ToList();
-
+        
         foreach (var definition in publishedWorkflowDefinitions)
         {
             var root = _activitySerializer.Deserialize(definition.StringData!);
-            var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+            var useActivityIdAsNodeId = definition.CreatedWithModernTooling();
+            var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
             var flattenedList = graph.Flatten().ToList();
             var definitionId = dependency.DefinitionId;
             var version = dependency.Version;

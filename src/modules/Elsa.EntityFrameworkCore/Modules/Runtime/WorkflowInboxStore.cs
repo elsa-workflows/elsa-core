@@ -25,10 +25,10 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, SaveAsync, cancellationToken);
+    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, LoadAsync, cancellationToken);
+    public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
@@ -37,24 +37,24 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
         {
             foreach (var filter in filters) filter.Apply(query);
             return query;
-        }, LoadAsync, cancellationToken);
+        }, OnLoadAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     
-    private ValueTask<WorkflowInboxMessage> SaveAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage entity, CancellationToken cancellationToken)
+    private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage entity, CancellationToken cancellationToken)
     {
         dbContext.Entry(entity).Property("SerializedBookmarkPayload").CurrentValue = _payloadSerializer.Serialize(entity.BookmarkPayload);
         dbContext.Entry(entity).Property("SerializedInput").CurrentValue = entity.Input != null ? _payloadSerializer.Serialize(entity.Input) : default;
         dbContext.Entry(entity).Property("SerializedAffectedWorkflowInstancesIds").CurrentValue = entity.AffectedWorkflowInstancesIds != null ? JsonSerializer.Serialize(entity.AffectedWorkflowInstancesIds) : default;
-        return new(entity);
+        return default;
     }
 
-    private ValueTask<WorkflowInboxMessage?> LoadAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage? entity, CancellationToken cancellationToken)
+    private ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return ValueTask.FromResult(entity);
+            return ValueTask.CompletedTask;
 
         var bookmarkPayloadJson = dbContext.Entry(entity).Property<string>("SerializedBookmarkPayload").CurrentValue;
         var inputJson = dbContext.Entry(entity).Property<string>("SerializedInput").CurrentValue;
@@ -64,6 +64,6 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
         entity.Input = !string.IsNullOrEmpty(inputJson) ? _payloadSerializer.Deserialize<Dictionary<string, object>>(inputJson) : null;
         entity.AffectedWorkflowInstancesIds = !string.IsNullOrEmpty(affectedWorkflowInstancesIdsJson) ? JsonSerializer.Deserialize<List<string>>(affectedWorkflowInstancesIdsJson) : null;
 
-        return new(entity);
+        return ValueTask.CompletedTask;
     }
 }

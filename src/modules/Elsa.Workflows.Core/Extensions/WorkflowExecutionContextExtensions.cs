@@ -101,8 +101,8 @@ public static class WorkflowExecutionContextExtensions
         ScheduleWorkOptions? options = default)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var toolVersion = workflowExecutionContext.Workflow.ToolVersion;
-        var activityId = toolVersion.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
+        var toolVersion = workflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
+        var activityId = toolVersion?.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
         var tag = options?.Tag;
         var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables);
         var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, activityInvocationOptions), tag);

@@ -302,7 +302,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             var resumeResult = await ResumeWorkflowAsync(
                 workflowInstanceId,
-                runtimeOptions with { BookmarkId = bookmark.BookmarkId },
+                runtimeOptions with
+                {
+                    BookmarkId = bookmark.BookmarkId,
+                    ActivityInstanceId = bookmark.ActivityInstanceId
+                },
                 cancellationToken);
 
             resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks));

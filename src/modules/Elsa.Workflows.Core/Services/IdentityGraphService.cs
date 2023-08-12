@@ -21,12 +21,16 @@ public class IdentityGraphService : IIdentityGraphService
     }
 
     /// <inheritdoc />
-    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default) => await AssignIdentitiesAsync((IActivity)workflow, cancellationToken);
+    public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default)
+    {
+        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
+        await AssignIdentitiesAsync(workflow, useActivityIdAsNodeId, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
+    public async Task AssignIdentitiesAsync(IActivity root, bool useActivityIdAsNodeId, CancellationToken cancellationToken = default)
     {
-        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
         AssignIdentities(graph);
     }
 

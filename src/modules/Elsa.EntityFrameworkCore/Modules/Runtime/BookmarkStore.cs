@@ -24,28 +24,28 @@ public class EFCoreBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, s => s.BookmarkId, SaveAsync, cancellationToken);
+    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, s => s.BookmarkId, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, LoadAsync, cancellationToken);
+    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     
-    private ValueTask<StoredBookmark> SaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
+    private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {
         dbContext.Entry(entity).Property("Data").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
-        return new(entity);
+        return default;
     }
 
-    private ValueTask<StoredBookmark?> LoadAsync(RuntimeElsaDbContext dbContext, StoredBookmark? entity, CancellationToken cancellationToken)
+    private ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, StoredBookmark? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return ValueTask.FromResult(entity);
+            return default;
 
         var json = dbContext.Entry(entity).Property<string>("Data").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
-
-        return new(entity);
+        
+        return default;
     }
 }
