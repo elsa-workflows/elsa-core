@@ -9,6 +9,9 @@ using Elsa.Workflows.Core.Services;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Provides extensions on <see cref="ExpressionExecutionContext"/>
+/// </summary>
 public static class ExpressionExecutionContextExtensions
 {
     public static readonly object WorkflowExecutionContextKey = new();
@@ -16,6 +19,9 @@ public static class ExpressionExecutionContextExtensions
     public static readonly object InputKey = new();
     public static readonly object WorkflowKey = new();
 
+    /// <summary>
+    /// Creates a dictionary for the specified <see cref="WorkflowExecutionContext"/> and <see cref="ActivityExecutionContext"/>.
+    /// </summary>
     public static IDictionary<object, object> CreateActivityExecutionContextPropertiesFrom(WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object> input) =>
         new Dictionary<object, object>
         {
@@ -24,6 +30,9 @@ public static class ExpressionExecutionContextExtensions
             [WorkflowKey] = workflowExecutionContext.Workflow,
         };
 
+    /// <summary>
+    /// Creates a dictionary for the specified <see cref="WorkflowExecutionContext"/> and <see cref="ActivityExecutionContext"/>.
+    /// </summary>
     public static IDictionary<object, object> CreateTriggerIndexingPropertiesFrom(Workflow workflow, IDictionary<string, object> input) =>
         new Dictionary<object, object>
         {
@@ -31,23 +40,72 @@ public static class ExpressionExecutionContextExtensions
             [InputKey] = input
         };
 
+    /// <summary>
+    /// Returns the <see cref="Workflow"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
     public static bool TryGetWorkflowExecutionContext(this ExpressionExecutionContext context, out WorkflowExecutionContext workflowExecutionContext) =>
         context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
 
+    /// <summary>
+    /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
     public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context) => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
+    
+    /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
+    
+    /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="activityExecutionContext"></param>
+    /// <returns></returns>
     public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
 
+    /// <summary>
+    /// Returns the input of the current activity.
+    /// </summary>
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
+    
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
     public static T? GetInput<T>(this ExpressionExecutionContext context, string key) => context.GetInput(key).ConvertTo<T>();
+    
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
     public static object? GetInput(this ExpressionExecutionContext context, string key) => context.GetInput().TryGetValue(key, out var value) ? value : default;
 
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
+    
+    /// <summary>
+    /// Returns the value of the specified output.
+    /// </summary>
     public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
+    
+    /// <summary>
+    /// Returns the value of the specified output.
+    /// </summary>
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
+    
+    
+    /// <summary>
+    /// Returns the value of the variable with the specified name.
+    /// </summary>
     public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name)?.Value;
 
-    public static Variable? GetVariable(this ExpressionExecutionContext context, string name)
+    /// <summary>
+    /// Returns the variable with the specified name.
+    /// </summary>
+    public static Variable? GetVariable(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
     {
         foreach (var block in context.Memory.Blocks.Where(b => b.Value.Metadata is VariableBlockMetadata))
         {
@@ -55,8 +113,8 @@ public static class ExpressionExecutionContextExtensions
             if (metadata!.Variable.Name == name)
                 return metadata.Variable;
         }
-
-        return context.ParentContext?.GetVariable(name);
+        
+        return localScopeOnly ? null : context.ParentContext?.GetVariable(name);
     }
 
     /// <summary>
@@ -64,7 +122,7 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
     {
-        var existingVariable = context.GetVariable(name);
+        var existingVariable = context.GetVariable(name, localScopeOnly: true);
         
         if(existingVariable != null)
             throw new Exception($"Variable {name} already exists in the context.");
