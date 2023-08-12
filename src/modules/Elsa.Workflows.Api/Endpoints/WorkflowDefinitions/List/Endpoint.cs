@@ -50,9 +50,9 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
 
     private async Task<Page<WorkflowDefinitionSummary>> FindAsync(Request request, WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy ??= OrderByWorkflowDefinition.Created;
+        request.OrderBy ??= OrderByWorkflowDefinition.Name;
 
-        var direction = request.OrderBy == OrderByWorkflowDefinition.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
+        var direction = request.OrderBy == OrderByWorkflowDefinition.Name ? request.OrderDirection ?? OrderDirection.Ascending : request.OrderDirection ?? OrderDirection.Descending;
 
         switch (request.OrderBy)
         {
