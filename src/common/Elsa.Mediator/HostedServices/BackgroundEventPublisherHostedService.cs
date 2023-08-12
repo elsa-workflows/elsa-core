@@ -53,7 +53,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         }
     }
 
-    private async Task ReadOutputAsync(Channel<INotification, INotification> output, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<INotification> output, CancellationToken cancellationToken)
     {
         await foreach (var notification in output.Reader.ReadAllAsync(cancellationToken))
         {
