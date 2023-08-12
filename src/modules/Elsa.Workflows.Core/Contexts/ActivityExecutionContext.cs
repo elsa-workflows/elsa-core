@@ -141,7 +141,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// Returns the global node ID for the current activity within the graph.
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
-    public string NodeId => WorkflowExecutionContext.Workflow.ToolVersion >= new Version(3, 0) ? Activity.Id : ActivityNode.NodeId;
+    public string NodeId => WorkflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion >= new Version(3, 0) ? Activity.Id : ActivityNode.NodeId;
 
     /// <summary>
     /// A list of bookmarks created by the current activity.

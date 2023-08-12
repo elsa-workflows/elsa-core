@@ -38,7 +38,6 @@ public class Workflow : Composite<object>, ICloneable
         Outputs = outputs;
         Outcomes = outcomes;
         WorkflowMetadata = workflowMetadata;
-        ToolVersion = new Version(3, 0);
         Options = options;
         Variables = variables;
         CustomProperties = customProperties;
@@ -59,7 +58,6 @@ public class Workflow : Composite<object>, ICloneable
     /// </summary>
     public Workflow()
     {
-        ToolVersion = new Version(1, 0);
     }
 
     /// <summary>
@@ -101,11 +99,6 @@ public class Workflow : Composite<object>, ICloneable
     /// Make workflow definition readonly.
     /// </summary>
     public bool IsReadonly { get; set; }
-
-    /// <summary>
-    /// The version of the tool that created this workflow.
-    /// </summary>
-    public Version ToolVersion { get; set; }
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
