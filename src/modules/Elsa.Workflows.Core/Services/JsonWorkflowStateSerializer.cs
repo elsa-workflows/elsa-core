@@ -33,10 +33,26 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
     }
 
     /// <inheritdoc />
+    public Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetSerializerOptions();
+        var json = JsonSerializer.Serialize(workflowState, workflowState.GetType(), options);
+        return Task.FromResult(json);
+    }
+
+    /// <inheritdoc />
     public Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default)
     {
         var options = GetSerializerOptions();
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
+        return Task.FromResult(workflowState);
+    }
+
+    /// <inheritdoc />
+    public Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default)
+    {
+        var options = GetSerializerOptions();
+        var workflowState = JsonSerializer.Deserialize<T>(serializedState, options)!;
         return Task.FromResult(workflowState);
     }
 

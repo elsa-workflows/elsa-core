@@ -4,6 +4,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Management.Services;
@@ -41,7 +42,8 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
             throw new Exception("Provider not found");
 
         var workflow = await provider.MaterializeAsync(definition, cancellationToken);
-        var graph = (await _activityVisitor.VisitAsync(workflow, cancellationToken)).Flatten().ToList();
+        var useActivityIdAsNodeId = definition.CreatedWithModernTooling();
+        var graph = (await _activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken)).Flatten().ToList();
 
         // Assign identities.
         _identityGraphService.AssignIdentities(graph);

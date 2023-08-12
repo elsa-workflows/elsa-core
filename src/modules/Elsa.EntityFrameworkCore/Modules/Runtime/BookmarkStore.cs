@@ -38,14 +38,14 @@ public class EFCoreBookmarkStore : IBookmarkStore
         return new(entity);
     }
 
-    private ValueTask<StoredBookmark?> LoadAsync(RuntimeElsaDbContext dbContext, StoredBookmark? entity, CancellationToken cancellationToken)
+    private ValueTask LoadAsync(RuntimeElsaDbContext dbContext, StoredBookmark? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return ValueTask.FromResult(entity);
+            return ValueTask.CompletedTask;
 
         var json = dbContext.Entry(entity).Property<string>("Data").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
-
-        return new(entity);
+        
+        return ValueTask.CompletedTask;
     }
 }

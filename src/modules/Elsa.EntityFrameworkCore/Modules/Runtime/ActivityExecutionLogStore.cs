@@ -49,14 +49,12 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
         return new(entity);
     }
 
-    private async ValueTask<ActivityExecutionRecord?> LoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
+    private async ValueTask LoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return entity;
+            return;
 
         entity.ActivityState = await LoadActivityState(dbContext, entity);
-
-        return entity;
     }
 
     private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)

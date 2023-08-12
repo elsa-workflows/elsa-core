@@ -7,24 +7,56 @@ namespace Elsa.Workflows.Core.Models;
 /// </summary>
 public class ActivityNode
 {
-    public ActivityNode(IActivity activity)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ActivityNode"/> class.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <param name="useActivityIdAsNodeId">Whether to use the activity ID as the node ID.</param>
+    public ActivityNode(IActivity activity, bool useActivityIdAsNodeId)
     {
         Activity = activity;
+        UseActivityIdAsNodeId = useActivityIdAsNodeId;
     }
 
+    /// <summary>
+    /// Gets the node ID.
+    /// </summary>
     public string NodeId
     {
         get
         {
+            if (UseActivityIdAsNodeId)
+                return Activity.Id;
+            
             var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
             return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
         }
     }
 
+    /// <summary>
+    /// Gets the activity.
+    /// </summary>
     public IActivity Activity { get; }
+    
+    /// <summary>
+    /// Gets a value indicating whether to use the activity ID as the node ID.
+    /// </summary>
+    public bool UseActivityIdAsNodeId { get; }
+    
+    /// <summary>
+    /// Gets the parents of this node.
+    /// </summary>
     public ICollection<ActivityNode> Parents { get; set; } = new List<ActivityNode>();
+    
+    /// <summary>
+    /// Gets the children of this node.
+    /// </summary>
     public ICollection<ActivityNode> Children { get; set; } = new List<ActivityNode>();
 
+    /// <summary>
+    /// Gets the descendants of this node.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<ActivityNode> Descendants()
     {
         foreach (var child in Children)
@@ -38,6 +70,9 @@ public class ActivityNode
         }
     }
 
+    /// <summary>
+    /// Gets the ancestors of this node.
+    /// </summary>
     public IEnumerable<ActivityNode> Ancestors()
     {
         foreach (var parent in Parents)
@@ -51,6 +86,14 @@ public class ActivityNode
         }
     }
 
+    /// <summary>
+    /// Gets the siblings of this node.
+    /// </summary>
     public IEnumerable<ActivityNode> Siblings() => Parents.SelectMany(parent => parent.Children);
+    
+    /// <summary>
+    /// Gets the siblings and cousins of this node.
+    /// </summary>
+    /// <returns></returns>
     public IEnumerable<ActivityNode> SiblingsAndCousins() => Parents.SelectMany(parent => parent.Descendants());
 }

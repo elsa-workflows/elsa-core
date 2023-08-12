@@ -26,7 +26,9 @@ internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionPro
     protected override async ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
         // Output getters.
-        var nodes = (await _activityVisitor.VisitAsync(context.Workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
+        var workflow = context.Workflow;
+        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
+        var nodes = (await _activityVisitor.VisitAsync(workflow.Root, useActivityIdAsNodeId, context.CancellationToken)).Flatten().Distinct().ToList();
         
         // Ensure identities.
         _identityGraphService.AssignIdentities(nodes);

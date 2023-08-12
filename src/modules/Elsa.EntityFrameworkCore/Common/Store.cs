@@ -168,7 +168,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <param name="onLoading">A callback to run after the entity is loaded</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The entity if found, otherwise <c>null</c></returns>
-    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask<TEntity?>>? onLoading = default, CancellationToken cancellationToken = default)
+    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
     {
         return await QueryAsync(query, onLoading, cancellationToken).FirstOrDefault();
     }
@@ -192,14 +192,15 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <summary>
     /// Finds a list of entities using a query
     /// </summary>
-    public async Task<IEnumerable<TEntity>> FindManyAsync(Expression<Func<TEntity, bool>> predicate, Func<TDbContext, TEntity?, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TEntity>> FindManyAsync(Expression<Func<TEntity, bool>> predicate, Action<TDbContext, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>().AsNoTracking();
         var entities = await set.Where(predicate).ToListAsync(cancellationToken);
 
         if (onLoading != null)
-            entities = entities.Select(x => onLoading(dbContext, x)!).ToList();
+            foreach (var entity in entities)
+                onLoading(dbContext, entity);
 
         return entities;
     }
@@ -287,7 +288,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask<TEntity?>>? onLoading = default, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var asNoTracking = onLoading == null;

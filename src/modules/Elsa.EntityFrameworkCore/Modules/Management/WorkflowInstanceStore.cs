@@ -106,10 +106,10 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         return entity;
     }
 
-    private async ValueTask<WorkflowInstance?> LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
+    private async ValueTask LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
-            return null;
+            return;
 
         var data = entity.WorkflowState;
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
@@ -118,8 +118,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             data = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
 
         entity.WorkflowState = data;
-
-        return entity;
     }
 
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);

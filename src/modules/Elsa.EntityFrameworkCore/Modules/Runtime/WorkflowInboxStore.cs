@@ -51,10 +51,10 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
         return new(entity);
     }
 
-    private ValueTask<WorkflowInboxMessage?> LoadAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage? entity, CancellationToken cancellationToken)
+    private ValueTask LoadAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return ValueTask.FromResult(entity);
+            return ValueTask.CompletedTask;
 
         var bookmarkPayloadJson = dbContext.Entry(entity).Property<string>("SerializedBookmarkPayload").CurrentValue;
         var inputJson = dbContext.Entry(entity).Property<string>("SerializedInput").CurrentValue;
@@ -64,6 +64,6 @@ public class EFCoreWorkflowInboxStore : IWorkflowInboxStore
         entity.Input = !string.IsNullOrEmpty(inputJson) ? _payloadSerializer.Deserialize<Dictionary<string, object>>(inputJson) : null;
         entity.AffectedWorkflowInstancesIds = !string.IsNullOrEmpty(affectedWorkflowInstancesIdsJson) ? JsonSerializer.Deserialize<List<string>>(affectedWorkflowInstancesIdsJson) : null;
 
-        return new(entity);
+        return ValueTask.CompletedTask;
     }
 }

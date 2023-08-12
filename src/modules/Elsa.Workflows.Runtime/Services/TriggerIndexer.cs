@@ -140,7 +140,8 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<StoredTrigger> GetTriggersInternalAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
-        var nodes = await _activityVisitor.VisitAsync(workflow.Root, cancellationToken);
+        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
+        var nodes = await _activityVisitor.VisitAsync(workflow.Root, useActivityIdAsNodeId, cancellationToken);
 
         // Get a list of activities that are configured as "startable".
         var startableNodes = nodes

@@ -77,15 +77,13 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return new(entity);
     }
 
-    private async ValueTask<WorkflowExecutionLogRecord?> LoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)
+    private async ValueTask LoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return entity;
+            return;
 
         entity.Payload = await LoadPayload(dbContext, entity);
         entity.ActivityState = await LoadActivityState(dbContext, entity);
-
-        return entity;
     }
 
     private ValueTask<object?> LoadPayload(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)

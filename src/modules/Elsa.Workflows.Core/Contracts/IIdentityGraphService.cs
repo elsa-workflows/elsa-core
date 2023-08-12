@@ -16,7 +16,7 @@ public interface IIdentityGraphService
     /// <summary>
     /// Assign unique identities tot the specified <see cref="IActivity"/> graph.
     /// </summary>
-    Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default);
+    Task AssignIdentitiesAsync(IActivity root, bool useActivityIdAsNodeId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Assign unique identities tot the specified <see cref="ActivityNode"/> graph.

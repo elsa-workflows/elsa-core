@@ -158,10 +158,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return new ValueTask<WorkflowDefinition>(entity);
     }
 
-    private ValueTask<WorkflowDefinition?> LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
+    private ValueTask LoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)
     {
         if (entity == null)
-            return new(default(WorkflowDefinition));
+            return ValueTask.CompletedTask;
 
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
@@ -176,7 +176,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         entity.Outcomes = data.Outcomes;
         entity.CustomProperties = data.CustomProperties;
 
-        return new ValueTask<WorkflowDefinition?>(entity);
+        return ValueTask.CompletedTask;
     }
 
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
