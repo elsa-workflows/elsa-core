@@ -85,7 +85,8 @@ public class WriteHttpResponse : Activity
     private async Task WriteResponseAsync(ActivityExecutionContext context, HttpResponse response)
     {
         // Set status code.
-        response.StatusCode = (int)context.Get(StatusCode);
+        var statusCode = StatusCode.GetOrDefault(context, () => HttpStatusCode.OK);
+        response.StatusCode = (int)statusCode;
 
         // Add headers.
         var headers = context.GetHeaders(ResponseHeaders);
@@ -110,7 +111,8 @@ public class WriteHttpResponse : Activity
         response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
 
         // Write content.
-        await httpContent.CopyToAsync(response.Body);
+        if(statusCode != HttpStatusCode.NoContent)
+            await httpContent.CopyToAsync(response.Body);
         
         // Complete activity.
         await context.CompleteActivityAsync();
