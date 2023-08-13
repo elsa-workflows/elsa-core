@@ -28,7 +28,7 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxMessageStore>();
         });
     }
 
@@ -39,6 +39,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         
         Services.AddSingleton<DapperTriggerStore>();
         Services.AddSingleton<DapperBookmarkStore>();
-        Services.AddSingleton<DapperWorkflowInboxStore>();
+        Services.AddSingleton<DapperWorkflowInboxMessageStore>();
     }
 }

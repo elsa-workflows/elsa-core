@@ -25,7 +25,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxMessageStore>();
         });
     }
 
@@ -36,6 +36,6 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
-        AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxStore>();
+        AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxMessageStore>();
     }
 }

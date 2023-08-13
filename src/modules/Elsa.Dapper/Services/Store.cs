@@ -231,11 +231,28 @@ public class Store<T> where T : notnull
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of records deleted.</returns>
-    public async Task<int> DeleteAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
         var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
         filter(query);
         using var connection = _dbConnectionProvider.GetConnection();
+        return await query.ExecuteAsync(connection);
+    }
+    
+    /// <summary>
+    /// Deletes all records matching the specified query.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderFields">The fields by which to order the results.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The number of records deleted.</returns>
+    public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    {
+        using var connection = _dbConnectionProvider.GetConnection();
+        var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
+        filter(query);
+        query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
         return await query.ExecuteAsync(connection);
     }
     

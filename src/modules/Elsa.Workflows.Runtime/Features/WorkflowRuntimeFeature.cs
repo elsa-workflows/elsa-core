@@ -71,9 +71,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionStore>();
 
     /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowInboxStore"/>.
+    /// A factory that instantiates an <see cref="IWorkflowInboxMessageStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowInboxStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxStore>();
+    public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
@@ -99,6 +99,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
     public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="WorkflowInboxCleanupOptions"/>.
+    /// </summary>
+    public Action<WorkflowInboxCleanupOptions> WorkflowInboxCleanupOptions { get; set; } = _ => { };
 
     /// <summary>
     /// Register the specified workflow type.
@@ -135,7 +140,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices() => Module.ConfigureHostedService<PopulateRegistriesHostedService>();
+    public override void ConfigureHostedServices()
+    {
+        Module.ConfigureHostedService<PopulateRegistriesHostedService>();
+        Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
+    }
 
     /// <inheritdoc />
     public override void Apply()
@@ -143,6 +152,7 @@ public class WorkflowRuntimeFeature : FeatureBase
         // Options.
         Services.Configure(DistributedLockingOptions);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
+        Services.Configure(WorkflowInboxCleanupOptions);
 
         Services
             // Core.
@@ -183,7 +193,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
-            .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxStore>()
+            .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxMessageStore>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

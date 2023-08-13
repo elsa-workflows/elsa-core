@@ -1,3 +1,6 @@
+using Elsa.Common.Contracts;
+using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -9,16 +12,18 @@ namespace Elsa.MongoDb.Modules.Runtime;
 /// <summary>
 /// A MongoDb implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
-public class MongoWorkflowInboxStore : IWorkflowInboxStore
+public class MongoWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 {
     private readonly MongoDbStore<WorkflowInboxMessage> _mongoDbStore;
+    private readonly ISystemClock _systemClock;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MongoWorkflowInboxStore"/> class.
+    /// Initializes a new instance of the <see cref="MongoWorkflowInboxMessageStore"/> class.
     /// </summary>
-    public MongoWorkflowInboxStore(MongoDbStore<WorkflowInboxMessage> mongoDbStore)
+    public MongoWorkflowInboxMessageStore(MongoDbStore<WorkflowInboxMessage> mongoDbStore, ISystemClock systemClock)
     {
         _mongoDbStore = mongoDbStore;
+        _systemClock = systemClock;
     }
 
     /// <inheritdoc />
@@ -38,12 +43,14 @@ public class MongoWorkflowInboxStore : IWorkflowInboxStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default) =>
+        await _mongoDbStore.DeleteWhereAsync<string>(query => Paginate(Filter(query, filter), pageArgs), x => x.Id, cancellationToken);
 
-    private static IMongoQueryable<WorkflowInboxMessage> Filter(IMongoQueryable<WorkflowInboxMessage> queryable, params WorkflowInboxMessageFilter[] filters)
+    private IMongoQueryable<WorkflowInboxMessage> Filter(IMongoQueryable<WorkflowInboxMessage> queryable, params WorkflowInboxMessageFilter[] filters)
     {
-        foreach (var filter in filters) filter.Apply(queryable);
+        foreach (var filter in filters) filter.Apply(queryable, _systemClock.UtcNow);
         return queryable;
     }
+
+    private IMongoQueryable<WorkflowInboxMessage> Paginate(IMongoQueryable<WorkflowInboxMessage> queryable, PageArgs? pageArgs) => (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInboxMessage>)!;
 }

@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Filters;
@@ -38,10 +39,15 @@ public class WorkflowInboxMessageFilter
     public bool? IsHandled { get; set; }
 
     /// <summary>
+    /// A flag indicating whether to filter by messages that have expired.
+    /// </summary>
+    public bool? IsExpired { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     /// <returns>The filtered query.</returns>
-    public IQueryable<WorkflowInboxMessage> Apply(IQueryable<WorkflowInboxMessage> query)
+    public IQueryable<WorkflowInboxMessage> Apply(IQueryable<WorkflowInboxMessage> query, DateTimeOffset now)
     {
         var filter = this;
         if (filter.CorrelationId != null) query = query.Where(x => filter.CorrelationId == x.CorrelationId);
@@ -50,6 +56,7 @@ public class WorkflowInboxMessageFilter
         if (filter.Hash != null) query = query.Where(x => filter.Hash == x.Hash);
         if (filter.ActivityTypeName != null) query = query.Where(x => filter.ActivityTypeName == x.ActivityTypeName);
         if (filter.ActivityInstanceId != null) query = query.Where(x => filter.ActivityInstanceId == x.ActivityInstanceId);
+        if (filter.IsExpired != null) query = query.Where(x => x.ExpiresAt <= now);
 
         return query;
     }

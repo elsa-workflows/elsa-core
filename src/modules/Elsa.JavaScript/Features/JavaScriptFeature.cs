@@ -8,6 +8,7 @@ using Elsa.Features.Services;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Expressions;
 using Elsa.JavaScript.Extensions;
+using Elsa.JavaScript.Options;
 using Elsa.JavaScript.Providers;
 using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
@@ -28,10 +29,17 @@ public class JavaScriptFeature : FeatureBase
     public JavaScriptFeature(IModule module) : base(module)
     {
     }
-
+    
+    /// <summary>
+    /// Configures the Jint options.
+    /// </summary>
+    public Action<JintOptions> JintOptions { get; set; } = _ => { };
+    
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(JintOptions);
+        
         // JavaScript services.
         Services
             .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
