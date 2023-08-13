@@ -26,7 +26,7 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
             feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<MongoActivityExecutionLogStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<MongoWorkflowInboxStore>();
+            feature.WorkflowInboxStore = sp => sp.GetRequiredService<MongoWorkflowInboxMessageStore>();
         });
     }
 
@@ -43,7 +43,7 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         AddStore<StoredTrigger, MongoTriggerStore>();
         AddStore<StoredBookmark, MongoBookmarkStore>();
         AddStore<ActivityExecutionRecord, MongoActivityExecutionLogStore>();
-        AddStore<WorkflowInboxMessage, MongoWorkflowInboxStore>();
+        AddStore<WorkflowInboxMessage, MongoWorkflowInboxMessageStore>();
         
         Services.AddHostedService<CreateIndices>();
     }

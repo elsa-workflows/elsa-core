@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Services;
 public class DefaultWorkflowInbox : IWorkflowInbox
 {
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IWorkflowInboxStore _store;
+    private readonly IWorkflowInboxMessageStore _messageStore;
     private readonly INotificationSender _notificationSender;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGenerator _identityGenerator;
@@ -26,14 +26,14 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// </summary>
     public DefaultWorkflowInbox(
         IWorkflowRuntime workflowRuntime,
-        IWorkflowInboxStore store,
+        IWorkflowInboxMessageStore messageStore,
         INotificationSender notificationSender,
         ISystemClock systemClock,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher bookmarkHasher)
     {
         _workflowRuntime = workflowRuntime;
-        _store = store;
+        _messageStore = messageStore;
         _notificationSender = notificationSender;
         _systemClock = systemClock;
         _identityGenerator = identityGenerator;
@@ -68,7 +68,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         };
 
         // Store the message.
-        await _store.SaveAsync(message, cancellationToken);
+        await _messageStore.SaveAsync(message, cancellationToken);
 
         // Send a notification.
         var strategy = options.EventPublishingStrategy;
@@ -91,7 +91,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         {
             message.AffectedWorkflowInstancesIds = triggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
             message.HandledAt = _systemClock.UtcNow;
-            await _store.SaveAsync(message, cancellationToken);
+            await _messageStore.SaveAsync(message, cancellationToken);
         }
 
         return new DeliverWorkflowInboxMessageResult(triggeredWorkflows);
@@ -117,12 +117,12 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.FindManyAsync(filter, cancellationToken);
+        return await _messageStore.FindManyAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
     {
-        return await _store.FindManyAsync(filters, cancellationToken);
+        return await _messageStore.FindManyAsync(filters, cancellationToken);
     }
 }

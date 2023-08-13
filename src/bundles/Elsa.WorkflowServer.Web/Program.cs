@@ -14,7 +14,7 @@ using Proto.Persistence.Sqlite;
 
 const bool useMongoDb = false;
 const bool useProtoActor = false;
-const bool useHangfire = true;
+const bool useHangfire = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -90,6 +90,8 @@ services
                         e.UseEntityFrameworkCore();
                 });
                 runtime.UseMassTransitDispatcher();
+                
+                runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
             .UseScheduling(scheduling =>
@@ -99,13 +101,12 @@ services
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript()
+            .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
             .UseLiquid()
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
     });
 
-services.Configure<JintOptions>(options => options.AllowClrAccess = true);
 services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 

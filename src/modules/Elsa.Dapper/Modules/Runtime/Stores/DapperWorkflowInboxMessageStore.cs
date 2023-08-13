@@ -1,4 +1,7 @@
 using System.Text.Json;
+using Elsa.Common.Contracts;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
@@ -14,19 +17,21 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// <summary>
 /// A Dapper-based <see cref="IBookmarkStore"/> implementation.
 /// </summary>
-public class DapperWorkflowInboxStore : IWorkflowInboxStore
+public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 {
     private readonly IPayloadSerializer _payloadSerializer;
+    private readonly ISystemClock _systemClock;
     private const string TableName = "WorkflowInboxMessages";
     private const string PrimaryKeyName = "Id";
     private readonly Store<WorkflowInboxMessageRecord> _store;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DapperWorkflowInboxStore"/> class.
+    /// Initializes a new instance of the <see cref="DapperWorkflowInboxMessageStore"/> class.
     /// </summary>
-    public DapperWorkflowInboxStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
+    public DapperWorkflowInboxMessageStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer, ISystemClock systemClock)
     {
         _payloadSerializer = payloadSerializer;
+        _systemClock = systemClock;
         _store = new Store<WorkflowInboxMessageRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
 
@@ -52,9 +57,12 @@ public class DapperWorkflowInboxStore : IWorkflowInboxStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
+    public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        if (pageArgs == null)
+            return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), pageArgs, new[] { new OrderField(nameof(WorkflowInboxMessage.CreatedAt), OrderDirection.Ascending) }, cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, params WorkflowInboxMessageFilter[] filters)

@@ -53,7 +53,7 @@ public static class QueryableExtensions
     /// <param name="pageArgs">The pagination arguments.</param>
     /// <typeparam name="T">The type of the queryable.</typeparam>
     /// <returns>The paginated queryable.</returns>
-    public static IQueryable<T> Paginate<T>(this IQueryable<T> queryable, PageArgs pageArgs)
+    public static IQueryable<T> Paginate<T>(this IQueryable<T> queryable, PageArgs? pageArgs)
     {
         if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
