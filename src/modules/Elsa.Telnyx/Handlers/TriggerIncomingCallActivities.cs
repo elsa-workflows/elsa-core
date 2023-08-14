@@ -48,7 +48,7 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         var fromNumber = callInitiatedPayload.From;
         var fromBookmarkPayload = new IncomingCallFromBookmarkPayload(fromNumber);
 
-        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var fromResults = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = fromBookmarkPayload,
@@ -59,13 +59,17 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         // Trigger all workflows matching the To number.
         var toNumber = callInitiatedPayload.To;
         var toBookmarkPayload = new IncomingCallToBookmarkPayload(toNumber);
-        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var toResults = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = toBookmarkPayload,
             CorrelationId = correlationId,
             Input = input
         }, cancellationToken);
+
+        // If any workflows were triggered, don't trigger the catch-all workflows.
+        if (fromResults.WorkflowExecutionResults.Any() || toResults.WorkflowExecutionResults.Any())
+            return;
 
         // Trigger all catch-all workflows.
         var catchallBookmarkPayload = new IncomingCallCatchAllBookmarkPayload();
