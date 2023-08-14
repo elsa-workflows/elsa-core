@@ -149,8 +149,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         if (obj == null)
             return null!;
 
-        // If it's not an IEnumerable or it's a string, return the original object
-        if (obj is not IEnumerable enumerable || obj is string)
+        // If it's not an IEnumerable or it's a string or dictionary, return the original object
+        if (obj is not IEnumerable enumerable || obj is string || obj is IDictionary)
             return obj;
 
         // Use LINQ to convert the IEnumerable to an array
