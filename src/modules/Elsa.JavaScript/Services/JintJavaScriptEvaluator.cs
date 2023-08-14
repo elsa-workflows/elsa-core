@@ -81,6 +81,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("newGuid", (Func<Guid>)(() => Guid.NewGuid()));
         engine.SetValue("newGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
         engine.SetValue("newShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
+        
+        // Deprecated, use newGuidString instead.
+        engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
+        
+        // Deprecated, use newShortGuid instead.
+        engine.SetValue("getShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
