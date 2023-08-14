@@ -25,7 +25,7 @@ public class RouteMatcher : IRouteMatcher
 
         foreach (var parameter in parsedTemplate.Parameters)
             if (parameter.DefaultValue != null)
-                result.Add(parameter.Name, parameter.DefaultValue);
+                result.Add(parameter.Name!, parameter.DefaultValue);
 
         return result;
     }

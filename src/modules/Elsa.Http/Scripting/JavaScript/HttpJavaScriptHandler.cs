@@ -12,11 +12,11 @@ namespace Elsa.Http.Scripting.JavaScript;
 [PublicAPI]
 public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScript>
 {
-    
     /// <inheritdoc />
-    public async Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
+    public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
         engine.RegisterType<HttpRequestHeaders>();
+        return Task.CompletedTask;
     }
 }
