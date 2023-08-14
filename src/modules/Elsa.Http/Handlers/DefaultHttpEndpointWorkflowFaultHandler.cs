@@ -27,14 +27,14 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
     {
         var httpContext = context.HttpContext;
         var workflowState = context.WorkflowState;
-        var fault = workflowState.Fault!;
+        var fault = workflowState.Fault;
 
         httpContext.Response.ContentType = MediaTypeNames.Application.Json;
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
         var faultedResponse = _apiSerializer.Serialize(new
         {
-            errorMessage = $"Workflow faulted with error: {fault.Message}",
+            errorMessage = fault != null ? $"Workflow faulted with error: {fault.Message}" : "Workflow faulted",
             workflowState = workflowState
         });
 

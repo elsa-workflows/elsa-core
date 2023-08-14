@@ -55,7 +55,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowState entity, CancellationToken cancellationToken)
     {
-        var state = new WorkflowStateState(entity.Bookmarks, entity.CompletionCallbacks, entity.ActivityExecutionContexts, entity.Output, entity.Properties);
+        var state = new WorkflowStateState(entity.Bookmarks, entity.CompletionCallbacks, entity.ActivityExecutionContexts, entity.Output, entity.Properties, entity.Fault);
         var json = await _workflowStateSerializer.SerializeAsync(state, cancellationToken);
         var now = _systemClock.UtcNow;
         var entry = dbContext.Entry(entity);
@@ -80,6 +80,7 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         entity.ActivityExecutionContexts = data.ActivityExecutionContexts;
         entity.Output = data.Output;
         entity.Properties = data.Properties;
+        entity.Fault = data.Fault;
     }
 
     private class WorkflowStateState
@@ -89,19 +90,19 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         {
         }
 
-        public WorkflowStateState(
-            ICollection<Bookmark> bookmarks,
+        public WorkflowStateState(ICollection<Bookmark> bookmarks,
             ICollection<CompletionCallbackState> completionCallbacks,
             ICollection<ActivityExecutionContextState> activityExecutionContexts,
             IDictionary<string, object> output,
-            IDictionary<string, object> properties
-        )
+            IDictionary<string, object> properties,
+            WorkflowFaultState? fault)
         {
             Bookmarks = bookmarks;
             CompletionCallbacks = completionCallbacks;
             ActivityExecutionContexts = activityExecutionContexts;
             Output = output;
             Properties = properties;
+            Fault = fault;
         }
 
         public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
@@ -109,5 +110,6 @@ public class EFCoreWorkflowStateStore : IWorkflowStateStore
         public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
         public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
         public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+        public WorkflowFaultState? Fault { get; set; }
     }
 }
