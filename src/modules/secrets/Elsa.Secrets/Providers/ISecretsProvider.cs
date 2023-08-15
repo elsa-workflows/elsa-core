@@ -32,6 +32,19 @@ namespace Elsa.Secrets.Providers
         /// <returns></returns>
         Task<string?> GetSecretByNameAsync(string type, string name);
         /// <summary>
+        /// Get whether the secret contains sensitive data
+        /// </summary>
+        /// <param name="type">Type of secret to retrieve.</param>
+        /// <param name="name">Name of secret.</param>
+        /// <returns></returns>
+        Task<bool> IsSecretValueSensitiveData(string type, string name);
+        /// <summary>
+        /// Get whether the secret contains sensitive data
+        /// </summary>
+        /// <param name="name">Name of secret.</param>
+        /// <returns></returns>
+        Task<bool> IsSecretValueSensitiveData(string name);
+        /// <summary>
         /// List all secrets for specific type as name value dictionary
         /// </summary>
         /// <param name="type">Type of secrets to retrieve.</param>

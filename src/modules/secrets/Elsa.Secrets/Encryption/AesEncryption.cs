@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Elsa.Encryption;
+namespace Elsa.Secrets.Encryption;
 
 public class AesEncryption
 {
@@ -40,8 +40,16 @@ public class AesEncryption
     {
         using var encryptor = CreateAes(encryptionKey);
 
-        var bytes = Convert.FromBase64String(input);
-        var result = Encrypt(bytes, encryptor.CreateDecryptor());
-        return Encoding.Unicode.GetString(result);
+        try
+        {
+            var bytes = Convert.FromBase64String(input);
+            var result = Encrypt(bytes, encryptor.CreateDecryptor());
+            return Encoding.Unicode.GetString(result);
+        }
+        catch (FormatException)
+        {
+            //In case the value is for some reason not a base64 string, we don't want to block the subsequent operations
+            return input;
+        }
     }
 }

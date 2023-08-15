@@ -263,7 +263,7 @@ export class ElsaSecretEditorModal {
     var propertyValue = secret.properties.find(x => x.name === property.name);
 
     const key = `secret-property-input:${secret.id}:${property.name}`;
-    const display = propertyDisplayManager.display(secret, property, null, propertyValue.isEncrypted);
+    const display = propertyDisplayManager.display(secret, property, null, propertyValue?.isEncrypted);
     const id = `${property.name}Control`;
 
     return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display} onChange={() => this.propertyChanged(propertyValue)}/>;

@@ -8,5 +8,6 @@ namespace Elsa.Services
     {
         public string? RawValue { get; }
         ValueTask<object?> GetValueAsync(ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        ValueTask<bool> IsNonStorablePropertyValue(ActivityExecutionContext context, CancellationToken cancellationToken = default);
     }
 }

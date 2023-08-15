@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Secrets.Persistence.Specifications;
 using System.Linq;
-using Elsa.Encryption;
+using Elsa.Secrets.Encryption;
 using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Secrets.Manager
@@ -75,14 +75,19 @@ namespace Elsa.Secrets.Manager
             return secrets;
         }
 
-        public async Task<IEnumerable<Secret>> GetSecrets(string type, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<Secret>> GetSecrets(string type, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var specification = new SecretTypeSpecification(type);
             var secrets = await _secretsStore.FindManyAsync(specification, cancellationToken: cancellationToken);
-            foreach (var secret in secrets)
+            
+            if (decrypt)
             {
-                DecryptProperties(secret);
+                foreach (var secret in secrets)
+                {
+                    DecryptProperties(secret);
+                }
             }
+            
 
             return secrets;
         }

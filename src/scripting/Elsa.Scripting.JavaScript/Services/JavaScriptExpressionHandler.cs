@@ -20,5 +20,10 @@ namespace Elsa.Scripting.JavaScript.Services
 
         public async Task<object?> EvaluateAsync(string expression, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken) =>
             await _javaScriptService.EvaluateAsync(expression, returnType, context, cancellationToken: cancellationToken);
+
+        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
     }
 }

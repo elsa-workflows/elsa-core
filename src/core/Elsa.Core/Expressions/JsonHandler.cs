@@ -15,5 +15,10 @@ namespace Elsa.Expressions
             var value = JsonConvert.DeserializeObject(expression, returnType);
             return Task.FromResult(value)!;
         }
+
+        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
     }
 }

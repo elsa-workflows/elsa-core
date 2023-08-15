@@ -33,7 +33,7 @@ namespace Elsa.Secrets.Manager
         /// <param name="type">Type of secrets.</param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<IEnumerable<Secret>> GetSecrets(string type, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Secret>> GetSecrets(string type, bool decrypt = true, CancellationToken cancellationToken = default);
         /// <summary>
         /// Get view models of all secrets
         /// </summary>

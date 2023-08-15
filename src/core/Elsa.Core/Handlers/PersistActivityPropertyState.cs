@@ -35,6 +35,12 @@ namespace Elsa.Handlers
             // Persist input properties.
             foreach (var property in inputProperties)
             {
+                var propProvider = notification.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, property.Name);
+                if (propProvider != null && await propProvider.IsNonStorablePropertyValue(notification.ActivityExecutionContext, cancellationToken))
+                {
+                    continue;
+                }
+                
                 var value = property.GetValue(activity);
                 var inputAttr = property.GetCustomAttribute<ActivityInputAttribute>();
                 var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider; 
@@ -44,6 +50,12 @@ namespace Elsa.Handlers
             // Persist output properties.
             foreach (var property in outputProperties)
             {
+                var propProvider = notification.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, property.Name);
+                if (propProvider != null && await propProvider.IsNonStorablePropertyValue(notification.ActivityExecutionContext, cancellationToken))
+                {
+                    continue;
+                }
+
                 var value = property.GetValue(activity);
                 var outputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
                 var defaultProviderName = outputAttr.DefaultWorkflowStorageProvider; 

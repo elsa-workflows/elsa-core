@@ -13,5 +13,7 @@ namespace Elsa.Expressions
             Type returnType,
             ActivityExecutionContext context,
             CancellationToken cancellationToken);
+
+        Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken);
     }
 }

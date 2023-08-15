@@ -18,5 +18,10 @@ namespace Elsa.Expressions
             var result = context.GetVariable(expression);
             return Task.FromResult(result);
         }
+
+        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
     }
 }

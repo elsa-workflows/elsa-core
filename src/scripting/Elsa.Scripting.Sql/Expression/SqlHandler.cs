@@ -56,6 +56,11 @@ namespace Elsa.Scripting.Sql.Expressions
             return Task.FromResult(expression.Parse(returnType));
         }
 
+        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(false);
+        }
+
         private bool IsNumber(object value)
         {
             return value is sbyte

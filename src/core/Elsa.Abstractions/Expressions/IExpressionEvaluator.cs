@@ -12,5 +12,6 @@ namespace Elsa.Expressions
         Task<T?> EvaluateAsync<T>(string? expression, string syntax, ActivityExecutionContext context, CancellationToken cancellationToken = default);
         Task<Result<object?>> TryEvaluateAsync(string? expression, string syntax, Type returnType, ActivityExecutionContext context, CancellationToken cancellationToken = default);
         Task<Result<T?>> TryEvaluateAsync<T>(string? expression, string syntax, ActivityExecutionContext context, CancellationToken cancellationToken = default);
+        Task<bool> IsNonStorableExpression(string expression, string syntax, ActivityExecutionContext context, CancellationToken cancellationToken);
     }
 }

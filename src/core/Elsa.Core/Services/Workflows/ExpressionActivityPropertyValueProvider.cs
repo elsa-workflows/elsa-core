@@ -29,5 +29,14 @@ namespace Elsa.Services.Workflows
             var evaluator = context.GetService<IExpressionEvaluator>();
             return await evaluator.EvaluateAsync(Expression, Syntax, Type, context, cancellationToken);
         }
+
+        public async ValueTask<bool> IsNonStorablePropertyValue(ActivityExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            if (Expression == null)
+                return false;
+            
+            var evaluator = context.GetService<IExpressionEvaluator>();
+            return await evaluator.IsNonStorableExpression(Expression, Syntax, context, cancellationToken);
+        }
     }
 }
