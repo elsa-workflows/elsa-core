@@ -49,7 +49,8 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
             storedTrigger.Payload,
             storedTrigger.Name,
             storedTrigger.ActivityId,
-            storedTrigger.WorkflowDefinitionId
+            storedTrigger.WorkflowDefinitionId,
+            storedTrigger.Hash
         };
         return JsonSerializer.Serialize(input, _settings);
     }
