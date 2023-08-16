@@ -82,8 +82,8 @@ public class DialAndWait : Activity<CallPayload>
         var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, response.CallControlId);
         var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, response.CallControlId);
         
-        context.CreateBookmark(answeredBookmark, OnCallAnswered);
-        context.CreateBookmark(hangupBookmark, OnCallHangup);
+        context.CreateBookmark(answeredBookmark, OnCallAnswered, false);
+        context.CreateBookmark(hangupBookmark, OnCallHangup, false);
     }
 
     private async ValueTask OnCallAnswered(ActivityExecutionContext context)

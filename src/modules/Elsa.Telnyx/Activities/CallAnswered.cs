@@ -34,7 +34,7 @@ public class CallAnswered : Activity<CallAnsweredPayload>
         foreach (var callControlId in callControlIds)
         {
             var payload = new CallAnsweredBookmarkPayload(callControlId);
-            context.CreateBookmark(new BookmarkOptions(payload, Resume, Type));
+            context.CreateBookmark(new BookmarkOptions(payload, Resume, Type, IncludeActivityInstanceId: false));
         }
     }
 

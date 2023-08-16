@@ -263,10 +263,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     /// <param name="payloads">The payloads to create bookmarks for.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
-    public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default)
+    /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
+    public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new BookmarkOptions(payload, callback));
+            CreateBookmark(new BookmarkOptions(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
     }
 
     /// <summary>
@@ -293,8 +294,9 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     /// <param name="payload">The payload to associate with the bookmark.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
+    /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(payload, callback));
+    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true) => CreateBookmark(new BookmarkOptions(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 

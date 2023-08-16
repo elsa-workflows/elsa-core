@@ -39,6 +39,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var input = new Dictionary<string, object>().AddInput(eventPayload.GetType().Name, eventPayload);
         var activityDescriptors = FindActivityDescriptors(eventType).ToList();
         var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
+        var activityInstanceId = clientStatePayload.ActivityInstanceId; 
         var correlationId = clientStatePayload.CorrelationId;
         var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
         var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
@@ -48,18 +49,9 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
             await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
             {
                 ActivityTypeName = activityDescriptor.TypeName,
-                BookmarkPayload = bookmarkPayload,
-                CorrelationId = correlationId,
-                ActivityInstanceId = clientStatePayload.ActivityInstanceId,
-                Input = input
-            }, cancellationToken);
-            
-            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
-            {
-                ActivityTypeName = activityDescriptor.TypeName,
                 BookmarkPayload = bookmarkPayloadWithCallControl,
                 CorrelationId = correlationId,
-                ActivityInstanceId = clientStatePayload.ActivityInstanceId,
+                ActivityInstanceId = activityInstanceId,
                 Input = input
             }, cancellationToken);
         }

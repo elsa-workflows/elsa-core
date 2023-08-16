@@ -166,7 +166,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload, options.ActivityInstanceId);
         var correlationId = options.CorrelationId;
         var workflowInstanceId = options.WorkflowInstanceId;
         var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId };

@@ -108,8 +108,8 @@ public class TransferCall : Activity<CallPayload>
         var callControlId = payload.CallControlId;
         var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId);
         var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, callControlId);
-        context.CreateBookmark(answeredBookmark, AnsweredAsync);
-        context.CreateBookmark(hangupBookmark, HangupAsync);
+        context.CreateBookmark(answeredBookmark, AnsweredAsync, false);
+        context.CreateBookmark(hangupBookmark, HangupAsync, false);
         return default;
     }
     

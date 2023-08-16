@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
@@ -18,7 +17,6 @@ namespace Elsa.Telnyx.Activities;
 /// Bridge two calls.
 /// </summary>
 [Activity(Constants.Namespace, "Bridge two calls.", Kind = ActivityKind.Task)]
-[WebhookDriven(WebhookEventTypes.CallBridged)]
 [PublicAPI]
 public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
 {
@@ -44,7 +42,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
     {
         var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
         var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
-        var request = new BridgeCallsRequest(callControlIdB, ClientState: context.CreateCorrelatingClientState());
+        var request = new BridgeCallsRequest(callControlIdB, ClientState: context.CreateCorrelatingClientState(context.Id));
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try
@@ -53,7 +51,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
             
             var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
             var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
-            context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync);
+            context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync, false);
         }
         catch (ApiException e)
         {
