@@ -102,7 +102,7 @@ public abstract class PlayAudioBase : Activity
             await HandleDisconnectedAsync(context);
         }
         
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync, false);
+        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync, true);
     }
 
     /// <summary>
