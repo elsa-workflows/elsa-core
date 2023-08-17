@@ -52,7 +52,7 @@ public record Portability(
     string LineType,
     string Lrn,
     string Ocn,
-    DateOnly? PortedDate,
+    string? PortedDate,
     string PortedStatus,
     string Spid,
     string SpidCarrierName,
@@ -69,7 +69,7 @@ public record Portability(
 public record Carrier(
     string ErrorCode,
     string MobileCountryCode,
-    int MobileNetworkCode,
+    string MobileNetworkCode,
     string Name,
     string Type
 )
