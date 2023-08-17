@@ -64,7 +64,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             ActivityTypeName = newMessage.ActivityTypeName,
             BookmarkPayload = newMessage.BookmarkPayload,
             Input = newMessage.Input,
-            Hash = _bookmarkHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload),
+            Hash = _bookmarkHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload, newMessage.ActivityInstanceId),
         };
 
         // Store the message.
