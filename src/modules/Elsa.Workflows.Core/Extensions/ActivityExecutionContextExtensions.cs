@@ -337,6 +337,10 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
+        // If the activity is already completed, do nothing.
+        if(context.Status == ActivityStatus.Completed)
+            return;
+        
         // Mark the activity as complete.
         context.Status = ActivityStatus.Completed;
 
