@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
+using Elsa.Api.Client.HttpMessageHandlers;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
@@ -29,11 +30,11 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds the Elsa client to the service collection.
     /// </summary>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions> configureOptions)
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default)
     {
-        services.Configure(configureOptions);
+        services.Configure(configureOptions ?? (_ => { }));
+        services.AddScoped<ApiHttpMessageHandler>();
         services.AddScoped<IElsaClient, ElsaClient>();
-        services.AddActivityTypeService();
 
         services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings);
         services.AddApi<IWorkflowInstancesApi>(CreateRefitSettings);
@@ -46,14 +47,6 @@ public static class DependencyInjectionExtensions
         services.AddApi<IFeaturesApi>(CreateRefitSettings);
         return services;
     }
-
-    /// <summary>
-    /// Adds activity type services to the service collection.
-    /// </summary>
-    public static IServiceCollection AddActivityTypeService(this IServiceCollection services)
-    {
-        return services;
-    }
     
     /// <summary>
     /// Adds a refit client for the specified API type.
@@ -64,7 +57,16 @@ public static class DependencyInjectionExtensions
     public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings) where T : class
     {
         services.AddRefitClient<T>(settings)
-            .ConfigureHttpClient(ConfigureElsaApiHttpClient);
+            .ConfigureHttpClient(ConfigureElsaApiHttpClient)
+            .AddHttpMessageHandler<ApiHttpMessageHandler>();
+    }
+    
+    /// <summary>
+    /// Creates an API client for the specified API type.
+    /// </summary>
+    public static T CreateApi<T>(this IServiceProvider serviceProvider, Uri baseAddress) where T : class
+    {
+        return RestService.For<T>(baseAddress.ToString(), CreateRefitSettings(serviceProvider));
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)
@@ -73,7 +75,10 @@ public static class DependencyInjectionExtensions
         httpClient.BaseAddress = options.BaseAddress;
         options.ConfigureHttpClient?.Invoke(serviceProvider, httpClient);
     }
-    
+
+    /// <summary>
+    /// Creates a <see cref="RefitSettings"/> instance configured for Elsa. 
+    /// </summary>
     private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
     {
         JsonSerializerOptions serializerOptions = new()
@@ -87,7 +92,7 @@ public static class DependencyInjectionExtensions
 
         var settings = new RefitSettings
         {
-            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions)
+            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
         };    
             
         return settings;
