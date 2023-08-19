@@ -43,7 +43,7 @@ public abstract class StopAudioPlaybackBase : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var request = new StopAudioPlaybackRequest(Stop.Get(context), context.CreateCorrelatingClientState());
+        var request = new StopAudioPlaybackRequest(Stop.Get(context), context.CreateCorrelatingClientState(context.Id));
         var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
