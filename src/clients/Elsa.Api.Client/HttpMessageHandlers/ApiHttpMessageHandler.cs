@@ -1,28 +1,19 @@
 using Elsa.Api.Client.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.Client.HttpMessageHandlers;
 
 /// <summary>
-/// An HTTP message handler that invokes <see cref="IApiHttpRequestConfigurator"/> instances before sending the request.
+/// An HTTP message handler that delegates its processing to another <see cref="HttpMessageHandler"/> instance provided by an <see cref="IHttpMessageHandlerProvider"/>.
 /// </summary>
 public class ApiHttpMessageHandler : DelegatingHandler
 {
-    private readonly IEnumerable<IApiHttpRequestConfigurator> _httpClientConfigurators;
-
     /// <inheritdoc />
-    public ApiHttpMessageHandler(IEnumerable<IApiHttpRequestConfigurator> httpClientConfigurators)
+    public ApiHttpMessageHandler(IServiceProvider serviceProvider)
     {
-        _httpClientConfigurators = httpClientConfigurators;
-    }
+        var provider = serviceProvider.GetService<IHttpMessageHandlerProvider>();
 
-    /// <inheritdoc />
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        // Invoke configurators.
-        foreach (var httpClientConfigurator in _httpClientConfigurators)
-            await httpClientConfigurator.ConfigureRequestAsync(request, cancellationToken);
-
-        // Continue processing the request
-        return await base.SendAsync(request, cancellationToken);
+        if (provider != null)
+            InnerHandler = provider.GetHandler();
     }
 }

@@ -32,22 +32,30 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default)
     {
+        return services.AddElsaClient(builder => builder.AddHttpMessageHandler<ApiHttpMessageHandler>() , configureOptions);
+    }
+
+    /// <summary>
+    /// Adds the Elsa client to the service collection.
+    /// </summary>
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<IHttpClientBuilder> configureHttpClientBuilder, Action<ElsaClientOptions>? configureOptions = default)
+    {
         services.Configure(configureOptions ?? (_ => { }));
         services.AddScoped<ApiHttpMessageHandler>();
         services.AddScoped<IElsaClient, ElsaClient>();
 
-        services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings);
-        services.AddApi<IWorkflowInstancesApi>(CreateRefitSettings);
-        services.AddApi<IActivityDescriptorsApi>(CreateRefitSettings);
-        services.AddApi<IActivityExecutionsApi>(CreateRefitSettings);
-        services.AddApi<IStorageDriversApi>(CreateRefitSettings);
-        services.AddApi<IVariableTypesApi>(CreateRefitSettings);
-        services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings);
-        services.AddApi<ILoginApi>(CreateRefitSettings);
-        services.AddApi<IFeaturesApi>(CreateRefitSettings);
+        services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IWorkflowInstancesApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IActivityDescriptorsApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IActivityExecutionsApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IStorageDriversApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IVariableTypesApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<ILoginApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IFeaturesApi>(CreateRefitSettings, configureHttpClientBuilder);
         return services;
     }
-    
+
     /// <summary>
     /// Adds a refit client for the specified API type.
     /// </summary>
@@ -56,9 +64,20 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The API type.</typeparam>
     public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings) where T : class
     {
-        services.AddRefitClient<T>(settings)
-            .ConfigureHttpClient(ConfigureElsaApiHttpClient)
-            .AddHttpMessageHandler<ApiHttpMessageHandler>();
+        services.AddApi<T>(settings, builder => builder.AddHttpMessageHandler<ApiHttpMessageHandler>());
+    }
+    
+    /// <summary>
+    /// Adds a refit client for the specified API type.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="settings">The refit settings.</param>
+    /// <param name="configureHttpClientBuilder">A delegate to configure the HTTP client builder.</param>
+    /// <typeparam name="T">The API type.</typeparam>
+    public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings, Action<IHttpClientBuilder> configureHttpClientBuilder) where T : class
+    {
+        var builder = services.AddRefitClient<T>(settings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        configureHttpClientBuilder(builder);
     }
     
     /// <summary>
@@ -67,6 +86,14 @@ public static class DependencyInjectionExtensions
     public static T CreateApi<T>(this IServiceProvider serviceProvider, Uri baseAddress) where T : class
     {
         return RestService.For<T>(baseAddress.ToString(), CreateRefitSettings(serviceProvider));
+    }
+    
+    /// <summary>
+    /// Creates an API client for the specified API type.
+    /// </summary>
+    public static T CreateApi<T>(this IServiceProvider serviceProvider, HttpClient httpClient) where T : class
+    {
+        return RestService.For<T>(httpClient, CreateRefitSettings(serviceProvider));
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)
@@ -93,6 +120,7 @@ public static class DependencyInjectionExtensions
         var settings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
+            HttpMessageHandlerFactory = serviceProvider.GetRequiredService<ApiHttpMessageHandler>
         };    
             
         return settings;
