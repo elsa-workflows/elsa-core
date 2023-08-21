@@ -29,11 +29,11 @@ public class DeliverWorkflowMessagesFromInbox : INotificationHandler<WorkflowBoo
         {
             var activityTypeName = bookmark.Name;
             var hash = bookmark.Hash;
+            
             var filter = new WorkflowInboxMessageFilter
             {
                 ActivityTypeName = activityTypeName,
-                Hash = hash,
-                IsHandled = false
+                Hash = hash
             };
             
             var messages = await _workflowInbox.FindManyAsync(filter, cancellationToken);
