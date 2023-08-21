@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
@@ -57,7 +56,6 @@ public class EFCoreWorkflowInboxMessageStore : IWorkflowInboxMessageStore
     {
         dbContext.Entry(entity).Property("SerializedBookmarkPayload").CurrentValue = _payloadSerializer.Serialize(entity.BookmarkPayload);
         dbContext.Entry(entity).Property("SerializedInput").CurrentValue = entity.Input != null ? _payloadSerializer.Serialize(entity.Input) : default;
-        dbContext.Entry(entity).Property("SerializedAffectedWorkflowInstancesIds").CurrentValue = entity.AffectedWorkflowInstancesIds != null ? JsonSerializer.Serialize(entity.AffectedWorkflowInstancesIds) : default;
         return default;
     }
 
@@ -68,11 +66,9 @@ public class EFCoreWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 
         var bookmarkPayloadJson = dbContext.Entry(entity).Property<string>("SerializedBookmarkPayload").CurrentValue;
         var inputJson = dbContext.Entry(entity).Property<string>("SerializedInput").CurrentValue;
-        var affectedWorkflowInstancesIdsJson = dbContext.Entry(entity).Property<string>("SerializedAffectedWorkflowInstancesIds").CurrentValue;
 
         entity.BookmarkPayload = _payloadSerializer.Deserialize(bookmarkPayloadJson);
         entity.Input = !string.IsNullOrEmpty(inputJson) ? _payloadSerializer.Deserialize<Dictionary<string, object>>(inputJson) : null;
-        entity.AffectedWorkflowInstancesIds = !string.IsNullOrEmpty(affectedWorkflowInstancesIdsJson) ? JsonSerializer.Deserialize<List<string>>(affectedWorkflowInstancesIdsJson) : null;
 
         return ValueTask.CompletedTask;
     }

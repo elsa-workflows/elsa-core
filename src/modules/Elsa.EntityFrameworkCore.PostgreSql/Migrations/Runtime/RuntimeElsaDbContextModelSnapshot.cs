@@ -390,17 +390,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTimeOffset?>("HandledAt")
-                        .HasColumnType("timestamp with time zone");
-
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsHandled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedBookmarkPayload")
@@ -424,11 +415,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
-                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
-
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
-
-                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 

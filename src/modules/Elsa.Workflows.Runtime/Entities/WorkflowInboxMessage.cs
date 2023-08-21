@@ -41,17 +41,7 @@ public class WorkflowInboxMessage : Entity
     /// An optional set of inputs to deliver to the workflow instance.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }
-
-    /// <summary>
-    /// Set to true if the message was handled by a workflow instance.
-    /// </summary>
-    public bool IsHandled { get; set; }
-
-    /// <summary>
-    /// The IDs of the workflow instances that handled the message.
-    /// </summary>
-    public ICollection<string>? AffectedWorkflowInstancesIds { get; set; }
-
+    
     /// <summary>
     /// The date and time the message was created.
     /// </summary>
@@ -61,9 +51,4 @@ public class WorkflowInboxMessage : Entity
     /// The date and time the message expires.
     /// </summary>
     public DateTimeOffset ExpiresAt { get; set; }
-
-    /// <summary>
-    /// The date and time the message was handled.
-    /// </summary>
-    public DateTimeOffset? HandledAt { get; set; }
 }

@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Filters;
@@ -34,11 +33,6 @@ public class WorkflowInboxMessageFilter
     public string? ActivityInstanceId { get; set; }
 
     /// <summary>
-    /// A flag indicating whether to filter by messages that have been handled.
-    /// </summary>
-    public bool? IsHandled { get; set; }
-
-    /// <summary>
     /// A flag indicating whether to filter by messages that have expired.
     /// </summary>
     public bool? IsExpired { get; set; }
@@ -51,7 +45,6 @@ public class WorkflowInboxMessageFilter
     {
         var filter = this;
         if (filter.CorrelationId != null) query = query.Where(x => filter.CorrelationId == x.CorrelationId);
-        if (filter.IsHandled != null) query = query.Where(x => x.IsHandled == filter.IsHandled);
         if (filter.WorkflowInstanceId != null) query = query.Where(x => filter.WorkflowInstanceId == x.WorkflowInstanceId);
         if (filter.Hash != null) query = query.Where(x => filter.Hash == x.Hash);
         if (filter.ActivityTypeName != null) query = query.Where(x => filter.ActivityTypeName == x.ActivityTypeName);

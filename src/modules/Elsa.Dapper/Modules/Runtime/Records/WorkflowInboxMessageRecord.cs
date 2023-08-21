@@ -46,16 +46,6 @@ public class WorkflowInboxMessageRecord
     public string? Input { get; set; }
 
     /// <summary>
-    /// Set to true if the message was handled by a workflow instance.
-    /// </summary>
-    public bool IsHandled { get; set; }
-
-    /// <summary>
-    /// The IDs of the workflow instances that handled the message.
-    /// </summary>
-    public string? AffectedWorkflowInstancesIds { get; set; }
-
-    /// <summary>
     /// The date and time the message was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
@@ -64,9 +54,4 @@ public class WorkflowInboxMessageRecord
     /// The date and time the message expires.
     /// </summary>
     public DateTimeOffset ExpiresAt { get; set; }
-
-    /// <summary>
-    /// The date and time the message was handled.
-    /// </summary>
-    public DateTimeOffset? HandledAt { get; set; }
 }

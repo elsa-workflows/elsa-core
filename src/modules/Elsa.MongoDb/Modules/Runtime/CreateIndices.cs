@@ -175,10 +175,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.Hash)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
-                        new(indexBuilder.Ascending(x => x.IsHandled)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.ExpiresAt)),
-                        new(indexBuilder.Ascending(x => x.HandledAt)),
                     },
                     cancellationToken));
     }

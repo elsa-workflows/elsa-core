@@ -390,18 +390,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<DateTimeOffset?>("HandledAt")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<bool>("IsHandled")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedBookmarkPayload")
                         .HasColumnType("nvarchar(max)");
@@ -424,11 +415,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
-                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
-
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
-
-                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 

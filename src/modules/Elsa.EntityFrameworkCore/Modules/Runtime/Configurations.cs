@@ -114,10 +114,8 @@ public class Configurations :
     {
         builder.Ignore(x => x.Input);
         builder.Ignore(x => x.BookmarkPayload);
-        builder.Ignore(x => x.AffectedWorkflowInstancesIds);
         builder.Property<string>("SerializedInput");
         builder.Property<string>("SerializedBookmarkPayload");
-        builder.Property<string>("SerializedAffectedWorkflowInstancesIds");
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
@@ -125,7 +123,5 @@ public class Configurations :
         builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
         builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
-        builder.HasIndex(x => x.HandledAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.HandledAt)}");
-        builder.HasIndex(x => x.IsHandled, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.IsHandled)}");
     }
 }

@@ -25,7 +25,7 @@ public class ReadWorkflowInboxMessage : INotificationHandler<WorkflowInboxMessag
     public async Task HandleAsync(WorkflowInboxMessageReceived notification, CancellationToken cancellationToken)
     {
         var message = notification.InboxMessage;
-        var result = await _workflowInbox.DeliverAsync(message, cancellationToken);
+        var result = await _workflowInbox.BroadcastAsync(message, cancellationToken);
         notification.WorkflowExecutionResults.AddRange(result.WorkflowExecutionResults);
     }
 }

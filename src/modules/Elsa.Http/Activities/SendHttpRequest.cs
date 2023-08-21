@@ -12,7 +12,6 @@ namespace Elsa.Http;
 /// Send an HTTP request.
 /// </summary>
 [Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
-[PublicAPI]
 public class SendHttpRequest : SendHttpRequestBase
 {
     /// <inheritdoc />

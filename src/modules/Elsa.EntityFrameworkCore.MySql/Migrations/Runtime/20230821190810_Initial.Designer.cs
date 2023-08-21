@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230809080332_Initial")]
+    [Migration("20230821190810_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -390,18 +390,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTimeOffset?>("HandledAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
-
-                    b.Property<bool>("IsHandled")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedBookmarkPayload")
                         .HasColumnType("longtext");
@@ -424,11 +415,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
-                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
-
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
-
-                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 

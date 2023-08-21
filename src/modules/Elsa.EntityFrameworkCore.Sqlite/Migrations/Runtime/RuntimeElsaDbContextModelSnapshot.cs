@@ -390,17 +390,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("HandledAt")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Hash")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsHandled")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("SerializedAffectedWorkflowInstancesIds")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedBookmarkPayload")
@@ -424,11 +415,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
-                    b.HasIndex(new[] { "HandledAt" }, "IX_WorkflowInboxMessage_HandledAt");
-
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
-
-                    b.HasIndex(new[] { "IsHandled" }, "IX_WorkflowInboxMessage_IsHandled");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 

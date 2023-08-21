@@ -59,7 +59,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         {
             try
             {
-                await _notificationSender.SendAsync(notification, NotificationStrategy.Parallel, cancellationToken);
+                await _notificationSender.SendAsync(notification, NotificationStrategy.FireAndForget, cancellationToken);
             }
             catch (Exception e)
             {

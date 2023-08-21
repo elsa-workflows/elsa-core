@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -79,7 +78,6 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
                 .Is(nameof(WorkflowInboxMessageRecord.CorrelationId), filter.CorrelationId)
                 .Is(nameof(WorkflowInboxMessageRecord.ActivityTypeName), filter.ActivityTypeName)
                 .Is(nameof(WorkflowInboxMessageRecord.ActivityInstanceId), filter.ActivityInstanceId)
-                .Is(nameof(WorkflowInboxMessageRecord.IsHandled), filter.IsHandled)
                 ;
 
             clauses.Add(clause);
@@ -103,9 +101,6 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             Hash = source.Hash,
             BookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
             Input = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
-            HandledAt = source.HandledAt,
-            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? JsonSerializer.Serialize(source.AffectedWorkflowInstancesIds) : default,
-            IsHandled = source.IsHandled,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
         };
@@ -122,9 +117,6 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
             BookmarkPayload = _payloadSerializer.Deserialize(source.BookmarkPayload),
-            AffectedWorkflowInstancesIds = source.AffectedWorkflowInstancesIds != null ? JsonSerializer.Deserialize<List<string>>(source.AffectedWorkflowInstancesIds) : default,
-            HandledAt = source.HandledAt,
-            IsHandled = source.IsHandled,
             Input = source.Input != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.Input) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,

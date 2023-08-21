@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -134,12 +135,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    IsHandled = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    HandledAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
-                    SerializedAffectedWorkflowInstancesIds = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SerializedBookmarkPayload = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SerializedInput = table.Column<string>(type: "longtext", nullable: true)
@@ -425,22 +422,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInboxMessage_HandledAt",
-                schema: "Elsa",
-                table: "WorkflowInboxMessages",
-                column: "HandledAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInboxMessage_Hash",
                 schema: "Elsa",
                 table: "WorkflowInboxMessages",
                 column: "Hash");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowInboxMessage_IsHandled",
-                schema: "Elsa",
-                table: "WorkflowInboxMessages",
-                column: "IsHandled");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInboxMessage_WorkflowInstanceId",

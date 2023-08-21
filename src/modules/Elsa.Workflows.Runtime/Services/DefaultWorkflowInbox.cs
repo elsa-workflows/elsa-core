@@ -83,17 +83,15 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// <inheritdoc />
     public async ValueTask<DeliverWorkflowInboxMessageResult> DeliverAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
+        var resumedWorkflowResults = await ResumeWorkflowsAsync(message, cancellationToken);
+        return new DeliverWorkflowInboxMessageResult(resumedWorkflowResults);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    {
         var triggeredWorkflows = await TriggerWorkflowsAsync(message, cancellationToken);
-
-        message.IsHandled = triggeredWorkflows.Any();
-
-        if (message.IsHandled)
-        {
-            message.AffectedWorkflowInstancesIds = triggeredWorkflows.Select(x => x.WorkflowInstanceId).ToList();
-            message.HandledAt = _systemClock.UtcNow;
-            await _messageStore.SaveAsync(message, cancellationToken);
-        }
-
+        
         return new DeliverWorkflowInboxMessageResult(triggeredWorkflows);
     }
 
@@ -112,6 +110,19 @@ public class DefaultWorkflowInbox : IWorkflowInbox
 
         var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
         return result.TriggeredWorkflows;
+    }
+
+    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    {
+        var activityTypeName = message.ActivityTypeName;
+        var correlationId = message.CorrelationId;
+        var workflowInstanceId = message.WorkflowInstanceId;
+        var activityInstanceId = message.ActivityInstanceId;
+        var bookmarkPayload = message.BookmarkPayload;
+        var input = message.Input;
+        var options = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, activityInstanceId, input);
+
+        return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
     }
 
     /// <inheritdoc />
