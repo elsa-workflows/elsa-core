@@ -42,7 +42,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var isEnumerable = typeof(IEnumerable).IsAssignableFrom(targetType);
 
         if (!isEnumerable)
-            return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+        {
+            var currentReader = reader;
+            try
+            {
+                return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+            }
+            catch (NotSupportedException)
+            {
+                return JsonSerializer.Deserialize(ref currentReader, typeof(JsonObject), newOptions)!;
+            }
+        }
 
         // If the target type is a Newtonsoft.JObject, parse the JSON island.
         var isNewtonsoftObject = targetType == typeof(JObject);
