@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
@@ -15,12 +16,12 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreActivityExecutionStore : IActivityExecutionStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> _store;
-    private readonly IPayloadSerializer _serializer;
+    private readonly IActivityStateSerializer _serializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreActivityExecutionStore"/> class.
     /// </summary>
-    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, IPayloadSerializer serializer)
+    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, IActivityStateSerializer serializer)
     {
         _store = store;
         _serializer = serializer;
@@ -46,10 +47,9 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     /// <inheritdoc />
     public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
 
-    private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
+    private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("ActivityData").CurrentValue = entity.ActivityState != null ? _serializer.Serialize(entity.ActivityState) : default;
-        return default;
+        dbContext.Entry(entity).Property("ActivityData").CurrentValue = entity.ActivityState != null ? (await _serializer.SerializeAsync(entity.ActivityState, cancellationToken)).ToString() : default;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
@@ -63,7 +63,8 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)
     {
         var json = dbContext.Entry(entity).Property<string>("ActivityData").CurrentValue;
-        return new(!string.IsNullOrEmpty(json) ? _serializer.Deserialize<IDictionary<string, object>>(json) : null);
+        var dictionary = !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) : default;
+        return ValueTask.FromResult<IDictionary<string, object>?>(dictionary?.ToDictionary(x => x.Key, x => (object)x.Value));
     }
 
     private IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
