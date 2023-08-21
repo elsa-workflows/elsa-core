@@ -99,9 +99,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -122,8 +119,17 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("bit");
 
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedException")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -152,6 +158,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_Status");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -179,12 +188,12 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -218,15 +227,15 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Hash")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
@@ -250,16 +259,13 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.ToTable("WorkflowTriggers", "Elsa");
+                    b.ToTable("Triggers", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
@@ -292,11 +298,14 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("PayloadData")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Source")
                         .HasColumnType("nvarchar(max)");

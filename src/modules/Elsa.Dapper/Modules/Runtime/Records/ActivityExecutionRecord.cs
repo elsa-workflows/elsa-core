@@ -33,22 +33,32 @@ public class ActivityExecutionRecordRecord
     /// <summary>
     /// The name of the activity.
     /// </summary>
-    public string? ActivityName { get; set; } = default!;
+    public string? ActivityName { get; set; }
     
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
-    public string? ActivityState { get; set; }
+    public string? SerializedActivityState { get; set; }
+
+    /// <summary>
+    /// Gets or sets the exception that occurred during the activity execution.
+    /// </summary>
+    public string? SerializedException { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = default!;
+    public DateTimeOffset StartedAt { get; set; }
 
     /// <summary>
     /// Gets or sets whether the activity has any bookmarks.
     /// </summary>
     public bool HasBookmarks { get; set; }
+
+    /// <summary>
+    /// Gets or sets the status of the activity.
+    /// </summary>
+    public string Status { get; set; } = default!;
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

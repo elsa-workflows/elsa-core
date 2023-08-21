@@ -34,7 +34,7 @@ public class EFCoreBookmarkStore : IBookmarkStore
     
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("Data").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
         return default;
     }
 
@@ -43,7 +43,7 @@ public class EFCoreBookmarkStore : IBookmarkStore
         if (entity is null)
             return default;
 
-        var json = dbContext.Entry(entity).Property<string>("Data").CurrentValue;
+        var json = dbContext.Entry(entity).Property<string>("SerializedPayload").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
         
         return default;

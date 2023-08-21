@@ -45,7 +45,7 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<StoredTrigger> builder)
     {
         builder.Ignore(x => x.Payload);
-        builder.Property<string>("Data");
+        builder.Property<string>("SerializedPayload");
         builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionId)}");
         builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Name)}");
@@ -57,8 +57,8 @@ public class Configurations :
     {
         builder.Ignore(x => x.ActivityState);
         builder.Ignore(x => x.Payload);
-        builder.Property<string>("PayloadData");
-        builder.Property<string>("ActivityData");
+        builder.Property<string>("SerializedActivityState");
+        builder.Property<string>("SerializedPayload");
 
         builder.HasIndex(x => x.Timestamp).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Timestamp)}");
         builder.HasIndex(x => x.Sequence).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Sequence)}");
@@ -81,7 +81,9 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<ActivityExecutionRecord> builder)
     {
         builder.Ignore(x => x.ActivityState);
-        builder.Property<string>("ActivityData");
+        builder.Ignore(x => x.Exception);
+        builder.Property<string>("SerializedActivityState");
+        builder.Property<string>("SerializedException");
         
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");
@@ -91,6 +93,7 @@ public class Configurations :
         builder.HasIndex(x => x.ActivityName).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityName)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.StartedAt)}");
         builder.HasIndex(x => x.HasBookmarks).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.HasBookmarks)}");
+        builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.Status)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.CompletedAt)}");
     }
 
@@ -98,7 +101,7 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<StoredBookmark> builder)
     {
         builder.Ignore(x => x.Payload);
-        builder.Property<string>("Data");
+        builder.Property<string>("SerializedPayload");
         builder.HasKey(x => x.BookmarkId);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");

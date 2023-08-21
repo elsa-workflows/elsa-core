@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
@@ -36,7 +37,8 @@ public class ActivityExecutionService : IActivityExecutionService
             StartedCount = grouping.Count(),
             CompletedCount = grouping.Count(x => x.CompletedAt != null),
             UncompletedCount = grouping.Count(x => x.CompletedAt == null),
-            IsBlocked = grouping.Any(x => x.HasBookmarks)
+            IsBlocked = grouping.Any(x => x.HasBookmarks),
+            IsFaulted = grouping.Any(x => x.Status == ActivityStatus.Faulted)
         }).ToList();
         
         return stats;

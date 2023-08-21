@@ -123,6 +123,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public ActivityStatus Status { get; set; }
 
+    /// <summary>
+    /// Gets or sets the exception that occurred during the activity execution, if any.
+    /// </summary>
+    public Exception? Exception { get; set; }
+
     /// <inheritdoc />
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
 

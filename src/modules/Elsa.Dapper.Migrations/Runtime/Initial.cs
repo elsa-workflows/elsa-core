@@ -119,6 +119,7 @@ public class Initial : Migration
             .WithColumn("StartedAt").AsDateTimeOffset().NotNullable()
             .WithColumn("CompletedAt").AsDateTimeOffset().Nullable()
             .WithColumn("HasBookmarks").AsBoolean().NotNullable()
+            .WithColumn("Status").AsString().NotNullable()
             ;
 
         IfDatabase("Sqlite")
@@ -133,7 +134,9 @@ public class Initial : Migration
             .WithColumn("ActivityState").AsString().Nullable()
             .WithColumn("StartedAt").AsDateTime2().NotNullable()
             .WithColumn("CompletedAt").AsDateTime2().Nullable()
-            .WithColumn("HasBookmarks").AsBoolean().NotNullable();
+            .WithColumn("HasBookmarks").AsBoolean().NotNullable()
+            .WithColumn("Status").AsString().NotNullable()
+            ;
 
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
@@ -144,12 +147,10 @@ public class Initial : Migration
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Hash").AsString().Nullable()
             .WithColumn("BookmarkPayload").AsString()
-            .WithColumn("AffectedWorkflowInstancesIds").AsString().Nullable()
             .WithColumn("Input").AsString().Nullable()
-            .WithColumn("IsHandled").AsBoolean().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset()
             .WithColumn("ExpiresAt").AsDateTimeOffset()
-            .WithColumn("HandledAt").AsDateTimeOffset().Nullable();
+            ;
         
         IfDatabase("Sqlite")
             .Create
@@ -160,12 +161,10 @@ public class Initial : Migration
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Hash").AsString().Nullable()
             .WithColumn("BookmarkPayload").AsString()
-            .WithColumn("AffectedWorkflowInstancesIds").AsString().Nullable()
             .WithColumn("Input").AsString().Nullable()
-            .WithColumn("IsHandled").AsBoolean().Nullable()
             .WithColumn("CreatedAt").AsDateTime2()
             .WithColumn("ExpiresAt").AsDateTime2()
-            .WithColumn("HandledAt").AsDateTime2().Nullable();
+            ;
     }
 
     /// <inheritdoc />

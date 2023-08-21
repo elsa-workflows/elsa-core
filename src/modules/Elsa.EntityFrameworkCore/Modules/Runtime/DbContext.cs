@@ -23,7 +23,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// <summary>
     /// The workflow triggers.
     /// </summary>
-    public DbSet<StoredTrigger> WorkflowTriggers { get; set; } = default!;
+    public DbSet<StoredTrigger> Triggers { get; set; } = default!;
     
     /// <summary>
     /// The workflow execution log records.

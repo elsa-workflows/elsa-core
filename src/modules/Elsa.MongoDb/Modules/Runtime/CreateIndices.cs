@@ -111,6 +111,7 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.ActivityName)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.HasBookmarks)),
+                        new(indexBuilder.Ascending(x => x.Status)),
                         new(indexBuilder.Ascending(x => x.CompletedAt))
                     },
                     cancellationToken));

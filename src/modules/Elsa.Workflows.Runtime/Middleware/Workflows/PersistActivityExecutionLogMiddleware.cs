@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
@@ -40,9 +41,11 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
             ActivityType = x.Activity.Type,
             ActivityName = x.Activity.Name,
             ActivityState = x.ActivityState,
+            Exception = ExceptionState.FromException(x.Exception),
             ActivityTypeVersion = x.Activity.Version,
             StartedAt = x.StartedAt,
             HasBookmarks = x.Bookmarks.Any(),
+            Status = x.Status,
             CompletedAt = x.CompletedAt
         }).ToList();
 

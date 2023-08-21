@@ -48,18 +48,17 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
         }
         catch (Exception exception)
         {
-            context.Status = ActivityStatus.Faulted;
             context.AddExecutionLogEntry("Faulted",
                 includeActivityState: true,
+                message: exception.Message,
                 payload: new
                 {
-                    Exception = new
-                    {
-                        exception.Message,
-                        exception.Source,
-                        exception.Data,
-                        Type = exception.GetType()
-                    }
+                    Exception = exception.GetType().FullName,
+                    exception.Message,
+                    exception.Source,
+                    exception.Data,
+                    exception.StackTrace,
+                    InnerException = exception.InnerException?.GetType().FullName,
                 });
 
             throw;

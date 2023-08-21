@@ -1,3 +1,4 @@
+using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
@@ -36,6 +37,11 @@ public class ActivityExecutionRecord : Entity
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
     public IDictionary<string, object>? ActivityState { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the exception that occurred during the activity execution.
+    /// </summary>
+    public ExceptionState? Exception { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
@@ -46,6 +52,11 @@ public class ActivityExecutionRecord : Entity
     /// Gets or sets whether the activity has any bookmarks.
     /// </summary>
     public bool HasBookmarks { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the status of the activity.
+    /// </summary>
+    public ActivityStatus Status { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

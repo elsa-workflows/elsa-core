@@ -23,9 +23,6 @@ public record ExceptionState(Type Type, string Message, string? StackTrace, Exce
     /// </summary>
     public static ExceptionState? FromException(Exception? ex)
     {
-        if (ex == null)
-            return null;
-            
-        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, FromException(ex.InnerException));
+        return ex == null ? null : new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, FromException(ex.InnerException));
     }
 }

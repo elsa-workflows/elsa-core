@@ -29,4 +29,9 @@ public class ActivityExecutionStats
     /// Gets or sets a value whether this activity is waiting for bookmarks to be resumed.
     /// </summary>
     public bool IsBlocked { get; set; }
+    
+    /// <summary>
+    /// Gets or sets a value whether this activity is faulted.
+    /// </summary>
+    public bool IsFaulted { get; set; }
 }

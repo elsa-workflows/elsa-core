@@ -99,9 +99,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("text");
-
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -122,8 +119,17 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedException")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -152,6 +158,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_Status");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -179,11 +188,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("text");
-
                     b.Property<string>("Hash")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -218,14 +227,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("text");
-
                     b.Property<string>("Hash")
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -250,15 +259,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.ToTable("WorkflowTriggers", "Elsa");
+                    b.ToTable("Triggers", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ActivityData")
                         .HasColumnType("text");
 
                     b.Property<string>("ActivityId")
@@ -292,11 +298,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("text");
 
-                    b.Property<string>("PayloadData")
-                        .HasColumnType("text");
-
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("text");
 
                     b.Property<string>("Source")
                         .HasColumnType("text");

@@ -96,9 +96,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -119,8 +116,17 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedException")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -149,6 +155,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_Status");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -176,12 +185,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -215,15 +224,15 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Hash")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
@@ -247,16 +256,13 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.ToTable("WorkflowTriggers", "Elsa");
+                    b.ToTable("Triggers", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
-
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
@@ -289,11 +295,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("PayloadData")
-                        .HasColumnType("longtext");
-
                     b.Property<long>("Sequence")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Source")
                         .HasColumnType("longtext");

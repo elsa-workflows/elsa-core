@@ -72,8 +72,8 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("ActivityData").CurrentValue = entity.ActivityState != null ? _serializer.Serialize(entity.ActivityState) : default;
-        dbContext.Entry(entity).Property("PayloadData").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _serializer.Serialize(entity.ActivityState) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
         return default;
     }
 
@@ -88,13 +88,13 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private ValueTask<object?> LoadPayload(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
-        var json = dbContext.Entry(entity).Property<string>("PayloadData").CurrentValue;
+        var json = dbContext.Entry(entity).Property<string>("SerializedPayload").CurrentValue;
         return new(!string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null);
     }
 
     private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
-        var json = dbContext.Entry(entity).Property<string>("ActivityData").CurrentValue;
+        var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
         return new(!string.IsNullOrEmpty(json) ? _serializer.Deserialize<IDictionary<string, object>>(json) : null);
     }
 

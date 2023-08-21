@@ -3,7 +3,9 @@ using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -98,8 +100,10 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             CompletedAt = source.CompletedAt,
             StartedAt = source.StartedAt,
             HasBookmarks = source.HasBookmarks,
+            Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            ActivityState = source.ActivityState != null ? _payloadSerializer.Serialize(source.ActivityState) : default
+            SerializedActivityState = source.ActivityState != null ? _payloadSerializer.Serialize(source.ActivityState) : default,
+            SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : default
         };
     }
 
@@ -115,8 +119,10 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             CompletedAt = source.CompletedAt,
             StartedAt = source.StartedAt,
             HasBookmarks = source.HasBookmarks,
+            Status = Enum.Parse<ActivityStatus>(source.Status),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            ActivityState = source.ActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.ActivityState) : default
+            ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
+            Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default
         };
     }
 }

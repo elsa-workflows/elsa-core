@@ -1,5 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Elsa.Expressions.Services;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.Serialization.Providers;
 
@@ -34,9 +37,11 @@ public class BasicSerializationProvider : ISerializationProvider
             return true;
         }
 
+        var options = CreateOptions();
+
         try
         {
-            jsonElement = JsonSerializer.SerializeToElement(obj);
+            jsonElement = JsonSerializer.SerializeToElement(obj, options);
             return true;
         }
         catch (JsonException)
@@ -45,4 +50,13 @@ public class BasicSerializationProvider : ISerializationProvider
             return false;
         }
     }
+    
+    private static JsonSerializerOptions CreateOptions() => new()
+    {
+        Converters =
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault())
+        }
+    };
 }

@@ -94,9 +94,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ActivityData")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ActivityId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -117,9 +114,18 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<bool>("HasBookmarks")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedException")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StartedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -147,6 +153,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_Status");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
@@ -176,11 +185,11 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Hash")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -215,14 +224,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Data")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Hash")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -247,15 +256,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.ToTable("WorkflowTriggers");
+                    b.ToTable("Triggers");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ActivityData")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityId")
@@ -289,11 +295,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("ParentActivityInstanceId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PayloadData")
-                        .HasColumnType("TEXT");
-
                     b.Property<long>("Sequence")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("SerializedActivityState")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Source")
                         .HasColumnType("TEXT");

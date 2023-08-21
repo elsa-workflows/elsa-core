@@ -1,4 +1,6 @@
 using Elsa.Common.Entities;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Runtime.Entities;
 
@@ -38,6 +40,11 @@ public class ActivityExecutionRecord : Entity
     public IDictionary<string, object>? ActivityState { get; set; }
 
     /// <summary>
+    /// Gets or sets the exception that occurred during the activity execution.
+    /// </summary>
+    public ExceptionState? Exception { get; set; }
+
+    /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
     public DateTimeOffset StartedAt { get; set; } = default!;
@@ -46,6 +53,11 @@ public class ActivityExecutionRecord : Entity
     /// Gets or sets whether the activity has any bookmarks.
     /// </summary>
     public bool HasBookmarks { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the status of the activity.
+    /// </summary>
+    public ActivityStatus Status { get; set; }
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

@@ -45,6 +45,8 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
         catch (Exception e)
         {
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component. Transitioning workflow instance {WorkflowInstanceId} into the Faulted state", workflowExecutionContext.Id);
+            context.Exception = e;
+            context.Status = ActivityStatus.Faulted;
             workflowExecutionContext.Fault = new WorkflowFault(e, e.Message, context.Id);
             
             if(workflowExecutionContext.CanTransitionTo(WorkflowSubStatus.Faulted))
