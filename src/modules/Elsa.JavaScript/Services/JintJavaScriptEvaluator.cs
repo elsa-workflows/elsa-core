@@ -68,6 +68,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
 
+        // Create workflow input accessors.
+        CreateWorkflowInputAccessors(engine, context);
+        
         // Create variable getters and setters for each variable.
         CreateVariableAccessors(engine, context);
 
@@ -116,6 +119,35 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
         var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
         return outputRecord?.Value;
+    }
+    
+    private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
+    {
+        if(context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+        {
+            var input = workflowExecutionContext.Input;
+            
+            foreach (var inputEntry in input)
+            {
+                var inputPascalName = inputEntry.Key.Pascalize();
+                var inputValue = inputEntry.Value;
+                engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
+            }
+        }
+        else
+        {
+            // We end up here when we are evaluating an expression during trigger indexing.
+            // The scenario being that a workflow definition might have variables declared, that we want to be able to access from JavaScript expressions.
+            foreach(var block in context.Memory.Blocks.Values)
+            {
+                if(block.Metadata is not VariableBlockMetadata variableBlockMetadata)
+                    continue;
+                
+                var variable = variableBlockMetadata.Variable;
+                var variablePascaleName = variable.Name.Pascalize();
+                engine.SetValue($"get{variablePascaleName}", (Func<object?>)(() => block.Value));
+            }
+        }
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
