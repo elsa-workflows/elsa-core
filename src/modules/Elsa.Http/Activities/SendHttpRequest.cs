@@ -40,8 +40,14 @@ public class SendHttpRequest : SendHttpRequestBase
         var expectedStatusCodes = ExpectedStatusCodes;
         var statusCode = (int)response.StatusCode;
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
-        var activity = matchingCase?.Activity ?? UnmatchedStatusCode;
+        var activity = matchingCase != null ? matchingCase.Activity : UnmatchedStatusCode;
 
+        if(activity == null)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+        
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
     }
 
