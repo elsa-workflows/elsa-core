@@ -47,7 +47,7 @@ namespace Elsa.Expressions
             }
         }
 
-        public async Task<bool> IsNonStorableExpression(string expression, string syntax, ActivityExecutionContext context, CancellationToken cancellationToken)
+        public async Task<bool> IsNonStorableExpression(string expression, string syntax, CancellationToken cancellationToken)
         {
             var evaluator = _evaluators[syntax];
             return await evaluator.IsNonStorableExpression(expression, cancellationToken);

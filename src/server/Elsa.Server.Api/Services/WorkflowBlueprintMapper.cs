@@ -74,13 +74,17 @@ namespace Elsa.Server.Api.Services
         {
             if (propertyDescriptor.IsDesignerCritical)
             {
-                try
+                var propProvider = workflowBlueprint.ActivityPropertyProviders.GetProvider(activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
+                if (propProvider != null && !(await propProvider.IsNonStorablePropertyValue(activityBlueprintWrapper.ActivityExecutionContext, cancellationToken)))
                 {
-                    return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
-                }
-                catch (Exception e)
-                {
-                    throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                    try
+                    {
+                        return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                    }
                 }
             }
 

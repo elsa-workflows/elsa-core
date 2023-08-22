@@ -36,7 +36,7 @@ namespace Elsa.Services.Workflows
                 return false;
             
             var evaluator = context.GetService<IExpressionEvaluator>();
-            return await evaluator.IsNonStorableExpression(Expression, Syntax, context, cancellationToken);
+            return await evaluator.IsNonStorableExpression(Expression, Syntax, cancellationToken);
         }
     }
 }
