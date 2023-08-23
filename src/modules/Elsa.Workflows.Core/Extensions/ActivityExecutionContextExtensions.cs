@@ -338,14 +338,35 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
         // If the activity is already completed, do nothing.
-        if(context.Status == ActivityStatus.Completed)
+        if (context.Status == ActivityStatus.Completed)
             return;
-        
+
         // Mark the activity as complete.
         context.Status = ActivityStatus.Completed;
-        
-        if(result != null)
-            context.JournalData["Result"] = result;
+
+        // Record the outcomes, if any.
+        if (result is Outcomes outcomes)
+            context.JournalData["Outcomes"] = outcomes.Names;
+
+        // Record the output, if any.
+        var activity = context.Activity;
+        var expressionExecutionContext = context.ExpressionExecutionContext;
+        var activityDescriptor = context.ActivityDescriptor;
+        var outputDescriptors = activityDescriptor.Outputs;
+        var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
+        var serializer = context.GetRequiredService<IActivityStateSerializer>();
+
+        foreach (var output in outputs)
+        {
+            var outputName = output.Key;
+            var outputValue = output.Value;
+
+            if (outputValue == null!) 
+                continue;
+            
+            var serializedOutputValue = await serializer.SerializeAsync(outputValue, context.CancellationToken);
+            context.JournalData[outputName] = serializedOutputValue;
+        }
 
         // Add an execution log entry.
         context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
