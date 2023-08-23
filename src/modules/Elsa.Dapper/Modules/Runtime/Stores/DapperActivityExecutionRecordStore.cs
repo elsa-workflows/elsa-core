@@ -21,14 +21,16 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     private const string TableName = "WorkflowExecutionLogRecords";
     private const string PrimaryKeyName = "Id";
     private readonly IPayloadSerializer _payloadSerializer;
+    private readonly IActivityStateSerializer _activityStateSerializer;
     private readonly Store<ActivityExecutionRecordRecord> _store;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DapperActivityExecutionRecordStore"/> class.
     /// </summary>
-    public DapperActivityExecutionRecordStore(IPayloadSerializer payloadSerializer, Store<ActivityExecutionRecordRecord> store)
+    public DapperActivityExecutionRecordStore(IPayloadSerializer payloadSerializer, IActivityStateSerializer activityStateSerializer, Store<ActivityExecutionRecordRecord> store)
     {
         _payloadSerializer = payloadSerializer;
+        _activityStateSerializer = activityStateSerializer;
         _store = store;
     }
 
@@ -102,7 +104,9 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             HasBookmarks = source.HasBookmarks,
             Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            SerializedActivityState = source.ActivityState != null ? _payloadSerializer.Serialize(source.ActivityState) : default,
+            SerializedActivityState = source.ActivityState != null ? _activityStateSerializer.Serialize(source.ActivityState) : default,
+            SerializedPayload = source.Payload != null ? _activityStateSerializer.Serialize(source.Payload) : default,
+            SerializedOutputs = source.Outputs != null ? _activityStateSerializer.Serialize(source.Outputs) : default,
             SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : default
         };
     }
@@ -122,6 +126,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             Status = Enum.Parse<ActivityStatus>(source.Status),
             ActivityTypeVersion = source.ActivityTypeVersion,
             ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
+            Payload = source.SerializedPayload != null ? _activityStateSerializer.Deserialize<IDictionary<string, object>>(source.SerializedPayload) : default,
+            Outputs = source.SerializedOutputs != null ? _activityStateSerializer.Deserialize<IDictionary<string, object>>(source.SerializedOutputs) : default,
             Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default
         };
     }

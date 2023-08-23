@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
@@ -21,5 +19,5 @@ public interface ISerializationProvider
     /// <summary>
     /// Serializes the specified value.
     /// </summary>
-    ValueTask<JsonElement> SerializeAsync(object? value, CancellationToken cancellationToken = default);
+    string Serialize(object? value);
 }

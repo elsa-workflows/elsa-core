@@ -364,7 +364,7 @@ public static class ActivityExecutionContextExtensions
             if (outputValue == null!) 
                 continue;
             
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue, context.CancellationToken);
+            var serializedOutputValue = serializer.Serialize(outputValue);
             context.JournalData[outputName] = serializedOutputValue;
         }
 

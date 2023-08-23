@@ -38,7 +38,7 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         var entries = activityExecutionContexts.Select(activityExecutionContext =>
         {
             // Get any outcomes that were added to the activity execution context.
-            var outcomes = activityExecutionContext.JournalData.TryGetValue("Result", out var resultValue) ? resultValue as Outcomes : default;
+            var outcomes = activityExecutionContext.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
             var payload = new Dictionary<string, object>();
             
             if(outcomes != null)

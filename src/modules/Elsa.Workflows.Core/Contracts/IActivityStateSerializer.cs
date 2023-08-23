@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
@@ -11,5 +9,10 @@ public interface IActivityStateSerializer
     /// <summary>
     /// Serializes the specified state.
     /// </summary>
-    Task<JsonElement> SerializeAsync(object? value, CancellationToken cancellationToken = default);
+    string Serialize(object? value);
+
+    /// <summary>
+    /// Deserializes the specified state.
+    /// </summary>
+    T Deserialize<T>(string json);
 }
