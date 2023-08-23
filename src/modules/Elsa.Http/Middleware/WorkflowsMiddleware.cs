@@ -27,6 +27,8 @@ public class WorkflowsMiddleware
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IRouteMatcher _routeMatcher;
     private readonly IRouteTable _routeTable;
+    private readonly IEnumerable<IHttpCorrelationIdSelector> _correlationIdSelectors;
+    private readonly IEnumerable<IHttpWorkflowInstanceIdSelector> _workflowInstanceIdSelectors;
     private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private readonly IHttpEndpointWorkflowFaultHandler _httpEndpointWorkflowFaultHandler;
     private readonly IHttpEndpointAuthorizationHandler _httpEndpointAuthorizationHandler;
@@ -52,7 +54,9 @@ public class WorkflowsMiddleware
         IBookmarkHasher hasher,
         IBookmarkPayloadSerializer serializer,
         IRouteMatcher routeMatcher,
-        IRouteTable routeTable)
+        IRouteTable routeTable,
+        IEnumerable<IHttpCorrelationIdSelector> correlationIdSelectors,
+        IEnumerable<IHttpWorkflowInstanceIdSelector> workflowInstanceIdSelectors)
     {
         _next = next;
         _workflowRuntime = workflowRuntime;
@@ -66,6 +70,8 @@ public class WorkflowsMiddleware
         _serializer = serializer;
         _routeMatcher = routeMatcher;
         _routeTable = routeTable;
+        _correlationIdSelectors = correlationIdSelectors;
+        _workflowInstanceIdSelectors = workflowInstanceIdSelectors;
     }
 
     /// <summary>
@@ -97,14 +103,13 @@ public class WorkflowsMiddleware
             [HttpEndpoint.RequestPathInputKey] = path
         };
 
-        // TODO: Get correlation ID from query string or header.
-        var correlationId = default(string);
-
-        var request = httpContext.Request;
-        var method = request.Method!.ToLowerInvariant();
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
-        var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, default, default, input);
         var cancellationToken = httpContext.RequestAborted;
+        var request = httpContext.Request;
+        var method = request.Method.ToLowerInvariant();
+        var correlationId = await GetCorrelationIdAsync(httpContext, httpContext.RequestAborted);
+        var workflowInstanceId = await GetWorkflowInstanceIdAsync(httpContext, httpContext.RequestAborted);
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
+        var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, default, input);
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
         var workflowMatches = (await _workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
 
@@ -144,6 +149,36 @@ public class WorkflowsMiddleware
         var routeTemplate = matchingRoute?.route ?? path;
 
         return routeTemplate;
+    }
+
+    private async Task<string?> GetCorrelationIdAsync(HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var correlationId = default(string);
+
+        foreach (var selector in _correlationIdSelectors.OrderByDescending(x => x.Priority))
+        {
+            correlationId = await selector.GetCorrelationIdAsync(httpContext, cancellationToken);
+
+            if (correlationId != null)
+                break;
+        }
+
+        return correlationId;
+    }
+
+    private async Task<string?> GetWorkflowInstanceIdAsync(HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var workflowInstanceId = default(string);
+
+        foreach (var selector in _workflowInstanceIdSelectors.OrderByDescending(x => x.Priority))
+        {
+            workflowInstanceId = await selector.GetWorkflowInstanceIdAsync(httpContext, cancellationToken);
+
+            if (workflowInstanceId != null)
+                break;
+        }
+
+        return workflowInstanceId;
     }
 
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)

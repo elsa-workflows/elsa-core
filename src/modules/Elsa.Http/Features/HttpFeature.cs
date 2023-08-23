@@ -12,6 +12,7 @@ using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Providers;
+using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
 using Elsa.Liquid.Features;
@@ -62,6 +63,24 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public Action<IHttpClientBuilder> HttpClientBuilder { get; set; } = _ => { };
 
+    /// <summary>
+    /// A list of <see cref="IHttpCorrelationIdSelector"/> types to register with the service collection.
+    /// </summary>
+    public ICollection<Type> HttpCorrelationIdSelectorTypes { get; } = new List<Type>
+    {
+        typeof(HeaderHttpCorrelationIdSelector), 
+        typeof(QueryStringHttpCorrelationIdSelector)
+    };
+
+    /// <summary>
+    /// A list of <see cref="IHttpWorkflowInstanceIdSelector"/> types to register with the service collection.
+    /// </summary>
+    public ICollection<Type> HttpWorkflowInstanceIdSelectorTypes { get; } = new List<Type>
+    {
+        typeof(HeaderHttpWorkflowInstanceIdSelector), 
+        typeof(QueryStringHttpWorkflowInstanceIdSelector)
+    };
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -78,7 +97,7 @@ public class HttpFeature : FeatureBase
 
             management.AddActivitiesFrom<HttpFeature>();
         });
-        
+
         Services.AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>();
     }
 
@@ -141,5 +160,12 @@ public class HttpFeature : FeatureBase
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
             .AddAuthorization();
+        
+        // Add selectors.
+        foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes) 
+            Services.AddSingleton(typeof(IHttpCorrelationIdSelector), httpCorrelationIdSelectorType);
+        
+        foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
+            Services.AddSingleton(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
     }
 }

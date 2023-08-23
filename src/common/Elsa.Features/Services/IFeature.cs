@@ -1,8 +1,11 @@
+using JetBrains.Annotations;
+
 namespace Elsa.Features.Services;
 
 /// <summary>
 /// Represents a feature.
 /// </summary>
+[UsedImplicitly(ImplicitUseTargetFlags.WithInheritors | ImplicitUseTargetFlags.Members)]
 public interface IFeature
 {
     /// <summary>
