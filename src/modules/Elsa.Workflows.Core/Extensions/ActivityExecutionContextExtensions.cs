@@ -343,6 +343,9 @@ public static class ActivityExecutionContextExtensions
         
         // Mark the activity as complete.
         context.Status = ActivityStatus.Completed;
+        
+        if(result != null)
+            context.JournalData["Result"] = result;
 
         // Add an execution log entry.
         context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
