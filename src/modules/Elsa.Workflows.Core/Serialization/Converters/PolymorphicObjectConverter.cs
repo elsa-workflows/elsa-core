@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 
@@ -42,7 +43,16 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var isEnumerable = typeof(IEnumerable).IsAssignableFrom(targetType);
 
         if (!isEnumerable)
-            return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+        {
+            try
+            {
+                return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
+            }
+            catch (NotSupportedException e)
+            {
+                return default!;
+            }
+        }
 
         // If the target type is a Newtonsoft.JObject, parse the JSON island.
         var isNewtonsoftObject = targetType == typeof(JObject);

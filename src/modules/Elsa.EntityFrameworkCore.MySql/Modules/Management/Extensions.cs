@@ -23,7 +23,7 @@ public static partial class Extensions
         return feature;
     }
 
-    public static EFCoreWorkflowManagementPersistenceFeature UseMySql(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static WorkflowManagementPersistenceFeature UseMySql(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(connectionString, options);
         return feature;

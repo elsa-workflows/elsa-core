@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 
@@ -25,8 +27,13 @@ public class BasicSerializationProvider : ISerializationProvider
         if (CanSerialize(value, out var jsonElement))
             return new(jsonElement);
 
-        var type = JsonSerializer.SerializeToElement(value!.GetType().Name);
-        return new(type);
+        var unserializableTypeHolder = new JsonObject()
+        {
+            ["UnserializableType"] = value!.GetType().GetSimpleAssemblyQualifiedName()
+        };
+        
+        var serializedTypeHolder = JsonSerializer.SerializeToElement(unserializableTypeHolder);
+        return new(serializedTypeHolder);
     }
 
     private static bool CanSerialize(object? obj, out JsonElement jsonElement)
@@ -44,19 +51,21 @@ public class BasicSerializationProvider : ISerializationProvider
             jsonElement = JsonSerializer.SerializeToElement(obj, options);
             return true;
         }
-        catch (JsonException)
+        catch (Exception)
         {
             jsonElement = default;
             return false;
         }
     }
-    
+
     private static JsonSerializerOptions CreateOptions() => new()
     {
+        ReferenceHandler = ReferenceHandler.Preserve,
         Converters =
         {
             new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
-            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault())
+            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()),
+            new SafeDictionaryConverterFactory()
         }
     };
 }

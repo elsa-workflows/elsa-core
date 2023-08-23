@@ -21,7 +21,7 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreWorkflowManagementPersistenceFeature UseSqlite(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static WorkflowManagementPersistenceFeature UseSqlite(this WorkflowManagementPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(connectionString, options);
         return feature;
