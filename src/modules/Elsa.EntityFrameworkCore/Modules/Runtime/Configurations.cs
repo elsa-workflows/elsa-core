@@ -82,8 +82,12 @@ public class Configurations :
     {
         builder.Ignore(x => x.ActivityState);
         builder.Ignore(x => x.Exception);
+        builder.Ignore(x => x.Payload);
+        builder.Ignore(x => x.Outputs);
         builder.Property<string>("SerializedActivityState");
         builder.Property<string>("SerializedException");
+        builder.Property<string>("SerializedPayload");
+        builder.Property<string>("SerializedOutputs");
         
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");

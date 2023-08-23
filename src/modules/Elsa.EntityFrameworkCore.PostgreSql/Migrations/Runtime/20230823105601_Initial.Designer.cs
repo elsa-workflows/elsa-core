@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230821204529_Initial")]
+    [Migration("20230823105601_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -126,6 +126,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedOutputs")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("StartedAt")

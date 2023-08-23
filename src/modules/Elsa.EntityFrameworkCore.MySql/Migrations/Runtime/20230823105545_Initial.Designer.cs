@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230821204450_Initial")]
+    [Migration("20230823105545_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -123,6 +123,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedOutputs")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("StartedAt")

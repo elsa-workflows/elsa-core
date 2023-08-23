@@ -30,7 +30,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     Status = table.Column<int>(type: "int", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     SerializedActivityState = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SerializedException = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    SerializedException = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SerializedOutputs = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SerializedPayload = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

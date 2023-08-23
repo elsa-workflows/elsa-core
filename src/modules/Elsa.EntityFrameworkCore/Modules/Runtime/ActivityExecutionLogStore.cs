@@ -38,46 +38,57 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+        await _store.QueryAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
+        await _store.QueryAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
 
     /// <inheritdoc />
-    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.CountAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
+    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), cancellationToken);
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? (await _activityStateSerializer.SerializeAsync(entity.ActivityState, cancellationToken)).ToString() : default;
+        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.ActivityState != null ? (await _activityStateSerializer.SerializeAsync(entity.Outputs, cancellationToken)).ToString() : default;
         dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? _payloadSerializer.Serialize(entity.Exception) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _payloadSerializer.Serialize(entity.Payload) : default;
     }
 
-    private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
+    private ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return;
+            return ValueTask.CompletedTask;
 
-        entity.ActivityState = await LoadActivityState(dbContext, entity);
-        entity.Exception = await LoadException(dbContext, entity);
+        entity.ActivityState = DeserializeActivityState(dbContext, entity);
+        entity.Outputs = Deserialize<IDictionary<string, object>>(dbContext, entity, "SerializedOutputs");
+        entity.Exception = DeserializePayload<ExceptionState>(dbContext, entity, "SerializedException");
+        entity.Payload = DeserializePayload<IDictionary<string, object>>(dbContext, entity, "SerializedPayload");
+        return ValueTask.CompletedTask;
     }
 
-    private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)
+    private IDictionary<string, object>? DeserializeActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)
     {
-        var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
-        var dictionary = !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) : default;
-        return ValueTask.FromResult<IDictionary<string, object>?>(dictionary?.ToDictionary(x => x.Key, x => (object)x.Value));
+        var dictionary = Deserialize<Dictionary<string, JsonElement>>(dbContext, entity, "SerializedActivityState");
+        return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);
     }
-
-    private ValueTask<ExceptionState?> LoadException(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)
+    
+    private T? Deserialize<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
     {
-        var json = dbContext.Entry(entity).Property<string>("SerializedException").CurrentValue;
-        var exceptionState = !string.IsNullOrEmpty(json) ? _payloadSerializer.Deserialize<ExceptionState>(json) : default;
-        return ValueTask.FromResult(exceptionState);
+        var json = dbContext.Entry(entity).Property<string>(propertyName).CurrentValue;
+        var value = !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<T>(json) : default;
+        return value;
     }
 
-    private IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
+    private T? DeserializePayload<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
+    {
+        var json = dbContext.Entry(entity).Property<string>(propertyName).CurrentValue;
+        var payload = !string.IsNullOrEmpty(json) ? _payloadSerializer.Deserialize<T>(json) : default;
+        return payload;
+    }
+
+    private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);
 }

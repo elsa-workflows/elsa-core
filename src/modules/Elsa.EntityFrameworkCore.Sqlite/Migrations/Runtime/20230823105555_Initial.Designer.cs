@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20230821204507_Initial")]
+    [Migration("20230823105555_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -121,6 +121,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedException")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedOutputs")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StartedAt")
