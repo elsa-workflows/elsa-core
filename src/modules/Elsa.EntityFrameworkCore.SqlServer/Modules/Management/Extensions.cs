@@ -20,7 +20,7 @@ public static partial class Extensions
         return feature;
     }
     
-    public static EFCoreWorkflowManagementPersistenceFeature UseSqlServer(this EFCoreWorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static WorkflowManagementPersistenceFeature UseSqlServer(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;

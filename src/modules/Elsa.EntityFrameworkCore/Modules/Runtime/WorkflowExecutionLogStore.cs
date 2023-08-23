@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -16,15 +17,17 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
-    private readonly IPayloadSerializer _serializer;
+    private readonly IPayloadSerializer _payloadSerializer;
+    private readonly IActivityStateSerializer _activityStateSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreWorkflowExecutionLogStore"/> class.
     /// </summary>
-    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer serializer)
+    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer payloadPayloadSerializer, IActivityStateSerializer activityStateSerializer)
     {
         _store = store;
-        _serializer = serializer;
+        _payloadSerializer = payloadPayloadSerializer;
+        _activityStateSerializer = activityStateSerializer;
     }
 
     /// <inheritdoc />
@@ -70,11 +73,10 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
         return await _store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
-    private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
+    private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _serializer.Serialize(entity.ActivityState) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
-        return default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? (await _activityStateSerializer.SerializeAsync(entity.ActivityState, cancellationToken)).ToString() : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? (await _activityStateSerializer.SerializeAsync(entity.Payload, cancellationToken)).ToString() : default;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)
@@ -89,13 +91,13 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     private ValueTask<object?> LoadPayload(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
         var json = dbContext.Entry(entity).Property<string>("SerializedPayload").CurrentValue;
-        return new(!string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null);
+        return new(!string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<object>(json) : null);
     }
 
     private ValueTask<IDictionary<string, object>?> LoadActivityState(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity)
     {
         var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
-        return new(!string.IsNullOrEmpty(json) ? _serializer.Deserialize<IDictionary<string, object>>(json) : null);
+        return new(!string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<IDictionary<string, object>>(json) : null);
     }
 
     private static IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);
