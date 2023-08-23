@@ -125,6 +125,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedException")
                         .HasColumnType("text");
 
+                    b.Property<string>("SerializedOutputs")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 

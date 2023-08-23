@@ -120,6 +120,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedException")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SerializedOutputs")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedPayload")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StartedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");

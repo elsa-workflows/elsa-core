@@ -19,7 +19,7 @@ ProjectSection(SolutionItems) = preProject
 	build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 	NuGet.Config = NuGet.Config
 	.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
-	update-migrations-runtime.sh = update-migrations-runtime.sh
+	update-migrations.sh = update-migrations.sh
 	.github\workflows\pr-body-generator.yml = .github\workflows\pr-body-generator.yml
 EndProjectSection
 EndProject
