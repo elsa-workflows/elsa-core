@@ -22,21 +22,31 @@ public class BasicSerializationProvider : ISerializationProvider
     public bool Supports(object? value) => true;
 
     /// <inheritdoc />
-    public ValueTask<JsonElement> SerializeAsync(object? value, CancellationToken cancellationToken = default)
+    public bool Supports(Type type) => true;
+
+    /// <inheritdoc />
+    public string Serialize(object? value)
     {
         if (CanSerialize(value, out var jsonElement))
-            return new(jsonElement);
+            return jsonElement ?? string.Empty;
 
-        var unserializableTypeHolder = new JsonObject()
+        var unserializableTypeHolder = new JsonObject
         {
             ["UnserializableType"] = value!.GetType().GetSimpleAssemblyQualifiedName()
         };
         
-        var serializedTypeHolder = JsonSerializer.SerializeToElement(unserializableTypeHolder);
-        return new(serializedTypeHolder);
+        var serializedTypeHolder = JsonSerializer.Serialize(unserializableTypeHolder);
+        return serializedTypeHolder;
     }
 
-    private static bool CanSerialize(object? obj, out JsonElement jsonElement)
+    /// <inheritdoc />
+    public T Deserialize<T>(string json)
+    {
+        var options = CreateOptions();
+        return JsonSerializer.Deserialize<T>(json, options)!;
+    }
+
+    private static bool CanSerialize(object? obj, out string? jsonElement)
     {
         if (obj == null)
         {
@@ -48,7 +58,7 @@ public class BasicSerializationProvider : ISerializationProvider
 
         try
         {
-            jsonElement = JsonSerializer.SerializeToElement(obj, options);
+            jsonElement = JsonSerializer.Serialize(obj, options);
             return true;
         }
         catch (Exception)

@@ -39,6 +39,16 @@ public class ActivityExecutionRecordRecord
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
     public string? SerializedActivityState { get; set; }
+    
+    /// <summary>
+    /// Any additional payload associated with the log record.
+    /// </summary>
+    public string? SerializedPayload { get; set; }
+    
+    /// <summary>
+    /// Any outputs provided by the activity.
+    /// </summary>
+    public string? SerializedOutputs { get; set; }
 
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.

@@ -17,9 +17,15 @@ public class ActivityStateSerializer : IActivityStateSerializer
     }
 
     /// <inheritdoc />
-    public async Task<JsonElement> SerializeAsync(object? value, CancellationToken cancellationToken = default)
+    public string Serialize(object? value)
     {
         var serializer = _providers.Where(x => x.Supports(value)).OrderByDescending(x => x.Priority).First();
-        return await serializer.SerializeAsync(value, cancellationToken);
+        return serializer.Serialize(value);
+    }
+
+    /// <inheritdoc />
+    public T Deserialize<T>(string json)
+    {
+        return JsonSerializer.Deserialize<T>(json)!;
     }
 }

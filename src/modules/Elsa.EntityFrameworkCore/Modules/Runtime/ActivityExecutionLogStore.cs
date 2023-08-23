@@ -52,8 +52,8 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? (await _activityStateSerializer.SerializeAsync(entity.ActivityState, cancellationToken)).ToString() : default;
-        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? (await _activityStateSerializer.SerializeAsync(entity.Outputs, cancellationToken)).ToString() : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _activityStateSerializer.Serialize(entity.ActivityState) : default;
+        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? _activityStateSerializer.Serialize(entity.Outputs) : default;
         dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? _payloadSerializer.Serialize(entity.Exception) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _payloadSerializer.Serialize(entity.Payload) : default;
     }
