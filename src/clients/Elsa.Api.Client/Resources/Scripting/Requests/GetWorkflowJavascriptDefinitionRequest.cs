@@ -3,7 +3,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 /// <summary>
 /// A request to retrieve the type definitions
 /// </summary>
-public class GetTypeDefinitionsRequest
+public class GetWorkflowJavascriptDefinitionRequest
 {
     /// <summary>
     /// Initialize new type definition request.
@@ -11,7 +11,7 @@ public class GetTypeDefinitionsRequest
     /// <param name="workflowDefinitionId">Id of workflow definition to retrieve type definitions for.</param>
     /// <param name="activityTypeName">Type name of the activity to retrieve type definitions for.</param>
     /// <param name="propertyName">Name of the property to retrieve type definitions for.</param>
-    public GetTypeDefinitionsRequest(string workflowDefinitionId, string activityTypeName, string propertyName)
+    public GetWorkflowJavascriptDefinitionRequest(string workflowDefinitionId, string activityTypeName, string propertyName)
     {
         WorkflowDefinitionId = workflowDefinitionId;
         ActivityTypeName = activityTypeName;
