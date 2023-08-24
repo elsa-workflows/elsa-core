@@ -144,7 +144,14 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns the first parent context that contains a variable container.
     /// </summary>
-    public static ExpressionExecutionContext GetVariableContainerContext(this ExpressionExecutionContext context) => context.FindParent(x => x.GetActivityExecutionContext().Activity is IVariableContainer) ?? context;
+    public static ExpressionExecutionContext GetVariableContainerContext(this ExpressionExecutionContext context)
+    {
+        return context.FindParent(x =>
+        {
+            var activityExecutionContext = x.TryGetActivityExecutionContext(out var activityExecutionContextResult) ? activityExecutionContextResult : null;
+            return activityExecutionContext?.Activity is IVariableContainer;
+        }) ?? context;
+    }
 
     /// <summary>
     /// Sets the value of a named variable in the context.

@@ -18,8 +18,9 @@ public abstract class Container : Activity, IVariableContainer
     /// <summary>
     /// The <see cref="IActivity"/>s to execute.
     /// </summary>
-    [Port] public ICollection<IActivity> Activities { get; set; } = new List<IActivity>();
-    
+    [Port]
+    public ICollection<IActivity> Activities { get; set; } = new List<IActivity>();
+
     /// <summary>
     /// The variables available to this scope.
     /// </summary>
@@ -28,11 +29,23 @@ public abstract class Container : Activity, IVariableContainer
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        // Ensure variables have names.
+        EnsureNames(Variables);
+
         // Register variables.
         context.ExpressionExecutionContext.Memory.Declare(Variables);
-        
+
         // Schedule children.
         await ScheduleChildrenAsync(context);
+    }
+
+    private void EnsureNames(IEnumerable<Variable> variables)
+    {
+        var count = 0;
+
+        foreach (var variable in variables)
+            if (string.IsNullOrWhiteSpace(variable.Name))
+                variable.Name = $"Variable{++count}";
     }
 
     /// <summary>
