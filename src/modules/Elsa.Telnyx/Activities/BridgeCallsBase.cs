@@ -29,19 +29,19 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
     /// The source call control ID of one of the call to bridge with. Leave empty to use the ambient inbound call control Id, if there is one.
     /// </summary>
     [Input(DisplayName = "Call Control ID A", Description = "The source call control ID of one of the call to bridge with. Leave empty to use the ambient inbound call control Id, if there is one.")]
-    public Input<string?>? CallControlIdA { get; set; }
+    public Input<string> CallControlIdA { get; set; } = default!;
 
     /// <summary>
     /// The destination call control ID of the call you want to bridge with.
     /// </summary>
     [Input(DisplayName = "Call Control ID B", Description = "The destination call control ID of the call you want to bridge with.")]
-    public Input<string?>? CallControlIdB { get; set; }
+    public Input<string> CallControlIdB { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA) ?? throw new Exception("CallControlA is required");
-        var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB) ?? throw new Exception("CallControlB is required");
+        var callControlIdA = CallControlIdA.Get(context);
+        var callControlIdB = CallControlIdB.Get(context);
         var request = new BridgeCallsRequest(callControlIdB, ClientState: context.CreateCorrelatingClientState(context.Id));
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
@@ -80,8 +80,8 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
         var payload = context.GetInput<CallBridgedPayload>()!;
-        var callControlIdA = context.GetPrimaryCallControlId(CallControlIdA);
-        var callControlIdB = context.GetSecondaryCallControlId(CallControlIdB);
+        var callControlIdA = CallControlIdA.Get(context);
+        var callControlIdB = CallControlIdB.Get(context);;
 
         if (payload.CallControlId == callControlIdA) context.SetProperty("CallBridgedPayloadA", payload);
         if (payload.CallControlId == callControlIdB) context.SetProperty("CallBridgedPayloadB", payload);

@@ -35,7 +35,7 @@ public class TransferCall : Activity<CallPayload>
         Description = "Unique identifier and token for controlling the call.",
         Category = "Advanced"
     )]
-    public Input<string?> CallControlId { get; set; } = default!;
+    public Input<string> CallControlId { get; set; } = default!;
 
     /// <summary>
     /// The DID or SIP URI to dial out and bridge to the given call.
@@ -129,7 +129,7 @@ public class TransferCall : Activity<CallPayload>
 
     private async ValueTask TransferCallAsync(ActivityExecutionContext context)
     {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = CallControlId.Get(context);
         
         var request = new TransferCallRequest(
             To.Get(context) ?? throw new Exception("To is required."),

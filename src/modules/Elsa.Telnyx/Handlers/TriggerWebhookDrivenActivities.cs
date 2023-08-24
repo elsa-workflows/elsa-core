@@ -39,9 +39,8 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var input = new Dictionary<string, object>().AddInput(eventPayload.GetType().Name, eventPayload);
         var activityDescriptors = FindActivityDescriptors(eventType).ToList();
         var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
-        var activityInstanceId = clientStatePayload.ActivityInstanceId; 
-        var correlationId = clientStatePayload.CorrelationId;
-        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
+        var activityInstanceId = clientStatePayload?.ActivityInstanceId;
+        var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
         var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
 
         foreach (var activityDescriptor in activityDescriptors)
@@ -50,7 +49,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
             {
                 ActivityTypeName = activityDescriptor.TypeName,
                 BookmarkPayload = bookmarkPayloadWithCallControl,
-                CorrelationId = correlationId,
+                WorkflowInstanceId = workflowInstanceId,
                 ActivityInstanceId = activityInstanceId,
                 Input = input
             }, cancellationToken);

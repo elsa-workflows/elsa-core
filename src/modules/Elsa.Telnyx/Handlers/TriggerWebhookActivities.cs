@@ -40,25 +40,16 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
         if (activityType == null)
             return;
 
-        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
+        var workflowInstanceId = ((Payload)webhook.Data.Payload).GetClientStatePayload()?.WorkflowInstanceId;
         var callControlId = (webhook.Data.Payload as CallPayload)?.CallControlId;
         var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
-        var bookmarkPayload = new WebhookEventBookmarkPayload(eventType);
         var input = new Dictionary<string, object>().AddInput(webhook);
-
-        // await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
-        // {
-        //     ActivityTypeName = activityType,
-        //     BookmarkPayload = bookmarkPayload,
-        //     CorrelationId = correlationId,
-        //     Input = input
-        // }, cancellationToken);
         
         await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityType,
             BookmarkPayload = bookmarkPayloadWithCallControl,
-            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
             Input = input
         }, cancellationToken);
     }

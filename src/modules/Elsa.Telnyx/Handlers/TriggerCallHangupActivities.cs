@@ -37,7 +37,7 @@ internal class TriggerCallHangupActivities : INotificationHandler<TelnyxWebhookR
             return;
 
         var clientStatePayload = callHangupPayload.GetClientStatePayload();
-        var correlationId = clientStatePayload.CorrelationId;
+        var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
         var input = new Dictionary<string, object>().AddInput(callHangupPayload);
         var callControlId = callHangupPayload.CallControlId;
         
@@ -45,7 +45,7 @@ internal class TriggerCallHangupActivities : INotificationHandler<TelnyxWebhookR
         {
             ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<CallHangup>(),
             BookmarkPayload = new CallHangupBookmarkPayload(callControlId),
-            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
             Input = input
         }, cancellationToken);
     }

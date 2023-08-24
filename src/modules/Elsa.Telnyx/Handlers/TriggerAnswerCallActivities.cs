@@ -37,8 +37,8 @@ internal class TriggerAnswerCallActivities : INotificationHandler<TelnyxWebhookR
             return;
 
         var clientStatePayload = callAnsweredPayload.GetClientStatePayload();
-        var correlationId = clientStatePayload.CorrelationId;
-        var activityInstanceId = clientStatePayload.ActivityInstanceId!;
+        var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
+        var activityInstanceId = clientStatePayload?.ActivityInstanceId!;
         var input = new Dictionary<string, object>().AddInput(callAnsweredPayload);
         var callControlId = callAnsweredPayload.CallControlId;
 
@@ -53,10 +53,10 @@ internal class TriggerAnswerCallActivities : INotificationHandler<TelnyxWebhookR
             // Trigger all workflows matching the activity type names and associated call control IDs.
             await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
             {
+                WorkflowInstanceId = workflowInstanceId,
                 ActivityTypeName = activityTypeName,
                 ActivityInstanceId = activityInstanceId,
                 BookmarkPayload = new AnswerCallBookmarkPayload(callControlId),
-                CorrelationId = correlationId,
                 Input = input
             }, cancellationToken);
         }
