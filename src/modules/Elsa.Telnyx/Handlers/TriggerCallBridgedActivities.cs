@@ -37,7 +37,7 @@ internal class TriggerCallBridgedActivities : INotificationHandler<TelnyxWebhook
             return;
 
         var clientStatePayload = callBridgedPayload.GetClientStatePayload();
-        var correlationId = clientStatePayload.CorrelationId;
+        var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
         var input = new Dictionary<string, object>().AddInput(callBridgedPayload);
         var callControlId = callBridgedPayload.CallControlId;
         var activityTypeNames = new[]
@@ -52,7 +52,7 @@ internal class TriggerCallBridgedActivities : INotificationHandler<TelnyxWebhook
             {
                 ActivityTypeName = activityTypeName,
                 BookmarkPayload = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlId),
-                CorrelationId = correlationId,
+                WorkflowInstanceId = workflowInstanceId,
                 Input = input
             }, cancellationToken);
         }

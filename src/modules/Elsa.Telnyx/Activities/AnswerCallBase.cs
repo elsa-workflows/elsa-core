@@ -26,12 +26,12 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>
     /// The call control ID to answer. Leave blank when the workflow is driven by an incoming call and you wish to pick up that one.
     /// </summary>
     [Input(DisplayName = "Call Control ID", Description = "The call control ID of the call to answer.", Category = "Advanced")]
-    public Input<string?>? CallControlId { get; set; }
+    public Input<string> CallControlId { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = CallControlId.Get(context);
 
         var request = new AnswerCallRequest
         {

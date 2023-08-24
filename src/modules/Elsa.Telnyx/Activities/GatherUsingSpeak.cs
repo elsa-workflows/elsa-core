@@ -31,7 +31,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.
     /// </summary>
     [Input(DisplayName = "Call Control ID", Description = "The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.", Category = "Advanced")]
-    public Input<string?> CallControlId { get; set; } = default!;
+    public Input<string> CallControlId { get; set; } = default!;
         
     /// <summary>
     /// The language you want spoken.
@@ -144,7 +144,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        var callControlId = CallControlId.Get(context);
         
         var request = new GatherUsingSpeakRequest(
             Language.Get(context) ?? throw new Exception("Language is required."),

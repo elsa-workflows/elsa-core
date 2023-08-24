@@ -101,6 +101,6 @@ public class SetVariable : CodeActivity
     protected override void Execute(ActivityExecutionContext context)
     {
         var value = context.Get(Value);
-        Variable.Set(context, value);
+        context.SetVariable(Variable.Name, value);
     }
 }

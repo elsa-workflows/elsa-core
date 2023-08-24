@@ -6,9 +6,9 @@ namespace Elsa.Telnyx.Models;
 /// <summary>
 /// Represents the client state payload to correlate commands and events.
 /// </summary>
-/// <param name="CorrelationId">The correlation ID.</param>
+/// <param name="WorkflowInstanceId">The correlation ID.</param>
 /// <param name="ActivityInstanceId">An optional activity instance ID.</param>
-public record ClientStatePayload(string CorrelationId, string? ActivityInstanceId = default)
+public record ClientStatePayload(string WorkflowInstanceId, string? ActivityInstanceId = default)
 {
     /// <summary>
     /// Deserializes a <see cref="ClientStatePayload"/> from the specified base64 string.

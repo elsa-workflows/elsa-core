@@ -31,7 +31,7 @@ public abstract class SpeakTextBase : Activity
         Description = "Unique identifier and token for controlling the call.",
         Category = "Advanced"
     )]
-    public Input<string?> CallControlId { get; set; } = default!;
+    public Input<string> CallControlId { get; set; } = default!;
 
     /// <summary>
     /// The language you want spoken.
@@ -97,7 +97,7 @@ public abstract class SpeakTextBase : Activity
             ClientState: context.CreateCorrelatingClientState(context.Id)
         );
 
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = CallControlId.Get(context);
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

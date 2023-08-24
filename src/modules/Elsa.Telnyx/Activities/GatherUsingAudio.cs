@@ -32,7 +32,7 @@ public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPers
     /// The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.
     /// </summary>
     [Input(DisplayName = "Call Control ID", Description = "The call control ID of the call from which to gather input. Leave empty to use the ambient call control ID, if there is any.", Category = "Advanced")]
-    public Input<string?> CallControlId { get; set; } = default!;
+    public Input<string> CallControlId { get; set; } = default!;
 
     /// <summary>
     /// The URL of a file to be played back at the beginning of each prompt. The URL can point to either a WAV or MP3 file.
@@ -127,7 +127,7 @@ public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPers
             ValidDigits.Get(context).EmptyToNull()
         );
 
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        var callControlId = CallControlId.Get(context);
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try
@@ -144,7 +144,7 @@ public class GatherUsingAudio : Activity<CallGatherEndedPayload>, IBookmarksPers
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required");
+        var callControlId = CallControlId.Get(context);
         context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync);
     }
 

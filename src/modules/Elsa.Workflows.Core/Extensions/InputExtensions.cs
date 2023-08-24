@@ -38,8 +38,11 @@ public static class InputExtensions
     /// <typeparam name="T">The type of the input.</typeparam>
     /// <returns>The value of the specified input.</returns>
     /// <exception cref="Exception">Throws an exception if the input is not found.</exception>
-    public static T Get<T>(this Input<T>? input, ActivityExecutionContext context, [CallerArgumentExpression("input")]string? inputName = default) => context.Get(input) ?? throw new Exception($"{inputName} is required.");
-    
+    public static T Get<T>(this Input<T>? input, ActivityExecutionContext context, [CallerArgumentExpression("input")] string? inputName = default)
+    {
+        return context.Get(input) ?? throw new Exception($"{inputName} is required.");
+    }
+
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
@@ -49,5 +52,8 @@ public static class InputExtensions
     /// <typeparam name="T">The type of the input.</typeparam>
     /// <returns>The value of the specified input.</returns>
     /// <exception cref="Exception">Throws an exception if the input is not found.</exception>
-    public static T Get<T>(this Input<T>? input, ExpressionExecutionContext context, [CallerArgumentExpression("input")]string? inputName = default) => context.Get(input) ?? throw new Exception($"{inputName} is required.");
+    public static T Get<T>(this Input<T>? input, ExpressionExecutionContext context, [CallerArgumentExpression("input")] string? inputName = default)
+    {
+        return context.Get(input) ?? throw new Exception($"{inputName} is required.");
+    }
 }

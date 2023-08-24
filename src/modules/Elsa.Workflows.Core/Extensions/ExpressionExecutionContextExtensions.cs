@@ -2,6 +2,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -132,8 +133,24 @@ public static class ExpressionExecutionContextExtensions
             StorageDriverType = storageDriverType ?? typeof(WorkflowStorageDriver)
         };
         
-        context.Set(variable, value, configure);
+        // Find the first parent context that has a variable container.
+        // If not found, use the current context.
+        var variableContainerContext = context.GetVariableContainerContext();
+        
+        variableContainerContext.Set(variable, value, configure);
         return variable;
+    }
+    
+    /// <summary>
+    /// Returns the first parent context that contains a variable container.
+    /// </summary>
+    public static ExpressionExecutionContext GetVariableContainerContext(this ExpressionExecutionContext context)
+    {
+        return context.FindParent(x =>
+        {
+            var activityExecutionContext = x.TryGetActivityExecutionContext(out var activityExecutionContextResult) ? activityExecutionContextResult : null;
+            return activityExecutionContext?.Activity is IVariableContainer;
+        }) ?? context;
     }
 
     /// <summary>
@@ -146,8 +163,14 @@ public static class ExpressionExecutionContextExtensions
         if(variable == null)
             return CreateVariable(context, name, value, configure: configure);
 
+        // Get the context where the variable is defined.
+        var contextWithVariable = context.FindContextContainingBlock(variable.Id) ?? context;
+        
+        // Set the value on the variable.
         variable.Value = value;
-        variable.Set(context, value, configure);
+        variable.Set(contextWithVariable, value, configure);
+        
+        // Return the variable.
         return variable;
     }
 

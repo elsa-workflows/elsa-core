@@ -32,7 +32,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
         Description = "Unique identifier and token for controlling the call.",
         Category = "Advanced"
     )]
-    public Input<string?> CallControlId { get; set; } = default!;
+    public Input<string> CallControlId { get; set; } = default!;
 
     /// <summary>
     /// When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.
@@ -72,7 +72,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
             ClientState: context.CreateCorrelatingClientState()
         );
 
-        var callControlId = context.GetPrimaryCallControlId(CallControlId) ?? throw new Exception("CallControlId is required.");
+        var callControlId = CallControlId.Get(context);
         var telnyxClient = context.GetRequiredService<ITelnyxClient>();
 
         try

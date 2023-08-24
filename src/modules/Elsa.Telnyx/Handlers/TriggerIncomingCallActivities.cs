@@ -3,7 +3,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
-using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
@@ -39,8 +38,7 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         // Only trigger workflows for incoming calls.
         if (callInitiatedPayload.Direction != "incoming" || callInitiatedPayload.ClientState != null)
             return;
-
-        var correlationId = callInitiatedPayload.GetCorrelationId();
+        
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<IncomingCall>();
         var input = new Dictionary<string, object>().AddInput(webhook);
 
@@ -52,7 +50,6 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = fromBookmarkPayload,
-            CorrelationId = correlationId,
             Input = input
         }, cancellationToken);
 
@@ -63,7 +60,6 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = toBookmarkPayload,
-            CorrelationId = correlationId,
             Input = input
         }, cancellationToken);
 
@@ -77,7 +73,6 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = catchallBookmarkPayload,
-            CorrelationId = correlationId,
             Input = input
         }, cancellationToken);
     }

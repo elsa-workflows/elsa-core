@@ -47,10 +47,10 @@ class SetGetVariablesWorkflow : WorkflowBase
                     Variable = variable1,
                     Value = new("The value of variable 1")
                 },
-                new SetVariable()
+                new SetVariable
                 {
                     Variable = variable2,
-                    Value = new Input<object?>(variable1)
+                    Value = new(variable1)
                 },
                 new WriteLine(context => $"Variable 2: {variable2.Get(context)}")
             }

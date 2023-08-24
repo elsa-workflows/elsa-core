@@ -35,9 +35,7 @@ internal class WebhookHandler : IWebhookHandler
         var cancellationToken = httpContext.RequestAborted;
         var json = await ReadRequestBodyAsync(httpContext);
         var webhook = JsonSerializer.Deserialize<TelnyxWebhook>(json, SerializerSettings)!;
-        var correlationId = ((Payload)webhook.Data.Payload).GetCorrelationId();
-
-        using var loggingScope = _logger.BeginScope(new Dictionary<string, object> { ["CorrelationId"] = correlationId });
+        
         _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
         await _notificationSender.SendAsync(new TelnyxWebhookReceived(webhook), NotificationStrategy.Background, cancellationToken);
     }
