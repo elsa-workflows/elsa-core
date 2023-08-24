@@ -2,9 +2,9 @@ namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
 /// Serializes and deserializes activity state. Only primitive and serializable values are supported.
-/// To provide custom serialization, implement <see cref="ISerializationProvider"/> and register it with the service container.
+/// To provide custom serialization, implement <see cref="ISafeSerializerConfigurator"/> and register it with the service container.
 /// </summary>
-public interface IActivityStateSerializer
+public interface ISafeSerializer
 { 
     /// <summary>
     /// Serializes the specified state.

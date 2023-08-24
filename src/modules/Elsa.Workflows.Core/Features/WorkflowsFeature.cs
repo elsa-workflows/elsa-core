@@ -15,7 +15,6 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.PortResolvers;
 using Elsa.Workflows.Core.Serialization;
-using Elsa.Workflows.Core.Serialization.Providers;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -149,8 +148,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
             .AddSingleton<IActivitySerializer, JsonActivitySerializer>()
             .AddSingleton<IApiSerializer, ApiSerializer>()
-            .AddSingleton<IActivityStateSerializer, ActivityStateSerializer>()
-            .AddSingleton<ISerializationProvider, BasicSerializationProvider>()
+            .AddSingleton<ISafeSerializer, SafeSerializer>()
             
             // Instantiation strategies.
             .AddSingleton<IWorkflowActivationStrategy, AllowAlwaysStrategy>()

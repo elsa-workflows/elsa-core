@@ -18,11 +18,19 @@ public static class ActivityDescriptorExtensions
     }
 
     /// <summary>
-    /// Returns each input from the specified activity.
+    /// Returns each wrapped input from the specified activity.
     /// </summary>
     public static IEnumerable<InputDescriptor> GetWrappedInputPropertyDescriptors(this ActivityDescriptor activityDescriptor, IActivity activity)
     {
         return activityDescriptor.Inputs.Where(x => x.IsWrapped);
+    }
+    
+    /// <summary>
+    /// Returns each naked input from the specified activity.
+    /// </summary>
+    public static IEnumerable<InputDescriptor> GetNakedInputPropertyDescriptors(this ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        return activityDescriptor.Inputs.Where(x => !x.IsWrapped);
     }
     
     /// <summary>

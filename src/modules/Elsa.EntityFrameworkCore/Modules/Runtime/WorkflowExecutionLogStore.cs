@@ -18,16 +18,16 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
     private readonly IPayloadSerializer _payloadSerializer;
-    private readonly IActivityStateSerializer _activityStateSerializer;
+    private readonly ISafeSerializer _safeSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreWorkflowExecutionLogStore"/> class.
     /// </summary>
-    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer payloadPayloadSerializer, IActivityStateSerializer activityStateSerializer)
+    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer payloadPayloadSerializer, ISafeSerializer safeSerializer)
     {
         _store = store;
         _payloadSerializer = payloadPayloadSerializer;
-        _activityStateSerializer = activityStateSerializer;
+        _safeSerializer = safeSerializer;
     }
 
     /// <inheritdoc />
@@ -75,8 +75,8 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _activityStateSerializer.Serialize(entity.ActivityState) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _activityStateSerializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _safeSerializer.Serialize(entity.ActivityState) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _safeSerializer.Serialize(entity.Payload) : default;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)
