@@ -1,4 +1,5 @@
 ﻿using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
+using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 
@@ -23,4 +24,9 @@ public interface IElsaClient
     /// Gets the workflow instances API.
     /// </summary>
     IWorkflowInstancesApi WorkflowInstances { get; }
+
+    /// <summary>
+    /// Gets the javascript API.
+    /// </summary>
+    IJavaScriptApi JavaScript { get; }
 }
