@@ -17,7 +17,7 @@ public static class ExecutionLogMiddlewareExtensions
 }
 
 /// <summary>
-/// An activity execution middleware component that extracts execution details as <see cref="WorkflowExecutionLogEntry"/>.
+/// An activity execution middleware component that extracts execution details as <see cref="WorkflowExecutionLogEntry"/> objects.
 /// </summary>
 public class ExecutionLogMiddleware : IActivityExecutionMiddleware
 {

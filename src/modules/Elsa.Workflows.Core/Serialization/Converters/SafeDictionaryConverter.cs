@@ -12,8 +12,6 @@ public class SafeDictionaryConverter : JsonConverter<IDictionary<string, object>
     /// <inheritdoc />
     public override IDictionary<string, object> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        // For simplicity, I'm assuming you're using the default deserialization for dictionaries.
-        // If you need custom deserialization logic, you can implement it here.
         return JsonSerializer.Deserialize<IDictionary<string, object>>(ref reader, options)!;
     }
 

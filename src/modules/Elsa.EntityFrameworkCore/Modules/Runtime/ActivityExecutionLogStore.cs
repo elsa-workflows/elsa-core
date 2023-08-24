@@ -17,16 +17,16 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreActivityExecutionStore : IActivityExecutionStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> _store;
-    private readonly IActivityStateSerializer _activityStateSerializer;
+    private readonly ISafeSerializer _safeSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreActivityExecutionStore"/> class.
     /// </summary>
-    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, IActivityStateSerializer activityStateSerializer, IPayloadSerializer payloadSerializer)
+    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, ISafeSerializer safeSerializer, IPayloadSerializer payloadSerializer)
     {
         _store = store;
-        _activityStateSerializer = activityStateSerializer;
+        _safeSerializer = safeSerializer;
         _payloadSerializer = payloadSerializer;
     }
 
@@ -52,8 +52,8 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _activityStateSerializer.Serialize(entity.ActivityState) : default;
-        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? _activityStateSerializer.Serialize(entity.Outputs) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? _safeSerializer.Serialize(entity.ActivityState) : default;
+        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? _safeSerializer.Serialize(entity.Outputs) : default;
         dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? _payloadSerializer.Serialize(entity.Exception) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _payloadSerializer.Serialize(entity.Payload) : default;
     }
