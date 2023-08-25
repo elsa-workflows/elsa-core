@@ -360,6 +360,14 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
+    public static async ValueTask CompleteActivityAsync(this ActivityCompletedContext context, object? result = default)
+    {
+        await context.TargetContext.CompleteActivityAsync(result);
+    }
+    
+    /// <summary>
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
         // If the activity is not running, do nothing.
@@ -419,6 +427,11 @@ public static class ActivityExecutionContextExtensions
         context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
     }
 
+    /// <summary>
+    /// Complete the current activity with the specified outcome.
+    /// </summary>
+    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityCompletedContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
+    
     /// <summary>
     /// Complete the current activity with the specified outcome.
     /// </summary>
