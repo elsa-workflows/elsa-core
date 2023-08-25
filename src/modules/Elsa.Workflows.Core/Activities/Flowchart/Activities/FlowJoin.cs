@@ -64,7 +64,7 @@ public class FlowJoin : Activity, IJoinNode
 
     private async Task ClearBookmarksAsync(Flowchart flowchart, ActivityExecutionContext context)
     {
-        // Clear any bookmarks created between this join and its most recent fork.
+        // Cancel all activities between this join activity and its most recent fork.
         var connections = flowchart.Connections;
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.Activity).ToList();

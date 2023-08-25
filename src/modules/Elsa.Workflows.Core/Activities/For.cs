@@ -41,7 +41,7 @@ public class For : Activity
     /// </summary>
     [Input(Description = "The end step.")]
     public Input<int> End { get; set; } = new(0);
-    
+
     /// <summary>
     /// The step size.
     /// </summary>
@@ -89,11 +89,13 @@ public class For : Activity
 
         currentValue = currentValue == null ? start : increment ? currentValue + step : currentValue - step;
 
+        var isBreaking = context.GetIsBreaking();
+
         var loop =
-            increment && inclusive ? currentValue <= end
-            : increment && !inclusive ? currentValue < end
-            : !increment && inclusive ? currentValue >= end
-            : !increment && !inclusive && currentValue > end;
+            !isBreaking && (increment && inclusive ? currentValue <= end
+                : increment && !inclusive ? currentValue < end
+                : !increment && inclusive ? currentValue >= end
+                : !increment && !inclusive && currentValue > end);
 
         if (loop)
         {
@@ -112,5 +114,5 @@ public class For : Activity
         }
     }
 
-    private async ValueTask OnChildComplete(ActivityExecutionContext context, ActivityExecutionContext childContext) => await HandleIteration(context);
+    private async ValueTask OnChildComplete(ActivityCompletedContext context) => await HandleIteration(context.TargetContext);
 }

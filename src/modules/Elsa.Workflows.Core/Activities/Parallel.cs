@@ -35,11 +35,11 @@ public class Parallel : Container
             await context.ScheduleActivityAsync(activity, OnChildCompleted);
     }
     
-    private static async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private static async ValueTask OnChildCompleted(ActivityCompletedContext context)
     {
-        var remainingChildren = context.UpdateProperty<int>(ScheduledChildrenProperty, scheduledChildren => scheduledChildren - 1);
+        var remainingChildren = context.TargetContext.UpdateProperty<int>(ScheduledChildrenProperty, scheduledChildren => scheduledChildren - 1);
         
         if (remainingChildren == 0)
-            await context.CompleteActivityAsync();
+            await context.TargetContext.CompleteActivityAsync();
     }
 }

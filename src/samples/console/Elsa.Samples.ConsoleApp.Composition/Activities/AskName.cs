@@ -24,9 +24,9 @@ public class AskName : Composite<string>
         };
     }
 
-    protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected override void OnCompleted(ActivityCompletedContext context)
     {
-        var name = _name.Get<string>(context);
-        context.Set(Result, name);
+        var name = _name.Get<string>(context.TargetContext);
+        context.TargetContext.Set(Result, name);
     }
 }

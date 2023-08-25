@@ -11,18 +11,18 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class WorkflowExecutionContextExtensions
 {
-    /// <summary>
-    /// Remove the specified set of <see cref="ActivityExecutionContext"/> from the workflow execution context.
-    /// </summary>
-    public static async Task RemoveActivityExecutionContextsAsync(this WorkflowExecutionContext workflowExecutionContext, IEnumerable<ActivityExecutionContext> contexts)
-    {
-        // Copy each item into a new list to avoid changing the source enumerable while removing elements from it.
-        var list = contexts.ToList();
-
-        // Remove each context.
-        foreach (var context in list) 
-            await workflowExecutionContext.CompleteActivityExecutionContextAsync(context);
-    }
+    // /// <summary>
+    // /// Remove the specified set of <see cref="ActivityExecutionContext"/> from the workflow execution context.
+    // /// </summary>
+    // public static async Task RemoveActivityExecutionContextsAsync(this WorkflowExecutionContext workflowExecutionContext, IEnumerable<ActivityExecutionContext> contexts)
+    // {
+    //     // Copy each item into a new list to avoid changing the source enumerable while removing elements from it.
+    //     var list = contexts.ToList();
+    //
+    //     // Remove each context.
+    //     foreach (var context in list) 
+    //         await context.CompleteActivityExecutionContextAsync(context);
+    // }
 
     /// <summary>
     /// Schedules the workflow for execution.

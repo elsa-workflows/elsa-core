@@ -70,7 +70,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Returns true if the activity execution context has completed.
     /// </summary>
-    public bool IsCompleted => CompletedAt != null;
+    public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Faulted or ActivityStatus.Canceled;
 
     /// <summary>
     /// The workflow execution context. 
@@ -209,7 +209,7 @@ public class ActivityExecutionContext : IExecutionContext
         var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
         await ScheduleActivityAsync(activityNode, owner, options);
     }
-    
+
     /// <summary>
     /// Schedules the specified activity to be executed.
     /// </summary>
@@ -224,9 +224,13 @@ public class ActivityExecutionContext : IExecutionContext
         if (activityNode == null)
         {
             if (completionCallback != null)
-                await completionCallback(this, this);
+            {
+                var completedContext = new ActivityCompletedContext(this, this);
+                await completionCallback(completedContext);
+            }
             else
                 await owner.CompleteActivityAsync();
+
             return;
         }
 
@@ -526,7 +530,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public void ClearCompletionCallbacks()
     {
-        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
+        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this || x.Child.Activity == Activity);
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
 

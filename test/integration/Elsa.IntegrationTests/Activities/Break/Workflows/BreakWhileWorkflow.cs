@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.IntegrationTests.Activities;
+namespace Elsa.IntegrationTests.Activities.Workflows;
 
 public class BreakWhileWorkflow : WorkflowBase
 {
@@ -25,7 +25,7 @@ public class BreakWhileWorkflow : WorkflowBase
                         new SetVariable
                         {
                             Variable = currentValue,
-                            Value = new Input<object?>(context => currentValue.Get(context) + 1)
+                            Value = new (context => currentValue.Get(context) + 1)
                         },
                         new If(context => currentValue.Get(context) == 3)
                         {

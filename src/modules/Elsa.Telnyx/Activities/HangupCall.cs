@@ -30,5 +30,5 @@ public class HangupCall : HangupCallBase
     /// <summary>
     /// Executed when any child activity completed.
     /// </summary>
-    private async ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    private async ValueTask OnCompletedAsync(ActivityCompletedContext context) => await context.TargetContext.CompleteActivityAsync();
 }

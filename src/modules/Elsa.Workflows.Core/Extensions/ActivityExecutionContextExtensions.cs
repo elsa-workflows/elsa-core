@@ -311,30 +311,46 @@ public static class ActivityExecutionContextExtensions
     public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) =>
         context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
 
-    /// <summary>
-    /// Removes all child <see cref="ActivityExecutionContext"/> objects.
-    /// </summary>
-    public static async Task RemoveChildrenAsync(this ActivityExecutionContext context)
-    {
-        // Detach child activity execution contexts.
-        await context.WorkflowExecutionContext.RemoveActivityExecutionContextsAsync(context.GetChildren());
-    }
+    // /// <summary>
+    // /// Removes all child <see cref="ActivityExecutionContext"/> objects.
+    // /// </summary>
+    // public static async Task RemoveChildrenAsync(this ActivityExecutionContext context)
+    // {
+    //     // Detach child activity execution contexts.
+    //     await context.WorkflowExecutionContext.RemoveActivityExecutionContextsAsync(context.GetChildren());
+    // }
 
     /// <summary>
-    /// Send a signal up the current branch.
+    /// Send a signal up the current hierarchy of ancestors.
     /// </summary>
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
-        var ancestorContexts = new[] { context }.Concat(context.GetAncestors());
+        var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
+        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList(); 
 
-        foreach (var ancestorContext in ancestorContexts)
+        // Let all ancestors capture the signal.
+        foreach (var ancestorContext in capturingContexts)
         {
             var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
 
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
-            await handler.HandleSignalAsync(signal, signalContext);
+            await handler.CaptureSignalAsync(signal, signalContext);
+
+            if (signalContext.StopPropagationRequested)
+                return;
+        }
+        
+        // Let all ancestors receive the signal.
+        foreach (var ancestorContext in receivingContexts)
+        {
+            var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
+
+            if (ancestorContext.Activity is not ISignalHandler handler)
+                continue;
+
+            await handler.ReceiveSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
                 return;
@@ -344,11 +360,25 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
+    public static async ValueTask CompleteActivityAsync(this ActivityCompletedContext context, object? result = default)
+    {
+        await context.TargetContext.CompleteActivityAsync(result);
+    }
+    
+    /// <summary>
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
-        // If the activity is already completed, do nothing.
-        if (context.Status == ActivityStatus.Completed)
+        // If the activity is not running, do nothing.
+        if (context.Status != ActivityStatus.Running)
             return;
+
+        // Update all child contexts.
+        var childContexts = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        
+        foreach (var childContext in childContexts) 
+            await childContext.CancelActivityAsync();
 
         // Mark the activity as complete.
         context.Status = ActivityStatus.Completed;
@@ -383,10 +413,25 @@ public static class ActivityExecutionContextExtensions
         // Send a signal.
         await context.SendSignalAsync(new ActivityCompleted(result));
 
-        // Remove the context.
-        await context.WorkflowExecutionContext.CompleteActivityExecutionContextAsync(context);
+        // Clear bookmarks.
+        context.ClearBookmarks();
+
+        // Remove completion callbacks.
+        context.ClearCompletionCallbacks();
+
+        // Remove all associated variables.
+        var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
+        await variablePersistenceManager.DeleteVariablesAsync(context);
+
+        // Update the completed at timestamp.
+        context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
     }
 
+    /// <summary>
+    /// Complete the current activity with the specified outcome.
+    /// </summary>
+    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityCompletedContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
+    
     /// <summary>
     /// Complete the current activity with the specified outcome.
     /// </summary>
@@ -402,10 +447,21 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
+        // If the activity is not running, do nothing.
+        if (context.Status != ActivityStatus.Running)
+            return;
+
+        // Select all child contexts.
+        var childContexts = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var childContext in childContexts)
+            await CancelActivityAsync(childContext);
+
         var publisher = context.GetRequiredService<INotificationSender>();
         var workflow = context.WorkflowExecutionContext.Workflow;
         context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
+        context.ClearCompletionCallbacks();
 
         workflow.WhenCreatedWithModernTooling(
             () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityId == context.Activity.Id),

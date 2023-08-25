@@ -66,8 +66,8 @@ public class If : Activity<bool>
         await context.ScheduleActivityAsync(nextActivity, OnChildCompleted);
     }
 
-    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompleted(ActivityCompletedContext context)
     {
-        await context.CompleteActivityAsync();
+        await context.TargetContext.CompleteActivityAsync();
     }
 }

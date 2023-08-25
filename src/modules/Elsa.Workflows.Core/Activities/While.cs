@@ -81,11 +81,15 @@ public class While : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await HandleIterationAsync(context);
 
-    private async ValueTask OnBodyCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext) => await HandleIterationAsync(context);
+    private async ValueTask OnBodyCompleted(ActivityCompletedContext context)
+    {
+        await HandleIterationAsync(context.TargetContext);
+    }
 
     private async ValueTask HandleIterationAsync(ActivityExecutionContext context)
     {
-        var loop = await context.EvaluateInputPropertyAsync<While, bool>(x => x.Condition);
+        var isBreaking = context.GetIsBreaking();
+        var loop = !isBreaking && await context.EvaluateInputPropertyAsync<While, bool>(x => x.Condition);
 
         if (loop)
             await context.ScheduleActivityAsync(Body, OnBodyCompleted);

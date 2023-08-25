@@ -33,7 +33,6 @@ public class WorkflowExecutionContext : IExecutionContext
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
     private readonly IServiceProvider _serviceProvider;
     private readonly IHasher _hasher;
-    private readonly ISystemClock _systemClock;
     private readonly IActivityRegistry _activityRegistry;
     private readonly IList<ActivityNode> _nodes;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
@@ -62,7 +61,7 @@ public class WorkflowExecutionContext : IExecutionContext
     {
         _serviceProvider = serviceProvider;
         _hasher = hasher;
-        _systemClock = systemClock;
+        SystemClock = systemClock;
         _activityRegistry = activityRegistry;
         Workflow = workflow;
         Graph = graph;
@@ -123,6 +122,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
+    
+    /// <summary>
+    /// Gets the clock used to determine the current time.
+    /// </summary>
+    public ISystemClock SystemClock { get; }
 
     /// <summary>
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
@@ -382,9 +386,9 @@ public class WorkflowExecutionContext : IExecutionContext
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
-        var now = _systemClock.UtcNow;
+        var now = SystemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, _systemClock, CancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
@@ -414,42 +418,6 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the last activity result.
     /// </summary>
     public object? GetLastActivityResult() => TransientProperties.TryGetValue(LastActivityResultKey, out var value) ? value : default;
-
-    /// <summary>
-    /// Cancels the specified activity. 
-    /// </summary>
-    public async Task CancelActivityAsync(IActivity activity)
-    {
-        var activityExecutionContext = ActiveActivityExecutionContexts.FirstOrDefault(x => x.Activity == activity);
-
-        if (activityExecutionContext != null)
-            await activityExecutionContext.CancelActivityAsync();
-    }
-
-    /// <summary>
-    /// Marks the specified activity execution context as completed.
-    /// </summary>
-    internal async Task CompleteActivityExecutionContextAsync(ActivityExecutionContext context)
-    {
-        // Select all child contexts.
-        var childContexts = ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-
-        foreach (var childContext in childContexts) await CompleteActivityExecutionContextAsync(childContext);
-
-        // // Remove the context.
-        //_activityExecutionContexts.Remove(context);
-        context.CompletedAt = _systemClock.UtcNow;
-
-        // Remove all associated completion callbacks.
-        context.ClearCompletionCallbacks();
-
-        // Remove all associated variables.
-        var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-        await variablePersistenceManager.DeleteVariablesAsync(context);
-
-        // Remove all associated bookmarks.
-        Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
-    }
 
     /// <summary>
     /// Adds the specified <see cref="ActivityExecutionContext"/> to the workflow execution context.

@@ -21,6 +21,7 @@ public class Break : CodeActivity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        // Send a signal to the parent scope to break out of the loop.
         await context.SendSignalAsync(new BreakSignal());
     }
 }

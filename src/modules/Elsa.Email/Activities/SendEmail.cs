@@ -120,7 +120,7 @@ public class SendEmail : Activity
         }
     }
 
-    private async ValueTask OnErrorCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    private async ValueTask OnErrorCompletedAsync(ActivityCompletedContext context) => await context.TargetContext.CompleteActivityAsync();
 
     private static ICollection<string> GetAddresses(ActivityExecutionContext context, Input<ICollection<string>> input)
     {

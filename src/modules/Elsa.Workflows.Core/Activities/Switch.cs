@@ -88,9 +88,9 @@ public class Switch : Activity
         return matchingCases;
     }
 
-    private async ValueTask OnChildActivityCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
-        await context.CompleteActivityAsync();
+        await context.TargetContext.CompleteActivityAsync();
     }
 }
 

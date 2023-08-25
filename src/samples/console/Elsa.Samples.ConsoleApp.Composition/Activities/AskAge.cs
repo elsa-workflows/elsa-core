@@ -23,9 +23,9 @@ public class AskAge : Composite<int>
         };
     }
 
-    protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected override void OnCompleted(ActivityCompletedContext context)
     {
-        var age = _age.Get<int>(context);
-        context.Set(Result, age);
+        var age = _age.Get<int>(context.TargetContext);
+        context.TargetContext.Set(Result, age);
     }
 }

@@ -70,6 +70,14 @@ public class ForEach<T> : Activity
 
     private async Task HandleIteration(ActivityExecutionContext context)
     {
+        var isBreaking = context.GetIsBreaking();
+        
+        if (isBreaking)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+        
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
         var items = context.Get(Items)!.ToList();
 
@@ -98,8 +106,8 @@ public class ForEach<T> : Activity
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
     }
 
-    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompleted(ActivityCompletedContext context)
     {
-        await HandleIteration(context);
+        await HandleIteration(context.TargetContext);
     }
 }

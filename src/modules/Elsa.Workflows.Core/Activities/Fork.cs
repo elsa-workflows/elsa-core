@@ -3,7 +3,9 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Behaviors;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
@@ -19,8 +21,10 @@ public class Fork : Activity
     /// <inheritdoc />
     public Fork([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
+        // Handle break signals directly instead of using the BreakBehavior. The behavior stops propagation of the signal, which is not what we want.
+        OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
     }
-    
+
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
@@ -34,14 +38,30 @@ public class Fork : Activity
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     /// <inheritdoc />
-    protected override ValueTask ExecuteAsync(ActivityExecutionContext context) => context.ScheduleActivities(Branches.Reverse(), CompleteChildAsync);
+    protected override ValueTask ExecuteAsync(ActivityExecutionContext context) => context.ScheduleActivities(Branches, CompleteChildAsync);
 
-    private async ValueTask CompleteChildAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask CompleteChildAsync(ActivityCompletedContext context)
     {
+        var targetContext = context.TargetContext;
+        var isBreaking = targetContext.GetIsBreaking();
+
+        if (isBreaking)
+        {
+            // Remove any and all bookmarks from other branches.
+            RemoveBookmarks(targetContext);
+
+            // Signal activity completion.
+            await CompleteAsync(targetContext);
+
+            // Exit.
+            return;
+        }
+
+        var childContext = context.ChildContext;
         var completedChildActivityId = childContext.Activity.Id;
 
         // Append activity to set of completed activities.
-        var completedActivityIds = context.UpdateProperty<HashSet<string>>("Completed", set =>
+        var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
             set ??= new HashSet<string>();
             set.Add(completedChildActivityId);
@@ -56,10 +76,10 @@ public class Fork : Activity
             case ForkJoinMode.WaitAny:
             {
                 // Remove any and all bookmarks from other branches.
-                RemoveBookmarks(context);
+                RemoveBookmarks(targetContext);
 
                 // Signal activity completion.
-                await CompleteAsync(context);
+                await CompleteAsync(targetContext);
             }
                 break;
             case ForkJoinMode.WaitAll:
@@ -68,7 +88,7 @@ public class Fork : Activity
 
                 if (allSet)
                     // Signal activity completion.
-                    await CompleteAsync(context);
+                    await CompleteAsync(targetContext);
             }
                 break;
         }
@@ -81,7 +101,12 @@ public class Fork : Activity
         var forkNode = context.ActivityNode;
         var branchNodes = forkNode.Children;
         var branchDescendantActivityIds = branchNodes.SelectMany(x => x.Flatten()).Select(x => x.Activity.Id).ToHashSet();
-        
-        workflowExecutionContext.Bookmarks.RemoveWhere(x => branchDescendantActivityIds.Contains(x.ActivityNodeId));
+
+        workflowExecutionContext.Bookmarks.RemoveWhere(x => branchDescendantActivityIds.Contains(x.ActivityId));
+    }
+
+    private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)
+    {
+        signalContext.ReceiverActivityExecutionContext.SetIsBreaking();
     }
 }

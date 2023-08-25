@@ -75,7 +75,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
     /// <summary>
     /// Called when the activity is completed.
     /// </summary>
-    protected async ValueTask OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    protected async ValueTask OnCompleted(ActivityCompletedContext context) => await context.TargetContext.CompleteActivityAsync();
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
