@@ -11,9 +11,9 @@ public interface IFeaturesApi
     /// <summary>
     /// Gets the specified feature.
     /// </summary>
-    /// <param name="fullName"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>The feature.</returns>
+    /// <param name="fullName">The fully qualified name of the feature.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>Information about the feature.</returns>
     [Get("/features/installed/{fullName}")]
     Task<FeatureDescriptor> GetAsync(string fullName, CancellationToken cancellationToken = default);
 }
