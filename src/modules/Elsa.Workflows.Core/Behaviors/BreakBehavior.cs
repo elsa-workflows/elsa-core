@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Signals;
 
@@ -6,6 +7,7 @@ namespace Elsa.Workflows.Core.Behaviors;
 
 /// <summary>
 /// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.
+/// Stops propagation of the signal, which is useful for looping activities such as <see cref="While"/>, <see cref="For"/> ans <see cref="ForEach"/>.
 /// </summary>
 public class BreakBehavior : Behavior
 {
@@ -14,7 +16,7 @@ public class BreakBehavior : Behavior
     /// </summary>
     public BreakBehavior(IActivity owner) : base(owner)
     {
-        OnSignalReceived<BreakSignal>(OnBreakAsync);
+        OnSignalReceived<BreakSignal>(OnBreak);
         OnSignalReceived<CompleteCompositeSignal>(OnCompleteCompositeAsync);
     }
 
@@ -23,35 +25,21 @@ public class BreakBehavior : Behavior
         // Cancel each descendant to clear bookmarks and cancel jobs etc.
         await CancelDescendantsAsync(context);
 
-        // Remove child activity execution contexts.
-        await context.ReceiverActivityExecutionContext.RemoveChildrenAsync();
-
         // Mark this activity as completed.
         await context.ReceiverActivityExecutionContext.CompleteActivityAsync();
     }
 
-    private async ValueTask OnBreakAsync(BreakSignal signal, SignalContext context)
+    private void OnBreak(BreakSignal signal, SignalContext context)
     {
         // Prevent bubbling.
         context.StopPropagation();
         
-        // Cancel each descendant to clear bookmarks and cancel jobs etc.
-        await CancelDescendantsAsync(context);
-
-        // Remove child activity execution contexts.
-        await context.ReceiverActivityExecutionContext.RemoveChildrenAsync();
-
-        // Mark this activity as completed.
-        await context.ReceiverActivityExecutionContext.CompleteActivityAsync();
+        // Set the IsBreaking property to true.
+        context.ReceiverActivityExecutionContext.SetProperty("IsBreaking", true);
     }
     
     private async Task CancelDescendantsAsync(SignalContext context)
     {
-        var senderActivity = context.SenderActivityExecutionContext.Activity;
-        var descendants = context.ReceiverActivityExecutionContext.ActivityNode.Descendants().Select(x => x.Activity).Where(x => x.Id != senderActivity.Id).ToList();
-        var workflowExecutionContext = context.ReceiverActivityExecutionContext.WorkflowExecutionContext;
-
-        foreach (var descendant in descendants) 
-            await workflowExecutionContext.CancelActivityAsync(descendant);
+        await context.ReceiverActivityExecutionContext.CancelActivityAsync();
     }
 }

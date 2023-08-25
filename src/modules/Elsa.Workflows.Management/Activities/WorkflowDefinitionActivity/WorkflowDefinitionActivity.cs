@@ -112,12 +112,14 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async ValueTask OnChildCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
+        var targetContext = context.TargetContext;
+        
         // Do we have a "complete composite" signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
 
-        await context.CompleteActivityAsync(completeCompositeSignal?.Value);
+        await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)

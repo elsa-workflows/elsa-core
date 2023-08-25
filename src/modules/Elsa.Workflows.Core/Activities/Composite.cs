@@ -62,10 +62,10 @@ public abstract class Composite : Activity, IVariableContainer
     {
     }
 
-    private async ValueTask OnRootCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnRootCompletedAsync(ActivityCompletedContext context)
     {
-        await OnCompletedAsync(context, childContext);
-        await context.CompleteActivityAsync();
+        await OnCompletedAsync(context);
+        await context.TargetContext.CompleteActivityAsync();
     }
     
     /// <summary>
@@ -83,9 +83,9 @@ public abstract class Composite : Activity, IVariableContainer
     /// </summary>
     /// <param name="context">The context of the composite activity.</param>
     /// <param name="childContext">The context of the child activity that completed.</param>
-    protected virtual ValueTask OnCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected virtual ValueTask OnCompletedAsync(ActivityCompletedContext context)
     {
-        OnCompleted(context, childContext);
+        OnCompleted(context);
         return new();
     }
 
@@ -94,7 +94,7 @@ public abstract class Composite : Activity, IVariableContainer
     /// </summary>
     /// <param name="context">The context of the composite activity.</param>
     /// <param name="childContext">The context of the child activity that completed.</param>
-    protected virtual void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected virtual void OnCompleted(ActivityCompletedContext context)
     {
     }
 
@@ -103,7 +103,8 @@ public abstract class Composite : Activity, IVariableContainer
         // Set the outcome into the context for the parent activity to pick up.
         context.SenderActivityExecutionContext.WorkflowExecutionContext.TransientProperties[nameof(CompleteCompositeSignal)] = signal;
         
-        await OnCompletedAsync(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext);
+        var completedContext = new ActivityCompletedContext(context.ReceiverActivityExecutionContext, context.SenderActivityExecutionContext, signal.Value);
+        await OnCompletedAsync(completedContext);
         
         // Complete the sender first so that it notifies its parents to complete.
         await context.SenderActivityExecutionContext.CompleteActivityAsync();

@@ -39,5 +39,5 @@ public static class WellKnowTypeRegistryExtensions
     /// <summary>
     /// Returns the type associated with the specified alias. If no type was found, the alias is interpreted as a type name/
     /// </summary>
-    public static Type GetTypeOrDefault(this IWellKnownTypeRegistry registry, string alias) => registry.TryGetType(alias, out var type) ? type : Type.GetType(alias)!;
+    public static Type GetTypeOrDefault(this IWellKnownTypeRegistry registry, string alias) => registry.TryGetType(alias, out var type) ? type : Type.GetType(alias) ?? typeof(object);
 }

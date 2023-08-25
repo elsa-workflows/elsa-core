@@ -28,7 +28,7 @@ public class ForkTests
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BasicForkWorkflow>();
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]{ "Branch 3", "Branch 2", "Branch 1" }, lines);
+        Assert.Equal(new[]{ "Branch 1", "Branch 2", "Branch 3" }, lines);
     }
     
     [Fact(DisplayName = "Wait AnyAsync causes workflow to continue")]

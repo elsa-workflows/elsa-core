@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.IntegrationTests.Activities;
+namespace Elsa.IntegrationTests.Activities.Workflows;
 
 class BreakForWorkflow : WorkflowBase
 {
@@ -19,7 +19,7 @@ class BreakForWorkflow : WorkflowBase
                 new WriteLine("Start"),
                 new For(0, 3)
                 {
-                    CurrentValue = new Output<object?>(currentValue),
+                    CurrentValue = new (currentValue),
                     Body = new Sequence
                     {
                         Activities =

@@ -28,8 +28,11 @@ public class ScheduledChildCallbackBehavior : Behavior
         // Before invoking the parent activity, make sure its properties are evaluated.
         if (!activityExecutionContext.GetHasEvaluatedProperties())
             await activityExecutionContext.EvaluateInputPropertiesAsync();
-        
-        if (callbackEntry.CompletionCallback != null) 
-            await callbackEntry.CompletionCallback(activityExecutionContext, childActivityExecutionContext);
+
+        if (callbackEntry.CompletionCallback != null)
+        {
+            var completedContext = new ActivityCompletedContext(activityExecutionContext, childActivityExecutionContext, signal.Result);
+            await callbackEntry.CompletionCallback(completedContext);
+        }
     }
 }

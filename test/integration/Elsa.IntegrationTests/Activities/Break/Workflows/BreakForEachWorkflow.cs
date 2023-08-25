@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
-namespace Elsa.IntegrationTests.Activities;
+namespace Elsa.IntegrationTests.Activities.Workflows;
 
 class BreakForEachWorkflow : WorkflowBase
 {
@@ -22,7 +22,7 @@ class BreakForEachWorkflow : WorkflowBase
                 new ForEach<string>
                 {
                     Items = new Input<ICollection<string>>(items),
-                    CurrentValue = new Output<string?>(currentItem),
+                    CurrentValue = new (currentItem),
                     Body = new Sequence
                     {
                         Activities =

@@ -33,12 +33,12 @@ public class AskDetails : Composite<Person>
         };
     }
 
-    protected override void OnCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    protected override void OnCompleted(ActivityCompletedContext context)
     {
-        var name = _name.Get<string>(context)!;
-        var age = _age.Get<int>(context);
+        var name = _name.Get<string>(context.TargetContext)!;
+        var age = _age.Get<int>(context.TargetContext);
         var person = new Person(name, age);
 
-        context.Set(Result, person);
+        context.TargetContext.Set(Result, person);
     }
 }

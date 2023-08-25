@@ -10,16 +10,19 @@ public class HelloWorldHttpWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Root = new Sequence
-        (
-            new HttpEndpoint
+        {
+            Activities =
             {
-                Path = new("/hello-world"),
-                CanStartWorkflow = true
-            },
-            new WriteHttpResponse
-            {
-                Content = new("Hello world of HTTP workflows!")
+                new HttpEndpoint
+                {
+                    Path = new("/hello-world"),
+                    CanStartWorkflow = true
+                },
+                new WriteHttpResponse
+                {
+                    Content = new("Hello world of HTTP workflows!")
+                }
             }
-        );
+        };
     }
 }

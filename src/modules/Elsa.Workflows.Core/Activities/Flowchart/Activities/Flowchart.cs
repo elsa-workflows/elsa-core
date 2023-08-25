@@ -6,8 +6,6 @@ using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Signals;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -15,7 +13,6 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// A flowchart consists of a collection of activities and connections between them.
 /// </summary>
 [Activity("Elsa", "Flow", "A flowchart is a collection of activities and connections between them.")]
-[PublicAPI]
 [Browsable(false)]
 public class Flowchart : Container
 {
@@ -24,7 +21,6 @@ public class Flowchart : Container
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        OnSignalReceived<ActivityCompleted>(OnDescendantCompletedAsync);
     }
 
     /// <summary>
@@ -52,43 +48,31 @@ public class Flowchart : Container
         }
 
         // Schedule the start activity.
-        await context.ScheduleActivityAsync(startActivity);
+        await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
     }
 
-    private async ValueTask OnDescendantCompletedAsync(ActivityCompleted signal, SignalContext context)
+    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        await ScheduleChildrenAsync(signal, context);
-    }
-
-    private async Task ScheduleChildrenAsync(ActivityCompleted signal, SignalContext context)
-    {
-        var flowchartActivityExecutionContext = context.ReceiverActivityExecutionContext;
-        var completedActivity = context.SenderActivityExecutionContext.Activity;
-
-        if (completedActivity == null!)
-            return;
-
-        // Ignore completed activities that are not immediate children.
-        var isDirectChild = Activities.Contains(completedActivity);
-
-        if (!isDirectChild)
-            return;
-
+        var targetContext = context.TargetContext;
+        var childContext = context.ChildContext;
+        var completedActivity = childContext.Activity;
+        var result = context.Result;
+        
         // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
-        Func<Connection, bool> outboundConnectionsQuery = signal.Result is Outcomes outcomes
+        Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
             ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
             : connection => connection.Source.Activity == completedActivity;
 
         var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
         var children = outboundConnections.Select(x => x.Target.Activity).ToList();
-        var scope = flowchartActivityExecutionContext.GetProperty(ScopeProperty, () => new FlowScope());
+        var scope = targetContext.GetProperty(ScopeProperty, () => new FlowScope());
 
         scope.RegisterActivityExecution(completedActivity);
 
-        // If the completed activity is an End activity, complete the flowchart.
-        if (completedActivity is End)
+        // If the completed activity is an End or Break activity, complete the flowchart immediately.
+        if (completedActivity is End or Break)
         {
-            await flowchartActivityExecutionContext.CompleteActivityAsync();
+            await targetContext.CompleteActivityAsync();
         }
         else
         {
@@ -104,7 +88,7 @@ public class Flowchart : Container
                     // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
                     if (!inboundActivities.Contains(completedActivity))
                     {
-                        await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                        await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
                         continue;
                     }
 
@@ -115,11 +99,11 @@ public class Flowchart : Container
                         var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
                         if (haveInboundActivitiesExecuted)
-                            await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                            await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
                     }
                     else
                     {
-                        await flowchartActivityExecutionContext.ScheduleActivityAsync(activity);
+                        await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
                     }
                 }
             }
@@ -127,15 +111,14 @@ public class Flowchart : Container
             if (!children.Any())
             {
                 // If there is no pending work, complete the flowchart activity.
-                var hasPendingWork = HasPendingWork(flowchartActivityExecutionContext);
+                var hasPendingWork = HasPendingWork(targetContext);
 
                 if (!hasPendingWork)
-                    await flowchartActivityExecutionContext.CompleteActivityAsync();
+                    await targetContext.CompleteActivityAsync();
             }
         }
 
-        flowchartActivityExecutionContext.SetProperty(ScopeProperty, scope);
-        context.StopPropagation();
+        targetContext.SetProperty(ScopeProperty, scope);
     }
 
     /// <summary>
@@ -147,21 +130,20 @@ public class Flowchart : Container
         var activityIds = Activities.Select(x => x.Id).ToList();
         var descendantContexts = GetDescendents(context).Where(x => x.ParentActivityExecutionContext == context).ToList();
         var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
-        
+
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
         {
             var ownerInstanceId = workItem.OwnerActivityInstanceId;
-            
-            if(ownerInstanceId == null)
+
+            if (ownerInstanceId == null)
                 return false;
 
             var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
             var ancestors = GetAncestors(ownerContext).ToList();
 
             return ancestors.Any(x => x == context);
-
         });
-        
+
         var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
 
         return hasRunningActivityInstances || hasPendingWork;
@@ -170,7 +152,7 @@ public class Flowchart : Container
     private static IEnumerable<ActivityExecutionContext> GetDescendents(ActivityExecutionContext activityExecutionContext)
     {
         var children = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == activityExecutionContext).ToList();
-        
+
         foreach (var child in children)
         {
             yield return child;
@@ -183,7 +165,7 @@ public class Flowchart : Container
     private static IEnumerable<ActivityExecutionContext> GetAncestors(ActivityExecutionContext activityExecutionContext)
     {
         var current = activityExecutionContext;
-        
+
         while (current != null)
         {
             yield return current;

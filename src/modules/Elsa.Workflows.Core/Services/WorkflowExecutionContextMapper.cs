@@ -28,8 +28,8 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         };
 
         ExportProperties(state, workflowExecutionContext);
-        ExtractCompletionCallbacks(state, workflowExecutionContext);
         ExtractActiveActivityExecutionContexts(state, workflowExecutionContext);
+        ExtractCompletionCallbacks(state, workflowExecutionContext);
 
         return state;
     }

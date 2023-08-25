@@ -28,5 +28,5 @@ public class FlowNode : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context) => await context.ScheduleActivityAsync(Body, OnBodyCompletedAsync);
 
-    private async ValueTask OnBodyCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext) => await context.CompleteActivityAsync();
+    private async ValueTask OnBodyCompletedAsync(ActivityCompletedContext context) => await context.TargetContext.CompleteActivityAsync();
 }

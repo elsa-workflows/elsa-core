@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.IntegrationTests.Activities;
+namespace Elsa.IntegrationTests.Activities.Workflows;
 
 public class BreakWhileForkWorkflow : WorkflowBase
 {
@@ -33,7 +33,7 @@ public class BreakWhileForkWorkflow : WorkflowBase
                                 new SetVariable
                                 {
                                     Variable = currentValue,
-                                    Value = new Input<object?>(context => currentValue.Get(context) + 1)
+                                    Value = new (context => currentValue.Get(context) + 1)
                                 },
                                 new If(context => currentValue.Get(context) == 3)
                                 {

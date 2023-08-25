@@ -18,7 +18,7 @@ public class SendHttpRequest : SendHttpRequestBase
     public SendHttpRequest([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// A list of expected status codes to handle and the corresponding activity to execute when the status code matches.
     /// </summary>
@@ -42,17 +42,17 @@ public class SendHttpRequest : SendHttpRequestBase
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
         var activity = matchingCase != null ? matchingCase.Activity : UnmatchedStatusCode;
 
-        if(activity == null)
+        if (activity == null)
         {
             await context.CompleteActivityAsync();
             return;
         }
-        
+
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
     }
 
-    private async ValueTask OnChildActivityCompletedAsync(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
-        await context.CompleteActivityAsync();
+        await context.TargetContext.CompleteActivityAsync();
     }
 }

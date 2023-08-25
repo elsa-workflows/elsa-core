@@ -50,7 +50,7 @@ public class ParallelForEach<T> : Activity
                 // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
                 StorageDriverType = typeof(WorkflowStorageDriver)
             };
-            
+
             var variables = new List<Variable<T>>
             {
                 variable
@@ -66,12 +66,13 @@ public class ParallelForEach<T> : Activity
         context.SetProperty(CompletedTagsProperty, new List<Guid>());
     }
 
-    private async ValueTask OnChildCompleted(ActivityExecutionContext context, ActivityExecutionContext childContext)
+    private async ValueTask OnChildCompleted(ActivityCompletedContext context)
     {
-        var scheduledTags = context.GetProperty<List<Guid>>(ScheduledTagsProperty)!;
-        var completedTag = childContext.Tag.ConvertTo<Guid>();
+        var targetContext = context.TargetContext;
+        var scheduledTags = targetContext.GetProperty<List<Guid>>(ScheduledTagsProperty)!;
+        var completedTag = targetContext.Tag.ConvertTo<Guid>();
 
-        var completedTags = new HashSet<Guid>(context.UpdateProperty<List<Guid>>(CompletedTagsProperty, completedTags =>
+        var completedTags = new HashSet<Guid>(targetContext.UpdateProperty<List<Guid>>(CompletedTagsProperty, completedTags =>
         {
             completedTags!.Add(completedTag);
             return completedTags;
@@ -82,6 +83,6 @@ public class ParallelForEach<T> : Activity
             return;
 
         // We're done, so complete the activity.
-        await context.CompleteActivityAsync();
+        await targetContext.CompleteActivityAsync();
     }
 }
