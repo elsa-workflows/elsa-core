@@ -65,7 +65,12 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var ownerActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            var childNode = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.NodeId == completionCallbackEntry.ChildNodeId).ActivityNode;
+            var childNode = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.NodeId == completionCallbackEntry.ChildNodeId)?.ActivityNode;
+            
+            // If the child node is null, it means the completion callback was registered for an activity instance that has already completed or was canceled. 
+            if(childNode == null)
+                continue;
+            
             var callbackName = completionCallbackEntry.MethodName;
             var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
             workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate);

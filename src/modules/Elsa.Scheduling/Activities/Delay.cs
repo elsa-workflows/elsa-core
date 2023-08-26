@@ -15,7 +15,7 @@ namespace Elsa.Scheduling.Activities;
 /// <summary>
 /// Delay execution for the specified amount of time.
 /// </summary>
-[Activity( "Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
+[Activity("Elsa", "Scheduling", "Delay execution for the specified amount of time.")]
 public class Delay : Activity, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
@@ -67,7 +67,7 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
     [Input(
         Description = "The timespan to delay workflow execution.",
         DefaultValueProvider = typeof(Delay)
-    )] 
+    )]
     public Input<TimeSpan> TimeSpan { get; set; } = default!;
 
     /// <inheritdoc />
@@ -81,35 +81,35 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
         context.JournalData.Add("ResumeAt", resumeAt);
         context.CreateBookmark(payload);
     }
-    
+
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of milliseconds.
     /// </summary>
     public static Delay FromMilliseconds(
         double value,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMilliseconds(value), source, line);
-    
+
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of seconds.
     /// </summary>
     public static Delay FromSeconds(
         double value,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromSeconds(value), source, line);
-    
+
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of minutes.
     /// </summary>
     public static Delay FromMinutes(
         double value,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromMinutes(value), source, line);
-    
+
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of hours.
     /// </summary>
     public static Delay FromHours(
         double value,
         [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(System.TimeSpan.FromHours(value), source, line);
-    
+
     /// <summary>
     /// Creates a new <see cref="Delay"/> from the specified number of days.
     /// </summary>
