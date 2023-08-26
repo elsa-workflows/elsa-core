@@ -5,15 +5,27 @@ using JetBrains.Annotations;
 
 namespace Proto.Cluster.AzureContainerApps;
 
+/// <summary>
+///    Utility methods for configuration.
+/// </summary>
 public static class ConfigUtils
 {
-    public static IPAddress FindSmallestIpAddress(AddressFamily family = AddressFamily.InterNetwork)
+    /// <summary>
+    ///   Finds the smallest IP address on the machine.
+    /// </summary>
+    /// <param name="family">The address family to look for.</param>
+    /// <param name="includeLoopback">Whether to include loopback addresses.</param>
+    public static IPAddress FindSmallestIpAddress(AddressFamily family = AddressFamily.InterNetwork, bool includeLoopback = false)
     {
-        var addressCandidates = NetworkInterface.GetAllNetworkInterfaces()
+        var addressCandidatesQuery = NetworkInterface.GetAllNetworkInterfaces()
             .Where(nif => nif.OperationalStatus == OperationalStatus.Up)
             .SelectMany(nif => nif.GetIPProperties().UnicastAddresses.Select(a => a.Address))
-            .Where(addr => addr.AddressFamily == family && !IPAddress.IsLoopback(addr))
-            .ToList();
+            .Where(addr => addr.AddressFamily == family);
+
+        if (!includeLoopback) 
+            addressCandidatesQuery = addressCandidatesQuery.Where(addr => !IPAddress.IsLoopback(addr));
+
+        var addressCandidates = addressCandidatesQuery.ToList();
 
         return PickSmallestIpAddress(addressCandidates);
     }

@@ -19,7 +19,7 @@ public class AzureContainerAppsProviderOptions
     public string ResourceGroupName { get; set; } = default!;
 
     /// <summary>
-    /// The name of the container app to use.
+    /// The interval at which to poll the cluster member store for changes.
     /// </summary>
     public TimeSpan PollInterval { get; set; } = TimeSpan.FromSeconds(5);
 }

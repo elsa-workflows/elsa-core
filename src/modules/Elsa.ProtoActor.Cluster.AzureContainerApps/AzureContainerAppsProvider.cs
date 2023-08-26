@@ -4,6 +4,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
+using Proto.Cluster.PubSub;
+using Proto.Remote;
 using Proto.Utils;
 
 namespace Proto.Cluster.AzureContainerApps;
@@ -135,6 +137,20 @@ public class AzureContainerAppsProvider : IClusterProvider
     {
         var pollInterval = _options.Value.PollInterval;
         var storeName = _clusterMemberStore.GetType().Name;
+        
+        _cluster.System.EventStream.Subscribe<EndpointTerminatedEvent>(async e =>
+        {
+            var members = (await _clusterMemberStore.ListAsync().ConfigureAwait(false)).ToArray();
+            var failedMember = members.FirstOrDefault(m => m.Address == e.Address);
+            
+            if(failedMember is null)
+                return;
+            
+            await _clusterMemberStore.UnregisterAsync(failedMember.Id).ConfigureAwait(false);
+            
+            _logger.LogInformation("Endpoint terminated {Address}", e.Address);
+            await DeregisterMemberAsync().ConfigureAwait(false);
+        });
 
         _ = SafeTask.Run(async () =>
             {
@@ -149,12 +165,16 @@ public class AzureContainerAppsProvider : IClusterProvider
                         if (members.Any())
                         {
                             _logger.LogInformation("Got members {Members}", members.Length);
-                            _cluster.MemberList.UpdateClusterTopology(members);
+                            
+                            foreach (var member in members)
+                                _logger.LogInformation("Member {MemberId} on {MemberAddress}", member.Id, member.Address);
                         }
                         else
                         {
-                            _logger.LogWarning("Failed to get members from {Store}", storeName);
+                            _logger.LogWarning("Did not get any members from {Store}", storeName);
                         }
+                        
+                        _cluster.MemberList.UpdateClusterTopology(members);
                     }
                     catch (Exception x)
                     {
