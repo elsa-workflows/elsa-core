@@ -1,5 +1,7 @@
 using System.Text.Json;
 using JetBrains.Annotations;
+using Proto.Cluster.AzureContainerApps.Contracts;
+using Proto.Cluster.AzureContainerApps.Models;
 using StackExchange.Redis;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.Redis;
@@ -10,39 +12,34 @@ namespace Proto.Cluster.AzureContainerApps.Stores.Redis;
 [PublicAPI]
 public class RedisClusterMemberStore : IClusterMemberStore
 {
+    private readonly ISystemClock _systemClock;
     private const string ClusterKey = "proto:cluster:members";
     private readonly IDatabase _database;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RedisClusterMemberStore"/> class.
     /// </summary>
-    public RedisClusterMemberStore(ConnectionMultiplexer connectionMultiplexer) => _database = connectionMultiplexer.GetDatabase();
-
-    /// <inheritdoc />
-    public async ValueTask<ICollection<Member>> ListAsync(CancellationToken cancellationToken = default)
+    public RedisClusterMemberStore(ConnectionMultiplexer connectionMultiplexer, ISystemClock systemClock)
     {
-        var entries = await _database.HashGetAllAsync(ClusterKey);
-
-        return entries.Select(entry =>
-        {
-            var clusterMember = Deserialize(entry.Value!);
-            return new Member
-            {
-                Id = entry.Name,
-                Host = clusterMember.Host,
-                Port = clusterMember.Port,
-                Kinds = { clusterMember.Kinds }
-            };
-        }).ToList();
+        _systemClock = systemClock;
+        _database = connectionMultiplexer.GetDatabase();
     }
 
     /// <inheritdoc />
-    public async ValueTask RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
+    public async ValueTask<ICollection<StoredMember>> ListAsync(CancellationToken cancellationToken = default)
     {
-        var clusterMember = new ClusterMember(member.Host, member.Port, clusterName, member.Kinds);
-        var serialized = Serialize(clusterMember);
+        var entries = await _database.HashGetAllAsync(ClusterKey);
+        return entries.Select(entry => Deserialize(entry.Value!)).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<StoredMember> RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
+    {
+        var storedMember = StoredMember.FromMember(member, clusterName, _systemClock.UtcNow);
+        var serialized = Serialize(storedMember);
 
         await _database.HashSetAsync(ClusterKey, member.Id, serialized);
+        return storedMember;
     }
 
     /// <inheritdoc />
@@ -52,11 +49,19 @@ public class RedisClusterMemberStore : IClusterMemberStore
     }
 
     /// <inheritdoc />
+    public async ValueTask UpdateAsync(StoredMember storedMember, CancellationToken cancellationToken = default)
+    {
+        var serialized = Serialize(storedMember);
+
+        await _database.HashSetAsync(ClusterKey, storedMember.Id, serialized);
+    }
+
+    /// <inheritdoc />
     public async ValueTask ClearAsync(string clusterName, CancellationToken cancellationToken = default)
     {
         await _database.KeyDeleteAsync(ClusterKey);
     }
 
-    private static string Serialize(ClusterMember member) => JsonSerializer.Serialize(member);
-    private static ClusterMember Deserialize(string data) => JsonSerializer.Deserialize<ClusterMember>(data)!;
+    private static string Serialize(StoredMember member) => JsonSerializer.Serialize(member);
+    private static StoredMember Deserialize(string data) => JsonSerializer.Deserialize<StoredMember>(data)!;
 }

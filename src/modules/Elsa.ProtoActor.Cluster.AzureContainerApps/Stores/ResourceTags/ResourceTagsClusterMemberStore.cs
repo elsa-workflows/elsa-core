@@ -5,6 +5,8 @@ using Azure.ResourceManager.AppContainers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Proto.Cluster.AzureContainerApps.Contracts;
+using Proto.Cluster.AzureContainerApps.Models;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
@@ -14,6 +16,7 @@ namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 [PublicAPI]
 public class ResourceTagsClusterMemberStore : IClusterMemberStore
 {
+    private readonly ISystemClock _systemClock;
     private readonly IArmClientProvider _armClientProvider;
     private readonly ILogger _logger;
     private readonly string _containerAppName;
@@ -21,17 +24,20 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     private readonly string? _subscriptionId;
     
     private ArmClient? _armClient;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
     /// </summary>
     /// <param name="armArmClientProvider">The <see cref="IArmClientProvider"/> to use.</param>
     /// <param name="options">The options for this store.</param>
+    /// <param name="systemClock">The <see cref="ISystemClock"/> to use.</param>
     /// <param name="logger">The logger to use.</param>
     public ResourceTagsClusterMemberStore(
         IArmClientProvider armArmClientProvider,
         IOptions<ResourceTagsMemberStoreOptions> options,
-        ILogger<ResourceTagsClusterMemberStore> logger) : this(armArmClientProvider, logger, options.Value.ResourceGroupName, options.Value.SubscriptionId)
+        ISystemClock systemClock,
+        ILogger<ResourceTagsClusterMemberStore> logger) : 
+        this(armArmClientProvider, systemClock, logger, options.Value.ResourceGroupName, options.Value.SubscriptionId)
     {
     }
 
@@ -39,16 +45,19 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
     /// </summary>
     /// <param name="armArmClientProvider">The <see cref="IArmClientProvider"/> to use.</param>
+    /// <param name="systemClock">The <see cref="ISystemClock"/> to use.</param>
     /// <param name="logger">The logger to use.</param>
     /// <param name="resourceGroupName">The name of the resource group.</param>
     /// <param name="subscriptionId">The subscription ID.</param>
     internal ResourceTagsClusterMemberStore(
         IArmClientProvider armArmClientProvider,
+        ISystemClock systemClock,
         ILogger<ResourceTagsClusterMemberStore> logger,
         string resourceGroupName, 
         string? subscriptionId = default)
     {
         _armClientProvider = armArmClientProvider;
+        _systemClock = systemClock;
         _logger = logger;
         _resourceGroupName = resourceGroupName;
         _subscriptionId = subscriptionId;
@@ -56,9 +65,9 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<ICollection<Member>> ListAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<ICollection<StoredMember>> ListAsync(CancellationToken cancellationToken = default)
     {
-        var members = new List<Member>();
+        var storedMembers = new List<StoredMember>();
         var resourceGroupName = _resourceGroupName;
         var containerAppName = _containerAppName;
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
@@ -66,7 +75,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         if (containerApp == null)
         {
             _logger.LogError("Resource: {ResourceName} in resource group: {ResourceGroup} is not found", containerAppName, resourceGroupName);
-            return members.ToArray();
+            return storedMembers.ToArray();
         }
 
         // Get the app container managed environment in order to get the other container apps.
@@ -96,16 +105,19 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
                 .Select(x => x.Value);
 
             member.Kinds.AddRange(kinds);
-            members.Add(member);
+            var storedMember = StoredMember.FromMember(member, taggedMember.Cluster, DateTimeOffset.UtcNow);
+            storedMembers.Add(storedMember);
         }
         
-        return members.ToArray();
+        return storedMembers.ToArray();
     }
 
     /// <inheritdoc />
-    public async ValueTask RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
+    public async ValueTask<StoredMember> RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
     {
-        var taggedMember = new TaggedMember(member.Host, member.Port, clusterName);
+        var now = _systemClock.UtcNow;
+        var storedMember = StoredMember.FromMember(member, clusterName, now);
+        var taggedMember = new TaggedMember(member.Host, member.Port, clusterName, now, now);
         var serializedTaggedMember = Serialize(taggedMember);
 
         var tags = new Dictionary<string, string>
@@ -118,12 +130,14 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
 
         try
         {
-            await AddMemberTags(tags, cancellationToken).ConfigureAwait(false);
+            await SetMemberTags(tags, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception x)
         {
             _logger.LogError(x, "Failed to update metadata");
         }
+        
+        return storedMember;
     }
 
     /// <inheritdoc />
@@ -145,6 +159,27 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     }
 
     /// <inheritdoc />
+    public async ValueTask UpdateAsync(StoredMember storedMember, CancellationToken cancellationToken = default)
+    {
+        var taggedMember = new TaggedMember(storedMember.Host, storedMember.Port, storedMember.Cluster, storedMember.CreatedAt, _systemClock.UtcNow);
+        var serializedTaggedMember = Serialize(taggedMember);
+
+        var tags = new Dictionary<string, string>
+        {
+            [ResourceTagNames.Prefix(storedMember.Id)] = serializedTaggedMember
+        };
+        
+        try
+        {
+            await SetMemberTags(tags, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception x)
+        {
+            _logger.LogError(x, "Failed to update metadata");
+        }
+    }
+
+    /// <inheritdoc />
     public async ValueTask ClearAsync(string clusterName, CancellationToken cancellationToken = default)
     {
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
@@ -162,7 +197,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         await containerApp.SetTagsAsync(existingTags, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task AddMemberTags(Dictionary<string, string> newTags, CancellationToken cancellationToken)
+    private async Task SetMemberTags(Dictionary<string, string> newTags, CancellationToken cancellationToken)
     {
         var containerApp = await GetContainerAppAsync(cancellationToken).ConfigureAwait(false);
         

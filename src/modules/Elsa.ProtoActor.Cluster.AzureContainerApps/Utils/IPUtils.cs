@@ -3,12 +3,12 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using JetBrains.Annotations;
 
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.Utils;
 
 /// <summary>
 ///    Utility methods for configuration.
 /// </summary>
-public static class ConfigUtils
+public static class IPUtils
 {
     /// <summary>
     ///   Finds the smallest IP address on the machine.
