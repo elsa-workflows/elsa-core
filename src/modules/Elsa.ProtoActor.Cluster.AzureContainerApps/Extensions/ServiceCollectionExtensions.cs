@@ -1,6 +1,7 @@
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Proto.Cluster.AzureContainerApps.Actors;
 using Proto.Cluster.AzureContainerApps.ClusterProviders;
 using Proto.Cluster.AzureContainerApps.Contracts;
 using Proto.Cluster.AzureContainerApps.Options;
@@ -23,17 +24,22 @@ public static class ServiceCollectionExtensions
     /// <param name="armClientProvider">An <see cref="IArmClientProvider"/> to create <see cref="ArmClient"/> instances.</param>
     /// <param name="configureMemberStore">An optional configuration for the member store.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
-    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services, IArmClientProvider? armClientProvider = default, Action<IServiceCollection>? configureMemberStore = null, Action<AzureContainerAppsProviderOptions>? configure = null)
+    public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services,
+        IArmClientProvider? armClientProvider = default,
+        Action<IServiceCollection>? configureMemberStore = null,
+        Action<AzureContainerAppsProviderOptions>? configure = null)
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
         services.ConfigureOptions<AzureContainerAppsProviderOptionsValidator>();
         services.AddSingleton<AzureContainerAppsProvider>();
         services.AddSingleton<ISystemClock, DefaultSystemClock>();
+        services.AddSingleton<IContainerAppMetadataAccessor, EnvironmentContainerAppMetadataAccessor>();
+        services.AddTransient<AzureContainerAppsClusterMonitor>();
 
         if (armClientProvider != null)
             services.AddSingleton(armClientProvider);
-        
+
         if (configureMemberStore != null)
             // Add the custom member store
             configureMemberStore.Invoke(services);
