@@ -1,4 +1,5 @@
 using Proto.Cluster;
+using Proto.Cluster.AzureContainerApps.Services;
 using Proto.Cluster.AzureContainerApps.Stores.Redis;
 using StackExchange.Redis;
 
@@ -11,8 +12,8 @@ public class RedisClusterMemberStoreTests : IClassFixture<RedisFixture>
 
     public RedisClusterMemberStoreTests(RedisFixture redisFixture)
     {
-        var multiplexer = ConnectionMultiplexer.Connect(redisFixture.GetConnectionString());
-        _memberStore = new RedisClusterMemberStore(multiplexer);
+        var multiplexerProvider = new RedisConnectionMultiplexerProvider(redisFixture.GetConnectionString());
+        _memberStore = new RedisClusterMemberStore(multiplexerProvider, new DefaultSystemClock());
 
         _member = new Member
         {

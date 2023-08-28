@@ -7,7 +7,9 @@ using Elsa.ProtoActor.Protos;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
+using Proto.Cluster.AzureContainerApps.ClusterProviders;
 using Proto.Cluster.AzureContainerApps.Stores.Redis;
+using Proto.Cluster.AzureContainerApps.Utils;
 using Proto.Persistence.Sqlite;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -60,7 +62,7 @@ services
             // Use Proto.Actor for workflow execution.
             runtime.UseProtoActor(protoActor =>
             {
-                var advertisedHost = ConfigUtils.FindSmallestIpAddress().ToString();
+                var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
 
                 protoActor.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
 
