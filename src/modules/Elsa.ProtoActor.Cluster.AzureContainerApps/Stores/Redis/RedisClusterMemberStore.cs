@@ -1,5 +1,11 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Proto.Cluster.AzureContainerApps.Contracts;
+using Proto.Cluster.AzureContainerApps.Models;
 using StackExchange.Redis;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.Redis;
@@ -10,53 +16,69 @@ namespace Proto.Cluster.AzureContainerApps.Stores.Redis;
 [PublicAPI]
 public class RedisClusterMemberStore : IClusterMemberStore
 {
+    private readonly IRedisConnectionMultiplexerProvider _connectionMultiplexerProvider;
+    private readonly ISystemClock _systemClock;
     private const string ClusterKey = "proto:cluster:members";
-    private readonly IDatabase _database;
+    private IDatabase _database;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RedisClusterMemberStore"/> class.
     /// </summary>
-    public RedisClusterMemberStore(ConnectionMultiplexer connectionMultiplexer) => _database = connectionMultiplexer.GetDatabase();
-
-    /// <inheritdoc />
-    public async ValueTask<ICollection<Member>> ListAsync(CancellationToken cancellationToken = default)
+    public RedisClusterMemberStore(IRedisConnectionMultiplexerProvider connectionMultiplexerProvider, ISystemClock systemClock)
     {
-        var entries = await _database.HashGetAllAsync(ClusterKey);
-
-        return entries.Select(entry =>
-        {
-            var clusterMember = Deserialize(entry.Value!);
-            return new Member
-            {
-                Id = entry.Name,
-                Host = clusterMember.Host,
-                Port = clusterMember.Port,
-                Kinds = { clusterMember.Kinds }
-            };
-        }).ToList();
+        _connectionMultiplexerProvider = connectionMultiplexerProvider;
+        _systemClock = systemClock;
     }
 
     /// <inheritdoc />
-    public async ValueTask RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
+    public async ValueTask<ICollection<StoredMember>> ListAsync(CancellationToken cancellationToken = default)
     {
-        var clusterMember = new ClusterMember(member.Host, member.Port, clusterName, member.Kinds);
-        var serialized = Serialize(clusterMember);
+        var entries = await _database.HashGetAllAsync(ClusterKey);
+        return entries.Select(entry => Deserialize(entry.Value!)).ToList();
+    }
 
-        await _database.HashSetAsync(ClusterKey, member.Id, serialized);
+    /// <inheritdoc />
+    public async ValueTask<StoredMember> RegisterAsync(string clusterName, Member member, CancellationToken cancellationToken = default)
+    {
+        var storedMember = StoredMember.FromMember(member, clusterName, _systemClock.UtcNow);
+        var serialized = Serialize(storedMember);
+        var database = await GetDatabaseAsync();
+        
+        await database.HashSetAsync(ClusterKey, member.Id, serialized);
+        return storedMember;
     }
 
     /// <inheritdoc />
     public async ValueTask UnregisterAsync(string memberId, CancellationToken cancellationToken = default)
     {
-        await _database.HashDeleteAsync(ClusterKey, memberId);
+        var database = await GetDatabaseAsync();
+        await database.HashDeleteAsync(ClusterKey, memberId);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask UpdateAsync(StoredMember storedMember, CancellationToken cancellationToken = default)
+    {
+        var serialized = Serialize(storedMember);
+        var database = await GetDatabaseAsync();
+        await database.HashSetAsync(ClusterKey, storedMember.Id, serialized);
     }
 
     /// <inheritdoc />
     public async ValueTask ClearAsync(string clusterName, CancellationToken cancellationToken = default)
     {
-        await _database.KeyDeleteAsync(ClusterKey);
+        var database = await GetDatabaseAsync();
+        await database.KeyDeleteAsync(ClusterKey);
     }
 
-    private static string Serialize(ClusterMember member) => JsonSerializer.Serialize(member);
-    private static ClusterMember Deserialize(string data) => JsonSerializer.Deserialize<ClusterMember>(data)!;
+    private async Task<IDatabase> GetDatabaseAsync()
+    {
+        if(_database is not null)
+            return _database;
+        
+        var connectionMultiplexer = await _connectionMultiplexerProvider.GetConnectionMultiplexerAsync();
+        return _database = connectionMultiplexer.GetDatabase();
+    }
+
+    private static string Serialize(StoredMember member) => JsonSerializer.Serialize(member);
+    private static StoredMember Deserialize(string data) => JsonSerializer.Deserialize<StoredMember>(data)!;
 }

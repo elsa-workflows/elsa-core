@@ -1,7 +1,8 @@
+using System;
 using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.Options;
 
 /// <summary>
 /// Validates the <see cref="ResourceTagsMemberStoreOptions"/> to ensure that the required options are provided.

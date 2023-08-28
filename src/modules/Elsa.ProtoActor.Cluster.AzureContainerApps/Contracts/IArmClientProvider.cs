@@ -1,6 +1,8 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.ResourceManager;
 
-namespace Proto.Cluster.AzureContainerApps;
+namespace Proto.Cluster.AzureContainerApps.Contracts;
 
 /// <summary>
 /// Provides an <see cref="ArmClient"/> instance.

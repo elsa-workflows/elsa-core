@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
 /// <summary>
@@ -8,7 +10,8 @@ public class ResourceTagsMemberStoreOptions
     /// <summary>
     /// The subscription ID to use. If not set, the default subscription will be used.
     /// </summary>
-    public string? SubscriptionId { get; set; }
+    [CanBeNull]
+    public string SubscriptionId { get; set; }
     
     /// <summary>
     /// The name of the resource group to use.

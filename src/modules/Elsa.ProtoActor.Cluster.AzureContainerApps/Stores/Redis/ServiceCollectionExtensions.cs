@@ -1,11 +1,13 @@
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
+using Proto.Cluster.AzureContainerApps.Contracts;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.Redis;
 
 /// <summary>
 /// Adds extension methods to <see cref="IServiceCollection"/> for registering the Azure Container Apps provider
 /// </summary>
+[PublicAPI]
 public static class ServiceCollectionExtensions
 {
     /// <summary>
@@ -16,7 +18,7 @@ public static class ServiceCollectionExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddRedisClusterMemberStore(this IServiceCollection services, string connectionString)
     {
-        services.AddSingleton<ConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(connectionString));
+        services.AddSingleton<IRedisConnectionMultiplexerProvider>(new RedisConnectionMultiplexerProvider(connectionString));
         services.AddSingleton<IClusterMemberStore, RedisClusterMemberStore>();
         return services;
     }

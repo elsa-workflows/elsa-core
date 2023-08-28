@@ -1,6 +1,9 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.Resources;
+using JetBrains.Annotations;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;
 
@@ -17,7 +20,7 @@ public static class ArmClientUtils
     /// <param name="subscriptionId">The subscription ID. If not set, the default subscription will be used.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The resource group.</returns>
-    public static async Task<ResourceGroupResource> GetResourceGroupByNameAsync(this ArmClient client, string resourceGroupName, string? subscriptionId = default, CancellationToken cancellationToken = default)
+    public static async Task<ResourceGroupResource> GetResourceGroupByNameAsync(this ArmClient client, string resourceGroupName, [CanBeNull] string subscriptionId = default, CancellationToken cancellationToken = default)
     {
         var resourceIdentifier = $"/subscriptions/{subscriptionId}";
         var subscription = subscriptionId != null ? client.GetSubscriptionResource(ResourceIdentifier.Parse(resourceIdentifier)) : await client.GetDefaultSubscriptionAsync(cancellationToken);
