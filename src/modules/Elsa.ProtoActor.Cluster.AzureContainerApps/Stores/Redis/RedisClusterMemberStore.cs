@@ -19,7 +19,7 @@ public class RedisClusterMemberStore : IClusterMemberStore
     private readonly IRedisConnectionMultiplexerProvider _connectionMultiplexerProvider;
     private readonly ISystemClock _systemClock;
     private const string ClusterKey = "proto:cluster:members";
-    private IDatabase _database;
+    private IDatabase? _database;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RedisClusterMemberStore"/> class.
@@ -33,7 +33,8 @@ public class RedisClusterMemberStore : IClusterMemberStore
     /// <inheritdoc />
     public async ValueTask<ICollection<StoredMember>> ListAsync(CancellationToken cancellationToken = default)
     {
-        var entries = await _database.HashGetAllAsync(ClusterKey);
+        var database = await GetDatabaseAsync();
+        var entries = await database.HashGetAllAsync(ClusterKey);
         return entries.Select(entry => Deserialize(entry.Value!)).ToList();
     }
 
