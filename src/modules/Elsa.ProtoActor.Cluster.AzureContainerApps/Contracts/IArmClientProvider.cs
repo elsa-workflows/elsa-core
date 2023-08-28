@@ -1,3 +1,5 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.ResourceManager;
 
 namespace Proto.Cluster.AzureContainerApps.Contracts;

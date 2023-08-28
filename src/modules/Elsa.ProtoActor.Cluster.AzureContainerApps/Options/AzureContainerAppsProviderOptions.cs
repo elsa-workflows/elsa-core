@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 using Proto.Cluster.AzureContainerApps.ClusterProviders;
 using Proto.Cluster.AzureContainerApps.Contracts;
@@ -13,7 +14,8 @@ public class AzureContainerAppsProviderOptions
     /// <summary>
     /// The subscription ID to use. If not set, the default subscription will be used.
     /// </summary>
-    public string? SubscriptionId { get; set; }
+    [CanBeNull]
+    public string SubscriptionId { get; set; }
 
     /// <summary>
     /// The name of the resource group to use.

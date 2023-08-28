@@ -1,3 +1,4 @@
+using System;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,9 +26,9 @@ public static class ServiceCollectionExtensions
     /// <param name="configureMemberStore">An optional configuration for the member store.</param>
     /// <param name="configure">An optional action to configure the provider options.</param>
     public static IServiceCollection AddAzureContainerAppsProvider(this IServiceCollection services,
-        IArmClientProvider? armClientProvider = default,
-        Action<IServiceCollection>? configureMemberStore = null,
-        Action<AzureContainerAppsProviderOptions>? configure = null)
+        [CanBeNull] IArmClientProvider armClientProvider = default,
+        [CanBeNull] Action<IServiceCollection> configureMemberStore = null,
+        [CanBeNull] Action<AzureContainerAppsProviderOptions> configure = null)
     {
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);

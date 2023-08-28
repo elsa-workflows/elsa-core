@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Proto.Cluster.AzureContainerApps.Messages;
 
 /// <summary>

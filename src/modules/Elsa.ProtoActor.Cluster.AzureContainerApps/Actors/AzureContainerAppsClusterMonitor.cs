@@ -1,4 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.ResourceManager.AppContainers;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Proto.Cluster.AzureContainerApps.Contracts;
@@ -30,8 +36,8 @@ public class AzureContainerAppsClusterMonitor : IActor
     private string _address = default!;
     private ICollection<string> _kinds = default!;
     private ContainerAppMetadata _containerAppMetadata = default!;
-    private ContainerAppResource? _containerApp;
-    private CancellationTokenSource? _scheduledTask;
+    [CanBeNull] private ContainerAppResource _containerApp;
+    [CanBeNull] private CancellationTokenSource _scheduledTask;
     private bool _stopping;
 
     /// <summary>

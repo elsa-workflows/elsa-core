@@ -1,3 +1,5 @@
+using System;
+
 namespace Proto.Cluster.AzureContainerApps.Contracts;
 
 /// <summary>

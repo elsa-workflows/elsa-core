@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.AzureContainerApps.Actors;
 using Proto.Cluster.AzureContainerApps.Messages;

@@ -1,4 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.Core;
 using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
@@ -21,9 +26,9 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
     private readonly ILogger _logger;
     private readonly string _containerAppName;
     private readonly string _resourceGroupName;
-    private readonly string? _subscriptionId;
+    [CanBeNull] private readonly string _subscriptionId;
     
-    private ArmClient? _armClient;
+    [CanBeNull] private ArmClient _armClient;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ResourceTagsClusterMemberStore"/> class.
@@ -54,7 +59,7 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         ISystemClock systemClock,
         ILogger<ResourceTagsClusterMemberStore> logger,
         string resourceGroupName, 
-        string? subscriptionId = default)
+        [CanBeNull] string subscriptionId = default)
     {
         _armClientProvider = armArmClientProvider;
         _systemClock = systemClock;
@@ -212,7 +217,8 @@ public class ResourceTagsClusterMemberStore : IClusterMemberStore
         await containerApp.SetTagsAsync(tags, cancellationToken);
     }
 
-    private async Task<ContainerAppResource?> GetContainerAppAsync(CancellationToken cancellationToken)
+    [ItemCanBeNull]
+    private async Task<ContainerAppResource> GetContainerAppAsync(CancellationToken cancellationToken)
     {
         var armClient = await GetArmClientAsync().ConfigureAwait(false);
         var subscriptionId = _subscriptionId;
