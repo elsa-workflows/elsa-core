@@ -1,4 +1,3 @@
-using Azure.ResourceManager;
 using Azure.ResourceManager.AppContainers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,7 +12,7 @@ using Proto.Utils;
 namespace Proto.Cluster.AzureContainerApps.Actors;
 
 /// <summary>
-/// An actor that monitors periodically updates the member list. 
+/// An actor that periodically updates the member list. 
 /// </summary>
 public class AzureContainerAppsClusterMonitor : IActor
 {
@@ -30,9 +29,8 @@ public class AzureContainerAppsClusterMonitor : IActor
     private int _port;
     private string _address = default!;
     private ICollection<string> _kinds = default!;
-    private ArmClient _client = default!;
     private ContainerAppMetadata _containerAppMetadata = default!;
-    private ContainerAppResource _containerApp = default!;
+    private ContainerAppResource? _containerApp;
     private CancellationTokenSource? _scheduledTask;
     private bool _stopping;
 
@@ -80,11 +78,9 @@ public class AzureContainerAppsClusterMonitor : IActor
     private async Task OnStarted(CancellationToken cancellationToken)
     {
         _containerAppMetadata = await _containerAppMetadataAccessor.GetMetadataAsync(cancellationToken).ConfigureAwait(false);
-        _client = await _armClientProvider.CreateClientAsync(cancellationToken).ConfigureAwait(false);
-        await LoadContainerAppAsync(_containerAppMetadata.ContainerAppName).ConfigureAwait(false);
     }
 
-    private async Task OnRegisterMember(IContext context, RegisterMember command)
+    private Task OnRegisterMember(IContext context, RegisterMember command)
     {
         // Store the member ID.
         _memberId = command.MemberId;
@@ -92,14 +88,19 @@ public class AzureContainerAppsClusterMonitor : IActor
         _port = command.Port;
         _kinds = command.Kinds;
         _address = $"{_host}:{_port}";
-        
-        // Register the member in the store.
-        await AddMember().ConfigureAwait(false);
 
-        // Schedule the first update.
-        ScheduleUpdate(context);
+        var registerMemberTask = RegisterMemberInternal();
+
+        // Reenter after the member has been registered.
+        context.ReenterAfter(registerMemberTask, _ =>
+        {
+            // Schedule the first update.
+            ScheduleUpdate(context);
+        });
+
+        return Task.CompletedTask;
     }
-    
+
     private async Task OnUnregisterMember()
     {
         await Retry.Try(UnregisterMemberInternal, onError: OnError, onFailed: OnFailed).ConfigureAwait(false);
@@ -107,14 +108,30 @@ public class AzureContainerAppsClusterMonitor : IActor
         void OnFailed(Exception exception) => _logger.LogError(exception, "Failed to unregister member");
     }
 
-    private async Task OnUpdateMembers(IContext context)
+    private Task OnUpdateMembers(IContext context)
     {
         if (_stopping)
-            return;
+            return Task.CompletedTask;
 
+        var updateMembersTask = UpdateMembersAsync();
+        context.ReenterAfter(updateMembersTask, _ =>
+        {
+            // Schedule the next update.
+            ScheduleUpdate(context);
+        });
+
+        return Task.CompletedTask;
+    }
+
+    private async Task RegisterMemberInternal()
+    {
+        // Register the member in the store.
+        await AddMember().ConfigureAwait(false);
+    }
+
+    private async Task UpdateMembersAsync()
+    {
         var storeName = _clusterMemberStore.GetType().Name;
-        var revisionName = _containerAppMetadata.RevisionName;
-
         _logger.LogInformation("Looking for members in {Store}", storeName);
 
         var now = _systemClock.UtcNow;
@@ -122,69 +139,76 @@ public class AzureContainerAppsClusterMonitor : IActor
         try
         {
             var ttl = _options.Value.PollInterval + _options.Value.MemberTimeToLive;
-            var storedMembers = (await _clusterMemberStore.ListAsync().ConfigureAwait(false)).ToList();
+            var storedMembers = await GetMembersFromStore();
             var activeMembers = storedMembers.Where(m => m.UpdatedAt + ttl >= now).ToList();
             var expiredMembers = storedMembers.Where(m => m.UpdatedAt + ttl < now).ToList();
 
-            // Log the members we got from storage.
-            if (storedMembers.Any())
-            {
-                _logger.LogInformation("Got members {Members}", storedMembers.Count);
+            LogStoredMembers(storedMembers);
+            await UpdateCurrentMember(activeMembers, now);
+            await RemoveExpiredMembers(expiredMembers);
 
-                foreach (var storedMember in storedMembers)
-                    _logger.LogInformation("Member {MemberId} on {MemberAddress}", storedMember.Id, storedMember.Address);
-            }
-            else
-            {
-                _logger.LogWarning("Did not get any members from {Store}", storeName);
-            }
-
-            // Update the current member entry if it's still active.
-            var currentMember = activeMembers.FirstOrDefault(m => m.Id == _memberId);
-
-            if (currentMember is not null)
-            {
-                // Check if the current revision is active.
-                var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
-
-                if (!canReceiveTraffic)
-                {
-                    _logger.LogInformation("Revision {RevisionName} is not active", revisionName);
-                    expiredMembers.Add(currentMember);
-                    activeMembers.Remove(currentMember);
-                }
-                else
-                {
-                    _logger.LogInformation("Updating current member {MemberId} on {MemberAddress}", currentMember.Id, currentMember.Address);
-                    currentMember = currentMember with { UpdatedAt = now };
-                    await _clusterMemberStore.UpdateAsync(currentMember).ConfigureAwait(false);
-                }
-            }
-
-            // Remove expired members from storage.
-            if (expiredMembers.Any())
-            {
-                _logger.LogInformation("Removing {Members} expired members", expiredMembers.Count);
-
-                foreach (var expiredMember in expiredMembers)
-                {
-                    _logger.LogInformation("Expired member {MemberId} on {MemberAddress}", expiredMember.Id, expiredMember.Address);
-                    await _clusterMemberStore.UnregisterAsync(expiredMember.Id).ConfigureAwait(false);
-                }
-            }
-
-            var members = activeMembers.Select(x => x.ToMember()).ToList();
-            _cluster.MemberList.UpdateClusterTopology(members);
+            UpdateClusterTopology(activeMembers);
         }
         catch (Exception x)
         {
             _logger.LogError(x, "Failed to get members from {Store}", storeName);
         }
-        finally
+    }
+
+    private async Task<IList<StoredMember>> GetMembersFromStore()
+    {
+        return (await _clusterMemberStore.ListAsync().ConfigureAwait(false)).ToList();
+    }
+
+    private void LogStoredMembers(ICollection<StoredMember> storedMembers)
+    {
+        if (storedMembers.Any())
+            _logger.LogInformation("Got members {Members}", storedMembers.Count);
+        else
+            _logger.LogWarning("Did not get any members from {Store}", _clusterMemberStore.GetType().Name);
+    }
+
+    private async Task UpdateCurrentMember(ICollection<StoredMember> activeMembers, DateTimeOffset now)
+    {
+        var currentMember = activeMembers.FirstOrDefault(m => m.Id == _memberId);
+
+        if (currentMember is not null)
         {
-            // Schedule the next update.
-            ScheduleUpdate(context);
+            var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
+            var revisionName = _containerAppMetadata.RevisionName;
+
+            if (!canReceiveTraffic)
+            {
+                _logger.LogInformation("Revision {RevisionName} is not active", revisionName);
+                activeMembers.Remove(currentMember);
+            }
+            else
+            {
+                _logger.LogInformation("Updating current member {MemberId} on {MemberAddress}", currentMember.Id, currentMember.Address);
+                currentMember = currentMember with { UpdatedAt = now };
+                await _clusterMemberStore.UpdateAsync(currentMember).ConfigureAwait(false);
+            }
         }
+    }
+
+    private async Task RemoveExpiredMembers(IList<StoredMember> expiredMembers)
+    {
+        if (expiredMembers.Any())
+        {
+            _logger.LogInformation("Removing {Members} expired members", expiredMembers.Count);
+
+            foreach (var expiredMember in expiredMembers)
+            {
+                _logger.LogInformation("Expired member {MemberId} on {MemberAddress}", expiredMember.Id, expiredMember.Address);
+                await _clusterMemberStore.UnregisterAsync(expiredMember.Id).ConfigureAwait(false);
+            }
+        }
+    }
+
+    private void UpdateClusterTopology(IEnumerable<StoredMember> activeMembers)
+    {
+        var members = activeMembers.Select(x => x.ToMember()).ToList();
+        _cluster.MemberList.UpdateClusterTopology(members);
     }
     
     private async Task AddMember()
@@ -194,7 +218,7 @@ public class AzureContainerAppsClusterMonitor : IActor
         void OnError(int attempt, Exception exception) => _logger.LogWarning(exception, "Failed to register member");
         void OnFailed(Exception exception) => _logger.LogError(exception, "Failed to register member");
     }
-    
+
     private async Task AddMemberInternal()
     {
         var canReceiveTraffic = await CanReceiveTrafficAsync().ConfigureAwait(false);
@@ -221,33 +245,40 @@ public class AzureContainerAppsClusterMonitor : IActor
 
         await _clusterMemberStore.RegisterAsync(ClusterName, member).ConfigureAwait(false);
     }
-    
+
     private void ScheduleUpdate(IContext context)
     {
-        if(_stopping)
+        if (_stopping)
             return;
-        
+
         var pollInterval = _options.Value.PollInterval;
         _scheduledTask = context.Scheduler().SendOnce(pollInterval, context.Self, new UpdateMembers());
     }
 
     private async Task<bool> CanReceiveTrafficAsync()
     {
+        var containerApp = await GetContainerAppAsync();
         var revisionName = _containerAppMetadata.RevisionName;
-        var revision = await _containerApp.GetContainerAppRevisionAsync(revisionName).ConfigureAwait(false);
+        var revision = await containerApp.GetContainerAppRevisionAsync(revisionName).ConfigureAwait(false);
         return revision.Value.Data.TrafficWeight.GetValueOrDefault() > 0;
     }
-    
-    private async Task LoadContainerAppAsync(string containerAppName)
+
+    private async Task<ContainerAppResource> GetContainerAppAsync()
     {
+        if (_containerApp is not null)
+            return _containerApp;
+
         var subscriptionId = _options.Value.SubscriptionId;
         var resourceGroupName = _options.Value.ResourceGroupName;
-        var resourceGroup = await _client.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId).ConfigureAwait(false);
+        var client = await _armClientProvider.CreateClientAsync().ConfigureAwait(false);
+        var resourceGroup = await client.GetResourceGroupByNameAsync(resourceGroupName, subscriptionId).ConfigureAwait(false);
+        var containerAppName = _containerAppMetadata.ContainerAppName;
         var response = await resourceGroup.GetContainerAppAsync(containerAppName).ConfigureAwait(false);
 
         _containerApp = response.Value;
+        return _containerApp;
     }
-    
+
     private async Task UnregisterMemberInternal()
     {
         _stopping = true;
