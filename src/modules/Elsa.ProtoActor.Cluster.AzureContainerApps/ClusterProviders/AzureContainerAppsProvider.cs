@@ -15,12 +15,12 @@ namespace Proto.Cluster.AzureContainerApps.ClusterProviders;
 public class AzureContainerAppsProvider : IClusterProvider
 {
     private readonly ILogger _logger;
-    private readonly string _advertisedHost;
     
     private string _address = default!;
     private Cluster _cluster = default!;
     private string _clusterName = default!;
     private string[] _kinds = default!;
+    private string _host = default!;
     private int _port;
     private PID _clusterMonitor = default!;
 
@@ -31,17 +31,17 @@ public class AzureContainerAppsProvider : IClusterProvider
     public AzureContainerAppsProvider(ILogger<AzureContainerAppsProvider> logger)
     {
         _logger = logger;
-        _advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
     }
 
     /// <inheritdoc />
     public Task StartMemberAsync(Cluster cluster)
     {
         var clusterName = cluster.Config.ClusterName;
-        var (_, port) = cluster.System.GetAddress();
+        var (host, port) = cluster.System.GetAddress();
         var kinds = cluster.GetClusterKinds();
         _cluster = cluster;
         _clusterName = clusterName;
+        _host = host;
         _port = port;
         _kinds = kinds;
         
@@ -86,7 +86,7 @@ public class AzureContainerAppsProvider : IClusterProvider
     private void RegisterMember()
     {
         // Send a message to register this member, which will also start the cluster monitor.
-        _cluster.System.Root.Send(_clusterMonitor,new RegisterMember(_clusterName, _advertisedHost, _port, _kinds, _cluster.System.Id));
+        _cluster.System.Root.Send(_clusterMonitor,new RegisterMember(_clusterName, _host, _port, _kinds, _cluster.System.Id));
     }
 
     private void UnregisterMember()
