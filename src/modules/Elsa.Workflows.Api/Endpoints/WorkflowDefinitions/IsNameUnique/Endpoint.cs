@@ -25,8 +25,8 @@ internal class IsNameUnique : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var exists = await _store.GetIsNameUnique(request.Name.Trim(), request.DefinitionId, cancellationToken);
-        var response = new Response(!exists);
+        var isUnique = await _store.GetIsNameUnique(request.Name.Trim(), request.DefinitionId, cancellationToken);
+        var response = new Response(isUnique);
         
         await SendOkAsync(response, cancellationToken);
     }

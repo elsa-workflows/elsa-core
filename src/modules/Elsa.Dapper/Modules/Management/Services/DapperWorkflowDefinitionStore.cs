@@ -154,13 +154,15 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        return await _store.AnyAsync(query =>
+        var exists = await _store.AnyAsync(query =>
         {
             query.Is(nameof(WorkflowDefinition.Name), name);
 
             if (definitionId != null)
                 query.IsNot(nameof(WorkflowDefinition.DefinitionId), definitionId);
         }, cancellationToken);
+
+        return !exists;
     }
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
