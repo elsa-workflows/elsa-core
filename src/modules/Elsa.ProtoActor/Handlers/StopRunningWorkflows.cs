@@ -1,6 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
 using Proto.Cluster;

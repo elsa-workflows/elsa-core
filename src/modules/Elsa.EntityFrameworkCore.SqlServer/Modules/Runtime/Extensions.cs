@@ -6,6 +6,12 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static partial class Extensions
 {
+    public static EFCoreWorkflowRuntimePersistenceFeature UseSqlServer(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    {
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
+        return feature;
+    }
+    
     public static EFCoreDefaultWorkflowRuntimePersistenceFeature UseSqlServer(this EFCoreDefaultWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);

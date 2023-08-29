@@ -1,5 +1,6 @@
 using Elsa.ProtoActor.Extensions;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.Models;
+using Elsa.ProtoActor.ProtoBuf;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
@@ -7,19 +8,18 @@ using Proto.Persistence.SnapshotStrategies;
 
 namespace Elsa.ProtoActor.Grains;
 
-// TODO: Replace this grain with a store-based implementation that stores metrics.
 /// <summary>
 /// Represents a registry of workflow instances for a given workflow definition version.
 /// </summary>
-public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
+public class RunningWorkflows : RunningWorkflowsBase
 {
-    private const int EventsPerSnapshot = 100;
+    private const int EventsPerSnapshot = 1;
     private readonly Persistence _persistence;
-    private IDictionary<string, WorkflowInstanceEntry> _lookupByInstanceId = new Dictionary<string, WorkflowInstanceEntry>();
-    private IDictionary<string, WorkflowInstanceEntry> _lookupByCorrelationId = new Dictionary<string, WorkflowInstanceEntry>();
+    private IDictionary<string, RunningWorkflowInstanceEntry> _lookupByInstanceId = new Dictionary<string, RunningWorkflowInstanceEntry>();
+    private IDictionary<string, RunningWorkflowInstanceEntry> _lookupByCorrelationId = new Dictionary<string, RunningWorkflowInstanceEntry>();
 
     /// <inheritdoc />
-    public RunningWorkflowsGrain(IProvider provider, IContext context) : base(context)
+    public RunningWorkflows(IProvider provider, IContext context) : base(context)
     {
         _persistence = Persistence.WithEventSourcingAndSnapshotting(
             provider, 
@@ -29,6 +29,12 @@ public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
             ApplySnapshot, 
             new IntervalStrategy(EventsPerSnapshot),
             GetState);
+    }
+
+    /// <inheritdoc />
+    public override async Task OnStarted()
+    {
+        await _persistence.RecoverStateAsync();
     }
 
     /// <inheritdoc />
@@ -58,7 +64,7 @@ public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
     
     private void ApplySnapshot(Snapshot snapshot)
     {
-        var registrySnapshot = (WorkflowRegistrySnapshot)snapshot.State;
+        var registrySnapshot = (RunningWorkflowsSnapshot)snapshot.State;
         _lookupByCorrelationId = registrySnapshot.Entries.Where(x => !string.IsNullOrEmpty(x.CorrelationId)).ToDictionary(x => x.CorrelationId!);
         _lookupByInstanceId = registrySnapshot.Entries.ToDictionary(x => x.InstanceId);
     }
@@ -76,11 +82,11 @@ public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
         }
     }
 
-    private object GetState() => new WorkflowRegistrySnapshot(_lookupByInstanceId.Values);
+    private object GetState() => new RunningWorkflowsSnapshot(_lookupByInstanceId.Values.ToList());
     
     private void RegisterInternal(RegisterRunningWorkflowRequest request)
     {
-        var entry = new WorkflowInstanceEntry(request.DefinitionId, request.Version, request.InstanceId, request.CorrelationId);
+        var entry = new RunningWorkflowInstanceEntry(request.DefinitionId, request.Version, request.InstanceId, request.CorrelationId);
         _lookupByInstanceId[request.InstanceId] = entry;
 
         if (!string.IsNullOrEmpty(request.CorrelationId))
@@ -97,5 +103,3 @@ public class RunningWorkflowsGrain : RunningWorkflowsGrainBase
         _lookupByInstanceId.Remove(request.InstanceId);
     }
 }
-
-internal record WorkflowInstanceEntry(string DefinitionId, int Version, string InstanceId, string? CorrelationId);

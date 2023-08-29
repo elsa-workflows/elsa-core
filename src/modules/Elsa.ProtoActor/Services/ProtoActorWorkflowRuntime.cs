@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -11,12 +11,12 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
-using ProtoWorkflowStatus = Elsa.ProtoActor.Protos.WorkflowStatus;
-using ProtoWorkflowSubStatus = Elsa.ProtoActor.Protos.WorkflowSubStatus;
-using ProtoWorkflowFault = Elsa.ProtoActor.Protos.WorkflowFault;
-using ProtoException = Elsa.ProtoActor.Protos.ExceptionState;
-using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.Protos.WorkflowExecutionResponse;
-using ProtoBookmark = Elsa.ProtoActor.Protos.Bookmark;
+using ProtoWorkflowStatus = Elsa.ProtoActor.ProtoBuf.WorkflowStatus;
+using ProtoWorkflowSubStatus = Elsa.ProtoActor.ProtoBuf.WorkflowSubStatus;
+using ProtoWorkflowFault = Elsa.ProtoActor.ProtoBuf.WorkflowFault;
+using ProtoException = Elsa.ProtoActor.ProtoBuf.ExceptionState;
+using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.ProtoBuf.WorkflowExecutionResponse;
+using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Services;
 
