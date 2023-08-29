@@ -146,7 +146,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        return await _store.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, cancellationToken);
+        var exists = await _store.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, cancellationToken);
+        return !exists;
     }
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
