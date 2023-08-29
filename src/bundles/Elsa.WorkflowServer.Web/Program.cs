@@ -1,3 +1,4 @@
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -10,9 +11,11 @@ using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
+using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
-const bool useProtoActor = false;
+const bool useSqlServer = true;
+const bool useProtoActor = true;
 const bool useHangfire = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +24,7 @@ var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
+var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 
 // Add Elsa services.
@@ -43,7 +47,13 @@ services
                 if(useMongoDb)
                     identity.UseMongoDb();
                 else
-                    identity.UseEntityFrameworkCore();
+                    identity.UseEntityFrameworkCore(ef =>
+                    {
+                        if(useSqlServer)
+                            ef.UseSqlServer(sqlServerConnectionString!);
+                        else
+                            ef.UseSqlite(sqliteConnectionString);
+                    });
                 
                 identity.IdentityOptions = options => identitySection.Bind(options);
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
@@ -57,7 +67,13 @@ services
                 if(useMongoDb)
                     management.UseMongoDb();
                 else
-                    management.UseEntityFrameworkCore();
+                    management.UseEntityFrameworkCore(ef =>
+                    {
+                        if(useSqlServer)
+                            ef.UseSqlServer(sqlServerConnectionString!);
+                        else
+                            ef.UseSqlite(sqliteConnectionString);
+                    });
                 
                 management.AddVariableType<ApiResponse<User>>("Api");
                 management.AddVariableType<User>("Api");
@@ -68,17 +84,37 @@ services
                 if(useMongoDb)
                     runtime.UseMongoDb();
                 else
-                    runtime.UseEntityFrameworkCore();
+                    runtime.UseEntityFrameworkCore(ef =>
+                    {
+                        if(useSqlServer)
+                            ef.UseSqlServer(sqlServerConnectionString!);
+                        else
+                            ef.UseSqlite(sqliteConnectionString);
+                    });
                 
                 if(useProtoActor)
-                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString)));
+                {
+                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+                    {
+                        if(useSqlServer)
+                            return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
+                        else
+                            return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                    });
+                }
                 else
                     runtime.UseDefaultRuntime(dr =>
                     {
                         if(useMongoDb)
                             dr.UseMongoDb();
                         else
-                            dr.UseEntityFrameworkCore();
+                            dr.UseEntityFrameworkCore(ef =>
+                            {
+                                if(useSqlServer)
+                                    ef.UseSqlServer(sqlServerConnectionString!);
+                                else
+                                    ef.UseSqlite(sqliteConnectionString);
+                            });
                     });
                 
                 runtime.UseExecutionLogRecords(e =>
@@ -86,7 +122,13 @@ services
                     if(useMongoDb)
                         e.UseMongoDb();
                     else
-                        e.UseEntityFrameworkCore();
+                        e.UseEntityFrameworkCore(ef =>
+                        {
+                            if(useSqlServer)
+                                ef.UseSqlServer(sqlServerConnectionString!);
+                            else
+                                ef.UseSqlite(sqliteConnectionString);
+                        });
                 });
                 runtime.UseMassTransitDispatcher();
                 

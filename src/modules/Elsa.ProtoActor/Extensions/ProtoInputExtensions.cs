@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.ProtoActor.Extensions;

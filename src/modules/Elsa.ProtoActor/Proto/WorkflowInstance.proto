@@ -1,21 +1,17 @@
 syntax = "proto3";
-
-option csharp_namespace = "Elsa.ProtoActor.Protos";
+option csharp_namespace = "Elsa.ProtoActor.ProtoBuf";
+package Elsa.ProtoActor.ProtoBuf;
 
 import "google/protobuf/empty.proto";
-import "Messages.proto";
+import "google/protobuf/wrappers.proto";
+import "Shared.proto";
+import "WorkflowInstance.Messages.proto";
 
-service WorkflowGrain {
+service WorkflowInstance {
   rpc CanStart (StartWorkflowRequest) returns (CanStartWorkflowResponse);
   rpc Start (StartWorkflowRequest) returns (WorkflowExecutionResponse);
   rpc Stop (Empty) returns (Empty);
   rpc Resume (ResumeWorkflowRequest) returns (WorkflowExecutionResponse);
   rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
   rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
-}
-
-service RunningWorkflowsGrain {
-  rpc Register(RegisterRunningWorkflowRequest) returns (google.protobuf.Empty);
-  rpc Unregister(UnregisterRunningWorkflowRequest) returns (google.protobuf.Empty);
-  rpc Count (CountRunningWorkflowsRequest) returns (CountRunningWorkflowsResponse);
 }

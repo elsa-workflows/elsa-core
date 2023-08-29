@@ -1,0 +1,15 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.ProtoActor.ProtoBuf";
+package Elsa.ProtoActor.ProtoBuf;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+// Shared.
+message Json {
+  string text = 1;
+}
+
+message Input {
+  map<string, Json> Data = 1;
+}

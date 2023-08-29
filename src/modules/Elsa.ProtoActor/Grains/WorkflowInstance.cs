@@ -1,7 +1,8 @@
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -11,14 +12,14 @@ using Proto.Cluster;
 using Proto.Persistence;
 using Exception = System.Exception;
 using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
-using ProtoBookmark = Elsa.ProtoActor.Protos.Bookmark;
+using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;
 
 /// <summary>
 /// Executes a workflow.
 /// </summary>
-internal class WorkflowGrain : WorkflowGrainBase
+internal class WorkflowInstance : WorkflowInstanceBase
 {
     private const int MaxSnapshotsToKeep = 5;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
@@ -38,7 +39,7 @@ internal class WorkflowGrain : WorkflowGrainBase
     private WorkflowState _workflowState = default!;
 
     /// <inheritdoc />
-    public WorkflowGrain(
+    public WorkflowInstance(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowStateSerializer workflowStateSerializer,
@@ -140,7 +141,7 @@ internal class WorkflowGrain : WorkflowGrainBase
         var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
         await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
         var workflowState = _workflowHost.WorkflowState;
-        var result = workflowState.Status == WorkflowStatus.Finished ? Protos.RunWorkflowResult.Finished : Protos.RunWorkflowResult.Suspended;
+        var result = workflowState.Status == WorkflowStatus.Finished ? ProtoBuf.RunWorkflowResult.Finished : ProtoBuf.RunWorkflowResult.Suspended;
 
         _workflowState = workflowState;
 
@@ -261,7 +262,7 @@ internal class WorkflowGrain : WorkflowGrainBase
             await _persistence.PersistRollingSnapshotAsync(GetState(), MaxSnapshotsToKeep);
     }
 
-    private object GetState() => new WorkflowSnapshot(_definitionId, _instanceId, _version, _workflowState, _input);
+    private object GetState() => new WorkflowSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
     {

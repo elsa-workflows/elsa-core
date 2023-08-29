@@ -1,19 +1,11 @@
 syntax = "proto3";
+option csharp_namespace = "Elsa.ProtoActor.ProtoBuf";
+package Elsa.ProtoActor.ProtoBuf;
+
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
-package Elsa.ProtoActor.Protos;
-option csharp_namespace = "Elsa.ProtoActor.Protos";
+import "Shared.proto";
 
-// Shared.
-message Json {
-  string text = 1;
-}
-
-message Input {
-  map<string, Json> Data = 1;
-}
-
-// WorkflowGrain.
 message CanStartWorkflowResponse {
   bool CanStart = 1;
 }
@@ -102,26 +94,4 @@ message Bookmark {
   optional bool AutoBurn = 8;
   optional string CallbackMethodName = 9;
   string CreatedAt = 10; // ISO 8601
-}
-
-// RunningWorkflowsGrain.
-message RegisterRunningWorkflowRequest {
-  string DefinitionId = 1;
-  int32 Version = 2;
-  string InstanceId = 3;
-  optional string CorrelationId = 6;
-}
-
-message UnregisterRunningWorkflowRequest {
-  string InstanceId = 1;
-}
-
-message CountRunningWorkflowsRequest {
-  string DefinitionId = 1;
-  int32 Version = 2;
-  optional string CorrelationId = 3;
-}
-
-message CountRunningWorkflowsResponse {
-  optional int32 Count = 1;
 }

@@ -3,7 +3,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.ProtoActor.Protos;
+using Elsa.ProtoActor.ProtoBuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
@@ -69,7 +69,7 @@ services
                 protoActor.RemoteConfig = _ => GrpcNetRemoteConfig
                     .BindTo(advertisedHost)
                     .WithProtoMessages(EmptyReflection.Descriptor)
-                    .WithProtoMessages(MessagesReflection.Descriptor)
+                    .WithProtoMessages(SharedReflection.Descriptor)
                     .WithLogLevelForDeserializationErrors(LogLevel.Critical)
                     .WithRemoteDiagnostics(true); // required by proto.actor dashboard
 
