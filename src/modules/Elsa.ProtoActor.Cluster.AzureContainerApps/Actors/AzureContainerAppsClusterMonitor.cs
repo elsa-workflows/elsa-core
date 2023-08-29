@@ -150,7 +150,7 @@ public class AzureContainerAppsClusterMonitor : IActor
             var expiredMembers = storedMembers.Where(m => m.UpdatedAt + ttl < now).ToList();
 
             LogStoredMembers(storedMembers);
-            await UpdateCurrentMember(activeMembers, now);
+            await UpdateCurrentMember(activeMembers, expiredMembers, now);
             await RemoveExpiredMembers(expiredMembers);
 
             UpdateClusterTopology(activeMembers);
@@ -174,7 +174,7 @@ public class AzureContainerAppsClusterMonitor : IActor
             _logger.LogWarning("Did not get any members from {Store}", _clusterMemberStore.GetType().Name);
     }
 
-    private async Task UpdateCurrentMember(ICollection<StoredMember> activeMembers, DateTimeOffset now)
+    private async Task UpdateCurrentMember(ICollection<StoredMember> activeMembers, ICollection<StoredMember> expiredMembers, DateTimeOffset now)
     {
         var currentMember = activeMembers.FirstOrDefault(m => m.Id == _memberId);
 
@@ -187,6 +187,7 @@ public class AzureContainerAppsClusterMonitor : IActor
             {
                 _logger.LogInformation("Revision {RevisionName} is not active", revisionName);
                 activeMembers.Remove(currentMember);
+                expiredMembers.Add(currentMember);
             }
             else
             {
