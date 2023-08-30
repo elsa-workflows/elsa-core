@@ -20,7 +20,7 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     public DapperWorkflowRuntimePersistenceFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -29,6 +29,8 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
             feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxMessageStore>();
+            feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
+            feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
         });
     }
 
@@ -36,9 +38,11 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     public override void Apply()
     {
         base.Apply();
-        
+
         Services.AddSingleton<DapperTriggerStore>();
         Services.AddSingleton<DapperBookmarkStore>();
         Services.AddSingleton<DapperWorkflowInboxMessageStore>();
+        Services.AddSingleton<DapperWorkflowExecutionLogStore>();
+        Services.AddSingleton<DapperActivityExecutionRecordStore>();
     }
 }

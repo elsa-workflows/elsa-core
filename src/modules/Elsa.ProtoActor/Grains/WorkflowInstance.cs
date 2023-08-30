@@ -6,6 +6,7 @@ using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Proto;
 using Proto.Cluster;
@@ -25,6 +26,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly BookmarkMapper _bookmarkMapper;
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
@@ -43,8 +46,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowStateSerializer workflowStateSerializer,
+        IWorkflowInstanceStore workflowInstanceStore,
         IProvider provider,
         IContext context,
+        WorkflowStateMapper workflowStateMapper,
         BookmarkMapper bookmarkMapper,
         WorkflowStatusMapper workflowStatusMapper,
         WorkflowSubStatusMapper workflowSubStatusMapper,
@@ -53,6 +58,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _workflowStateSerializer = workflowStateSerializer;
+        _workflowInstanceStore = workflowInstanceStore;
+        _workflowStateMapper = workflowStateMapper;
         _bookmarkMapper = bookmarkMapper;
         _workflowStatusMapper = workflowStatusMapper;
         _workflowSubStatusMapper = workflowSubStatusMapper;
@@ -146,6 +153,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _workflowState = workflowState;
 
         await SaveSnapshotAsync();
+        SaveWorkflowInstance(workflowState);
 
         return new WorkflowExecutionResponse
         {
@@ -206,6 +214,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _workflowState = _workflowHost.WorkflowState;
 
         await SaveSnapshotAsync();
+        SaveWorkflowInstance(_workflowState);
 
         return new WorkflowExecutionResponse
         {
@@ -274,7 +283,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
-    
+
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
         var definitionId = workflowState.DefinitionId;
@@ -286,5 +295,20 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Asynchronously persists the workflow instance.
+    /// </summary>
+    private void SaveWorkflowInstance(WorkflowState workflowState)
+    {
+        var saveInstanceTask = SaveWorkflowInstanceCoreAsync(workflowState);
+        Context.ReenterAfter(saveInstanceTask, () => { });
+    }
+
+    private async Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
+    {
+        var workflowInstance = _workflowStateMapper.Map(workflowState)!;
+        await _workflowInstanceStore.SaveAsync(workflowInstance);
     }
 }

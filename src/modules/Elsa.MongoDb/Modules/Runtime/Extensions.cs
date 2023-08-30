@@ -16,21 +16,21 @@ public static class Extensions
         return feature;
     }
     
-    /// <summary>
-    /// Configures the <see cref="DefaultWorkflowRuntimeFeature"/> to use the <see cref="MongoDefaultWorkflowRuntimePersistenceFeature"/>.
-    /// </summary>
-    public static DefaultWorkflowRuntimeFeature UseMongoDb(this DefaultWorkflowRuntimeFeature feature, Action<MongoDefaultWorkflowRuntimePersistenceFeature>? configure = default)
-    {
-        feature.Module.Configure(configure);
-        return feature;
-    }
+    // /// <summary>
+    // /// Configures the <see cref="DefaultWorkflowRuntimeFeature"/> to use the <see cref="MongoDefaultWorkflowRuntimePersistenceFeature"/>.
+    // /// </summary>
+    // public static DefaultWorkflowRuntimeFeature UseMongoDb(this DefaultWorkflowRuntimeFeature feature, Action<MongoDefaultWorkflowRuntimePersistenceFeature>? configure = default)
+    // {
+    //     feature.Module.Configure(configure);
+    //     return feature;
+    // }
         
-    /// <summary>
-    /// Configures the <see cref="ExecutionLogRecordFeature"/> to use the <see cref="MongoWorkflowExecutionLogStore"/>.
-    /// </summary>
-    public static ExecutionLogRecordFeature UseMongoDb(this ExecutionLogRecordFeature feature, Action<MongoExecutionLogRecordPersistenceFeature>? configure = default)
-    {
-        feature.Module.Configure(configure);
-        return feature;
-    }
+    // /// <summary>
+    // /// Configures the <see cref="ExecutionLogRecordFeature"/> to use the <see cref="MongoWorkflowExecutionLogStore"/>.
+    // /// </summary>
+    // public static ExecutionLogRecordFeature UseMongoDb(this ExecutionLogRecordFeature feature, Action<MongoExecutionLogRecordPersistenceFeature>? configure = default)
+    // {
+    //     feature.Module.Configure(configure);
+    //     return feature;
+    // }
 }

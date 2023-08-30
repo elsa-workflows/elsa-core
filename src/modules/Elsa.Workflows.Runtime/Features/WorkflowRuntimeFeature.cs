@@ -80,10 +80,10 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
 
-    /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<BackgroundWorkflowStateExporter>;
+    // /// <summary>
+    // /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
+    // /// </summary>
+    // public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<BackgroundWorkflowStateExporter>;
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
@@ -135,8 +135,8 @@ public class WorkflowRuntimeFeature : FeatureBase
         // Activities
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
         
-        // Add command handler for export workflow state to database.
-        Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
+        // // Add command handler for export workflow state to database.
+        // Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
     }
 
     /// <inheritdoc />
@@ -188,7 +188,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<NoopActivityExecutionStore>()
             
             // Memory stores.
-            .AddMemoryStore<WorkflowState, MemoryWorkflowStateStore>()
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
@@ -201,12 +200,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
-            // Workflow state exporter.
-            .AddSingleton(WorkflowStateExporter)
+            // // Workflow state exporter.
+            // .AddSingleton(WorkflowStateExporter)
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowRequestHandler>()
-            .AddNotificationHandler<ExportWorkflowStateHandler>()
+            //.AddNotificationHandler<ExportWorkflowStateHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()
             .AddNotificationHandler<ScheduleBackgroundActivities>()
@@ -217,6 +216,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
+            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
 
             // Workflow activation strategies.
             .AddSingleton<IWorkflowActivationStrategy, SingletonStrategy>()

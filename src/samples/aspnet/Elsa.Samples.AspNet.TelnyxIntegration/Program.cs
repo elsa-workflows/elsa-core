@@ -56,9 +56,6 @@ services
         .UseWorkflowRuntime(runtime =>
         {
             runtime.UseEntityFrameworkCore();
-            runtime.UseDefaultRuntime(dr => dr.UseEntityFrameworkCore());
-            runtime.UseExecutionLogRecords(d => d.UseEntityFrameworkCore());
-            runtime.UseAsyncWorkflowStateExporter();
         })
         .UseScheduling()
         .UseWorkflowsApi()

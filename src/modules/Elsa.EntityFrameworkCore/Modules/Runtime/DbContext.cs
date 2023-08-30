@@ -16,11 +16,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     }
     
     /// <summary>
-    /// The workflow states.
-    /// </summary>
-    public DbSet<WorkflowState> WorkflowStates { get; set; } = default!;
-    
-    /// <summary>
     /// The workflow triggers.
     /// </summary>
     public DbSet<StoredTrigger> Triggers { get; set; } = default!;
@@ -49,7 +44,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
         var config = new Configurations();
-        modelBuilder.ApplyConfiguration<WorkflowState>(config);
         modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);

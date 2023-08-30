@@ -6,7 +6,7 @@ using Elsa.Workflows.Core.State;
 namespace Elsa.Workflows.Core.Services;
 
 /// <inheritdoc />
-public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
+public class WorkflowStateExtractor : IWorkflowStateExtractor
 {
     /// <inheritdoc />
     public WorkflowState Extract(WorkflowExecutionContext workflowExecutionContext)
@@ -15,7 +15,7 @@ public class WorkflowExecutionContextMapper : IWorkflowExecutionContextMapper
         {
             Id = workflowExecutionContext.Id,
             DefinitionId = workflowExecutionContext.Workflow.Identity.DefinitionId,
-            DefinitionVersionId = workflowExecutionContext.Workflow.Id,
+            DefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
             Status = workflowExecutionContext.Status,

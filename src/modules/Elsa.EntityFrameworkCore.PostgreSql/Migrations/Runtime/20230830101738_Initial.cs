@@ -127,29 +127,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "WorkflowStates",
-                schema: "Elsa",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "text", nullable: false),
-                    DefinitionId = table.Column<string>(type: "text", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "text", nullable: false),
-                    DefinitionVersion = table.Column<int>(type: "integer", nullable: false),
-                    CorrelationId = table.Column<string>(type: "text", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    SubStatus = table.Column<string>(type: "text", nullable: false),
-                    ExecutionLogSequence = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    Data = table.Column<string>(type: "text", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowStates", x => x.Id);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityId",
                 schema: "Elsa",
@@ -407,54 +384,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: "Elsa",
                 table: "WorkflowInboxMessages",
                 column: "WorkflowInstanceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CorrelationId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "CorrelationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CreatedAt",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "CreatedAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "DefinitionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionVersionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "DefinitionVersionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_DefinitionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "DefinitionId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus", "DefinitionId", "DefinitionVersion" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_UpdatedAt",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "UpdatedAt");
         }
 
         /// <inheritdoc />
@@ -478,10 +407,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
             migrationBuilder.DropTable(
                 name: "WorkflowInboxMessages",
-                schema: "Elsa");
-
-            migrationBuilder.DropTable(
-                name: "WorkflowStates",
                 schema: "Elsa");
         }
     }

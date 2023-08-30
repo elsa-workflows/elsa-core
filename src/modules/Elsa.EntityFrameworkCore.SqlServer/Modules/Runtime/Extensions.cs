@@ -6,19 +6,10 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static partial class Extensions
 {
+    /// <summary>
+    /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use SqlServer.
+    /// </summary>
     public static EFCoreWorkflowRuntimePersistenceFeature UseSqlServer(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
-    {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
-        return feature;
-    }
-    
-    public static EFCoreDefaultWorkflowRuntimePersistenceFeature UseSqlServer(this EFCoreDefaultWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
-    {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
-        return feature;
-    }
-
-    public static EFCoreExecutionLogPersistenceFeature UseSqlServer(this EFCoreExecutionLogPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(connectionString, options);
         return feature;

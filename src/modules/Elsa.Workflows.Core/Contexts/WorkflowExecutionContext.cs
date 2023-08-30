@@ -122,6 +122,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// The date and time the workflow execution context has finished.
+    /// </summary>
+    public DateTimeOffset? FinishedAt { get; set; }
     
     /// <summary>
     /// Gets the clock used to determine the current time.

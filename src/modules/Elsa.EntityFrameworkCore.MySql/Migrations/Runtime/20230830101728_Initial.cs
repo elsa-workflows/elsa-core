@@ -181,37 +181,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
-            migrationBuilder.CreateTable(
-                name: "WorkflowStates",
-                schema: "Elsa",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DefinitionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DefinitionVersionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    DefinitionVersion = table.Column<int>(type: "int", nullable: false),
-                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SubStatus = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ExecutionLogSequence = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    FinishedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
-                    Data = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowStates", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityId",
                 schema: "Elsa",
@@ -469,54 +438,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: "Elsa",
                 table: "WorkflowInboxMessages",
                 column: "WorkflowInstanceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CorrelationId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "CorrelationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CreatedAt",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "CreatedAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "DefinitionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionVersionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "DefinitionVersionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_DefinitionId",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "DefinitionId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus", "DefinitionId", "DefinitionVersion" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_UpdatedAt",
-                schema: "Elsa",
-                table: "WorkflowStates",
-                column: "UpdatedAt");
         }
 
         /// <inheritdoc />
@@ -540,10 +461,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
             migrationBuilder.DropTable(
                 name: "WorkflowInboxMessages",
-                schema: "Elsa");
-
-            migrationBuilder.DropTable(
-                name: "WorkflowStates",
                 schema: "Elsa");
         }
     }

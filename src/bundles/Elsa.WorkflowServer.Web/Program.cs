@@ -14,7 +14,7 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
-const bool useSqlServer = true;
+const bool useSqlServer = false;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 
@@ -102,36 +102,8 @@ services
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                     });
                 }
-                else
-                    runtime.UseDefaultRuntime(dr =>
-                    {
-                        if(useMongoDb)
-                            dr.UseMongoDb();
-                        else
-                            dr.UseEntityFrameworkCore(ef =>
-                            {
-                                if(useSqlServer)
-                                    ef.UseSqlServer(sqlServerConnectionString!);
-                                else
-                                    ef.UseSqlite(sqliteConnectionString);
-                            });
-                    });
                 
-                runtime.UseExecutionLogRecords(e =>
-                {
-                    if(useMongoDb)
-                        e.UseMongoDb();
-                    else
-                        e.UseEntityFrameworkCore(ef =>
-                        {
-                            if(useSqlServer)
-                                ef.UseSqlServer(sqlServerConnectionString!);
-                            else
-                                ef.UseSqlite(sqliteConnectionString);
-                        });
-                });
                 runtime.UseMassTransitDispatcher();
-                
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))

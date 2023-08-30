@@ -118,28 +118,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "WorkflowStates",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "TEXT", nullable: false),
-                    DefinitionId = table.Column<string>(type: "TEXT", nullable: false),
-                    DefinitionVersionId = table.Column<string>(type: "TEXT", nullable: false),
-                    DefinitionVersion = table.Column<int>(type: "INTEGER", nullable: false),
-                    CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
-                    Status = table.Column<string>(type: "TEXT", nullable: false),
-                    SubStatus = table.Column<string>(type: "TEXT", nullable: false),
-                    ExecutionLogSequence = table.Column<long>(type: "INTEGER", nullable: false),
-                    CreatedAt = table.Column<string>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<string>(type: "TEXT", nullable: false),
-                    FinishedAt = table.Column<string>(type: "TEXT", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowStates", x => x.Id);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityId",
                 table: "ActivityExecutionRecords",
@@ -354,46 +332,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 name: "IX_WorkflowInboxMessage_WorkflowInstanceId",
                 table: "WorkflowInboxMessages",
                 column: "WorkflowInstanceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CorrelationId",
-                table: "WorkflowStates",
-                column: "CorrelationId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_CreatedAt",
-                table: "WorkflowStates",
-                column: "CreatedAt");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionId",
-                table: "WorkflowStates",
-                column: "DefinitionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_DefinitionVersionId",
-                table: "WorkflowStates",
-                column: "DefinitionVersionId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_DefinitionId",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "DefinitionId" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_Status_SubStatus_DefinitionId_DefinitionVersion",
-                table: "WorkflowStates",
-                columns: new[] { "Status", "SubStatus", "DefinitionId", "DefinitionVersion" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowState_UpdatedAt",
-                table: "WorkflowStates",
-                column: "UpdatedAt");
         }
 
         /// <inheritdoc />
@@ -413,9 +351,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
             migrationBuilder.DropTable(
                 name: "WorkflowInboxMessages");
-
-            migrationBuilder.DropTable(
-                name: "WorkflowStates");
         }
     }
 }

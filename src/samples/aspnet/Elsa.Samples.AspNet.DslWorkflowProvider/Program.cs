@@ -26,8 +26,6 @@ services.AddElsa(elsa => elsa
     .UseWorkflowRuntime(runtime =>
     {
         runtime.UseEntityFrameworkCore();
-        runtime.UseExecutionLogRecords();
-        runtime.UseAsyncWorkflowStateExporter();
     })
 
     // Expose API endpoints.

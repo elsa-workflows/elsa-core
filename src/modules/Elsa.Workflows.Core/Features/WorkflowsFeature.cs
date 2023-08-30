@@ -105,7 +105,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IWorkflowRunner, WorkflowRunner>()
             .AddSingleton<IActivityVisitor, ActivityVisitor>()
             .AddSingleton<IIdentityGraphService, IdentityGraphService>()
-            .AddSingleton<IWorkflowExecutionContextMapper, WorkflowExecutionContextMapper>()
+            .AddSingleton<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IBookmarkHasher, BookmarkHasher>()
