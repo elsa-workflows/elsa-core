@@ -77,7 +77,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         var queryable = Filter(set.AsQueryable(), filter);
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = Paginate(queryable, pageArgs);
-        var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        var results = await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
 
         return Page.Of(results, count);
     }
@@ -92,7 +92,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = Paginate(queryable, pageArgs);
-        var results = await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        var results = await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
         return Page.Of(results, count);
     }
 
@@ -102,7 +102,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter);
-        return await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
@@ -111,7 +111,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
-        return await queryable.Select(x => WorkflowDefinitionSummary.FromDefinition(x)).ToListAsync(cancellationToken);
+        return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />

@@ -66,7 +66,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
-        var entities = await _store.QueryAsync<WorkflowInstanceSummary>(query => Filter(query, filter).Paginate(pageArgs), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList();
+        var entities = await _store.QueryAsync<WorkflowInstanceSummary>(query => Filter(query, filter).Paginate(pageArgs), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList();
         return Page.Of(entities, count);
     }
 
@@ -78,18 +78,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = queryable.Paginate(pageArgs);
-        var entities = await queryable.Select(x => WorkflowInstanceSummary.FromInstance(x)).ToListAsync(cancellationToken);
+        var entities = await queryable.Select(WorkflowInstanceSummary.FromInstanceExpression()).ToListAsync(cancellationToken);
 
         return Page.Of(entities, count);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => Filter(query, filter), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
+        await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), x => WorkflowInstanceSummary.FromInstance(x), cancellationToken).ToList().AsEnumerable();
+        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
