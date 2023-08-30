@@ -1,4 +1,3 @@
-using System;
 using Proto.Cluster.AzureContainerApps.Contracts;
 
 namespace Proto.Cluster.AzureContainerApps.Services;

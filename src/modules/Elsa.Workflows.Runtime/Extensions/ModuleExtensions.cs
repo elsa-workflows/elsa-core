@@ -63,40 +63,4 @@ public static class ModuleExtensions
         feature.Module.Configure(configure);
         return feature;
     }
-    
-    // /// <summary>
-    // /// Configures the execution log records feature.
-    // /// </summary>
-    // /// <param name="feature">The workflow runtime feature.</param>
-    // /// <param name="configure">A callback that configures the execution log records feature.</param>
-    // /// <returns>The workflow runtime feature.</returns>
-    // public static WorkflowRuntimeFeature UseExecutionLogRecords(this WorkflowRuntimeFeature feature, Action<ExecutionLogRecordFeature>? configure = default)
-    // {
-    //     feature.Module.Configure(configure);
-    //     return feature;
-    // }
-    
-    // /// <summary>
-    // /// Configures the workflow state exporter feature.
-    // /// </summary>
-    // /// <param name="feature">The workflow runtime feature.</param>
-    // /// <param name="configure">A callback that configures the workflow state exporter feature.</param>
-    // /// <returns>The workflow runtime feature.</returns>
-    // public static WorkflowRuntimeFeature UseAsyncWorkflowStateExporter(this WorkflowRuntimeFeature feature, Action<AsyncWorkflowStateExporterFeature>? configure = default)
-    // {
-    //     feature.Module.Configure(configure);
-    //     return feature;
-    // }
-    
-    // /// <summary>
-    // /// Configures the workflow state exporter feature.
-    // /// </summary>
-    // /// <param name="feature">The workflow runtime feature.</param>
-    // /// <param name="configure">A callback that configures the workflow state exporter feature.</param>
-    // /// <returns>The workflow runtime feature.</returns>
-    // public static WorkflowRuntimeFeature UseDefaultWorkflowStateExporter(this WorkflowRuntimeFeature feature, Action<DefaultWorkflowStateExporterFeature>? configure = default)
-    // {
-    //     feature.Module.Configure(configure);
-    //     return feature;
-    // }
 }

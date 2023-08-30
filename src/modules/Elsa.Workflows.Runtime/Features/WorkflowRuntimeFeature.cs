@@ -5,11 +5,9 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Runtime.ActivationValidators;
-using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
@@ -80,11 +78,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
 
-    // /// <summary>
-    // /// A factory that instantiates an <see cref="IWorkflowStateExporter"/>.
-    // /// </summary>
-    // public Func<IServiceProvider, IWorkflowStateExporter> WorkflowStateExporter { get; set; } = ActivatorUtilities.GetServiceOrCreateInstance<BackgroundWorkflowStateExporter>;
-
     /// <summary>
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     /// </summary>
@@ -134,9 +127,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Activities
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
-        
-        // // Add command handler for export workflow state to database.
-        // Services.AddCommandHandler<ExportWorkflowStateToDbCommandHandler, ExportWorkflowStateToDbCommand>();
     }
 
     /// <inheritdoc />
@@ -200,12 +190,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
-            // // Workflow state exporter.
-            // .AddSingleton(WorkflowStateExporter)
-
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowRequestHandler>()
-            //.AddNotificationHandler<ExportWorkflowStateHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()
             .AddNotificationHandler<ScheduleBackgroundActivities>()

@@ -1,4 +1,3 @@
-using System;
 using Microsoft.Extensions.Options;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.ResourceTags;

@@ -1,4 +1,3 @@
-using System;
 using JetBrains.Annotations;
 using Proto.Cluster.AzureContainerApps.ClusterProviders;
 using Proto.Cluster.AzureContainerApps.Contracts;

@@ -1,9 +1,7 @@
-﻿using System.Threading.Tasks;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Proto.Cluster.AzureContainerApps.Actors;
 using Proto.Cluster.AzureContainerApps.Messages;
-using Proto.Cluster.AzureContainerApps.Utils;
 using Proto.DependencyInjection;
 
 namespace Proto.Cluster.AzureContainerApps.ClusterProviders;

@@ -1,9 +1,6 @@
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 

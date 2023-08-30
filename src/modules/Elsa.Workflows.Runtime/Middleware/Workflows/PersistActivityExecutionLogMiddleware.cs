@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;

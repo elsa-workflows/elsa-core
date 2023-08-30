@@ -1,5 +1,4 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 

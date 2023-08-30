@@ -1,6 +1,5 @@
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
-using Elsa.Mediator.PublishingStrategies;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;

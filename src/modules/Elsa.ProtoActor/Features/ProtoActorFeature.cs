@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -38,9 +37,6 @@ public class ProtoActorFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        // Configure default workflow execution pipeline suitable for Proto Actor.
-        Module.UseWorkflows(workflows => workflows.WithProtoActorRuntimeWorkflowExecutionPipeline());
-
         // Configure runtime with ProtoActor workflow runtime.
         Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }

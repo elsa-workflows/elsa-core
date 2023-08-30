@@ -14,14 +14,13 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// <summary>
     /// Configures the workflow execution pipeline with commonly used components.
     /// </summary>
-    public static IWorkflowExecutionPipelineBuilder UseDefaultRuntimePipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
+    public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
             .UsePersistentVariables()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
-            //.UseWorkflowStatePersistence()
             .UseDefaultActivityScheduler();
 
     /// <summary>
@@ -43,9 +42,4 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// Installs middleware that persist activity execution records.
     /// </summary>
     public static IWorkflowExecutionPipelineBuilder UseActivityExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistActivityExecutionLogMiddleware>();
-    
-    // /// <summary>
-    // /// Installs middleware that persist the workflow execution state.
-    // /// </summary>
-    // public static IWorkflowExecutionPipelineBuilder UseWorkflowStatePersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowStateMiddleware>();
 }

@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Proto.Cluster.AzureContainerApps.Contracts;
 using Proto.Cluster.AzureContainerApps.Models;

@@ -1,6 +1,5 @@
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Modules.Management;
-using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;

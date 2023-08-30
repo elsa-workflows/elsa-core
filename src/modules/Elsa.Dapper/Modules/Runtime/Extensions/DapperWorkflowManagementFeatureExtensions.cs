@@ -1,5 +1,4 @@
 ﻿using Elsa.Dapper.Modules.Runtime.Features;
-using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;
 
