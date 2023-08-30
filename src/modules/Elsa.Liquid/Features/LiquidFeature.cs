@@ -9,6 +9,7 @@ using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Expressions;
 using Elsa.Liquid.Filters;
 using Elsa.Liquid.Handlers;
+using Elsa.Liquid.Options;
 using Elsa.Liquid.Providers;
 using Elsa.Liquid.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,9 +29,16 @@ public class LiquidFeature : FeatureBase
     {
     }
 
+    /// <summary>
+    /// Configures the Fluid options.
+    /// </summary>
+    public Action<FluidOptions> FluidOptions { get; set; } = _ => { };
+
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
+        Services.Configure(FluidOptions);
+        
         Services
             .AddHandlersFrom<ConfigureLiquidEngine>()
             .AddSingleton<IExpressionSyntaxProvider, LiquidExpressionSyntaxProvider>()
