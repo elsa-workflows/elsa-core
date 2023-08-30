@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
+using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
@@ -259,7 +260,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         return new ImportWorkflowStateResponse();
     }
 
-    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowSnapshot)snapshot.State;
+    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowInstanceSnapshot)snapshot.State;
 
     private async Task SaveSnapshotAsync()
     {
@@ -271,7 +272,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             await _persistence.PersistRollingSnapshotAsync(GetState(), MaxSnapshotsToKeep);
     }
 
-    private object GetState() => new WorkflowSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
+    private object GetState() => new WorkflowInstanceSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
     {
