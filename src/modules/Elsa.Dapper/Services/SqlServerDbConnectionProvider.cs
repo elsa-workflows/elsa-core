@@ -2,7 +2,7 @@ using System.Data;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Dialects;
 using JetBrains.Annotations;
-using Microsoft.Data.Sqlite;
+using Microsoft.Data.SqlClient;
 
 namespace Elsa.Dapper.Services;
 
@@ -10,22 +10,22 @@ namespace Elsa.Dapper.Services;
 /// Provides a SQLite connection to the database.
 /// </summary>
 [PublicAPI]
-public class SqliteDbConnectionProvider : IDbConnectionProvider
+public class SqlServerDbConnectionProvider : IDbConnectionProvider
 {
-    private readonly string _connectionString = "Data Source=elsa.dapper.db";
+    private readonly string _connectionString = "Server=localhost;Database=Elsa;Trusted_Connection=True;";
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SqliteDbConnectionProvider"/> class.
+    /// Initializes a new instance of the <see cref="SqlServerDbConnectionProvider"/> class.
     /// </summary>
-    public SqliteDbConnectionProvider()
+    public SqlServerDbConnectionProvider()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SqliteDbConnectionProvider"/> class.
+    /// Initializes a new instance of the <see cref="SqlServerDbConnectionProvider"/> class.
     /// </summary>
     /// <param name="connectionString">The connection string to use.</param>
-    public SqliteDbConnectionProvider(string connectionString)
+    public SqlServerDbConnectionProvider(string connectionString)
     {
         _connectionString = connectionString;
     }
@@ -36,7 +36,7 @@ public class SqliteDbConnectionProvider : IDbConnectionProvider
     /// <inheritdoc />
     public IDbConnection GetConnection()
     {
-        return new SqliteConnection
+        return new SqlConnection
         {
             ConnectionString = GetConnectionString()
         };

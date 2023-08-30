@@ -1,8 +1,10 @@
 using Elsa.Dapper.Features;
 using Elsa.Dapper.Modules.Runtime.Stores;
+using Elsa.Dapper.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
