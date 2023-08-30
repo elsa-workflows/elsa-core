@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
