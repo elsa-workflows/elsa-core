@@ -1,9 +1,4 @@
-using Elsa.Common.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Contracts;
@@ -33,7 +28,7 @@ public interface IWorkflowRuntime
     Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(
         string activityTypeName,
         object bookmarkPayload,
-        TriggerWorkflowsRuntimeOptions options,
+        TriggerWorkflowsOptions options,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -52,12 +47,12 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Resumes all workflows that are bookmarked on the specified activity type. 
     /// </summary>
-    Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Starts all workflows and resumes existing workflow instances based on the specified activity type and bookmark payload.
     /// </summary>
-    Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default);
+    Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Executes a pending workflow.
@@ -89,7 +84,7 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Adds and removes bookmarks based on the provided bookmarks diff.
     /// </summary>
-    Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default);
+    Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the specified bookmark.
@@ -101,72 +96,5 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Counts the number of workflow instances based on the provided query args.
     /// </summary>
-    Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default);
-}
-
-public record StartWorkflowRuntimeOptions(string? CorrelationId = default, IDictionary<string, object>? Input = default, VersionOptions VersionOptions = default, string? TriggerActivityId = default, string? InstanceId = default);
-
-public record ResumeWorkflowRuntimeOptions(
-    string? CorrelationId = default, 
-    string? WorkflowInstanceId = default, 
-    string? BookmarkId = default, 
-    string? ActivityId = default,
-    string? ActivityNodeId = default,
-    string? ActivityInstanceId = default,
-    string? ActivityHash = default,
-    IDictionary<string, object>? Input = default);
-
-public record CanStartWorkflowResult(string? InstanceId, bool CanStart);
-
-public class TriggerWorkflowsRuntimeOptions
-{
-    public TriggerWorkflowsRuntimeOptions(string? CorrelationId = default, string? WorkflowInstanceId = default, string? ActivityInstanceId = default, IDictionary<string, object>? Input = default)
-    {
-        this.CorrelationId = CorrelationId;
-        this.WorkflowInstanceId = WorkflowInstanceId;
-        this.ActivityInstanceId = ActivityInstanceId;
-        this.Input = Input;
-    }
-
-    public string? CorrelationId { get; set; }
-    public string? WorkflowInstanceId { get; set; }
-    public string? ActivityInstanceId { get; set; }
-    public IDictionary<string, object>? Input { get; set; }
-}
-
-public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
-
-public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, string? TriggeredActivityId = null, WorkflowFaultState? Fault = default);
-
-public record UpdateBookmarksContext(string InstanceId, Diff<Bookmark> Diff, string? CorrelationId);
-
-public record WorkflowsFilter(string ActivityTypeName, object BookmarkPayload, TriggerWorkflowsRuntimeOptions Options);
-
-public record WorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId);
-
-public record StartableWorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? ActivityId, string? DefinitionId)
-    : WorkflowMatch(WorkflowInstanceId, WorkflowInstance, CorrelationId);
-
-public record ResumableWorkflowMatch(string WorkflowInstanceId, WorkflowInstance? WorkflowInstance, string? CorrelationId, string? BookmarkId)
-    : WorkflowMatch(WorkflowInstanceId, WorkflowInstance, CorrelationId);
-
-/// <summary>
-/// Contains arguments to use for counting the number of workflow instances.
-/// </summary>
-public class CountRunningWorkflowsArgs
-{
-    /// <summary>
-    /// The workflow definition ID to include in the query.
-    /// </summary>
-    public string? DefinitionId { get; set; }
-
-    /// <summary>
-    /// The workflow definition version to include in the query.
-    /// </summary>
-    public int? Version { get; set; }
-
-    /// <summary>
-    /// The correlation ID to include in the query. 
-    /// </summary>
-    public string? CorrelationId { get; set; }
+    Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request, CancellationToken cancellationToken = default);
 }

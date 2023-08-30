@@ -39,7 +39,6 @@ public class DispatchWorkflowRequestConsumer :
 
         var options = new ResumeWorkflowRuntimeOptions(
             message.CorrelationId,
-            message.InstanceId,
             message.BookmarkId,
             message.ActivityId,
             message.ActivityNodeId,
@@ -54,7 +53,7 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchTriggerWorkflows> context)
     {
         var message = context.Message;
-        var options = new TriggerWorkflowsRuntimeOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input);
+        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input);
         await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
     }
 
@@ -62,7 +61,7 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchResumeWorkflows> context)
     {
         var message = context.Message;
-        var options = new TriggerWorkflowsRuntimeOptions(CorrelationId: message.CorrelationId, WorkflowInstanceId: message.WorkflowInstanceId, Input: message.Input);
+        var options = new TriggerWorkflowsOptions(CorrelationId: message.CorrelationId, WorkflowInstanceId: message.WorkflowInstanceId, Input: message.Input);
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
     }
 }

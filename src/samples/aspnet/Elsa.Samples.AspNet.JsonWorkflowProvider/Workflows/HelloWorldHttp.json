@@ -43,8 +43,8 @@
         "id": "HttpEndpoint1",
         "type": "Elsa.HttpEndpoint",
         "customProperties": {
-          "CanStartWorkflow": true,
-          "RunAsynchronously": false
+          "canStartWorkflow": true,
+          "runAsynchronously": false
         }
       },
       {

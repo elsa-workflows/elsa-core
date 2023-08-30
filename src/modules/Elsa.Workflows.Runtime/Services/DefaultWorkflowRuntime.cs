@@ -91,7 +91,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(
         string activityTypeName,
         object bookmarkPayload,
-        TriggerWorkflowsRuntimeOptions options,
+        TriggerWorkflowsOptions options,
         CancellationToken cancellationToken = default)
     {
         var results = new List<WorkflowExecutionResult>();
@@ -169,7 +169,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload, options.ActivityInstanceId);
         var correlationId = options.CorrelationId;
@@ -181,7 +181,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsRuntimeOptions options, CancellationToken cancellationToken = default)
+    public async Task<TriggerWorkflowsResult> TriggerWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options, CancellationToken cancellationToken = default)
     {
         var startedWorkflows = await StartWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
         var resumedWorkflows = await ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
@@ -231,10 +231,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task UpdateBookmarksAsync(UpdateBookmarksContext context, CancellationToken cancellationToken = default)
+    public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
     {
-        await RemoveBookmarksAsync(context.InstanceId, context.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(context.InstanceId, context.Diff.Added, context.CorrelationId, cancellationToken);
+        await RemoveBookmarksAsync(request.InstanceId, request.Diff.Removed, cancellationToken);
+        await StoreBookmarksAsync(request.InstanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -244,13 +244,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsArgs args, CancellationToken cancellationToken = default)
+    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowInstanceFilter
         {
-            DefinitionId = args.DefinitionId,
-            Version = args.Version,
-            CorrelationId = args.CorrelationId,
+            DefinitionId = request.DefinitionId,
+            Version = request.Version,
+            CorrelationId = request.CorrelationId,
             WorkflowStatus = WorkflowStatus.Running
         };
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
