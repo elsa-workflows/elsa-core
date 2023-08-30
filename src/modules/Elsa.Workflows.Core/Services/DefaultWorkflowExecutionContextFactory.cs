@@ -13,7 +13,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivitySchedulerFactory _schedulerFactory;
     private readonly IActivityRegistry _activityRegistry;
-    private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly ISystemClock _systemClock;
     private readonly IHasher _hasher;
 
@@ -25,7 +25,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         IIdentityGraphService identityGraphService,
         IActivitySchedulerFactory schedulerFactory,
         IActivityRegistry activityRegistry,
-        IWorkflowExecutionContextMapper workflowExecutionContextMapper,
+        IWorkflowStateExtractor workflowStateExtractor,
         ISystemClock systemClock,
         IHasher hasher)
     {
@@ -33,7 +33,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         _identityGraphService = identityGraphService;
         _schedulerFactory = schedulerFactory;
         _activityRegistry = activityRegistry;
-        _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _workflowStateExtractor = workflowStateExtractor;
         _systemClock = systemClock;
         _hasher = hasher;
     }
@@ -89,7 +89,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             cancellationToken);
 
         // Restore workflow execution context from state, if provided.
-        if (workflowState != null) _workflowExecutionContextMapper.Apply(workflowExecutionContext, workflowState);
+        if (workflowState != null) _workflowStateExtractor.Apply(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }

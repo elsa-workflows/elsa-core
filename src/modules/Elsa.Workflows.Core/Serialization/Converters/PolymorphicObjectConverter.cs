@@ -6,7 +6,6 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Serialization.Converters;
 

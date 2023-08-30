@@ -174,6 +174,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddSingleton<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
+            .AddSingleton<WorkflowStateMapper>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

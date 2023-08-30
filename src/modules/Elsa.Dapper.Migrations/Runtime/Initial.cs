@@ -92,20 +92,7 @@ public class Initial : Migration
             .WithColumn("SerializedPayload").AsString().Nullable()
             .WithColumn("Timestamp").AsDateTime2().NotNullable()
             .WithColumn("Sequence").AsInt64().NotNullable();
-
-        Create
-            .Table("WorkflowStates")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("DefinitionId").AsString().NotNullable()
-            .WithColumn("DefinitionVersionId").AsString().NotNullable()
-            .WithColumn("DefinitionVersion").AsInt32().NotNullable()
-            .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("Status").AsString().NotNullable()
-            .WithColumn("SubStatus").AsString().NotNullable()
-            .WithColumn("ExecutionLogSequence").AsInt64().NotNullable()
-            .WithColumn("Props").AsString().NotNullable()
-            ;
-
+        
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
             .Table("ActivityExecutionRecords")
@@ -176,7 +163,6 @@ public class Initial : Migration
         Delete.Table("Triggers");
         Delete.Table("Bookmarks");
         Delete.Table("WorkflowExecutionLogRecords");
-        Delete.Table("WorkflowStates");
         Delete.Table("ActivityExecutionRecords");
         Delete.Table("WorkflowInboxMessages");
     }

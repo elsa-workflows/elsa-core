@@ -12,9 +12,9 @@ public static class WorkflowsFeatureExtensions
      /// <summary>
      /// Installs a default workflow runtime execution pipeline.
      /// </summary>
-     public static WorkflowsFeature WithDefaultRuntimeWorkflowExecutionPipeline(this WorkflowsFeature workflowsFeature) => 
+     public static WorkflowsFeature WithDefaultWorkflowExecutionPipeline(this WorkflowsFeature workflowsFeature) => 
          workflowsFeature.WithWorkflowExecutionPipeline(pipeline => 
-             pipeline.UseDefaultRuntimePipeline());
+             pipeline.UseDefaultPipeline());
 
      /// <summary>
      /// Installs an activity invoker that can run activities asynchronously in the background.

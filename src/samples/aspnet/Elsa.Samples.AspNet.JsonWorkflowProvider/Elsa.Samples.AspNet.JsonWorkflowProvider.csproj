@@ -24,8 +24,5 @@
       </Content>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="bak\" />
-    </ItemGroup>
 
 </Project>

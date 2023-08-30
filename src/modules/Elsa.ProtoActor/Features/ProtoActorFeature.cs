@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -38,9 +37,6 @@ public class ProtoActorFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        // Configure default workflow execution pipeline suitable for Proto Actor.
-        Module.UseWorkflows(workflows => workflows.WithProtoActorRuntimeWorkflowExecutionPipeline());
-
         // Configure runtime with ProtoActor workflow runtime.
         Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }
@@ -96,7 +92,6 @@ public class ProtoActorFeature : FeatureBase
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
             var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
-            var workflowRegistryGrainProps = system.DI().PropsFor<RunningWorkflowsActor>();
 
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
@@ -105,7 +100,6 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
-                    .WithClusterKind(RunningWorkflowsActor.Kind, workflowRegistryGrainProps)
                 ;
 
             ActorSystemConfig(sp, systemConfig);
@@ -144,7 +138,6 @@ public class ProtoActorFeature : FeatureBase
         // Actors.
         services
             .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstance>(sp, context)))
-            .AddTransient(sp => new RunningWorkflowsActor((context, _) => ActivatorUtilities.CreateInstance<RunningWorkflows>(sp, context)))
             ;
     }
 

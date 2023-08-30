@@ -24,92 +24,99 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
-        return Task.FromResult(entity);
+        return ValueTask.FromResult(entity);
     }
 
     /// <inheritdoc />
-    public Task<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    public ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
         var entities = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
         var page = Page.Of(entities, count);
-        return Task.FromResult(page);
+        return ValueTask.FromResult(page);
     }
 
     /// <inheritdoc />
-    public Task<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    public ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
         var entities = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
         var page = Page.Of(entities, count);
-        return Task.FromResult(page);
+        return ValueTask.FromResult(page);
     }
 
     /// <inheritdoc />
-    public Task<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
-        return Task.FromResult(entities);
+        return ValueTask.FromResult(entities);
     }
 
     /// <inheritdoc />
-    public Task<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var entities = _store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
-        return Task.FromResult(entities);
+        return ValueTask.FromResult(entities);
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    public ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        return new(count);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var page = await FindManyAsync(filter, pageArgs, cancellationToken);
         return new(page.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(), page.TotalCount);
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var page = await FindManyAsync(filter, pageArgs, order, cancellationToken);
         return new(page.Items.Select(WorkflowInstanceSummary.FromInstance).ToList(), page.TotalCount);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = await FindManyAsync(filter, cancellationToken);
         return entities.Select(WorkflowInstanceSummary.FromInstance);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var entities = await FindManyAsync(filter, order, cancellationToken);
         return entities.Select(WorkflowInstanceSummary.FromInstance);
     }
 
     /// <inheritdoc />
-    public Task SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         _store.Save(instance, x => x.Id);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
+    public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(instances, GetId);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
     
     /// <inheritdoc />
-    public Task<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var query = Filter(_store.List().AsQueryable(), filter);
         var count = _store.DeleteMany(query, x => x.Id);
-        return Task.FromResult(count);
+        return ValueTask.FromResult(count);
     }
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;

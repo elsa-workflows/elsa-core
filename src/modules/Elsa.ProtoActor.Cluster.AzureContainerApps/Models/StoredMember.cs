@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Proto.Cluster.AzureContainerApps.Contracts;
 

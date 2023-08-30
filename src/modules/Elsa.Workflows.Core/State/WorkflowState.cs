@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Elsa.Common.Entities;
 using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.State;
@@ -7,8 +6,13 @@ namespace Elsa.Workflows.Core.State;
 /// <summary>
 /// Represents the current state of a workflow. 
 /// </summary>
-public class WorkflowState : Entity
+public class WorkflowState
 {
+    /// <summary>
+    /// Gets or sets the ID.
+    /// </summary>
+    public string Id { get; set; } = default!;
+    
     /// <summary>
     /// The workflow definition ID.
     /// </summary>

@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
 using Proto.Cluster;
@@ -25,13 +24,10 @@ internal class StopRunningWorkflows : INotificationHandler<WorkflowInstancesDele
 
     async Task INotificationHandler<WorkflowInstancesDeleting>.HandleAsync(WorkflowInstancesDeleting notification, CancellationToken cancellationToken)
     {
-        var runningWorkflowsGrainClient = _cluster.GetNamedRunningWorkflowsGrain();
-        
         foreach (var workflowInstanceId in notification.Ids)
         {
             var workflowGrainClient = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
             await workflowGrainClient.Stop(cancellationToken);
-            await runningWorkflowsGrainClient.Unregister(new UnregisterRunningWorkflowRequest { InstanceId = workflowInstanceId }, cancellationToken);
         }
     }
 }

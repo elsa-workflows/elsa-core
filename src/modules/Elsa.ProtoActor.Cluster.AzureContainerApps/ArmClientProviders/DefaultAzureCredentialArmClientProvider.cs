@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Azure.Identity;
 using Azure.ResourceManager;
 using JetBrains.Annotations;

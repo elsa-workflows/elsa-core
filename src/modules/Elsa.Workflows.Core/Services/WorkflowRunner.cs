@@ -15,7 +15,7 @@ public class WorkflowRunner : IWorkflowRunner
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IWorkflowExecutionPipeline _pipeline;
-    private readonly IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
@@ -28,7 +28,7 @@ public class WorkflowRunner : IWorkflowRunner
     public WorkflowRunner(
         IServiceScopeFactory serviceScopeFactory,
         IWorkflowExecutionPipeline pipeline,
-        IWorkflowExecutionContextMapper workflowExecutionContextMapper,
+        IWorkflowStateExtractor workflowStateExtractor,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
@@ -37,7 +37,7 @@ public class WorkflowRunner : IWorkflowRunner
     {
         _serviceScopeFactory = serviceScopeFactory;
         _pipeline = pipeline;
-        _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _workflowStateExtractor = workflowStateExtractor;
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
@@ -155,7 +155,6 @@ public class WorkflowRunner : IWorkflowRunner
         else
         {
             // Schedule the workflow itself.
-            //workflowExecutionContext.ScheduleRoot();
             workflowExecutionContext.ScheduleWorkflow();
         }
 
@@ -178,9 +177,7 @@ public class WorkflowRunner : IWorkflowRunner
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
         // Extract workflow state.
-        var workflowState = workflowExecutionContext.TransientProperties.TryGetValue(workflowExecutionContext, out var state)
-            ? (WorkflowState)state
-            : _workflowExecutionContextMapper.Extract(workflowExecutionContext);
+        var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
         
         // Update timestamps.
         workflowState.UpdatedAt = _systemClock.UtcNow;

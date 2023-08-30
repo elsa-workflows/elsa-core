@@ -21,7 +21,7 @@ internal class DispatchWorkflowRequestHandler :
 
     public async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
     {
-        var options = new TriggerWorkflowsRuntimeOptions(command.CorrelationId, command.WorkflowInstanceId, command.ActivityInstanceId, command.Input);
+        var options = new TriggerWorkflowsOptions(command.CorrelationId, command.WorkflowInstanceId, command.ActivityInstanceId, command.Input);
         await _workflowRuntime.TriggerWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options, cancellationToken);
 
         return Unit.Instance;
@@ -40,7 +40,6 @@ internal class DispatchWorkflowRequestHandler :
     {
         var options = new ResumeWorkflowRuntimeOptions(
             command.CorrelationId,
-            command.InstanceId,
             command.BookmarkId,
             command.ActivityId,
             command.ActivityNodeId,
@@ -55,7 +54,7 @@ internal class DispatchWorkflowRequestHandler :
 
     public async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
     {
-        var options = new TriggerWorkflowsRuntimeOptions(CorrelationId: command.CorrelationId, Input: command.Input, WorkflowInstanceId: command.WorkflowInstanceId, ActivityInstanceId: command.ActivityInstanceId);
+        var options = new TriggerWorkflowsOptions(CorrelationId: command.CorrelationId, Input: command.Input, WorkflowInstanceId: command.WorkflowInstanceId, ActivityInstanceId: command.ActivityInstanceId);
         await _workflowRuntime.ResumeWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options, cancellationToken);
 
         return Unit.Instance;

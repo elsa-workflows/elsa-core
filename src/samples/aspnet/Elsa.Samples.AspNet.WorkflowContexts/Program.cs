@@ -37,7 +37,6 @@ services
                 .UsePersistentVariables()
                 .UseBookmarkPersistence()
                 .UseWorkflowExecutionLogPersistence()
-                .UseWorkflowStatePersistence()
                 .UseWorkflowContexts()
                 .UseDefaultActivityScheduler()
             );
@@ -59,15 +58,6 @@ services
         {
             // Use EF core for triggers and bookmarks.
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-
-            // Use EF core for execution log records.
-            runtime.UseExecutionLogRecords(log => log.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-
-            // Use the default workflow runtime with EF core.
-            runtime.UseDefaultRuntime(defaultRuntime => defaultRuntime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-
-            // Install a workflow state exporter to capture workflow states and store them in IWorkflowInstanceStore.
-            runtime.UseAsyncWorkflowStateExporter();
         })
         .UseWorkflowContexts()
         .UseScheduling()

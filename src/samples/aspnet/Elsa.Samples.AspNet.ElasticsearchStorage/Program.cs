@@ -1,6 +1,5 @@
 using Elsa.Elasticsearch.Extensions;
 using Elsa.Elasticsearch.Modules.Management;
-using Elsa.Elasticsearch.Modules.Runtime;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -25,9 +24,6 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowRuntime(runtime =>
     {
         runtime.UseEntityFrameworkCore();
-        runtime.UseDefaultRuntime(d => d.UseEntityFrameworkCore());
-        runtime.UseExecutionLogRecords(log => log.UseElasticsearch());
-        runtime.UseAsyncWorkflowStateExporter();
     });
     
     // Expose API endpoints.
