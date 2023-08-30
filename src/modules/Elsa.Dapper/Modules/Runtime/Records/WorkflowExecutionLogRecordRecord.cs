@@ -15,6 +15,7 @@ internal class WorkflowExecutionLogRecordRecord
     public string? ActivityName { get; set; } = default!;
     public string NodeId { get; set; } = default!;
     public DateTimeOffset Timestamp { get; set; }
+    public long Sequence { get; set; }
     public string? EventName { get; set; }
     public string? Message { get; set; }
     public string? Source { get; set; }

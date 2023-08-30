@@ -71,6 +71,21 @@ public static class ParameterizedQueryBuilderExtensions
     }
 
     /// <summary>
+    /// Begins a DELETE FROM query.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="table">The table.</param>
+    /// <param name="innerQuery">The inner query.</param>
+    public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, ParameterizedQuery innerQuery)
+    {
+        query.Sql.AppendLine(query.Dialect.Delete(table));
+        query.Sql.AppendLine("and rowid in (");
+        query.Sql.AppendLine(innerQuery.Sql.ToString());
+        query.Sql.AppendLine(")");
+        return query;
+    }
+
+    /// <summary>
     /// Begins a SELECT COUNT(*) FROM query.
     /// </summary>
     /// <param name="query">The query.</param>
@@ -122,7 +137,7 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
-    
+
     /// <summary>
     /// Appends an IS NULL clause to the query.
     /// </summary>
@@ -133,7 +148,7 @@ public static class ParameterizedQueryBuilderExtensions
         query.Sql.AppendLine(query.Dialect.IsNull(field));
         return query;
     }
-    
+
     /// <summary>
     /// Appends an IS NOT NULL clause to the query.
     /// </summary>
@@ -262,7 +277,7 @@ public static class ParameterizedQueryBuilderExtensions
     {
         if (!orderFields.Any())
             return query;
-        
+
         var clauses = string.Join(",", orderFields.Select(x => $"{x.Field} {(x.Direction == OrderDirection.Ascending ? "asc" : "desc")}"));
         query.Sql.AppendLine($"order by {clauses}");
         return query;
@@ -314,22 +329,25 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="table">The table.</param>
     /// <param name="primaryKeyField">The primary key field.</param>
     /// <param name="record">The record.</param>
-    public static ParameterizedQuery Upsert(this ParameterizedQuery query, string table, string primaryKeyField, object record)
+    /// <param name="getParameterName">An optional function to get the parameter name.</param>
+    public static ParameterizedQuery Upsert(this ParameterizedQuery query, string table, string primaryKeyField, object record, Func<string, string>? getParameterName = default)
     {
         var fields = record.GetType().GetProperties()
             .Where(x => x.CanRead && x.Name != primaryKeyField)
             .Select(x => x.Name)
             .ToArray();
 
-        query.Sql.AppendLine(query.Dialect.Upsert(table, primaryKeyField, fields));
-
+        getParameterName ??= x => x;
+        
+        query.Sql.AppendLine(query.Dialect.Upsert(table, primaryKeyField, fields, getParameterName));
+        
         var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
-        query.Parameters.Add($"@{primaryKeyField}", primaryKeyValue);
-
+        query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
+        
         foreach (var field in fields)
         {
             var value = record.GetType().GetProperty(field)?.GetValue(record);
-            query.Parameters.Add($"@{field}", value);
+            query.Parameters.Add($"@{getParameterName(field)}", value);
         }
 
         return query;
@@ -341,18 +359,20 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
     /// <param name="record">The record.</param>
-    public static ParameterizedQuery Insert(this ParameterizedQuery query, string table, object record)
+    /// <param name="getParameterName">An optional function to get the parameter name.</param>
+    public static ParameterizedQuery Insert(this ParameterizedQuery query, string table, object record, Func<string, string>? getParameterName = default)
     {
         var fields = record.GetType().GetProperties()
             .Select(x => x.Name)
             .ToArray();
 
-        query.Sql.AppendLine(query.Dialect.Insert(table, fields));
+        getParameterName ??= x => x;
+        query.Sql.AppendLine(query.Dialect.Insert(table, fields, getParameterName));
 
         foreach (var field in fields)
         {
             var value = record.GetType().GetProperty(field)?.GetValue(record);
-            query.Parameters.Add($"@{field}", value);
+            query.Parameters.Add($"@{getParameterName(field)}", value);
         }
 
         return query;

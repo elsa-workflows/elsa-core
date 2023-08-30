@@ -1,5 +1,6 @@
-using System.Text;
 using System.Text.Encodings.Web;
+using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Services;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -11,13 +12,13 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
-using Fluid;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
+const bool useDapper = true;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 
@@ -26,8 +27,8 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
-var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 
 // Add Elsa services.
@@ -36,6 +37,19 @@ services
     {
         if(useMongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
+        
+        if(useDapper)
+            elsa.UseDapper(dapper =>
+            {
+                dapper.UseMigrations();
+                dapper.DbConnectionProvider = sp =>
+                {
+                    if(useSqlServer)
+                        return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
+                    else
+                        return new SqliteDbConnectionProvider(sqliteConnectionString);
+                };
+            });
         
         if (useHangfire)
             elsa.UseHangfire();
@@ -49,6 +63,8 @@ services
             {
                 if(useMongoDb)
                     identity.UseMongoDb();
+                else if (useDapper)
+                    identity.UseDapper();
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
@@ -69,6 +85,8 @@ services
             {
                 if(useMongoDb)
                     management.UseMongoDb();
+                else if (useDapper)
+                    management.UseDapper();
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
@@ -86,6 +104,8 @@ services
             {
                 if(useMongoDb)
                     runtime.UseMongoDb();
+                else if (useDapper)
+                    runtime.UseDapper();
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
@@ -118,7 +138,7 @@ services
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
             .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
-            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = NullEncoder.Default)
+            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
     });

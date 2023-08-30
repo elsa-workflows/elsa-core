@@ -70,7 +70,7 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
             {
                 var order = new WorkflowDefinitionOrder<string>
                 {
-                    KeySelector = p => p.Name ?? string.Empty,
+                    KeySelector = p => p.Name!,
                     Direction = direction
                 };
 

@@ -9,6 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Dapper\Elsa.Dapper.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
