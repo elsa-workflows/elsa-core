@@ -1,5 +1,4 @@
-﻿using System.Text.Encodings.Web;
-using Elsa.Expressions.Models;
+﻿using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Notifications;
@@ -22,7 +21,7 @@ public class LiquidTemplateManager : ILiquidTemplateManager
     /// <summary>
     /// Constructor.
     /// </summary>
-    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, INotificationSender notificationSender, IOptions<FluidOptions> options, IServiceProvider serviceProvider)
+    public LiquidTemplateManager(LiquidParser parser, IMemoryCache memoryCache, INotificationSender notificationSender, IOptions<FluidOptions> options)
     {
         _parser = parser;
         _memoryCache = memoryCache;
@@ -38,9 +37,10 @@ public class LiquidTemplateManager : ILiquidTemplateManager
 
         var result = GetCachedTemplate(template);
         var templateContext = await CreateTemplateContextAsync(expressionExecutionContext, cancellationToken);
+        var encoder = _options.Encoder;
         templateContext.AddFilters(_options, expressionExecutionContext.ServiceProvider);
 
-        return await result.RenderAsync(templateContext, HtmlEncoder.Default);
+        return await result.RenderAsync(templateContext, encoder);
     }
 
     private IFluidTemplate GetCachedTemplate(string source)

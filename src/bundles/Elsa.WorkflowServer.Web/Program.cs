@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Encodings.Web;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -9,6 +11,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
+using Fluid;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
@@ -115,7 +118,7 @@ services
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
             .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
-            .UseLiquid()
+            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = NullEncoder.Default)
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
     });
