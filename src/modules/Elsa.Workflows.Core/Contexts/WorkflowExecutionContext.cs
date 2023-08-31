@@ -166,7 +166,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A dictionary of inputs provided at the start of the current workflow execution. 
     /// </summary>
-    public IDictionary<string, object> Input { get; }
+    public IDictionary<string, object> Input { get; set; }
 
     /// <summary>
     /// A dictionary of outputs provided by the current workflow execution. 
