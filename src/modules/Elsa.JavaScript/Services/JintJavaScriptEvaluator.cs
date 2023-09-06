@@ -68,17 +68,17 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
-        
+
         // Create variable getters and setters for each variable.
         CreateVariableAccessors(engine, context);
-        
+
         // Create workflow input accessors - only if the current activity is not part of a composite activity definition.
         // Otherwise, the workflow input accessors will hide the composite activity input accessors which rely on variable accessors created above.
-        if(!IsInsideCompositeActivity(context))
-            CreateWorkflowInputAccessors(engine, context);
+        if (!IsInsideCompositeActivity(context))
+            CreateInputAccessors(engine, context);
 
         // Create output getters for each activity.
-        CreateOutputAccessors(engine, context);
+        CreateActivityOutputAccessors(engine, context);
 
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -87,10 +87,10 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("newGuid", (Func<Guid>)(() => Guid.NewGuid()));
         engine.SetValue("newGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
         engine.SetValue("newShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
-        
+
         // Deprecated, use newGuidString instead.
         engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
-        
+
         // Deprecated, use newShortGuid instead.
         engine.SetValue("getShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
 
@@ -108,9 +108,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static bool IsInsideCompositeActivity(ExpressionExecutionContext context)
     {
-        if(!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+        if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
             return false;
-        
+
         // If the first workflow definition in the ancestor hierarchy and that workflow definition has a parent, then we are inside a composite activity.
         var firstWorkflowContext = activityExecutionContext.GetAncestors().FirstOrDefault(x => x.Activity is Workflow);
 
@@ -134,18 +134,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
         return outputRecord?.Value;
     }
-    
-    private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
+
+    private void CreateInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        if(!context.TryGetActivityExecutionContext(out var activityExecutionContext))
-            return;
-        
         // Only create workflow input accessors if the current activity is not part of a composite activity definition.
-        
-        if(context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+        if (context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
         {
             var input = workflowExecutionContext.Input;
-            
+
             foreach (var inputEntry in input)
             {
                 var inputPascalName = inputEntry.Key.Pascalize();
@@ -157,14 +153,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         {
             // We end up here when we are evaluating an expression during trigger indexing.
             // The scenario being that a workflow definition might have variables declared, that we want to be able to access from JavaScript expressions.
-            foreach(var block in context.Memory.Blocks.Values)
+            foreach (var block in context.Memory.Blocks.Values)
             {
-                if(block.Metadata is not VariableBlockMetadata variableBlockMetadata)
+                if (block.Metadata is not VariableBlockMetadata variableBlockMetadata)
                     continue;
-                
+
                 var variable = variableBlockMetadata.Variable;
-                var variablePascaleName = variable.Name.Pascalize();
-                engine.SetValue($"get{variablePascaleName}", (Func<object?>)(() => block.Value));
+                var variablePascalName = variable.Name.Pascalize();
+                engine.SetValue($"get{variablePascalName}", (Func<object?>)(() => block.Value));
             }
         }
     }
@@ -243,7 +239,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static void CreateOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
     {
         // Select activities with outputs.
         var activityExecutionContext = context.GetActivityExecutionContext();
