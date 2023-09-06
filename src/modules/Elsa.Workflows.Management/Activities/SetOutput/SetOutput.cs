@@ -64,5 +64,13 @@ public class SetOutput : CodeActivity
         // If the ancestor activity is the root workflow, we need to update the workflow execution context's output collection as well.
         if (ancestorContext.ParentActivityExecutionContext == null)
             context.WorkflowExecutionContext.Output[outputName] = outputValue!;
+        else
+        {
+            // If this activity executes in a composite activity, we need to update the composite activity's output variable as well.
+            var variable = context.ExpressionExecutionContext.GetVariable(outputName);
+            
+            if(variable != null)
+                context.Set(variable, outputValue);
+        }
     }
 }
