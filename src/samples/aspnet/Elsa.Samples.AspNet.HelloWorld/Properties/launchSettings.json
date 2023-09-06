@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Elsa.Samples.AspNet.HelloWorld": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63923;http://localhost:63924"
+    }
+  }
+}

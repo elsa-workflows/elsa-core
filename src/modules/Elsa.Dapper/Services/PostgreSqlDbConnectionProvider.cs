@@ -12,7 +12,7 @@ namespace Elsa.Dapper.Services;
 [PublicAPI]
 public class PostgreSqlDbConnectionProvider : IDbConnectionProvider
 {
-    private readonly string _connectionString = "Data Source=elsa.dapper.db";
+    private readonly string _connectionString = "";
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PostgreSqlDbConnectionProvider"/> class.
