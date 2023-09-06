@@ -53,10 +53,11 @@ public static class ServiceProviderExtensions
     /// </summary>
     /// <param name="services">The services.</param>
     /// <param name="workflowDefinitionId">The ID of the workflow definition.</param>
+    /// <param name="input">An optional dictionary of input values.</param>
     /// <returns>The workflow state.</returns>
-    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, string workflowDefinitionId)
+    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, string workflowDefinitionId, IDictionary<string, object>? input = default)
     {
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, input, VersionOptions.Published);
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
         var bookmarks = new Stack<Bookmark>(result.Bookmarks);
@@ -67,7 +68,7 @@ public static class ServiceProviderExtensions
             var resumeOptions = new ResumeWorkflowRuntimeOptions(BookmarkId: bookmark.Id);
             var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
 
-            foreach (var newBookmark in resumeResult.Bookmarks)
+            foreach (var newBookmark in resumeResult!.Bookmarks)
                 bookmarks.Push(newBookmark);
         }
 

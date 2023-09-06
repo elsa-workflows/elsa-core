@@ -9,6 +9,7 @@ using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Humanizer;
 using Jint;
@@ -67,12 +68,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
-
-        // Create workflow input accessors.
-        CreateWorkflowInputAccessors(engine, context);
         
         // Create variable getters and setters for each variable.
         CreateVariableAccessors(engine, context);
+        
+        // Create workflow input accessors - only if the current activity is not part of a composite activity definition.
+        // Otherwise, the workflow input accessors will hide the composite activity input accessors which rely on variable accessors created above.
+        if(!IsInsideCompositeActivity(context))
+            CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
         CreateOutputAccessors(engine, context);
@@ -103,6 +106,17 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
+    private static bool IsInsideCompositeActivity(ExpressionExecutionContext context)
+    {
+        if(!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+            return false;
+        
+        // If the first workflow definition in the ancestor hierarchy and that workflow definition has a parent, then we are inside a composite activity.
+        var firstWorkflowContext = activityExecutionContext.GetAncestors().FirstOrDefault(x => x.Activity is Workflow);
+
+        return firstWorkflowContext?.ParentActivityExecutionContext != null;
+    }
+
     private static object? GetLastResult(ExpressionExecutionContext context)
     {
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
@@ -123,6 +137,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     
     private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
+        if(!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+            return;
+        
+        // Only create workflow input accessors if the current activity is not part of a composite activity definition.
+        
         if(context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
         {
             var input = workflowExecutionContext.Input;
