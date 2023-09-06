@@ -85,6 +85,16 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 
         var clausesSql = string.Join(" OR ", clauses.Select(x => x.Sql.ToString()));
         query.Sql.AppendLine(clausesSql);
+        
+        // Copy all parameters from the clauses to the main query.
+        foreach (var clause in clauses)
+        {
+            foreach (var parameterName in clause.Parameters.ParameterNames)
+            {
+                var parameterValue = clause.Parameters.Get<object>(parameterName);
+                query.Parameters.Add(parameterName, parameterValue);
+            }
+        }
     }
 
     private IEnumerable<WorkflowInboxMessage> Map(IEnumerable<WorkflowInboxMessageRecord> source) => source.Select(Map);
