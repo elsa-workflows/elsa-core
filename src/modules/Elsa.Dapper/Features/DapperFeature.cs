@@ -27,6 +27,7 @@ public class DapperFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IDbConnectionProvider> DbConnectionProvider { get; set; } = _ => new SqliteDbConnectionProvider();
 
+    /// <inheritdoc />
     public override void Apply()
     {
         Services.AddSingleton(DbConnectionProvider);

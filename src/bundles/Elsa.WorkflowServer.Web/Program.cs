@@ -1,3 +1,6 @@
+using System.Text.Encodings.Web;
+using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Services;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -14,7 +17,8 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
-const bool useSqlServer = true;
+const bool useSqlServer = false;
+const bool useDapper = true;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 
@@ -23,8 +27,8 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-var sqliteConnectionString = configuration.GetConnectionString("Sqlite");
-var sqlServerConnectionString = configuration.GetConnectionString("SqlServer");
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 
 // Add Elsa services.
@@ -33,6 +37,19 @@ services
     {
         if(useMongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
+        
+        if(useDapper)
+            elsa.UseDapper(dapper =>
+            {
+                dapper.UseMigrations();
+                dapper.DbConnectionProvider = sp =>
+                {
+                    if(useSqlServer)
+                        return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
+                    else
+                        return new SqliteDbConnectionProvider(sqliteConnectionString);
+                };
+            });
         
         if (useHangfire)
             elsa.UseHangfire();
@@ -46,6 +63,8 @@ services
             {
                 if(useMongoDb)
                     identity.UseMongoDb();
+                else if (useDapper)
+                    identity.UseDapper();
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
@@ -66,6 +85,8 @@ services
             {
                 if(useMongoDb)
                     management.UseMongoDb();
+                else if (useDapper)
+                    management.UseDapper();
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
@@ -83,6 +104,8 @@ services
             {
                 if(useMongoDb)
                     runtime.UseMongoDb();
+                else if (useDapper)
+                    runtime.UseDapper();
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
@@ -102,36 +125,8 @@ services
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                     });
                 }
-                else
-                    runtime.UseDefaultRuntime(dr =>
-                    {
-                        if(useMongoDb)
-                            dr.UseMongoDb();
-                        else
-                            dr.UseEntityFrameworkCore(ef =>
-                            {
-                                if(useSqlServer)
-                                    ef.UseSqlServer(sqlServerConnectionString!);
-                                else
-                                    ef.UseSqlite(sqliteConnectionString);
-                            });
-                    });
                 
-                runtime.UseExecutionLogRecords(e =>
-                {
-                    if(useMongoDb)
-                        e.UseMongoDb();
-                    else
-                        e.UseEntityFrameworkCore(ef =>
-                        {
-                            if(useSqlServer)
-                                ef.UseSqlServer(sqlServerConnectionString!);
-                            else
-                                ef.UseSqlite(sqliteConnectionString);
-                        });
-                });
                 runtime.UseMassTransitDispatcher();
-                
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
@@ -143,7 +138,7 @@ services
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
             .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
-            .UseLiquid()
+            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
     });

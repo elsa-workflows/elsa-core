@@ -1,4 +1,3 @@
-using System;
 using Azure.ResourceManager;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,5 +1,4 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +13,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     public RuntimeElsaDbContext(DbContextOptions options) : base(options)
     {
     }
-    
-    /// <summary>
-    /// The workflow states.
-    /// </summary>
-    public DbSet<WorkflowState> WorkflowStates { get; set; } = default!;
     
     /// <summary>
     /// The workflow triggers.
@@ -49,7 +43,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
         var config = new Configurations();
-        modelBuilder.ApplyConfiguration<WorkflowState>(config);
         modelBuilder.ApplyConfiguration<StoredTrigger>(config);
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);

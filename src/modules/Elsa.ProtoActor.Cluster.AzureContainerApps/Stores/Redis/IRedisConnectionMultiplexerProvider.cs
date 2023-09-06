@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using StackExchange.Redis;
 
 namespace Proto.Cluster.AzureContainerApps.Stores.Redis;

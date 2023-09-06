@@ -2,12 +2,19 @@
 using Elsa.EntityFrameworkCore.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
 
+/// <summary>
+/// Provides extension methods to configure Entity Framework Core with SQLite.
+/// </summary>
 public static class DbContextOptionsBuilderExtensions
 {
+    /// <summary>
+    /// Configures Entity Framework Core with SQLite.
+    /// </summary>
     public static DbContextOptionsBuilder UseElsaSqlite(this DbContextOptionsBuilder builder, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default, Action<SqliteDbContextOptionsBuilder>? configure = default) =>
         builder
         .UseElsaDbContextOptions(options)

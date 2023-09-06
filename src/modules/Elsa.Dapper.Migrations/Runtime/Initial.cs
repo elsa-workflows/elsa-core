@@ -68,7 +68,10 @@ public class Initial : Migration
             .WithColumn("Source").AsString().Nullable()
             .WithColumn("SerializedActivityState").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
-            .WithColumn("Timestamp").AsDateTimeOffset().NotNullable();
+            .WithColumn("SerializedException").AsString().Nullable()
+            .WithColumn("Timestamp").AsDateTimeOffset().NotNullable()
+            .WithColumn("Sequence").AsInt64().NotNullable()
+            ;
 
         IfDatabase("Sqlite")
             .Create
@@ -90,22 +93,12 @@ public class Initial : Migration
             .WithColumn("Source").AsString().Nullable()
             .WithColumn("SerializedActivityState").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("SerializedOutputs").AsString().Nullable()
+            .WithColumn("SerializedException").AsString().Nullable()
             .WithColumn("Timestamp").AsDateTime2().NotNullable()
-            .WithColumn("Sequence").AsInt64().NotNullable();
-
-        Create
-            .Table("WorkflowStates")
-            .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("DefinitionId").AsString().NotNullable()
-            .WithColumn("DefinitionVersionId").AsString().NotNullable()
-            .WithColumn("DefinitionVersion").AsInt32().NotNullable()
-            .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("Status").AsString().NotNullable()
-            .WithColumn("SubStatus").AsString().NotNullable()
-            .WithColumn("ExecutionLogSequence").AsInt64().NotNullable()
-            .WithColumn("Props").AsString().NotNullable()
+            .WithColumn("Sequence").AsInt64().NotNullable()
             ;
-
+        
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
             .Table("ActivityExecutionRecords")
@@ -117,7 +110,7 @@ public class Initial : Migration
             .WithColumn("ActivityName").AsString().Nullable()
             .WithColumn("SerializedActivityState").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
-            .WithColumn("SerializedOutput").AsString().Nullable()
+            .WithColumn("SerializedOutputs").AsString().Nullable()
             .WithColumn("SerializedException").AsString().Nullable()
             .WithColumn("StartedAt").AsDateTimeOffset().NotNullable()
             .WithColumn("CompletedAt").AsDateTimeOffset().Nullable()
@@ -134,7 +127,10 @@ public class Initial : Migration
             .WithColumn("ActivityType").AsString().NotNullable()
             .WithColumn("ActivityTypeVersion").AsInt32().NotNullable()
             .WithColumn("ActivityName").AsString().Nullable()
-            .WithColumn("ActivityState").AsString().Nullable()
+            .WithColumn("SerializedActivityState").AsString().Nullable()
+            .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("SerializedOutputs").AsString().Nullable()
+            .WithColumn("SerializedException").AsString().Nullable()
             .WithColumn("StartedAt").AsDateTime2().NotNullable()
             .WithColumn("CompletedAt").AsDateTime2().Nullable()
             .WithColumn("HasBookmarks").AsBoolean().NotNullable()
@@ -146,11 +142,12 @@ public class Initial : Migration
             .Table("WorkflowInboxMessages")
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("ActivityTypeName").AsString().NotNullable()
-            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().Nullable()
+            .WithColumn("ActivityInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("Hash").AsString().Nullable()
-            .WithColumn("BookmarkPayload").AsString()
-            .WithColumn("Input").AsString().Nullable()
+            .WithColumn("Hash").AsString().NotNullable()
+            .WithColumn("SerializedBookmarkPayload").AsString()
+            .WithColumn("SerializedInput").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset()
             .WithColumn("ExpiresAt").AsDateTimeOffset()
             ;
@@ -160,11 +157,12 @@ public class Initial : Migration
             .Table("WorkflowInboxMessages")
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("ActivityTypeName").AsString().NotNullable()
-            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().Nullable()
+            .WithColumn("ActivityInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
-            .WithColumn("Hash").AsString().Nullable()
-            .WithColumn("BookmarkPayload").AsString()
-            .WithColumn("Input").AsString().Nullable()
+            .WithColumn("Hash").AsString().NotNullable()
+            .WithColumn("SerializedBookmarkPayload").AsString()
+            .WithColumn("SerializedInput").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTime2()
             .WithColumn("ExpiresAt").AsDateTime2()
             ;
@@ -176,7 +174,6 @@ public class Initial : Migration
         Delete.Table("Triggers");
         Delete.Table("Bookmarks");
         Delete.Table("WorkflowExecutionLogRecords");
-        Delete.Table("WorkflowStates");
         Delete.Table("ActivityExecutionRecords");
         Delete.Table("WorkflowInboxMessages");
     }

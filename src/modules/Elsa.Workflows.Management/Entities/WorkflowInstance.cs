@@ -57,7 +57,7 @@ public class WorkflowInstance : Entity
     /// <summary>
     /// The timestamp when the workflow instance was last executed.
     /// </summary>
-    public DateTimeOffset? UpdatedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
     
     /// <summary>
     /// The timestamp when the workflow instance was finished.

@@ -25,7 +25,7 @@ public class CorrelationStrategy : IWorkflowActivationStrategy
     /// </summary>
     public async ValueTask<bool> GetAllowActivationAsync(WorkflowInstantiationStrategyContext context)
     {
-        var countArgs = new CountRunningWorkflowsArgs
+        var countArgs = new CountRunningWorkflowsRequest
         {
             CorrelationId = context.CorrelationId,
         };

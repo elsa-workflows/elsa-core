@@ -1,3 +1,4 @@
+using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -18,7 +19,7 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// </summary>
 public class DapperActivityExecutionRecordStore : IActivityExecutionStore
 {
-    private const string TableName = "WorkflowExecutionLogRecords";
+    private const string TableName = "ActivityExecutionRecords";
     private const string PrimaryKeyName = "Id";
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISafeSerializer _safeSerializer;
@@ -27,11 +28,11 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     /// <summary>
     /// Initializes a new instance of the <see cref="DapperActivityExecutionRecordStore"/> class.
     /// </summary>
-    public DapperActivityExecutionRecordStore(IPayloadSerializer payloadSerializer, ISafeSerializer safeSerializer, Store<ActivityExecutionRecordRecord> store)
+    public DapperActivityExecutionRecordStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer, ISafeSerializer safeSerializer)
     {
         _payloadSerializer = payloadSerializer;
         _safeSerializer = safeSerializer;
-        _store = store;
+        _store = new Store<ActivityExecutionRecordRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
 
     /// <inheritdoc />
@@ -83,7 +84,7 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
 
         if (filter.Completed != null)
         {
-            if(filter.Completed == true)
+            if (filter.Completed == true)
                 query.IsNotNull(nameof(ActivityExecutionRecordRecord.CompletedAt));
             else
                 query.IsNull(nameof(ActivityExecutionRecordRecord.CompletedAt));

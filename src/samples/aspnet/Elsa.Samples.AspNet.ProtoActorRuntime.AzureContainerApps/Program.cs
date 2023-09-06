@@ -53,12 +53,6 @@ services
             // Use EF core for triggers and bookmarks.
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 
-            // Use EF core for execution log records.
-            runtime.UseExecutionLogRecords(log => log.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)));
-
-            // Install a workflow state exporter to capture workflow states and store them in IWorkflowInstanceStore.
-            runtime.UseAsyncWorkflowStateExporter();
-
             // Use Proto.Actor for workflow execution.
             runtime.UseProtoActor(protoActor =>
             {

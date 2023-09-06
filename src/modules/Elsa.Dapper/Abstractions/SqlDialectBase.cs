@@ -53,28 +53,28 @@ public abstract class SqlDialectBase : ISqlDialect
     }
 
     /// <inheritdoc />
-    public virtual string Skip(int count) => $"OFFSET {count}";
+    public virtual string Skip(int count) => $"offset {count}";
 
     /// <inheritdoc />
-    public virtual string Take(int count) => $"LIMIT {count}";
+    public virtual string Take(int count) => $"limit {count}";
 
     /// <inheritdoc />
-    public string Insert(string table, string[] fields)
+    public string Insert(string table, string[] fields, Func<string, string>? getParamName = default)
     {
+        getParamName ??= x => x;
         var fieldList = string.Join(", ", fields);
-        var fieldParamNames = fields.Select(x => $"@{x}");
+        var fieldParamNames = fields.Select(x => $"@{getParamName(x)}");
         var fieldParamList = string.Join(", ", fieldParamNames);
         return $"INSERT INTO {table} ({fieldList}) VALUES ({fieldParamList});";
     }
 
     /// <inheritdoc />
-    public virtual string Upsert(string table, string primaryKeyField, string[] fields)
+    public virtual string Upsert(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default)
     {
+        getParamName ??= x => x;
         var fieldList = string.Join(", ", fields);
-        var fieldParamNames = fields.Select(x => $"@{x}");
+        var fieldParamNames = fields.Select(x => $"@{getParamName(x)}");
         var fieldParamList = string.Join(", ", fieldParamNames);
-        //var updateList = string.Join(", ", fields.Select(x => $"{x} = @{x}"));
-        //return $"insert into {table} ({fieldList}) values ({fieldParamList}) on conflict(id) do update set {updateList}";
-        return $"INSERT OR REPLACE INTO {table} ({primaryKeyField}, {fieldList}) VALUES (@{primaryKeyField}, {fieldParamList});";
+        return $"INSERT OR REPLACE INTO {table} ({primaryKeyField}, {fieldList}) VALUES (@{getParamName(primaryKeyField)}, {fieldParamList});";
     }
 }

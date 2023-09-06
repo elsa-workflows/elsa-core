@@ -4,7 +4,6 @@ using Elsa.Http.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
-using JetBrains.Annotations;
 
 namespace Elsa.Http;
 

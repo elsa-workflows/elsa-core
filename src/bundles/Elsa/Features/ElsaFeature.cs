@@ -35,7 +35,7 @@ public class ElsaFeature : FeatureBase
     {
         Module
             .UseWorkflows(workflows => workflows
-                .WithDefaultRuntimeWorkflowExecutionPipeline()
+                .WithDefaultWorkflowExecutionPipeline()
                 .WithBackgroundActivityExecutionPipeline())
             .UseWorkflowManagement(management =>
             {

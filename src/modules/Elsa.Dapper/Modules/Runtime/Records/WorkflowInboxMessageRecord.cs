@@ -18,7 +18,7 @@ public class WorkflowInboxMessageRecord
     /// <summary>
     /// An optional bookmark payload that can be used to filter the workflow instances to deliver the message to.
     /// </summary>
-    public string BookmarkPayload { get; set; } = default!;
+    public string SerializedBookmarkPayload { get; set; } = default!;
     
     /// <summary>
     /// The hash of the bookmark.
@@ -43,7 +43,7 @@ public class WorkflowInboxMessageRecord
     /// <summary>
     /// An optional set of inputs to deliver to the workflow instance.
     /// </summary>
-    public string? Input { get; set; }
+    public string? SerializedInput { get; set; }
 
     /// <summary>
     /// The date and time the message was created.

@@ -34,13 +34,12 @@
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
-    <ItemGroup Label="Proto">
+    <ItemGroup>
         <Protobuf Include="Proto\Shared.proto" AdditionalImportDirs="./Proto"/>
-        <Protobuf Include="Proto\RunningWorkflows.Messages.proto" AdditionalImportDirs="./Proto"/>
         <Protobuf Include="Proto\WorkflowInstance.Messages.proto" AdditionalImportDirs="./Proto"/>
-        <ProtoGrain Include="Proto\RunningWorkflows.proto" AdditionalImportDirs="./Proto"/>
         <ProtoGrain Include="Proto\WorkflowInstance.proto" AdditionalImportDirs="./Proto"/>
     </ItemGroup>
+
 
 
 </Project>

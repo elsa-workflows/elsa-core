@@ -63,6 +63,19 @@ public class ElasticStore<T> where T : class
             
         return new Page<T>(response.Hits.Select(hit => hit.Source).ToList()!, response.Total);
     }
+    
+    /// <summary>
+    /// Counts the number of documents matching the given search descriptor.
+    /// </summary>
+    public async Task<long> CountAsync(Action<CountRequestDescriptor<T>> countRequest, CancellationToken cancellationToken = default)
+    {
+        var response = await _elasticClient.CountAsync(countRequest, cancellationToken);
+
+        if (!response.IsSuccess())
+            throw new Exception($"Failed to get count from Elasticsearch: {response.DebugInformation}");
+
+        return response.Count;
+    }
 
     /// <summary>
     /// Stores the specified document in the index.

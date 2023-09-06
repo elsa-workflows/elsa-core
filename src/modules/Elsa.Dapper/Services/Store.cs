@@ -205,9 +205,14 @@ public class Store<T> where T : notnull
     public async Task SaveManyAsync(IEnumerable<T> records, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
         var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
+        var currentIndex = 0;
 
         foreach (var record in records)
-            query.Upsert(TableName, primaryKey, record);
+        {
+            var index = currentIndex;
+            query.Upsert(TableName, primaryKey, record, field => $"{field}_{index}");
+            currentIndex++;
+        }
 
         using var connection = _dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
@@ -249,11 +254,13 @@ public class Store<T> where T : notnull
     /// <returns>The number of records deleted.</returns>
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
     {
+        var selectQuery =  _dbConnectionProvider.CreateQuery().From(TableName, "rowid");
+        filter(selectQuery);
+        selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
+        
+        var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, selectQuery);
         using var connection = _dbConnectionProvider.GetConnection();
-        var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
-        filter(query);
-        query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
-        return await query.ExecuteAsync(connection);
+        return await deleteQuery.ExecuteAsync(connection);
     }
     
     /// <summary>

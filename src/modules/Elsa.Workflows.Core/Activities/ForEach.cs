@@ -1,5 +1,4 @@
 using Elsa.Workflows.Core.Attributes;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
 

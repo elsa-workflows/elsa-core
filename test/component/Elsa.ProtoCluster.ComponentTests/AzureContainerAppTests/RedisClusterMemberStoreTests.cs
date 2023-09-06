@@ -1,7 +1,6 @@
 using Proto.Cluster;
 using Proto.Cluster.AzureContainerApps.Services;
 using Proto.Cluster.AzureContainerApps.Stores.Redis;
-using StackExchange.Redis;
 
 namespace Elsa.ProtoCluster.ComponentTests.AzureContainerAppTests;
 

@@ -109,7 +109,7 @@ public class WorkflowsMiddleware
         var correlationId = await GetCorrelationIdAsync(httpContext, httpContext.RequestAborted);
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(httpContext, httpContext.RequestAborted);
         var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
-        var triggerOptions = new TriggerWorkflowsRuntimeOptions(correlationId, workflowInstanceId, default, input);
+        var triggerOptions = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, default, input);
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
         var workflowMatches = (await _workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
 

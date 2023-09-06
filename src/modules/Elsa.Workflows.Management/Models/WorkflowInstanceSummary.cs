@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
@@ -30,6 +31,25 @@ public class WorkflowInstanceSummary
             FinishedAt = workflowInstance.FinishedAt
         };
     }
+    
+    /// <summary>
+    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// </summary>
+    public static Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> FromInstanceExpression()
+        => workflowInstance => new WorkflowInstanceSummary
+        {
+            Id = workflowInstance.Id,
+            DefinitionId = workflowInstance.DefinitionId,
+            DefinitionVersionId = workflowInstance.DefinitionVersionId,
+            Version = workflowInstance.Version,
+            Status = workflowInstance.Status,
+            SubStatus = workflowInstance.SubStatus,
+            CorrelationId = workflowInstance.CorrelationId,
+            Name = workflowInstance.Name,
+            CreatedAt = workflowInstance.CreatedAt,
+            UpdatedAt = workflowInstance.UpdatedAt,
+            FinishedAt = workflowInstance.FinishedAt
+        };
 
     /// <summary>The ID of the workflow instance.</summary>
     public string Id { get; set; } = default!;

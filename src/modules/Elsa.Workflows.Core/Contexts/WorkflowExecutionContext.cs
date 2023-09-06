@@ -122,6 +122,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
+
+    /// <summary>
+    /// The date and time the workflow execution context has finished.
+    /// </summary>
+    public DateTimeOffset? FinishedAt { get; set; }
     
     /// <summary>
     /// Gets the clock used to determine the current time.
@@ -161,7 +166,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A dictionary of inputs provided at the start of the current workflow execution. 
     /// </summary>
-    public IDictionary<string, object> Input { get; }
+    public IDictionary<string, object> Input { get; set; }
 
     /// <summary>
     /// A dictionary of outputs provided by the current workflow execution. 

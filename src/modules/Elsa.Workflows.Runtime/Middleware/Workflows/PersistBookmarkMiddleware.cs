@@ -41,7 +41,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         var diff = Diff.For(originalBookmarks, updatedBookmarks);
 
         // Update bookmarks.
-        var updateBookmarksContext = new UpdateBookmarksContext(context.Id, diff, context.CorrelationId);
+        var updateBookmarksContext = new UpdateBookmarksRequest(context.Id, diff, context.CorrelationId);
         await _workflowRuntime.UpdateBookmarksAsync(updateBookmarksContext, cancellationToken);
 
         // Publish domain event.

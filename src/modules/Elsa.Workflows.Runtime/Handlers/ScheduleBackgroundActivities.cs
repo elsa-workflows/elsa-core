@@ -21,7 +21,7 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
     private readonly IBookmarkHasher _bookmarkHasher;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private IWorkflowExecutionContextMapper _workflowExecutionContextMapper;
+    private IWorkflowStateExtractor _workflowStateExtractor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ScheduledBackgroundActivity"/> class.
@@ -31,13 +31,13 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
         IBookmarkPayloadSerializer bookmarkPayloadSerializer,
         IBookmarkHasher bookmarkHasher,
         IWorkflowRuntime workflowRuntime, 
-        IWorkflowExecutionContextMapper workflowExecutionContextMapper)
+        IWorkflowStateExtractor workflowStateExtractor)
     {
         _backgroundActivityScheduler = backgroundActivityScheduler;
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
         _bookmarkHasher = bookmarkHasher;
         _workflowRuntime = workflowRuntime;
-        _workflowExecutionContextMapper = workflowExecutionContextMapper;
+        _workflowStateExtractor = workflowStateExtractor;
     }
 
     /// <inheritdoc />
@@ -88,7 +88,7 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
         if (scheduledBackgroundActivities.Any())
         {
             // Bookmarks got updated, so we need to update the workflow state.
-            var workflowState = _workflowExecutionContextMapper.Extract(workflowExecutionContext);
+            var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
             await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
         }
     }

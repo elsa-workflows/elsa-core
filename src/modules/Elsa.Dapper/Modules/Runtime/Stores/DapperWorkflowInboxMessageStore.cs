@@ -83,7 +83,7 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             clauses.Add(clause);
         }
 
-        var clausesSql = string.Join(" OR ", $"({clauses.Select(x => x.Sql)})");
+        var clausesSql = string.Join(" OR ", clauses.Select(x => x.Sql.ToString()));
         query.Sql.AppendLine(clausesSql);
     }
 
@@ -99,8 +99,8 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
-            BookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
-            Input = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
+            SerializedBookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
+            SerializedInput = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
         };
@@ -116,8 +116,8 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
-            BookmarkPayload = _payloadSerializer.Deserialize(source.BookmarkPayload),
-            Input = source.Input != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.Input) : default,
+            BookmarkPayload = _payloadSerializer.Deserialize(source.SerializedBookmarkPayload),
+            Input = source.SerializedInput != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.SerializedInput) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
         };
