@@ -1,17 +1,16 @@
 ﻿using System.Runtime.CompilerServices;
+using Elsa.JavaScript.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using JetBrains.Annotations;
-using IJavaScriptEvaluator = Elsa.JavaScript.Contracts.IJavaScriptEvaluator;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.JavaScript.Activities;
 
 /// <summary>
 /// Executes JavaScript code.
 /// </summary>
 [Activity("Elsa", "Scripting", "Executes JavaScript code", DisplayName = "Run JavaScript")]
-[PublicAPI]
 public class RunJavaScript : CodeActivity<object?>
 {
     /// <inheritdoc />

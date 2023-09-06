@@ -45,6 +45,11 @@ public class InputAttribute : Attribute
     public Type? OptionsProvider { get; set; }
 
     /// <summary>
+    /// The method name on the activity to invoke to get options. If specified, this overrules any value specified via <see cref="Options"/> and <see cref="OptionsProvider"/>.
+    /// </summary>
+    public string? OptionsMethod { get; set; }
+
+    /// <summary>
     /// A value to order this property by. Properties are displayed in ascending order (lower appears before higher).
     /// </summary>
     public float Order { get; set; }

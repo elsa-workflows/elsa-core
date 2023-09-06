@@ -14,10 +14,13 @@ internal class WriteHttpResponseContentTypeOptionsProvider : IActivityPropertyOp
         _options = options.Value;
     }
     
-    public ValueTask<object?> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
+    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
     {
-        return new(GetOptions(property));
+        var options = new Dictionary<string, object>
+        {
+            ["AvailableContentTypes"] = new[] { "" }.Concat(_options.AvailableContentTypes)
+        };
+        
+        return new(options);
     }
-
-    private object GetOptions(PropertyInfo property) => new[] { "" }.Concat(_options.AvailableContentTypes);
 }
