@@ -1,5 +1,4 @@
 using Elsa.Dapper.Abstractions;
-using System.Collections.Generic;
 
 namespace Elsa.Dapper.Dialects;
 
@@ -10,7 +9,7 @@ public class PostgreSqlDialect : SqlDialectBase
 {
 
     /// <inheritdoc />
-    public virtual string Upsert(string table, string primaryKeyField, string[] fields)
+    public override string Upsert(string table, string primaryKeyField, string[] fields)
     {
         var fieldList = string.Join(", ", fields);
         var fieldParamNames = fields.Select(x => $"@{x}");
