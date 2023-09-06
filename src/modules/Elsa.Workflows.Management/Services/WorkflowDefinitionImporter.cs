@@ -70,6 +70,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Outcomes = model.Outcomes ?? new List<string>();
             draft.IsReadonly = model.IsReadonly;
             draft.Options = model.Options ?? new WorkflowOptions();
+            draft.ToolVersion = model.ToolVersion;
 
             if (request.Publish ?? model.IsPublished)
             {
