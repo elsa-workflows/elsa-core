@@ -12,6 +12,9 @@ public class VersionOptionsJsonConverter : JsonConverter<VersionOptions>
     /// <inheritdoc />
     public override VersionOptions Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
+        if(reader.TokenType == JsonTokenType.Number)
+            return VersionOptions.SpecificVersion(reader.GetInt32());
+        
         var textValue = reader.GetString();
         return string.IsNullOrWhiteSpace(textValue) ? VersionOptions.Published : VersionOptions.FromString(textValue);
     }
