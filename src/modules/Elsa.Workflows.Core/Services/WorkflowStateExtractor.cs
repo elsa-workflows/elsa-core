@@ -54,11 +54,11 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     /// <inheritdoc />
     public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
+        // Do not map input. We don't want to overwrite the input that was passed to the workflow.
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
-        workflowExecutionContext.Input = state.Input;
         workflowExecutionContext.Output = state.Output;
         workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
         workflowExecutionContext.CreatedAt = state.CreatedAt;
