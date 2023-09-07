@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
@@ -48,8 +49,12 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
             .GetOrAdd(BackgroundActivityInvokerMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
-
-        var bookmarks = notification.IndexedWorkflowBookmarks.AddedBookmarks;
+  
+        if (scheduledBackgroundActivities.Any())
+        {
+            // Before scheduling background work, ensure the workflow runtime has the current state of the workflow instance.
+            await UpdateWorkflowRuntimeStateAsync(workflowExecutionContext, cancellationToken);
+        }
 
         foreach (var scheduledBackgroundActivity in scheduledBackgroundActivities)
         {
@@ -87,9 +92,14 @@ internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookm
 
         if (scheduledBackgroundActivities.Any())
         {
-            // Bookmarks got updated, so we need to update the workflow state.
-            var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
-            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
+            // Bookmarks got updated, so we need to update the workflow runtime again with the latest state.
+            await UpdateWorkflowRuntimeStateAsync(workflowExecutionContext, cancellationToken);
         }
+    }
+
+    private async Task UpdateWorkflowRuntimeStateAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
+    {
+        var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
+        await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
     }
 }
