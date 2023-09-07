@@ -1,10 +1,12 @@
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
@@ -41,7 +43,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
         var diff = Diff.For(originalBookmarks, updatedBookmarks);
 
         // Update bookmarks.
-        var updateBookmarksContext = new UpdateBookmarksRequest(context.Id, diff, context.CorrelationId);
+        var updateBookmarksContext = new UpdateBookmarksRequest(context, diff, context.CorrelationId);
         await _workflowRuntime.UpdateBookmarksAsync(updateBookmarksContext, cancellationToken);
 
         // Publish domain event.

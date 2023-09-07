@@ -11,6 +11,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Requests;
 using Medallion.Threading;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -233,8 +234,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
     {
-        await RemoveBookmarksAsync(request.InstanceId, request.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(request.InstanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
+        var instanceId = request.WorkflowExecutionContext.Id;
+        await RemoveBookmarksAsync(instanceId, request.Diff.Removed, cancellationToken);
+        await StoreBookmarksAsync(instanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
     }
 
     /// <inheritdoc />

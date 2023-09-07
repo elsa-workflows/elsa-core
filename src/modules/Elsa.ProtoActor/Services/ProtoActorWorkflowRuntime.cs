@@ -10,9 +10,10 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Requests;
 using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
-using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Contracts.CountRunningWorkflowsRequest;
+using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
 using ProtoWorkflowStatus = Elsa.ProtoActor.ProtoBuf.WorkflowStatus;
 using ProtoWorkflowSubStatus = Elsa.ProtoActor.ProtoBuf.WorkflowSubStatus;
 using ProtoWorkflowFault = Elsa.ProtoActor.ProtoBuf.WorkflowFault;
@@ -245,8 +246,9 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
     {
-        await RemoveBookmarksAsync(request.InstanceId, request.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(request.InstanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
+        var instanceId = request.WorkflowExecutionContext.Id;
+        await RemoveBookmarksAsync(instanceId, request.Diff.Removed, cancellationToken);
+        await StoreBookmarksAsync(instanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
     }
 
     /// <inheritdoc />
