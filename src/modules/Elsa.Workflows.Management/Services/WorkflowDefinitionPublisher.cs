@@ -150,7 +150,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
         var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
         var lastVersion = await _workflowDefinitionStore.FindLastVersionAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
-        var definition = (await _workflowDefinitionStore.FindAsync(filter, order, cancellationToken)) ?? lastVersion;
+        var definition = await _workflowDefinitionStore.FindAsync(filter, order, cancellationToken) ?? lastVersion;
 
         if (definition == null!)
             return null;

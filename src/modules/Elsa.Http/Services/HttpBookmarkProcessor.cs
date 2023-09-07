@@ -4,6 +4,7 @@ using Elsa.Http.Models;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.AspNetCore.Http;
 
@@ -16,6 +17,8 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly WorkflowStateMapper _workflowStateMapper;
 
     /// <summary>
     /// Constructor.
@@ -24,12 +27,16 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         IWorkflowRuntime workflowRuntime,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IWorkflowInstanceStore workflowInstanceStore,
+        WorkflowStateMapper workflowStateMapper)
     {
         _workflowRuntime = workflowRuntime;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _httpContextAccessor = httpContextAccessor;
+        _workflowInstanceStore = workflowInstanceStore;
+        _workflowStateMapper = workflowStateMapper;
     }
     
     /// <inheritdoc />
@@ -99,6 +106,10 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
             workflowStates.Add(workflowState);
         }
+
+        // Save the updated workflow states.
+        foreach (var workflowInstance in workflowStates.Select(workflowState => _workflowStateMapper.Map(workflowState)!)) 
+            await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
 
         return workflowStates;
     }

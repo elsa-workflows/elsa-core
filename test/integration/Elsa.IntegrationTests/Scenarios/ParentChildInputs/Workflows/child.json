@@ -1,0 +1,139 @@
+{
+  "id": "228c0150ab7b4745b038b950be574935",
+  "definitionId": "25b097966de245818e9a5c0d04f3323e",
+  "name": "Child",
+  "createdAt": "2023-09-06T09:57:32.944622+00:00",
+  "version": 5,
+  "variables": [],
+  "inputs": [
+    {
+      "uiHint": "single-line",
+      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "type": "Object",
+      "name": "Input1",
+      "displayName": "Input1",
+      "description": "",
+      "category": "",
+      "isArray": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output1",
+      "description": "",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "NotFoundConnectionsKey": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "start": "WriteLine1",
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output1"
+          },
+          "memoryReference": {
+            "id": "ca8473b5-83ec-4f75-a2f1-dfba71f349d1"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "return getInput1();"
+          },
+          "memoryReference": {
+            "id": "06c6243d-8a57-45e3-ae54-f209b95d2bb2"
+          }
+        },
+        "id": "SetOutput1",
+        "name": null,
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 636,
+              "y": 250.01388549804688
+            },
+            "size": {
+              "width": 107.734375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "\u0022Child: \u0022 \u002B getInput1();"
+          },
+          "memoryReference": {
+            "id": "3f726554-0fa1-4e54-b5e7-74b18807437b"
+          }
+        },
+        "id": "WriteLine1",
+        "name": null,
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 332.01385498046875,
+              "y": 222.01388549804688
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "WriteLine1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "SetOutput1",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

@@ -66,7 +66,7 @@ public static class ActivityExecutionContextExtensions
     public static void SetResult(this ActivityExecutionContext context, object? value)
     {
         var activity = context.Activity as IActivityWithResult ?? throw new Exception($"Cannot set result on activity {context.Activity.Id} because it does not implement {nameof(IActivityWithResult)}.");
-        context.Set(activity.Result, value);
+        context.Set(activity.Result, value, "Result");
     }
 
     /// <summary>
@@ -310,15 +310,6 @@ public static class ActivityExecutionContextExtensions
     /// <returns></returns>
     public static IEnumerable<ActivityExecutionContext> GetChildren(this ActivityExecutionContext context) =>
         context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
-
-    // /// <summary>
-    // /// Removes all child <see cref="ActivityExecutionContext"/> objects.
-    // /// </summary>
-    // public static async Task RemoveChildrenAsync(this ActivityExecutionContext context)
-    // {
-    //     // Detach child activity execution contexts.
-    //     await context.WorkflowExecutionContext.RemoveActivityExecutionContextsAsync(context.GetChildren());
-    // }
 
     /// <summary>
     /// Send a signal up the current hierarchy of ancestors.

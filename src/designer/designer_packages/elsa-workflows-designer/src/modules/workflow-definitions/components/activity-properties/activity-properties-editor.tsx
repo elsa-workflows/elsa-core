@@ -348,8 +348,9 @@ export class ActivityPropertiesEditor {
       outputTargetOptions.push({label: 'Variables', items: [...variables.map(x => ({value: x.id, name: x.name}))], kind: 'variable'});
     }
 
-    if (outputDefinitions.length > 0)
-      outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
+    // Disable this for now until we rework the input output handling at the engine level.
+    // if (outputDefinitions.length > 0)
+    //   outputTargetOptions.push({label: 'Outputs', items: [...outputDefinitions.map(x => ({value: x.name, name: x.name}))], kind: 'output'});
 
     return <div key={key}>
       {outputs.map(propertyDescriptor => {

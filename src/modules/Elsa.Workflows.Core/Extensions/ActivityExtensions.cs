@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
@@ -61,16 +62,40 @@ public static class ActivityExtensions
     /// <summary>
     /// Gets the output with the specified name.
     /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="context">The context.</param>
+    /// <param name="activity">The activity to get the output from.</param>
+    /// <param name="context">The workflow execution context.</param>
+    /// <param name="outputName">Name of the output.</param>
+    /// <returns>The output value.</returns>
+    public static object? GetOutput(this IActivity activity, WorkflowExecutionContext context, string? outputName = default)
+    {
+        var workflowExecutionContext = context;
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        var output = outputRegister.FindOutputByActivityId(activity.Id, outputName);
+        return output;
+    }
+    
+    /// <summary>
+    /// Gets the output with the specified name.
+    /// </summary>
+    /// <param name="activity">The activity to get the output from.</param>
+    /// <param name="context">The activity execution context.</param>
+    /// <param name="outputName">Name of the output.</param>
+    /// <returns>The output value.</returns>
+    public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = default)
+    {
+        return activity.GetOutput(context.WorkflowExecutionContext, outputName);
+    }
+    
+    /// <summary>
+    /// Gets the output with the specified name.
+    /// </summary>
+    /// <param name="activity">The activity to get the output from.</param>
+    /// <param name="context">The expression execution context.</param>
     /// <param name="outputName">Name of the output.</param>
     /// <returns>The output value.</returns>
     public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = default)
     {
-        var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var output = outputRegister.FindOutputByActivityInstanceId(context.GetActivityExecutionContext().Id, outputName);
-        return output;
+        return activity.GetOutput(context.GetWorkflowExecutionContext(), outputName);
     }
 
     /// <summary>
@@ -81,10 +106,23 @@ public static class ActivityExtensions
     /// <param name="outputName">Name of the output.</param>
     /// <typeparam name="T">The type of the output.</typeparam>
     /// <returns>The output value.</returns>
-    public static T? GetOutput<T>(this IActivity activity, ExpressionExecutionContext context, string outputName)
+    public static T? GetOutput<T>(this IActivity activity, ActivityExecutionContext context, string outputName)
     {
         var outputValue = activity.GetOutput(context, outputName);
         return outputValue == null ? default! : outputValue.ConvertTo<T>();
+    }
+    
+    /// <summary>
+    /// Gets the output with the specified name.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="outputName">Name of the output.</param>
+    /// <typeparam name="T">The type of the output.</typeparam>
+    /// <returns>The output value.</returns>
+    public static T? GetOutput<T>(this IActivity activity, ExpressionExecutionContext context, string outputName)
+    {
+        return activity.GetOutput<T>(context.GetActivityExecutionContext(), outputName);
     }
 
     /// <summary>
@@ -96,7 +134,7 @@ public static class ActivityExtensions
     /// <typeparam name="TActivity">The type of the activity.</typeparam>
     /// <typeparam name="T">The type of the output.</typeparam>
     /// <returns>The output value.</returns>
-    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    public static T? GetOutput<TActivity, T>(this TActivity activity, ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
     {
         var outputName = outputExpression.GetPropertyName();
         return ((IActivity)activity!).GetOutput<T>(context, outputName);
@@ -114,7 +152,7 @@ public static class ActivityExtensions
         var value = GetResult(activity, context);
         return value == null ? default! : value.ConvertTo<T>();
     }
-
+    
     /// <summary>
     /// Gets the Result output of the specified activity.
     /// </summary>
@@ -122,6 +160,17 @@ public static class ActivityExtensions
     /// <param name="context">The context.</param>
     /// <returns>The output value.</returns>
     public static object? GetResult(this IActivity activity, ExpressionExecutionContext context)
+    {
+        return activity.GetResult(context.GetActivityExecutionContext());
+    }
+
+    /// <summary>
+    /// Gets the Result output of the specified activity.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <param name="context">The context.</param>
+    /// <returns>The output value.</returns>
+    public static object? GetResult(this IActivity activity, ActivityExecutionContext context)
     {
         return activity.GetOutput(context, ActivityOutputRegister.DefaultOutputName);
     }
@@ -132,7 +181,7 @@ public static class ActivityExtensions
     /// <param name="context">The context.</param>
     /// <param name="activity">The activity.</param>
     /// <returns>The output value.</returns>
-    public static object? GetResult(this ExpressionExecutionContext context, IActivity activity)
+    public static object? GetResult(this ActivityExecutionContext context, IActivity activity)
     {
         return activity.GetOutput(context, ActivityOutputRegister.DefaultOutputName);
     }
@@ -143,7 +192,7 @@ public static class ActivityExtensions
     /// <param name="context">The context.</param>
     public static T? GetLastResult<T>(this ExpressionExecutionContext context)
     {
-        var value = GetLastResult(context);
+        var value = GetLastResult(context.GetWorkflowExecutionContext());
         return value == null ? default! : value.ConvertTo<T>();
     }
 
@@ -151,10 +200,18 @@ public static class ActivityExtensions
     /// Gets the result of the last activity.
     /// </summary>
     /// <param name="context">The context.</param>
-    public static object? GetLastResult(this ExpressionExecutionContext context)
+    public static object? GetLastResult(this ActivityExecutionContext context)
     {
-        var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        return workflowExecutionContext.GetLastActivityResult();
+        return context.WorkflowExecutionContext.GetLastResult();
+    }
+    
+    /// <summary>
+    /// Gets the result of the last activity.
+    /// </summary>
+    /// <param name="context">The context.</param>
+    public static object? GetLastResult(this WorkflowExecutionContext context)
+    {
+        return context.GetLastActivityResult();
     }
 
     /// <summary>

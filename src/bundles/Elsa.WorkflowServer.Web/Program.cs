@@ -18,7 +18,7 @@ using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
-const bool useDapper = true;
+const bool useDapper = false;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 

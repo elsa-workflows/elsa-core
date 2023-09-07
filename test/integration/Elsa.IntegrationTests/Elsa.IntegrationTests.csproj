@@ -87,7 +87,17 @@
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow5.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\ParentChildInputs\Workflows\child.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ParentChildInputs\Workflows\parent1.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ParentChildInputs\Workflows\parent2.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
+
 
 
 
