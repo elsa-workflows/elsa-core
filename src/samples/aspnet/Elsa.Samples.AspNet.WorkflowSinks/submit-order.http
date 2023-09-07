@@ -1,6 +1,0 @@
-POST https://localhost:7207/api/orders/submit
-Content-Type: application/json
-
-{
-  "customerName": "Elon Musk"
-}
