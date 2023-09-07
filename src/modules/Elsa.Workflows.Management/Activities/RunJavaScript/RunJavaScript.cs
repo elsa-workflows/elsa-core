@@ -25,6 +25,12 @@ public class RunJavaScript : CodeActivity<object?>
     {
         Script = new Input<string>(script);
     }
+    
+    /// <summary>
+    /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
+    /// </summary>
+    [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
+    public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
 
     /// <summary>
     /// The script to run.
@@ -35,12 +41,6 @@ public class RunJavaScript : CodeActivity<object?>
         OptionsProvider = typeof(RunJavaScriptOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
-
-    /// <summary>
-    /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
-    /// </summary>
-    [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
-    public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
