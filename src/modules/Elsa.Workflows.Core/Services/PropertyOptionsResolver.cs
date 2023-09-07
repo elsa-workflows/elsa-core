@@ -40,11 +40,12 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
             var activityType = propertyInfo.DeclaringType!;
             var methodName = inputAttribute.OptionsMethod!;
             var method = activityType.GetMethod(methodName, bindingAttr: BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            
-            if(method is null)
+
+            if (method is null)
                 throw new InvalidOperationException($"Could not find static method '{methodName}' on type '{activityType}'.");
-            
-            var options = method.Invoke(null, null) as IDictionary<string, object>;
+
+            var optionsTask = (ValueTask<IDictionary<string, object>>)method.Invoke(null, new object[] { propertyInfo, cancellationToken })!;
+            var options = await optionsTask;
             return options;
         }
 
@@ -62,7 +63,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
 
         if (!wrappedPropertyType.IsEnum)
             return false;
-            
+
         items = wrappedPropertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
 
         if (isNullable)
