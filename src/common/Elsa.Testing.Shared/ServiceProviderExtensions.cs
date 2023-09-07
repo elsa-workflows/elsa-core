@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Testing.Shared;

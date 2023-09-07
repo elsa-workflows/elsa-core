@@ -14,6 +14,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Http.Middleware;
 

@@ -1,6 +1,6 @@
 using Elsa.Common.Models;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime.Requests;
 
 /// <summary>
 /// Represents options for starting a workflow.

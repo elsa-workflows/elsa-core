@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.ActivationValidators;
 
