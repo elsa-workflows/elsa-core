@@ -24,9 +24,9 @@ public class InputDescriptor : PropertyDescriptor
     public string UIHint { get; set; } = default!;
     
     /// <summary>
-    /// An arbitrary options object that can be used by some UI tool.
+    /// An arbitrary options object that can be used by UI tooling.
     /// </summary>
-    public object? Options { get; set; }
+    public IDictionary<string, object>? Options { get; set; }
     
     /// <summary>
     /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.

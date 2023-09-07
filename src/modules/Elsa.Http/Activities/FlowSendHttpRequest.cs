@@ -1,8 +1,10 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 
 namespace Elsa.Http;
 
@@ -20,7 +22,7 @@ public class FlowSendHttpRequest : SendHttpRequestBase
     /// <summary>
     /// A list of expected status codes to handle.
     /// </summary>
-    [Input(Description = "A list of expected status codes to handle.", UIHint = InputUIHints.MultiText)]
+    [Input(Description = "A list of expected status codes to handle.", UIHint = InputUIHints.DynamicOutcomes, OptionsMethod = nameof(GetExpectedStatusCodesOptionsAsync))]
     public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
 
     /// <inheritdoc />
@@ -32,5 +34,15 @@ public class FlowSendHttpRequest : SendHttpRequestBase
         var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : "Done";
 
         await context.CompleteActivityWithOutcomesAsync(outcome);
+    }
+
+    private static ValueTask<IDictionary<string, object>> GetExpectedStatusCodesOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
+    {
+        var options = new Dictionary<string, object>
+        {
+            [nameof(DynamicOutcomesOptions)] = new DynamicOutcomesOptions(new[]{"Unmatched status code", "Done"})
+        };
+        
+        return new(options);
     }
 }

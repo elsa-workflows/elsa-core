@@ -22,18 +22,35 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
+    public async ValueTask<IDictionary<string, object>?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
-        
-        if (inputAttribute?.OptionsProvider == null)
-            return inputAttribute?.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
 
-        var providerType = inputAttribute.OptionsProvider;
+        if (inputAttribute?.OptionsProvider != null)
+        {
+            var providerType = inputAttribute.OptionsProvider;
 
-        using var scope = _serviceProvider.CreateScope();
-        var provider = (IActivityPropertyOptionsProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
-        return await provider.GetOptionsAsync(propertyInfo, cancellationToken);
+            using var scope = _serviceProvider.CreateScope();
+            var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
+            return await provider.GetOptionsAsync(propertyInfo, cancellationToken);
+        }
+
+        if (inputAttribute?.OptionsMethod is not null)
+        {
+            var activityType = propertyInfo.DeclaringType!;
+            var methodName = inputAttribute.OptionsMethod!;
+            var method = activityType.GetMethod(methodName, bindingAttr: BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+
+            if (method is null)
+                throw new InvalidOperationException($"Could not find static method '{methodName}' on type '{activityType}'.");
+
+            var optionsTask = (ValueTask<IDictionary<string, object>>)method.Invoke(null, new object[] { propertyInfo, cancellationToken })!;
+            var options = await optionsTask;
+            return options;
+        }
+
+        var defaultOptions = inputAttribute?.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
+        return defaultOptions != null ? new Dictionary<string, object> { ["Default"] = defaultOptions } : null;
     }
 
     private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out IList<SelectListItem>? items)
@@ -46,7 +63,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
 
         if (!wrappedPropertyType.IsEnum)
             return false;
-            
+
         items = wrappedPropertyType.GetEnumNames().Select(x => new SelectListItem(x.Humanize(LetterCasing.Title), x)).ToList();
 
         if (isNullable)
