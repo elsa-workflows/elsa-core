@@ -15,13 +15,15 @@ public static class RouteTableExtensions
     
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<Trigger> triggers)
     {
-        var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path).ToList();
+        var paths = Filter(triggers).Select(Deserialize).Select(x => x.Path)
+            .Where(x => !x.Contains("//")).ToList();
         routeTable.AddRange(paths);
     }
 
     public static void AddRoutes(this IRouteTable routeTable, IEnumerable<Bookmark> bookmarks)
     {
-        var paths = Filter(bookmarks).Select(Deserialize).Select(x => x.Path).ToList();
+        var paths = Filter(bookmarks).Select(Deserialize).Select(x => x.Path)
+            .Where(x => !x.Contains("//")).ToList();
         routeTable.AddRange(paths);
     }
 
