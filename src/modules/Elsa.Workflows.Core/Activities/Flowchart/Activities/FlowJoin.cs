@@ -20,14 +20,14 @@ public class FlowJoin : Activity, IJoinNode
     public FlowJoin([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).
     /// </summary>
     [Input(
         Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
         DefaultValue = FlowJoinMode.WaitAny
-    )] 
+    )]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
     /// <inheritdoc />
@@ -50,14 +50,12 @@ public class FlowJoin : Activity, IJoinNode
                     await context.CompleteActivityAsync();
                 break;
             case FlowJoinMode.WaitAny:
-                // Only complete if we haven't already executed.
+                // If this activity was already executed, complete it with the AlreadyCompleted result. This will prevent the Flowchart activity from scheduling its siblings again.
                 var alreadyExecuted = inboundActivities.Max(x => flowScope.GetExecutionCount(x)) == executionCount;
+                var result = alreadyExecuted ? new AlreadyCompleted() : default;
 
-                if (!alreadyExecuted)
-                {
-                    await context.CompleteActivityAsync();
-                    await ClearBookmarksAsync(flowchart, context);
-                }
+                await context.CompleteActivityAsync(result);
+                await ClearBookmarksAsync(flowchart, context);
                 break;
         }
     }
@@ -71,7 +69,7 @@ public class FlowJoin : Activity, IJoinNode
         var inboundActivityExecutionContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
 
         // Cancel each inbound activity.
-        foreach (var activityExecutionContext in inboundActivityExecutionContexts) 
+        foreach (var activityExecutionContext in inboundActivityExecutionContexts)
             await activityExecutionContext.CancelActivityAsync();
     }
 }

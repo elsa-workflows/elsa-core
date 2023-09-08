@@ -57,13 +57,15 @@ public class Flowchart : Container
         var childContext = context.ChildContext;
         var completedActivity = childContext.Activity;
         var result = context.Result;
-        
+        var alreadyCompleted = result is AlreadyCompleted;
+
         // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
         Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
             ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
             : connection => connection.Source.Activity == completedActivity;
 
-        var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
+        // Only query the outbound connections if the completed activity wasn't already completed.
+        var outboundConnections = alreadyCompleted ? new List<Connection>() : Connections.Where(outboundConnectionsQuery).ToList();
         var children = outboundConnections.Select(x => x.Target.Activity).ToList();
         var scope = targetContext.GetProperty(ScopeProperty, () => new FlowScope());
 

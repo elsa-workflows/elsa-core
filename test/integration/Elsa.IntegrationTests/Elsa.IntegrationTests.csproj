@@ -96,6 +96,11 @@
       <None Update="Scenarios\ParentChildInputs\Workflows\parent2.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\ExplicitJoins\Workflows\flow-join-any.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+
+
     </ItemGroup>
 
 
