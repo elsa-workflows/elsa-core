@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 
@@ -84,6 +85,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var path = Path.Get(context);
+
+        if (path.Contains("//"))
+            throw new RoutePatternException(path, "Path cannot contain double slashes (//)");
+
         if (!context.IsTriggerOfWorkflow())
         {
             context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
@@ -137,11 +143,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     {
         // Generate bookmark data for path and selected methods.
         var path = context.Get(Path);
-        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string>{ HttpMethods.Get };
+        var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
         return methods!.Select(x =>
-            new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
+                new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
             .Cast<object>().ToArray();
     }
 
