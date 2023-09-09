@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock" Version="2.3.3"/>
+        <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0"/>
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
