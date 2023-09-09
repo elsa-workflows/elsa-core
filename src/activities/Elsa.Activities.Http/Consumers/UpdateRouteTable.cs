@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Activities.Http.Bookmarks;
@@ -10,7 +9,6 @@ using Elsa.Persistence;
 using Elsa.Persistence.Specifications.Bookmarks;
 using Elsa.Persistence.Specifications.Triggers;
 using Elsa.Services;
-using Elsa.Services.Bookmarks;
 using Rebus.Extensions;
 using Rebus.Handlers;
 
@@ -26,19 +24,20 @@ namespace Elsa.Activities.Http.Consumers
         private readonly ITriggerStore _triggerStore;
         private readonly IBookmarkStore _bookmarkStore;
         private readonly IBookmarkHasher _bookmarkHasher;
-        private readonly BookmarkSerializer _bookmarkSerializer;
+        private readonly IBookmarkSerializer _bookmarkSerializer;
 
         public UpdateRouteTable(
             IRouteTable routeTable,
             ITriggerStore triggerStore,
             IBookmarkStore bookmarkStore,
-            IBookmarkHasher bookmarkHasher)
+            IBookmarkHasher bookmarkHasher,
+            IBookmarkSerializer bookmarkSerializer)
         {
             _routeTable = routeTable;
             _triggerStore = triggerStore;
             _bookmarkStore = bookmarkStore;
             _bookmarkHasher = bookmarkHasher;
-            _bookmarkSerializer = new();
+            _bookmarkSerializer = bookmarkSerializer;
         }
 
         public Task Handle(TriggerIndexingFinished message)
@@ -49,17 +48,19 @@ namespace Elsa.Activities.Http.Consumers
 
         public async Task Handle(TriggersDeleted message)
         {
-            WorkflowDefinitionIdSpecification specification = new(message.WorkflowDefinitionId);
-            ICollection<Trigger> currentDefinitionTriggers = (await _triggerStore.FindManyAsync(specification)).ToList();
+            var specification = new WorkflowDefinitionIdSpecification(message.WorkflowDefinitionId);
+            var currentDefinitionTriggers = (await _triggerStore.FindManyAsync(specification)).ToList();
+            var triggers = message.Triggers.Where(x => !Exists(x)).ToList();
 
-            bool Exists(Trigger trigger) => currentDefinitionTriggers.Any(x => x.ActivityId == trigger.ActivityId 
-                && x.WorkflowDefinitionId == trigger.WorkflowDefinitionId
-                && x.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
-                && trigger.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
-                && _bookmarkHasher.Hash(Deserialize(x)) == _bookmarkHasher.Hash(Deserialize(trigger)));
-
-            ICollection<Trigger> triggers = message.Triggers.Where(x => !Exists(x)).ToList();
             _routeTable.RemoveRoutes(triggers);
+            return;
+
+            bool Exists(Trigger trigger) => currentDefinitionTriggers.Any(
+                x => x.ActivityId == trigger.ActivityId
+                     && x.WorkflowDefinitionId == trigger.WorkflowDefinitionId
+                     && x.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
+                     && trigger.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
+                     && _bookmarkHasher.Hash(Deserialize(x)) == _bookmarkHasher.Hash(Deserialize(trigger)));
         }
 
         public Task Handle(BookmarkIndexingFinished message)
@@ -70,17 +71,19 @@ namespace Elsa.Activities.Http.Consumers
 
         public async Task Handle(BookmarksDeleted message)
         {
-            WorkflowInstanceIdSpecification specification = new(message.WorkflowInstanceId);
-            ICollection<Bookmark> currentInstanceBookmarks = (await _bookmarkStore.FindManyAsync(specification)).ToList();
+            var specification = new WorkflowInstanceIdSpecification(message.WorkflowInstanceId);
+            var currentInstanceBookmarks = (await _bookmarkStore.FindManyAsync(specification)).ToList();
+            var bookmarks = message.Bookmarks.Where(x => !Exists(x)).ToList();
+            
+            _routeTable.RemoveRoutes(bookmarks);
+            return;
 
-            bool Exists(Bookmark bookmark) => currentInstanceBookmarks.Any(x => x.ActivityId == bookmark.ActivityId 
+            bool Exists(Bookmark bookmark) => currentInstanceBookmarks.Any(x =>
+                x.ActivityId == bookmark.ActivityId
                 && x.WorkflowInstanceId == bookmark.WorkflowInstanceId
                 && x.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
                 && bookmark.ModelType == typeof(HttpEndpointBookmark).GetSimpleAssemblyQualifiedName()
                 && _bookmarkHasher.Hash(Deserialize(x)) == _bookmarkHasher.Hash(Deserialize(bookmark)));
-
-            ICollection<Bookmark> bookmarks = message.Bookmarks.Where(x => !Exists(x)).ToList();
-            _routeTable.RemoveRoutes(bookmarks);
         }
 
         private HttpEndpointBookmark Deserialize(Trigger trigger) => Deserialize(trigger.Model);
