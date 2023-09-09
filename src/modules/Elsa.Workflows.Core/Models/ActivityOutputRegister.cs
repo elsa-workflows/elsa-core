@@ -32,7 +32,7 @@ public class ActivityOutputRegister
     {
         var activityId = activityExecutionContext.Activity.Id;
         var activityInstanceId = activityExecutionContext.Id;
-        var containerId = activityExecutionContext.ParentActivityExecutionContext!.Id;
+        var containerId = activityExecutionContext.ParentActivityExecutionContext?.Id ?? activityExecutionContext.WorkflowExecutionContext.Id;
         
         outputName ??= DefaultOutputName;
         var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
