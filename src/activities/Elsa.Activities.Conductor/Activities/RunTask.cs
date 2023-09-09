@@ -30,7 +30,10 @@ namespace Elsa.Activities.Conductor
         )]
         public string TaskName { get; set; } = default!;
 
-        [ActivityOutput(Hint = "Any input to send along with the task to your application.")]
+        [ActivityInput(
+            Hint = "Any input to send along with the task to your application.",
+            SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
+        )]
         public object? Payload { get; set; }
         
         [ActivityOutput(Hint = "Any input that was received along with the task completion.")]
