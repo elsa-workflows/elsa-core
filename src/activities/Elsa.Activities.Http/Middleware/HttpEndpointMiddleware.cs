@@ -79,11 +79,13 @@ namespace Elsa.Activities.Http.Middleware
                     routeData.Values[routeValue.Key] = routeValue.Value;
             }
 
-            // Create a workflow query using the selected route and HTTP method of the request.
-            const string activityType = nameof(HttpEndpoint);
-            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
-            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
-            var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
+            // Find pending workflows using the selected route and HTTP method of the request.
+            var pendingWorkflows = await FindPendingWorkflows(workflowLaunchpad, routeTemplate, method, cancellationToken, correlationId, tenantId).ToList();
+            if (pendingWorkflows?.Count == 0 && string.IsNullOrWhiteSpace(matchingRoute?.route))
+            {
+                routeTemplate = path.StartsWith("/") ? path[1..] : $"/{path}";
+                pendingWorkflows = await FindPendingWorkflows(workflowLaunchpad, routeTemplate, method, cancellationToken, correlationId, tenantId).ToList();
+            }
 
             if (await HandleNoWorkflowsFoundAsync(httpContext, pendingWorkflows, basePath))
                 return;
@@ -274,5 +276,19 @@ namespace Elsa.Activities.Http.Middleware
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value : null
             : httpContext.Request.Path.Value;
+
+        private async Task<IEnumerable<CollectedWorkflow>> FindPendingWorkflows(
+            IWorkflowLaunchpad workflowLaunchpad, 
+            string routeTemplate, 
+            string method,
+            CancellationToken cancellationToken,
+            string? correlationId = null, 
+            string? tenantId = null)
+        {
+            const string activityType = nameof(HttpEndpoint);
+            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
+            return await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken);
+        }
     }
 }
