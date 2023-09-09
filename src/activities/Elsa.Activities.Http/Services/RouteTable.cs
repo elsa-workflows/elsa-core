@@ -13,7 +13,13 @@ public class RouteTable : IRouteTable
     
     public RouteTable(IMemoryCache cache) => _cache = cache;
     private ConcurrentDictionary<string, string> Routes => _cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, string>());
-    public void Add(string path) => Routes.TryAdd(path, path);
+    public void Add(string path)
+    {
+        if (path.Contains("//")) 
+            return;
+        Routes.TryAdd(path, path);
+    }
+
     public void Remove(string path) => Routes.TryRemove(path, out _);
 
     public void AddRange(IEnumerable<string> paths)
