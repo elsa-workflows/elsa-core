@@ -30,7 +30,7 @@ public class GetUsersWorkflow : WorkflowBase
                 new ForEach<ExpandoObject>(context =>
                 {
                     var response = (dynamic)responseVariable.Get(context)!;
-                    return (ICollection<ExpandoObject>)response.data;
+                    return ((object[])response.data).Cast<ExpandoObject>().ToList();
                 })
                 {
                     CurrentValue = new(currentUserVariable),
