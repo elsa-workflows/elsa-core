@@ -6,6 +6,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -17,10 +18,12 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 public class Flowchart : Container
 {
     internal const string ScopeProperty = "Scope";
+    internal const string BranchMonitorsProperty = "BranchMonitoring";
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
+        OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
     }
 
     /// <summary>
@@ -49,78 +52,6 @@ public class Flowchart : Container
 
         // Schedule the start activity.
         await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
-    }
-
-    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
-    {
-        var targetContext = context.TargetContext;
-        var childContext = context.ChildContext;
-        var completedActivity = childContext.Activity;
-        var result = context.Result;
-        var alreadyCompleted = result is AlreadyCompleted;
-
-        // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
-        Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
-            ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
-            : connection => connection.Source.Activity == completedActivity;
-
-        // Only query the outbound connections if the completed activity wasn't already completed.
-        var outboundConnections = alreadyCompleted ? new List<Connection>() : Connections.Where(outboundConnectionsQuery).ToList();
-        var children = outboundConnections.Select(x => x.Target.Activity).ToList();
-        var scope = targetContext.GetProperty(ScopeProperty, () => new FlowScope());
-
-        scope.RegisterActivityExecution(completedActivity);
-
-        // If the completed activity is an End or Break activity, complete the flowchart immediately.
-        if (completedActivity is End or Break)
-        {
-            await targetContext.CompleteActivityAsync();
-        }
-        else
-        {
-            if (children.Any())
-            {
-                scope.AddActivities(children);
-
-                // Schedule each child, but only if all of its left inbound activities have already executed.
-                foreach (var activity in children)
-                {
-                    var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
-
-                    // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
-                    if (!inboundActivities.Contains(completedActivity))
-                    {
-                        await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
-                        continue;
-                    }
-
-                    // If the activity is anything but a join activity, only schedule it if all of its left-inbound activities have executed, effectively implementing a "wait all" join. 
-                    if (activity is not IJoinNode)
-                    {
-                        var executionCount = scope.GetExecutionCount(activity);
-                        var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
-
-                        if (haveInboundActivitiesExecuted)
-                            await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
-                    }
-                    else
-                    {
-                        await targetContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
-                    }
-                }
-            }
-
-            if (!children.Any())
-            {
-                // If there is no pending work, complete the flowchart activity.
-                var hasPendingWork = HasPendingWork(targetContext);
-
-                if (!hasPendingWork)
-                    await targetContext.CompleteActivityAsync();
-            }
-        }
-
-        targetContext.SetProperty(ScopeProperty, scope);
     }
 
     /// <summary>
@@ -215,5 +146,93 @@ public class Flowchart : Container
 
         var rootActivity = query.FirstOrDefault();
         return rootActivity;
+    }
+
+    private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
+    {
+        var flowchartContext = context.TargetContext;
+        var completedActivityContext = context.ChildContext;
+        var completedActivity = completedActivityContext.Activity;
+        var result = context.Result;
+        var alreadyCompleted = result is AlreadyCompleted;
+
+        // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
+        Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
+            ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
+            : connection => connection.Source.Activity == completedActivity;
+
+        // Only query the outbound connections if the completed activity wasn't already completed.
+        var outboundConnections = alreadyCompleted ? new List<Connection>() : Connections.Where(outboundConnectionsQuery).ToList();
+        var children = outboundConnections.Select(x => x.Target.Activity).ToList();
+        var scope = flowchartContext.GetProperty(ScopeProperty, () => new FlowScope());
+
+        scope.RegisterActivityExecution(completedActivity);
+
+        // If the completed activity is an End or Break activity, complete the flowchart immediately.
+        if (completedActivity is End or Break)
+        {
+            await flowchartContext.CompleteActivityAsync();
+        }
+        else
+        {
+            if (children.Any())
+            {
+                scope.AddActivities(children);
+
+                // Schedule each child, but only if all of its left inbound activities have already executed.
+                foreach (var activity in children)
+                {
+                    var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
+
+                    // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
+                    if (!inboundActivities.Contains(completedActivity))
+                    {
+                        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+                        continue;
+                    }
+
+                    // If the activity is anything but a join activity, only schedule it if all of its left-inbound activities have executed, effectively implementing a "wait all" join. 
+                    if (activity is not IJoinNode)
+                    {
+                        var executionCount = scope.GetExecutionCount(activity);
+                        var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
+
+                        if (haveInboundActivitiesExecuted)
+                            await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+                    }
+                    else
+                    {
+                        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+                    }
+                }
+            }
+
+            if (!children.Any())
+            {
+                // If there is no pending work, complete the flowchart activity.
+                var hasPendingWork = HasPendingWork(flowchartContext);
+
+                if (!hasPendingWork)
+                    await flowchartContext.CompleteActivityAsync();
+            }
+        }
+
+        flowchartContext.SetProperty(ScopeProperty, scope);
+    }
+
+    private async ValueTask OnScheduleOutcomesAsync(ScheduleActivityOutcomes signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var schedulingActivityContext = context.SenderActivityExecutionContext;
+        var schedulingActivity = schedulingActivityContext.Activity;
+        var outcomes = signal.Outcomes;
+        var outboundConnections = Connections.Where(connection => connection.Source.Activity == schedulingActivity && outcomes.Contains(connection.Source.Port!)).ToList();
+        var outboundActivities = outboundConnections.Select(x => x.Target.Activity).ToList();
+
+        if (outboundActivities.Any())
+        {
+            // Schedule each child.
+            foreach (var activity in outboundActivities) await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+        }
     }
 }

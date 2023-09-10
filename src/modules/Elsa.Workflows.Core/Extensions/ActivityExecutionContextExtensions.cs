@@ -14,6 +14,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
 
@@ -237,22 +238,7 @@ public static class ActivityExecutionContextExtensions
         context.ActivityState[inputDescriptor.Name] = value!;
         return value;
     }
-
-    /// <summary>
-    /// Schedules the specified activity.
-    /// </summary>
-    public static async Task ScheduleOutcomeAsync(this ActivityExecutionContext context, IActivity? activity, [CallerArgumentExpression("activity")] string portPropertyName = default!)
-    {
-        if (activity == null)
-        {
-            var outcome = context.GetOutcomeName(portPropertyName);
-            await context.CompleteActivityWithOutcomesAsync(outcome);
-            return;
-        }
-
-        await context.ScheduleActivityAsync(activity, context);
-    }
-
+    
     /// <summary>
     /// Returns the outcome name for the specified port property name.
     /// </summary>
@@ -416,6 +402,38 @@ public static class ActivityExecutionContextExtensions
 
         // Update the completed at timestamp.
         context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
+    }
+    
+    /// <summary>
+    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
+    /// </summary>
+    public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
+    {
+        // Record the outcomes, if any.
+        context.JournalData["Outcomes"] = outcomes;
+
+        // Record the output, if any.
+        var activity = context.Activity;
+        var expressionExecutionContext = context.ExpressionExecutionContext;
+        var activityDescriptor = context.ActivityDescriptor;
+        var outputDescriptors = activityDescriptor.Outputs;
+        var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
+        var serializer = context.GetRequiredService<ISafeSerializer>();
+
+        foreach (var output in outputs)
+        {
+            var outputName = output.Key;
+            var outputValue = output.Value;
+
+            if (outputValue == null!)
+                continue;
+
+            var serializedOutputValue = serializer.Serialize(outputValue);
+            context.JournalData[outputName] = serializedOutputValue;
+        }
+        
+        // Send a signal.
+        await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
     }
 
     /// <summary>

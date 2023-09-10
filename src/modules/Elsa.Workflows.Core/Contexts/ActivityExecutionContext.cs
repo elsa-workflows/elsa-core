@@ -183,7 +183,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables);
+        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
         await ScheduleActivityAsync(activity, options);
     }
 
@@ -252,7 +252,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
     public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables);
+        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
         await ScheduleActivities(activities, options);
     }
 
