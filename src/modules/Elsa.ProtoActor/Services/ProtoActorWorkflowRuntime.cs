@@ -35,6 +35,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IBookmarkHasher _hasher;
+    private readonly IBookmarkManager _bookmarkManager;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowExecutionResultMapper _workflowExecutionResultMapper;
@@ -50,6 +51,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         IWorkflowInstanceStore workflowInstanceStore,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher hasher,
+        IBookmarkManager bookmarkManager,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowExecutionResultMapper workflowExecutionResultMapper)
@@ -61,6 +63,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         _workflowInstanceStore = workflowInstanceStore;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
+        _bookmarkManager = bookmarkManager;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowExecutionResultMapper = workflowExecutionResultMapper;
@@ -300,11 +303,9 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
     private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmark in bookmarks)
-        {
-            var filter = new BookmarkFilter { Hash = bookmark.Hash, WorkflowInstanceId = workflowInstanceId };
-            await _bookmarkStore.DeleteAsync(filter, cancellationToken);
-        }
+        var matchingHashes = bookmarks.Select(x => x.Hash).ToList();
+        var filter = new BookmarkFilter { Hashes = matchingHashes, WorkflowInstanceId = workflowInstanceId };
+        await _bookmarkManager.DeleteManyAsync(filter, cancellationToken);
     }
 
     private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken)

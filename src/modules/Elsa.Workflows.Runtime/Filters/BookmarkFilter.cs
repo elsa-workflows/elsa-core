@@ -33,6 +33,11 @@ public class BookmarkFilter
     public string? Hash { get; set; }
     
     /// <summary>
+    /// Gets or sets the hashes of the bookmarks to find.
+    /// </summary>
+    public ICollection<string>? Hashes { get; set; }
+    
+    /// <summary>
     /// Gets or sets the correlation ID of the bookmark to find.
     /// </summary>
     public string? CorrelationId { get; set; }
@@ -62,6 +67,7 @@ public class BookmarkFilter
         if (filter.BookmarkIds != null) query = query.Where(x => filter.BookmarkIds.Contains(x.BookmarkId));
         if (filter.CorrelationId != null) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
         if (filter.Hash != null) query = query.Where(x => x.Hash == filter.Hash);
+        if (filter.Hashes != null) query = query.Where(x => filter.Hashes.Contains(x.Hash));
         if (filter.WorkflowInstanceId != null) query = query.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.WorkflowInstanceIds != null) query = query.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
         if (filter.ActivityTypeName != null) query = query.Where(x => x.ActivityTypeName == filter.ActivityTypeName);

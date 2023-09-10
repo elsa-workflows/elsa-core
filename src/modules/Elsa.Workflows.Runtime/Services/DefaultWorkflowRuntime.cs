@@ -27,6 +27,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IBookmarkHasher _hasher;
+    private readonly IBookmarkManager _bookmarkManager;
     private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowStateMapper _workflowStateMapper;
@@ -42,6 +43,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
         IBookmarkHasher hasher,
+        IBookmarkManager bookmarkManager,
         IDistributedLockProvider distributedLockProvider,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowStateMapper workflowStateMapper,
@@ -53,6 +55,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
+        _bookmarkManager = bookmarkManager;
         _distributedLockProvider = distributedLockProvider;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowStateMapper = workflowStateMapper;
@@ -351,11 +354,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
-        foreach (var bookmark in bookmarks)
-        {
-            var filter = new BookmarkFilter { Hash = bookmark.Hash, WorkflowInstanceId = workflowInstanceId };
-            await _bookmarkStore.DeleteAsync(filter, cancellationToken);
-        }
+        var matchingHashes = bookmarks.Select(x => x.Hash).ToList();
+        var filter = new BookmarkFilter { Hashes = matchingHashes, WorkflowInstanceId = workflowInstanceId };
+        await _bookmarkManager.DeleteManyAsync(filter, cancellationToken);
     }
 
     private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(
