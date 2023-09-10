@@ -10,6 +10,7 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 
@@ -108,14 +109,17 @@ public class SendEmail : Activity
         SetRecipientsEmailAddresses(message.Bcc, GetAddresses(context, Bcc));
 
         var smtpService = context.GetRequiredService<ISmtpService>();
+        var logger = context.GetRequiredService<ILogger<SendEmail>>();
 
         try
         {
             await smtpService.SendAsync(message, context.CancellationToken);
             await context.CompleteActivityAsync();
         }
-        catch (Exception)
+        catch (Exception e)
         {
+            logger.LogWarning(e, "Error while sending email message");
+            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace }, includeActivityState: true);
             await context.ScheduleActivityAsync(Error, OnErrorCompletedAsync);
         }
     }
