@@ -33,6 +33,11 @@ public class SendHttpRequest : SendHttpRequestBase
     [Port]
     public IActivity? UnmatchedStatusCode { get; set; }
 
+    /// <summary>
+    /// The activity to execute when the HTTP request fails to connect.
+    /// </summary>
+    public IActivity? FailedToConnect { get; set; }
+
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
     {
@@ -41,13 +46,13 @@ public class SendHttpRequest : SendHttpRequestBase
         var matchingCase = expectedStatusCodes.FirstOrDefault(x => x.StatusCode == statusCode);
         var activity = matchingCase != null ? matchingCase.Activity : UnmatchedStatusCode;
 
-        if (activity == null)
-        {
-            await context.CompleteActivityAsync();
-            return;
-        }
-
         await context.ScheduleActivityAsync(activity, OnChildActivityCompletedAsync);
+    }
+
+    /// <inheritdoc />
+    protected override async ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception)
+    {
+        await context.ScheduleActivityAsync(FailedToConnect, OnChildActivityCompletedAsync);
     }
 
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)

@@ -84,6 +84,11 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// </summary>
     protected abstract ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response);
 
+    /// <summary>
+    /// Handles an exception that occurred while sending the request.
+    /// </summary>
+    protected abstract ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception);
+
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
         var request = PrepareRequest(context);
@@ -99,6 +104,12 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
             context.Set(ParsedContent, parsedContent);
 
             await HandleResponseAsync(context, response);
+        }
+        catch(HttpRequestException e)
+        {
+            context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
+            context.JournalData.Add("Error", e.Message);
+            await HandleRequestExceptionAsync(context, e);
         }
         catch (TaskCanceledException e)
         {
