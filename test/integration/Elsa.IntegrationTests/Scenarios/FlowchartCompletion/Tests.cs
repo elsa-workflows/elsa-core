@@ -26,6 +26,7 @@ public class Tests
     [InlineData("workflow3.json")]
     [InlineData("workflow4.json")]
     [InlineData("workflow5.json")]
+    [InlineData("workflow6.json")]
     public async Task Test1(string workflowFileName)
     {
         // Populate registries.

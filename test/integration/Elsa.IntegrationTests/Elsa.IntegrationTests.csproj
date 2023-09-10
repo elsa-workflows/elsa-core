@@ -99,6 +99,10 @@
       <None Update="Scenarios\ExplicitJoins\Workflows\flow-join-any.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\FlowchartCompletion\Workflows\workflow6.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+
 
 
     </ItemGroup>

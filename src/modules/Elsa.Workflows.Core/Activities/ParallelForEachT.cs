@@ -41,19 +41,26 @@ public class ParallelForEach<T> : Activity
     {
         var items = context.Get(Items)!.ToList();
         var tags = new List<Guid>();
+        var currentIndex = 0;
 
         foreach (var item in items)
         {
             // For each item, declare a new variable the work to be scheduled.
-            var variable = new Variable<T>("CurrentValue", item)
+            var currentValueVariable = new Variable<T>("CurrentValue", item)
             {
                 // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
                 StorageDriverType = typeof(WorkflowStorageDriver)
             };
-
-            var variables = new List<Variable<T>>
+            
+            var currentIndexVariable = new Variable<int>("CurrentIndex", currentIndex++)
             {
-                variable
+                StorageDriverType = typeof(WorkflowStorageDriver)
+            };
+
+            var variables = new List<Variable>
+            {
+                currentValueVariable,
+                currentIndexVariable
             };
 
             // Schedule a body of work for each item.

@@ -32,6 +32,8 @@ public class ScheduledChildCallbackBehavior : Behavior
         if (callbackEntry.CompletionCallback != null)
         {
             var completedContext = new ActivityCompletedContext(activityExecutionContext, childActivityExecutionContext, signal.Result);
+            var tag = callbackEntry.Tag;
+            completedContext.TargetContext.Tag = tag;
             await callbackEntry.CompletionCallback(completedContext);
         }
     }

@@ -20,7 +20,8 @@ namespace Elsa.Workflows.Core;
 /// <param name="Owner">The activity scheduling the <see cref="Child"/> activity.</param>
 /// <param name="Child">The child <see cref="IActivity"/> being scheduled.</param>
 /// <param name="CompletionCallback">The <see cref="ActivityCompletionCallback"/> delegate to invoke when the scheduled <see cref="Child"/> activity completes.</param>
-public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback);
+/// <param name="Tag">An optional tag.</param>
+public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, ActivityNode Child, ActivityCompletionCallback? CompletionCallback, object? Tag = default);
 
 /// <summary>
 /// Provides context to the currently executing workflow.
@@ -282,9 +283,9 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Registers a completion callback for the specified activity.
     /// </summary>
-    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = default)
+    internal void AddCompletionCallback(ActivityExecutionContext owner, ActivityNode child, ActivityCompletionCallback? completionCallback = default, object? tag = default)
     {
-        var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback);
+        var entry = new ActivityCompletionCallbackEntry(owner, child, completionCallback, tag);
         _completionCallbackEntries.Add(entry);
     }
 

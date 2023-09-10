@@ -91,7 +91,8 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
             var callbackName = completionCallbackEntry.MethodName;
             var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
-            workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate);
+            var tag = completionCallbackEntry.Tag;
+            workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
         }
     }
 
@@ -106,7 +107,10 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 throw new Exception("Lost an owner context");
         }
 
-        var completionCallbacks = workflowExecutionContext.CompletionCallbacks.Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name));
+        var completionCallbacks = workflowExecutionContext
+            .CompletionCallbacks
+                .Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name, x.Tag));
+        
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
