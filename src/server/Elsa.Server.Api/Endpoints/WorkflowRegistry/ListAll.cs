@@ -57,7 +57,7 @@ public class ListAll : Controller
         {
             var workflowBlueprints = workflowProvider.ListAsync(versionOptions, tenantId: tenantId, cancellationToken: cancellationToken);
 
-            await foreach (var workflowBlueprint in workflowBlueprints.WithCancellation(cancellationToken))
+            await foreach (var workflowBlueprint in workflowBlueprints)
                 yield return workflowBlueprint;
         }
     }
