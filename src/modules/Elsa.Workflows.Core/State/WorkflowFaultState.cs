@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.State;
 public record WorkflowFaultState(ExceptionState? Exception, string Message, string? FaultedActivityId)
 {
     /// <summary>
-    /// Constructor
+    /// Initializes a new instance of the <see cref="WorkflowFaultState"/> class.
     /// </summary>
     [JsonConstructor]
     public WorkflowFaultState() : this(default, default!, default)

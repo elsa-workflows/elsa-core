@@ -51,7 +51,13 @@ public class WorkflowState
     /// <summary>
     /// The serialized workflow state, if any. 
     /// </summary>
+    [Obsolete("Use Incidents instead.")]
     public WorkflowFaultState? Fault { get; set; }
+    
+    /// <summary>
+    /// A collection of incidents that may have occurred during execution.
+    /// </summary>
+    public ICollection<ActivityIncidentState> Incidents { get; set; } = new List<ActivityIncidentState>();
 
     /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 

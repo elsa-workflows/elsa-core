@@ -124,6 +124,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("IncidentCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
 
@@ -135,7 +138,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
+                    b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Version")

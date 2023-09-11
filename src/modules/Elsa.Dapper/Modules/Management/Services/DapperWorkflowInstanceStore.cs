@@ -22,7 +22,6 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private const string TableName = "WorkflowInstances";
     private const string PrimaryKeyName = "Id";
-    private readonly IDbConnectionProvider _dbConnectionProvider;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly Store<WorkflowInstanceRecord> _store;
 
@@ -31,7 +30,6 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     /// </summary>
     public DapperWorkflowInstanceStore(IDbConnectionProvider dbConnectionProvider, IWorkflowStateSerializer workflowStateSerializer)
     {
-        _dbConnectionProvider = dbConnectionProvider;
         _workflowStateSerializer = workflowStateSerializer;
         _store = new Store<WorkflowInstanceRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
     }
@@ -73,7 +71,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return (await MapAsync(records)).ToList();
     }
-    
+
     /// <inheritdoc />
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
@@ -127,7 +125,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     {
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
-    
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query
@@ -146,7 +144,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
-    
+
     private async ValueTask<Page<WorkflowInstance>> MapAsync(Page<WorkflowInstanceRecord> source)
     {
         var items = (await MapAsync(source.Items)).ToList();
@@ -155,7 +153,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
 
     private async ValueTask<IEnumerable<WorkflowInstance>> MapAsync(IEnumerable<WorkflowInstanceRecord> source) =>
         await Task.WhenAll(source.Select(async x => await MapAsync(x)));
-    
+
     private async ValueTask<IEnumerable<WorkflowInstanceRecord>> MapAsync(IEnumerable<WorkflowInstance> source) =>
         await Task.WhenAll(source.Select(async x => await MapAsync(x)));
 
@@ -169,6 +167,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             DefinitionVersionId = source.DefinitionVersionId,
             Version = source.Version,
             Name = source.Name,
+            IncidentCount = source.IncidentCount,
             WorkflowState = workflowState,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,
@@ -189,6 +188,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             DefinitionVersionId = source.DefinitionVersionId,
             Version = source.Version,
             Name = source.Name,
+            IncidentCount = source.IncidentCount,
             WorkflowState = workflowState,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,

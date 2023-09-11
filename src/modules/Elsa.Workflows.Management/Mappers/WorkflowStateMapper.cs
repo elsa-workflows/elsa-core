@@ -28,11 +28,12 @@ public class WorkflowStateMapper
             Status = source.Status,
             SubStatus = source.SubStatus,
             CorrelationId = source.CorrelationId,
+            IncidentCount = source.Incidents.Count,
             UpdatedAt = source.UpdatedAt,
             FinishedAt = source.FinishedAt,
             WorkflowState = source
         };
-
+        
         if (source.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
             workflowInstance.Name = name;
 

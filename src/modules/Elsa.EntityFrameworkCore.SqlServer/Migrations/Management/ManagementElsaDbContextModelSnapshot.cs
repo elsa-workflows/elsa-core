@@ -127,6 +127,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("IncidentCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
 
@@ -138,7 +141,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTimeOffset?>("UpdatedAt")
+                    b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<int>("Version")

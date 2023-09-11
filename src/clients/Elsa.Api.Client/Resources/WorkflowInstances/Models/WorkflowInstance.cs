@@ -47,6 +47,11 @@ public class WorkflowInstance : Entity
     /// The name of the workflow instance.
     /// </summary>
     public string? Name { get; set; }
+
+    /// <summary>
+    /// The number of incidents that have occurred during execution, if any.
+    /// </summary>
+    public int IncidentCount { get; set; }
     
     /// <summary>
     /// The timestamp when the workflow instance was created.

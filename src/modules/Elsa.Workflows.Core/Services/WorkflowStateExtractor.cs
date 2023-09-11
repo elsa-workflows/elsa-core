@@ -25,6 +25,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             Input = GetPersistableInput(workflowExecutionContext),
             Output = workflowExecutionContext.Output,
             Fault = MapFault(workflowExecutionContext.Fault),
+            Incidents = MapIncidents(workflowExecutionContext.Incidents).ToList(),
             CreatedAt = workflowExecutionContext.CreatedAt
         };
 
@@ -47,7 +48,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             if (input.TryGetValue(inputDefinition.Name, out var value))
                 filteredInput.Add(inputDefinition.Name, value);
         }
-        
+
         return filteredInput;
     }
 
@@ -109,8 +110,8 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
         var completionCallbacks = workflowExecutionContext
             .CompletionCallbacks
-                .Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name, x.Tag));
-        
+            .Select(x => new CompletionCallbackState(x.Owner.Id, x.Child.NodeId, x.CompletionCallback?.Method.Name, x.Tag));
+
         state.CompletionCallbacks = completionCallbacks.ToList();
     }
 
@@ -197,5 +198,16 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
         var exceptionState = ExceptionState.FromException(fault.Exception);
         return new WorkflowFaultState(exceptionState, fault.Message, fault.FaultedActivityId);
+    }
+
+    private static IEnumerable<ActivityIncidentState> MapIncidents(IEnumerable<ActivityIncident> incidents)
+    {
+        return incidents.Select(MapIncident);
+    }
+
+    private static ActivityIncidentState MapIncident(ActivityIncident source)
+    {
+        var exceptionState = ExceptionState.FromException(source.Exception);
+        return new ActivityIncidentState(source.ActivityId, source.ActivityType, source.Message, exceptionState, source.Data);
     }
 }
