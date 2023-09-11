@@ -11,9 +11,9 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
 public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 {
     private readonly IIdentityGenerator _identityGenerator;
-    private const string AllActivitiesKey = "AllActivities";
-    private const string AllConnectionsKey = "AllConnections";
-    private const string NotFoundConnectionsKey = "NotFoundConnectionsKey";
+    private const string AllActivitiesKey = "allActivities";
+    private const string AllConnectionsKey = "allConnections";
+    private const string NotFoundConnectionsKey = "notFoundConnections";
 
     /// <inheritdoc />
     public FlowchartJsonConverter(IIdentityGenerator identityGenerator)
@@ -40,7 +40,8 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var connections = DeserializeConnections(connectionsElement, activityDictionary, options);
         var notFoundConnections = GetNotFoundConnections(doc.RootElement, activityDictionary, connections, options);
         var connectionsToRestore = FindConnectionsThatCanBeRestored(notFoundConnections, activities);
-        var connectionsWithRestoredOnes = connections.Except(notFoundConnections).Union(connectionsToRestore).ToList();
+        var connectionComparer = new ConnectionComparer();
+        var connectionsWithRestoredOnes = connections.Except(notFoundConnections, connectionComparer).Union(connectionsToRestore, connectionComparer).ToList();
 
         var flowChart = new Activities.Flowchart
         {
@@ -54,7 +55,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             {
                 [AllActivitiesKey] = activities.ToList(),
                 [AllConnectionsKey] = connectionsWithRestoredOnes,
-                [NotFoundConnectionsKey] = notFoundConnections.Except(connectionsToRestore)
+                [NotFoundConnectionsKey] = notFoundConnections.Except(connectionsToRestore, connectionComparer).ToList()
             }
         };
 
@@ -70,9 +71,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
-        var allActivities = value.CustomProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
-        var allConnections = (ICollection<Connection>)(value.CustomProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
         var customProperties = new Dictionary<string, object>(value.CustomProperties);
+        var allActivities = customProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
+        var allConnections = (ICollection<Connection>)(customProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
 
         customProperties.Remove(AllActivitiesKey);
         customProperties.Remove(AllConnectionsKey);
@@ -94,12 +95,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
     private static ICollection<Connection> GetNotFoundConnections(JsonElement rootElement, IDictionary<string, IActivity> activities, IEnumerable<Connection> connections, JsonSerializerOptions connectionSerializerOptions)
     {
-        var customPropertiesElement = rootElement.TryGetProperty("customProperties", out var customPropertiesEl)
-            ? customPropertiesEl
-            // Backwards compatibility with older JSON.
-            : rootElement.TryGetProperty("applicationProperties", out var applicationPropertiesEl)
-                ? applicationPropertiesEl
-                : default;
+        var customPropertiesElement = rootElement.TryGetProperty("customProperties", out var customPropertiesEl) ? customPropertiesEl : default;
 
         var notFoundConnectionsElement = customPropertiesElement.ValueKind != JsonValueKind.Undefined ? customPropertiesElement.TryGetProperty(NotFoundConnectionsKey, out var notFoundConnectionsEl) ? notFoundConnectionsEl : default : default;
         var notFoundConnections = notFoundConnectionsElement.ValueKind != JsonValueKind.Undefined ? DeserializeConnections(notFoundConnectionsElement, activities, connectionSerializerOptions) : new List<Connection>();
@@ -126,10 +122,10 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         {
             var missingSource = notFoundConnection.Source;
             var missingTarget = notFoundConnection.Target;
-            
+
             // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
             // Activity might be null in case of JSON missing information.
-            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity?.Id); 
+            var source = foundActivities.FirstOrDefault(x => x.Id == missingSource.Activity?.Id);
             var target = foundActivities.FirstOrDefault(x => x.Id == missingTarget.Activity?.Id);
             // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
 
@@ -144,9 +140,9 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
     private static ICollection<Connection> DeserializeConnections(JsonElement connectionsElement, IDictionary<string, IActivity> activityDictionary, JsonSerializerOptions options)
     {
-        if(connectionsElement.ValueKind == JsonValueKind.Undefined)
+        if (connectionsElement.ValueKind == JsonValueKind.Undefined)
             return new List<Connection>();
-        
+
         // To not break existing workflow definitions, we need to support the old connection format.
         var useOldConnectionConverter = connectionsElement.EnumerateArray().Any(x => x.TryGetProperty("sourcePort", out var sourcePort) && sourcePort.ValueKind == JsonValueKind.String);
 
