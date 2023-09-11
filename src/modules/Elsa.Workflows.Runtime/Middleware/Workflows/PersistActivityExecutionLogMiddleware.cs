@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
@@ -48,7 +49,19 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
             var expressionExecutionContext = activityExecutionContext.ExpressionExecutionContext;
             var activityDescriptor = activityExecutionContext.ActivityDescriptor;
             var outputDescriptors = activityDescriptor.Outputs;
-            var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
+            
+            var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
+            {
+                var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
+                
+                if(cachedValue != default)
+                    return cachedValue;
+                
+                if(x.ValueGetter(activity) is Output output && activityExecutionContext.TryGet(output.MemoryBlockReference(), out var outputValue))
+                    return outputValue;
+                
+                return default;
+            });
             
             return new ActivityExecutionRecord
             {
