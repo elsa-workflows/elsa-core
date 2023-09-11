@@ -22,14 +22,16 @@ public static class ExceptionHandlingMiddlewareExtensions
 public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
+    private readonly IIncidentStrategyResolver _incidentStrategyResolver;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _incidentStrategyResolver = incidentStrategyResolver;
         _logger = logger;
     }
 
@@ -47,10 +49,9 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component. Transitioning workflow instance {WorkflowInstanceId} into the Faulted state", workflowExecutionContext.Id);
             context.Exception = e;
             context.Status = ActivityStatus.Faulted;
-            workflowExecutionContext.Fault = new WorkflowFault(e, e.Message, context.Id);
-            
-            if(workflowExecutionContext.CanTransitionTo(WorkflowSubStatus.Faulted))
-                workflowExecutionContext.TransitionTo(WorkflowSubStatus.Faulted);
+
+            var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);
+            strategy.HandleIncident(context);
         }
     }
 }

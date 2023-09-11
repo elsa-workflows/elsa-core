@@ -9,6 +9,7 @@ using Elsa.Workflows.Core.ActivationValidators;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Expressions;
+using Elsa.Workflows.Core.IncidentStrategies;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -121,6 +122,11 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
+            .AddSingleton<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
+            
+            // Incident Strategies.
+            .AddTransient<IIncidentStrategy, FaultStrategy>()
+            .AddTransient<IIncidentStrategy, ContinueWithIncidentsStrategy>()
 
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
