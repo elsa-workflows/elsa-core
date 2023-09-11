@@ -32,10 +32,10 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     {
         var filter = new WorkflowDefinitionFilter
         {
-            UsableAsActivity = true, 
+            UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
-        
+
         var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
         var descriptors = CreateDescriptors(definitions);
         return descriptors;
@@ -47,7 +47,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
     private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, ICollection<WorkflowDefinition> allDefinitions)
     {
         var typeName = definition.Name!.Pascalize();
-        
+
         var latestPublishedVersion = allDefinitions
             .Where(x => x.DefinitionId == definition.DefinitionId && x.IsPublished)
             .MaxBy(x => x.Version);
@@ -59,7 +59,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = true,
             Type = PortType.Flow
         }).ToList();
-        
+
         var rootPort = new Port
         {
             Name = nameof(WorkflowDefinitionActivity.Root),
@@ -67,7 +67,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             IsBrowsable = true,
             Type = PortType.Embedded
         };
-        
+
         ports.Insert(0, rootPort);
 
         return new ActivityDescriptor

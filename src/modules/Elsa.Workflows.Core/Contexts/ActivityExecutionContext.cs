@@ -470,15 +470,9 @@ public class ActivityExecutionContext : IExecutionContext
     /// <exception cref="InvalidOperationException">The memory block does not exist.</exception>
     public object? Get(MemoryBlockReference blockReference)
     {
-        var memoryBlock = GetMemoryBlock(blockReference);
-
-        if (memoryBlock != null)
-            return memoryBlock.Value;
-
-        if (blockReference is Literal literal)
-            return literal.Value;
-
-        throw new InvalidOperationException($"The memory block '{blockReference}' does not exist.");
+        return !TryGet(blockReference, out var value)
+            ? throw new InvalidOperationException($"The memory block '{blockReference}' does not exist.")
+            : value;
     }
 
     /// <summary>
@@ -491,6 +485,32 @@ public class ActivityExecutionContext : IExecutionContext
     {
         var value = Get(blockReference);
         return value != default ? value.ConvertTo<T>() : default;
+    }
+
+    /// <summary>
+    /// Tries to get the value of the specified memory block.
+    /// </summary>
+    /// <param name="blockReference">The memory block reference.</param>
+    /// <param name="value">The memory block value.</param>
+    /// <returns>True if the memory block exists, false otherwise.</returns>
+    public bool TryGet(MemoryBlockReference blockReference, out object? value)
+    {
+        var memoryBlock = GetMemoryBlock(blockReference);
+
+        if (memoryBlock != null)
+        {
+            value = memoryBlock.Value;
+            return true;
+        }
+
+        if (blockReference is Literal literal)
+        {
+            value = literal.Value;
+            return true;
+        }
+
+        value = null;
+        return false;
     }
 
     /// <summary>

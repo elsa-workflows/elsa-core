@@ -50,7 +50,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
         }
 
         var defaultOptions = inputAttribute?.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
-        return defaultOptions != null ? new Dictionary<string, object> { ["Default"] = defaultOptions } : null;
+        return defaultOptions != null ? new Dictionary<string, object> { ["items"] = defaultOptions } : null;
     }
 
     private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out IList<SelectListItem>? items)

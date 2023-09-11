@@ -65,7 +65,7 @@ public class ActivityDescriber : IActivityDescriber
             Name = x,
             DisplayName = x
         }).ToDictionary(x => x.Name) ?? new Dictionary<string, Port>();
-        
+
         var allPorts = embeddedPorts.Concat(flowPorts.Values);
         var inputProperties = GetInputProperties(activityType).ToList();
         var outputProperties = GetOutputProperties(activityType).ToList();
@@ -96,16 +96,16 @@ public class ActivityDescriber : IActivityDescriber
                 return activity;
             }
         };
-        
+
         return descriptor;
     }
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
+    public IEnumerable<PropertyInfo> GetInputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
         activityType.GetProperties().Where(x => typeof(Input).IsAssignableFrom(x.PropertyType) || x.GetCustomAttribute<InputAttribute>() != null).DistinctBy(x => x.Name);
 
     /// <inheritdoc />
-    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) => 
+    public IEnumerable<PropertyInfo> GetOutputProperties([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType) =>
         activityType.GetProperties().Where(x => typeof(Output).IsAssignableFrom(x.PropertyType)).DistinctBy(x => x.Name).ToList();
 
     /// <inheritdoc />
@@ -122,6 +122,7 @@ public class ActivityDescriber : IActivityDescriber
             outputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             wrappedPropertyType,
             propertyInfo.GetValue,
+            propertyInfo.SetValue,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
             outputAttribute?.IsBrowsable ?? true
         ));
@@ -140,7 +141,7 @@ public class ActivityDescriber : IActivityDescriber
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
 
         var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
-        
+
         return new InputDescriptor
         (
             inputAttribute?.Name ?? propertyInfo.Name,
@@ -156,21 +157,20 @@ public class ActivityDescriber : IActivityDescriber
             inputAttribute?.Order ?? 0,
             _defaultValueResolver.GetDefaultValue(propertyInfo),
             inputAttribute?.DefaultSyntax,
-            //inputAttribute?.SupportedSyntaxes, TODO: Come up with a different way to specify support languages for activity inputs. By default, maybe all props should support all registered scripting languages?
             inputAttribute?.IsReadOnly ?? false,
             inputAttribute?.IsBrowsable ?? true
         );
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
         var properties = GetInputProperties(activityType);
         return await DescribeInputPropertiesAsync(properties, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type activityType, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default) =>
         await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
 
     private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)

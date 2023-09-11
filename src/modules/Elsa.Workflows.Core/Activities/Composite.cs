@@ -82,7 +82,6 @@ public abstract class Composite : Activity, IVariableContainer
     /// Override this method to execute custom logic when the composite activity completes.
     /// </summary>
     /// <param name="context">The context of the composite activity.</param>
-    /// <param name="childContext">The context of the child activity that completed.</param>
     protected virtual ValueTask OnCompletedAsync(ActivityCompletedContext context)
     {
         OnCompleted(context);
@@ -93,7 +92,6 @@ public abstract class Composite : Activity, IVariableContainer
     /// Override this method to execute custom logic when the composite activity completes.
     /// </summary>
     /// <param name="context">The context of the composite activity.</param>
-    /// <param name="childContext">The context of the child activity that completed.</param>
     protected virtual void OnCompleted(ActivityCompletedContext context)
     {
     }

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
@@ -18,7 +19,7 @@ public class SetOutput : CodeActivity
     public SetOutput([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The name of the output to assign.
     /// </summary>
@@ -68,9 +69,19 @@ public class SetOutput : CodeActivity
         {
             // If this activity executes in a composite activity, we need to update the composite activity's output variable as well.
             var variable = context.ExpressionExecutionContext.GetVariable(outputName);
-            
-            if(variable != null)
+
+            if (variable != null)
                 context.Set(variable, outputValue);
+
+            // Also set the output on the composite activity's output property.
+            var compositeActivityContext = ancestorContext.ParentActivityExecutionContext;
+            var compositeActivity = compositeActivityContext.Activity;
+            var compositeActivityDescriptor = compositeActivityContext.ActivityDescriptor;
+            var compositeOutputDescriptor = compositeActivityDescriptor.Outputs.FirstOrDefault(x => x.Name == outputName);
+            var compositeOutput = (Output?)compositeOutputDescriptor?.ValueGetter(compositeActivity);
+                
+            if(compositeOutput != null)
+                ancestorContext.ParentActivityExecutionContext.Set(compositeOutput, outputValue);
         }
     }
 }

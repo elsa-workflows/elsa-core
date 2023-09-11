@@ -20,13 +20,16 @@ public class OutputDescriptor : PropertyDescriptor
         string displayName,
         Type type,
         Func<IActivity, object?> valueGetter,
-        string? description = default,
+        Action<IActivity, object?> valueSetter,
+
+    string? description = default,
         bool? isBrowsable = default)
     {
         Name = name;
         DisplayName = displayName;
         Type = type;
         ValueGetter = valueGetter;
+        ValueSetter = valueSetter;
         Description = description;
         IsBrowsable = isBrowsable;
     }
