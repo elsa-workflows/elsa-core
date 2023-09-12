@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
 using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
+using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
@@ -52,6 +53,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<IStorageDriversApi>(CreateRefitSettings, configureHttpClientBuilder);
         services.AddApi<IVariableTypesApi>(CreateRefitSettings, configureHttpClientBuilder);
         services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IIncidentStrategiesApi>(CreateRefitSettings, configureHttpClientBuilder);
         services.AddApi<ILoginApi>(CreateRefitSettings, configureHttpClientBuilder);
         services.AddApi<IFeaturesApi>(CreateRefitSettings, configureHttpClientBuilder);
         services.AddApi<IJavaScriptApi>(CreateRefitSettings, configureHttpClientBuilder);
