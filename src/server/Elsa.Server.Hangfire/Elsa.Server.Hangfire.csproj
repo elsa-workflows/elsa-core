@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hangfire.Core" Version="1.8.4" />
+      <PackageReference Include="Hangfire.Core" Version="1.8.5" />
     </ItemGroup>
 
 </Project>
