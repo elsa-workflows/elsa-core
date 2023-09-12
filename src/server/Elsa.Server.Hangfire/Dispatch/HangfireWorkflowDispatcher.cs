@@ -39,10 +39,11 @@ namespace Elsa.Server.Hangfire.Dispatch
                 _logger.LogWarning("No published version found for workflow blueprint {WorkflowDefinitionId}", request.WorkflowDefinitionId);
                 return;
             }
+            var jobName = workflowBlueprint.GetJobName(request.ActivityId) ?? request.WorkflowDefinitionId;
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
             var queue = ServiceBusOptions.FormatChannelQueueName<ExecuteWorkflowDefinitionRequest>(channel);
-            EnqueueJob<WorkflowDefinitionJob>(x => x.ExecuteAsync(request, CancellationToken.None), queue);
+            EnqueueJob<WorkflowDefinitionJob>(x => x.ExecuteAsync(jobName, request, CancellationToken.None), queue);
         }
 
         public async Task DispatchAsync(ExecuteWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
@@ -66,16 +67,24 @@ namespace Elsa.Server.Hangfire.Dispatch
 
                 return;
             }
+            var jobName = workflowBlueprint.GetJobName(request.ActivityId) ?? workflowInstance.DefinitionId;
 
             var channel = _workflowChannelOptions.GetChannelOrDefault(workflowBlueprint.Channel);
             var queue = ServiceBusOptions.FormatChannelQueueName<ExecuteWorkflowInstanceRequest>(channel);
-            EnqueueJob<WorkflowInstanceJob>(x => x.ExecuteAsync(request, CancellationToken.None), queue);
+            EnqueueJob<WorkflowInstanceJob>(x => x.ExecuteAsync(jobName, request, CancellationToken.None), queue);
         }
 
-        public Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
+        public async Task DispatchAsync(TriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
         {
-            EnqueueJob<CorrelatedWorkflowDefinitionJob>(x => x.ExecuteAsync(request, CancellationToken.None), QueueNames.CorrelatedWorkflows);
-            return Task.CompletedTask;
+            string? jobName = request.WorkflowInstanceId;
+            var workflowInstance = await _workflowInstanceStore.FindByIdAsync(request.WorkflowInstanceId, cancellationToken);
+            if (workflowInstance is not null)
+            {
+                var workflowBlueprint = await _workflowRegistry.FindAsync(workflowInstance.DefinitionId, VersionOptions.SpecificVersion(workflowInstance.Version), request.TenantId, cancellationToken);
+                jobName = workflowBlueprint?.GetJobName() ?? workflowInstance.DefinitionId;
+            }
+
+            EnqueueJob<CorrelatedWorkflowDefinitionJob>(x => x.ExecuteAsync(jobName, request, CancellationToken.None), QueueNames.CorrelatedWorkflows);
         }
 
         private void EnqueueJob<T>(Expression<Func<T, Task>> job, string queueName) => _jobClient.Create(job, new EnqueuedState(queueName));

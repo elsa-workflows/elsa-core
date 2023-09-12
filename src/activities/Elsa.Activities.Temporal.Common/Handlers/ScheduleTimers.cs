@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Bookmarks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Events;
+using Elsa.Models;
 using Elsa.Services;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -18,17 +19,20 @@ namespace Elsa.Activities.Temporal.Common.Handlers
         private readonly IWorkflowDefinitionScheduler _workflowDefinitionScheduler;
         private readonly IWorkflowInstanceScheduler _workflowInstanceScheduler;
         private readonly IBookmarkSerializer _bookmarkSerializer;
+        private readonly IWorkflowRegistry _workflowRegistry;
         private readonly ILogger<ScheduleTimers> _logger;
 
         public ScheduleTimers(
             IWorkflowDefinitionScheduler workflowDefinitionScheduler,
             IWorkflowInstanceScheduler workflowInstanceScheduler,
-            IBookmarkSerializer bookmarkSerializer,
+            IBookmarkSerializer bookmarkSerializer, 
+            IWorkflowRegistry workflowRegistry,
             ILogger<ScheduleTimers> logger)
         {
             _workflowDefinitionScheduler = workflowDefinitionScheduler;
             _workflowInstanceScheduler = workflowInstanceScheduler;
             _bookmarkSerializer = bookmarkSerializer;
+            _workflowRegistry = workflowRegistry;
             _logger = logger;
         }
 
@@ -40,22 +44,30 @@ namespace Elsa.Activities.Temporal.Common.Handlers
 
             await _workflowDefinitionScheduler.UnscheduleAsync(notification.WorkflowDefinitionId, cancellationToken);
 
+            var workflowBlueprint = await _workflowRegistry.FindAsync(notification.WorkflowDefinitionId, VersionOptions.Published, null, cancellationToken);
+
             foreach (var trigger in startAtTriggers)
             {
+                var jobName = workflowBlueprint?.GetJobName(trigger.ActivityId) ?? trigger.WorkflowDefinitionId;
+
                 var bookmark = _bookmarkSerializer.Deserialize<StartAtBookmark>(trigger.Model);
-                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
+                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(jobName, trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, null, cancellationToken));
             }
 
             foreach (var trigger in timerTriggers)
             {
+                var jobName = workflowBlueprint?.GetJobName(trigger.ActivityId) ?? trigger.WorkflowDefinitionId;
+
                 var bookmark = _bookmarkSerializer.Deserialize<TimerBookmark>(trigger.Model);
-                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
+                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(jobName, trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.ExecuteAt, bookmark.Interval, cancellationToken));
             }
 
             foreach (var trigger in cronTriggers)
             {
+                var jobName = workflowBlueprint?.GetJobName(trigger.ActivityId) ?? trigger.WorkflowDefinitionId;
+
                 var bookmark = _bookmarkSerializer.Deserialize<CronBookmark>(trigger.Model);
-                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
+                await Try(() => _workflowDefinitionScheduler.ScheduleAsync(jobName, trigger.WorkflowDefinitionId, trigger.ActivityId, bookmark.CronExpression, cancellationToken));
             }
         }
 
