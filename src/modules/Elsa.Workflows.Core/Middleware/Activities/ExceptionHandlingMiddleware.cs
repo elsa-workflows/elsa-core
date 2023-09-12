@@ -38,17 +38,19 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        
         try
         {
             await _next(context);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "An exception was caught from a downstream middleware component. Transitioning workflow instance {WorkflowInstanceId} into the Faulted state", workflowExecutionContext.Id);
+            _logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Exception = e;
             context.Status = ActivityStatus.Faulted;
+
+            var activity = context.Activity;
+            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, e, null);
+            context.WorkflowExecutionContext.Incidents.Add(incident);
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);
             strategy.HandleIncident(context);

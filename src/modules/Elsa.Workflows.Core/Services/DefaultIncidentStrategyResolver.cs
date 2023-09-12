@@ -1,6 +1,6 @@
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.IncidentStrategies;
 using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.IncidentStrategies;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

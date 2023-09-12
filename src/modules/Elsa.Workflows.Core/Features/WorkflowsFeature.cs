@@ -9,7 +9,6 @@ using Elsa.Workflows.Core.ActivationValidators;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Expressions;
-using Elsa.Workflows.Core.IncidentStrategies;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -17,6 +16,7 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.PortResolvers;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.IncidentStrategies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Features;
