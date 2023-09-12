@@ -87,15 +87,22 @@ public static class WorkflowExecutionContextExtensions
         ActivityExecutionContext owner,
         ScheduleWorkOptions? options = default)
     {
+        var scheduler = workflowExecutionContext.Scheduler;
+        
+        if(options?.PreventDuplicateScheduling == true && scheduler.Any(x => x.ActivityId == activityNode.NodeId))
+            return;
+        
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var toolVersion = workflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
         var activityId = toolVersion?.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
         var tag = options?.Tag;
-        var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables);
+        var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
         var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, activityInvocationOptions), tag);
         var completionCallback = options?.CompletionCallback;
-        workflowExecutionContext.Scheduler.Schedule(workItem);
+        
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback, tag);
+        scheduler.Schedule(workItem);
+        
     }
 
     /// <summary>

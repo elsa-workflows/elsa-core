@@ -18,14 +18,17 @@ public class ExplicitJoinWaitAnyTests
         _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Fact(DisplayName = "Workflows with explicit joins using WaitAny wait for any of the specified activities to complete and complete the workflow.")]
-    public async Task Test1()
+    [Theory(DisplayName = "Workflows with explicit joins complete the workflow.")]
+    [InlineData("join-any-1.json", "Start; End")]
+    [InlineData("join-all-1.json", "Start; Line 1; Line 2; End")]
+    [InlineData("join-all-2.json", "Start; Line 1; Line 2; End")]
+    public async Task Test1(string workflowFileName, string expectedLines)
     {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
 
         // Import workflow.
-        var fileName = "Scenarios/ExplicitJoins/Workflows/flow-join-any.json";
+        var fileName = $"Scenarios/ExplicitJoins/Workflows/{workflowFileName}";
         var workflowDefinition = await _services.ImportWorkflowDefinitionAsync(fileName);
 
         // Execute.
@@ -33,7 +36,8 @@ public class ExplicitJoinWaitAnyTests
 
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Start", "End" }, lines);
+        var expectedLinesArray = expectedLines.Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
+        Assert.Equal(expectedLinesArray, lines);
 
         // Assert expected workflow status.
         Assert.Equal(WorkflowStatus.Finished, workflowState.Status);

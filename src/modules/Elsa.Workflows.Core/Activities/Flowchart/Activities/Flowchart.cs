@@ -6,6 +6,7 @@ using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
@@ -202,7 +203,15 @@ public class Flowchart : Container
                     }
                     else
                     {
-                        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+                        // Select an existing activity execution context for this activity, if any.
+                        var joinContext = flowchartContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == flowchartContext && x.Activity == activity);
+                        var scheduleWorkOptions = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedAsync,
+                            ReuseActivityExecutionContextId = joinContext?.Id,
+                            PreventDuplicateScheduling = true
+                        };
+                        await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
                 }
             }

@@ -16,20 +16,24 @@ public interface IActivityScheduler
     /// <summary>
     /// Schedules a work item.
     /// </summary>
-    /// <param name="workItem"></param>
+    /// <param name="workItem">The work item to schedule.</param>
     void Schedule(ActivityWorkItem workItem);
     
     /// <summary>
     /// Takes the next work item from the scheduler.
     /// </summary>
-    /// <returns></returns>
     ActivityWorkItem Take();
     
     /// <summary>
     /// Returns a list of all work items in the scheduler.
     /// </summary>
-    /// <returns></returns>
     IEnumerable<ActivityWorkItem> List();
+    
+    /// <summary>
+    /// Returns true if there are any work items matching the specified predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to match.</param>
+    bool Any(Func<ActivityWorkItem, bool> predicate);
     
     /// <summary>
     /// Clears all work items from the scheduler.

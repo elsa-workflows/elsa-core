@@ -19,11 +19,21 @@ public class ActivityInvoker : IActivityInvoker
     /// <inheritdoc />
     public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = default)
     {
-        // Setup an activity execution context.
-        var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, options);
+        // Setup an activity execution context, potentially reusing an existing one if requested.
+        var reuseActivityExecutionContextId = options?.ReuseActivityExecutionContextId;
 
-        // Add the activity context to the workflow context.
-        workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
+        var activityExecutionContext = reuseActivityExecutionContextId != null
+            ? workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == reuseActivityExecutionContextId)
+            : default;
+
+        if (activityExecutionContext == null)
+        {
+            // Create a new activity execution context.
+            activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, options);
+
+            // Add the activity context to the workflow context.
+            workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
+        }
 
         // Execute the activity execution pipeline.
         await InvokeAsync(activityExecutionContext);
