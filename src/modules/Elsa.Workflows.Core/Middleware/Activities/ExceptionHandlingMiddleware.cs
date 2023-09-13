@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
@@ -49,7 +50,8 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
             context.Status = ActivityStatus.Faulted;
 
             var activity = context.Activity;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, e);
+            var exceptionState = ExceptionState.FromException(e);
+            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState);
             context.WorkflowExecutionContext.Incidents.Add(incident);
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);

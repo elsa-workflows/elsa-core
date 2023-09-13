@@ -51,7 +51,7 @@ public class WorkflowState
     /// <summary>
     /// A collection of incidents that may have occurred during execution.
     /// </summary>
-    public ICollection<ActivityIncidentState> Incidents { get; set; } = new List<ActivityIncidentState>();
+    public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
 
     /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 

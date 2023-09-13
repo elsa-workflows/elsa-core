@@ -24,7 +24,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             ExecutionLogSequence = workflowExecutionContext.ExecutionLogSequence,
             Input = GetPersistableInput(workflowExecutionContext),
             Output = workflowExecutionContext.Output,
-            Incidents = MapIncidents(workflowExecutionContext.Incidents).ToList(),
+            Incidents = workflowExecutionContext.Incidents,
             CreatedAt = workflowExecutionContext.CreatedAt
         };
 
@@ -188,16 +188,5 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
 
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
-    }
-    
-    private static IEnumerable<ActivityIncidentState> MapIncidents(IEnumerable<ActivityIncident> incidents)
-    {
-        return incidents.Select(MapIncident);
-    }
-
-    private static ActivityIncidentState MapIncident(ActivityIncident source)
-    {
-        var exceptionState = ExceptionState.FromException(source.Exception);
-        return new ActivityIncidentState(source.ActivityId, source.ActivityType, source.Message, exceptionState);
     }
 }

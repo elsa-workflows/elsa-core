@@ -2,6 +2,7 @@ using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Services;
@@ -85,6 +86,7 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             executeActivityDelegate,
             triggerActivityId,
             default,
+            workflowState?.Incidents ?? new List<ActivityIncident>(),
             workflowState?.CreatedAt ?? _systemClock.UtcNow,
             cancellationToken);
 

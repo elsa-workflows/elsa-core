@@ -20,6 +20,7 @@ internal class WorkflowInstanceMapper : ResponseMapper<Response, WorkflowInstanc
         SubStatus = e.SubStatus,
         CorrelationId = e.CorrelationId,
         Name = e.Name,
+        IncidentCount = e.IncidentCount,
         CreatedAt = e.CreatedAt,
         FinishedAt = e.FinishedAt,
         UpdatedAt = e.UpdatedAt

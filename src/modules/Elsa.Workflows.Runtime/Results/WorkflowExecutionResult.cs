@@ -1,7 +1,6 @@
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime.Results;
 
-public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, ICollection<ActivityIncidentState> Incidents, string? TriggeredActivityId = null);
+public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, ICollection<ActivityIncident> Incidents, string? TriggeredActivityId = null);

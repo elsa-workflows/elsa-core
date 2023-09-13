@@ -26,12 +26,11 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IWorkflowInstanceManager _workflowInstanceManager;
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly BookmarkMapper _bookmarkMapper;
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
-    private readonly ActivityIncidentStateMapper _activityIncidentStateMapper;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
@@ -46,24 +45,22 @@ internal class WorkflowInstance : WorkflowInstanceBase
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowStateSerializer workflowStateSerializer,
-        IWorkflowInstanceStore workflowInstanceStore,
+        IWorkflowInstanceManager workflowInstanceManager,
         IProvider provider,
         IContext context,
         WorkflowStateMapper workflowStateMapper,
         BookmarkMapper bookmarkMapper,
         WorkflowStatusMapper workflowStatusMapper,
-        WorkflowSubStatusMapper workflowSubStatusMapper,
-        ActivityIncidentStateMapper activityIncidentStateMapper) : base(context)
+        WorkflowSubStatusMapper workflowSubStatusMapper) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
         _workflowStateSerializer = workflowStateSerializer;
-        _workflowInstanceStore = workflowInstanceStore;
+        _workflowInstanceManager = workflowInstanceManager;
         _workflowStateMapper = workflowStateMapper;
         _bookmarkMapper = bookmarkMapper;
         _workflowStatusMapper = workflowStatusMapper;
         _workflowSubStatusMapper = workflowSubStatusMapper;
-        _activityIncidentStateMapper = activityIncidentStateMapper;
         _persistence = Persistence.WithSnapshotting(provider, Context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
@@ -309,6 +306,6 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private async Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceStore.SaveAsync(workflowInstance);
+        await _workflowInstanceManager.SaveAsync(workflowInstance);
     }
 }

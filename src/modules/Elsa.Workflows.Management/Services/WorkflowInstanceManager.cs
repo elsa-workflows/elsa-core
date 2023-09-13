@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
 
@@ -19,7 +20,13 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
         _store = store;
         _notificationSender = notificationSender;
     }
-
+    
+    /// <inheritdoc />
+    public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(workflowInstance, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)

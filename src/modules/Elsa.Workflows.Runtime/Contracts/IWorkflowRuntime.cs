@@ -1,7 +1,9 @@
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

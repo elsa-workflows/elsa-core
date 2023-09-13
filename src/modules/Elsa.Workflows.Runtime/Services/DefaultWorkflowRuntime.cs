@@ -11,7 +11,9 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Results;
 using Medallion.Threading;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -24,6 +26,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IWorkflowInstanceManager _workflowInstanceManager;
     private readonly ITriggerStore _triggerStore;
     private readonly IBookmarkStore _bookmarkStore;
     private readonly IBookmarkHasher _hasher;
@@ -40,6 +43,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IWorkflowHostFactory workflowHostFactory,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceStore workflowInstanceStore,
+        IWorkflowInstanceManager workflowInstanceManager,
         ITriggerStore triggerStore,
         IBookmarkStore bookmarkStore,
         IBookmarkHasher hasher,
@@ -52,6 +56,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceStore = workflowInstanceStore;
+        _workflowInstanceManager = workflowInstanceManager;
         _triggerStore = triggerStore;
         _bookmarkStore = bookmarkStore;
         _hasher = hasher;
@@ -231,7 +236,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
         
-        await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+        await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -340,7 +345,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceStore.SaveAsync(workflowInstance, cancellationToken);
+        await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
 
     private async Task StoreBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, string? correlationId, CancellationToken cancellationToken)

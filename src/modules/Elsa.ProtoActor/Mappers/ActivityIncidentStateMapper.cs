@@ -1,10 +1,10 @@
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Core.Models;
 using ProtoActivityIncident = Elsa.ProtoActor.ProtoBuf.ActivityIncident;
 
 namespace Elsa.ProtoActor.Mappers;
 
 /// <summary>
-/// Maps between <see cref="ActivityIncidentState"/> and <see cref="ProtoActivityIncident"/>.
+/// Maps between <see cref="ActivityIncident"/> and <see cref="ProtoActivityIncident"/>.
 /// </summary>
 internal class ActivityIncidentStateMapper
 {
@@ -19,29 +19,29 @@ internal class ActivityIncidentStateMapper
     }
 
     /// <summary>
-    /// Maps a <see cref="ProtoActivityIncident"/> to a <see cref="ActivityIncidentState"/>.
+    /// Maps a <see cref="ProtoActivityIncident"/> to a <see cref="ActivityIncident"/>.
     /// </summary>
     /// <param name="source">The source.</param>
-    /// <returns>The mapped <see cref="ActivityIncidentState"/>.</returns>
-    public ActivityIncidentState Map(ProtoActivityIncident source)
+    /// <returns>The mapped <see cref="ActivityIncident"/>.</returns>
+    public ActivityIncident Map(ProtoActivityIncident source)
     {
         return new(source.ActivityId, source.ActivityType, source.Message, _exceptionMapper.Map(source.Exception));
     }
     
     /// <summary>
-    /// Maps a collection of <see cref="ProtoActivityIncident"/> to a collection of <see cref="ActivityIncidentState"/>.
+    /// Maps a collection of <see cref="ProtoActivityIncident"/> to a collection of <see cref="ActivityIncident"/>.
     /// </summary>
-    public IEnumerable<ActivityIncidentState> Map(IEnumerable<ProtoActivityIncident> source)
+    public IEnumerable<ActivityIncident> Map(IEnumerable<ProtoActivityIncident> source)
     {
         return source.Select(Map).ToList();
     }
 
     /// <summary>
-    /// Maps a <see cref="ActivityIncidentState"/> to a <see cref="ProtoActivityIncident"/>.
+    /// Maps a <see cref="ActivityIncident"/> to a <see cref="ProtoActivityIncident"/>.
     /// </summary>
     /// <param name="source">The source.</param>
     /// <returns>The mapped <see cref="ProtoActivityIncident"/>.</returns>
-    public ProtoActivityIncident Map(ActivityIncidentState source)
+    public ProtoActivityIncident Map(ActivityIncident source)
     {
         return new ProtoActivityIncident
         {
@@ -53,9 +53,9 @@ internal class ActivityIncidentStateMapper
     }
 
     /// <summary>
-    /// Maps a collection of <see cref="ActivityIncidentState"/> to a collection of <see cref="ProtoActivityIncident"/>.
+    /// Maps a collection of <see cref="ActivityIncident"/> to a collection of <see cref="ProtoActivityIncident"/>.
     /// </summary>
-    public IEnumerable<ProtoActivityIncident> Map(IEnumerable<ActivityIncidentState> source)
+    public IEnumerable<ProtoActivityIncident> Map(IEnumerable<ActivityIncident> source)
     {
         return source.Select(Map).ToList();
     }

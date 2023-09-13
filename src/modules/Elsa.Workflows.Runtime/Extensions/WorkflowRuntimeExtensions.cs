@@ -2,6 +2,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Results;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
