@@ -70,7 +70,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Returns true if the activity execution context has completed.
     /// </summary>
-    public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Faulted or ActivityStatus.Canceled;
+    public bool IsCompleted => Status is ActivityStatus.Completed or ActivityStatus.Canceled;
 
     /// <summary>
     /// The workflow execution context. 

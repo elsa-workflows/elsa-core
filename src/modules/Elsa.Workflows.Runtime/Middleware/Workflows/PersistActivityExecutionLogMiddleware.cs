@@ -77,12 +77,23 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
                 ActivityTypeVersion = activityExecutionContext.Activity.Version,
                 StartedAt = activityExecutionContext.StartedAt,
                 HasBookmarks = activityExecutionContext.Bookmarks.Any(),
-                Status = activityExecutionContext.Status,
+                Status = GetAggregateStatus(activityExecutionContext),
                 CompletedAt = activityExecutionContext.CompletedAt
             };
         }).ToList();
 
         await _activityExecutionStore.SaveManyAsync(entries, context.CancellationToken);
         await _notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, entries));
+    }
+
+    private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
+    {
+        // If any child activity is faulted, the aggregate status is faulted.
+        var descendantContexts = context.GetDescendants().ToList();
+        
+        if (descendantContexts.Any(x => x.Status == ActivityStatus.Faulted))
+            return ActivityStatus.Faulted;
+
+        return context.Status;
     }
 }

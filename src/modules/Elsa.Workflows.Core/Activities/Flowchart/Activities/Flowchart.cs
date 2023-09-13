@@ -222,7 +222,16 @@ public class Flowchart : Container
                 var hasPendingWork = HasPendingWork(flowchartContext);
 
                 if (!hasPendingWork)
-                    await flowchartContext.CompleteActivityAsync();
+                {
+                    var hasFaultedActivities = flowchartContext.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+                    
+                    if(!hasFaultedActivities)
+                        await flowchartContext.CompleteActivityAsync();
+                    else
+                    {
+                        flowchartContext.Status = ActivityStatus.Faulted;
+                    }
+                }
             }
         }
 
