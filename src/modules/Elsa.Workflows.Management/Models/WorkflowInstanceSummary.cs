@@ -26,6 +26,7 @@ public class WorkflowInstanceSummary
             SubStatus = workflowInstance.SubStatus,
             CorrelationId = workflowInstance.CorrelationId,
             Name = workflowInstance.Name,
+            IncidentCount = workflowInstance.IncidentCount,
             CreatedAt = workflowInstance.CreatedAt,
             UpdatedAt = workflowInstance.UpdatedAt,
             FinishedAt = workflowInstance.FinishedAt
@@ -46,6 +47,7 @@ public class WorkflowInstanceSummary
             SubStatus = workflowInstance.SubStatus,
             CorrelationId = workflowInstance.CorrelationId,
             Name = workflowInstance.Name,
+            IncidentCount = workflowInstance.IncidentCount,
             CreatedAt = workflowInstance.CreatedAt,
             UpdatedAt = workflowInstance.UpdatedAt,
             FinishedAt = workflowInstance.FinishedAt
@@ -74,6 +76,9 @@ public class WorkflowInstanceSummary
 
     /// <summary>The name of the workflow instance.</summary>
     public string? Name { get; set; }
+    
+    /// <summary>The number of incidents associated with the workflow instance.</summary>
+    public int IncidentCount { get; set; }
 
     /// <summary>The timestamp when the workflow instance was created.</summary>
     public DateTimeOffset CreatedAt { get; set; }
