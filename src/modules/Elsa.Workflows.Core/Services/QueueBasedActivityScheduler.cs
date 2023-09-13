@@ -25,5 +25,8 @@ public class QueueBasedActivityScheduler : IActivityScheduler
     public IEnumerable<ActivityWorkItem> List() => _queue.ToList();
 
     /// <inheritdoc />
+    public bool Any(Func<ActivityWorkItem, bool> predicate) => _queue.Any(predicate);
+
+    /// <inheritdoc />
     public void Clear() => _queue.Clear();
 }

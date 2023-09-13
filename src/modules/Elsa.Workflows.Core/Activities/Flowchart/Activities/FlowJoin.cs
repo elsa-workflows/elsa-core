@@ -43,20 +43,24 @@ public class FlowJoin : Activity, IJoinNode
         switch (mode)
         {
             case FlowJoinMode.WaitAll:
+            {
                 // If all left-inbound activities have executed, complete & continue.
                 var haveAllInboundActivitiesExecuted = inboundActivities.All(x => flowScope.GetExecutionCount(x) > executionCount);
 
                 if (haveAllInboundActivitiesExecuted)
+                {
                     await context.CompleteActivityAsync();
-                break;
-            case FlowJoinMode.WaitAny:
-                // If this activity was already executed, complete it with the AlreadyCompleted result. This will prevent the Flowchart activity from scheduling its siblings again.
-                var alreadyExecuted = inboundActivities.Max(x => flowScope.GetExecutionCount(x)) == executionCount;
-                var result = alreadyExecuted ? new AlreadyCompleted() : default;
+                    await ClearBookmarksAsync(flowchart, context);
+                }
 
-                await context.CompleteActivityAsync(result);
+                break;
+            }
+            case FlowJoinMode.WaitAny:
+            {
+                await context.CompleteActivityAsync();
                 await ClearBookmarksAsync(flowchart, context);
                 break;
+            }
         }
     }
 

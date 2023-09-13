@@ -96,10 +96,16 @@
       <None Update="Scenarios\ParentChildInputs\Workflows\parent2.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Scenarios\ExplicitJoins\Workflows\flow-join-any.json">
+      <None Update="Scenarios\ExplicitJoins\Workflows\join-any-1.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Scenarios\FlowchartCompletion\Workflows\workflow6.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ExplicitJoins\Workflows\join-all-1.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ExplicitJoins\Workflows\join-all-2.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
 
