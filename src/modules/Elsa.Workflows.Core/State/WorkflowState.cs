@@ -47,12 +47,6 @@ public class WorkflowState
     /// Collected bookmarks.
     /// </summary>
     [NotMapped]public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-
-    /// <summary>
-    /// The serialized workflow state, if any. 
-    /// </summary>
-    [Obsolete("Use Incidents instead.")]
-    public WorkflowFaultState? Fault { get; set; }
     
     /// <summary>
     /// A collection of incidents that may have occurred during execution.

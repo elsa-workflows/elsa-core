@@ -48,9 +48,9 @@ public class WorkflowExecutionLogRecordFilter
     public string? EventName { get; set; }
     
     /// <summary>
-    /// Match any of these event names.
+    /// Match all of these event names.
     /// </summary>
-    public ICollection<string>? AnyEventName { get; set; }
+    public ICollection<string>? EventNames { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified queryable.
@@ -66,7 +66,7 @@ public class WorkflowExecutionLogRecordFilter
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);
         if (filter.ActivityIds != null) queryable = queryable.Where(x => filter.ActivityIds.Contains(x.ActivityId));
         if (filter.EventName != null) queryable = queryable.Where(x => x.EventName == filter.EventName);
-        if (filter.AnyEventName != null) queryable = queryable.Where(x => filter.AnyEventName.Contains(x.EventName!));
+        if (filter.EventNames != null) queryable = queryable.Where(x => filter.EventNames.Contains(x.EventName!));
         
         return queryable;
     }

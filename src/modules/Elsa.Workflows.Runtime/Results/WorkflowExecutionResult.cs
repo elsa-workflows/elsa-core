@@ -4,4 +4,4 @@ using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
-public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, string? TriggeredActivityId = null, WorkflowFaultState? Fault = default);
+public record WorkflowExecutionResult(string WorkflowInstanceId, WorkflowStatus Status, WorkflowSubStatus SubStatus, ICollection<Bookmark> Bookmarks, ICollection<ActivityIncidentState> Incidents, string? TriggeredActivityId = null);

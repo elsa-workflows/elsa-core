@@ -25,14 +25,15 @@ message WorkflowExecutionResponse {
   WorkflowStatus Status = 3;
   WorkflowSubStatus SubStatus = 4;
   repeated Bookmark Bookmarks = 5;
-  optional WorkflowFault Fault = 6;
+  repeated ActivityIncident Incidents = 6;
   optional string TriggeredActivityId = 7;
 }
 
-message WorkflowFault {
-  optional ExceptionState Exception = 1;
-  string Message = 2;
-  optional string FaultedActivityId = 3;
+message ActivityIncident {
+  string ActivityId = 1;
+  string ActivityType = 2;
+  string Message = 3;
+  optional ExceptionState Exception = 4;
 }
 
 message ExceptionState {

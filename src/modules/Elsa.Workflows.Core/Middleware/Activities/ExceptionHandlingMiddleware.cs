@@ -49,7 +49,7 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
             context.Status = ActivityStatus.Faulted;
 
             var activity = context.Activity;
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, e, null);
+            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, e);
             context.WorkflowExecutionContext.Incidents.Add(incident);
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);

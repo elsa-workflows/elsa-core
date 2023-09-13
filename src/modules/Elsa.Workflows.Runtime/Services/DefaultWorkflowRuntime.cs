@@ -168,7 +168,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             await SaveWorkflowStateAsync(workflowState, cancellationToken);
 
-            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents);
         }
     }
 
@@ -286,8 +286,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 workflowState.Status,
                 workflowState.SubStatus,
                 workflowState.Bookmarks,
-                default,
-                workflowState.Fault);
+                workflowState.Incidents,
+                default);
         }
     }
 
@@ -331,7 +331,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 cancellationToken);
 
             if (resumeResult != null)
-                resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks));
+                resumedWorkflows.Add(new WorkflowExecutionResult(workflowInstanceId, resumeResult.Status, resumeResult.SubStatus, resumeResult.Bookmarks, resumeResult.Incidents));
         }
 
         return resumedWorkflows;

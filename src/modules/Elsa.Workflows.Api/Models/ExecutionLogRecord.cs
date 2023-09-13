@@ -7,7 +7,7 @@ internal record ExecutionLogRecord(
     string ActivityId,
     string ActivityType,
     int ActivityTypeVersion,
-    string ActivityName,
+    string? ActivityName,
     string NodeId,
     DateTimeOffset Timestamp,
     long Sequence,

@@ -28,10 +28,10 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
     /// <inheritdoc />
     public Execute(
-        IWorkflowDefinitionStore store, 
-        IWorkflowRuntime workflowRuntime, 
-        IHttpBookmarkProcessor httpBookmarkProcessor, 
-        IApiSerializer apiSerializer, 
+        IWorkflowDefinitionStore store,
+        IWorkflowRuntime workflowRuntime,
+        IHttpBookmarkProcessor httpBookmarkProcessor,
+        IApiSerializer apiSerializer,
         IIdentityGenerator identityGenerator)
     {
         _store = store;
@@ -53,9 +53,10 @@ internal class Execute : ElsaEndpoint<Request, Response>
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-        
+
         // Obsolete. Remove in 3.0 release.
-        if (request.Version.HasValue) {
+        if (request.Version.HasValue)
+        {
             versionOptions = VersionOptions.SpecificVersion(request.Version.Value);
         }
 
@@ -71,10 +72,10 @@ internal class Execute : ElsaEndpoint<Request, Response>
         var input = (IDictionary<string, object>?)request.Input;
         var instanceId = _identityGenerator.GenerateId();
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId);
-        
+
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
         HttpContext.Response.Headers.Add("x-elsa-workflow-instance-id", instanceId);
-        
+
         // Start the workflow.
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
 
@@ -108,11 +109,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
     private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        var faultedResponse = _apiSerializer.Serialize(new
-        {
-            errorMessage = $"Workflow faulted with error: {workflowState.Fault!.Message}",
-            workflowState = workflowState
-        });
+        var faultedResponse = _apiSerializer.Serialize(workflowState);
 
         HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
         HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

@@ -184,12 +184,6 @@ public class WorkflowExecutionContext : IExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     /// <summary>
-    /// Stores any fault that may have occurred during execution.
-    /// </summary>
-    [Obsolete("Use Incidents instead.")]
-    public WorkflowFault? Fault { get; set; }
-
-    /// <summary>
     /// A collection of incidents that may have occurred during execution.
     /// </summary>
     public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();

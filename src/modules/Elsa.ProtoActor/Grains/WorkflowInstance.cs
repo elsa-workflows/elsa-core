@@ -31,7 +31,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private readonly BookmarkMapper _bookmarkMapper;
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
-    private readonly WorkflowFaultStateMapper _workflowFaultStateMapper;
+    private readonly ActivityIncidentStateMapper _activityIncidentStateMapper;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
@@ -53,7 +53,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         BookmarkMapper bookmarkMapper,
         WorkflowStatusMapper workflowStatusMapper,
         WorkflowSubStatusMapper workflowSubStatusMapper,
-        WorkflowFaultStateMapper workflowFaultStateMapper) : base(context)
+        ActivityIncidentStateMapper activityIncidentStateMapper) : base(context)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowHostFactory = workflowHostFactory;
@@ -63,7 +63,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _bookmarkMapper = bookmarkMapper;
         _workflowStatusMapper = workflowStatusMapper;
         _workflowSubStatusMapper = workflowSubStatusMapper;
-        _workflowFaultStateMapper = workflowFaultStateMapper;
+        _activityIncidentStateMapper = activityIncidentStateMapper;
         _persistence = Persistence.WithSnapshotting(provider, Context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
@@ -161,7 +161,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
             Status = _workflowStatusMapper.Map(workflowState.Status),
             SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
-            Fault = workflowState.Fault != null ? _workflowFaultStateMapper.Map(workflowState.Fault) : default,
+            //Fault = workflowState.Fault != null ? _workflowFaultStateMapper.Map(workflowState.Fault) : default,
             TriggeredActivityId = string.Empty,
             WorkflowInstanceId = instanceId
         };
@@ -220,7 +220,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         {
             Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
             Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
-            Fault = _workflowState.Fault != null ? _workflowFaultStateMapper.Map(_workflowState.Fault) : default,
+            //Fault = _workflowState.Fault != null ? _workflowFaultStateMapper.Map(_workflowState.Fault) : default,
             TriggeredActivityId = string.Empty,
             WorkflowInstanceId = _workflowState.Id,
             Status = _workflowStatusMapper.Map(_workflowState.Status),

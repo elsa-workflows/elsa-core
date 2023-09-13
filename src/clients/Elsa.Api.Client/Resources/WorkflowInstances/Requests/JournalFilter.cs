@@ -10,4 +10,8 @@ public class JournalFilter
     /// </summary>
     public ICollection<string>? ActivityIds { get; set; }
 
+    /// <summary>
+    /// Gets or sets the event types to filter by.
+    /// </summary>
+    public ICollection<string>? EventNames { get; set; }
 }
