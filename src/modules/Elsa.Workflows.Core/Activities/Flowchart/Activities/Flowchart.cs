@@ -155,6 +155,9 @@ public class Flowchart : Container
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
+        
+        // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
+        var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
 
         // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
         Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
@@ -173,7 +176,7 @@ public class Flowchart : Container
         {
             await flowchartContext.CompleteActivityAsync();
         }
-        else
+        else if(scheduleChildren)
         {
             if (children.Any())
             {
