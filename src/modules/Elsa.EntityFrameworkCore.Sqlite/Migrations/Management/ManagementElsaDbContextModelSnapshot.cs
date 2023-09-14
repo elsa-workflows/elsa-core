@@ -123,6 +123,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("FinishedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("IncidentCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
 
@@ -135,6 +138,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UpdatedAt")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")

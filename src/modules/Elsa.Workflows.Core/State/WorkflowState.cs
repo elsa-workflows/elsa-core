@@ -47,11 +47,11 @@ public class WorkflowState
     /// Collected bookmarks.
     /// </summary>
     [NotMapped]public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-
+    
     /// <summary>
-    /// The serialized workflow state, if any. 
+    /// A collection of incidents that may have occurred during execution.
     /// </summary>
-    public WorkflowFaultState? Fault { get; set; }
+    public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
 
     /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 

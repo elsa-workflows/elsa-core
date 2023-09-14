@@ -36,7 +36,7 @@ public class Get : ElsaEndpoint<Request, WorkflowExecutionLogRecord>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityId = request.ActivityId,
-            AnyEventName = new[] { "Started", "Completed", "Faulted" }
+            EventNames = new[] { "Started", "Completed", "Faulted" }
         };
 
         var sort = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(

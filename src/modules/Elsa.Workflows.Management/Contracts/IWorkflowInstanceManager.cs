@@ -1,3 +1,4 @@
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Management.Contracts;
@@ -7,6 +8,11 @@ namespace Elsa.Workflows.Management.Contracts;
 /// </summary>
 public interface IWorkflowInstanceManager
 {
+    /// <summary>
+    /// Saves the specified workflow instance.
+    /// </summary>
+    Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+    
     /// <summary>
     /// Deletes the first workflow instance that matches the specified filter.
     /// </summary>

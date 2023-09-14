@@ -125,7 +125,7 @@ public class ProtoActorFeature : FeatureBase
             .AddSingleton<BookmarkMapper>()
             .AddSingleton<ExceptionMapper>()
             .AddSingleton<WorkflowExecutionResultMapper>()
-            .AddSingleton<WorkflowFaultStateMapper>()
+            .AddSingleton<ActivityIncidentStateMapper>()
             .AddSingleton<WorkflowStatusMapper>()
             .AddSingleton<WorkflowSubStatusMapper>();
 

@@ -66,6 +66,7 @@ public class Initial : Migration
             .WithColumn("SubStatus").AsString().NotNullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Name").AsString().Nullable()
+            .WithColumn("IncidentCount").AsInt32().NotNullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
             .WithColumn("UpdatedAt").AsDateTimeOffset().Nullable()
             .WithColumn("FinishedAt").AsDateTimeOffset().Nullable();
@@ -82,6 +83,7 @@ public class Initial : Migration
             .WithColumn("SubStatus").AsString().NotNullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("Name").AsString().Nullable()
+            .WithColumn("IncidentCount").AsInt32().NotNullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable()
             .WithColumn("UpdatedAt").AsDateTime2().Nullable()
             .WithColumn("FinishedAt").AsDateTime2().Nullable();

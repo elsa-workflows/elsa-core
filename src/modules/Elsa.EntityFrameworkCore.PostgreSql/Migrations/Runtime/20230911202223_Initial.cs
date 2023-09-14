@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -13,172 +14,118 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
             migrationBuilder.EnsureSchema(
                 name: "Elsa");
 
-            migrationBuilder.AlterDatabase()
-                .Annotation("MySql:CharSet", "utf8mb4");
-
             migrationBuilder.CreateTable(
                 name: "ActivityExecutionRecords",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
-                    ActivityName = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    StartedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    HasBookmarks = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    CompletedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
-                    SerializedActivityState = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedException = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedOutputs = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    ActivityType = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "integer", nullable: false),
+                    ActivityName = table.Column<string>(type: "text", nullable: true),
+                    StartedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    HasBookmarks = table.Column<bool>(type: "boolean", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    CompletedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    SerializedActivityState = table.Column<string>(type: "text", nullable: true),
+                    SerializedException = table.Column<string>(type: "text", nullable: true),
+                    SerializedOutputs = table.Column<string>(type: "text", nullable: true),
+                    SerializedPayload = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ActivityExecutionRecords", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateTable(
                 name: "Bookmarks",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    BookmarkId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Hash = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CorrelationId = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    SerializedPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    BookmarkId = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeName = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SerializedPayload = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Bookmarks", x => x.BookmarkId);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateTable(
                 name: "Triggers",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowDefinitionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Name = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityId = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Hash = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: true),
+                    SerializedPayload = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Triggers", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateTable(
                 name: "WorkflowExecutionLogRecords",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowDefinitionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowDefinitionVersionId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowVersion = table.Column<int>(type: "int", nullable: false),
-                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ParentActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityType = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeVersion = table.Column<int>(type: "int", nullable: false),
-                    ActivityName = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    NodeId = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Timestamp = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowDefinitionVersionId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowVersion = table.Column<int>(type: "integer", nullable: false),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: false),
+                    ParentActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    ActivityId = table.Column<string>(type: "text", nullable: false),
+                    ActivityType = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeVersion = table.Column<int>(type: "integer", nullable: false),
+                    ActivityName = table.Column<string>(type: "text", nullable: true),
+                    NodeId = table.Column<string>(type: "text", nullable: false),
+                    Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     Sequence = table.Column<long>(type: "bigint", nullable: false),
-                    EventName = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Message = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Source = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedActivityState = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    EventName = table.Column<string>(type: "text", nullable: true),
+                    Message = table.Column<string>(type: "text", nullable: true),
+                    Source = table.Column<string>(type: "text", nullable: true),
+                    SerializedActivityState = table.Column<string>(type: "text", nullable: true),
+                    SerializedPayload = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowExecutionLogRecords", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateTable(
                 name: "WorkflowInboxMessages",
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Hash = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    SerializedBookmarkPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedInput = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    ActivityTypeName = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    SerializedBookmarkPayload = table.Column<string>(type: "text", nullable: true),
+                    SerializedInput = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityId",

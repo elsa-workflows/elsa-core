@@ -16,6 +16,7 @@ using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.PortResolvers;
 using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.IncidentStrategies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Features;
@@ -121,6 +122,11 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
             .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
+            .AddSingleton<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
+            
+            // Incident Strategies.
+            .AddTransient<IIncidentStrategy, FaultStrategy>()
+            .AddTransient<IIncidentStrategy, ContinueWithIncidentsStrategy>()
 
             // Pipelines.
             .AddSingleton<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))

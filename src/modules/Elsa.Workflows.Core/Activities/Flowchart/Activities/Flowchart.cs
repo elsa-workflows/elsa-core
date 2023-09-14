@@ -155,7 +155,9 @@ public class Flowchart : Container
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
-        var alreadyCompleted = result is AlreadyCompleted;
+        
+        // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
+        var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
 
         // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
         Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
@@ -163,7 +165,7 @@ public class Flowchart : Container
             : connection => connection.Source.Activity == completedActivity;
 
         // Only query the outbound connections if the completed activity wasn't already completed.
-        var outboundConnections = alreadyCompleted ? new List<Connection>() : Connections.Where(outboundConnectionsQuery).ToList();
+        var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
         var children = outboundConnections.Select(x => x.Target.Activity).ToList();
         var scope = flowchartContext.GetProperty(ScopeProperty, () => new FlowScope());
 
@@ -174,7 +176,7 @@ public class Flowchart : Container
         {
             await flowchartContext.CompleteActivityAsync();
         }
-        else
+        else if(scheduleChildren)
         {
             if (children.Any())
             {
@@ -222,7 +224,16 @@ public class Flowchart : Container
                 var hasPendingWork = HasPendingWork(flowchartContext);
 
                 if (!hasPendingWork)
-                    await flowchartContext.CompleteActivityAsync();
+                {
+                    var hasFaultedActivities = flowchartContext.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+                    
+                    if(!hasFaultedActivities)
+                        await flowchartContext.CompleteActivityAsync();
+                    else
+                    {
+                        flowchartContext.Status = ActivityStatus.Faulted;
+                    }
+                }
             }
         }
 

@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Middleware.Activities;
@@ -22,35 +23,39 @@ public static class ExceptionHandlingMiddlewareExtensions
 public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
+    private readonly IIncidentStrategyResolver _incidentStrategyResolver;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _incidentStrategyResolver = incidentStrategyResolver;
         _logger = logger;
     }
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        
         try
         {
             await _next(context);
         }
         catch (Exception e)
         {
-            _logger.LogWarning(e, "An exception was caught from a downstream middleware component. Transitioning workflow instance {WorkflowInstanceId} into the Faulted state", workflowExecutionContext.Id);
+            _logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Exception = e;
             context.Status = ActivityStatus.Faulted;
-            workflowExecutionContext.Fault = new WorkflowFault(e, e.Message, context.Id);
-            
-            if(workflowExecutionContext.CanTransitionTo(WorkflowSubStatus.Faulted))
-                workflowExecutionContext.TransitionTo(WorkflowSubStatus.Faulted);
+
+            var activity = context.Activity;
+            var exceptionState = ExceptionState.FromException(e);
+            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState);
+            context.WorkflowExecutionContext.Incidents.Add(incident);
+
+            var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);
+            strategy.HandleIncident(context);
         }
     }
 }

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
@@ -22,12 +23,12 @@ public class Fault : Activity
     /// The message to include with the fault.
     /// </summary>
     [Input(Description = "The message to include with the fault.")]
-    public Input<string?> Message { get; set; } = default!;
+    public Input<string> Message { get; set; } = default!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        var message = Message.Get(context);
-        throw new Exception(message);
+        var message = Message.GetOrDefault(context);
+        throw new FaultException(message);
     }
 }

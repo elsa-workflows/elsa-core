@@ -10,6 +10,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.State;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core;
@@ -57,6 +58,7 @@ public class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityExecutionContext>? activityExecutionContexts,
+        IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
         CancellationToken cancellationToken)
     {
@@ -77,6 +79,7 @@ public class WorkflowExecutionContext : IExecutionContext
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
         CancellationToken = cancellationToken;
+        Incidents = incidents.ToList();
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = _nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
@@ -184,9 +187,9 @@ public class WorkflowExecutionContext : IExecutionContext
     public IDictionary<object, object> TransientProperties { get; set; } = new Dictionary<object, object>();
 
     /// <summary>
-    /// Stores any fault that may have occurred during execution. Faulting a workflow will effectively suspend subsequent execution.
+    /// A collection of incidents that may have occurred during execution.
     /// </summary>
-    public WorkflowFault? Fault { get; set; }
+    public ICollection<ActivityIncident> Incidents { get; set; }
 
     /// <summary>
     /// The current <see cref="ExecuteActivityDelegate"/> delegate to invoke when executing the next activity.

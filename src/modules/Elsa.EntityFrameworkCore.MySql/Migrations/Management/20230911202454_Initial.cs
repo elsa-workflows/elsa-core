@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -75,8 +76,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Name = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    IncidentCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     FinishedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     Data = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")

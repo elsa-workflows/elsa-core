@@ -26,4 +26,9 @@ public class WorkflowOptions
     /// The category to use when the workflow is used as an activity.
     /// </summary>
     public string? ActivityCategory { get; set; }
+    
+    /// <summary>
+    /// The type of <see cref="IIncidentStrategy"/> to use when a fault occurs in the workflow.
+    /// </summary>
+    public Type? IncidentStrategyType { get; set; }
 }

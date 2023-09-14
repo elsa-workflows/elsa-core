@@ -47,7 +47,7 @@ public class ActivityExecutionRecord : Entity
     /// <summary>
     /// Any outputs provided by the activity.
     /// </summary>
-    public IDictionary<string, object>? Outputs { get; set; }
+    public IDictionary<string, object?>? Outputs { get; set; }
 
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.

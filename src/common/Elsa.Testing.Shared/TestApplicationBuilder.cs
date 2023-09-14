@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -89,5 +90,13 @@ public class TestApplicationBuilder
 
         ConfigureElsa(elsa => elsa.UseWorkflows(workflows => workflows.WithStandardOutStreamProvider(_ => provider)));
         return this;
+    }
+
+    /// <summary>
+    /// Adds a workflow to the service provider.
+    /// </summary>
+    public TestApplicationBuilder AddWorkflow<T>() where T:IWorkflow
+    {
+        return ConfigureElsa(elsa => elsa.AddWorkflow<T>());
     }
 }

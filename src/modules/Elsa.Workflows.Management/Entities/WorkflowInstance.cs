@@ -50,6 +50,11 @@ public class WorkflowInstance : Entity
     public string? Name { get; set; }
     
     /// <summary>
+    /// The number of incidents that have occurred during execution, if any.
+    /// </summary>
+    public int IncidentCount { get; set; }
+    
+    /// <summary>
     /// The timestamp when the workflow instance was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }

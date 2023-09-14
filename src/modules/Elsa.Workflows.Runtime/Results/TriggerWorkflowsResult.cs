@@ -1,3 +1,3 @@
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime.Results;
 
 public record TriggerWorkflowsResult(ICollection<WorkflowExecutionResult> TriggeredWorkflows);
