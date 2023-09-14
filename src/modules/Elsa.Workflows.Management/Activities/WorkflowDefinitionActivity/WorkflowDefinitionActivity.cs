@@ -11,6 +11,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
@@ -34,7 +35,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// The latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
     public int LatestAvailablePublishedVersion { get; set; }
-    
+
     /// <summary>
     /// The latest published version ID set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
@@ -115,14 +116,18 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
-        
+
         // Do we have a "complete composite" signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
 
         // If we do, make sure to remove it from the transient properties.
         if (completeCompositeSignal != null)
+        {
+            var logger = context.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
+            logger.LogDebug("Received a complete composite signal and removing it from the transient properties");
             context.WorkflowExecutionContext.TransientProperties.Remove(nameof(CompleteCompositeSignal));
-        
+        }
+
         await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
@@ -150,7 +155,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
                 // Find the latest version.
                 workflowDefinition = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken);
             }
-            
+
             if (workflowDefinition == null)
                 throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
         }

@@ -17,6 +17,7 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -238,7 +239,7 @@ public static class ActivityExecutionContextExtensions
         context.ActivityState[inputDescriptor.Name] = value!;
         return value;
     }
-    
+
     /// <summary>
     /// Returns the outcome name for the specified port property name.
     /// </summary>
@@ -295,7 +296,7 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetActiveChildren(this ActivityExecutionContext context) =>
         context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
-    
+
     /// <summary>
     /// Returns a flattened list of the current context's immediate children.
     /// </summary>
@@ -308,11 +309,11 @@ public static class ActivityExecutionContextExtensions
     public static IEnumerable<ActivityExecutionContext> GetDescendants(this ActivityExecutionContext context)
     {
         var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-        
+
         foreach (var child in children)
         {
             yield return child;
-            
+
             foreach (var descendant in child.GetDescendants())
                 yield return descendant;
         }
@@ -324,7 +325,8 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
-        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList(); 
+        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList();
+        var logger = context.GetRequiredService<ILogger<ActivityExecutionContext>>();
 
         // Let all ancestors capture the signal.
         foreach (var ancestorContext in capturingContexts)
@@ -334,12 +336,16 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
+            logger.LogDebug("Capturing signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
             await handler.CaptureSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
+            {
+                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
                 return;
+            }
         }
-        
+
         // Let all ancestors receive the signal.
         foreach (var ancestorContext in receivingContexts)
         {
@@ -348,10 +354,14 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
+            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
             await handler.ReceiveSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
+            {
+                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
                 return;
+            }
         }
     }
 
@@ -362,7 +372,7 @@ public static class ActivityExecutionContextExtensions
     {
         await context.TargetContext.CompleteActivityAsync(result);
     }
-    
+
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
@@ -374,8 +384,8 @@ public static class ActivityExecutionContextExtensions
 
         // Update all child contexts.
         var childContexts = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-        
-        foreach (var childContext in childContexts) 
+
+        foreach (var childContext in childContexts)
             await childContext.CancelActivityAsync();
 
         // Mark the activity as complete.
@@ -424,7 +434,7 @@ public static class ActivityExecutionContextExtensions
         // Update the completed at timestamp.
         context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
     }
-    
+
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
@@ -452,7 +462,7 @@ public static class ActivityExecutionContextExtensions
             var serializedOutputValue = serializer.Serialize(outputValue);
             context.JournalData[outputName] = serializedOutputValue;
         }
-        
+
         // Send a signal.
         await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
     }
@@ -461,7 +471,7 @@ public static class ActivityExecutionContextExtensions
     /// Complete the current activity with the specified outcome.
     /// </summary>
     public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityCompletedContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-    
+
     /// <summary>
     /// Complete the current activity with the specified outcome.
     /// </summary>
