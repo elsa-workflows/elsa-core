@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
@@ -45,7 +46,7 @@ public static class ServiceProviderExtensions
             Model = model,
             Publish = true
         };
-        
+
         var workflowDefinitionImporter = services.GetRequiredService<IWorkflowDefinitionImporter>();
         var result = await workflowDefinitionImporter.ImportAsync(workflowDefinitionRequest);
         return result.WorkflowDefinition;
@@ -65,8 +66,8 @@ public static class ServiceProviderExtensions
         var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
         var bookmarks = new Stack<Bookmark>(result.Bookmarks);
 
-        // Continue resuming the workflow for as long as there are bookmarks to resume.
-        while (bookmarks.TryPop(out var bookmark))
+        // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
+        while (result.Status != WorkflowStatus.Finished && bookmarks.TryPop(out var bookmark))
         {
             var resumeOptions = new ResumeWorkflowRuntimeOptions(BookmarkId: bookmark.Id);
             var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
@@ -77,5 +78,14 @@ public static class ServiceProviderExtensions
 
         // Return the workflow state.
         return (await workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId))!;
+    }
+
+    /// <summary>
+    /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
+    /// </summary>
+    public static async Task<WorkflowState> RunWorkflowUntilEndAsync<TWorkflow>(this IServiceProvider services, IDictionary<string, object>? input = default) where TWorkflow : IWorkflow
+    {
+        var workflowDefinitionId = typeof(TWorkflow).Name;
+        return await services.RunWorkflowUntilEndAsync(workflowDefinitionId, input);
     }
 }
