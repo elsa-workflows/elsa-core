@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,7 @@ public class ManagementElsaDbContext : ElsaDbContextBase
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Ignore<WorkflowState>();
+        modelBuilder.Ignore<ActivityIncident>();
     }
 
     /// <inheritdoc />
