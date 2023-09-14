@@ -1,3 +1,4 @@
+using Elsa.Server.Api.Helpers;
 using Elsa.Server.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -10,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Buffers;
 using System.Collections.Generic;
@@ -20,7 +22,7 @@ using System.Threading.Tasks;
 namespace Elsa.Server.Api.Attributes
 {
     /// <summary>
-    /// mark a controller to use Newtonsoft as the formatter
+    /// Mark a controller to use Newtonsoft as the formatter
     /// </summary>
     public class NewtonsoftJsonFormatterAttribute : ActionFilterAttribute, IControllerModelConvention, IActionModelConvention
     {
@@ -38,33 +40,52 @@ namespace Elsa.Server.Api.Attributes
             var parameters = action.Parameters.Where(p => p.BindingInfo?.BindingSource == BindingSource.Body);
             foreach (var p in parameters)
             {
-                p.BindingInfo.BinderType = typeof(NewtonsoftJsonBodyModelBinder);
+                if (p.BindingInfo != null)
+                {
+                    p.BindingInfo.BinderType = typeof(NewtonsoftJsonBodyModelBinder);
+                }
             }
         }
 
         public override void OnActionExecuted(ActionExecutedContext context)
         {
+            //Use default MvcNewtonsoftJsonOptions injected globally
+            var jsonOptions = context.HttpContext.RequestServices.GetService<IOptions<MvcNewtonsoftJsonOptions>>();
+            var jsonSettings = jsonOptions?.Value.SerializerSettings??new JsonSerializerSettings();
+            if (context.Controller.GetType().FullName?.StartsWith("Elsa.Server.Api")==true)
+            {
+                //If controller's namespace start with Elsa.Server.Api.Endpoints.WorkflowDefinitions, use GetSettingsForWorkflowDefinition get get SerializerSettings
+                if (context.Controller.GetType().FullName?.StartsWith("Elsa.Server.Api.Endpoints.WorkflowDefinitions")==true)
+                {
+                    jsonSettings = SerializationHelper.GetSettingsForWorkflowDefinition();
+                }
+                //If controller's namespace start with Elsa.Server.Api, use GetSettingsForEndpoint get get SerializerSettings
+                else
+                {
+                    jsonSettings = SerializationHelper.GetSettingsForEndpoint();
+                }
+            }
             if (context.Result is ObjectResult objectResult)
             {
-                var jsonOptions = context.HttpContext.RequestServices.GetService<IEndpointContentSerializerSettingsProvider>();
 
                 objectResult.Formatters.RemoveType<SystemTextJsonOutputFormatter>();
                 objectResult.Formatters.Add(new NewtonsoftJsonOutputFormatter(
-                    jsonOptions?.GetSettings(),
+                    jsonSettings,
                     context.HttpContext.RequestServices.GetRequiredService<ArrayPool<char>>(),
-                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value));
+                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value,
+                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcNewtonsoftJsonOptions>>().Value));
             }
-            //for JsonResult, there is no way to change the formatter, so change them to Object result
+            //For JsonResult, there is no way to change the formatter, so change them to Object result
             else if (context.Result is JsonResult jr)
             {
-                ObjectResult obj = new ObjectResult(jr.Value);
-                var jsonOptions = context.HttpContext.RequestServices.GetService<IEndpointContentSerializerSettingsProvider>();
+                var obj = new ObjectResult(jr.Value);
 
                 obj.Formatters.RemoveType<SystemTextJsonOutputFormatter>();
                 obj.Formatters.Add(new NewtonsoftJsonOutputFormatter(
-                    jsonOptions?.GetSettings(),
+                    jsonSettings,
                     context.HttpContext.RequestServices.GetRequiredService<ArrayPool<char>>(),
-                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value));
+                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value,
+                    context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcNewtonsoftJsonOptions>>().Value));
                 context.Result = obj;
             }
             else

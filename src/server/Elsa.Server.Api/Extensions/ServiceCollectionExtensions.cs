@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
             var setupNewtonsoftJson = apiOptions.SetupNewtonsoftJson ?? (_ => { });
 
-            //don't set Newtonsoft globally
+            //Don't set Newtonsoft globally
             services.AddControllers();//.AddNewtonsoftJson(setupNewtonsoftJson);
             services.AddRouting(options => { options.LowercaseUrls = true; });
 
@@ -58,7 +58,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSignalR();
             services.AddMvc(options =>
             {
-                //use this convertion to set ElsaNewtonsoftJsonConvention to all controllers in Elsa.Server.Api
+                //Use this conventions to set ElsaNewtonsoftJsonConvention to all controllers in Elsa.Server.Api
                 options.Conventions.Add(new ElsaNewtonsoftJsonConvention());
             });
             return services;
