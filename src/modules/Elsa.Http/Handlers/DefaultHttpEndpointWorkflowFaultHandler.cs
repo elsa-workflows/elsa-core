@@ -27,7 +27,6 @@ public class DefaultHttpEndpointWorkflowFaultHandler : IHttpEndpointWorkflowFaul
     {
         var httpContext = context.HttpContext;
         var workflowState = context.WorkflowState;
-        var incidents = workflowState.Incidents;
 
         httpContext.Response.ContentType = MediaTypeNames.Application.Json;
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
