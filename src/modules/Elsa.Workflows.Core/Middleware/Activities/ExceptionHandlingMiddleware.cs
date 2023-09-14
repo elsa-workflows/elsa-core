@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -24,15 +25,17 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
     private readonly IIncidentStrategyResolver _incidentStrategyResolver;
+    private readonly ISystemClock _systemClock;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ISystemClock systemClock, ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _incidentStrategyResolver = incidentStrategyResolver;
+        _systemClock = systemClock;
         _logger = logger;
     }
 
@@ -51,7 +54,8 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
 
             var activity = context.Activity;
             var exceptionState = ExceptionState.FromException(e);
-            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState);
+            var now = _systemClock.UtcNow;
+            var incident = new ActivityIncident(activity.Id, activity.Type, e.Message, exceptionState, now);
             context.WorkflowExecutionContext.Incidents.Add(incident);
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);

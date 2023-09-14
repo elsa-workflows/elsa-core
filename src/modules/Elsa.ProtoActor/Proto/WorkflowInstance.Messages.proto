@@ -34,6 +34,7 @@ message ActivityIncident {
   string ActivityType = 2;
   string Message = 3;
   optional ExceptionState Exception = 4;
+  string Timestamp = 5; // ISO 8601
 }
 
 message ExceptionState {

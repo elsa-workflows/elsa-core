@@ -16,7 +16,7 @@ public class ActivityIncident
     {
         
     }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityIncident"/> class.
     /// </summary>
@@ -24,12 +24,14 @@ public class ActivityIncident
     /// <param name="activityType">The type of the activity that caused the incident.</param>
     /// <param name="message">The message of the incident.</param>
     /// <param name="exception">The exception that caused the incident.</param>
-    public ActivityIncident(string activityId, string activityType, string message, ExceptionState? exception)
+    /// <param name="timestamp">The timestamp of the incident.</param>
+    public ActivityIncident(string activityId, string activityType, string message, ExceptionState? exception, DateTimeOffset timestamp)
     {
         ActivityId = activityId;
         ActivityType = activityType;
         Message = message;
         Exception = exception;
+        Timestamp = timestamp;
     }
 
     /// <summary>The ID of the activity that caused the incident.</summary>
@@ -43,4 +45,9 @@ public class ActivityIncident
 
     /// <summary>The exception that caused the incident.</summary>
     public ExceptionState? Exception { get; }
+
+    /// <summary>
+    /// The timestamp of the incident.
+    /// </summary>
+    public DateTimeOffset Timestamp { get; }
 }
