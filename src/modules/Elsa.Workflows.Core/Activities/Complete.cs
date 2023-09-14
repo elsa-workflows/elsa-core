@@ -63,8 +63,7 @@ public class Complete : Activity
         var outcomes = InterpretOutcomes(outcomesValue).ToArray();
         
         await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
-        
-        // Don't complete this activity, as it will be completed by the composite activity.
+        await context.CompleteActivityAsync();
     }
 
     private static IEnumerable<string> InterpretOutcomes(object? outcomesValue)

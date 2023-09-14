@@ -19,7 +19,7 @@ public class Tests
     {
         _services = new TestApplicationBuilder(testOutputHelper)
             .WithCapturingTextWriter(_capturingTextWriter)
-            .ConfigureElsa(elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Blobs.DirectoryFiles(GetWorkflowsDirectory())))
+            .WithWorkflowsFromDirectory("Scenarios", "DependencyWorkflows", "Workflows")
             .Build();
     }
 
@@ -36,10 +36,5 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
 
         Assert.Equal(new[] { "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom" }, lines);
-    }
-
-    private static string GetWorkflowsDirectory()
-    {
-        return Path.Combine("Scenarios", "DependencyWorkflows", "Workflows");
     }
 }

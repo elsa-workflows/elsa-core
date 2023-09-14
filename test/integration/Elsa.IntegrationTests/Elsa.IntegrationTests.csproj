@@ -108,12 +108,22 @@
       <None Update="Scenarios\ExplicitJoins\Workflows\join-all-2.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\CompositesAndOutcomes\Workflows\completor.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\CompositesAndOutcomes\Workflows\consumer.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\CompositesAndOutcomes\Workflows\tester.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
 
 
 
 
 
     </ItemGroup>
+
 
 
 

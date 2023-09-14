@@ -3,6 +3,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Services;
+using FluentStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ public class TestApplicationBuilder
             .AddSingleton(testOutputHelper)
             .AddSingleton<IConfiguration, ConfigurationManager>()
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
-        
+
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
             .UseScheduling()
@@ -40,7 +41,6 @@ public class TestApplicationBuilder
             .UseLiquid()
             .UseDsl()
             .UseWorkflowManagement()
-            
             .UseWorkflows(workflows => workflows
                 .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
             );
@@ -66,7 +66,7 @@ public class TestApplicationBuilder
         _configureElsa += configure;
         return this;
     }
-    
+
     /// <summary>
     /// Configures the service provider.
     /// </summary>
@@ -95,8 +95,26 @@ public class TestApplicationBuilder
     /// <summary>
     /// Adds a workflow to the service provider.
     /// </summary>
-    public TestApplicationBuilder AddWorkflow<T>() where T:IWorkflow
+    public TestApplicationBuilder AddWorkflow<T>() where T : IWorkflow
     {
         return ConfigureElsa(elsa => elsa.AddWorkflow<T>());
+    }
+    
+    /// <summary>
+    /// Add workflows from the specified relative directory.
+    /// </summary>
+    /// <param name="directory">The path segments of the directory.</param>
+    public TestApplicationBuilder WithWorkflowsFromDirectory(params string[] directory)
+    {
+        var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+        var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
+        var workflowsDirectory = directory.Prepend(assemblyDirectory).ToArray();
+        _configureElsa += elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Blobs.DirectoryFiles(Path.Combine(workflowsDirectory)));
+        return this;
+    }
+
+    private static string GetWorkflowsDirectory()
+    {
+        return Path.Combine("Scenarios", "DependencyWorkflows", "Workflows");
     }
 }

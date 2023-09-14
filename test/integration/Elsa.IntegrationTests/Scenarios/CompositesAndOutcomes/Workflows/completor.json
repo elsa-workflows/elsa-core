@@ -1,0 +1,71 @@
+{
+  "id": "3457460b3fd74daa8f898564cf96fe48",
+  "definitionId": "99c1c6cf2fec47b3b4916a01425ec989",
+  "name": "Completor",
+  "createdAt": "2023-09-14T13:49:38.017111+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [
+    "Success",
+    "Failure"
+  ],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true,
+    "activityCategory": "Testing"
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Gn-5gEC2-UCmmzWTgvYCmw",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "outcomes": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Success"
+          },
+          "memoryReference": {
+            "id": "tyDvLNGiYkCbUabhgzcSdw:input-0"
+          }
+        },
+        "id": "tyDvLNGiYkCbUabhgzcSdw",
+        "name": "Complete1",
+        "type": "Elsa.Complete",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -186.5,
+              "y": -263
+            },
+            "size": {
+              "width": 136.8125,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

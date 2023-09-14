@@ -119,6 +119,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         // Do we have a "complete composite" signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
 
+        // If we do, make sure to remove it from the transient properties.
+        if (completeCompositeSignal != null)
+            context.WorkflowExecutionContext.TransientProperties.Remove(nameof(CompleteCompositeSignal));
+        
         await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
