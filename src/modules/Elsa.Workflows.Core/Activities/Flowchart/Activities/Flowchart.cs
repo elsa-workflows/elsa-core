@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -42,16 +43,20 @@ public class Flowchart : Container
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+
         var startActivity = GetStartActivity(context);
 
         if (startActivity == null)
         {
             // Nothing else to execute.
+            logger.LogDebug("No start activity found. Completing flowchart");
             await context.CompleteActivityAsync();
             return;
         }
 
         // Schedule the start activity.
+        logger.LogDebug("Scheduling start activity: {StartActivityId}", startActivity.Id);
         await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
     }
 
@@ -109,30 +114,47 @@ public class Flowchart : Container
 
     private IActivity? GetStartActivity(ActivityExecutionContext context)
     {
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+
+        logger.LogDebug("Looking for start activity...");
+
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
 
         if (triggerActivity != null)
+        {
+            logger.LogDebug("Found trigger activity: {TriggerActivityId}", triggerActivityId);
             return triggerActivity;
+        }
 
         // If an explicit Start activity was provided, use that.
         if (Start != null)
+        {
+            logger.LogDebug("An explicit start activity was provided: {StartActivityId}", Start.Id);
             return Start;
+        }
 
         // If there is a Start activity on the flowchart, use that.
         var startActivity = Activities.FirstOrDefault(x => x is Start);
 
         if (startActivity != null)
+        {
+            logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
             return startActivity;
+        }
 
         // If there is a single activity that has no inbound connections, use that.
         var root = GetRootActivity();
 
         if (root != null)
+        {
+            logger.LogDebug("Found a single activity with no inbound connections: {ActivityId}", root.Id);
             return root;
+        }
 
         // If no start activity found, return the first activity.
+        logger.LogDebug("No start activity found. Using the first activity");
         return Activities.FirstOrDefault();
     }
 
@@ -151,10 +173,13 @@ public class Flowchart : Container
 
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
         var flowchartContext = context.TargetContext;
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
+
+        logger.LogDebug("Child activity {ActivityId} completed with status {ActivityStatus}", completedActivity.Id, completedActivityContext.Status);
         
         // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
@@ -174,12 +199,18 @@ public class Flowchart : Container
         // If the completed activity is an End or Break activity, complete the flowchart immediately.
         if (completedActivity is End or Break)
         {
+            logger.LogDebug("Completed activity {ActivityId} is an End or Break activity. Completing flowchart", completedActivity.Id);
             await flowchartContext.CompleteActivityAsync();
         }
-        else if(scheduleChildren)
+        else if (scheduleChildren)
         {
             if (children.Any())
             {
+                if(children.Count == 1)
+                    logger.LogDebug("Found 1 child for activity {ActivityId}: {ChildActivityId}", completedActivity.Id, children.First().Id);
+                else
+                    logger.LogDebug("Found {Count} children for activity {ActivityId}: {ChildActivityIds}", children.Count, completedActivity.Id, children.Select(x => x.Id).ToList());
+                
                 scope.AddActivities(children);
 
                 // Schedule each child, but only if all of its left inbound activities have already executed.
@@ -190,6 +221,7 @@ public class Flowchart : Container
                     // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
                     if (!inboundActivities.Contains(completedActivity))
                     {
+                        logger.LogDebug("Scheduling child activity {ChildActivityId}", activity.Id);
                         await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
                         continue;
                     }
@@ -201,7 +233,10 @@ public class Flowchart : Container
                         var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
                         if (haveInboundActivitiesExecuted)
+                        {
+                            logger.LogDebug("Scheduling child activity {ChildActivityId}", activity.Id);
                             await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+                        }
                     }
                     else
                     {
@@ -213,6 +248,13 @@ public class Flowchart : Container
                             ReuseActivityExecutionContextId = joinContext?.Id,
                             PreventDuplicateScheduling = true
                         };
+                        
+                        if(joinContext != null)
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing context {JoinContext}", activity.Id, joinContext.Id);
+                        else
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity", activity.Id);
+                        
+                        logger.LogDebug("Scheduling child activity {ChildActivityId}", activity.Id);
                         await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
                 }
@@ -220,17 +262,25 @@ public class Flowchart : Container
 
             if (!children.Any())
             {
+                logger.LogDebug("No children found for activity {ActivityId}", completedActivity.Id);
+                
                 // If there is no pending work, complete the flowchart activity.
                 var hasPendingWork = HasPendingWork(flowchartContext);
 
                 if (!hasPendingWork)
                 {
+                    logger.LogDebug("No pending work found");
                     var hasFaultedActivities = flowchartContext.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
-                    
-                    if(!hasFaultedActivities)
+
+                    if (!hasFaultedActivities)
+                    {
+                        logger.LogDebug("No faulted activities found");
+                        logger.LogDebug("Completing flowchart");
                         await flowchartContext.CompleteActivityAsync();
+                    }
                     else
                     {
+                        logger.LogDebug("Faulted activities found. Faulting flowchart");
                         flowchartContext.Status = ActivityStatus.Faulted;
                     }
                 }
