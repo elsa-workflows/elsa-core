@@ -6,6 +6,7 @@ using Elsa.Http.Models;
 using Elsa.Http.Providers;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
 
@@ -76,7 +77,7 @@ public class WriteHttpResponse : Activity
         if (httpContext == null)
         {
             // We're not in an HTTP context, so let's fail.
-            throw new Exception("Cannot execute in a non-HTTP context");
+            throw new FaultException("Cannot execute in a non-HTTP context");
         }
 
         await WriteResponseAsync(context, httpContext.Response);
