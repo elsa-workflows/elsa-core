@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
@@ -25,14 +26,24 @@ public class UrlDownloadableProvider : DownloadableProviderBase
     protected override async ValueTask<Downloadable> GetDownloadableAsync(DownloadableContext context)
     {
         var url = context.Content is string s ? new Uri(s) : (Uri)context.Content;
-        var response = await _fileDownloader.DownloadAsync(url, context.CancellationToken);
-        
-        // TODO: Get the filename from the response.
-        var fileName = "";
-
-        var stream = response.Body;
-        var contentType = response.ContentType;
+        var cancellationToken = context.CancellationToken;
+        var response = await _fileDownloader.DownloadAsync(url, cancellationToken);
+        var fileName = GetFilename(response) ?? url.Segments.Last();
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
         
         return new Downloadable(stream, fileName, contentType);
     }
+
+    private static string? GetFilename(HttpResponseMessage response)
+    {
+        if (!response.Content.Headers.TryGetValues("Content-Disposition", out var values)) 
+            return null;
+        
+        var contentDisposition = string.Join("", values);
+        var match = Regex.Match(contentDisposition, """filename="?(?<filename>[^";]*)"?""");
+
+        return match.Success ? match.Groups["filename"].Value : null;
+    }
+
 }

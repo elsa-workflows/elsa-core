@@ -18,7 +18,7 @@ internal class WriteHttpResponseContentTypeOptionsProvider : IActivityPropertyOp
     {
         var options = new Dictionary<string, object>
         {
-            ["AvailableContentTypes"] = new[] { "" }.Concat(_options.AvailableContentTypes)
+            ["items"] = new[] { "" }.Concat(_options.AvailableContentTypes)
         };
         
         return new(options);

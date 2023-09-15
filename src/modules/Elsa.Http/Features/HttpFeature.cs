@@ -5,6 +5,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
+using Elsa.Http.DownloadableProviders;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
@@ -147,12 +148,20 @@ public class HttpFeature : FeatureBase
             // Port resolvers.
             .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
 
-            // Add HTTP endpoint handlers.
+            // HTTP endpoint handlers.
             .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
             .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
+            
+            // File related services.
+            .AddSingleton<IDownloadableManager, DefaultDownloadableManager>()
+            .AddSingleton<IDownloadableProvider, BinaryDownloadableProvider>()
+            .AddSingleton<IDownloadableProvider, DownloadableDownloadableProvider>()
+            .AddSingleton<IDownloadableProvider, MultiDownloadableProvider>()
+            .AddSingleton<IDownloadableProvider, StreamDownloadableProvider>()
+            .AddSingleton<IDownloadableProvider, UrlDownloadableProvider>()
 
             // Add mediator handlers.
             .AddNotificationHandlersFrom<HttpFeature>()
@@ -160,6 +169,9 @@ public class HttpFeature : FeatureBase
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
             .AddAuthorization();
+
+        // HTTP clients.
+        Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
         
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes) 

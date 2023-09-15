@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace Elsa.Http.Contracts;
 
 /// <summary>
@@ -10,5 +8,5 @@ public interface IFileDownloader
     /// <summary>
     /// Downloads a file from the specified URL.
     /// </summary>
-    Task<HttpResponse> DownloadAsync(Uri url, CancellationToken cancellationToken = default);    
+    Task<HttpResponseMessage> DownloadAsync(Uri url, CancellationToken cancellationToken = default);    
 }
