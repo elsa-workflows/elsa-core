@@ -65,7 +65,7 @@ public class DispatchWorkflow : Activity<object>
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
-            var bookmarkOptions = new NewBookmarkArgs
+            var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
                 Payload = new DispatchWorkflowBookmark(instanceId),

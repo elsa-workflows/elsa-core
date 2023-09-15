@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Core.Models;
 /// <param name="BookmarkName">An optional name to associate with the bookmark.</param>
 /// <param name="AutoBurn">Whether or not the bookmark should be automatically burned when triggered.</param>
 /// <param name="IncludeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
-public record NewBookmarkArgs(
+public record CreateBookmarkArgs(
     object? Payload = default, 
     ExecuteActivityDelegate? Callback = default, 
     string? BookmarkName = default, 

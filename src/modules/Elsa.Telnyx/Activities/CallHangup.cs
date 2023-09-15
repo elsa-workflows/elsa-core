@@ -34,7 +34,7 @@ public class CallHangup : Activity<CallHangupPayload>
         foreach (var callControlId in callControlIds)
         {
             var payload = new CallHangupBookmarkPayload(callControlId);
-            context.CreateBookmark(new NewBookmarkArgs(payload, Resume, Type, IncludeActivityInstanceId: false));
+            context.CreateBookmark(new CreateBookmarkArgs(payload, Resume, Type, IncludeActivityInstanceId: false));
         }
     }
 

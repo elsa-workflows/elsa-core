@@ -276,7 +276,7 @@ public class ActivityExecutionContext : IExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new NewBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
+            CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
     }
 
     /// <summary>
@@ -299,7 +299,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new NewBookmarkArgs(default, callback, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs(default, callback, Metadata: metadata));
     }
 
     /// <summary>
@@ -312,7 +312,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
-        return CreateBookmark(new NewBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId, Metadata: customProperties));
+        return CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId, Metadata: customProperties));
     }
 
     /// <summary>
@@ -323,14 +323,14 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new NewBookmarkArgs(payload, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs(payload, Metadata: metadata));
     }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
     /// </summary>
-    public Bookmark CreateBookmark(NewBookmarkArgs? options = default)
+    public Bookmark CreateBookmark(CreateBookmarkArgs? options = default)
     {
         var payload = options?.Payload;
         var callback = options?.Callback;

@@ -75,7 +75,7 @@ public class Event : Trigger<object?>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            var options = new NewBookmarkArgs
+            var options = new CreateBookmarkArgs
             {
                 Payload = new EventBookmarkPayload(eventName),
                 IncludeActivityInstanceId = false
