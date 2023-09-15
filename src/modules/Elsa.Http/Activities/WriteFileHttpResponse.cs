@@ -15,7 +15,7 @@ namespace Elsa.Http;
 /// Sends a file to the HTTP response.
 /// </summary>
 [Activity("Elsa", "HTTP", "Send one ore more files (zipped) to the HTTP response.", DisplayName = "HTTP File Response")]
-public class WriteHttpFileResponse : Activity
+public class WriteFileHttpResponse : Activity
 {
     /// <summary>
     /// The MIME type of the file to serve.
