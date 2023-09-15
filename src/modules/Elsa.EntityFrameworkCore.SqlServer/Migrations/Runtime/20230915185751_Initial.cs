@@ -51,6 +51,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CorrelationId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    SerializedMetadata = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     SerializedPayload = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>

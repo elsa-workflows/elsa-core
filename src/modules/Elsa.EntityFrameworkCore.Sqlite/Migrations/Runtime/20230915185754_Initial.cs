@@ -45,6 +45,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<string>(type: "TEXT", nullable: false),
+                    SerializedMetadata = table.Column<string>(type: "TEXT", nullable: true),
                     SerializedPayload = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

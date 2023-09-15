@@ -19,35 +19,37 @@ internal class BookmarkMapper
     {
         _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
     }
-    
-    
-    public IEnumerable<ProtoBookmark> Map(IEnumerable<Bookmark> source) =>   
-        source.Select(x =>
+
+
+    public IEnumerable<ProtoBookmark> Map(IEnumerable<Bookmark> source) =>
+        source.Select(bookmark =>
             new ProtoBookmark
             {
-                Id = x.Id,
-                Name = x.Name,
-                Hash = x.Hash,
-                Payload = x.Payload != null ? _bookmarkPayloadSerializer.Serialize(x.Payload) : string.Empty,
-                ActivityId = x.ActivityId,
-                ActivityNodeId = x.ActivityNodeId,
-                ActivityInstanceId = x.ActivityInstanceId,
-                AutoBurn = x.AutoBurn,
-                CallbackMethodName = x.CallbackMethodName.EmptyIfNull(),
-                CreatedAt = x.CreatedAt.ToString("O")
+                Id = bookmark.Id,
+                Name = bookmark.Name,
+                Hash = bookmark.Hash,
+                Payload = bookmark.Payload != null ? _bookmarkPayloadSerializer.Serialize(bookmark.Payload) : string.Empty,
+                ActivityId = bookmark.ActivityId,
+                ActivityNodeId = bookmark.ActivityNodeId,
+                ActivityInstanceId = bookmark.ActivityInstanceId,
+                AutoBurn = bookmark.AutoBurn,
+                CallbackMethodName = bookmark.CallbackMethodName.EmptyIfNull(),
+                CreatedAt = bookmark.CreatedAt.ToString("O"),
+                Metadata = { bookmark.Metadata ?? new Dictionary<string, string>() }
             });
-    
+
     public IEnumerable<Bookmark> Map(IEnumerable<ProtoBookmark> source) =>
-        source.Select(x =>
+        source.Select(bookmark =>
             new Bookmark(
-                x.Id,
-                x.Name,
-                x.Hash,
-                x.Payload.NullIfEmpty(),
-                x.ActivityId,
-                x.ActivityNodeId,
-                x.ActivityInstanceId,
-                DateTimeOffset.Parse(x.CreatedAt),
-                x.AutoBurn,
-                x.CallbackMethodName.NullIfEmpty()));
+                bookmark.Id,
+                bookmark.Name,
+                bookmark.Hash,
+                bookmark.Payload.NullIfEmpty(),
+                bookmark.ActivityId,
+                bookmark.ActivityNodeId,
+                bookmark.ActivityInstanceId,
+                DateTimeOffset.Parse(bookmark.CreatedAt),
+                bookmark.AutoBurn,
+                bookmark.CallbackMethodName.NullIfEmpty(),
+                bookmark.Metadata.ToDictionary(x => x.Key, x => x.Value)));
 }

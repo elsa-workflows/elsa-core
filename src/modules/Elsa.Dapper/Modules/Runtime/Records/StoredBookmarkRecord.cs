@@ -9,5 +9,6 @@ internal class StoredBookmarkRecord
     public string? CorrelationId { get; set; }
     public string? ActivityInstanceId { get; set; }
     public string? SerializedPayload { get; set; }
+    public string? SerializedMetadata { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 }

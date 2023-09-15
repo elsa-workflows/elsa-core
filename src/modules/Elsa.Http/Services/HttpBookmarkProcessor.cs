@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core.Helpers;
@@ -55,14 +56,11 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         // We must assume that the workflow executed in a different process (when e.g. using Proto.Actor)
         // and check if we received any HTTP-related activity bookmarks.
         // If we did, acquire a lock on the workflow instance and resume it from here within an actual HTTP context so that the activity can complete its HTTP response.
-        var httpActivityTypeNames = new[] { ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>(), ActivityTypeNameHelper.GenerateTypeName<WriteHttpResponse>(), ActivityTypeNameHelper.GenerateTypeName<ServeFile>() };
 
         var query =
             from executionResult in executionResults
             from bookmark in executionResult.Bookmarks
-            where httpActivityTypeNames.Contains(bookmark.Name)
-                  // If a "regular" HttpEndpointBookmarkPayload bookmark was created, we do not want to resume that - it's a bookmark that was created to block the workflow until the desired HTTP request comes in.
-                  && bookmark.Payload is not HttpEndpointBookmarkPayload
+            where bookmark.Metadata?.ContainsKey(BookmarkMetadata.HttpCrossBoundaryMetadataKey) == true
             select (InstanceId: executionResult.WorkflowInstanceId, bookmark.Id);
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);

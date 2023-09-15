@@ -1,5 +1,6 @@
 using System.Net;
 using Elsa.Extensions;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core;
@@ -13,14 +14,14 @@ namespace Elsa.Http;
 /// <summary>
 /// Sends a file to the HTTP response.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send one ore more files (zipped) to the HTTP response.")]
-public class ServeFile : Activity
+[Activity("Elsa", "HTTP", "Send one ore more files (zipped) to the HTTP response.", DisplayName = "HTTP File Response")]
+public class WriteHttpFileResponse : Activity
 {
     /// <summary>
     /// The MIME type of the file to serve.
     /// </summary>
-    [Input(Description = "The MIME type of the file to serve. Leave empty to let the system determine the MIME type.")]
-    public Input<string?> MimeType { get; set; } = default!;
+    [Input(Description = "The content type of the file to serve. Leave empty to let the system determine the content type.")]
+    public Input<string?> ContentType { get; set; } = default!;
 
     /// <summary>
     /// The name of the file to serve.
@@ -31,7 +32,7 @@ public class ServeFile : Activity
     /// <summary>
     /// The file content to serve. Supports byte array, streams, string, Uri and an array of the aforementioned types.
     /// </summary>
-    [Input(Description = "The file content to serve. Supports byte array, stream, string, Uri, Downloadable and a (mixed) array of the aforementioned types.")]
+    [Input(Description = "The file content to serve. Supports various types, such as byte array, stream, string, Uri, Downloadable and a (mixed) array of the aforementioned types.")]
     public Input<object> Content { get; set; } = default!;
 
     /// <inheritdoc />
@@ -45,7 +46,7 @@ public class ServeFile : Activity
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
 
-            context.CreateBookmark(OnResumeAsync);
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
             return;
         }
 
@@ -81,13 +82,14 @@ public class ServeFile : Activity
         if (downloadableList.Count == 0)
             return;
 
-        var contentType = MimeType.GetOrDefault(context);
+        var contentType = ContentType.GetOrDefault(context);
+        var filename = FileName.GetOrDefault(context);
 
         if (downloadableList.Count == 1)
         {
             var downloadable = downloadableList[0];
-            if (string.IsNullOrWhiteSpace(contentType)) contentType = downloadable.ContentType ?? System.Net.Mime.MediaTypeNames.Application.Octet;
-            var filename = string.IsNullOrWhiteSpace(downloadable.Filename) ? "file.bin" : downloadable.Filename;
+            contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : System.Net.Mime.MediaTypeNames.Application.Octet;
+            filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
             response.ContentType = contentType;
             response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
             await downloadable.Stream.CopyToAsync(response.Body);

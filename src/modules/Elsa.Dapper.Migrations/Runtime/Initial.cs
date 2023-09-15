@@ -31,6 +31,7 @@ public class Initial : Migration
             .WithColumn("ActivityInstanceId").AsString().NotNullable()
             .WithColumn("Hash").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("SerializedMetadata").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable();
         
         IfDatabase("Sqlite")
@@ -43,6 +44,7 @@ public class Initial : Migration
             .WithColumn("ActivityInstanceId").AsString().NotNullable()
             .WithColumn("Hash").AsString().Nullable()
             .WithColumn("SerializedPayload").AsString().Nullable()
+            .WithColumn("SerializedMetadata").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable();
 
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")

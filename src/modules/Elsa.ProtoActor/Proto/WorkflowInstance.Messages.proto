@@ -93,7 +93,8 @@ message Bookmark {
   string ActivityId = 5;
   string ActivityNodeId = 6;
   string ActivityInstanceId = 7;
-  optional bool AutoBurn = 8;
-  optional string CallbackMethodName = 9;
-  string CreatedAt = 10; // ISO 8601
+  map<string, string> Metadata = 8;
+  optional bool AutoBurn = 9;
+  optional string CallbackMethodName = 10;
+  string CreatedAt = 11; // ISO 8601
 }

@@ -23,7 +23,8 @@ public record Bookmark(
     string ActivityNodeId,
     string ActivityInstanceId,
     bool AutoBurn = true,
-    string? CallbackMethodName = default
+    string? CallbackMethodName = default,
+    IDictionary<string, string>? CustomProperties = default
 )
 {
     /// <inheritdoc />

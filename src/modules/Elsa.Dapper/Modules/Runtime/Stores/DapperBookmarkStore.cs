@@ -48,7 +48,7 @@ public class DapperBookmarkStore : IBookmarkStore
     {
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
-    
+
     private void ApplyFilter(ParameterizedQuery query, BookmarkFilter filter)
     {
         query
@@ -62,7 +62,7 @@ public class DapperBookmarkStore : IBookmarkStore
             .Is(nameof(StoredBookmarkRecord.ActivityInstanceId), filter.ActivityInstanceId)
             ;
     }
-    
+
     private IEnumerable<StoredBookmark> Map(IEnumerable<StoredBookmarkRecord> source) => source.Select(Map);
 
     private StoredBookmarkRecord Map(StoredBookmark source)
@@ -76,10 +76,11 @@ public class DapperBookmarkStore : IBookmarkStore
             ActivityTypeName = source.ActivityTypeName,
             Hash = source.Hash,
             SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default,
+            SerializedMetadata = source.Metadata != null ? _payloadSerializer.Serialize(source.Metadata) : default,
             CreatedAt = source.CreatedAt
         };
     }
-    
+
     private StoredBookmark Map(StoredBookmarkRecord source)
     {
         return new StoredBookmark
@@ -91,6 +92,7 @@ public class DapperBookmarkStore : IBookmarkStore
             ActivityTypeName = source.ActivityTypeName,
             Hash = source.Hash,
             Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default,
+            Metadata = source.SerializedMetadata != null ? _payloadSerializer.Deserialize<Dictionary<string, string>>(source.SerializedMetadata) : default,
             CreatedAt = source.CreatedAt
         };
     }

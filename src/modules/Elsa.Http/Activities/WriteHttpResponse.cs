@@ -1,6 +1,7 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
 using Elsa.Http.Providers;
@@ -62,7 +63,7 @@ public class WriteHttpResponse : Activity
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
 
-            context.CreateBookmark(OnResumeAsync);
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
             return;
         }
 

@@ -70,6 +70,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     CorrelationId = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    SerializedMetadata = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SerializedPayload = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },

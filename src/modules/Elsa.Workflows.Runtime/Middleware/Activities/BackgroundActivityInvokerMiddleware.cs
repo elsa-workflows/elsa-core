@@ -64,7 +64,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
         var bookmarkPayload = new BackgroundActivityBookmark();
-        var bookmarkOptions = new BookmarkOptions { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload };
+        var bookmarkOptions = new NewBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload };
         var bookmark = context.CreateBookmark(bookmarkOptions);
         scheduledBackgroundActivities.Add(new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmark.Id));
     }

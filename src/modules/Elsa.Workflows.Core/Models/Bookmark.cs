@@ -15,6 +15,7 @@ namespace Elsa.Workflows.Core.Models;
 /// <param name="CreatedAt">The date and time the bookmark was created.</param>
 /// <param name="AutoBurn">Whether or not the bookmark should be automatically burned.</param>
 /// <param name="CallbackMethodName">The name of the method on the activity class to invoke when the bookmark is resumed.</param>
+/// <param name="Metadata">Custom properties associated with the bookmark.</param>
 public record Bookmark(
     string Id,
     string Name,
@@ -25,12 +26,12 @@ public record Bookmark(
     string ActivityInstanceId,
     DateTimeOffset CreatedAt,
     bool AutoBurn = true,
-    string? CallbackMethodName = default
-)
+    string? CallbackMethodName = default,
+    IDictionary<string, string>? Metadata = default)
 {
     /// <inheritdoc />
     [JsonConstructor]
-    public Bookmark() : this("", "", "",  null, "", "", "", default)
+    public Bookmark() : this("", "", "",  null, "", "", "", default, default)
     {
     }
 }
