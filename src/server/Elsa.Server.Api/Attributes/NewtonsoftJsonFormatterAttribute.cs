@@ -73,6 +73,7 @@ namespace Elsa.Server.Api.Attributes
                     jsonSettings,
                     context.HttpContext.RequestServices.GetRequiredService<ArrayPool<char>>(),
                     context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value));
+
             }
             //For JsonResult, there is no way to change the formatter, so change them to Object result
             else if (context.Result is JsonResult jr)
@@ -84,6 +85,7 @@ namespace Elsa.Server.Api.Attributes
                     jsonSettings,
                     context.HttpContext.RequestServices.GetRequiredService<ArrayPool<char>>(),
                     context.HttpContext.RequestServices.GetRequiredService<IOptions<MvcOptions>>().Value));
+
                 context.Result = obj;
             }
             else

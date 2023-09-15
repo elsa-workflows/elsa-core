@@ -116,7 +116,13 @@ namespace Elsa.Activities.Http
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        // protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        {
+            if(Path.Contains("//"))
+                throw new Exception("Path cannot contain double slashes (//)");
+            return context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 
