@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace Elsa.Http;
 
@@ -97,8 +98,8 @@ public class WriteFileHttpResponse : Activity
     {
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
-        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : System.Net.Mime.MediaTypeNames.Application.Octet;
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
+        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
         response.ContentType = contentType;
         response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
         await downloadable.Stream.CopyToAsync(response.Body);
@@ -108,7 +109,7 @@ public class WriteFileHttpResponse : Activity
     {
         var memoryStream = new MemoryStream();
         var currentFileIndex = 0;
-        
+
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
             foreach (var downloadable in downloadables)
@@ -120,7 +121,7 @@ public class WriteFileHttpResponse : Activity
                 await fileStream.CopyToAsync(entryStream);
             }
         }
-        
+
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
 
@@ -140,6 +141,12 @@ public class WriteFileHttpResponse : Activity
     {
         var manager = context.GetRequiredService<IDownloadableManager>();
         return await manager.GetDownloadablesAsync(content, context.CancellationToken);
+    }
+    
+    private string GetContentType(ActivityExecutionContext context, string filename)
+    {
+        var provider = context.GetService<IContentTypeProvider>() ?? new FileExtensionContentTypeProvider();
+        return provider.TryGetContentType(filename, out var contentType) ? contentType : "application/octet-stream";
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
