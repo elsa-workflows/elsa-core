@@ -1,6 +1,6 @@
+using System.IO.Compression;
 using System.Net;
 using Elsa.Extensions;
-using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core;
@@ -59,8 +59,6 @@ public class WriteFileHttpResponse : Activity
         var statusCode = HttpStatusCode.OK;
         response.StatusCode = (int)statusCode;
 
-        // Add headers.
-
         // Get content and content type.
         var content = context.Get(Content);
 
@@ -79,26 +77,65 @@ public class WriteFileHttpResponse : Activity
     {
         var downloadableList = downloadables.ToList();
 
-        if (downloadableList.Count == 0)
-            return;
+        switch (downloadableList.Count)
+        {
+            case 0:
+                return;
+            case 1:
+            {
+                var downloadable = downloadableList[0];
+                await SendSingleFileAsync(context, response, downloadable);
+                return;
+            }
+            default:
+                await SendMultipleFilesAsync(context, response, downloadableList);
+                break;
+        }
+    }
 
+    private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpResponse response, Downloadable downloadable)
+    {
+        var contentType = ContentType.GetOrDefault(context);
+        var filename = FileName.GetOrDefault(context);
+        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : System.Net.Mime.MediaTypeNames.Application.Octet;
+        filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
+        response.ContentType = contentType;
+        response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
+        await downloadable.Stream.CopyToAsync(response.Body);
+    }
+
+    private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpResponse response, ICollection<Downloadable> downloadables)
+    {
+        var memoryStream = new MemoryStream();
+        var currentFileIndex = 0;
+        
+        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+        {
+            foreach (var downloadable in downloadables)
+            {
+                var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
+                var entry = archive.CreateEntry(entryName);
+                var fileStream = downloadable.Stream;
+                await using var entryStream = entry.Open();
+                await fileStream.CopyToAsync(entryStream);
+            }
+        }
+        
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
 
-        if (downloadableList.Count == 1)
-        {
-            var downloadable = downloadableList[0];
-            contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : System.Net.Mime.MediaTypeNames.Application.Octet;
-            filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
-            response.ContentType = contentType;
-            response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
-            await downloadable.Stream.CopyToAsync(response.Body);
-            return;
-        }
+        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Zip;
+        filename = !string.IsNullOrWhiteSpace(filename) ? filename : "download.zip";
 
-        // TODO: Generate a zip file and send it to the response.
+        memoryStream.Position = 0;
+        response.ContentType = contentType;
+        response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
+        await memoryStream.CopyToAsync(response.Body);
     }
 
+    /// <summary>
+    /// Leverages the <see cref="IDownloadableManager"/> to get a list of <see cref="Downloadable"/> instances from the <paramref name="content"/>.
+    /// </summary>
     private async Task<IEnumerable<Downloadable>> GetDownloadablesAsync(ActivityExecutionContext context, object content)
     {
         var manager = context.GetRequiredService<IDownloadableManager>();
