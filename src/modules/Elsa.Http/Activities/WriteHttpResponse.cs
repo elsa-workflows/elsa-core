@@ -1,11 +1,13 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
 using Elsa.Http.Providers;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
 
@@ -61,7 +63,7 @@ public class WriteHttpResponse : Activity
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
 
-            context.CreateBookmark(OnResumeAsync);
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
             return;
         }
 
@@ -76,7 +78,7 @@ public class WriteHttpResponse : Activity
         if (httpContext == null)
         {
             // We're not in an HTTP context, so let's fail.
-            throw new Exception("Cannot execute in a non-HTTP context");
+            throw new FaultException("Cannot execute in a non-HTTP context");
         }
 
         await WriteResponseAsync(context, httpContext.Response);

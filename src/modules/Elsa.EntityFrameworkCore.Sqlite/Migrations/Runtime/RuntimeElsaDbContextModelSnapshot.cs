@@ -122,6 +122,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 

@@ -27,7 +27,10 @@
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
         <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+
+
     </ItemGroup>
+
 
 
 

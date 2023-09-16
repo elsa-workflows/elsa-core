@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core;
@@ -103,7 +104,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             // We're executing in a non-HTTP context (e.g. in a virtual actor).
             // Create a bookmark to allow the invoker to export the state and resume execution from there.
-            context.CreateBookmark(OnResumeAsync);
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
             return;
         }
 

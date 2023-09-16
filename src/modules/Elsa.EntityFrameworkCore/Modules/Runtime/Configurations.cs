@@ -78,7 +78,9 @@ public class Configurations :
     public void Configure(EntityTypeBuilder<StoredBookmark> builder)
     {
         builder.Ignore(x => x.Payload);
+        builder.Ignore(x => x.Metadata);
         builder.Property<string>("SerializedPayload");
+        builder.Property<string>("SerializedMetadata");
         builder.HasKey(x => x.BookmarkId);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");

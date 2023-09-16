@@ -127,6 +127,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 

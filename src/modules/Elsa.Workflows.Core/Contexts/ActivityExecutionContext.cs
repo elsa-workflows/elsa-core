@@ -276,7 +276,7 @@ public class ActivityExecutionContext : IExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new BookmarkOptions(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
+            CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
     }
 
     /// <summary>
@@ -295,8 +295,12 @@ public class ActivityExecutionContext : IExecutionContext
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// </summary>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
+    /// <param name="metadata">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(ExecuteActivityDelegate callback) => CreateBookmark(new BookmarkOptions(default, callback));
+    public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = default)
+    {
+        return CreateBookmark(new CreateBookmarkArgs(default, callback, Metadata: metadata));
+    }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
@@ -304,21 +308,29 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="payload">The payload to associate with the bookmark.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
+    /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true) => CreateBookmark(new BookmarkOptions(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
+    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
+    {
+        return CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId, Metadata: customProperties));
+    }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
     /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="metadata">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload) => CreateBookmark(new BookmarkOptions(payload));
+    public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
+    {
+        return CreateBookmark(new CreateBookmarkArgs(payload, Metadata: metadata));
+    }
 
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// Creating a bookmark will automatically suspend the workflow after all pending activities have executed.
     /// </summary>
-    public Bookmark CreateBookmark(BookmarkOptions? options = default)
+    public Bookmark CreateBookmark(CreateBookmarkArgs? options = default)
     {
         var payload = options?.Payload;
         var callback = options?.Callback;
@@ -338,7 +350,8 @@ public class ActivityExecutionContext : IExecutionContext
             Id,
             _systemClock.UtcNow,
             options?.AutoBurn ?? true,
-            callback?.Method.Name);
+            callback?.Method.Name,
+            options?.Metadata);
 
         AddBookmark(bookmark);
         return bookmark;

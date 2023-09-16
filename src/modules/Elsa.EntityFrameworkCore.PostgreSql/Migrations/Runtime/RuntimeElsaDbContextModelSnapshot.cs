@@ -127,6 +127,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("text");
+
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 

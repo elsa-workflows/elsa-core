@@ -18,7 +18,8 @@ public class StoredBookmark
         DateTimeOffset createdAt,
         string? activityInstanceId = default,
         string? correlationId = default,
-        object? payload = default)
+        object? payload = default,
+        IDictionary<string, string>? metadata = default)
     {
         BookmarkId = bookmarkId;
         ActivityTypeName = activityTypeName;
@@ -28,6 +29,7 @@ public class StoredBookmark
         ActivityInstanceId = activityInstanceId;
         CorrelationId = correlationId;
         Payload = payload;
+        Metadata = metadata;
     }
 
     /// <summary>
@@ -72,6 +74,11 @@ public class StoredBookmark
     /// The data associated with the bookmark.
     /// </summary>
     public object? Payload { get; set; }
+
+    /// <summary>
+    /// Custom properties associated with the bookmark.
+    /// </summary>
+    public IDictionary<string, string>? Metadata { get; set; }
 
     /// <summary>
     /// The date and time the bookmark was created.

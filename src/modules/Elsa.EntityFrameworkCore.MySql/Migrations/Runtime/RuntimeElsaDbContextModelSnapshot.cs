@@ -124,6 +124,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("SerializedMetadata")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 

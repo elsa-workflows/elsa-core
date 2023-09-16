@@ -48,7 +48,7 @@ public class WebhookEvent : Activity<Payload>
             var eventType = EventType;
             var payload = new WebhookEventBookmarkPayload(eventType);
             
-            context.CreateBookmark(new BookmarkOptions(payload, Resume, Type, false));
+            context.CreateBookmark(new CreateBookmarkArgs(payload, Resume, Type, false));
         }
     }
 
