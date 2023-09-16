@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Net;
-using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
@@ -9,7 +8,11 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Http;
 
@@ -52,13 +55,14 @@ public class WriteFileHttpResponse : Activity
             return;
         }
 
-        await WriteResponseAsync(context, httpContext.Response);
+        await WriteResponseAsync(context, httpContext);
     }
 
-    private async Task WriteResponseAsync(ActivityExecutionContext context, HttpResponse response)
+    private async Task WriteResponseAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         // Set status code.
         var statusCode = HttpStatusCode.OK;
+        var response = httpContext.Response;
         response.StatusCode = (int)statusCode;
 
         // Get content and content type.
@@ -69,13 +73,13 @@ public class WriteFileHttpResponse : Activity
 
         // Write content.
         var downloadables = await GetDownloadablesAsync(context, content);
-        await SendDownloadablesAsync(context, response, downloadables);
+        await SendDownloadablesAsync(context, httpContext, downloadables);
 
         // Complete activity.
         await context.CompleteActivityAsync();
     }
 
-    private async Task SendDownloadablesAsync(ActivityExecutionContext context, HttpResponse response, IEnumerable<Downloadable> downloadables)
+    private async Task SendDownloadablesAsync(ActivityExecutionContext context, HttpContext httpContext, IEnumerable<Downloadable> downloadables)
     {
         var downloadableList = downloadables.ToList();
 
@@ -86,53 +90,81 @@ public class WriteFileHttpResponse : Activity
             case 1:
             {
                 var downloadable = downloadableList[0];
-                await SendSingleFileAsync(context, response, downloadable);
+                await SendSingleFileAsync(context, httpContext, downloadable);
                 return;
             }
             default:
-                await SendMultipleFilesAsync(context, response, downloadableList);
+                await SendMultipleFilesAsync(context, httpContext, downloadableList);
                 break;
         }
     }
 
-    private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpResponse response, Downloadable downloadable)
+    private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpContext httpContext, Downloadable downloadable)
     {
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
-        response.ContentType = contentType;
-        response.Headers.Add("Content-Disposition", CreateContentDisposition(filename));
-        await downloadable.Stream.CopyToAsync(response.Body);
+        await SendFileStream(httpContext, downloadable.Stream, contentType, filename);
     }
 
-    private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpResponse response, ICollection<Downloadable> downloadables)
+    private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Downloadable> downloadables)
     {
-        var memoryStream = new MemoryStream();
+        var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+        
+        // 1. Create a temporary file
+        var tempFilePath = Path.GetTempFileName();
         var currentFileIndex = 0;
 
-        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-        {
-            foreach (var downloadable in downloadables)
-            {
-                var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
-                var entry = archive.CreateEntry(entryName);
-                var fileStream = downloadable.Stream;
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream);
-            }
-        }
+        // 2. Write the zip archive to the temporary file
+        await using var tempFileStream = new FileStream(tempFilePath, FileMode.Create);
+        using var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true);
 
+        foreach (var downloadable in downloadables)
+        {
+            var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
+            var entry = zipArchive.CreateEntry(entryName);
+            var fileStream = downloadable.Stream;
+            await using var entryStream = entry.Open();
+            await fileStream.CopyToAsync(entryStream);
+            await entryStream.FlushAsync();
+            entryStream.Close();
+            currentFileIndex++;
+        }
+        
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
 
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Zip;
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : "download.zip";
+        
+        // 3. Use FileStreamResult to stream the temporary file back to the client
+        var resultStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
+        await SendFileStream(httpContext, resultStream, contentType, filename);
+        
+        // 4. Delete the temporary file.
+        try
+        {
+            File.Delete(tempFilePath);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", tempFilePath);
+        }
+    }
 
-        memoryStream.Position = 0;
-        response.ContentType = contentType;
-        response.Headers.Add("Content-Disposition", CreateContentDisposition(filename));
-        await memoryStream.CopyToAsync(response.Body);
+    private async Task SendFileStream(HttpContext httpContext, Stream source, string contentType, string filename)
+    {
+        source.Seek(0, SeekOrigin.Begin);
+        
+        var result = new FileStreamResult(source, contentType)
+        {
+            EnableRangeProcessing = true,
+            FileDownloadName = filename
+        };
+        
+        var actionContext = new ActionContext(httpContext, httpContext.GetRouteData(), new ActionDescriptor());
+        await result.ExecuteResultAsync(actionContext);
     }
 
     /// <summary>
@@ -143,7 +175,7 @@ public class WriteFileHttpResponse : Activity
         var manager = context.GetRequiredService<IDownloadableManager>();
         return await manager.GetDownloadablesAsync(content, context.CancellationToken);
     }
-    
+
     private string GetContentType(ActivityExecutionContext context, string filename)
     {
         var provider = context.GetRequiredService<IContentTypeProvider>();
@@ -156,7 +188,7 @@ public class WriteFileHttpResponse : Activity
         {
             FileName = filename
         };
-        
+
         return contentDisposition.ToString();
     }
 
@@ -171,6 +203,6 @@ public class WriteFileHttpResponse : Activity
             throw new FaultException("Cannot execute in a non-HTTP context");
         }
 
-        await WriteResponseAsync(context, httpContext.Response);
+        await WriteResponseAsync(context, httpContext);
     }
 }
