@@ -52,5 +52,4 @@ public class UrlDownloadableProvider : DownloadableProviderBase
     {
         return _contentTypeProvider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
     }
-
 }
