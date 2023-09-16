@@ -3,6 +3,7 @@ using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace Elsa.Http.DownloadableProviders;
 
@@ -12,11 +13,13 @@ namespace Elsa.Http.DownloadableProviders;
 public class UrlDownloadableProvider : DownloadableProviderBase
 {
     private readonly IFileDownloader _fileDownloader;
+    private readonly IContentTypeProvider _contentTypeProvider;
 
     /// <inheritdoc />
-    public UrlDownloadableProvider(IFileDownloader fileDownloader)
+    public UrlDownloadableProvider(IFileDownloader fileDownloader, IContentTypeProvider contentTypeProvider)
     {
         _fileDownloader = fileDownloader;
+        _contentTypeProvider = contentTypeProvider;
     }
     
     /// <inheritdoc />
@@ -28,11 +31,11 @@ public class UrlDownloadableProvider : DownloadableProviderBase
         var url = context.Content is string s ? new Uri(s) : (Uri)context.Content;
         var cancellationToken = context.CancellationToken;
         var response = await _fileDownloader.DownloadAsync(url, cancellationToken);
-        var fileName = GetFilename(response) ?? url.Segments.Last();
+        var filename = GetFilename(response) ?? url.Segments.Last();
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+        var contentType = response.Content.Headers.ContentType?.MediaType ?? GetContentType(filename);
         
-        return new Downloadable(stream, fileName, contentType);
+        return new Downloadable(stream, filename, contentType);
     }
 
     private static string? GetFilename(HttpResponseMessage response)
@@ -40,10 +43,14 @@ public class UrlDownloadableProvider : DownloadableProviderBase
         if (!response.Content.Headers.TryGetValues("Content-Disposition", out var values)) 
             return null;
         
-        var contentDisposition = string.Join("", values);
-        var match = Regex.Match(contentDisposition, """filename="?(?<filename>[^";]*)"?""");
-
-        return match.Success ? match.Groups["filename"].Value : null;
+        var contentDispositionString = string.Join("", values);
+        var contentDisposition = new System.Net.Mime.ContentDisposition(contentDispositionString);
+        return contentDisposition.FileName;
+    }
+    
+    private string GetContentType(string filename)
+    {
+        return _contentTypeProvider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
     }
 
 }

@@ -22,6 +22,7 @@ using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.Features;
@@ -53,6 +54,11 @@ public class HttpFeature : FeatureBase
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointWorkflowFaultHandler>();
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="IContentTypeProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IContentTypeProvider> ContentTypeProvider { get; set; } = _ => new FileExtensionContentTypeProvider();
 
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
@@ -128,6 +134,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddSingleton<IRouteTableUpdater, DefaultRouteTableUpdater>()
+            .AddSingleton(ContentTypeProvider)
             .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
 

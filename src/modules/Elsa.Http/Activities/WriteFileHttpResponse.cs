@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Net;
+using System.Net.Http.Headers;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
@@ -101,7 +102,7 @@ public class WriteFileHttpResponse : Activity
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
         response.ContentType = contentType;
-        response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
+        response.Headers.Add("Content-Disposition", CreateContentDisposition(filename));
         await downloadable.Stream.CopyToAsync(response.Body);
     }
 
@@ -130,7 +131,7 @@ public class WriteFileHttpResponse : Activity
 
         memoryStream.Position = 0;
         response.ContentType = contentType;
-        response.Headers.Add("Content-Disposition", $"attachment; filename=\"{filename}\"");
+        response.Headers.Add("Content-Disposition", CreateContentDisposition(filename));
         await memoryStream.CopyToAsync(response.Body);
     }
 
@@ -145,8 +146,18 @@ public class WriteFileHttpResponse : Activity
     
     private string GetContentType(ActivityExecutionContext context, string filename)
     {
-        var provider = context.GetService<IContentTypeProvider>() ?? new FileExtensionContentTypeProvider();
-        return provider.TryGetContentType(filename, out var contentType) ? contentType : "application/octet-stream";
+        var provider = context.GetRequiredService<IContentTypeProvider>();
+        return provider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
+    }
+
+    private static string CreateContentDisposition(string filename)
+    {
+        var contentDisposition = new System.Net.Mime.ContentDisposition
+        {
+            FileName = filename
+        };
+        
+        return contentDisposition.ToString();
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
