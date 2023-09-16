@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="FluentStorage" Version="5.4.0" />
+  </ItemGroup>
+</Project>

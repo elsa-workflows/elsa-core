@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableProviders;
+using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
@@ -20,6 +21,7 @@ using Elsa.Liquid.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
+using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
@@ -59,6 +61,15 @@ public class HttpFeature : FeatureBase
     /// A delegate to configure the <see cref="IContentTypeProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IContentTypeProvider> ContentTypeProvider { get; set; } = _ => new FileExtensionContentTypeProvider();
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="IFileCacheStorageProvider"/>.
+    /// </summary>
+    public Func<IServiceProvider, IFileCacheStorageProvider> FileCache { get; set; } = _ =>
+    {
+        var blobStorage = StorageFactory.Blobs.DirectoryFiles(Path.GetTempPath());
+        return new BlobFileCacheStorageProvider(blobStorage);
+    };
 
     /// <summary>
     /// A delegate to configure the <see cref="HttpClient"/> used when by the <see cref="FlowSendHttpRequest"/> activity.
@@ -169,6 +180,9 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IDownloadableProvider, MultiDownloadableProvider>()
             .AddSingleton<IDownloadableProvider, StreamDownloadableProvider>()
             .AddSingleton<IDownloadableProvider, UrlDownloadableProvider>()
+            
+            // File caches.
+            .AddSingleton(FileCache)
 
             // Add mediator handlers.
             .AddNotificationHandlersFrom<HttpFeature>()
