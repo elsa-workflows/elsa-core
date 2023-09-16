@@ -24,7 +24,7 @@ public record Bookmark(
     string ActivityInstanceId,
     bool AutoBurn = true,
     string? CallbackMethodName = default,
-    IDictionary<string, string>? CustomProperties = default
+    IDictionary<string, string>? Metadata = default
 )
 {
     /// <inheritdoc />
