@@ -44,7 +44,8 @@ internal class Execute : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/workflow-definitions/{definitionId}/execute");
+        Routes("/workflow-definitions/{definitionId}/execute");
+        Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         ConfigurePermissions("exec:workflow-definitions");
     }
 
