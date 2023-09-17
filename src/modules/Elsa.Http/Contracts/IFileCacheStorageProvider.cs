@@ -3,7 +3,7 @@ using FluentStorage.Blobs;
 namespace Elsa.Http.Contracts;
 
 /// <summary>
-/// Represents a cache for storing files.
+/// Represents a provider of a file cache storage.
 /// </summary>
 public interface IFileCacheStorageProvider
 {
