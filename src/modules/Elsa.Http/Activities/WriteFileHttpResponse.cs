@@ -1,8 +1,10 @@
 using System.IO.Compression;
 using System.Net;
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
@@ -14,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Http;
 
@@ -40,6 +43,18 @@ public class WriteFileHttpResponse : Activity
     /// </summary>
     [Input(Description = "The file content to serve. Supports various types, such as byte array, stream, string, Uri, Downloadable and a (mixed) array of the aforementioned types.")]
     public Input<object> Content { get; set; } = default!;
+
+    /// <summary>
+    /// Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.
+    /// </summary>
+    [Input(Description = "Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.")]
+    public Input<bool> EnableResumableDownloads { get; set; } = default!;
+
+    /// <summary>
+    /// The correlation ID of the download. Used to resume a download.
+    /// </summary>
+    [Input(Description = "The correlation ID of the download. Used to resume a download.")]
+    public Input<string> DownloadCorrelationId { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -111,14 +126,39 @@ public class WriteFileHttpResponse : Activity
 
     private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Downloadable> downloadables)
     {
-        var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+        // If resumable downloads are enabled, check to see if we have a cached file.
+        var (zipBlob, zipStream, cleanupCallback) = await TryLoadCachedFileAsync(context) ?? await GenerateZipFileAsync(context, downloadables);
+
+        try
+        {
+            // Send the zip stream the temporary file back to the client.
+            var contentType = zipBlob.Metadata["ContentType"];
+            var downloadAsFilename = zipBlob.Metadata["Filename"];
+            await SendFileStream(httpContext, zipStream, contentType, downloadAsFilename);
+
+            // TODO: Delete the cached file after the workflow completes.
+        }
+        catch (Exception e)
+        {
+            var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+            logger.LogWarning(e, "Failed to send zip file to HTTP response");
+        }
+        finally
+        {
+            // Delete any temporary files.
+            await cleanupCallback();
+        }
+    }
+
+    private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, ICollection<Downloadable> downloadables)
+    {
         var cancellationToken = context.CancellationToken;
 
-        // 1. Create a temporary file
+        // Create a temporary file.
         var tempFilePath = Path.GetTempFileName();
         var currentFileIndex = 0;
 
-        // 2. Write the zip archive to the temporary file
+        // Write the zip archive to the temporary file.
         await using var tempFileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 4096, useAsync: true);
 
         using (var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true))
@@ -136,42 +176,91 @@ public class WriteFileHttpResponse : Activity
             }
         }
 
+        // Create a blob with metadata for resuming the download.
         var contentType = ContentType.GetOrDefault(context);
         var downloadAsFilename = FileName.GetOrDefault(context);
-
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Zip;
         downloadAsFilename = !string.IsNullOrWhiteSpace(downloadAsFilename) ? downloadAsFilename : "download.zip";
 
-        // 3. Cache the file.
+        var clock = context.GetRequiredService<ISystemClock>();
+        var cacheOptions = context.GetRequiredService<IOptions<HttpFileCacheOptions>>().Value;
+        var expiresAt = clock.UtcNow.Add(cacheOptions.TimeToLive);
+        var zipBlob = CreateBlob(tempFilePath, downloadAsFilename, contentType, expiresAt);
+
+        // If resumable downloads are enabled, cache the file.
+        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
+        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context, () => context.WorkflowExecutionContext.CorrelationId ?? "");
+
+        if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
+        {
+            var fileCacheStorageProvider = context.GetRequiredService<IFileCacheStorageProvider>();
+            var fileCacheStorage = fileCacheStorageProvider.GetStorage();
+            var fileCacheFilename = $"{downloadCorrelationId}.tmp";
+            var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
+            await fileCacheStorage.WriteFileAsync(fileCacheFilename, tempFilePath, cancellationToken: cancellationToken);
+            await fileCacheStorage.SetBlobAsync(cachedBlob, cancellationToken: cancellationToken);
+        }
+
+        var zipStream = File.OpenRead(tempFilePath);
+        return (zipBlob, zipStream, Cleanup);
+
+        ValueTask Cleanup()
+        {
+            var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+            try
+            {
+                File.Delete(tempFilePath);
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", tempFilePath);
+            }
+
+            return default;
+        }
+    }
+
+    private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context)
+    {
+        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
+        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context, () => context.WorkflowExecutionContext.CorrelationId ?? "");
+
+        if (!enableResumableDownloads || string.IsNullOrWhiteSpace(downloadCorrelationId))
+            return null;
+
+        var cancellationToken = context.CancellationToken;
         var fileCacheStorageProvider = context.GetRequiredService<IFileCacheStorageProvider>();
         var fileCacheStorage = fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = Path.GetFileName(Path.GetTempFileName());
-        var blob = new Blob(fileCacheFilename)
+        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
+        var blob = await fileCacheStorage.GetBlobAsync(fileCacheFilename, cancellationToken: cancellationToken);
+
+        if (blob == null)
+            return null;
+
+        // Check if the blob has expired.
+        var clock = context.GetRequiredService<ISystemClock>();
+        var expiresAt = DateTimeOffset.Parse(blob.Metadata["ExpiresAt"]);
+
+        if (clock.UtcNow > expiresAt)
         {
-            Metadata =
+            // File expired. Try to delete it.
+            try
             {
-                ["ContentType"] = contentType,
-                ["Filename"] = downloadAsFilename
+                await fileCacheStorage.DeleteAsync(blob.FullPath, cancellationToken);
             }
-        };
-        await fileCacheStorage.SetBlobAsync(blob, cancellationToken: cancellationToken);
-        await fileCacheStorage.WriteFileAsync(fileCacheFilename, tempFilePath, cancellationToken: cancellationToken);
+            catch (Exception e)
+            {
+                var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+                logger.LogWarning(e, "Failed to delete expired file {FullPath}", blob.FullPath);
+            }
 
-        // 4. Use FileStreamResult to stream the temporary file back to the client
-        var resultStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
-        await SendFileStream(httpContext, resultStream, contentType, downloadAsFilename);
-
-        // 5. Delete the temporary file.
-        try
-        {
-            File.Delete(tempFilePath);
-        }
-        catch (Exception e)
-        {
-            logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", tempFilePath);
+            return null;
         }
 
-        // 6. TODO: Delete the cached file after the workflow completes.
+        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
+        return (blob, stream, Noop);
+
+        ValueTask Noop() => default;
     }
 
     private async Task SendFileStream(HttpContext httpContext, Stream source, string contentType, string filename)
@@ -211,6 +300,19 @@ public class WriteFileHttpResponse : Activity
         };
 
         return contentDisposition.ToString();
+    }
+
+    private static Blob CreateBlob(string fullPath, string downloadAsFilename, string contentType, DateTimeOffset expiresAt)
+    {
+        return new Blob(fullPath)
+        {
+            Metadata =
+            {
+                ["ContentType"] = contentType,
+                ["Filename"] = downloadAsFilename,
+                ["ExpiresAt"] = expiresAt.ToString("O")
+            }
+        };
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)

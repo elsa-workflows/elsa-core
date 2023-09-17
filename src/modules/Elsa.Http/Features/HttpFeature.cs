@@ -48,6 +48,11 @@ public class HttpFeature : FeatureBase
     public Action<HttpActivityOptions>? ConfigureHttpOptions { get; set; }
 
     /// <summary>
+    /// A delegate to configure <see cref="HttpFileCacheOptions"/>.
+    /// </summary>
+    public Action<HttpFileCacheOptions>? ConfigureHttpFileCacheOptions { get; set; }
+
+    /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
@@ -56,12 +61,12 @@ public class HttpFeature : FeatureBase
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointWorkflowFaultHandler>();
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="IContentTypeProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IContentTypeProvider> ContentTypeProvider { get; set; } = _ => new FileExtensionContentTypeProvider();
-    
+
     /// <summary>
     /// A delegate to configure the <see cref="IFileCacheStorageProvider"/>.
     /// </summary>
@@ -86,7 +91,7 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public ICollection<Type> HttpCorrelationIdSelectorTypes { get; } = new List<Type>
     {
-        typeof(HeaderHttpCorrelationIdSelector), 
+        typeof(HeaderHttpCorrelationIdSelector),
         typeof(QueryStringHttpCorrelationIdSelector)
     };
 
@@ -95,7 +100,7 @@ public class HttpFeature : FeatureBase
     /// </summary>
     public ICollection<Type> HttpWorkflowInstanceIdSelectorTypes { get; } = new List<Type>
     {
-        typeof(HeaderHttpWorkflowInstanceIdSelector), 
+        typeof(HeaderHttpWorkflowInstanceIdSelector),
         typeof(QueryStringHttpWorkflowInstanceIdSelector)
     };
 
@@ -134,7 +139,10 @@ public class HttpFeature : FeatureBase
             options.BaseUrl = new Uri("http://localhost");
         });
 
+        var configureFileCacheOptions = ConfigureHttpFileCacheOptions ?? (options => { options.TimeToLive = TimeSpan.FromDays(7); });
+
         Services.Configure(configureOptions);
+        Services.Configure(configureFileCacheOptions);
 
         var httpClientBuilder = Services.AddHttpClient<SendHttpRequestBase>(HttpClient);
         HttpClientBuilder(httpClientBuilder);
@@ -172,7 +180,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
-            
+
             // Downloadable content handlers.
             .AddSingleton<IDownloadableManager, DefaultDownloadableManager>()
             .AddSingleton<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
@@ -180,7 +188,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IDownloadableContentHandler, MultiDownloadableContentHandler>()
             .AddSingleton<IDownloadableContentHandler, StreamDownloadableContentHandler>()
             .AddSingleton<IDownloadableContentHandler, UrlDownloadableContentHandler>()
-            
+
             // File caches.
             .AddSingleton(FileCache)
 
@@ -193,11 +201,11 @@ public class HttpFeature : FeatureBase
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
-        
+
         // Add selectors.
-        foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes) 
+        foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
             Services.AddSingleton(typeof(IHttpCorrelationIdSelector), httpCorrelationIdSelectorType);
-        
+
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddSingleton(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
     }
