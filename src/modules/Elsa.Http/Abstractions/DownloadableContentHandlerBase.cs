@@ -5,9 +5,9 @@ using Elsa.Http.Models;
 namespace Elsa.Http.Abstractions;
 
 /// <summary>
-/// Provides a base class for <see cref="IDownloadableProvider"/> implementations.
+/// Provides a base class for <see cref="IDownloadableContentHandler"/> implementations.
 /// </summary>
-public abstract class DownloadableProviderBase : IDownloadableProvider
+public abstract class DownloadableContentHandlerBase : IDownloadableContentHandler
 {
     /// <inheritdoc />
     public virtual float Priority => 0;
@@ -42,7 +42,7 @@ public abstract class DownloadableProviderBase : IDownloadableProvider
         throw new NotImplementedException();
     }
 
-    async ValueTask<IEnumerable<Downloadable>> IDownloadableProvider.GetDownloadablesAsync(DownloadableContext context)
+    async ValueTask<IEnumerable<Downloadable>> IDownloadableContentHandler.GetDownloadablesAsync(DownloadableContext context)
     {
         return await GetDownloadablesAsync(context);
     }

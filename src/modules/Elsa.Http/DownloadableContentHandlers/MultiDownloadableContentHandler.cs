@@ -3,12 +3,12 @@ using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Models;
 
-namespace Elsa.Http.DownloadableProviders;
+namespace Elsa.Http.DownloadableContentHandlers;
 
 /// <summary>
 /// Handles content that represents a list of downloadable objects.
 /// </summary>
-public class MultiDownloadableProvider : DownloadableProviderBase
+public class MultiDownloadableContentHandler : DownloadableContentHandlerBase
 {
     /// <inheritdoc />
     public override bool GetSupportsContent(object content) => content is IEnumerable enumerable and not string;

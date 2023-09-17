@@ -5,7 +5,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
-using Elsa.Http.DownloadableProviders;
+using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
@@ -173,13 +173,13 @@ public class HttpFeature : FeatureBase
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
             
-            // File related services.
+            // Downloadable content handlers.
             .AddSingleton<IDownloadableManager, DefaultDownloadableManager>()
-            .AddSingleton<IDownloadableProvider, BinaryDownloadableProvider>()
-            .AddSingleton<IDownloadableProvider, DownloadableDownloadableProvider>()
-            .AddSingleton<IDownloadableProvider, MultiDownloadableProvider>()
-            .AddSingleton<IDownloadableProvider, StreamDownloadableProvider>()
-            .AddSingleton<IDownloadableProvider, UrlDownloadableProvider>()
+            .AddSingleton<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, MultiDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, StreamDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, UrlDownloadableContentHandler>()
             
             // File caches.
             .AddSingleton(FileCache)

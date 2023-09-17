@@ -2,12 +2,12 @@ using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Models;
 
-namespace Elsa.Http.DownloadableProviders;
+namespace Elsa.Http.DownloadableContentHandlers;
 
 /// <summary>
 /// Handles content that represents a downloadable.
 /// </summary>
-public class DownloadableDownloadableProvider : DownloadableProviderBase
+public class DownloadableDownloadableContentHandler : DownloadableContentHandlerBase
 {
     /// <inheritdoc />
     public override bool GetSupportsContent(object content) => content is Downloadable;

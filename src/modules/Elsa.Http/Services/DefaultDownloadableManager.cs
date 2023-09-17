@@ -7,12 +7,12 @@ namespace Elsa.Http.Services;
 /// <inheritdoc />
 public class DefaultDownloadableManager : IDownloadableManager
 {
-    private readonly IEnumerable<IDownloadableProvider> _providers;
+    private readonly IEnumerable<IDownloadableContentHandler> _providers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultDownloadableManager"/> class.
     /// </summary>
-    public DefaultDownloadableManager(IEnumerable<IDownloadableProvider> providers)
+    public DefaultDownloadableManager(IEnumerable<IDownloadableContentHandler> providers)
     {
         _providers = providers.OrderBy(x => x.Priority).ToList();
     }

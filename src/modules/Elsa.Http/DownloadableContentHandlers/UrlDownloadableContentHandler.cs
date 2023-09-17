@@ -1,22 +1,21 @@
-using System.Text.RegularExpressions;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Microsoft.AspNetCore.StaticFiles;
 
-namespace Elsa.Http.DownloadableProviders;
+namespace Elsa.Http.DownloadableContentHandlers;
 
 /// <summary>
 /// Handles content that represents a downloadable URL.
 /// </summary>
-public class UrlDownloadableProvider : DownloadableProviderBase
+public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
 {
     private readonly IFileDownloader _fileDownloader;
     private readonly IContentTypeProvider _contentTypeProvider;
 
     /// <inheritdoc />
-    public UrlDownloadableProvider(IFileDownloader fileDownloader, IContentTypeProvider contentTypeProvider)
+    public UrlDownloadableContentHandler(IFileDownloader fileDownloader, IContentTypeProvider contentTypeProvider)
     {
         _fileDownloader = fileDownloader;
         _contentTypeProvider = contentTypeProvider;
