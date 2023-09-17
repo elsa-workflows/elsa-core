@@ -166,14 +166,12 @@ public class WriteFileHttpResponse : Activity
     {
         var cancellationToken = context.CancellationToken;
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
-        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
+        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
         var contentType = ContentType.GetOrDefault(context);
         var downloadAsFilename = Filename.GetOrDefault(context);
         var zipService = context.GetRequiredService<ZipManager>();
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId)) downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
 
-        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken); 
-        
         return (zipBlob, zipStream, Cleanup);
 
         ValueTask Cleanup()
@@ -186,9 +184,7 @@ public class WriteFileHttpResponse : Activity
     private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
-        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
-        
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId)) downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
+        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
 
         if (!enableResumableDownloads || string.IsNullOrWhiteSpace(downloadCorrelationId))
             return null;
@@ -203,6 +199,27 @@ public class WriteFileHttpResponse : Activity
         return (tuple.Value.Item1, tuple.Value.Item2, Noop);
 
         ValueTask Noop() => default;
+    }
+
+    private string GetDownloadCorrelationId(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
+
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
+            downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
+
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
+        {
+            var identity = context.WorkflowExecutionContext.Workflow.Identity;
+            var definitionId = identity.DefinitionId;
+            var version = identity.Version.ToString();
+            var correlationId = context.WorkflowExecutionContext.CorrelationId;
+            var sources = new[] { definitionId, version, correlationId }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            downloadCorrelationId = string.Join("-", sources);
+        }
+
+        return downloadCorrelationId;
     }
 
     private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)
@@ -222,9 +239,9 @@ public class WriteFileHttpResponse : Activity
 
     private IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadables(ActivityExecutionContext context, HttpContext httpContext, object? content)
     {
-        if(content == null)
+        if (content == null)
             return Enumerable.Empty<Func<ValueTask<Downloadable>>>();
-        
+
         var manager = context.GetRequiredService<IDownloadableManager>();
         var headers = httpContext.Request.Headers;
         var eTag = headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
