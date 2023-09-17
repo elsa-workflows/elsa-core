@@ -15,7 +15,17 @@ public static class ActivityTypeNameHelper
     public static string GenerateTypeName(Type type, string? ns)
     {
         var activityAttr = type.GetCustomAttribute<ActivityAttribute>();
-        var typeName = activityAttr?.Type ?? type.Name;
+        string typeName;
+        
+        if (type.IsGenericType)
+        {
+            var sanitizedTypeName = activityAttr?.Type ?? type.Name.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture));
+            var genericArgs = type.GenericTypeArguments.Select(type1 => GenerateTypeName(type1, null));
+            typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
+        }
+        else
+            typeName = activityAttr?.Type ?? type.Name;
+
         return ns != null ? $"{ns}.{typeName}" : typeName;
     }
 
