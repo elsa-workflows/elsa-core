@@ -36,7 +36,7 @@ public class WriteFileHttpResponse : Activity
     /// The name of the file to serve.
     /// </summary>
     [Input(Description = "The name of the file to serve. Leave empty to let the system determine the file name.")]
-    public Input<string?> FileName { get; set; } = default!;
+    public Input<string?> Filename { get; set; } = default!;
 
     /// <summary>
     /// The Entity Tag of the file to serve.
@@ -122,7 +122,7 @@ public class WriteFileHttpResponse : Activity
     private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpContext httpContext, Downloadable downloadable)
     {
         var contentType = ContentType.GetOrDefault(context);
-        var filename = FileName.GetOrDefault(context);
+        var filename = Filename.GetOrDefault(context);
         var eTag = EntityTag.GetOrDefault(context);
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
@@ -167,7 +167,7 @@ public class WriteFileHttpResponse : Activity
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
         var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
         var contentType = ContentType.GetOrDefault(context);
-        var downloadAsFilename = FileName.GetOrDefault(context);
+        var downloadAsFilename = Filename.GetOrDefault(context);
         var zipService = context.GetRequiredService<ZipManager>();
         if (string.IsNullOrWhiteSpace(downloadCorrelationId)) downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
 
