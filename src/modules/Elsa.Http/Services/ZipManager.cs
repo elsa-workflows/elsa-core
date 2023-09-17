@@ -30,7 +30,7 @@ internal class ZipManager
         _logger = logger;
     }
 
-    public async Task<(Blob, Stream, Action)> CreateAndCacheZipFileAsync(
+    public async Task<(Blob, Stream, Action)> CreateAsync(
         ICollection<Downloadable> downloadables,
         bool enableResumableDownloads,
         string? downloadCorrelationId,
@@ -42,14 +42,12 @@ internal class ZipManager
         var tempFilePath = Path.GetTempFileName();
 
         // Create a zip archive from the downloadables.
-        var zipService = this;
         await CreateZipArchiveAsync(tempFilePath, downloadables, cancellationToken);
 
         // Create a blob with metadata for resuming the download.
-        var zipBlob = zipService.CreateBlob(tempFilePath, downloadAsFilename, contentType);
+        var zipBlob = CreateBlob(tempFilePath, downloadAsFilename, contentType);
 
         // If resumable downloads are enabled, cache the file.
-
         if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
             await CreateCachedZipBlobAsync(tempFilePath, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
 
@@ -58,56 +56,12 @@ internal class ZipManager
     }
     
     /// <summary>
-    /// Creates a zip archive from the specified <see cref="Downloadable"/> instances.
-    /// </summary>
-    public async Task CreateZipArchiveAsync(string filePath, IEnumerable<Downloadable> downloadables, CancellationToken cancellationToken = default)
-    {
-        var currentFileIndex = 0;
-
-        // Write the zip archive to the temporary file.
-        await using var tempFileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 4096, useAsync: true);
-
-        using var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true);
-        foreach (var downloadable in downloadables)
-        {
-            var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
-            var entry = zipArchive.CreateEntry(entryName);
-            var fileStream = downloadable.Stream;
-            await using var entryStream = entry.Open();
-            await fileStream.CopyToAsync(entryStream, cancellationToken);
-            await entryStream.FlushAsync(cancellationToken);
-            entryStream.Close();
-            currentFileIndex++;
-        }
-    }
-    
-    /// <summary>
-    /// Creates a cached zip blob for the specified file.
-    /// </summary>
-    /// <param name="localPath">The full path of the file to upload.</param>
-    /// <param name="downloadCorrelationId">The download correlation ID.</param>
-    /// <param name="downloadAsFilename">The filename to use when downloading the file.</param>
-    /// <param name="contentType">The content type of the file.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns></returns>
-    public async Task<Blob> CreateCachedZipBlobAsync(string localPath, string downloadCorrelationId, string? downloadAsFilename = default, string? contentType = default, CancellationToken cancellationToken = default)
-    {
-        var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
-        var expiresAt = _clock.UtcNow.Add(_fileCacheOptions.Value.TimeToLive);
-        var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
-        await fileCacheStorage.WriteFileAsync(fileCacheFilename, localPath, cancellationToken);
-        await fileCacheStorage.SetBlobAsync(cachedBlob, cancellationToken: cancellationToken);
-        return cachedBlob;
-    }
-    
-    /// <summary>
     /// Loads a cached zip blob for the specified download correlation ID.
     /// </summary>
     /// <param name="downloadCorrelationId">The download correlation ID.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A tuple containing the blob and the stream.</returns>
-    public async Task<(Blob, Stream)?> LoadCachedZipBlobAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
+    public async Task<(Blob, Stream)?> LoadAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
     {
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
         var fileCacheFilename = $"{downloadCorrelationId}.tmp";
@@ -137,6 +91,48 @@ internal class ZipManager
         var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
         return (blob, stream);
     }
+    
+    /// <summary>
+    /// Creates a zip archive from the specified <see cref="Downloadable"/> instances.
+    /// </summary>
+    private async Task CreateZipArchiveAsync(string filePath, IEnumerable<Downloadable> downloadables, CancellationToken cancellationToken = default)
+    {
+        var currentFileIndex = 0;
+
+        // Write the zip archive to the temporary file.
+        await using var tempFileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 4096, useAsync: true);
+
+        using var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true);
+        foreach (var downloadable in downloadables)
+        {
+            var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
+            var entry = zipArchive.CreateEntry(entryName);
+            var fileStream = downloadable.Stream;
+            await using var entryStream = entry.Open();
+            await fileStream.CopyToAsync(entryStream, cancellationToken);
+            await entryStream.FlushAsync(cancellationToken);
+            entryStream.Close();
+            currentFileIndex++;
+        }
+    }
+
+    /// <summary>
+    /// Creates a cached zip blob for the specified file.
+    /// </summary>
+    /// <param name="localPath">The full path of the file to upload.</param>
+    /// <param name="downloadCorrelationId">The download correlation ID.</param>
+    /// <param name="downloadAsFilename">The filename to use when downloading the file.</param>
+    /// <param name="contentType">The content type of the file.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    private async Task CreateCachedZipBlobAsync(string localPath, string downloadCorrelationId, string? downloadAsFilename = default, string? contentType = default, CancellationToken cancellationToken = default)
+    {
+        var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
+        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
+        var expiresAt = _clock.UtcNow.Add(_fileCacheOptions.Value.TimeToLive);
+        var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
+        await fileCacheStorage.WriteFileAsync(fileCacheFilename, localPath, cancellationToken);
+        await fileCacheStorage.SetBlobAsync(cachedBlob, cancellationToken: cancellationToken);
+    }
 
     /// <summary>
     /// Creates a blob for the specified file.
@@ -146,7 +142,7 @@ internal class ZipManager
     /// <param name="contentType">The content type of the file.</param>
     /// <param name="expiresAt">The date and time at which the file expires.</param>
     /// <returns>The blob.</returns>
-    public Blob CreateBlob(string fullPath, string? downloadAsFilename, string? contentType, DateTimeOffset? expiresAt = default)
+    private Blob CreateBlob(string fullPath, string? downloadAsFilename, string? contentType, DateTimeOffset? expiresAt = default)
     {
         (downloadAsFilename, contentType) = GetDownloadableMetadata(downloadAsFilename, contentType);
 

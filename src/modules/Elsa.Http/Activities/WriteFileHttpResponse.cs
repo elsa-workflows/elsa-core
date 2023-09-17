@@ -171,7 +171,7 @@ public class WriteFileHttpResponse : Activity
         var zipService = context.GetRequiredService<ZipManager>();
         if (string.IsNullOrWhiteSpace(downloadCorrelationId)) downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
 
-        var (zipBlob, zipStream, cleanup) = await zipService.CreateAndCacheZipFileAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken); 
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken); 
         
         return (zipBlob, zipStream, Cleanup);
 
@@ -192,7 +192,7 @@ public class WriteFileHttpResponse : Activity
 
         var cancellationToken = context.CancellationToken;
         var zipService = context.GetRequiredService<ZipManager>();
-        var tuple = await zipService.LoadCachedZipBlobAsync(downloadCorrelationId, cancellationToken);
+        var tuple = await zipService.LoadAsync(downloadCorrelationId, cancellationToken);
 
         if (tuple == null)
             return null;
