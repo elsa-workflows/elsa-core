@@ -22,5 +22,5 @@ public interface IDownloadableContentHandler
     /// <summary>
     /// Returns a list of downloadables from the specified content.
     /// </summary>
-    ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(DownloadableContext context);
+    IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(DownloadableContext context);
 }

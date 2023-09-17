@@ -19,6 +19,6 @@ public class BinaryDownloadableContentHandler : DownloadableContentHandlerBase
         var stream = new MemoryStream(bytes);
         var fileName = "file.bin";
         var contentType = "application/octet-stream";
-        return new Downloadable(stream, fileName, contentType);
+        return new(stream, fileName, contentType);
     }
 }

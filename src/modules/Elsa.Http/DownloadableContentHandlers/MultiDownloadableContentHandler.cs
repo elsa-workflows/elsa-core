@@ -14,16 +14,16 @@ public class MultiDownloadableContentHandler : DownloadableContentHandlerBase
     public override bool GetSupportsContent(object content) => content is IEnumerable enumerable and not string;
 
     /// <inheritdoc />
-    protected override async ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(DownloadableContext context)
+    protected override IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(DownloadableContext context)
     {
-        var collectedDownloadables = new List<Downloadable>();
+        var collectedDownloadables = new List<Func<ValueTask<Downloadable>>>();
         var content = context.Content;
         var enumerable = (IEnumerable) content;
         var manager = context.Manager;
 
         foreach (var item in enumerable)
         {
-            var downloadables = await manager.GetDownloadablesAsync(item, context.Options, context.CancellationToken);
+            var downloadables = manager.GetDownloadablesAsync(item, context.Options, context.CancellationToken);
             collectedDownloadables.AddRange(downloadables);
         }
 

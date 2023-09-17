@@ -31,7 +31,7 @@ internal class ZipManager
     }
 
     public async Task<(Blob, Stream, Action)> CreateAsync(
-        ICollection<Downloadable> downloadables,
+        ICollection<Func<ValueTask<Downloadable>>> downloadables,
         bool enableResumableDownloads,
         string? downloadCorrelationId,
         string? downloadAsFilename = default, 
@@ -95,7 +95,7 @@ internal class ZipManager
     /// <summary>
     /// Creates a zip archive from the specified <see cref="Downloadable"/> instances.
     /// </summary>
-    private async Task CreateZipArchiveAsync(string filePath, IEnumerable<Downloadable> downloadables, CancellationToken cancellationToken = default)
+    private async Task CreateZipArchiveAsync(string filePath, IEnumerable<Func<ValueTask<Downloadable>>> downloadables, CancellationToken cancellationToken = default)
     {
         var currentFileIndex = 0;
 
@@ -103,8 +103,9 @@ internal class ZipManager
         await using var tempFileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 4096, useAsync: true);
 
         using var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true);
-        foreach (var downloadable in downloadables)
+        foreach (var downloadableFunc in downloadables)
         {
+            var downloadable = await downloadableFunc();
             var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
             var entry = zipArchive.CreateEntry(entryName);
             var fileStream = downloadable.Stream;

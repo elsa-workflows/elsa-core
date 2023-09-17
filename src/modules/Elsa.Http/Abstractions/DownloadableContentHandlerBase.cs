@@ -18,19 +18,17 @@ public abstract class DownloadableContentHandlerBase : IDownloadableContentHandl
     /// <summary>
     /// Returns a list of downloadables from the specified content.
     /// </summary>
-    protected virtual async ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(DownloadableContext context)
+    protected virtual IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(DownloadableContext context)
     {
-        var downloadable = await GetDownloadableAsync(context);
-        return new[]{ downloadable };
+        return new[] { GetDownloadableAsync(context) };
     }
 
     /// <summary>
     /// Returns a downloadable from the specified content.
     /// </summary>
-    protected virtual ValueTask<Downloadable> GetDownloadableAsync(DownloadableContext context)
+    protected virtual Func<ValueTask<Downloadable>> GetDownloadableAsync(DownloadableContext context)
     {
-        var downloadable = GetDownloadable(context);
-        return new (downloadable);
+        return () => ValueTask.FromResult(GetDownloadable(context));
     }
     
     /// <summary>
@@ -42,8 +40,8 @@ public abstract class DownloadableContentHandlerBase : IDownloadableContentHandl
         throw new NotImplementedException();
     }
 
-    async ValueTask<IEnumerable<Downloadable>> IDownloadableContentHandler.GetDownloadablesAsync(DownloadableContext context)
+    IEnumerable<Func<ValueTask<Downloadable>>> IDownloadableContentHandler.GetDownloadablesAsync(DownloadableContext context)
     {
-        return await GetDownloadablesAsync(context);
+        return GetDownloadablesAsync(context);
     }
 }
