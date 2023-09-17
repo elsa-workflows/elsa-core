@@ -1,3 +1,5 @@
+using Elsa.Http.Options;
+
 namespace Elsa.Http.Contracts;
 
 /// <summary>
@@ -8,5 +10,5 @@ public interface IFileDownloader
     /// <summary>
     /// Downloads a file from the specified URL.
     /// </summary>
-    Task<HttpResponseMessage> DownloadAsync(Uri url, CancellationToken cancellationToken = default);    
+    Task<HttpResponseMessage> DownloadAsync(Uri url, FileDownloadOptions? options = default, CancellationToken cancellationToken = default);    
 }

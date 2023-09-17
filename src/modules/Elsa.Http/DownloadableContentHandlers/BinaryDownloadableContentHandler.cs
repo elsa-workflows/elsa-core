@@ -2,12 +2,12 @@ using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Models;
 
-namespace Elsa.Http.DownloadableProviders;
+namespace Elsa.Http.DownloadableContentHandlers;
 
 /// <summary>
 /// Handles content that represents a downloadable binary file.
 /// </summary>
-public class BinaryDownloadableProvider : DownloadableProviderBase
+public class BinaryDownloadableContentHandler : DownloadableContentHandlerBase
 {
     /// <inheritdoc />
     public override bool GetSupportsContent(object content) => content is byte[];
@@ -19,6 +19,6 @@ public class BinaryDownloadableProvider : DownloadableProviderBase
         var stream = new MemoryStream(bytes);
         var fileName = "file.bin";
         var contentType = "application/octet-stream";
-        return new Downloadable(stream, fileName, contentType);
+        return new(stream, fileName, contentType);
     }
 }

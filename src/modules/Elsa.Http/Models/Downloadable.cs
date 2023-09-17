@@ -21,11 +21,13 @@ public class Downloadable
     /// <param name="stream">The stream to download.</param>
     /// <param name="filename">The filename to use when downloading the stream.</param>
     /// <param name="contentType">The content type to use when downloading the stream.</param>
-    public Downloadable(Stream stream, string? filename = default, string? contentType = default)
+    /// <param name="eTag">The ETag to use when downloading the stream.</param>
+    public Downloadable(Stream stream, string? filename = default, string? contentType = default, string? eTag = default)
     {
         Stream = stream;
         Filename = filename;
         ContentType = contentType;
+        ETag = eTag;
     }
 
     /// <summary>
@@ -42,4 +44,9 @@ public class Downloadable
     /// The content type to use when downloading the stream.
     /// </summary>
     public string? ContentType { get; set; }
+    
+    /// <summary>
+    /// The ETag to use when downloading the stream.
+    /// </summary>
+    public string? ETag { get; set; }
 }

@@ -7,7 +7,6 @@ using Elsa.WorkflowProviders.BlobStorage.Providers;
 using Elsa.Workflows.Management.Features;
 using FluentStorage;
 using FluentStorage.Blobs;
-using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Features;
@@ -17,11 +16,10 @@ namespace Elsa.WorkflowProviders.BlobStorage.Features;
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(DslIntegrationFeature))]
-[PublicAPI]
-public class FluentStorageFeature : FeatureBase
+public class BlobStorageFeature : FeatureBase
 {
     /// <inheritdoc />
-    public FluentStorageFeature(IModule module) : base(module)
+    public BlobStorageFeature(IModule module) : base(module)
     {
     }
 

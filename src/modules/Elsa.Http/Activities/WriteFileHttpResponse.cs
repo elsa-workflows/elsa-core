@@ -1,18 +1,22 @@
-using System.IO.Compression;
-using System.Net;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
+using Elsa.Http.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
+using FluentStorage.Blobs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
+using EntityTagHeaderValue = System.Net.Http.Headers.EntityTagHeaderValue;
+using RangeHeaderValue = System.Net.Http.Headers.RangeHeaderValue;
 
 namespace Elsa.Http;
 
@@ -32,13 +36,31 @@ public class WriteFileHttpResponse : Activity
     /// The name of the file to serve.
     /// </summary>
     [Input(Description = "The name of the file to serve. Leave empty to let the system determine the file name.")]
-    public Input<string?> FileName { get; set; } = default!;
+    public Input<string?> Filename { get; set; } = default!;
+
+    /// <summary>
+    /// The Entity Tag of the file to serve.
+    /// </summary>
+    [Input(Description = "The Entity Tag of the file to serve. Leave empty to let the system determine the Entity Tag.")]
+    public Input<string?> EntityTag { get; set; } = default!;
 
     /// <summary>
     /// The file content to serve. Supports byte array, streams, string, Uri and an array of the aforementioned types.
     /// </summary>
     [Input(Description = "The file content to serve. Supports various types, such as byte array, stream, string, Uri, Downloadable and a (mixed) array of the aforementioned types.")]
     public Input<object> Content { get; set; } = default!;
+
+    /// <summary>
+    /// Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.
+    /// </summary>
+    [Input(Description = "Whether to enable resumable downloads. When enabled, the client can resume a download if the connection is lost.")]
+    public Input<bool> EnableResumableDownloads { get; set; } = default!;
+
+    /// <summary>
+    /// The correlation ID of the download. Used to resume a download.
+    /// </summary>
+    [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-elsa-download-id header will be used.")]
+    public Input<string> DownloadCorrelationId { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -60,32 +82,25 @@ public class WriteFileHttpResponse : Activity
 
     private async Task WriteResponseAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
-        // Set status code.
-        var statusCode = HttpStatusCode.OK;
-        var response = httpContext.Response;
-        response.StatusCode = (int)statusCode;
-
         // Get content and content type.
         var content = context.Get(Content);
 
-        if (content == null)
-            return;
-
         // Write content.
-        var downloadables = await GetDownloadablesAsync(context, content);
+        var downloadables = GetDownloadables(context, httpContext, content).ToList();
         await SendDownloadablesAsync(context, httpContext, downloadables);
 
         // Complete activity.
         await context.CompleteActivityAsync();
     }
 
-    private async Task SendDownloadablesAsync(ActivityExecutionContext context, HttpContext httpContext, IEnumerable<Downloadable> downloadables)
+    private async Task SendDownloadablesAsync(ActivityExecutionContext context, HttpContext httpContext, IEnumerable<Func<ValueTask<Downloadable>>> downloadables)
     {
         var downloadableList = downloadables.ToList();
 
         switch (downloadableList.Count)
         {
             case 0:
+                SendNoContent(context, httpContext);
                 return;
             case 1:
             {
@@ -99,81 +114,140 @@ public class WriteFileHttpResponse : Activity
         }
     }
 
-    private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpContext httpContext, Downloadable downloadable)
+    private void SendNoContent(ActivityExecutionContext context, HttpContext httpContext)
     {
-        var contentType = ContentType.GetOrDefault(context);
-        var filename = FileName.GetOrDefault(context);
-        filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
-        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
-        await SendFileStream(httpContext, downloadable.Stream, contentType, filename);
+        httpContext.Response.StatusCode = StatusCodes.Status204NoContent;
     }
 
-    private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Downloadable> downloadables)
+    private async Task SendSingleFileAsync(ActivityExecutionContext context, HttpContext httpContext, Func<ValueTask<Downloadable>> downloadableFunc)
     {
-        var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
-        
-        // 1. Create a temporary file
-        var tempFilePath = Path.GetTempFileName();
-        var currentFileIndex = 0;
-
-        // 2. Write the zip archive to the temporary file
-        await using var tempFileStream = new FileStream(tempFilePath, FileMode.Create);
-        using var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true);
-
-        foreach (var downloadable in downloadables)
-        {
-            var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
-            var entry = zipArchive.CreateEntry(entryName);
-            var fileStream = downloadable.Stream;
-            await using var entryStream = entry.Open();
-            await fileStream.CopyToAsync(entryStream);
-            await entryStream.FlushAsync();
-            entryStream.Close();
-            currentFileIndex++;
-        }
-        
         var contentType = ContentType.GetOrDefault(context);
-        var filename = FileName.GetOrDefault(context);
+        var filename = Filename.GetOrDefault(context);
+        var eTag = EntityTag.GetOrDefault(context);
+        var downloadable = await downloadableFunc();
+        filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
+        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
+        eTag = !string.IsNullOrWhiteSpace(eTag) ? eTag : !string.IsNullOrWhiteSpace(downloadable.ETag) ? downloadable.ETag : default;
 
-        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Zip;
-        filename = !string.IsNullOrWhiteSpace(filename) ? filename : "download.zip";
-        
-        // 3. Use FileStreamResult to stream the temporary file back to the client
-        var resultStream = new FileStream(tempFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 4096, useAsync: true);
-        await SendFileStream(httpContext, resultStream, contentType, filename);
-        
-        // 4. Delete the temporary file.
+        var eTagHeaderValue = !string.IsNullOrWhiteSpace(eTag) ? new EntityTagHeaderValue(eTag) : default;
+        var stream = downloadable.Stream;
+        await SendFileStream(context, httpContext, stream, contentType, filename, eTagHeaderValue);
+    }
+
+    private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
+    {
+        // If resumable downloads are enabled, check to see if we have a cached file.
+        var (zipBlob, zipStream, cleanupCallback) = await TryLoadCachedFileAsync(context, httpContext) ?? await GenerateZipFileAsync(context, httpContext, downloadables);
+
         try
         {
-            File.Delete(tempFilePath);
+            // Send the zip stream the temporary file back to the client.
+            var contentType = zipBlob.Metadata["ContentType"];
+            var downloadAsFilename = zipBlob.Metadata["Filename"];
+            var eTag = $"\"{zipBlob.LastModificationTime?.ToString("O")}\"";
+            var eTagHeaderValue = new EntityTagHeaderValue(eTag);
+            await SendFileStream(context, httpContext, zipStream, contentType, downloadAsFilename, eTagHeaderValue);
+
+            // TODO: Delete the cached file after the workflow completes.
         }
         catch (Exception e)
         {
-            logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", tempFilePath);
+            var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
+            logger.LogWarning(e, "Failed to send zip file to HTTP response");
+        }
+        finally
+        {
+            // Delete any temporary files.
+            await cleanupCallback();
         }
     }
 
-    private async Task SendFileStream(HttpContext httpContext, Stream source, string contentType, string filename)
+    private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
+    {
+        var cancellationToken = context.CancellationToken;
+        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
+        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
+        var contentType = ContentType.GetOrDefault(context);
+        var downloadAsFilename = Filename.GetOrDefault(context);
+        var zipService = context.GetRequiredService<ZipManager>();
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
+
+        return (zipBlob, zipStream, Cleanup);
+
+        ValueTask Cleanup()
+        {
+            cleanup();
+            return default;
+        }
+    }
+
+    private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
+        var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
+
+        if (!enableResumableDownloads || string.IsNullOrWhiteSpace(downloadCorrelationId))
+            return null;
+
+        var cancellationToken = context.CancellationToken;
+        var zipService = context.GetRequiredService<ZipManager>();
+        var tuple = await zipService.LoadAsync(downloadCorrelationId, cancellationToken);
+
+        if (tuple == null)
+            return null;
+
+        return (tuple.Value.Item1, tuple.Value.Item2, Noop);
+
+        ValueTask Noop() => default;
+    }
+
+    private string GetDownloadCorrelationId(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
+
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
+            downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
+
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
+        {
+            var identity = context.WorkflowExecutionContext.Workflow.Identity;
+            var definitionId = identity.DefinitionId;
+            var version = identity.Version.ToString();
+            var correlationId = context.WorkflowExecutionContext.CorrelationId;
+            var sources = new[] { definitionId, version, correlationId }.Where(x => !string.IsNullOrWhiteSpace(x)).ToArray();
+
+            downloadCorrelationId = string.Join("-", sources);
+        }
+
+        return downloadCorrelationId;
+    }
+
+    private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)
     {
         source.Seek(0, SeekOrigin.Begin);
-        
+
         var result = new FileStreamResult(source, contentType)
         {
             EnableRangeProcessing = true,
+            EntityTag = eTag != null ? new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag.ToString()) : default,
             FileDownloadName = filename
         };
-        
+
         var actionContext = new ActionContext(httpContext, httpContext.GetRouteData(), new ActionDescriptor());
         await result.ExecuteResultAsync(actionContext);
     }
 
-    /// <summary>
-    /// Leverages the <see cref="IDownloadableManager"/> to get a list of <see cref="Downloadable"/> instances from the <paramref name="content"/>.
-    /// </summary>
-    private async Task<IEnumerable<Downloadable>> GetDownloadablesAsync(ActivityExecutionContext context, object content)
+    private IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadables(ActivityExecutionContext context, HttpContext httpContext, object? content)
     {
+        if (content == null)
+            return Enumerable.Empty<Func<ValueTask<Downloadable>>>();
+
         var manager = context.GetRequiredService<IDownloadableManager>();
-        return await manager.GetDownloadablesAsync(content, context.CancellationToken);
+        var headers = httpContext.Request.Headers;
+        var eTag = headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
+        var range = headers.TryGetValue(HeaderNames.Range, out header) ? RangeHeaderValue.Parse(header.ToString()) : default;
+        var options = new DownloadableOptions { ETag = eTag, Range = range };
+        return manager.GetDownloadablesAsync(content, options, context.CancellationToken);
     }
 
     private string GetContentType(ActivityExecutionContext context, string filename)
@@ -182,26 +256,13 @@ public class WriteFileHttpResponse : Activity
         return provider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
     }
 
-    private static string CreateContentDisposition(string filename)
-    {
-        var contentDisposition = new System.Net.Mime.ContentDisposition
-        {
-            FileName = filename
-        };
-
-        return contentDisposition.ToString();
-    }
-
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
     {
         var httpContextAccessor = context.GetRequiredService<IHttpContextAccessor>();
         var httpContext = httpContextAccessor.HttpContext;
 
         if (httpContext == null)
-        {
-            // We're not in an HTTP context, so let's fail.
             throw new FaultException("Cannot execute in a non-HTTP context");
-        }
 
         await WriteResponseAsync(context, httpContext);
     }

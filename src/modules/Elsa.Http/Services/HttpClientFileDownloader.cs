@@ -1,4 +1,5 @@
 using Elsa.Http.Contracts;
+using Elsa.Http.Options;
 
 namespace Elsa.Http.Services;
 
@@ -18,8 +19,16 @@ public class HttpClientFileDownloader : IFileDownloader
     }
 
     /// <inheritdoc />
-    public async Task<HttpResponseMessage> DownloadAsync(Uri url, CancellationToken cancellationToken = default)
+    public async Task<HttpResponseMessage> DownloadAsync(Uri url, FileDownloadOptions? options = default, CancellationToken cancellationToken = default)
     {
-        return await _httpClient.GetAsync(url, cancellationToken);
+        var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+        if (options?.ETag != null)
+            request.Headers.IfNoneMatch.Add(options.ETag);
+        
+        if(options?.Range != null)
+            request.Headers.Range = options.Range;
+        
+        return await _httpClient.SendAsync(request, cancellationToken);
     }
 }

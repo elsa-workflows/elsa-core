@@ -1,4 +1,5 @@
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 
 namespace Elsa.Http.Contracts;
 
@@ -10,5 +11,5 @@ public interface IDownloadableManager
     /// <summary>
     /// Returns a list of downloadables from the specified content.
     /// </summary>
-    ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(object content, CancellationToken cancellationToken = default);
+    IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(object content, DownloadableOptions? options = default, CancellationToken cancellationToken = default);
 }

@@ -1,22 +1,22 @@
-using System.Text.RegularExpressions;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 using Microsoft.AspNetCore.StaticFiles;
 
-namespace Elsa.Http.DownloadableProviders;
+namespace Elsa.Http.DownloadableContentHandlers;
 
 /// <summary>
 /// Handles content that represents a downloadable URL.
 /// </summary>
-public class UrlDownloadableProvider : DownloadableProviderBase
+public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
 {
     private readonly IFileDownloader _fileDownloader;
     private readonly IContentTypeProvider _contentTypeProvider;
 
     /// <inheritdoc />
-    public UrlDownloadableProvider(IFileDownloader fileDownloader, IContentTypeProvider contentTypeProvider)
+    public UrlDownloadableContentHandler(IFileDownloader fileDownloader, IContentTypeProvider contentTypeProvider)
     {
         _fileDownloader = fileDownloader;
         _contentTypeProvider = contentTypeProvider;
@@ -26,18 +26,27 @@ public class UrlDownloadableProvider : DownloadableProviderBase
     public override bool GetSupportsContent(object content) => (content is string url && url.StartsWith("http", StringComparison.OrdinalIgnoreCase)) || content is Uri;
 
     /// <inheritdoc />
-    protected override async ValueTask<Downloadable> GetDownloadableAsync(DownloadableContext context)
+    protected override Func<ValueTask<Downloadable>> GetDownloadableAsync(DownloadableContext context) => async () => await DownloadAsync(context);
+
+    private async ValueTask<Downloadable> DownloadAsync(DownloadableContext context)
     {
         var url = context.Content is string s ? new Uri(s) : (Uri)context.Content;
         var cancellationToken = context.CancellationToken;
-        var response = await _fileDownloader.DownloadAsync(url, cancellationToken);
+        var options = new FileDownloadOptions
+        {
+            // TODO: Uncomment the next two lines if we implement file caching for this handler.
+            // ETag = context.Options.ETag,
+            // Range = context.Options.Range
+        };
+        var response = await _fileDownloader.DownloadAsync(url, options, cancellationToken);
+        var eTag = response.Headers.ETag?.Tag;
         var filename = GetFilename(response) ?? url.Segments.Last();
-        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var contentType = response.Content.Headers.ContentType?.MediaType ?? GetContentType(filename);
+        var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         
-        return new Downloadable(stream, filename, contentType);
+        return new Downloadable(stream, filename, contentType, eTag);
     }
-
+    
     private static string? GetFilename(HttpResponseMessage response)
     {
         if (!response.Content.Headers.TryGetValues("Content-Disposition", out var values)) 

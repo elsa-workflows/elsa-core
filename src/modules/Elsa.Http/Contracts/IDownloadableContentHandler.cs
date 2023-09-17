@@ -6,7 +6,7 @@ namespace Elsa.Http.Contracts;
 /// <summary>
 /// Provides downloadables from the specified content, if supported.
 /// </summary>
-public interface IDownloadableProvider
+public interface IDownloadableContentHandler
 {
     /// <summary>
     /// The priority of this provider. Providers with lower priority are tried first.
@@ -22,5 +22,5 @@ public interface IDownloadableProvider
     /// <summary>
     /// Returns a list of downloadables from the specified content.
     /// </summary>
-    ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(DownloadableContext context);
+    IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(DownloadableContext context);
 }
