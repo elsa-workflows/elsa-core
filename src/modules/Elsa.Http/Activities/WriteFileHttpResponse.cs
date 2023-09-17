@@ -85,11 +85,8 @@ public class WriteFileHttpResponse : Activity
         // Get content and content type.
         var content = context.Get(Content);
 
-        if (content == null)
-            return;
-
         // Write content.
-        var downloadables = await GetDownloadablesAsync(context, httpContext, content);
+        var downloadables = (await GetDownloadablesAsync(context, httpContext, content)).ToList();
         await SendDownloadablesAsync(context, httpContext, downloadables);
 
         // Complete activity.
@@ -167,45 +164,20 @@ public class WriteFileHttpResponse : Activity
     private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Downloadable> downloadables)
     {
         var cancellationToken = context.CancellationToken;
-
-        // Create a temporary file.
-        var tempFilePath = Path.GetTempFileName();
-
-        // Create a zip archive from the downloadables.
-        var zipService = context.GetRequiredService<ZipService>();
-        await zipService.CreateZipArchiveAsync(tempFilePath, downloadables, cancellationToken);
-
-        // Create a blob with metadata for resuming the download.
-        var contentType = ContentType.GetOrDefault(context);
-        var downloadAsFilename = FileName.GetOrDefault(context);
-        var zipBlob = zipService.CreateBlob(tempFilePath, downloadAsFilename, contentType);
-
-        // If resumable downloads are enabled, cache the file.
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
         var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
+        var contentType = ContentType.GetOrDefault(context);
+        var downloadAsFilename = FileName.GetOrDefault(context);
+        var zipService = context.GetRequiredService<ZipManager>();
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId)) downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
 
-        // If download correlation ID is not set, try and get it from the request headers.
-        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
-            downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
-
-        if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
-            await zipService.CreateCachedZipBlobAsync(tempFilePath, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
-
-        var zipStream = File.OpenRead(tempFilePath);
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAndCacheZipFileAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken); 
+        
         return (zipBlob, zipStream, Cleanup);
 
         ValueTask Cleanup()
         {
-            var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
-            try
-            {
-                File.Delete(tempFilePath);
-            }
-            catch (Exception e)
-            {
-                logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", tempFilePath);
-            }
-
+            cleanup();
             return default;
         }
     }
@@ -219,7 +191,7 @@ public class WriteFileHttpResponse : Activity
             return null;
 
         var cancellationToken = context.CancellationToken;
-        var zipService = context.GetRequiredService<ZipService>();
+        var zipService = context.GetRequiredService<ZipManager>();
         var tuple = await zipService.LoadCachedZipBlobAsync(downloadCorrelationId, cancellationToken);
 
         if (tuple == null)
@@ -245,11 +217,11 @@ public class WriteFileHttpResponse : Activity
         await result.ExecuteResultAsync(actionContext);
     }
 
-    /// <summary>
-    /// Leverages the <see cref="IDownloadableManager"/> to get a list of <see cref="Downloadable"/> instances from the <paramref name="content"/>.
-    /// </summary>
-    private async Task<IEnumerable<Downloadable>> GetDownloadablesAsync(ActivityExecutionContext context, HttpContext httpContext, object content)
+    private async Task<IEnumerable<Downloadable>> GetDownloadablesAsync(ActivityExecutionContext context, HttpContext httpContext, object? content)
     {
+        if(content == null)
+            return Enumerable.Empty<Downloadable>();
+        
         var manager = context.GetRequiredService<IDownloadableManager>();
         var headers = httpContext.Request.Headers;
         var eTag = headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
@@ -270,10 +242,7 @@ public class WriteFileHttpResponse : Activity
         var httpContext = httpContextAccessor.HttpContext;
 
         if (httpContext == null)
-        {
-            // We're not in an HTTP context, so let's fail.
             throw new FaultException("Cannot execute in a non-HTTP context");
-        }
 
         await WriteResponseAsync(context, httpContext);
     }

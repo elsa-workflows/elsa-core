@@ -10,24 +10,51 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Http.Services;
 
 /// <summary>
-/// Provides a service for zipping downloadable content.
+/// Provides a helper service for zipping downloadable content.
 /// </summary>
-internal class ZipService
+internal class ZipManager
 {
     private readonly ISystemClock _clock;
     private readonly IFileCacheStorageProvider _fileCacheStorageProvider;
     private readonly IOptions<HttpFileCacheOptions> _fileCacheOptions;
-    private readonly ILogger<ZipService> _logger;
+    private readonly ILogger<ZipManager> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ZipService"/> class.
+    /// Initializes a new instance of the <see cref="ZipManager"/> class.
     /// </summary>
-    public ZipService(ISystemClock clock, IFileCacheStorageProvider fileCacheStorageProvider, IOptions<HttpFileCacheOptions> fileCacheOptions, ILogger<ZipService> logger)
+    public ZipManager(ISystemClock clock, IFileCacheStorageProvider fileCacheStorageProvider, IOptions<HttpFileCacheOptions> fileCacheOptions, ILogger<ZipManager> logger)
     {
         _clock = clock;
         _fileCacheStorageProvider = fileCacheStorageProvider;
         _fileCacheOptions = fileCacheOptions;
         _logger = logger;
+    }
+
+    public async Task<(Blob, Stream, Action)> CreateAndCacheZipFileAsync(
+        ICollection<Downloadable> downloadables,
+        bool enableResumableDownloads,
+        string? downloadCorrelationId,
+        string? downloadAsFilename = default, 
+        string? contentType = default, 
+        CancellationToken cancellationToken = default)
+    {
+        // Create a temporary file.
+        var tempFilePath = Path.GetTempFileName();
+
+        // Create a zip archive from the downloadables.
+        var zipService = this;
+        await CreateZipArchiveAsync(tempFilePath, downloadables, cancellationToken);
+
+        // Create a blob with metadata for resuming the download.
+        var zipBlob = zipService.CreateBlob(tempFilePath, downloadAsFilename, contentType);
+
+        // If resumable downloads are enabled, cache the file.
+
+        if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
+            await CreateCachedZipBlobAsync(tempFilePath, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
+
+        var zipStream = File.OpenRead(tempFilePath);
+        return (zipBlob, zipStream, () => Cleanup(tempFilePath));
     }
     
     /// <summary>
@@ -53,8 +80,7 @@ internal class ZipService
             currentFileIndex++;
         }
     }
-
-
+    
     /// <summary>
     /// Creates a cached zip blob for the specified file.
     /// </summary>
@@ -149,5 +175,17 @@ internal class ZipService
         downloadAsFilename = !string.IsNullOrWhiteSpace(downloadAsFilename) ? downloadAsFilename : "download.zip";
         
         return (downloadAsFilename, contentType);
+    }
+    
+    private void Cleanup(string filePath)
+    {
+        try
+        {
+            File.Delete(filePath);
+        }
+        catch (Exception e)
+        {
+            _logger.LogWarning(e, "Failed to delete temporary file {TempFilePath}", filePath);
+        }
     }
 }

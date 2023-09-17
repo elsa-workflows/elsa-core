@@ -103,7 +103,10 @@ internal class Execute : ElsaEndpoint<Request, Response>
             {
                 // Write a response header to indicate that the response is a workflow state response.
                 HttpContext.Response.Headers.Add("x-elsa-response", "true");
-                await SendOkAsync(new Response(workflowState), cancellationToken);
+
+                // Only write a response if the status code wasn't changed by the workflow.
+                if (HttpContext.Response.StatusCode == StatusCodes.Status200OK)
+                    await SendOkAsync(new Response(workflowState), cancellationToken);
             }
         }
     }

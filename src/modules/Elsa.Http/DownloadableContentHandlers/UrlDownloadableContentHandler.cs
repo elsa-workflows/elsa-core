@@ -32,7 +32,7 @@ public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
         var cancellationToken = context.CancellationToken;
         var options = new FileDownloadOptions
         {
-            // TODO: Add support for ETag and Range if we implement file caching for this handler.
+            // TODO: Uncomment the next two lines if we implement file caching for this handler.
             // ETag = context.Options.ETag,
             // Range = context.Options.Range
         };
