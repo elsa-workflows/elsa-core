@@ -1,10 +1,8 @@
-using System.IO.Compression;
-using System.Net;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Http.Options;
+using Elsa.Http.Services;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
@@ -16,7 +14,7 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Net.Http.Headers;
 
 namespace Elsa.Http;
 
@@ -37,6 +35,12 @@ public class WriteFileHttpResponse : Activity
     /// </summary>
     [Input(Description = "The name of the file to serve. Leave empty to let the system determine the file name.")]
     public Input<string?> FileName { get; set; } = default!;
+    
+    /// <summary>
+    /// The Entity Tag of the file to serve.
+    /// </summary>
+    [Input(Description = "The Entity Tag of the file to serve. Leave empty to let the system determine the Entity Tag.")]
+    public Input<string?> EntityTag { get; set; } = default!;
 
     /// <summary>
     /// The file content to serve. Supports byte array, streams, string, Uri and an array of the aforementioned types.
@@ -76,11 +80,6 @@ public class WriteFileHttpResponse : Activity
 
     private async Task WriteResponseAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
-        // Set status code.
-        var statusCode = HttpStatusCode.OK;
-        var response = httpContext.Response;
-        response.StatusCode = (int)statusCode;
-
         // Get content and content type.
         var content = context.Get(Content);
 
@@ -119,9 +118,14 @@ public class WriteFileHttpResponse : Activity
     {
         var contentType = ContentType.GetOrDefault(context);
         var filename = FileName.GetOrDefault(context);
+        var eTag = EntityTag.GetOrDefault(context);
         filename = !string.IsNullOrWhiteSpace(filename) ? filename : !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : "file.bin";
         contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : !string.IsNullOrWhiteSpace(downloadable.ContentType) ? downloadable.ContentType : GetContentType(context, filename);
-        await SendFileStream(httpContext, downloadable.Stream, contentType, filename);
+        eTag = !string.IsNullOrWhiteSpace(eTag) ? eTag : !string.IsNullOrWhiteSpace(downloadable.ETag) ? downloadable.ETag : default;
+        
+        var eTagHeaderValue = !string.IsNullOrWhiteSpace(eTag) ? new EntityTagHeaderValue(eTag) : default;
+        
+        await SendFileStream(context, httpContext, downloadable.Stream, contentType, filename, eTagHeaderValue);
     }
 
     private async Task SendMultipleFilesAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Downloadable> downloadables)
@@ -134,7 +138,9 @@ public class WriteFileHttpResponse : Activity
             // Send the zip stream the temporary file back to the client.
             var contentType = zipBlob.Metadata["ContentType"];
             var downloadAsFilename = zipBlob.Metadata["Filename"];
-            await SendFileStream(httpContext, zipStream, contentType, downloadAsFilename);
+            var eTag = $"\"{zipBlob.LastModificationTime?.ToString("O")}\"";
+            var eTagHeaderValue = new EntityTagHeaderValue(eTag);
+            await SendFileStream(context, httpContext, zipStream, contentType, downloadAsFilename, eTagHeaderValue);
 
             // TODO: Delete the cached file after the workflow completes.
         }
@@ -156,50 +162,22 @@ public class WriteFileHttpResponse : Activity
 
         // Create a temporary file.
         var tempFilePath = Path.GetTempFileName();
-        var currentFileIndex = 0;
 
-        // Write the zip archive to the temporary file.
-        await using var tempFileStream = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 4096, useAsync: true);
-
-        using (var zipArchive = new ZipArchive(tempFileStream, ZipArchiveMode.Create, true))
-        {
-            foreach (var downloadable in downloadables)
-            {
-                var entryName = !string.IsNullOrWhiteSpace(downloadable.Filename) ? downloadable.Filename : $"file-{currentFileIndex}.bin";
-                var entry = zipArchive.CreateEntry(entryName);
-                var fileStream = downloadable.Stream;
-                await using var entryStream = entry.Open();
-                await fileStream.CopyToAsync(entryStream, cancellationToken);
-                await entryStream.FlushAsync(cancellationToken);
-                entryStream.Close();
-                currentFileIndex++;
-            }
-        }
+        // Create a zip archive from the downloadables.
+        var zipService = context.GetRequiredService<ZipService>();
+        await zipService.CreateZipArchiveAsync(tempFilePath, downloadables, cancellationToken);
 
         // Create a blob with metadata for resuming the download.
         var contentType = ContentType.GetOrDefault(context);
         var downloadAsFilename = FileName.GetOrDefault(context);
-        contentType = !string.IsNullOrWhiteSpace(contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Zip;
-        downloadAsFilename = !string.IsNullOrWhiteSpace(downloadAsFilename) ? downloadAsFilename : "download.zip";
-
-        var clock = context.GetRequiredService<ISystemClock>();
-        var cacheOptions = context.GetRequiredService<IOptions<HttpFileCacheOptions>>().Value;
-        var expiresAt = clock.UtcNow.Add(cacheOptions.TimeToLive);
-        var zipBlob = CreateBlob(tempFilePath, downloadAsFilename, contentType, expiresAt);
+        var zipBlob = zipService.CreateBlob(tempFilePath, downloadAsFilename, contentType);
 
         // If resumable downloads are enabled, cache the file.
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
         var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context, () => context.WorkflowExecutionContext.CorrelationId ?? "");
 
         if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
-        {
-            var fileCacheStorageProvider = context.GetRequiredService<IFileCacheStorageProvider>();
-            var fileCacheStorage = fileCacheStorageProvider.GetStorage();
-            var fileCacheFilename = $"{downloadCorrelationId}.tmp";
-            var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
-            await fileCacheStorage.WriteFileAsync(fileCacheFilename, tempFilePath, cancellationToken: cancellationToken);
-            await fileCacheStorage.SetBlobAsync(cachedBlob, cancellationToken: cancellationToken);
-        }
+            await zipService.CreateCachedZipBlobAsync(tempFilePath, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
 
         var zipStream = File.OpenRead(tempFilePath);
         return (zipBlob, zipStream, Cleanup);
@@ -229,47 +207,25 @@ public class WriteFileHttpResponse : Activity
             return null;
 
         var cancellationToken = context.CancellationToken;
-        var fileCacheStorageProvider = context.GetRequiredService<IFileCacheStorageProvider>();
-        var fileCacheStorage = fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
-        var blob = await fileCacheStorage.GetBlobAsync(fileCacheFilename, cancellationToken: cancellationToken);
+        var zipService = context.GetRequiredService<ZipService>();
+        var tuple = await zipService.LoadCachedZipBlobAsync(downloadCorrelationId, cancellationToken);
 
-        if (blob == null)
+        if (tuple == null)
             return null;
 
-        // Check if the blob has expired.
-        var clock = context.GetRequiredService<ISystemClock>();
-        var expiresAt = DateTimeOffset.Parse(blob.Metadata["ExpiresAt"]);
-
-        if (clock.UtcNow > expiresAt)
-        {
-            // File expired. Try to delete it.
-            try
-            {
-                await fileCacheStorage.DeleteAsync(blob.FullPath, cancellationToken);
-            }
-            catch (Exception e)
-            {
-                var logger = context.GetRequiredService<ILogger<WriteFileHttpResponse>>();
-                logger.LogWarning(e, "Failed to delete expired file {FullPath}", blob.FullPath);
-            }
-
-            return null;
-        }
-
-        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
-        return (blob, stream, Noop);
+        return (tuple.Value.Item1, tuple.Value.Item2, Noop);
 
         ValueTask Noop() => default;
     }
 
-    private async Task SendFileStream(HttpContext httpContext, Stream source, string contentType, string filename)
+    private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)
     {
         source.Seek(0, SeekOrigin.Begin);
-
+        
         var result = new FileStreamResult(source, contentType)
         {
             EnableRangeProcessing = true,
+            EntityTag = eTag,
             FileDownloadName = filename
         };
 
@@ -290,29 +246,6 @@ public class WriteFileHttpResponse : Activity
     {
         var provider = context.GetRequiredService<IContentTypeProvider>();
         return provider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
-    }
-
-    private static string CreateContentDisposition(string filename)
-    {
-        var contentDisposition = new System.Net.Mime.ContentDisposition
-        {
-            FileName = filename
-        };
-
-        return contentDisposition.ToString();
-    }
-
-    private static Blob CreateBlob(string fullPath, string downloadAsFilename, string contentType, DateTimeOffset expiresAt)
-    {
-        return new Blob(fullPath)
-        {
-            Metadata =
-            {
-                ["ContentType"] = contentType,
-                ["Filename"] = downloadAsFilename,
-                ["ExpiresAt"] = expiresAt.ToString("O")
-            }
-        };
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)

@@ -191,6 +191,7 @@ public class HttpFeature : FeatureBase
 
             // File caches.
             .AddSingleton(FileCache)
+            .AddSingleton<ZipService>()
 
             // Add mediator handlers.
             .AddNotificationHandlersFrom<HttpFeature>()
