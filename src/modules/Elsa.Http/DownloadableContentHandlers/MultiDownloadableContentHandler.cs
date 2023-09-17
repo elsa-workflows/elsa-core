@@ -23,7 +23,7 @@ public class MultiDownloadableContentHandler : DownloadableContentHandlerBase
 
         foreach (var item in enumerable)
         {
-            var downloadables = await manager.GetDownloadablesAsync(item, context.CancellationToken);
+            var downloadables = await manager.GetDownloadablesAsync(item, context.Options, context.CancellationToken);
             collectedDownloadables.AddRange(downloadables);
         }
 

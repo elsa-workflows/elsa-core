@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 
 namespace Elsa.Http.Services;
 
@@ -18,16 +20,17 @@ public class DefaultDownloadableManager : IDownloadableManager
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(object content, CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<Downloadable>> GetDownloadablesAsync(object content, DownloadableOptions? options = default, CancellationToken cancellationToken = default)
     {
         var provider = _providers.FirstOrDefault(x => x.GetSupportsContent(content));
-        
+
         if (provider == null)
             return Enumerable.Empty<Downloadable>();
-        
-        var context = new DownloadableContext(this, content, cancellationToken);
+
+        options ??= new();
+        var context = new DownloadableContext(this, content, options, cancellationToken);
         var downloadables = await provider.GetDownloadablesAsync(context);
-        
+
         return downloadables;
     }
 }

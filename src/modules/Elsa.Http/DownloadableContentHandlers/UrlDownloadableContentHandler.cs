@@ -2,6 +2,7 @@ using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Http.Options;
 using Microsoft.AspNetCore.StaticFiles;
 
 namespace Elsa.Http.DownloadableContentHandlers;
@@ -29,12 +30,19 @@ public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
     {
         var url = context.Content is string s ? new Uri(s) : (Uri)context.Content;
         var cancellationToken = context.CancellationToken;
-        var response = await _fileDownloader.DownloadAsync(url, cancellationToken);
+        var options = new FileDownloadOptions
+        {
+            // TODO: Add support for ETag and Range if we implement file caching for this handler.
+            // ETag = context.Options.ETag,
+            // Range = context.Options.Range
+        };
+        var response = await _fileDownloader.DownloadAsync(url, options, cancellationToken);
+        var eTag = response.Headers.ETag?.Tag;
         var filename = GetFilename(response) ?? url.Segments.Last();
         var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         var contentType = response.Content.Headers.ContentType?.MediaType ?? GetContentType(filename);
         
-        return new Downloadable(stream, filename, contentType);
+        return new Downloadable(stream, filename, contentType, eTag);
     }
 
     private static string? GetFilename(HttpResponseMessage response)
