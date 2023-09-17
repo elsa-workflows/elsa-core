@@ -59,7 +59,7 @@ public class WriteFileHttpResponse : Activity
     /// <summary>
     /// The correlation ID of the download. Used to resume a download.
     /// </summary>
-    [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-elsa-download-id header will be used.")]
+    [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-download-id header will be used.")]
     public Input<string> DownloadCorrelationId { get; set; } = default!;
 
     /// <inheritdoc />
@@ -206,7 +206,7 @@ public class WriteFileHttpResponse : Activity
         var downloadCorrelationId = DownloadCorrelationId.GetOrDefault(context);
 
         if (string.IsNullOrWhiteSpace(downloadCorrelationId))
-            downloadCorrelationId = httpContext.Request.Headers["x-elsa-download-id"];
+            downloadCorrelationId = httpContext.Request.Headers["x-download-id"];
 
         if (string.IsNullOrWhiteSpace(downloadCorrelationId))
         {
