@@ -37,6 +37,11 @@ public class SendHttpRequest : SendHttpRequestBase
     /// The activity to execute when the HTTP request fails to connect.
     /// </summary>
     public IActivity? FailedToConnect { get; set; }
+    
+    /// <summary>
+    /// The activity to execute when the HTTP request times out.
+    /// </summary>
+    public IActivity? Timeout { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
@@ -53,6 +58,12 @@ public class SendHttpRequest : SendHttpRequestBase
     protected override async ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception)
     {
         await context.ScheduleActivityAsync(FailedToConnect, OnChildActivityCompletedAsync);
+    }
+
+    /// <inheritdoc />
+    protected override async ValueTask HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception)
+    {
+        await context.ScheduleActivityAsync(Timeout, OnChildActivityCompletedAsync);
     }
 
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)

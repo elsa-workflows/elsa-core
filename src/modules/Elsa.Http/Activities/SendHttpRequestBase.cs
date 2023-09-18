@@ -88,6 +88,11 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// Handles an exception that occurred while sending the request.
     /// </summary>
     protected abstract ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception);
+    
+    /// <summary>
+    /// Handles <see cref="TaskCanceledException"/> that occurred while sending the request.
+    /// </summary>
+    protected abstract ValueTask HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception);
 
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
@@ -113,7 +118,9 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         }
         catch (TaskCanceledException e)
         {
+            context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Cancelled", true);
+            await HandleTaskCanceledExceptionAsync(context, e);
         }
     }
 

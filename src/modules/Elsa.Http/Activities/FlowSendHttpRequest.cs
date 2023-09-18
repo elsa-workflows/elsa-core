@@ -42,11 +42,17 @@ public class FlowSendHttpRequest : SendHttpRequestBase
         await context.CompleteActivityWithOutcomesAsync("Failed to connect");
     }
 
+    /// <inheritdoc />
+    protected override async ValueTask HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception)
+    {
+        await context.CompleteActivityWithOutcomesAsync("Timeout");
+    }
+
     private static ValueTask<IDictionary<string, object>> GetExpectedStatusCodesOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
     {
         var options = new Dictionary<string, object>
         {
-            [nameof(DynamicOutcomesOptions)] = new DynamicOutcomesOptions(new[]{"Unmatched status code", "Failed to connect", "Done"})
+            [nameof(DynamicOutcomesOptions)] = new DynamicOutcomesOptions(new[]{"Unmatched status code", "Failed to connect", "Timeout", "Done"})
         };
         
         return new(options);
