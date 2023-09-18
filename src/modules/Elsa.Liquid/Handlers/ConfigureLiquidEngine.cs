@@ -44,6 +44,7 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
         memberAccessStrategy.Register<LiquidPropertyAccessor, FluidValue>((x, name) => x.GetValueAsync(name));
         memberAccessStrategy.Register<ExpandoObject, object>((x, name) => ((IDictionary<string, object>)x!)[name]);
         memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => GetVariable(x, name, options)));
+        memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Input", x => new LiquidPropertyAccessor(name => GetInput(x, name, options)));
         memberAccessStrategy.Register<ExpressionExecutionContext, string?>("CorrelationId", x => x.GetWorkflowExecutionContext().CorrelationId);
 
         if (_fluidOptions.AllowConfigurationAccess)
@@ -66,6 +67,14 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
     {
         var value = GetVariableInScope(context, key);
         return Task.FromResult(value == null ? NilValue.Instance : FluidValue.Create(value, options));
+    }
+
+    private Task<FluidValue> GetInput(ExpressionExecutionContext context, string key, TemplateOptions options)
+    {
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var input = workflowExecutionContext.Input.TryGetValue(key, out var value) ? value : default;
+        
+        return Task.FromResult(input == null ? NilValue.Instance : FluidValue.Create(value, options));
     }
 
     private static object? GetVariableInScope(ExpressionExecutionContext context, string variableName)
