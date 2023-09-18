@@ -47,7 +47,9 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
     /// </summary>
-    public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityScheduler();
+    public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
+        .UseExceptionHandling()
+        .UseDefaultActivityScheduler();
     
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.

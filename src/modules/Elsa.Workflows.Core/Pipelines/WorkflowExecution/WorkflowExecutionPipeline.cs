@@ -33,5 +33,7 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     /// <inheritdoc />
     public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
 
-    private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x.UseDefaultActivityScheduler());
+    private WorkflowMiddlewareDelegate CreateDefaultPipeline() => Setup(x => x
+        .UseExceptionHandling()
+        .UseDefaultActivityScheduler());
 }

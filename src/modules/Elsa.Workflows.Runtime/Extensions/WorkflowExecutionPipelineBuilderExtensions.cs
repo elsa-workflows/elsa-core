@@ -21,6 +21,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
+            .UseExceptionHandling()
             .UseDefaultActivityScheduler();
 
     /// <summary>
