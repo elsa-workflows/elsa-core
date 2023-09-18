@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
@@ -71,6 +72,7 @@ public class ActivityDescriber : IActivityDescriber
         var outputProperties = GetOutputProperties(activityType).ToList();
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
+        var isTerminal = activityType.FindInterfaces((type, criteria) => type == typeof(ITerminalNode), null).Any();
         var attributes = activityType.GetCustomAttributes(true).Cast<Attribute>().ToList();
 
         var descriptor = new ActivityDescriptor
@@ -88,6 +90,7 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
+            IsTerminal = isTerminal,
             Attributes = attributes,
             Constructor = context =>
             {

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Attributes;
 using JetBrains.Annotations;
 
@@ -9,7 +10,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Activity("Elsa", "Primitives", "Mark the workflow as finished.")]
 [PublicAPI]
-public class Finish : Activity
+public class Finish : CodeActivity, ITerminalNode
 {
     /// <inheritdoc />
     public Finish([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
