@@ -10,7 +10,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.State;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core;
