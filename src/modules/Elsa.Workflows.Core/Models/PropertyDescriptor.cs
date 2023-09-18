@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Contracts;
 
@@ -55,4 +56,10 @@ public abstract class PropertyDescriptor
     /// </summary>
     [JsonIgnore]
     public Action<IActivity, object?> ValueSetter { get; set; } = default!;
+    
+    /// <summary>
+    /// The source of the property, if any.
+    /// </summary>
+    [JsonIgnore]
+    public PropertyInfo? PropertyInfo { get; set; }
 }

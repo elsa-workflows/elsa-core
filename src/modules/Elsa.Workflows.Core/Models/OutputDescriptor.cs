@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Contracts;
 
@@ -21,8 +22,8 @@ public class OutputDescriptor : PropertyDescriptor
         Type type,
         Func<IActivity, object?> valueGetter,
         Action<IActivity, object?> valueSetter,
-
-    string? description = default,
+        PropertyInfo? propertyInfo = default,
+        string? description = default,
         bool? isBrowsable = default)
     {
         Name = name;
@@ -32,5 +33,6 @@ public class OutputDescriptor : PropertyDescriptor
         ValueSetter = valueSetter;
         Description = description;
         IsBrowsable = isBrowsable;
+        PropertyInfo = propertyInfo;
     }
 }

@@ -125,6 +125,7 @@ public class ActivityDescriber : IActivityDescriber
             wrappedPropertyType,
             propertyInfo.GetValue,
             propertyInfo.SetValue,
+            propertyInfo,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
             outputAttribute?.IsBrowsable ?? true
         ));
@@ -160,7 +161,10 @@ public class ActivityDescriber : IActivityDescriber
             _defaultValueResolver.GetDefaultValue(propertyInfo),
             inputAttribute?.DefaultSyntax,
             inputAttribute?.IsReadOnly ?? false,
-            inputAttribute?.IsBrowsable ?? true
+            inputAttribute?.IsBrowsable ?? true,
+            false,
+            default,
+            propertyInfo
         );
     }
 

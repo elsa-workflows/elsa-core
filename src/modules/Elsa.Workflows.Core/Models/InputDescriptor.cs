@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.Models;
@@ -30,7 +31,8 @@ public class InputDescriptor : PropertyDescriptor
         bool isReadOnly = false,
         bool isBrowsable = true,
         bool isSynthetic = false,
-        Type? storageDriverType = default)
+        Type? storageDriverType = default,
+        PropertyInfo? propertyInfo = default)
     {
         Name = name;
         Type = type;
@@ -45,11 +47,11 @@ public class InputDescriptor : PropertyDescriptor
         Order = order;
         DefaultValue = defaultValue;
         DefaultSyntax = defaultSyntax;
-        //SupportedSyntaxes = supportedSyntaxes?.ToList() ?? new List<string>();
         IsReadOnly = isReadOnly;
         StorageDriverType = storageDriverType;
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
+        PropertyInfo = propertyInfo;
     }
 
     /// <summary>
@@ -81,7 +83,6 @@ public class InputDescriptor : PropertyDescriptor
     /// The default syntax.
     /// </summary>
     public string? DefaultSyntax { get; set; }
-    //public ICollection<string> SupportedSyntaxes { get; set; } = new List<string>();
     
     /// <summary>
     /// True if the input is readonly, false otherwise.

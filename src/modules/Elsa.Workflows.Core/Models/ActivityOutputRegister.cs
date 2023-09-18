@@ -6,12 +6,12 @@ namespace Elsa.Workflows.Core.Models;
 public class ActivityOutputRegister
 {
     private readonly ICollection<ActivityOutputRecord> _records = new List<ActivityOutputRecord>();
-    
+
     /// <summary>
     /// The default output name.
     /// </summary>
     public const string DefaultOutputName = "Result";
-    
+
     /// <summary>
     /// Records an activity's output.
     /// </summary>
@@ -21,7 +21,7 @@ public class ActivityOutputRegister
     {
         Record(activityExecutionContext, default, outputValue);
     }
-    
+
     /// <summary>
     /// Records an activity's output.
     /// </summary>
@@ -33,18 +33,26 @@ public class ActivityOutputRegister
         var activityId = activityExecutionContext.Activity.Id;
         var activityInstanceId = activityExecutionContext.Id;
         var containerId = activityExecutionContext.ParentActivityExecutionContext?.Id ?? activityExecutionContext.WorkflowExecutionContext.Id;
-        
+
         outputName ??= DefaultOutputName;
-        var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
+
+        // Inspect the output descriptor to see if the specified output name matches any PropertyInfo's name.
+        // If so, use that descriptor's name instead.
+        var outputDescriptor = activityExecutionContext.ActivityDescriptor.Outputs.FirstOrDefault(x => x.PropertyInfo?.Name == outputName);
         
+        if (outputDescriptor != null)
+            outputName = outputDescriptor.Name;
+
+        var record = new ActivityOutputRecord(containerId, activityId, activityInstanceId, outputName, outputValue);
+
         _records.Add(record);
     }
-    
+
     /// <summary>
     /// Finds all output records matching the specified predicate.
     /// </summary>
     public IEnumerable<ActivityOutputRecord> FindMany(Func<ActivityOutputRecord, bool> predicate) => _records.Where(predicate);
-    
+
     /// <summary>
     /// Gets the output value for the specified activity ID.
     /// </summary>
