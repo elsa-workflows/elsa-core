@@ -81,4 +81,9 @@ public record ActivityDescriptor
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
     public bool IsBrowsable { get; set; }
+
+    /// <summary>
+    /// Whether this activity type is a terminal activity.
+    /// </summary>
+    public bool IsTerminal { get; set; }
 }

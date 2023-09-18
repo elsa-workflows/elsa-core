@@ -96,6 +96,11 @@ public class ActivityDescriptor
     /// Whether this activity type is selectable from activity pickers.
     /// </summary>
     public bool IsBrowsable { get; set; } = true;
+
+    /// <summary>
+    /// Whether this activity type is a terminal activity.
+    /// </summary>
+    public bool IsTerminal { get; set; }
 }
 
 // TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.

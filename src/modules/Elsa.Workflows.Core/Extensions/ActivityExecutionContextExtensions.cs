@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
@@ -14,7 +13,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
 
@@ -53,8 +54,8 @@ public class Sequence : Container
         var isBreaking = targetContext.GetIsBreaking();
         var completedActivity = childContext.Activity;
 
-        // If we are breaking, or the completed activity is an End or Break activity, complete the sequence immediately.
-        if (isBreaking || completedActivity is End or Break)
+        // If the complete activity is a terminal node, complete the sequence immediately.
+        if (isBreaking || completedActivity is ITerminalNode)
         {
             await targetContext.CompleteActivityAsync();
             return;

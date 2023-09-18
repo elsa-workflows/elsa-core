@@ -196,10 +196,10 @@ public class Flowchart : Container
 
         scope.RegisterActivityExecution(completedActivity);
 
-        // If the completed activity is an End or Break activity, complete the flowchart immediately.
-        if (completedActivity is End or Break)
+        // If the complete activity is a terminal node, complete the flowchart immediately.
+        if (completedActivity is ITerminalNode)
         {
-            logger.LogDebug("Completed activity {ActivityId} is an End or Break activity. Completing flowchart", completedActivity.Id);
+            logger.LogDebug("Completed activity {ActivityId} is a terminal activity. Completing flowchart", completedActivity.Id);
             await flowchartContext.CompleteActivityAsync();
         }
         else if (scheduleChildren)
