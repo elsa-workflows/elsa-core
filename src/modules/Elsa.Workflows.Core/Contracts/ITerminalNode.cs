@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Activities.Flowchart.Contracts;
+namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
 /// Marks an activity as a terminal activity.

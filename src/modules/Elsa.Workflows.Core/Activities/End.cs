@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;

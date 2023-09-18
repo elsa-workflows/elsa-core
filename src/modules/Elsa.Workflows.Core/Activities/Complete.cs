@@ -2,8 +2,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Signals;
 using JetBrains.Annotations;
@@ -15,7 +17,7 @@ namespace Elsa.Workflows.Core.Activities;
 /// </summary>
 [Activity("Elsa", "Composition", "Signals the current composite activity to complete itself as a whole.")]
 [PublicAPI]
-public class Complete : Activity
+public class Complete : Activity, ITerminalNode
 {
     /// <inheritdoc />
     public Complete([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
