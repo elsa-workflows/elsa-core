@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Runtime.Options;
 
@@ -16,5 +17,4 @@ public record StartWorkflowRuntimeOptions(
     VersionOptions VersionOptions = default, 
     string? TriggerActivityId = default, 
     string? InstanceId = default,
-    CancellationToken ApplicationCancellationToken = default,
-    CancellationToken SystemCancellationToken = default);
+    CancellationTokens CancellationTokens = default);

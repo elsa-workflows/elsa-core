@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -58,16 +59,14 @@ public interface IWorkflowRuntime
     /// </summary>
     /// <param name="match">A workflow match to execute.</param>
     /// <param name="input">Optional input to pass to the workflow.</param>
-    /// <param name="applicationCancellationToken">An optional application cancellation token.</param>
-    /// <param name="systemCancellationToken">An optional system cancellation token.</param>
-    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationToken applicationCancellationToken = default, CancellationToken systemCancellationToken = default);
+    /// <param name="cancellationTokens">An optional set of cancellation tokens to control workflow cancellation without cancelling system-level operations.</param>
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationTokens cancellationTokens = default);
 
     /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
     /// <param name="filter"></param>
     /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>

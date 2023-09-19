@@ -13,6 +13,7 @@ using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
@@ -155,7 +156,7 @@ public class WorkflowsMiddleware
         if (requestTimeout == null)
         {
             // If no request timeout was configured, execute the workflow without a timeout.
-            await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, cancellationToken, cancellationToken);
+            await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, cancellationToken);
             return;
         }
 
@@ -170,8 +171,9 @@ public class WorkflowsMiddleware
         var systemCancellationToken = originalCancellationToken;
         httpContext.RequestAborted = cts.Token;
         var applicationCancellationToken = cts.Token;
+        var cancellationTokens = new CancellationTokens(applicationCancellationToken, systemCancellationToken);
 
-        await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, applicationCancellationToken, systemCancellationToken);
+        await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, cancellationTokens);
     }
 
     private async Task ExecuteWorkflowAsync(
@@ -180,10 +182,10 @@ public class WorkflowsMiddleware
         IDictionary<string, object> input,
         TimeSpan? requestTimeout,
         HttpContext httpContext,
-        CancellationToken applicationCancellationToken,
-        CancellationToken systemCancellationToken)
+        CancellationTokens cancellationTokens)
     {
-        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(matchedWorkflow, input, applicationCancellationToken);
+        var systemCancellationToken = cancellationTokens.SystemCancellationToken;
+        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(matchedWorkflow, input, cancellationTokens);
 
         if (await HandleWorkflowFaultAsync(httpContext, executionResult, systemCancellationToken))
             return;
@@ -193,8 +195,7 @@ public class WorkflowsMiddleware
             new List<WorkflowExecutionResult> { executionResult },
             correlationId,
             input,
-            applicationCancellationToken,
-            systemCancellationToken);
+            cancellationTokens);
 
         // Check if there were any errors.
         var faultedWorkflowState = affectedWorkflowStates.FirstOrDefault(x => x.SubStatus == WorkflowSubStatus.Faulted);

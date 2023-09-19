@@ -1,3 +1,5 @@
+using Elsa.Workflows.Core.Models;
+
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
@@ -11,5 +13,4 @@ public record ResumeWorkflowRuntimeOptions(
     string? ActivityInstanceId = default,
     string? ActivityHash = default,
     IDictionary<string, object>? Input = default,
-    CancellationToken ApplicationCancellationToken = default,
-    CancellationToken SystemCancellationToken = default);
+    CancellationTokens CancellationTokens = default);

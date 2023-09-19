@@ -18,7 +18,7 @@ public class DispatchWorkflowRequestConsumer :
     private readonly IWorkflowRuntime _workflowRuntime;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="DispatchWorkflowRequestConsumer"/> class.
     /// </summary>
     public DispatchWorkflowRequestConsumer(IWorkflowRuntime workflowRuntime)
     {
@@ -30,7 +30,7 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId, cancellationToken, cancellationToken);
+        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId, cancellationToken);
 
         await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
     }
@@ -49,7 +49,6 @@ public class DispatchWorkflowRequestConsumer :
             message.ActivityInstanceId,
             message.ActivityHash,
             message.Input,
-            cancellationToken,
             cancellationToken);
 
         await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
@@ -60,7 +59,7 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input, cancellationToken, cancellationToken);
+        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input, cancellationToken);
         await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
 
@@ -74,8 +73,7 @@ public class DispatchWorkflowRequestConsumer :
             correlationId: message.CorrelationId,
             workflowInstanceId: message.WorkflowInstanceId,
             input: message.Input,
-            applicationCancellationToken: cancellationToken,
-            systemCancellationToken: cancellationToken);
+            cancellationTokens: cancellationToken);
 
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }

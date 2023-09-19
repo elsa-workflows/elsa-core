@@ -1,3 +1,5 @@
+using Elsa.Workflows.Core.Models;
+
 namespace Elsa.Workflows.Core.Options;
 
 /// <summary>
@@ -18,8 +20,7 @@ public class RunWorkflowOptions
         string? activityHash = default,
         IDictionary<string, object>? input = default,
         string? triggerActivityId = default,
-        CancellationToken applicationCancellationToken = default,
-        CancellationToken systemCancellationToken = default)
+        CancellationTokens cancellationTokens = default)
     {
         WorkflowInstanceId = workflowInstanceId;
         CorrelationId = correlationId;
@@ -30,8 +31,7 @@ public class RunWorkflowOptions
         ActivityHash = activityHash;
         Input = input;
         TriggerActivityId = triggerActivityId;
-        ApplicationCancellationToken = applicationCancellationToken;
-        SystemCancellationToken = systemCancellationToken;
+        CancellationTokens = cancellationTokens;
     }
 
     public string? WorkflowInstanceId { get; set; }
@@ -43,6 +43,5 @@ public class RunWorkflowOptions
     public string? ActivityHash { get; set; }
     public IDictionary<string, object>? Input { get; set; }
     public string? TriggerActivityId { get; set; }
-    public CancellationToken ApplicationCancellationToken { get; set; }
-    public CancellationToken SystemCancellationToken { get; set; }
+    public CancellationTokens CancellationTokens { get; set; }
 }

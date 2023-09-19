@@ -4,6 +4,7 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -91,7 +92,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         };
 
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        var response = await client.CanStart(request, options.SystemCancellationToken);
+        var response = await client.CanStart(request, options.CancellationTokens.SystemCancellationToken);
 
         return new CanStartWorkflowResult(workflowInstanceId, response!.CanStart);
     }
@@ -100,7 +101,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options)
     {
         // Load the workflow definition.
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, options.VersionOptions, options.SystemCancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, options.VersionOptions, options.CancellationTokens.SystemCancellationToken);
 
         if (workflowDefinition == null)
             return null;
@@ -127,7 +128,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         };
 
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        var response = await client.Start(request, options.SystemCancellationToken);
+        var response = await client.Start(request, options.CancellationTokens.SystemCancellationToken);
 
         return _workflowExecutionResultMapper.Map(response!);
     }
@@ -137,8 +138,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
         var filter = new TriggerFilter { Hash = hash };
-        var applicationCancellationToken = options.ApplicationCancellationToken;
-        var systemCancellationToken = options.SystemCancellationToken;
+        var systemCancellationToken = options.CancellationTokens.SystemCancellationToken;
         var triggers = await _triggerStore.FindManyAsync(filter, systemCancellationToken);
         var results = new List<WorkflowExecutionResult>();
 
@@ -152,8 +152,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 VersionOptions.Published,
                 trigger.ActivityId,
                 options.WorkflowInstanceId,
-                applicationCancellationToken,
-                systemCancellationToken);
+                options.CancellationTokens);
 
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
 
@@ -181,7 +180,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         };
 
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        var response = await client.Resume(request, options.SystemCancellationToken);
+        var response = await client.Resume(request, options.CancellationTokens.SystemCancellationToken);
 
         return _workflowExecutionResultMapper.Map(response!);
     }
@@ -193,15 +192,14 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var correlationId = options.CorrelationId;
         var workflowInstanceId = options.WorkflowInstanceId;
         var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId };
-        var bookmarks = await _bookmarkStore.FindManyAsync(filter, options.SystemCancellationToken);
+        var bookmarks = await _bookmarkStore.FindManyAsync(filter, options.CancellationTokens.SystemCancellationToken);
 
         return await ResumeWorkflowsAsync(
             bookmarks,
             new ResumeWorkflowRuntimeOptions(
                 correlationId,
                 Input: options.Input,
-                SystemCancellationToken: options.SystemCancellationToken,
-                ApplicationCancellationToken: options.ApplicationCancellationToken)
+                CancellationTokens: options.CancellationTokens)
         );
     }
 
@@ -216,7 +214,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationToken applicationCancellationToken = default, CancellationToken systemCancellationToken = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationTokens cancellationTokens = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
@@ -226,13 +224,12 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 VersionOptions.Published,
                 collectedStartableWorkflow.ActivityId,
                 collectedStartableWorkflow.WorkflowInstanceId,
-                applicationCancellationToken,
-                systemCancellationToken);
+                cancellationTokens);
             return await StartWorkflowAsync(collectedStartableWorkflow.DefinitionId!, startOptions);
         }
 
         var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
-        var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input, ApplicationCancellationToken: applicationCancellationToken, SystemCancellationToken: systemCancellationToken);
+        var runtimeOptions = new ResumeWorkflowRuntimeOptions(collectedResumableWorkflow.CorrelationId, Input: input, CancellationTokens: cancellationTokens);
         var result = await ResumeWorkflowAsync(match.WorkflowInstanceId, runtimeOptions with { BookmarkId = collectedResumableWorkflow.BookmarkId });
 
         return result!;
@@ -345,15 +342,14 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         foreach (var trigger in triggers)
         {
             var definitionId = trigger.WorkflowDefinitionId;
-            
+
             var startOptions = new StartWorkflowRuntimeOptions(
-                workflowsFilter.Options.CorrelationId, 
-                workflowsFilter.Options.Input, 
-                VersionOptions.Published, 
-                trigger.ActivityId, 
-                ApplicationCancellationToken: cancellationToken, 
-                SystemCancellationToken: cancellationToken);
-            
+                workflowsFilter.Options.CorrelationId,
+                workflowsFilter.Options.Input,
+                VersionOptions.Published,
+                trigger.ActivityId,
+                CancellationTokens: cancellationToken);
+
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
 
             var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);

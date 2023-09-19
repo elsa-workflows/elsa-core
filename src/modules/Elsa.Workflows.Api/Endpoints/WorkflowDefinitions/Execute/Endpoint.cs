@@ -73,7 +73,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
         var instanceId = _identityGenerator.GenerateId();
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId, cancellationToken, cancellationToken);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId, cancellationToken);
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
         HttpContext.Response.Headers.Add("x-elsa-workflow-instance-id", instanceId);
@@ -90,7 +90,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
         else
         {
             // Resume any HTTP bookmarks.
-            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken, cancellationToken);
+            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
 
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
 

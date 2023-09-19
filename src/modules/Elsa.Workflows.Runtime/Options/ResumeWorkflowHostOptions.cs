@@ -1,3 +1,5 @@
+using Elsa.Workflows.Core.Models;
+
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
@@ -10,8 +12,7 @@ namespace Elsa.Workflows.Runtime.Options;
 /// <param name="ActivityInstanceId">An optional activity instance ID.</param>
 /// <param name="ActivityHash">An optional activity hash.</param>
 /// <param name="Input">Optional input to pass to the workflow instance.</param>
-/// <param name="ApplicationCancellationToken">An optional cancellation token that can be used to cancel the workflow instance.</param>
-/// <param name="SystemCancellationToken">An optional cancellation token that can be used to cancel system level operations, such as persisting workflow state.</param>
+/// <param name="CancellationTokens">Optional cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</param>
 public record ResumeWorkflowHostOptions(
     string? CorrelationId = default,
     string? BookmarkId = default,
@@ -20,5 +21,4 @@ public record ResumeWorkflowHostOptions(
     string? ActivityInstanceId = default,
     string? ActivityHash = default,
     IDictionary<string, object>? Input = default,
-    CancellationToken ApplicationCancellationToken = default,
-    CancellationToken SystemCancellationToken = default);
+    CancellationTokens CancellationTokens = default);

@@ -72,15 +72,14 @@ public class WorkflowHost : IWorkflowHost
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
         var input = options?.Input;
-        
+
         var runOptions = new RunWorkflowOptions(
-            instanceId, 
-            correlationId, 
-            input: input, 
-            triggerActivityId: options?.TriggerActivityId, 
-            applicationCancellationToken: options?.ApplicationCancellationToken ?? cancellationToken, 
-            systemCancellationToken: options?.SystemCancellationToken ?? cancellationToken);
-        
+            instanceId,
+            correlationId,
+            input: input,
+            triggerActivityId: options?.TriggerActivityId,
+            cancellationTokens: options?.CancellationTokens ?? cancellationToken);
+
         var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
@@ -117,8 +116,7 @@ public class WorkflowHost : IWorkflowHost
             options?.ActivityHash,
             input,
             default,
-            options?.ApplicationCancellationToken ?? cancellationToken,
-            options?.SystemCancellationToken ?? cancellationToken
+            options?.CancellationTokens ?? cancellationToken
         );
 
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);

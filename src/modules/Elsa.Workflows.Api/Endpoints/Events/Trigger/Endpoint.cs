@@ -50,7 +50,7 @@ internal class Trigger : ElsaEndpoint<Request>
 
             // Resume any HTTP bookmarks.
             foreach (var result in results)
-                await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken, cancellationToken);
+                await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
 
             if (!HttpContext.Response.HasStarted) 
                 await SendOkAsync(cancellationToken);
