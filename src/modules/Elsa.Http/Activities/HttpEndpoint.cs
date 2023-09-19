@@ -59,14 +59,20 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The maximum time allowed to process the request.
     /// </summary>
-    [Input(Description = "The maximum time allowed to process the request.", Category = "Security")]
+    [Input(Description = "The maximum time allowed to process the request.", Category = "Upload")]
     public Input<TimeSpan?> RequestTimeout { get; set; } = default!;
 
     /// <summary>
     /// The maximum request size allowed in bytes.
     /// </summary>
-    [Input(Description = "The maximum request size allowed in bytes.", Category = "Security")]
+    [Input(Description = "The maximum request size allowed in bytes.", Category = "Upload")]
     public Input<long?> RequestSizeLimit { get; set; } = default!;
+    
+    /// <summary>
+    /// The maximum request size allowed in bytes.
+    /// </summary>
+    [Input(Description = "The maximum file size allowed in bytes for an individual file.", Category = "Upload")]
+    public Input<long?> FileSizeLimit { get; set; } = default!;
 
     /// <summary>
     /// The parsed request content, if any.
@@ -180,38 +186,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
     }
 
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
-    {
-        // Set a timeout, if specified.
-        var timeout = RequestTimeout.Get(context);
-
-        if (timeout == null)
-        {
-            await HandleRequestInternalAsync(context, httpContext);
-            return;
-        }
-
-        using var cts = new CancellationTokenSource(timeout.Value);
-        var originalCt = httpContext.RequestAborted;
-        httpContext.RequestAborted = cts.Token;
-
-        try
-        {
-            await HandleRequestInternalAsync(context, httpContext);
-        }
-        catch (OperationCanceledException) when (cts.IsCancellationRequested)
-        {
-            httpContext.Response.StatusCode = 408; // Request Timeout.
-            httpContext.Response.ContentType = "text/plain";
-            await httpContext.Response.WriteAsync($"Request timed out after {timeout.Value.TotalSeconds} seconds.", default);
-            cts.Token.ThrowIfCancellationRequested();
-        }
-        finally
-        {
-            httpContext.RequestAborted = originalCt;
-        }
-    }
-
-    private async Task HandleRequestInternalAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         // Provide the received HTTP request as output.
         var request = httpContext.Request;
