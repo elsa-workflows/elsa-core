@@ -130,10 +130,10 @@ public class WorkflowsMiddleware
 
         // Get settings from the bookmark payload.
         var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;
-        
+
         // Get the configured request size limit, if any.
         var requestSizeLimit = foundBookmarkPayload?.RequestSizeLimit;
-        
+
         if (requestSizeLimit != null)
         {
             // If a request size limit was configured, check if the request size exceeds the limit.
@@ -147,7 +147,7 @@ public class WorkflowsMiddleware
                 return;
             }
         }
-        
+
         // Get the configured request timeout, if any.
         var requestTimeout = foundBookmarkPayload?.RequestTimeout;
 
