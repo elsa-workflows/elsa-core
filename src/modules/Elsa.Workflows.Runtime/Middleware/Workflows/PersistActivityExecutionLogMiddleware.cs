@@ -32,7 +32,7 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         await Next(context);
 
         // Get the managed cancellation token.
-        var cancellationToken = context.SystemCancellationToken;
+        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
         
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;

@@ -66,7 +66,7 @@ public record HttpEndpointBookmarkPayload
     [ExcludeFromHash] public TimeSpan? RequestTimeout { get; set; }
     
     /// <summary>
-    /// Gets or sets the max request size in bytes
+    /// Gets or sets the max request size in bytes.
     /// </summary>
     [ExcludeFromHash] public long? RequestSizeLimit { get; set; }
 }

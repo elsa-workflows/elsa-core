@@ -64,7 +64,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             throw new Exception("Workflow definition not found");
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowState.Id, workflowState, applicationCancellationToken: cancellationToken);
+        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowState.Id, workflowState, cancellationTokens: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 

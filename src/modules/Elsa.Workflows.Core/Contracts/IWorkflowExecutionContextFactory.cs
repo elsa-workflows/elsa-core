@@ -1,4 +1,5 @@
 using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Core.State;
 
@@ -21,6 +22,5 @@ public interface IWorkflowExecutionContextFactory
         string? correlationId = default,
         ExecuteActivityDelegate? executeActivityDelegate = default,
         string? triggerActivityId = default,
-        CancellationToken applicationCancellationToken = default,
-        CancellationToken systemCancellationToken = default);
+        CancellationTokens cancellationTokens = default);
 }

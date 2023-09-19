@@ -166,7 +166,7 @@ public class WorkflowRunner : IWorkflowRunner
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         var workflow = workflowExecutionContext.Workflow;
-        var cancellationToken = workflowExecutionContext.ApplicationCancellationToken;
+        var cancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
 
         // Publish domain event.
         await _notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
@@ -178,7 +178,7 @@ public class WorkflowRunner : IWorkflowRunner
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
         // Get the managed cancellation token in case the workflow was cancelled.
-        cancellationToken = workflowExecutionContext.SystemCancellationToken;
+        cancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
         
         // Extract workflow state.
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
