@@ -61,7 +61,7 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointWorkflowFaultHandler>();
+    public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
 
     /// <summary>
     /// A delegate to configure the <see cref="IContentTypeProvider"/>.
@@ -179,7 +179,7 @@ public class HttpFeature : FeatureBase
             // HTTP endpoint handlers.
             .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
-            .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
+            .AddSingleton<DefaultHttpEndpointFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
 

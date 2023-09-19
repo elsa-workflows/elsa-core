@@ -49,18 +49,19 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
         string? correlationId = default,
         ExecuteActivityDelegate? executeActivityDelegate = default,
         string? triggerActivityId = default,
-        CancellationToken cancellationToken = default)
+        CancellationToken applicationCancellationToken = default,
+        CancellationToken systemCancellationToken = default)
     {
         var root = workflow;
 
         // Build graph.
         var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, applicationCancellationToken);
         var flattenedList = graph.Flatten().ToList();
         
         // Register activity types.
         var activityTypes = flattenedList.Select(x => x.Activity.GetType()).Distinct().ToList();
-        await _activityRegistry.RegisterAsync(activityTypes, cancellationToken);
+        await _activityRegistry.RegisterAsync(activityTypes, applicationCancellationToken);
         
         var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.Activity.Id));
 
@@ -88,7 +89,8 @@ public class DefaultWorkflowExecutionContextFactory : IWorkflowExecutionContextF
             default,
             workflowState?.Incidents ?? new List<ActivityIncident>(),
             workflowState?.CreatedAt ?? _systemClock.UtcNow,
-            cancellationToken);
+            applicationCancellationToken,
+            systemCancellationToken);
 
         // Restore workflow execution context from state, if provided.
         if (workflowState != null) _workflowStateExtractor.Apply(workflowExecutionContext, workflowState);

@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -72,13 +73,13 @@ internal class Execute : ElsaEndpoint<Request, Response>
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
         var instanceId = _identityGenerator.GenerateId();
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId, cancellationToken, cancellationToken);
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
         HttpContext.Response.Headers.Add("x-elsa-workflow-instance-id", instanceId);
 
         // Start the workflow.
-        var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions, cancellationToken);
+        var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
         if (result.SubStatus == WorkflowSubStatus.Faulted)
@@ -89,7 +90,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
         else
         {
             // Resume any HTTP bookmarks.
-            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
+            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken, cancellationToken);
 
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
 

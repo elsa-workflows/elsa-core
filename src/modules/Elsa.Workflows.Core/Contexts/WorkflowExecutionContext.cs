@@ -59,7 +59,8 @@ public class WorkflowExecutionContext : IExecutionContext
         IEnumerable<ActivityExecutionContext>? activityExecutionContexts,
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
-        CancellationToken cancellationToken)
+        CancellationToken applicationCancellationToken,
+        CancellationToken systemCancellationToken)
     {
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -77,13 +78,14 @@ public class WorkflowExecutionContext : IExecutionContext
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
-        CancellationToken = cancellationToken;
+        ApplicationCancellationToken = applicationCancellationToken;
+        SystemCancellationToken = systemCancellationToken;
         Incidents = incidents.ToList();
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = _nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
         MemoryRegister = workflow.CreateRegister();
-        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationToken);
+        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: applicationCancellationToken);
     }
 
     /// <summary>
@@ -206,14 +208,14 @@ public class WorkflowExecutionContext : IExecutionContext
     public string? TriggerActivityId { get; set; }
 
     /// <summary>
-    /// A <see cref="CancellationToken"/> that can be used to cancel asynchronous operations.
+    /// A <see cref="ApplicationCancellationToken"/> that can be used to cancel asynchronous operations.
     /// </summary>
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken ApplicationCancellationToken { get; }
 
     /// <summary>
-    /// A <see cref="CancellationToken"/> that can be used by the system to persist changes even if the workflow execution was cancelled by the caller.
+    /// A <see cref="ApplicationCancellationToken"/> that can be used by the system to persist changes even if the workflow execution was cancelled by the caller.
     /// </summary>
-    public CancellationToken ManagedCancellationToken { get; set; }
+    public CancellationToken SystemCancellationToken { get; set; }
 
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
@@ -400,8 +402,8 @@ public class WorkflowExecutionContext : IExecutionContext
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, ApplicationCancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, ApplicationCancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;

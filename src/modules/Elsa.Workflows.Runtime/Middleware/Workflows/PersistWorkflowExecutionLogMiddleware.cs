@@ -59,9 +59,9 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
             Sequence = x.Sequence
         }).ToList();
         
-        await _workflowExecutionLogStore.SaveManyAsync(entries, context.ManagedCancellationToken);
+        await _workflowExecutionLogStore.SaveManyAsync(entries, context.SystemCancellationToken);
         
         // Publish notification.
-        await _notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.ManagedCancellationToken);
+        await _notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.SystemCancellationToken);
     }
 }

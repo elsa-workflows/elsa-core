@@ -16,5 +16,6 @@ public interface IHttpBookmarkProcessor
         IEnumerable<WorkflowExecutionResult> executionResults,
         string? correlationId,
         IDictionary<string, object>? input,
-        CancellationToken cancellationToken = default);
+        CancellationToken applicationCancellationToken,
+        CancellationToken systemCancellationToken);
 }

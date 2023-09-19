@@ -5,6 +5,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Notifications;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.State;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -165,7 +166,7 @@ public class WorkflowRunner : IWorkflowRunner
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         var workflow = workflowExecutionContext.Workflow;
-        var cancellationToken = workflowExecutionContext.CancellationToken;
+        var cancellationToken = workflowExecutionContext.ApplicationCancellationToken;
 
         // Publish domain event.
         await _notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
@@ -177,7 +178,7 @@ public class WorkflowRunner : IWorkflowRunner
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
         // Get the managed cancellation token in case the workflow was cancelled.
-        cancellationToken = workflowExecutionContext.ManagedCancellationToken;
+        cancellationToken = workflowExecutionContext.SystemCancellationToken;
         
         // Extract workflow state.
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);

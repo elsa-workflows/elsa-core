@@ -14,7 +14,6 @@ public class ActivityIncident
     [JsonConstructor]
     public ActivityIncident()
     {
-        
     }
 
     /// <summary>
@@ -35,19 +34,19 @@ public class ActivityIncident
     }
 
     /// <summary>The ID of the activity that caused the incident.</summary>
-    public string ActivityId { get; } = default!;
+    public string ActivityId { get; init; } = default!;
 
     /// <summary>The type of the activity that caused the incident.</summary>
-    public string ActivityType { get; } = default!;
+    public string ActivityType { get; init; } = default!;
 
     /// <summary>The message of the incident.</summary>
-    public string Message { get; } = default!;
+    public string Message { get; init; } = default!;
 
     /// <summary>The exception that caused the incident.</summary>
-    public ExceptionState? Exception { get; }
+    public ExceptionState? Exception { get; init; }
 
     /// <summary>
     /// The timestamp of the incident.
     /// </summary>
-    public DateTimeOffset Timestamp { get; }
+    public DateTimeOffset Timestamp { get; init; }
 }
