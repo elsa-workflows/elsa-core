@@ -327,7 +327,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
             if (canStartResult.CanStart)
             {
-                results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance, workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId));
+                results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance, workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId, trigger.Payload));
             }
         }
 
@@ -342,7 +342,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var activityInstanceId = workflowsFilter.Options.ActivityInstanceId;
         var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
-        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId)).ToList();
+        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId, b.Payload)).ToList();
         return collectedWorkflows;
     }
 }

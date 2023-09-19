@@ -123,10 +123,52 @@ public class WorkflowsMiddleware
         if (await HandleMultipleWorkflowsFoundAsync(httpContext, workflowMatches, cancellationToken))
             return;
 
-        if (await AuthorizeAsync(httpContext, workflowMatches.Single(), bookmarkPayload, cancellationToken))
+        var matchedWorkflow = workflowMatches.Single();
+
+        if (await AuthorizeAsync(httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
             return;
 
-        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(workflowMatches.Single(), input, cancellationToken);
+        // Check if a request timeout was configured on the HTTP Endpoint activity.
+        var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;
+        var requestTimeout = foundBookmarkPayload?.RequestTimeout;
+
+        if (requestTimeout == null)
+        {
+            // If no request timeout was configured, execute the workflow without a timeout.
+            await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, cancellationToken);
+            return;
+        }
+
+        // If a request timeout was configured, execute the workflow within the specified timeout.
+        await ExecuteWorkflowWithinTimeoutAsync(matchedWorkflow, correlationId, input, requestTimeout.Value, httpContext);
+    }
+
+    private async Task ExecuteWorkflowWithinTimeoutAsync(WorkflowMatch matchedWorkflow, string? correlationId, IDictionary<string, object> input, TimeSpan requestTimeout, HttpContext httpContext)
+    {
+        using var cts = new CancellationTokenSource(requestTimeout);
+        var originalCancellationToken = httpContext.RequestAborted;
+        httpContext.RequestAborted = cts.Token;
+        var cancellationToken = cts.Token;
+
+        try
+        {
+            await ExecuteWorkflowAsync(matchedWorkflow, correlationId, input, requestTimeout, httpContext, cancellationToken);
+        }
+        catch (TaskCanceledException) when (cts.IsCancellationRequested)
+        {
+            httpContext.Response.StatusCode = 408; // Request Timeout.
+            httpContext.Response.ContentType = "text/plain";
+            await httpContext.Response.WriteAsync($"Request timed out after {requestTimeout.TotalSeconds} seconds.", default);
+        }
+        finally
+        {
+            httpContext.RequestAborted = originalCancellationToken;
+        }
+    }
+
+    private async Task ExecuteWorkflowAsync(WorkflowMatch matchedWorkflow, string? correlationId, IDictionary<string, object> input, TimeSpan? requestTimeout, HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(matchedWorkflow, input, cancellationToken);
 
         if (await HandleWorkflowFaultAsync(httpContext, executionResult, cancellationToken))
             return;
@@ -204,7 +246,7 @@ public class WorkflowsMiddleware
         }
     }
 
-    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value.ToLowerInvariant();
+    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.ToLowerInvariant();
 
     private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowMatch> workflowMatches, PathString? basePath)
     {

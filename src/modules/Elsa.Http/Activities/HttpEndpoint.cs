@@ -57,6 +57,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Input<string?> Policy { get; set; } = new(default(string?));
 
     /// <summary>
+    /// The maximum time allowed to process the request.
+    /// </summary>
+    [Input(Description = "The maximum time allowed to process the request.", Category = "Security")]
+    public Input<TimeSpan?> RequestTimeout { get; set; } = default!;
+
+    /// <summary>
+    /// The maximum request size allowed.
+    /// </summary>
+    [Input(Description = "The maximum request size allowed.", Category = "Security")]
+    public Input<int?> RequestSizeLimit { get; set; } = default!;
+
+    /// <summary>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
@@ -130,7 +142,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         await HandleRequestAsync(context, httpContext);
     }
-    
+
     private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
     {
         return request.Form.Files;
@@ -158,12 +170,47 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
-        return methods!.Select(x =>
-                new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
-            .Cast<object>().ToArray();
+        var requestTimeout = RequestTimeout.GetOrDefault(context);
+
+        return methods
+            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout))
+            .Cast<object>()
+            .ToArray();
     }
 
     private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        // Set a timeout, if specified.
+        var timeout = RequestTimeout.Get(context);
+
+        if (timeout == null)
+        {
+            await HandleRequestInternalAsync(context, httpContext);
+            return;
+        }
+
+        using var cts = new CancellationTokenSource(timeout.Value);
+        var originalCt = httpContext.RequestAborted;
+        httpContext.RequestAborted = cts.Token;
+
+        try
+        {
+            await HandleRequestInternalAsync(context, httpContext);
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            httpContext.Response.StatusCode = 408; // Request Timeout.
+            httpContext.Response.ContentType = "text/plain";
+            await httpContext.Response.WriteAsync($"Request timed out after {timeout.Value.TotalSeconds} seconds.", default);
+            cts.Token.ThrowIfCancellationRequested();
+        }
+        finally
+        {
+            httpContext.RequestAborted = originalCt;
+        }
+    }
+
+    private async Task HandleRequestInternalAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         // Provide the received HTTP request as output.
         var request = httpContext.Request;
@@ -184,7 +231,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Read files, if any.
         var files = ReadFilesAsync(context, request);
         Files.Set(context, files.ToArray());
-        
+
         // Read content, if any.
         var content = await ParseContentAsync(context, request);
         ParsedContent.Set(context, content);

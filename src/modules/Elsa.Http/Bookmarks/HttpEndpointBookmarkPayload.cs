@@ -22,12 +22,13 @@ public record HttpEndpointBookmarkPayload
     /// <summary>
     /// Initializes a new instance of the <see cref="HttpEndpointBookmarkPayload"/> class.
     /// </summary>
-    public HttpEndpointBookmarkPayload(string path, string method, bool? authorize = default, string? policy = default)
+    public HttpEndpointBookmarkPayload(string path, string method, bool? authorize = default, string? policy = default, TimeSpan? requestTimeout = default)
     {
         Path = path;
         Method = method;
         Authorize = authorize;
         Policy = policy;
+        RequestTimeout = requestTimeout;
     }
 
     /// <summary>
@@ -57,4 +58,9 @@ public record HttpEndpointBookmarkPayload
     /// Gets or sets a value indicating whether the endpoint requires authorization.
     /// </summary>
     [ExcludeFromHash] public bool? Authorize { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the request timeout.
+    /// </summary>
+    [ExcludeFromHash] public TimeSpan? RequestTimeout { get; set; }
 }
