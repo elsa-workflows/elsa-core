@@ -67,7 +67,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// </summary>
     [Input(Description = "The maximum request size allowed in bytes.", Category = "Upload")]
     public Input<long?> RequestSizeLimit { get; set; } = default!;
-    
+
     /// <summary>
     /// The maximum request size allowed in bytes.
     /// </summary>
@@ -149,9 +149,65 @@ public class HttpEndpoint : Trigger<HttpRequest>
         await HandleRequestAsync(context, httpContext);
     }
 
+    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        // Provide the received HTTP request as output.
+        var request = httpContext.Request;
+        context.Set(Result, request);
+
+        // Read route data, if any.
+        var path = context.GetInput<PathString>(RequestPathInputKey);
+        var routeData = GetRouteData(httpContext, path);
+
+        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
+        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
+        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
+
+        context.Set(RouteData, routeDictionary);
+        context.Set(QueryStringData, queryStringDictionary);
+        context.Set(Headers, headersDictionary);
+
+        // Read files, if any.
+        var files = ReadFilesAsync(context, request);
+
+        if (!await ValidateFilesAsync(context, httpContext, files))
+            return;
+
+        Files.Set(context, files.ToArray());
+
+        // Read content, if any.
+        var content = await ParseContentAsync(context, request);
+        ParsedContent.Set(context, content);
+
+        // Complete.
+        await context.CompleteActivityAsync();
+    }
+
     private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
     {
         return request.Form.Files;
+    }
+
+    private async Task<bool> ValidateFilesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        // Validate individual file sizes.
+        var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
+
+        if (!fileSizeLimit.HasValue)
+            return true;
+
+        if (!files.Any(file => file.Length > fileSizeLimit.Value))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"The maximum file size allowed is {fileSizeLimit} bytes."
+        });
+        await response.Body.FlushAsync();
+
+        return false;
     }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
@@ -183,36 +239,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
             .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
             .Cast<object>()
             .ToArray();
-    }
-
-    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
-    {
-        // Provide the received HTTP request as output.
-        var request = httpContext.Request;
-        context.Set(Result, request);
-
-        // Read route data, if any.
-        var path = context.GetInput<PathString>(RequestPathInputKey);
-        var routeData = GetRouteData(httpContext, path);
-
-        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
-        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
-        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
-
-        context.Set(RouteData, routeDictionary);
-        context.Set(QueryStringData, queryStringDictionary);
-        context.Set(Headers, headersDictionary);
-
-        // Read files, if any.
-        var files = ReadFilesAsync(context, request);
-        Files.Set(context, files.ToArray());
-
-        // Read content, if any.
-        var content = await ParseContentAsync(context, request);
-        ParsedContent.Set(context, content);
-
-        // Complete.
-        await context.CompleteActivityAsync();
     }
 
     private static RouteData GetRouteData(HttpContext httpContext, string path)
