@@ -75,6 +75,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Input<long?> FileSizeLimit { get; set; } = default!;
 
     /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "Only file extensions in this list are allowed.", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> AllowedFileExtensions { get; set; } = default!;
+
+    /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "File extensions in this list are forbidden.", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> BlockedFileExtensions { get; set; } = default!;
+
+    /// <summary>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
@@ -170,7 +182,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Read files, if any.
         var files = ReadFilesAsync(context, request);
 
-        if (!await ValidateFilesAsync(context, httpContext, files))
+        if (!await ValidateFileSizeAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileExtensionWhitelistAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileExtensionBlacklistAsync(context, httpContext, files))
             return;
 
         Files.Set(context, files.ToArray());
@@ -188,7 +206,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return request.Form.Files;
     }
 
-    private async Task<bool> ValidateFilesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private async Task<bool> ValidateFileSizeAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         // Validate individual file sizes.
         var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
@@ -204,6 +222,48 @@ public class HttpEndpoint : Trigger<HttpRequest>
         await response.WriteAsJsonAsync(new
         {
             Message = $"The maximum file size allowed is {fileSizeLimit} bytes."
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileExtensionWhitelistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var allowedFileExtensions = AllowedFileExtensions.GetOrDefault(context);
+
+        if (allowedFileExtensions == null || !allowedFileExtensions.Any())
+            return true;
+
+        if (files.All(file => allowedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"Only the following file extensions are allowed: {string.Join(", ", allowedFileExtensions)}"
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileExtensionBlacklistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var blockedFileExtensions = BlockedFileExtensions.GetOrDefault(context);
+
+        if (blockedFileExtensions == null || !blockedFileExtensions.Any())
+            return true;
+
+        if (!files.Any(file => blockedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"The following file extensions are not allowed: {string.Join(", ", blockedFileExtensions)}"
         });
         await response.Body.FlushAsync();
 

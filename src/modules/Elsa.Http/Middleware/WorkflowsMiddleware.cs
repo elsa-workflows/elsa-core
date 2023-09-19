@@ -144,8 +144,7 @@ public class WorkflowsMiddleware
             if (requestSize > requestSizeLimit)
             {
                 httpContext.Response.StatusCode = 413; // Payload Too Large.
-                httpContext.Response.ContentType = "text/plain";
-                await httpContext.Response.WriteAsync($"Request size limit of {requestSizeLimit} bytes exceeded.", default);
+                await httpContext.Response.WriteAsJsonAsync(new { message = $"The request size exceeds the configured limit of {requestSizeLimit} bytes." }, cancellationToken: cancellationToken);
                 return;
             }
         }
