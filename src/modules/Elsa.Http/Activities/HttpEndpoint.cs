@@ -63,6 +63,12 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Output<object?> ParsedContent { get; set; } = default!;
 
     /// <summary>
+    /// The uploaded files, if any.
+    /// </summary>
+    [Output(Description = "The uploaded files, if any.")]
+    public Output<IFormFile[]> Files { get; set; } = default!;
+
+    /// <summary>
     /// The parsed route data, if any.
     /// </summary>
     [Output(Description = "The parsed route data, if any.")]
@@ -124,6 +130,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         await HandleRequestAsync(context, httpContext);
     }
+    
+    private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
+    {
+        return request.Form.Files;
+    }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
     {
@@ -170,9 +181,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(QueryStringData, queryStringDictionary);
         context.Set(Headers, headersDictionary);
 
+        // Read files, if any.
+        var files = ReadFilesAsync(context, request);
+        Files.Set(context, files.ToArray());
+        
         // Read content, if any.
         var content = await ParseContentAsync(context, request);
-        context.Set(ParsedContent, content);
+        ParsedContent.Set(context, content);
 
         // Complete.
         await context.CompleteActivityAsync();

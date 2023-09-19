@@ -10,7 +10,11 @@ internal static class ActivityContextExtensions
     public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, CancellationToken cancellationToken)
     {
         var parsers = context.GetServices<IHttpContentParser>().OrderByDescending(x => x.Priority).ToList();
-        var contentParser = parsers.First(x => x.GetSupportsContentType(contentType));
+        var contentParser = parsers.FirstOrDefault(x => x.GetSupportsContentType(contentType));
+
+        if (contentParser == null)
+            return null;
+        
         return await contentParser.ReadAsync(content, returnType, cancellationToken);
     }
 
