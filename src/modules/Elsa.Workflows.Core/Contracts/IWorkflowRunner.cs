@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Contracts;
@@ -17,39 +18,4 @@ public interface IWorkflowRunner
     Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default);
     Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext);
-}
-
-public class RunWorkflowOptions
-{
-    public RunWorkflowOptions(
-        string? workflowInstanceId = default, 
-        string? correlationId = default, 
-        string? bookmarkId = default, 
-        string? activityId = default,
-        string? activityNodeId = default,
-        string? activityInstanceId = default,
-        string? activityHash = default, 
-        IDictionary<string, object>? input = default, 
-        string? triggerActivityId = default)
-    {
-        WorkflowInstanceId = workflowInstanceId;
-        CorrelationId = correlationId;
-        BookmarkId = bookmarkId;
-        ActivityId = activityId;
-        ActivityNodeId = activityNodeId;
-        ActivityInstanceId = activityInstanceId;
-        ActivityHash = activityHash;
-        Input = input;
-        TriggerActivityId = triggerActivityId;
-    }
-
-    public string? WorkflowInstanceId { get; set; }
-    public string? CorrelationId { get; set; }
-    public string? BookmarkId { get; set; }
-    public string? ActivityId { get; set; }
-    public string? ActivityNodeId { get; set; }
-    public string? ActivityInstanceId { get; set; }
-    public string? ActivityHash { get; set; }
-    public IDictionary<string, object>? Input { get; set; }
-    public string? TriggerActivityId { get; set; }
 }

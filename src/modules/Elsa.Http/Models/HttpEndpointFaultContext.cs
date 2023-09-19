@@ -9,4 +9,4 @@ namespace Elsa.Http.Models;
 /// <param name="HttpContext">The HTTP context.</param>
 /// <param name="WorkflowState">The faulted workflow state.</param>
 /// <param name="CancellationToken">The cancellation token.</param>
-public record HttpEndpointFaultedWorkflowContext(HttpContext HttpContext, WorkflowState WorkflowState, CancellationToken CancellationToken);
+public record HttpEndpointFaultContext(HttpContext HttpContext, WorkflowState WorkflowState, CancellationToken CancellationToken);

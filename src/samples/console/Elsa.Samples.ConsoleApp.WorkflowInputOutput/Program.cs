@@ -1,6 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 // Setup service container.

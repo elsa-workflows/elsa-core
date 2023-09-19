@@ -28,7 +28,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var cancellationToken = context.CancellationToken;
+        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
 
         // Get current bookmarks.
         var originalBookmarks = context.Bookmarks.ToList();

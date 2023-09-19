@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;

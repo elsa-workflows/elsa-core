@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core.Models;
 
-namespace Elsa.Workflows.Runtime.Requests;
+namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
 /// Represents options for starting a workflow.
@@ -15,4 +16,5 @@ public record StartWorkflowRuntimeOptions(
     IDictionary<string, object>? Input = default, 
     VersionOptions VersionOptions = default, 
     string? TriggerActivityId = default, 
-    string? InstanceId = default);
+    string? InstanceId = default,
+    CancellationTokens CancellationTokens = default);

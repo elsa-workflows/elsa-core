@@ -1,5 +1,6 @@
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using MassTransit;
 
@@ -17,7 +18,7 @@ public class DispatchWorkflowRequestConsumer :
     private readonly IWorkflowRuntime _workflowRuntime;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="DispatchWorkflowRequestConsumer"/> class.
     /// </summary>
     public DispatchWorkflowRequestConsumer(IWorkflowRuntime workflowRuntime)
     {
@@ -28,15 +29,17 @@ public class DispatchWorkflowRequestConsumer :
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
     {
         var message = context.Message;
-        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId);
+        var cancellationToken = context.CancellationToken;
+        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId, cancellationToken);
 
-        await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options, context.CancellationToken);
+        await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
     }
 
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchWorkflowInstance> context)
     {
         var message = context.Message;
+        var cancellationToken = context.CancellationToken;
 
         var options = new ResumeWorkflowRuntimeOptions(
             message.CorrelationId,
@@ -45,24 +48,33 @@ public class DispatchWorkflowRequestConsumer :
             message.ActivityNodeId,
             message.ActivityInstanceId,
             message.ActivityHash,
-            message.Input);
+            message.Input,
+            cancellationToken);
 
-        await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options, context.CancellationToken);
+        await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
     }
 
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchTriggerWorkflows> context)
     {
         var message = context.Message;
-        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input);
-        await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
+        var cancellationToken = context.CancellationToken;
+        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input, cancellationToken);
+        await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
 
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchResumeWorkflows> context)
     {
         var message = context.Message;
-        var options = new TriggerWorkflowsOptions(CorrelationId: message.CorrelationId, WorkflowInstanceId: message.WorkflowInstanceId, Input: message.Input);
-        await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options, context.CancellationToken);
+        var cancellationToken = context.CancellationToken;
+
+        var options = new TriggerWorkflowsOptions(
+            correlationId: message.CorrelationId,
+            workflowInstanceId: message.WorkflowInstanceId,
+            input: message.Input,
+            cancellationTokens: cancellationToken);
+
+        await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
 }

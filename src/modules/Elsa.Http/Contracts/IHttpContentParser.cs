@@ -17,7 +17,7 @@ public interface IHttpContentParser
     bool GetSupportsContentType(string contentType);
     
     /// <summary>
-    /// Reads the specified <see cref="stream"/> and returns a parsed object of the specified type. If no type is specified, a string is returned. 
+    /// Reads the specified <c>stream</c> and returns a parsed object of the specified type. If no type is specified, a string is returned. 
     /// </summary>
     Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken);
 }

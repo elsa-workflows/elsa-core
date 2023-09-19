@@ -31,6 +31,9 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         // Invoke next middleware.
         await Next(context);
 
+        // Get the managed cancellation token.
+        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
+        
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;
         
@@ -82,8 +85,8 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
             };
         }).ToList();
 
-        await _activityExecutionStore.SaveManyAsync(entries, context.CancellationToken);
-        await _notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, entries));
+        await _activityExecutionStore.SaveManyAsync(entries, cancellationToken);
+        await _notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, entries), cancellationToken);
     }
 
     private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)

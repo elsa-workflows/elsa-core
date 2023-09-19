@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -60,7 +61,7 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointWorkflowFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointWorkflowFaultHandler>();
+    public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
 
     /// <summary>
     /// A delegate to configure the <see cref="IContentTypeProvider"/>.
@@ -115,7 +116,8 @@ public class HttpFeature : FeatureBase
                 typeof(HttpRequest),
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
-                typeof(HttpRequestHeaders)
+                typeof(HttpRequestHeaders),
+                typeof(IFormFile)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -177,16 +179,17 @@ public class HttpFeature : FeatureBase
             // HTTP endpoint handlers.
             .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
-            .AddSingleton<DefaultHttpEndpointWorkflowFaultHandler>()
+            .AddSingleton<DefaultHttpEndpointFaultHandler>()
             .AddSingleton(HttpEndpointWorkflowFaultHandler)
             .AddSingleton(HttpEndpointAuthorizationHandler)
 
             // Downloadable content handlers.
             .AddSingleton<IDownloadableManager, DefaultDownloadableManager>()
-            .AddSingleton<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddSingleton<IDownloadableContentHandler, MultiDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
             .AddSingleton<IDownloadableContentHandler, StreamDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, FormFileDownloadableContentHandler>()
+            .AddSingleton<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddSingleton<IDownloadableContentHandler, UrlDownloadableContentHandler>()
 
             // File caches.
@@ -209,5 +212,11 @@ public class HttpFeature : FeatureBase
 
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddSingleton(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
+
+        Services.Configure<ExpressionOptions>(options =>
+        {
+            options.AddTypeAlias<IFormFile>("FormFile");
+            options.AddTypeAlias<IFormFile[]>("FormFile[]");
+        });
     }
 }

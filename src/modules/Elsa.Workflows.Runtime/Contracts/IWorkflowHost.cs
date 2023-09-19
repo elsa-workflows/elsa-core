@@ -1,7 +1,7 @@
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
@@ -35,18 +35,3 @@ public interface IWorkflowHost
     /// </summary>
     Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
 }
-
-public record StartWorkflowHostOptions(string? InstanceId = default, string? CorrelationId = default, IDictionary<string, object>? Input = default, string? TriggerActivityId = default);
-
-public record ResumeWorkflowHostOptions(
-    string? CorrelationId = default,
-    string? BookmarkId = default,
-    string? ActivityId = default,
-    string? ActivityNodeId = default,
-    string? ActivityInstanceId = default,
-    string? ActivityHash = default,
-    IDictionary<string, object>? Input = default);
-
-public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
-
-public record ResumeWorkflowHostResult(Diff<Bookmark> BookmarksDiff);

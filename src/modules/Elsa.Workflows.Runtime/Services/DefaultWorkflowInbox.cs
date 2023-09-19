@@ -104,12 +104,12 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input);
+        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
 
         if (workflowInstanceId != null)
-            return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+            return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options);
 
-        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        var result = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, options);
         return result.TriggeredWorkflows;
     }
 
@@ -121,9 +121,9 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input);
+        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
 
-        return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options, cancellationToken);
+        return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options);
     }
 
     /// <inheritdoc />

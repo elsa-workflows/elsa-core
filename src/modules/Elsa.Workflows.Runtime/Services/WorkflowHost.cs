@@ -3,8 +3,11 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -47,7 +50,7 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var strategyType = Workflow.Options?.ActivationStrategyType;
+        var strategyType = Workflow.Options.ActivationStrategyType;
 
         if (strategyType == null)
             return true;
@@ -69,7 +72,14 @@ public class WorkflowHost : IWorkflowHost
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
         var input = options?.Input;
-        var runOptions = new RunWorkflowOptions(instanceId, correlationId, input: input, triggerActivityId: options?.TriggerActivityId);
+
+        var runOptions = new RunWorkflowOptions(
+            instanceId,
+            correlationId,
+            input: input,
+            triggerActivityId: options?.TriggerActivityId,
+            cancellationTokens: options?.CancellationTokens ?? cancellationToken);
+
         var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
@@ -104,7 +114,9 @@ public class WorkflowHost : IWorkflowHost
             options?.ActivityNodeId,
             options?.ActivityInstanceId,
             options?.ActivityHash,
-            input
+            input,
+            default,
+            options?.CancellationTokens ?? cancellationToken
         );
 
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);

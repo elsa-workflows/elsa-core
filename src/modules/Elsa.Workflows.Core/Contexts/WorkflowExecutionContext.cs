@@ -59,7 +59,7 @@ public class WorkflowExecutionContext : IExecutionContext
         IEnumerable<ActivityExecutionContext>? activityExecutionContexts,
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
-        CancellationToken cancellationToken)
+        CancellationTokens cancellationTokens)
     {
         _serviceProvider = serviceProvider;
         _hasher = hasher;
@@ -77,13 +77,13 @@ public class WorkflowExecutionContext : IExecutionContext
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
-        CancellationToken = cancellationToken;
+        CancellationTokens = cancellationTokens;
         Incidents = incidents.ToList();
         NodeIdLookup = _nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = _nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = _nodes.ToDictionary(x => x.Activity);
         MemoryRegister = workflow.CreateRegister();
-        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationToken);
+        ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
     }
 
     /// <summary>
@@ -206,9 +206,9 @@ public class WorkflowExecutionContext : IExecutionContext
     public string? TriggerActivityId { get; set; }
 
     /// <summary>
-    /// A <see cref="CancellationToken"/> that can be used to cancel asynchronous operations.
+    /// A set of cancellation tokens that can be used to cancel the workflow execution without cancelling system-level operations.
     /// </summary>
-    public CancellationToken CancellationToken { get; }
+    public CancellationTokens CancellationTokens { get; }
 
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
@@ -395,8 +395,8 @@ public class WorkflowExecutionContext : IExecutionContext
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, memory, parentExpressionExecutionContext, properties, CancellationTokens.ApplicationCancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;

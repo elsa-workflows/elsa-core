@@ -1,5 +1,5 @@
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Http.Contracts;
@@ -14,7 +14,7 @@ public interface IHttpBookmarkProcessor
     /// </summary>
     Task<IEnumerable<WorkflowState>> ProcessBookmarks(
         IEnumerable<WorkflowExecutionResult> executionResults,
-        string? correlationId,
-        IDictionary<string, object>? input,
-        CancellationToken cancellationToken = default);
+        string? correlationId = default,
+        IDictionary<string, object>? input = default,
+        CancellationTokens cancellationToken = default);
 }

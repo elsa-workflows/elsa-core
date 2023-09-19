@@ -57,10 +57,52 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Input<string?> Policy { get; set; } = new(default(string?));
 
     /// <summary>
+    /// The maximum time allowed to process the request.
+    /// </summary>
+    [Input(Description = "The maximum time allowed to process the request.", Category = "Upload")]
+    public Input<TimeSpan?> RequestTimeout { get; set; } = default!;
+
+    /// <summary>
+    /// The maximum request size allowed in bytes.
+    /// </summary>
+    [Input(Description = "The maximum request size allowed in bytes.", Category = "Upload")]
+    public Input<long?> RequestSizeLimit { get; set; } = default!;
+
+    /// <summary>
+    /// The maximum request size allowed in bytes.
+    /// </summary>
+    [Input(Description = "The maximum file size allowed in bytes for an individual file.", Category = "Upload")]
+    public Input<long?> FileSizeLimit { get; set; } = default!;
+
+    /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "Only file extensions in this list are allowed. Leave empty to allow all extensions", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> AllowedFileExtensions { get; set; } = default!;
+
+    /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "File extensions in this list are forbidden. Leave empty to not block any extension.", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> BlockedFileExtensions { get; set; } = default!;
+
+    /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "Only MIME types in this list are allowed. Leave empty to allow all types", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> AllowedMimeTypes { get; set; } = default!;
+
+    /// <summary>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
     public Output<object?> ParsedContent { get; set; } = default!;
+
+    /// <summary>
+    /// The uploaded files, if any.
+    /// </summary>
+    [Output(Description = "The uploaded files, if any.")]
+    public Output<IFormFile[]> Files { get; set; } = default!;
 
     /// <summary>
     /// The parsed route data, if any.
@@ -125,6 +167,139 @@ public class HttpEndpoint : Trigger<HttpRequest>
         await HandleRequestAsync(context, httpContext);
     }
 
+    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        // Provide the received HTTP request as output.
+        var request = httpContext.Request;
+        context.Set(Result, request);
+
+        // Read route data, if any.
+        var path = context.GetInput<PathString>(RequestPathInputKey);
+        var routeData = GetRouteData(httpContext, path);
+
+        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
+        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
+        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
+
+        context.Set(RouteData, routeDictionary);
+        context.Set(QueryStringData, queryStringDictionary);
+        context.Set(Headers, headersDictionary);
+
+        // Read files, if any.
+        var files = ReadFilesAsync(context, request);
+
+        if (!await ValidateFileSizesAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileExtensionWhitelistAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileExtensionBlacklistAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileMimeTypesAsync(context, httpContext, files))
+            return;
+
+        Files.Set(context, files.ToArray());
+
+        // Read content, if any.
+        var content = await ParseContentAsync(context, request);
+        ParsedContent.Set(context, content);
+
+        // Complete.
+        await context.CompleteActivityAsync();
+    }
+
+    private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
+    {
+        return request.Form.Files;
+    }
+
+    private async Task<bool> ValidateFileSizesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        // Validate individual file sizes.
+        var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
+
+        if (!fileSizeLimit.HasValue)
+            return true;
+
+        if (!files.Any(file => file.Length > fileSizeLimit.Value))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"The maximum file size allowed is {fileSizeLimit} bytes."
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileExtensionWhitelistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var allowedFileExtensions = AllowedFileExtensions.GetOrDefault(context);
+
+        if (allowedFileExtensions == null || !allowedFileExtensions.Any())
+            return true;
+
+        if (files.All(file => allowedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"Only the following file extensions are allowed: {string.Join(", ", allowedFileExtensions)}"
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileExtensionBlacklistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var blockedFileExtensions = BlockedFileExtensions.GetOrDefault(context);
+
+        if (blockedFileExtensions == null || !blockedFileExtensions.Any())
+            return true;
+
+        if (!files.Any(file => blockedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"The following file extensions are not allowed: {string.Join(", ", blockedFileExtensions)}"
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileMimeTypesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var allowedMimeTypes = AllowedMimeTypes.GetOrDefault(context);
+
+        if (allowedMimeTypes == null || !allowedMimeTypes.Any())
+            return true;
+
+        if (files.All(file => allowedMimeTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"Only the following MIME types are allowed: {string.Join(", ", allowedMimeTypes)}"
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
     {
         if (!HasContent(httpRequest))
@@ -147,35 +322,13 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
-        return methods!.Select(x =>
-                new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy))
-            .Cast<object>().ToArray();
-    }
+        var requestTimeout = RequestTimeout.GetOrDefault(context);
+        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
-    private async Task HandleRequestAsync(ActivityExecutionContext context, HttpContext httpContext)
-    {
-        // Provide the received HTTP request as output.
-        var request = httpContext.Request;
-        context.Set(Result, request);
-
-        // Read route data, if any.
-        var path = context.GetInput<PathString>(RequestPathInputKey);
-        var routeData = GetRouteData(httpContext, path);
-
-        var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
-        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
-        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
-
-        context.Set(RouteData, routeDictionary);
-        context.Set(QueryStringData, queryStringDictionary);
-        context.Set(Headers, headersDictionary);
-
-        // Read content, if any.
-        var content = await ParseContentAsync(context, request);
-        context.Set(ParsedContent, content);
-
-        // Complete.
-        await context.CompleteActivityAsync();
+        return methods
+            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
+            .Cast<object>()
+            .ToArray();
     }
 
     private static RouteData GetRouteData(HttpContext httpContext, string path)

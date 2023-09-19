@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.IntegrationTests.Scenarios.BlockingAndBreaking.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
