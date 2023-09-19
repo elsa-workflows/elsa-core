@@ -77,14 +77,20 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The allowed file extensions,
     /// </summary>
-    [Input(Description = "Only file extensions in this list are allowed.", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    [Input(Description = "Only file extensions in this list are allowed. Leave empty to allow all extensions", Category = "Upload", UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>> AllowedFileExtensions { get; set; } = default!;
 
     /// <summary>
     /// The allowed file extensions,
     /// </summary>
-    [Input(Description = "File extensions in this list are forbidden.", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    [Input(Description = "File extensions in this list are forbidden. Leave empty to not block any extension.", Category = "Upload", UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>> BlockedFileExtensions { get; set; } = default!;
+
+    /// <summary>
+    /// The allowed file extensions,
+    /// </summary>
+    [Input(Description = "Only MIME types in this list are allowed. Leave empty to allow all types", Category = "Upload", UIHint = InputUIHints.MultiText)]
+    public Input<ICollection<string>> AllowedMimeTypes { get; set; } = default!;
 
     /// <summary>
     /// The parsed request content, if any.
@@ -182,13 +188,16 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Read files, if any.
         var files = ReadFilesAsync(context, request);
 
-        if (!await ValidateFileSizeAsync(context, httpContext, files))
+        if (!await ValidateFileSizesAsync(context, httpContext, files))
             return;
 
         if (!await ValidateFileExtensionWhitelistAsync(context, httpContext, files))
             return;
 
         if (!await ValidateFileExtensionBlacklistAsync(context, httpContext, files))
+            return;
+
+        if (!await ValidateFileMimeTypesAsync(context, httpContext, files))
             return;
 
         Files.Set(context, files.ToArray());
@@ -206,7 +215,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return request.Form.Files;
     }
 
-    private async Task<bool> ValidateFileSizeAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private async Task<bool> ValidateFileSizesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         // Validate individual file sizes.
         var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
@@ -264,6 +273,27 @@ public class HttpEndpoint : Trigger<HttpRequest>
         await response.WriteAsJsonAsync(new
         {
             Message = $"The following file extensions are not allowed: {string.Join(", ", blockedFileExtensions)}"
+        });
+        await response.Body.FlushAsync();
+
+        return false;
+    }
+
+    private async Task<bool> ValidateFileMimeTypesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
+        var allowedMimeTypes = AllowedMimeTypes.GetOrDefault(context);
+
+        if (allowedMimeTypes == null || !allowedMimeTypes.Any())
+            return true;
+
+        if (files.All(file => allowedMimeTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase)))
+            return true;
+
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
+        await response.WriteAsJsonAsync(new
+        {
+            Message = $"Only the following MIME types are allowed: {string.Join(", ", allowedMimeTypes)}"
         });
         await response.Body.FlushAsync();
 
