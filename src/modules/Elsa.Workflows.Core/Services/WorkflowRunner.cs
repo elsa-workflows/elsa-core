@@ -96,7 +96,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, correlationId, default, input, default, triggerActivityId, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, correlationId, default, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -114,7 +114,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, cancellationToken);
+        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
         var bookmarkId = options?.BookmarkId;
         var activityNodeId = options?.ActivityNodeId;
         var activityId = options?.ActivityId;
@@ -179,14 +179,14 @@ public class WorkflowRunner : IWorkflowRunner
 
         // Get the managed cancellation token in case the workflow was cancelled.
         cancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
-        
+
         // Extract workflow state.
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
-        
+
         // Update timestamps.
         workflowState.UpdatedAt = _systemClock.UtcNow;
 
-        if (workflowState.Status == WorkflowStatus.Finished) 
+        if (workflowState.Status == WorkflowStatus.Finished)
             workflowState.FinishedAt = workflowState.UpdatedAt;
 
         // Read captured output, if any.
@@ -208,6 +208,6 @@ public class WorkflowRunner : IWorkflowRunner
         IDictionary<string, object>? input,
         ExecuteActivityDelegate? executeActivityDelegate,
         string? triggerActivityId,
-        CancellationToken cancellationToken) =>
-        await _workflowExecutionContextFactory.CreateAsync(serviceProvider, workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationToken);
+        CancellationTokens cancellationTokens) =>
+        await _workflowExecutionContextFactory.CreateAsync(serviceProvider, workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationTokens);
 }

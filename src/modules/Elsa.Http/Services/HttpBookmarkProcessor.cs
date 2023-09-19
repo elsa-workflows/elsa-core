@@ -75,7 +75,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             // Resume the workflow "in-process".
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(
                 result.InstanceId,
-                applicationCancellationToken);
+                systemCancellationToken);
 
             if (workflowState == null)
             {
@@ -86,7 +86,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             var workflowDefinition = await _workflowDefinitionService.FindAsync(
                 workflowState.DefinitionId,
                 VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
-                applicationCancellationToken);
+                systemCancellationToken);
 
             if (workflowDefinition == null)
             {
@@ -96,7 +96,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
 
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
                 workflowDefinition,
-                applicationCancellationToken);
+                systemCancellationToken);
 
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, applicationCancellationToken);
             var options = new ResumeWorkflowHostOptions(correlationId, result.BookmarkId, Input: input, CancellationTokens: cancellationTokens);
