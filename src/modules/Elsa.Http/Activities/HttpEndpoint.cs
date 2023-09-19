@@ -63,10 +63,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Input<TimeSpan?> RequestTimeout { get; set; } = default!;
 
     /// <summary>
-    /// The maximum request size allowed.
+    /// The maximum request size allowed in bytes.
     /// </summary>
-    [Input(Description = "The maximum request size allowed.", Category = "Security")]
-    public Input<int?> RequestSizeLimit { get; set; } = default!;
+    [Input(Description = "The maximum request size allowed in bytes.", Category = "Security")]
+    public Input<long?> RequestSizeLimit { get; set; } = default!;
 
     /// <summary>
     /// The parsed request content, if any.
@@ -171,9 +171,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
         var requestTimeout = RequestTimeout.GetOrDefault(context);
+        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
         return methods
-            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout))
+            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
             .Cast<object>()
             .ToArray();
     }
