@@ -211,6 +211,11 @@ public class WorkflowExecutionContext : IExecutionContext
     public CancellationToken CancellationToken { get; }
 
     /// <summary>
+    /// A <see cref="CancellationToken"/> that can be used by the system to persist changes even if the workflow execution was cancelled by the caller.
+    /// </summary>
+    public CancellationToken ManagedCancellationToken { get; set; }
+
+    /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
     /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);

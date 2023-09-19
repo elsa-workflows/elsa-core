@@ -273,12 +273,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken = default)
     {
-        var input = options.Input;
-        var correlationId = options.CorrelationId;
         var workflowInstanceId = string.IsNullOrEmpty(options.InstanceId) ? _identityGenerator.GenerateId() : options.InstanceId;
 
         await using (await _distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(2), cancellationToken))
         {
+            var input = options.Input;
+            var correlationId = options.CorrelationId;
             var startWorkflowOptions = new StartWorkflowHostOptions(workflowInstanceId, correlationId, input, options.TriggerActivityId);
             await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
             var workflowState = workflowHost.WorkflowState;

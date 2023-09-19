@@ -176,6 +176,9 @@ public class WorkflowRunner : IWorkflowRunner
         // Execute the workflow execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
 
+        // Get the managed cancellation token in case the workflow was cancelled.
+        cancellationToken = workflowExecutionContext.ManagedCancellationToken;
+        
         // Extract workflow state.
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
         

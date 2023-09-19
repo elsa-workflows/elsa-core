@@ -156,13 +156,24 @@ public class WorkflowsMiddleware
         }
         catch (TaskCanceledException) when (cts.IsCancellationRequested)
         {
-            httpContext.Response.StatusCode = 408; // Request Timeout.
-            httpContext.Response.ContentType = "text/plain";
-            await httpContext.Response.WriteAsync($"Request timed out after {requestTimeout.TotalSeconds} seconds.", default);
+            await WriteTimeoutResponseAsync();
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            await WriteTimeoutResponseAsync();
         }
         finally
         {
             httpContext.RequestAborted = originalCancellationToken;
+        }
+
+        return;
+
+        async Task WriteTimeoutResponseAsync()
+        {
+            httpContext.Response.StatusCode = 408; // Request Timeout.
+            httpContext.Response.ContentType = "text/plain";
+            await httpContext.Response.WriteAsync($"Request timed out after {requestTimeout.TotalSeconds} seconds.", default);
         }
     }
 

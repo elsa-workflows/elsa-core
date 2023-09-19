@@ -65,6 +65,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
         var workflowStates = new List<WorkflowState>();
+        var managedCancellationToken = default(CancellationToken);
 
         while (workflowExecutionResults.TryPop(out var result))
         {
@@ -100,13 +101,13 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
 
             // Import the updated workflow state into the runtime.
             workflowState = workflowHost.WorkflowState;
-            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
+            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, managedCancellationToken);
             workflowStates.Add(workflowState);
         }
 
         // Save the updated workflow states.
         foreach (var workflowInstance in workflowStates.Select(workflowState => _workflowStateMapper.Map(workflowState)!))
-            await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
+            await _workflowInstanceManager.SaveAsync(workflowInstance, managedCancellationToken);
 
         return workflowStates;
     }
