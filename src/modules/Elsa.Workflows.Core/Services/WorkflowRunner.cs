@@ -166,19 +166,17 @@ public class WorkflowRunner : IWorkflowRunner
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
         var workflow = workflowExecutionContext.Workflow;
-        var cancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
+        var applicationCancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
+        var systemCancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
 
         // Publish domain event.
-        await _notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), applicationCancellationToken);
 
         // Transition into the Running state.
         workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
 
         // Execute the workflow execution pipeline.
         await _pipeline.ExecuteAsync(workflowExecutionContext);
-
-        // Get the managed cancellation token in case the workflow was cancelled.
-        cancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
 
         // Extract workflow state.
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
@@ -193,7 +191,7 @@ public class WorkflowRunner : IWorkflowRunner
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
 
         // Publish domain event.
-        await _notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), systemCancellationToken);
 
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);

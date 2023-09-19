@@ -24,7 +24,6 @@ public struct CancellationTokens
     {
     }
     
-    // Implement an implicit cast from CancellationToken to CancellationTokens.
     /// <summary>
     /// Implicitly casts a <see cref="CancellationToken"/> to a <see cref="CancellationTokens"/> struct.
     /// </summary>
