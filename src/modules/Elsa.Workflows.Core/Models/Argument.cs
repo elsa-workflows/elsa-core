@@ -19,7 +19,7 @@ public abstract class Argument
     protected Argument(MemoryBlockReference memoryBlockReference) : this(() => memoryBlockReference)
     {
     }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Argument"/> class.
     /// </summary>
@@ -32,5 +32,6 @@ public abstract class Argument
     /// <summary>
     /// Gets or sets the memory block reference.
     /// </summary>
-    [JsonIgnore] public Func<MemoryBlockReference> MemoryBlockReference { get; set; } = default!;
+    [JsonIgnore]
+    public Func<MemoryBlockReference> MemoryBlockReference { get; set; } = default!;
 }

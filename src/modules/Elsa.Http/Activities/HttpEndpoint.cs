@@ -3,7 +3,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
@@ -19,6 +18,7 @@ namespace Elsa.Http;
 /// Wait for an inbound HTTP request that matches the specified path and methods.
 /// </summary>
 [Activity("Elsa", "HTTP", "Wait for an inbound HTTP request that matches the specified path and methods.", DisplayName = "HTTP Endpoint")]
+[Output(IsSerializable = false)]
 public class HttpEndpoint : Trigger<HttpRequest>
 {
     internal const string HttpContextInputKey = "HttpContext";
@@ -101,7 +101,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The uploaded files, if any.
     /// </summary>
-    [Output(Description = "The uploaded files, if any.")]
+    [Output(Description = "The uploaded files, if any.", IsSerializable = false)]
     public Output<IFormFile[]> Files { get; set; } = default!;
 
     /// <summary>
@@ -212,7 +212,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
     private IFormFileCollection ReadFilesAsync(ActivityExecutionContext context, HttpRequest request)
     {
-        return request.Form.Files;
+        return request.HasFormContentType ? request.Form.Files : new FormFileCollection();
     }
 
     private async Task<bool> ValidateFileSizesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)

@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Core.Attributes;
 
-[AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Class)]
 public class OutputAttribute : Attribute
 {
     /// <summary>
@@ -22,4 +22,9 @@ public class OutputAttribute : Attribute
     /// A value indicating whether this property should be visible.
     /// </summary>
     public bool IsBrowsable { get; set; } = true;
+
+    /// <summary>
+    /// A value indicating whether this output can be serialized.
+    /// </summary>
+    public bool IsSerializable { get; set; } = true;
 }
