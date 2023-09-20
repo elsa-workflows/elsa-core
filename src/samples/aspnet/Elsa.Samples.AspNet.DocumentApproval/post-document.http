@@ -1,0 +1,11 @@
+﻿POST https://localhost:5001/workflows/documents
+Content-Type: application/json
+
+{
+    "Id": "document-1",
+    "Author": {
+        "Name": "Amanda"
+    }
+}
+
+###
