@@ -30,6 +30,7 @@ public class InputDescriptor : PropertyDescriptor
         string? defaultSyntax = "Literal",
         bool isReadOnly = false,
         bool isBrowsable = true,
+        bool isSerializable = true,
         bool isSynthetic = false,
         Type? storageDriverType = default,
         PropertyInfo? propertyInfo = default)

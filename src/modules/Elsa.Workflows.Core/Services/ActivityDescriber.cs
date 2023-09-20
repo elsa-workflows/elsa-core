@@ -73,6 +73,7 @@ public class ActivityDescriber : IActivityDescriber
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
         var isTerminal = activityType.FindInterfaces((type, criteria) => type == typeof(ITerminalNode), null).Any();
         var attributes = activityType.GetCustomAttributes(true).Cast<Attribute>().ToList();
+        var outputAttribute = attributes.OfType<OutputAttribute>().FirstOrDefault();
 
         var descriptor = new ActivityDescriptor
         {
@@ -98,6 +99,15 @@ public class ActivityDescriber : IActivityDescriber
                 return activity;
             }
         };
+        
+        // If the activity has a default output, set its IsSerializable property to the value of the OutputAttribute.IsSerializable property.
+        var defaultOutputDescriptor = descriptor.Outputs.FirstOrDefault(x => x.Name == ActivityOutputRegister.DefaultOutputName);
+        
+        if (defaultOutputDescriptor != null)
+        {
+            var isResultSerializable = outputAttribute?.IsSerializable;
+            defaultOutputDescriptor.IsSerializable = isResultSerializable;
+        }
 
         return descriptor;
     }
@@ -127,7 +137,8 @@ public class ActivityDescriber : IActivityDescriber
             propertyInfo.SetValue,
             propertyInfo,
             descriptionAttribute?.Description ?? outputAttribute?.Description,
-            outputAttribute?.IsBrowsable ?? true
+            outputAttribute?.IsBrowsable ?? true,
+            outputAttribute?.IsSerializable
         ));
     }
 
@@ -162,6 +173,7 @@ public class ActivityDescriber : IActivityDescriber
             inputAttribute?.DefaultSyntax,
             inputAttribute?.IsReadOnly ?? false,
             inputAttribute?.IsBrowsable ?? true,
+            default,
             false,
             default,
             propertyInfo

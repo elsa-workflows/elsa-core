@@ -401,10 +401,13 @@ public static class ActivityExecutionContextExtensions
         var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
         var serializer = context.GetRequiredService<ISafeSerializer>();
 
-        foreach (var output in outputs)
+        foreach (var outputDescriptor in outputDescriptors)
         {
-            var outputName = output.Key;
-            var outputValue = output.Value;
+            if(outputDescriptor.IsSerializable == false)
+                continue;
+            
+            var outputName = outputDescriptor.Name;
+            var outputValue = outputs[outputName];
 
             if (outputValue == null!)
                 continue;

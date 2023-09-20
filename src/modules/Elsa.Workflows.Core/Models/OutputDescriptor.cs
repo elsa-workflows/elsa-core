@@ -24,7 +24,8 @@ public class OutputDescriptor : PropertyDescriptor
         Action<IActivity, object?> valueSetter,
         PropertyInfo? propertyInfo = default,
         string? description = default,
-        bool? isBrowsable = default)
+        bool? isBrowsable = default,
+        bool? isSerializable = default)
     {
         Name = name;
         DisplayName = displayName;
@@ -33,6 +34,7 @@ public class OutputDescriptor : PropertyDescriptor
         ValueSetter = valueSetter;
         Description = description;
         IsBrowsable = isBrowsable;
+        IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
     }
 }

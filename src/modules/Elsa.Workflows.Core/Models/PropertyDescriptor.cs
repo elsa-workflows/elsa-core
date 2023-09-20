@@ -36,9 +36,14 @@ public abstract class PropertyDescriptor
     public float Order { get; set; }
 
     /// <summary>
-    /// True if this input should be displayed by UI tools, false otherwise.
+    /// True if this property should be displayed by UI tools, false otherwise.
     /// </summary>
     public bool? IsBrowsable { get; set; } = true;
+    
+    /// <summary>
+    /// True if this property can be serialized.
+    /// </summary>
+    public bool? IsSerializable { get; set; }
 
     /// <summary>
     /// True if this input property is synthetic, which means it does not exist physically on the activity's .NET type.
