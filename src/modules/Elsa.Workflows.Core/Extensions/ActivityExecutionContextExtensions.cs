@@ -234,7 +234,9 @@ public static class ActivityExecutionContextExtensions
         }
 
         // Store the input value in the activity state.
-        context.ActivityState[inputDescriptor.Name] = value!;
+        if (inputDescriptor.IsSerializable != false)
+            context.ActivityState[inputDescriptor.Name] = value!;
+
         return value;
     }
 
@@ -403,16 +405,16 @@ public static class ActivityExecutionContextExtensions
 
         foreach (var outputDescriptor in outputDescriptors)
         {
-            if(outputDescriptor.IsSerializable == false)
+            if (outputDescriptor.IsSerializable == false)
                 continue;
-            
+
             var outputName = outputDescriptor.Name;
             var outputValue = outputs[outputName];
 
             if (outputValue == null!)
                 continue;
 
-            var serializedOutputValue = serializer.Serialize(outputValue);
+            var serializedOutputValue = await serializer.SerializeAsync(outputValue);
             context.JournalData[outputName] = serializedOutputValue;
         }
 
@@ -441,6 +443,8 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
     {
+        var cancellationToken = context.CancellationToken;
+
         // Record the outcomes, if any.
         context.JournalData["Outcomes"] = outcomes;
 
@@ -460,7 +464,7 @@ public static class ActivityExecutionContextExtensions
             if (outputValue == null!)
                 continue;
 
-            var serializedOutputValue = serializer.Serialize(outputValue);
+            var serializedOutputValue = await serializer.SerializeAsync(outputValue, cancellationToken);
             context.JournalData[outputName] = serializedOutputValue;
         }
 

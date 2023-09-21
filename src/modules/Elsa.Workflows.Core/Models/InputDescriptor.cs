@@ -52,6 +52,7 @@ public class InputDescriptor : PropertyDescriptor
         StorageDriverType = storageDriverType;
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
+        IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
     }
 

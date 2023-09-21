@@ -173,7 +173,7 @@ public class ActivityDescriber : IActivityDescriber
             inputAttribute?.DefaultSyntax,
             inputAttribute?.IsReadOnly ?? false,
             inputAttribute?.IsBrowsable ?? true,
-            default,
+            inputAttribute?.IsSerializable ?? true,
             false,
             default,
             propertyInfo

@@ -24,7 +24,7 @@ public class OutputAttribute : Attribute
     public bool IsBrowsable { get; set; } = true;
 
     /// <summary>
-    /// A value indicating whether this output can be serialized.
+    /// A value indicating whether this output can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;
 }
