@@ -18,7 +18,7 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, IActivity? value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 

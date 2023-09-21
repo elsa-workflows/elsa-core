@@ -89,4 +89,9 @@ public class InputAttribute : Attribute
     /// When set to false, it is up to the activity itself to evaluate its input before using it. 
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
+    
+    /// <summary>
+    /// A value indicating whether this input can be serialized as part of the workflow instance,
+    /// </summary>
+    public bool IsSerializable { get; set; } = true;
 }
