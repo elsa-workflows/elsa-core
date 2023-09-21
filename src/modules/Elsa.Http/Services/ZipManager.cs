@@ -39,7 +39,7 @@ internal class ZipManager
         CancellationToken cancellationToken = default)
     {
         // Create a temporary file.
-        var tempFilePath = Path.GetTempFileName();
+        var tempFilePath = GetTempFilePath();
 
         // Create a zip archive from the downloadables.
         await CreateZipArchiveAsync(tempFilePath, downloadables, cancellationToken);
@@ -54,7 +54,7 @@ internal class ZipManager
         var zipStream = File.OpenRead(tempFilePath);
         return (zipBlob, zipStream, () => Cleanup(tempFilePath));
     }
-    
+
     /// <summary>
     /// Loads a cached zip blob for the specified download correlation ID.
     /// </summary>
@@ -172,6 +172,13 @@ internal class ZipManager
         downloadAsFilename = !string.IsNullOrWhiteSpace(downloadAsFilename) ? downloadAsFilename : "download.zip";
         
         return (downloadAsFilename, contentType);
+    }
+    
+    private string GetTempFilePath()
+    {
+        var tempFileName = Path.GetRandomFileName();
+        var tempFilePath = Path.Combine(_fileCacheOptions.Value.LocalCacheDirectory, tempFileName);
+        return tempFilePath;
     }
     
     private void Cleanup(string filePath)

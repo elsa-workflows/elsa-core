@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Features;
 
@@ -71,9 +72,10 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate to configure the <see cref="IFileCacheStorageProvider"/>.
     /// </summary>
-    public Func<IServiceProvider, IFileCacheStorageProvider> FileCache { get; set; } = _ =>
+    public Func<IServiceProvider, IFileCacheStorageProvider> FileCache { get; set; } = sp =>
     {
-        var blobStorage = StorageFactory.Blobs.DirectoryFiles(Path.GetTempPath());
+        var options = sp.GetRequiredService<IOptions<HttpFileCacheOptions>>().Value;
+        var blobStorage = StorageFactory.Blobs.DirectoryFiles(options.LocalCacheDirectory);
         return new BlobFileCacheStorageProvider(blobStorage);
     };
 
