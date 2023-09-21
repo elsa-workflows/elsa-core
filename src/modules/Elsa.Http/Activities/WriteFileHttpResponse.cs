@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
 using Elsa.Workflows.Core.Models;
 using FluentStorage.Blobs;
+using FluentStorage.Utils.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -141,10 +143,11 @@ public class WriteFileHttpResponse : Activity
 
         try
         {
-            // Send the zip stream the temporary file back to the client.
+            // Send the temporary file back to the client.
             var contentType = zipBlob.Metadata["ContentType"];
             var downloadAsFilename = zipBlob.Metadata["Filename"];
-            var eTag = $"\"{zipBlob.LastModificationTime?.ToString("O")}\"";
+            var hash = ComputeHash(zipStream);
+            var eTag = $"\"{hash}\"";
             var eTagHeaderValue = new EntityTagHeaderValue(eTag);
             await SendFileStream(context, httpContext, zipStream, contentType, downloadAsFilename, eTagHeaderValue);
 
@@ -160,6 +163,16 @@ public class WriteFileHttpResponse : Activity
             // Delete any temporary files.
             await cleanupCallback();
         }
+    }
+
+    private string ComputeHash(Stream stream)
+    {
+        stream.Seek(0, SeekOrigin.Begin);
+        var bytes = stream.ToByteArray()!;
+        using var md5Hash = MD5.Create();
+        var hash = md5Hash.ComputeHash(bytes);
+        stream.Seek(0, SeekOrigin.Begin);
+        return Convert.ToBase64String(hash);
     }
 
     private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
