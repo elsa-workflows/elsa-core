@@ -35,6 +35,8 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
+        context.CancellationToken.ThrowIfCancellationRequested();
+        
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
         // Evaluate input properties.
