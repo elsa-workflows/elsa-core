@@ -78,10 +78,8 @@ public abstract class Activity : IActivity, ISignalHandler
     /// <inheritdoc />
     [JsonIgnore]
     public IDictionary<string, object> SyntheticProperties { get; set; } = new Dictionary<string, object>();
-
-    /// <summary>
-    /// Stores metadata such as x and y coordinates when created via the designer.
-    /// </summary>
+    
+    /// <inheritdoc />
     public IDictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
 
     /// <summary>

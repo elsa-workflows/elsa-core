@@ -56,7 +56,7 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
             var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
             {
                 if(x.IsSerializable == false)
-                    return default;
+                    return "(not serializable)";
                 
                 var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
                 

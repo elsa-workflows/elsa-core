@@ -39,6 +39,11 @@ public interface IActivity
     IDictionary<string, object> SyntheticProperties { get; set; }
     
     /// <summary>
+    /// Metadata associated with the activity. This is typically used by the workflow designer to store information about the activity.
+    /// </summary>
+    IDictionary<string, object> Metadata { get; set; }
+    
+    /// <summary>
     /// Invoked when the activity executes.
     /// </summary>
     ValueTask ExecuteAsync(ActivityExecutionContext context);

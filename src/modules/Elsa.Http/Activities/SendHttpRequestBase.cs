@@ -11,6 +11,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Base class for activities that send HTTP requests.
 /// </summary>
+[Output(IsSerializable = false)]
 public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 {
     /// <inheritdoc />
