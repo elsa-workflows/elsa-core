@@ -93,6 +93,30 @@ public class HttpEndpoint : Trigger<HttpRequest>
     public Input<ICollection<string>> AllowedMimeTypes { get; set; } = default!;
 
     /// <summary>
+    /// A value indicating whether to expose the "Request too large" outcome.
+    /// </summary>
+    [Input(Description = "A value indicating whether to expose the \"Request too large\" outcome.", Category = "Outcomes")]
+    public bool ExposeRequestTooLargeOutcome { get; set; }
+
+    /// <summary>
+    /// A value indicating whether to expose the "File too large" outcome.
+    /// </summary>
+    [Input(Description = "A value indicating whether to expose the \"File too large\" outcome.", Category = "Outcomes")]
+    public bool ExposeFileTooLargeOutcome { get; set; }
+
+    /// <summary>
+    /// A value indicating whether to expose the "Invalid file extension" outcome.
+    /// </summary>
+    [Input(Description = "A value indicating whether to expose the \"Invalid file extension\" outcome.", Category = "Outcomes")]
+    public bool ExposeInvalidFileExtensionOutcome { get; set; }
+
+    /// <summary>
+    /// A value indicating whether to expose the "Invalid file MIME type" outcome.
+    /// </summary>
+    [Input(Description = "A value indicating whether to expose the \"Invalid file MIME type\" outcome.", Category = "Outcomes")]
+    public bool ExposeInvalidFileMimeTypeOutcome { get; set; }
+
+    /// <summary>
     /// The parsed request content, if any.
     /// </summary>
     [Output(Description = "The parsed request content, if any.")]
@@ -184,23 +208,45 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
         context.Set(Headers, headersDictionary);
+        
+        // Validate request size.
+        if (!ValidateRequestSize(context, httpContext))
+        {
+            await HandleRequestTooLargeAsync(context, httpContext);
+            return;
+        }
 
         // Read files, if any.
         var files = ReadFilesAsync(context, request);
 
-        if (!await ValidateFileSizesAsync(context, httpContext, files))
-            return;
+        if (files.Any())
+        {
+            if (!ValidateFileSizes(context, httpContext, files))
+            {
+                await HandleFileSizeTooLargeAsync(context, httpContext);
+                return;
+            }
 
-        if (!await ValidateFileExtensionWhitelistAsync(context, httpContext, files))
-            return;
+            if (!ValidateFileExtensionWhitelist(context, httpContext, files))
+            {
+                await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
+                return;
+            }
 
-        if (!await ValidateFileExtensionBlacklistAsync(context, httpContext, files))
-            return;
+            if (!ValidateFileExtensionBlacklist(context, httpContext, files))
+            {
+                await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
+                return;
+            }
 
-        if (!await ValidateFileMimeTypesAsync(context, httpContext, files))
-            return;
+            if (!ValidateFileMimeTypes(context, httpContext, files))
+            {
+                await HandleInvalidFileMimeTypesAsync(context, httpContext);
+                return;
+            }
 
-        Files.Set(context, files.ToArray());
+            Files.Set(context, files.ToArray());
+        }
 
         // Read content, if any.
         var content = await ParseContentAsync(context, request);
@@ -215,9 +261,39 @@ public class HttpEndpoint : Trigger<HttpRequest>
         return request.HasFormContentType ? request.Form.Files : new FormFileCollection();
     }
 
-    private async Task<bool> ValidateFileSizesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private bool ValidateRequestSize(ActivityExecutionContext context, HttpContext httpContext)
     {
-        // Validate individual file sizes.
+        var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
+
+        if (!requestSizeLimit.HasValue)
+            return true;
+
+        var requestSize = httpContext.Request.ContentLength ?? 0;
+        return requestSize <= requestSizeLimit;
+    }
+    
+    private async Task HandleRequestTooLargeAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var exposeRequestTooLargeOutcome = ExposeRequestTooLargeOutcome;
+
+        if (exposeRequestTooLargeOutcome)
+        {
+            await context.CompleteActivityWithOutcomesAsync("Request too large");
+        }
+        else
+        {
+            var response = httpContext.Response;
+            response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await response.WriteAsJsonAsync(new
+            {
+                Message = $"The maximum request size allowed is {RequestSizeLimit.Get(context)} bytes."
+            });
+            await response.Body.FlushAsync();
+        }
+    }
+    
+    private bool ValidateFileSizes(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    {
         var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
 
         if (!fileSizeLimit.HasValue)
@@ -226,18 +302,30 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (!files.Any(file => file.Length > fileSizeLimit.Value))
             return true;
 
-        var response = httpContext.Response;
-        response.StatusCode = StatusCodes.Status413PayloadTooLarge;
-        await response.WriteAsJsonAsync(new
-        {
-            Message = $"The maximum file size allowed is {fileSizeLimit} bytes."
-        });
-        await response.Body.FlushAsync();
-
         return false;
     }
 
-    private async Task<bool> ValidateFileExtensionWhitelistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private async Task HandleFileSizeTooLargeAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        var exposeFileTooLargeOutcome = ExposeFileTooLargeOutcome;
+
+        if (exposeFileTooLargeOutcome)
+        {
+            await context.CompleteActivityWithOutcomesAsync("File too large");
+        }
+        else
+        {
+            var response = httpContext.Response;
+            response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+            await response.WriteAsJsonAsync(new
+            {
+                Message = $"The maximum file size allowed is {FileSizeLimit.Get(context)} bytes."
+            });
+            await response.Body.FlushAsync();
+        }
+    }
+
+    private bool ValidateFileExtensionWhitelist(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         var allowedFileExtensions = AllowedFileExtensions.GetOrDefault(context);
 
@@ -247,18 +335,28 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (files.All(file => allowedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
             return true;
 
+        return false;
+    }
+
+    private async Task HandleInvalidFileExtensionWhitelistAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        if (ExposeInvalidFileExtensionOutcome)
+        {
+            await context.CompleteActivityWithOutcomesAsync("Invalid file extension");
+            return;
+        }
+
         var response = httpContext.Response;
+        var allowedFileExtensions = AllowedFileExtensions.GetOrDefault(context)!;
         response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
         await response.WriteAsJsonAsync(new
         {
             Message = $"Only the following file extensions are allowed: {string.Join(", ", allowedFileExtensions)}"
         });
         await response.Body.FlushAsync();
-
-        return false;
     }
 
-    private async Task<bool> ValidateFileExtensionBlacklistAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private bool ValidateFileExtensionBlacklist(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         var blockedFileExtensions = BlockedFileExtensions.GetOrDefault(context);
 
@@ -268,6 +366,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (!files.Any(file => blockedFileExtensions.Contains(System.IO.Path.GetExtension(file.FileName), StringComparer.OrdinalIgnoreCase)))
             return true;
 
+        return false;
+    }
+
+    private async Task HandleInvalidFileExtensionBlacklistAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        if (ExposeInvalidFileExtensionOutcome)
+        {
+            await context.CompleteActivityWithOutcomesAsync("Invalid file extension");
+            return;
+        }
+        
+        var blockedFileExtensions = BlockedFileExtensions.GetOrDefault(context)!;
         var response = httpContext.Response;
         response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
         await response.WriteAsJsonAsync(new
@@ -275,11 +385,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
             Message = $"The following file extensions are not allowed: {string.Join(", ", blockedFileExtensions)}"
         });
         await response.Body.FlushAsync();
-
-        return false;
     }
 
-    private async Task<bool> ValidateFileMimeTypesAsync(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
+    private bool ValidateFileMimeTypes(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         var allowedMimeTypes = AllowedMimeTypes.GetOrDefault(context);
 
@@ -289,6 +397,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
         if (files.All(file => allowedMimeTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase)))
             return true;
 
+        return false;
+    }
+
+    private async Task HandleInvalidFileMimeTypesAsync(ActivityExecutionContext context, HttpContext httpContext)
+    {
+        if(ExposeInvalidFileMimeTypeOutcome)
+        {
+            await context.CompleteActivityWithOutcomesAsync("Invalid file MIME type");
+            return;
+        }
+        
+        var allowedMimeTypes = AllowedMimeTypes.GetOrDefault(context)!;
         var response = httpContext.Response;
         response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
         await response.WriteAsJsonAsync(new
@@ -296,8 +416,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
             Message = $"Only the following MIME types are allowed: {string.Join(", ", allowedMimeTypes)}"
         });
         await response.Body.FlushAsync();
-
-        return false;
     }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpRequest httpRequest)
