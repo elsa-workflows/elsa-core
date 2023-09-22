@@ -20,6 +20,9 @@ public class ConnectionComparer : IEqualityComparer<Connection>
     /// <inheritdoc />
     public int GetHashCode(Connection obj)
     {
-        return HashCode.Combine(obj.Source.Activity.Id, obj.Target.Activity.Id, obj.Source.Port, obj.Target.Port);
+        // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+        // Justification: These can be null when the designer is in an invalid state. For example, if it used a NotFoundActivity that no longer has the same outcomes.
+        return HashCode.Combine(obj.Source?.Activity?.Id, obj.Target?.Activity?.Id, obj.Source?.Port, obj.Target?.Port);
+        // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
     }
 }

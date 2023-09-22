@@ -180,17 +180,13 @@ public class Flowchart : Container
         var result = context.Result;
 
         logger.LogDebug("Child activity {ActivityId} completed with status {ActivityStatus}", completedActivity.Id, completedActivityContext.Status);
-        
+
         // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
-
-        // If specific outcomes were provided by the completed activity, use them to find the connection to the next activity.
-        Func<Connection, bool> outboundConnectionsQuery = result is Outcomes outcomes
-            ? connection => connection.Source.Activity == completedActivity && outcomes.Names.Contains(connection.Source.Port)
-            : connection => connection.Source.Activity == completedActivity;
+        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : new[] { default(string), "Done" };
 
         // Only query the outbound connections if the completed activity wasn't already completed.
-        var outboundConnections = Connections.Where(outboundConnectionsQuery).ToList();
+        var outboundConnections = Connections.Where(connection => connection.Source.Activity == completedActivity && outcomeNames.Contains(connection.Source.Port)).ToList();
         var children = outboundConnections.Select(x => x.Target.Activity).ToList();
         var scope = flowchartContext.GetProperty(ScopeProperty, () => new FlowScope());
 
@@ -206,11 +202,11 @@ public class Flowchart : Container
         {
             if (children.Any())
             {
-                if(children.Count == 1)
+                if (children.Count == 1)
                     logger.LogDebug("Found 1 child for activity {ActivityId}: {ChildActivityId}", completedActivity.Id, children.First().Id);
                 else
                     logger.LogDebug("Found {Count} children for activity {ActivityId}: {ChildActivityIds}", children.Count, completedActivity.Id, children.Select(x => x.Id).ToList());
-                
+
                 scope.AddActivities(children);
 
                 // Schedule each child, but only if all of its left inbound activities have already executed.
@@ -248,12 +244,12 @@ public class Flowchart : Container
                             ReuseActivityExecutionContextId = joinContext?.Id,
                             PreventDuplicateScheduling = true
                         };
-                        
-                        if(joinContext != null)
+
+                        if (joinContext != null)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing context {JoinContext}", activity.Id, joinContext.Id);
                         else
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity", activity.Id);
-                        
+
                         logger.LogDebug("Scheduling child activity {ChildActivityId}", activity.Id);
                         await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
@@ -263,7 +259,7 @@ public class Flowchart : Container
             if (!children.Any())
             {
                 logger.LogDebug("No children found for activity {ActivityId}", completedActivity.Id);
-                
+
                 // If there is no pending work, complete the flowchart activity.
                 var hasPendingWork = HasPendingWork(flowchartContext);
 

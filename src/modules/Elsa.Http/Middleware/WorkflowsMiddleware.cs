@@ -132,23 +132,7 @@ public class WorkflowsMiddleware
 
         // Get settings from the bookmark payload.
         var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;
-
-        // Get the configured request size limit, if any.
-        var requestSizeLimit = foundBookmarkPayload?.RequestSizeLimit;
-
-        if (requestSizeLimit != null)
-        {
-            // If a request size limit was configured, check if the request size exceeds the limit.
-            var requestSize = request.ContentLength ?? 0;
-
-            if (requestSize > requestSizeLimit)
-            {
-                httpContext.Response.StatusCode = 413; // Payload Too Large.
-                await httpContext.Response.WriteAsJsonAsync(new { message = $"The request size exceeds the configured limit of {requestSizeLimit} bytes." }, cancellationToken: cancellationToken);
-                return;
-            }
-        }
-
+        
         // Get the configured request timeout, if any.
         var requestTimeout = foundBookmarkPayload?.RequestTimeout;
 
