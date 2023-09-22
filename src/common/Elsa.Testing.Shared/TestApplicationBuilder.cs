@@ -101,6 +101,14 @@ public class TestApplicationBuilder
     }
     
     /// <summary>
+    /// Adds activities from the assembly containing the specified type.
+    /// </summary>
+    public TestApplicationBuilder AddActivitiesFrom<T>()
+    {
+        return ConfigureElsa(elsa => elsa.AddActivitiesFrom<T>());
+    }
+    
+    /// <summary>
     /// Add workflows from the specified relative directory.
     /// </summary>
     /// <param name="directory">The path segments of the directory.</param>
