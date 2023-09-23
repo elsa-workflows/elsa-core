@@ -7,25 +7,28 @@ using ThrottleDebounce;
 
 namespace Elsa.DropIns.HostedServices;
 
+/// <summary>
+/// Monitors the drop-in directory for changes and loads any new drop-ins.
+/// </summary>
 public class DropInDirectoryMonitorHostedService : BackgroundService
 {
     private readonly IOptions<DropInOptions> _options;
     private readonly IServiceProvider _serviceProvider;
     private readonly RateLimitedFunc<string, Task> _debouncedLoader;
 
+    /// <inheritdoc />
     public DropInDirectoryMonitorHostedService(IOptions<DropInOptions> options, IServiceProvider serviceProvider)
     {
         _options = options;
         _serviceProvider = serviceProvider;
-
         _debouncedLoader = Debouncer.Debounce<string, Task>(LoadDropInAssemblyAsync, TimeSpan.FromSeconds(2));
     }
 
+    /// <inheritdoc />
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var rootDirectoryPath = _options.Value.DropInRootDirectory;
-
-        // Monitor any changes in this directory:
+        
         var watcher = new FileSystemWatcher(rootDirectoryPath)
         {
             EnableRaisingEvents = true,

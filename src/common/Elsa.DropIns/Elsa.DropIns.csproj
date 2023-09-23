@@ -1,9 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides drop-in features for Elsa workflows.
+        </Description>
+        <PackageTags>elsa drop-ins common</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

@@ -7,15 +7,20 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.DropIns.Services;
 
+/// <inheritdoc />
 public class DropInInstaller : IDropInInstaller
 {
     private readonly IOptions<DropInOptions> _options;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DropInInstaller"/> class.
+    /// </summary>
     public DropInInstaller(IOptions<DropInOptions> options)
     {
         _options = options;
     }
-    
+
+    /// <inheritdoc />
     public void Install(IModule module)
     {
         var dropInRootDirectory = _options.Value.DropInRootDirectory;
