@@ -3,11 +3,11 @@ using System.Runtime.Loader;
 
 namespace Elsa.DropIns.Contexts;
 
-internal class DropInLoadContext : AssemblyLoadContext
+internal class DirectoryAssemblyLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver _resolver;
 
-    public DropInLoadContext(string dropInPath)
+    public DirectoryAssemblyLoadContext(string dropInPath)
     {
         _resolver = new AssemblyDependencyResolver(dropInPath);
     }

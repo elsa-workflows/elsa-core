@@ -9,6 +9,8 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0"/>
         <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1"/>
+        <PackageReference Include="NuGet.Packaging" Version="6.7.0" />
+        <PackageReference Include="NuGet.Protocol" Version="6.7.0" />
         <PackageReference Include="ThrottleDebounce" Version="2.0.0" />
     </ItemGroup>
     
