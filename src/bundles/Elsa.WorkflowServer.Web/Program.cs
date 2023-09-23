@@ -1,6 +1,8 @@
 using System.Text.Encodings.Web;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
+using Elsa.DropIns;
+using Elsa.DropIns.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -35,25 +37,25 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 services
     .AddElsa(elsa =>
     {
-        if(useMongoDb)
+        if (useMongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
-        
-        if(useDapper)
+
+        if (useDapper)
             elsa.UseDapper(dapper =>
             {
                 dapper.UseMigrations();
                 dapper.DbConnectionProvider = sp =>
                 {
-                    if(useSqlServer)
+                    if (useSqlServer)
                         return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
                     else
                         return new SqliteDbConnectionProvider(sqliteConnectionString);
                 };
             });
-        
+
         if (useHangfire)
             elsa.UseHangfire();
-        
+
         elsa
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>()
@@ -61,19 +63,19 @@ services
             .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
             .UseIdentity(identity =>
             {
-                if(useMongoDb)
+                if (useMongoDb)
                     identity.UseMongoDb();
                 else if (useDapper)
                     identity.UseDapper();
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
-                        if(useSqlServer)
+                        if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-                
+
                 identity.IdentityOptions = options => identitySection.Bind(options);
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
@@ -83,49 +85,49 @@ services
             .UseDefaultAuthentication()
             .UseWorkflowManagement(management =>
             {
-                if(useMongoDb)
+                if (useMongoDb)
                     management.UseMongoDb();
                 else if (useDapper)
                     management.UseDapper();
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
-                        if(useSqlServer)
+                        if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-                
+
                 management.AddVariableType<ApiResponse<User>>("Api");
                 management.AddVariableType<User>("Api");
                 management.AddVariableType<Support>("Api");
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if(useMongoDb)
+                if (useMongoDb)
                     runtime.UseMongoDb();
                 else if (useDapper)
                     runtime.UseDapper();
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
-                        if(useSqlServer)
+                        if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-                
-                if(useProtoActor)
+
+                if (useProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
-                        if(useSqlServer)
+                        if (useSqlServer)
                             return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                         else
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                     });
                 }
-                
+
                 runtime.UseMassTransitDispatcher();
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
@@ -141,15 +143,19 @@ services
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
+
+        // Initialize drop-ins.
+        elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
     });
 
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
-// Configure middleware pipeline.
+// Build the web application.
 var app = builder.Build();
 
+// Configure the pipeline.
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
 
