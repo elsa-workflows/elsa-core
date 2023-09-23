@@ -1,8 +1,9 @@
-﻿using Elsa.Features.Services;
-
 namespace Elsa.DropIns.Core;
 
+/// <summary>
+/// Implement this interface to run code wen the drop-in is added to the drop-in system at runtime.
+/// </summary>
 public interface IDropInStartup
 {
-    void ConfigureModule(IModule elsa);
+    ValueTask StartAsync(CancellationToken cancellationToken = default);
 }

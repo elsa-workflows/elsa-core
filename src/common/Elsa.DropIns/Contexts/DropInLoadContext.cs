@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.Loader;
 
-namespace Elsa.DropIns;
+namespace Elsa.DropIns.Contexts;
 
 internal class DropInLoadContext : AssemblyLoadContext
 {
@@ -14,12 +14,6 @@ internal class DropInLoadContext : AssemblyLoadContext
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
-        // Check if the assembly is already loaded in the default context.
-        var defaultAssembly = Default.Assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName.Name);
-        
-        if (defaultAssembly != null)
-            return defaultAssembly;
-
         var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
         return assemblyPath != null ? LoadFromAssemblyPath(assemblyPath) : null;
     }

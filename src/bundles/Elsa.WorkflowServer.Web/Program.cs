@@ -2,7 +2,7 @@ using System.Text.Encodings.Web;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns;
-using Elsa.DropIns.Core;
+using Elsa.DropIns.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
@@ -32,13 +32,6 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
-
-// Load drop-ins from App_Data/DropIns.
-var dropInDirectoryPath = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns");
-var dropInDirectoryLoader = new DropInDirectoryLoader();
-var dropInAssemblies = dropInDirectoryLoader.LoadAssembliesFromDirectory(dropInDirectoryPath).ToList();
-var dropInStartupFinder = new DropInStartupFinder();
-var dropInStartupTypes = dropInStartupFinder.FindDropInStartupTypes(dropInAssemblies).ToList();
 
 // Add Elsa services.
 services
@@ -151,12 +144,8 @@ services
             .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
 
-        // Invoke drop-in startup types.
-        foreach (var dropInStartupType in dropInStartupTypes)
-        {
-            var dropInStartup = (IDropInStartup)Activator.CreateInstance(dropInStartupType)!;
-            dropInStartup.ConfigureModule(elsa);
-        }
+        // Initialize drop-ins.
+        elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
     });
 
 services.AddHealthChecks();
