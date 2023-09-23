@@ -12,7 +12,6 @@ internal static class ServiceCollectionExtensions
     {
         services.AddDropInCore(configureOptions);
         services.AddHostedService<DropInDirectoryMonitorHostedService>();
-        services.AddSingleton<IDropInStarter, DropInStarter>();
         
         return services;
     }
@@ -28,8 +27,6 @@ internal static class ServiceCollectionExtensions
     public static IServiceCollection AddDropInCore(this IServiceCollection services, Action<DropInOptions>? configureOptions = default)
     {
         services.Configure(configureOptions ?? (_ => { }));
-        services.AddSingleton<IDropInDirectoryLoader, DropInDirectoryLoader>();
-        services.AddSingleton<ITypeFinder, TypeFinder>();
 
         return services;
     }

@@ -1,7 +1,5 @@
 using Elsa.DropIns.Contracts;
-using Elsa.DropIns.HostedServices;
 using Elsa.DropIns.Options;
-using Elsa.DropIns.Services;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 

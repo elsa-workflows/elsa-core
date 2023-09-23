@@ -1,17 +1,16 @@
 using System.Reflection;
-using Elsa.DropIns.Contracts;
 
-namespace Elsa.DropIns.Services;
+namespace Elsa.DropIns.Helpers;
 
-public class TypeFinder : ITypeFinder
+public static class TypeFinder
 {
-    public IEnumerable<Type> FindImplementationsOf<T>(IEnumerable<Assembly> assemblies)
+    public static IEnumerable<Type> FindImplementationsOf<T>(IEnumerable<Assembly> assemblies)
     {
         // Find all types that implement IDropInStartup:
         return assemblies.SelectMany(FindImplementationsOf<T>);
     }
 
-    public IEnumerable<Type> FindImplementationsOf<T>(Assembly assembly)
+    public static IEnumerable<Type> FindImplementationsOf<T>(Assembly assembly)
     {
         // Find all types that implement T:
         return assembly.GetExportedTypes().Where(t => typeof(T).IsAssignableFrom(t) && t is { IsAbstract: false, IsInterface: false });

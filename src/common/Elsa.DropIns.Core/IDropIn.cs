@@ -7,5 +7,6 @@ namespace Elsa.DropIns.Core;
 /// </summary>
 public interface IDropIn
 {
-    void ConfigureModule(IModule module);
+    void Install(IModule module);
+    ValueTask ConfigureAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken);
 }

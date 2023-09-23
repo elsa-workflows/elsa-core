@@ -1,4 +1,5 @@
-using Elsa.DropIns.Contracts;
+using Elsa.DropIns.Catalogs;
+using Elsa.DropIns.Core;
 using Elsa.DropIns.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -8,16 +9,14 @@ namespace Elsa.DropIns.HostedServices;
 
 public class DropInDirectoryMonitorHostedService : BackgroundService
 {
-    private readonly IDropInDirectoryLoader _directoryLoader;
-    private readonly IDropInStarter _dropInStarter;
     private readonly IOptions<DropInOptions> _options;
+    private readonly IServiceProvider _serviceProvider;
     private readonly RateLimitedFunc<string, Task> _debouncedLoader;
 
-    public DropInDirectoryMonitorHostedService(IDropInDirectoryLoader directoryLoader, IDropInStarter dropInStarter, IOptions<DropInOptions> options)
+    public DropInDirectoryMonitorHostedService(IOptions<DropInOptions> options, IServiceProvider serviceProvider)
     {
-        _directoryLoader = directoryLoader;
-        _dropInStarter = dropInStarter;
         _options = options;
+        _serviceProvider = serviceProvider;
 
         _debouncedLoader = Debouncer.Debounce<string, Task>(LoadDropInAssemblyAsync, TimeSpan.FromSeconds(2));
     }
@@ -51,11 +50,13 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
     private async Task LoadDropInAssemblyAsync(string fullPath)
     {
         var directory = Path.GetDirectoryName(fullPath)!;
-        var dropInAssemblyFilename = $"{Path.GetFileNameWithoutExtension(directory)}.dll";
-        var assemblyPath = Path.Combine(directory, dropInAssemblyFilename);
-        var assembly = _directoryLoader.LoadDropInAssembly(assemblyPath);
+        var directoryCatalog = new DirectoryDropInCatalog(directory);
+        var dropInDescriptors = directoryCatalog.List();
 
-        if (assembly != null)
-            await _dropInStarter.StartAsync(assembly);
+        foreach (var dropInDescriptor in dropInDescriptors)
+        {
+            var dropIn = (IDropIn)Activator.CreateInstance(dropInDescriptor.Type)!;
+            await dropIn.ConfigureAsync(_serviceProvider, CancellationToken.None);
+        }
     }
 }

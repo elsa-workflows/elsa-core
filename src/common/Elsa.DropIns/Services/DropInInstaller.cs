@@ -1,3 +1,4 @@
+using Elsa.DropIns.Catalogs;
 using Elsa.DropIns.Contracts;
 using Elsa.DropIns.Core;
 using Elsa.DropIns.Options;
@@ -8,27 +9,23 @@ namespace Elsa.DropIns.Services;
 
 public class DropInInstaller : IDropInInstaller
 {
-    private readonly IDropInDirectoryLoader _directoryLoader;
-    private readonly ITypeFinder _typeFinder;
     private readonly IOptions<DropInOptions> _options;
 
-    public DropInInstaller(IDropInDirectoryLoader directoryLoader, ITypeFinder typeFinder, IOptions<DropInOptions> options)
+    public DropInInstaller(IOptions<DropInOptions> options)
     {
-        _directoryLoader = directoryLoader;
-        _typeFinder = typeFinder;
         _options = options;
     }
     
     public void Install(IModule module)
     {
         var dropInRootDirectory = _options.Value.DropInRootDirectory;
-        var dropInAssemblies = _directoryLoader.LoadDropInAssembliesFromRootDirectory(dropInRootDirectory).ToList();
-        var dropInTypes = _typeFinder.FindImplementationsOf<IDropIn>(dropInAssemblies).ToList();
+        var directoryCatalog = new DirectoryDropInCatalog(dropInRootDirectory);
+        var dropInDescriptors = directoryCatalog.List();
         
-        foreach (var type in dropInTypes)
+        foreach (var dropInDescriptor in dropInDescriptors)
         {
-            var dropIn = (IDropIn)Activator.CreateInstance(type)!;
-            dropIn.ConfigureModule(module);
+            var dropIn = (IDropIn)Activator.CreateInstance(dropInDescriptor.Type)!;
+            dropIn.Install(module);
         }
     }
 }
