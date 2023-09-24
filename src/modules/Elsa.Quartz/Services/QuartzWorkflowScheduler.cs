@@ -32,7 +32,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .WithIdentity(taskName)
             .StartAt(at)
             .Build();
-        await scheduler.ScheduleJob(trigger, cancellationToken);
+
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -59,7 +61,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
-        await scheduler.ScheduleJob(trigger, cancellationToken);
+
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -81,10 +85,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
     {
         var scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
         var trigger = TriggerBuilder.Create().ForJob(RunWorkflowJob.JobKey).UsingJobData(CreateJobDataMap(request)).WithIdentity(taskName).WithCronSchedule(cronExpression).Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken)) 
-            await scheduler.ScheduleJob(trigger, cancellationToken);
 
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -114,8 +117,7 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.DefinitionId), request.DefinitionId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.VersionOptions), request.VersionOptions.ToString())
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.TriggerActivityId), request.TriggerActivityId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.Input), request.Input)
-        ;
+            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.Input), request.Input);
 
     private static JobDataMap CreateJobDataMap(DispatchWorkflowInstanceRequest request) =>
         new JobDataMap()
