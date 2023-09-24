@@ -8,20 +8,43 @@ using Microsoft.Extensions.Options;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-internal static class ExpressionExecutionContextExtensions
+/// <summary>
+/// 
+/// </summary>
+public static class ExpressionExecutionContextExtensions
 {
+    /// <summary>
+    /// Generates a URL that can be used to trigger an event.
+    /// </summary>
+    /// <param name="context">The expression execution context.</param>
+    /// <param name="eventName">The name of the event to trigger.</param>
+    /// <param name="lifetime">The lifetime of the event trigger token.</param>
+    /// <returns>A URL that can be used to trigger an event.</returns>
     public static string GenerateEventTriggerUrl(this ExpressionExecutionContext context, string eventName, TimeSpan lifetime)
     {
         var token = context.GenerateEventTriggerTokenInternal(eventName, lifetime);
         return context.GenerateEventTriggerUrlInternal(token);
     }
 
+    /// <summary>
+    /// Generates a URL that can be used to trigger an event.
+    /// </summary>
+    /// <param name="context">The expression execution context.</param>
+    /// <param name="eventName">The name of the event to trigger.</param>
+    /// <param name="expiresAt">The expiration date of the event trigger token.</param>
+    /// <returns>A URL that can be used to trigger an event.</returns>
     public static string GenerateEventTriggerUrl(this ExpressionExecutionContext context, string eventName, DateTimeOffset expiresAt)
     {
         var token = context.GenerateEventTriggerTokenInternal(eventName, expiresAt: expiresAt);
         return context.GenerateEventTriggerUrlInternal(token);
     }
 
+    /// <summary>
+    /// Generates a URL that can be used to trigger an event.
+    /// </summary>
+    /// <param name="context">The expression execution context.</param>
+    /// <param name="eventName">The name of the event to trigger.</param>
+    /// <returns>A URL that can be used to trigger an event.</returns>
     public static string GenerateEventTriggerUrl(this ExpressionExecutionContext context, string eventName)
     {
         var token = context.GenerateEventTriggerTokenInternal(eventName);

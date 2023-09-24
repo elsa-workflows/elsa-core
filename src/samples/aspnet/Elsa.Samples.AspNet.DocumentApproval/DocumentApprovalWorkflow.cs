@@ -2,6 +2,7 @@ using System.Dynamic;
 using System.Net;
 using System.Net.Mime;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core;
@@ -18,7 +19,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
     {
         protected override void Build(IWorkflowBuilder builder)
         {
-            var documentVariable = builder.WithVariable<ExpandoObject>();
+            var documentVariable = builder.WithVariable<ExpandoObject>().WithWorkflowStorage();
             var approvedVariable = builder.WithVariable<bool>();
 
             builder.Root = new Sequence
@@ -144,7 +145,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
 
         private string GenerateSignalUrl(ExpressionExecutionContext context, string signalName)
         {
-            return "Signal (events in Elsa 3) URL generation not yet implemented";
+            return context.GenerateEventTriggerUrl(signalName);
         }
     }
 }
