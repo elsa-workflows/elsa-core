@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
 using Humanizer;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -20,18 +22,21 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     private readonly IActivityFactory _activityFactory;
     private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
     private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<ActivityJsonConverter> _logger;
 
     /// <inheritdoc />
     public ActivityJsonConverter(
         IActivityRegistry activityRegistry,
         IActivityFactory activityFactory,
         IExpressionSyntaxRegistry expressionSyntaxRegistry,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        ILogger<ActivityJsonConverter> logger)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
         _expressionSyntaxRegistry = expressionSyntaxRegistry;
         _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -45,7 +50,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
         // If the activity type is a NotFoundActivity, try to extract the original activity type name and version.
-        if(activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        if (activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
         {
             activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
@@ -78,7 +83,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
-        var activityDescriptor = _activityRegistry.Find(value.Type, value.Version)!;
         var newOptions = new JsonSerializerOptions(options);
 
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
@@ -86,6 +90,19 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
         // Write to a JsonObject so that we can add additional information.
         var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
+        var activityDescriptor = _activityRegistry.Find(value.Type, value.Version);
+
+        if (activityDescriptor != null)
+            WriteSyntheticProperties(activityModel, value, activityDescriptor, newOptions);
+        else
+            _logger.LogWarning("Activity descriptor for activity {ActivityType} with version {ActivityVersion} not found. Skipping serialization of synthetic properties", value.Type, value.Version);
+
+        // Send the model to the writer.
+        JsonSerializer.Serialize(writer, activityModel, newOptions);
+    }
+
+    private void WriteSyntheticProperties(JsonNode activityModel, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions newOptions)
+    {
         var syntheticInputs = activityDescriptor.Inputs.Where(x => x.IsSynthetic).ToList();
         var syntheticOutputs = activityDescriptor.Outputs.Where(x => x.IsSynthetic).ToList();
 
@@ -95,9 +112,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var inputName = inputDescriptor.Name;
             var propertyName = inputName.Camelize();
 
-            if (!value.SyntheticProperties.TryGetValue(inputName, out var inputValue)) 
+            if (!value.SyntheticProperties.TryGetValue(inputName, out var inputValue))
                 continue;
-            
+
             var input = (Input?)inputValue;
 
             if (input == null)
@@ -107,7 +124,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             }
 
             var expression = input.Expression;
-            var expressionType = expression.GetType();
+            var expressionType = expression!.GetType();
             var inputType = input.Type;
             var memoryReferenceId = input.MemoryBlockReference().Id;
             var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
@@ -134,9 +151,9 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var outputName = outputDescriptor.Name;
             var propertyName = outputName.Camelize();
 
-            if (!value.SyntheticProperties.TryGetValue(outputName, out var outputValue)) 
+            if (!value.SyntheticProperties.TryGetValue(outputName, out var outputValue))
                 continue;
-            
+
             var output = (Output?)outputValue;
 
             if (output == null)
@@ -159,11 +176,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
             activityModel[propertyName] = JsonSerializer.SerializeToNode(outputModel, outputModel.GetType(), newOptions);
         }
-
-        // Send the model to the writer.
-        JsonSerializer.Serialize(writer, activityModel, newOptions);
     }
-    
+
     private string GetActivityDetails(JsonElement activityRoot, out int activityTypeVersion, out ActivityDescriptor? activityDescriptor)
     {
         if (!activityRoot.TryGetProperty("type", out var activityTypeNameElement))
@@ -180,21 +194,21 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             activityDescriptor = _activityRegistry.Find(x => x.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var value) && (string?)value == workflowDefinitionVersionId);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
         }
-        
+
         // If the activity type version is specified, use that to find the activity descriptor.
         if (activityDescriptor == null && activityRoot.TryGetProperty("version", out var activityVersionElement))
         {
             activityTypeVersion = activityVersionElement.GetInt32();
             activityDescriptor = _activityRegistry.Find(activityTypeName, activityTypeVersion);
         }
-        
+
         // If the activity type version is not specified, use the latest version of the activity descriptor.
-        if(activityDescriptor == null)
+        if (activityDescriptor == null)
         {
             activityDescriptor = _activityRegistry.Find(activityTypeName);
             activityTypeVersion = activityDescriptor?.Version ?? 0;
         }
-        
+
         return activityTypeName;
     }
 }
