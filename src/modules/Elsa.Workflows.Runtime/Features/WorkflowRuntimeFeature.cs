@@ -61,12 +61,12 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopWorkflowExecutionLogStore>();
+    public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
     
     /// <summary>
     /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<NoopActivityExecutionStore>();
+    public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowInboxMessageStore"/>.
