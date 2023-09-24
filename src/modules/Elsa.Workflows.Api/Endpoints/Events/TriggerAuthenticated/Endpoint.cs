@@ -1,10 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Api.Endpoints.Events.Trigger;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
+namespace Elsa.Workflows.Api.Endpoints.Events.TriggerAuthenticated;
 
 /// <summary>
 /// Triggers all workflows that are waiting for the specified event.

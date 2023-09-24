@@ -18,9 +18,14 @@ public class HttpActivityOptions
     public Uri BaseUrl { get; set; } = default!;
 
     /// <summary>
+    /// The prefix used for API routes.
+    /// </summary>
+    public string ApiRoutePrefix { get; set; } = "elsa/api";
+
+    /// <summary>
     /// A configurable set of available content types available from the <see cref="WriteHttpResponse"/> activity.
     /// </summary>
-    public ISet<string> AvailableContentTypes { get; set; } = new HashSet<string>
+    public ISet<string> AvailableContentTypes { get; set; } = new SortedSet<string>
     {
         "application/json", 
         "application/xml", 

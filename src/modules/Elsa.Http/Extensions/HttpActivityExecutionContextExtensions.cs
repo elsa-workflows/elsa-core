@@ -1,11 +1,13 @@
 using Elsa.Http.Contracts;
+using Elsa.Http.Models;
+using Elsa.SasTokens.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-internal static class ActivityContextExtensions
+internal static class HttpActivityExecutionContextExtensions
 {
     public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, CancellationToken cancellationToken)
     {

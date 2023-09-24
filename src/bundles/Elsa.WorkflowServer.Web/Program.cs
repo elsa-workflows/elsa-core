@@ -9,12 +9,15 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Handlers;
+using Elsa.Http.Options;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
@@ -141,7 +144,12 @@ services
             .UseRealTimeWorkflows()
             .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
-            .UseHttp(http => http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>())
+            .UseHttp(http =>
+            {
+                http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
+                http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
+            })
+            .UseSasTokens(sas => sas.DataProtectionProvider = sp => DataProtectionProvider.Create("Elsa Workflows"))
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
 
         // Initialize drop-ins.
@@ -173,7 +181,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Elsa API endpoints for designer.
-app.UseWorkflowsApi();
+var routePrefix = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value.ApiRoutePrefix;
+app.UseWorkflowsApi(routePrefix);
 
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
