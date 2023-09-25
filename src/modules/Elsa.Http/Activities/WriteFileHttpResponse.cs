@@ -178,12 +178,11 @@ public class WriteFileHttpResponse : Activity
     private async Task<(Blob, Stream, Func<ValueTask>)> GenerateZipFileAsync(ActivityExecutionContext context, HttpContext httpContext, ICollection<Func<ValueTask<Downloadable>>> downloadables)
     {
         var cancellationToken = context.CancellationToken;
-        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
         var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
         var contentType = ContentType.GetOrDefault(context);
         var downloadAsFilename = Filename.GetOrDefault(context);
         var zipService = context.GetRequiredService<ZipManager>();
-        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, enableResumableDownloads, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
+        var (zipBlob, zipStream, cleanup) = await zipService.CreateAsync(downloadables, true, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
 
         return (zipBlob, zipStream, Cleanup);
 
@@ -196,10 +195,9 @@ public class WriteFileHttpResponse : Activity
 
     private async Task<(Blob, Stream, Func<ValueTask>)?> TryLoadCachedFileAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
-        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
         var downloadCorrelationId = GetDownloadCorrelationId(context, httpContext);
 
-        if (!enableResumableDownloads || string.IsNullOrWhiteSpace(downloadCorrelationId))
+        if (string.IsNullOrWhiteSpace(downloadCorrelationId))
             return null;
 
         var cancellationToken = context.CancellationToken;
@@ -238,11 +236,12 @@ public class WriteFileHttpResponse : Activity
     private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)
     {
         source.Seek(0, SeekOrigin.Begin);
+        var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
 
         var result = new FileStreamResult(source, contentType)
         {
-            EnableRangeProcessing = true,
-            EntityTag = eTag != null ? new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag.ToString()) : default,
+            EnableRangeProcessing = enableResumableDownloads,
+            EntityTag = enableResumableDownloads ? eTag != null ? new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag.ToString()) : default : default,
             FileDownloadName = filename
         };
 

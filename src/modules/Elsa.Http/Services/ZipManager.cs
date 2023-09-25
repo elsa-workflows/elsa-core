@@ -32,7 +32,7 @@ internal class ZipManager
 
     public async Task<(Blob, Stream, Action)> CreateAsync(
         ICollection<Func<ValueTask<Downloadable>>> downloadables,
-        bool enableResumableDownloads,
+        bool cache,
         string? downloadCorrelationId,
         string? downloadAsFilename = default, 
         string? contentType = default, 
@@ -48,7 +48,7 @@ internal class ZipManager
         var zipBlob = CreateBlob(tempFilePath, downloadAsFilename, contentType);
 
         // If resumable downloads are enabled, cache the file.
-        if (enableResumableDownloads && !string.IsNullOrWhiteSpace(downloadCorrelationId))
+        if (cache && !string.IsNullOrWhiteSpace(downloadCorrelationId))
             await CreateCachedZipBlobAsync(tempFilePath, downloadCorrelationId, downloadAsFilename, contentType, cancellationToken);
 
         var zipStream = File.OpenRead(tempFilePath);
