@@ -71,6 +71,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     {
         var variable = new Variable<T>();
         Variables.Add(variable);
+        variable.WithWorkflowStorage();
         return variable;
     }
 
@@ -81,7 +82,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         {
             Name = name,
             Value = value
-        };
+        }.WithWorkflowStorage();
 
         Variables.Add(variable);
         return variable;
@@ -91,6 +92,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     public Variable<T> WithVariable<T>(T value)
     {
         var variable = value != null ? new Variable<T>(value) : new Variable<T>();
+        variable.WithWorkflowStorage();
         Variables.Add(variable);
         return variable;
     }
@@ -158,6 +160,18 @@ public class WorkflowBuilder : IWorkflowBuilder
 
         // Assign identities to all activities.
         _identityGraphService.AssignIdentities(nodes);
+
+        // Give unnamed variables in each variable container a predictable name.
+        var variableContainers = nodes.Where(x => x.Activity is IVariableContainer).Select(x => (IVariableContainer)x.Activity).ToList();
+
+        foreach (var container in variableContainers)
+        {
+            var index = 0;
+            var unnamedVariables = container.Variables.Where(x => string.IsNullOrWhiteSpace(x.Name)).ToList();
+
+            foreach (var unnamedVariable in unnamedVariables)
+                unnamedVariable.Name = $"Variable_{index++}";
+        }
 
         return workflow;
     }
