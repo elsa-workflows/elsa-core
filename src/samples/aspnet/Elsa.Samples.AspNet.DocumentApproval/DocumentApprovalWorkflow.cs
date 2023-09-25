@@ -19,7 +19,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
     {
         protected override void Build(IWorkflowBuilder builder)
         {
-            var documentVariable = builder.WithVariable<ExpandoObject>().WithWorkflowStorage();
+            var documentVariable = builder.WithVariable<ExpandoObject>();
             var approvedVariable = builder.WithVariable<bool>();
 
             builder.Root = new Sequence
@@ -52,6 +52,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                 Activities =
                                 {
                                     new WriteLine(context => $"Jack approve url: \n {GenerateSignalUrl(context, "Approve:Jack")}"),
+                                    new WriteLine(context => $"Jack reject url: \n {GenerateSignalUrl(context, "Reject:Jack")}"),
                                     new Fork
                                     {
                                         JoinMode = ForkJoinMode.WaitAny,
@@ -67,6 +68,10 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                                     {
                                                         Variable = approvedVariable,
                                                         Value = new(true)
+                                                    },
+                                                    new WriteHttpResponse
+                                                    {
+                                                        Content = new("Thanks for the approval, Jack!"),
                                                     }
                                                 }
                                             },
@@ -81,6 +86,10 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                                     {
                                                         Variable = approvedVariable,
                                                         Value = new(false)
+                                                    },
+                                                    new WriteHttpResponse
+                                                    {
+                                                        Content = new("Sorry to hear that, Jack!"),
                                                     }
                                                 }
                                             }
@@ -95,6 +104,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                 Activities =
                                 {
                                     new WriteLine(context => $"Lucy approve url: \n {GenerateSignalUrl(context, "Approve:Lucy")}"),
+                                    new WriteLine(context => $"Lucy reject url: \n {GenerateSignalUrl(context, "Reject:Lucy")}"),
                                     new Fork
                                     {
                                         JoinMode = ForkJoinMode.WaitAny,
@@ -110,6 +120,10 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                                     {
                                                         Variable = approvedVariable,
                                                         Value = new(true)
+                                                    },
+                                                    new WriteHttpResponse
+                                                    {
+                                                        Content = new("Thanks for the approval, Lucy!"),
                                                     }
                                                 }
                                             },
@@ -124,6 +138,10 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                                                     {
                                                         Variable = approvedVariable,
                                                         Value = new(false)
+                                                    },
+                                                    new WriteHttpResponse
+                                                    {
+                                                        Content = new("Sorry to hear that, Lucy!"),
                                                     }
                                                 }
                                             }
