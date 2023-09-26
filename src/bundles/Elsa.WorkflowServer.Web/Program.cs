@@ -149,7 +149,6 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
             })
-            .UseSasTokens(sas => sas.DataProtectionProvider = sp => DataProtectionProvider.Create("Elsa Workflows"))
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
 
         // Initialize drop-ins.

@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.Features;
 using Elsa.JavaScript.Features;
+using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Features;
@@ -18,6 +19,7 @@ namespace Elsa.Workflows.Api.Features;
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(JavaScriptFeature))]
 [DependsOn(typeof(HttpFeature))]
+[DependsOn(typeof(SasTokensFeature))]
 public class WorkflowsApiFeature : FeatureBase
 {
     /// <inheritdoc />
