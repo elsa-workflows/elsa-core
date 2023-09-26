@@ -114,7 +114,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
 
     private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        var faultedResponse = _apiSerializer.Serialize(workflowState);
+        var faultedResponse = _apiSerializer.Serialize(new Response(workflowState));
 
         HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
         HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
