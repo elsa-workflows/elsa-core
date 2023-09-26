@@ -17,6 +17,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 // Add Elsa services.
 services
     .AddElsa(elsa => elsa
+        .UseSasTokens()
         .UseIdentity(identity =>
         {
             identity.IdentityOptions = options => identitySection.Bind(options);
