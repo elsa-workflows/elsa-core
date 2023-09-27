@@ -28,7 +28,10 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var rootDirectoryPath = _options.Value.DropInRootDirectory;
-        
+
+        if (!Directory.Exists(rootDirectoryPath)) 
+            Directory.CreateDirectory(rootDirectoryPath);
+
         var watcher = new FileSystemWatcher(rootDirectoryPath)
         {
             EnableRaisingEvents = true,
