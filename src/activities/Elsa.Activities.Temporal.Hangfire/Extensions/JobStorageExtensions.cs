@@ -19,9 +19,20 @@ namespace Elsa.Activities.Temporal.Hangfire.Extensions
             {
                 jobList = api.ScheduledJobs(skip, take);
 
-                var jobs = jobList.FindAll(x => x.Value.Job.Type == typeof(TJob));
-                foreach (var job in jobs.Where(x => predicate((TJobModel)x.Value.Job.Args[0])))
-                    yield return job;
+                var jobs = jobList.FindAll(x => x.Value?.Job?.Type == typeof(TJob));
+                foreach (var job in jobs)
+                {
+                    var args = job.Value?.Job?.Args;
+                    
+                    if (args is not { Count: 1 })
+                        continue;
+
+                    if(args[0] is not TJobModel jobModel)
+                        continue;
+                    
+                    if (predicate(jobModel)) 
+                        yield return job;
+                }
 
                 skip += take;
             } while (jobList.Count == take);

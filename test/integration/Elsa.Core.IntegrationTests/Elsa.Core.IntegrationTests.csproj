@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
@@ -28,8 +28,8 @@
         <PackageReference Include="YesSql.Provider.Sqlite" Version="3.0.7"/>
         <PackageReference Include="YesSql.Provider.PostgreSql" Version="3.0.7"/>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.0"/>
-        <PackageReference Include="Hangfire.AspNetCore" Version="1.7.28"/>
-        <PackageReference Include="Hangfire.InMemory" Version="0.3.4"/>
+        <PackageReference Include="Hangfire.AspNetCore" Version="1.8.4"/>
+        <PackageReference Include="Hangfire.InMemory" Version="0.5.1"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0"/>
     </ItemGroup>
 

@@ -25,7 +25,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
             var model = new Secret
             {
                 Id = request.SecretId,
-                DisplayName = request.DisplayName,
+                DisplayName = request.Name,
                 Name = request.Name,
                 Type = request.Type,   
                 Properties = request.Properties

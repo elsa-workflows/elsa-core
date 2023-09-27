@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Telnyx.Activities;
+using Elsa.Activities.Telnyx.Extensions;
 using Elsa.Services;
 
 namespace Elsa.Activities.Telnyx.Providers.Bookmarks

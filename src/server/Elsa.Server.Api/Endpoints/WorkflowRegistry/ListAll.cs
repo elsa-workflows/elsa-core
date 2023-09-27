@@ -34,10 +34,10 @@ public class ListAll : Controller
     }
 
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagedList<WorkflowBlueprintSummaryModel>))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<WorkflowBlueprintSummaryModel>))]
     [SwaggerOperation(
         Summary = "Returns a list of workflow blueprints.",
-        Description = "Returns paginated a list of workflow blueprints. When no version options are specified, the latest version is returned.",
+        Description = "Returns a list of workflow blueprints. When no version options are specified, the latest version is returned.",
         OperationId = "WorkflowBlueprints.List",
         Tags = new[] { "WorkflowBlueprints" })
     ]
@@ -57,7 +57,7 @@ public class ListAll : Controller
         {
             var workflowBlueprints = workflowProvider.ListAsync(versionOptions, tenantId: tenantId, cancellationToken: cancellationToken);
 
-            await foreach (var workflowBlueprint in workflowBlueprints.WithCancellation(cancellationToken))
+            await foreach (var workflowBlueprint in workflowBlueprints)
                 yield return workflowBlueprint;
         }
     }

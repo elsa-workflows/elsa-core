@@ -1,5 +1,4 @@
 {
-  "extends": [ "tslint-stencil" ],
   "rules": {
     "no-import-side-effect": false,
     "linebreak-style": false,

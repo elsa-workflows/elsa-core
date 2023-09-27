@@ -335,7 +335,10 @@ namespace Elsa.Services.Workflows
                     if (workflowExecutionContext.Status == WorkflowStatus.Faulted)
                     {
                         await _mediator.Publish(new WorkflowFaulting(activityExecutionContext, activity), cancellationToken);
-                        break;
+
+                        // Only break out of loop if the status hasn't changed to Cancelled, in which case we might need to continue executing any scheduled compensation activities.
+                        if (workflowExecutionContext.Status == WorkflowStatus.Faulted)
+                            break;
                     }
 
                     await _mediator.Publish(new WorkflowExecutionPassCompleted(workflowExecutionContext, activityExecutionContext), cancellationToken);

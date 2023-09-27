@@ -1,6 +1,7 @@
 using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
+using Elsa.Server.Api.Extensions;
 using Elsa.Server.Api.Extensions.SchemaFilters;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
@@ -30,7 +31,8 @@ namespace Microsoft.Extensions.DependencyInjection
 
             var setupNewtonsoftJson = apiOptions.SetupNewtonsoftJson ?? (_ => { });
 
-            services.AddControllers().AddNewtonsoftJson(setupNewtonsoftJson);
+            //Don't set Newtonsoft globally
+            services.AddControllers();//.AddNewtonsoftJson(setupNewtonsoftJson);
             services.AddRouting(options => { options.LowercaseUrls = true; });
 
             services.AddVersionedApiExplorer(o =>
@@ -54,7 +56,11 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddSingleton<IEndpointContentSerializerSettingsProvider, EndpointContentSerializerSettingsProvider>()
                 .AddAutoMapperProfile<AutoMapperProfile>()
                 .AddSignalR();
-                
+            services.AddMvc(options =>
+            {
+                //Use this conventions to set ElsaNewtonsoftJsonConvention to all controllers in Elsa.Server.Api
+                options.Conventions.Add(new ElsaNewtonsoftJsonConvention());
+            });
             return services;
         }
 
@@ -65,7 +71,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 {
                     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Elsa", Version = "v1" });
                     c.EnableAnnotations();
-                    c.ExampleFilters();
+                    //c.ExampleFilters(); I don't know why, this line will make swagger error
                     c.MapType<VersionOptions?>(() => new OpenApiSchema
                     {
                         Type = PrimitiveType.String.ToString().ToLower(),
@@ -83,7 +89,6 @@ namespace Microsoft.Extensions.DependencyInjection
 
                     //Allow enums to be displayed
                     c.SchemaFilter<XEnumNamesSchemaFilter>();
-
                     configure?.Invoke(c);
                 });
     }

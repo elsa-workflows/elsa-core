@@ -1,4 +1,4 @@
-﻿import { Map } from '../utils/utils';
+import { Map } from '../utils/utils';
 
 export interface WorkflowDefinition {
   id?: string;
@@ -293,7 +293,7 @@ export interface ActivityPropertyDescriptor {
   uiHint: string;
   label?: string;
   hint?: string;
-  options?: any;
+  options?: SelectList | RuntimeSelectListProviderSettings | CodeEditorSettings | PropertySettings | Array<any>;
   category?: string;
   defaultValue?: any;
   defaultSyntax?: string;
@@ -301,7 +301,7 @@ export interface ActivityPropertyDescriptor {
   isReadOnly?: boolean;
   defaultWorkflowStorageProvider?: string;
   disableWorkflowProviderSelection: boolean;
-  considerValuesAsOutcomes: boolean;
+  considerValuesAsOutcomes?: boolean;
   type?: string;
 }
 
@@ -345,6 +345,15 @@ export interface SelectListItem {
 export interface RuntimeSelectListProviderSettings {
   runtimeSelectListProviderType: string;
   context?: any;
+}
+
+export interface CodeEditorSettings extends PropertySettings {
+  syntax?: string;
+}
+
+export interface PropertySettings {
+  editorHeight?: string
+  context?: string;
 }
 
 export class SyntaxNames {

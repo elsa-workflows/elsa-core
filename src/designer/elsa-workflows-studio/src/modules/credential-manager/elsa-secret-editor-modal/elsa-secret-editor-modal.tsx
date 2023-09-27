@@ -239,7 +239,7 @@ export class ElsaSecretEditorModal {
       <div>
         <div class="elsa-w-full">
           {textInput(formContext, 'name', 'Name', secretModel.name, 'Secret\'s name', 'secretName')}
-          {textInput(formContext, 'type', 'Type', secretModel.displayName, 'Secret\'s type', 'secretDisplayName', true)}
+          {textInput(formContext, 'type', 'Type', secretModel.type, 'Secret\'s type', 'secretType', true)}
         </div>
         <div class="elsa-mt-6">
           <div key={key} class={`elsa-grid elsa-grid-cols-1 elsa-gap-y-6 elsa-gap-x-4 sm:elsa-grid-cols-6`}>

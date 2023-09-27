@@ -66,7 +66,7 @@ export class ElsaMultiTextProperty {
     const fieldName = propertyName;
     const values = parseJson(this.currentValue);
     const items = this.selectList.items as Array<SelectListItem>;
-    const useDropdown = !!propertyDescriptor.options && propertyDescriptor.options.length > 0;
+    const useDropdown = !!propertyDescriptor.options && Array.isArray(propertyDescriptor.options) && propertyDescriptor.options.length > 0;
     const propertyOptions = this.createKeyValueOptions(items);
 
     const elsaInputTags = useDropdown ?

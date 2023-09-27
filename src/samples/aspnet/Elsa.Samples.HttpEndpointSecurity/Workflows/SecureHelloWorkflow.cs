@@ -22,6 +22,14 @@ namespace Elsa.Samples.HttpEndpointSecurity.Workflows
                         var user = httpContext.User;
                         return $"Hello {user.Identity!.Name}!";
                     }));
+            
+            builder
+                .HttpEndpoint(setup => setup
+                    .WithPath("/safe-hello-header")
+                    .WithMethod("GET")
+                    .WithAuthorizeWithCustomHeader(true, "api-key", "test-api-key"))
+                .WriteHttpResponse(setup => setup.WithStatusCode(HttpStatusCode.OK)
+                    .WithContent(() => "Hello header"));
         }
     }
 }

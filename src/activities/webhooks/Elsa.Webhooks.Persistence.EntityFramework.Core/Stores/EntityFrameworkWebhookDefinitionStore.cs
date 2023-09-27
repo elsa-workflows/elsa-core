@@ -6,6 +6,7 @@ using Elsa.Serialization;
 using Elsa.Webhooks.Persistence.EntityFramework.Core.Services;
 using Elsa.Webhooks.Models;
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
 {
@@ -13,7 +14,7 @@ namespace Elsa.Webhooks.Persistence.EntityFramework.Core.Stores
     {
         private readonly IContentSerializer _contentSerializer;
 
-        public EntityFrameworkWebhookDefinitionStore(IWebhookContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer) : base(dbContextFactory, mapper)
+        public EntityFrameworkWebhookDefinitionStore(IWebhookContextFactory dbContextFactory, IMapper mapper, IContentSerializer contentSerializer, ILogger<EntityFrameworkWebhookDefinitionStore> logger) : base(dbContextFactory, mapper, logger)
         {
             _contentSerializer = contentSerializer;
         }

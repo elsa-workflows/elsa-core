@@ -39,5 +39,8 @@ namespace Elsa.Secrets.Models
         public IDictionary<string, string?> Expressions { get; set; } = new Dictionary<string, string?>();
 
         public string? GetExpression(string syntax) => Expressions.ContainsKey(syntax) ? Expressions[syntax] : default;
+
+        public override string ToString()
+            => this.Name;
     }
 }

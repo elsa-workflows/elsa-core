@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Azure.Core;
 using Elsa.Options;
 using Elsa.Rebus.AzureServiceBus.StartupTasks;
@@ -42,7 +42,7 @@ namespace Elsa.Rebus.AzureServiceBus
             {
                 return new PurgeSubscriptions(sp.GetService<IServiceBusFactory>()!,
                     sp.GetService<ElsaOptions>()!,
-                    sp.GetService<ILogger>()!,
+                    sp.GetService<ILogger<PurgeSubscriptions>>()!,
                     sp.GetService<IDistributedLockProvider>()!,
                     connectionString);
             });

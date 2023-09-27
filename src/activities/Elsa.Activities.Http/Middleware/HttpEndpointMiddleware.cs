@@ -12,6 +12,7 @@ using Elsa.Activities.Http.Extensions;
 using Elsa.Activities.Http.Models;
 using Elsa.Activities.Http.Options;
 using Elsa.Activities.Http.Parsers.Request;
+using Elsa.Activities.Http.Services;
 using Elsa.Models;
 using Elsa.Persistence;
 using Elsa.Services;
@@ -78,11 +79,13 @@ namespace Elsa.Activities.Http.Middleware
                     routeData.Values[routeValue.Key] = routeValue.Value;
             }
 
-            // Create a workflow query using the selected route and HTTP method of the request.
-            const string activityType = nameof(HttpEndpoint);
-            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
-            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
-            var pendingWorkflows = await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken).ToList();
+            // Find pending workflows using the selected route and HTTP method of the request.
+            var pendingWorkflows = await FindPendingWorkflows(workflowLaunchpad, routeTemplate, method, cancellationToken, correlationId, tenantId).ToList();
+            if (pendingWorkflows?.Count == 0 && string.IsNullOrWhiteSpace(matchingRoute?.route))
+            {
+                routeTemplate = path.StartsWith("/") ? path[1..] : $"/{path}";
+                pendingWorkflows = await FindPendingWorkflows(workflowLaunchpad, routeTemplate, method, cancellationToken, correlationId, tenantId).ToList();
+            }
 
             if (await HandleNoWorkflowsFoundAsync(httpContext, pendingWorkflows, basePath))
                 return;
@@ -116,7 +119,8 @@ namespace Elsa.Activities.Http.Middleware
             var contentParser = orderedContentParsers.FirstOrDefault(x => x.SupportedContentTypes.Contains(simpleContentType, StringComparer.OrdinalIgnoreCase)) ?? orderedContentParsers.LastOrDefault() ?? new DefaultHttpRequestBodyParser();
             var activityWrapper = workflowBlueprintWrapper.GetUnfilteredActivity<HttpEndpoint>(pendingWorkflow.ActivityId!)!;
 
-            if (!await AuthorizeAsync(httpContext, options.Value, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken))
+            if (!await AuthorizeAsync(httpContext, options.Value, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken) ||
+                !await AuthorizeWithCustomHeaderAsync(httpContext, activityWrapper, workflowBlueprint, pendingWorkflow, cancellationToken))
             {
                 httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
@@ -215,6 +219,22 @@ namespace Elsa.Activities.Http.Middleware
 
             return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
         }
+        
+        private async Task<bool> AuthorizeWithCustomHeaderAsync(
+            HttpContext httpContext,
+            IActivityBlueprintWrapper<HttpEndpoint> httpEndpoint,
+            IWorkflowBlueprint workflowBlueprint,
+            CollectedWorkflow pendingWorkflow,
+            CancellationToken cancellationToken)
+        {
+            var authorizeWithCustomHeader = await httpEndpoint.EvaluatePropertyValueAsync(x => x.AuthorizeWithCustomHeader, cancellationToken);
+
+            if (!authorizeWithCustomHeader)
+                return true;
+
+            var authorizationHandler = ActivatorUtilities.GetServiceOrCreateInstance<CustomHeaderAuthorizationHandler>(httpContext.RequestServices);
+            return await authorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, httpEndpoint, workflowBlueprint, pendingWorkflow.WorkflowInstanceId, cancellationToken));
+        }
 
         private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, IList<CollectedWorkflow> pendingWorkflows, PathString? basePath)
         {
@@ -256,5 +276,19 @@ namespace Elsa.Activities.Http.Middleware
         private string? GetPath(PathString? basePath, HttpContext httpContext) => basePath != null
             ? httpContext.Request.Path.StartsWithSegments(basePath.Value, out _, out var remainingPath) ? remainingPath.Value : null
             : httpContext.Request.Path.Value;
+
+        private async Task<IEnumerable<CollectedWorkflow>> FindPendingWorkflows(
+            IWorkflowLaunchpad workflowLaunchpad, 
+            string routeTemplate, 
+            string method,
+            CancellationToken cancellationToken,
+            string? correlationId = null, 
+            string? tenantId = null)
+        {
+            const string activityType = nameof(HttpEndpoint);
+            var bookmark = new HttpEndpointBookmark(routeTemplate, method);
+            var collectWorkflowsContext = new WorkflowsQuery(activityType, bookmark, correlationId, default, default, tenantId);
+            return await workflowLaunchpad.FindWorkflowsAsync(collectWorkflowsContext, cancellationToken);
+        }
     }
 }

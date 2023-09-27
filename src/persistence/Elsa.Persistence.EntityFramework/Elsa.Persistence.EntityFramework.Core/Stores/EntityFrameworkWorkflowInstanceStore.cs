@@ -27,7 +27,7 @@ namespace Elsa.Persistence.EntityFramework.Core.Stores
             IElsaContextFactory dbContextFactory,
             IMapper mapper,
             IContentSerializer contentSerializer,
-            ILogger<EntityFrameworkWorkflowInstanceStore> logger) : base(dbContextFactory, mapper)
+            ILogger<EntityFrameworkWorkflowInstanceStore> logger) : base(dbContextFactory, mapper, logger)
         {
             _contentSerializer = contentSerializer;
             _logger = logger;

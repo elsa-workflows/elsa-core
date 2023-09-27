@@ -74,7 +74,7 @@ namespace Elsa.Activities.Http
         /// Allow authenticated requests only
         /// </summary>
         [ActivityInput(
-            Hint = "Check to allow authenticated requests only",
+            Hint = "Check to only allow requests, which satisfy a specified policy",
             SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
             Category = "Security"
         )]
@@ -89,6 +89,25 @@ namespace Elsa.Activities.Http
             Category = "Security"
         )]
         public string? Policy { get; set; }
+        
+        [ActivityInput(
+            Hint = "Check to only allow requests, which have a specified header with a specified value",
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public bool AuthorizeWithCustomHeader { get; set; }
+        
+        [ActivityInput(
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public string? CustomHeaderName { get; set; }
+        
+        [ActivityInput(
+            SupportedSyntaxes = new[] { SyntaxNames.Literal, SyntaxNames.JavaScript, SyntaxNames.Liquid },
+            Category = "Security"
+        )]
+        public string? CustomHeaderValue { get; set; }
 
         /// <summary>
         /// The received HTTP request.
@@ -97,7 +116,13 @@ namespace Elsa.Activities.Http
         [ActivityOutput(Hint = "The received HTTP request.")]
         public HttpRequestModel? Output { get; set; }
 
-        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        // protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context) => context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        protected override IActivityExecutionResult OnExecute(ActivityExecutionContext context)
+        {
+            if(Path.Contains("//"))
+                throw new Exception("Path cannot contain double slashes (//)");
+            return context.WorkflowExecutionContext.IsFirstPass ? ExecuteInternal(context) : Suspend();
+        }
 
         protected override IActivityExecutionResult OnResume(ActivityExecutionContext context) => ExecuteInternal(context);
 

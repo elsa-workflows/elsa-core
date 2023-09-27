@@ -1,0 +1,3 @@
+dotnet pack -o packages --version-suffix "-preview.709" -p:PackageVersion=2.9.5-preview.709
+dotnet nuget push packages/*.nupkg --api-key {key} -s https://api.nuget.org/v3/index.json --skip-duplicate
+dotnet nuget push packages/*.nupkg --api-key {key} -s https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json --skip-duplicate

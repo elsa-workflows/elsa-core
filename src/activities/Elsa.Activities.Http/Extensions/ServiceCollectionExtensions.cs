@@ -11,8 +11,10 @@ using Elsa.Activities.Http.Parsers.Response;
 using Elsa.Activities.Http.Scripting.JavaScript;
 using Elsa.Activities.Http.Scripting.Liquid;
 using Elsa.Activities.Http.Services;
+using Elsa.Activities.Http.StartupTasks;
 using Elsa.Events;
 using Elsa.Options;
+using Elsa.Runtime;
 using Elsa.Scripting.JavaScript.Providers;
 using Elsa.Scripting.Liquid.Extensions;
 using Microsoft.AspNetCore.Http;
@@ -65,6 +67,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 .AddNotificationHandlers(typeof(ConfigureJavaScriptEngine))
                 .AddLiquidFilter<SignalUrlFilter>("signal_url")
                 .AddJavaScriptTypeDefinitionProvider<HttpTypeDefinitionProvider>()
+                .AddStartupTask<UpdateRouteTableWithBookmarks>()
 
                 .AddMemoryCache()
                 .AddDataProtection();
