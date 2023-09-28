@@ -14,6 +14,13 @@ public class ConnectionComparer : IEqualityComparer<Connection>
         if (ReferenceEquals(x, null)) return false;
         if (ReferenceEquals(y, null)) return false;
         if (x.GetType() != y.GetType()) return false;
+
+        // ReSharper disable ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+        // Justification: These can be null when the designer is in an invalid state. For example, if a NotFoundActivity is used that no longer has the same outcomes.
+        if (x.Source.Activity?.Id == null || x.Target.Activity?.Id == null || y.Source.Activity?.Id == null || y.Target.Activity?.Id == null)
+            return false;
+        // ReSharper restore ConditionalAccessQualifierIsNonNullableAccordingToAPIContract
+
         return x.Source.Activity.Id.Equals(y.Source.Activity.Id) && x.Target.Activity.Id.Equals(y.Target.Activity.Id) && x.Source.Port == y.Source.Port && x.Target.Port == y.Target.Port;
     }
 
