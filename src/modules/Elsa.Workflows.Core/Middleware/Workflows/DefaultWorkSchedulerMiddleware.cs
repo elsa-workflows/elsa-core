@@ -1,5 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 
 namespace Elsa.Workflows.Core.Middleware.Workflows;
@@ -20,9 +22,12 @@ public static class UseActivitySchedulerMiddlewareExtensions
 /// </summary>
 public class DefaultWorkSchedulerMiddleware : WorkflowExecutionMiddleware
 {
+    private readonly IActivityInvoker _activityInvoker;
+
     /// <inheritdoc />
-    public DefaultWorkSchedulerMiddleware(WorkflowMiddlewareDelegate next) : base(next)
+    public DefaultWorkSchedulerMiddleware(WorkflowMiddlewareDelegate next, IActivityInvoker activityInvoker) : base(next)
     {
+        _activityInvoker = activityInvoker;
     }
 
     /// <inheritdoc />
@@ -40,7 +45,8 @@ public class DefaultWorkSchedulerMiddleware : WorkflowExecutionMiddleware
             var currentWorkItem = scheduler.Take();
 
             // Execute work item.
-            await currentWorkItem.Execute();
+            //await currentWorkItem.Execute();
+            await ExecuteWorkItemAsync(context, currentWorkItem);
         }
 
         // Invoke next middleware.
@@ -49,5 +55,18 @@ public class DefaultWorkSchedulerMiddleware : WorkflowExecutionMiddleware
         // If all activities are completed, complete the workflow.
         if (context.Status == WorkflowStatus.Running)
             context.TransitionTo(context.AllActivitiesCompleted() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
+    }
+
+    private async Task ExecuteWorkItemAsync(WorkflowExecutionContext context, ActivityWorkItem workItem)
+    {
+        var options = new ActivityInvocationOptions
+        {
+            Owner = workItem.Owner,
+            ReuseActivityExecutionContextId = workItem.ReuseActivityExecutionContextId,
+            Tag = workItem.Tag,
+            Variables = workItem.Variables
+        };
+
+        await _activityInvoker.InvokeAsync(context, workItem.Activity, options);
     }
 }

@@ -19,7 +19,8 @@ public static class WorkflowExecutionContextExtensions
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
-        var workItem = new ActivityWorkItem(workflow.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
+        //var workItem = new ActivityWorkItem(workflow.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
+        var workItem = new ActivityWorkItem(workflow.Root);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
     
@@ -30,7 +31,7 @@ public static class WorkflowExecutionContextExtensions
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
-        var workItem = new ActivityWorkItem(workflow.Root.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow.Root));
+        var workItem = new ActivityWorkItem(workflow.Root);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
 
@@ -40,7 +41,7 @@ public static class WorkflowExecutionContextExtensions
     public static void ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity));
+        var workItem = new ActivityWorkItem(activity);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
     
@@ -50,7 +51,7 @@ public static class WorkflowExecutionContextExtensions
     public static void ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
     {
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activityExecutionContext.Activity.Id, null, async () => await activityInvoker.InvokeAsync(activityExecutionContext));
+        var workItem = new ActivityWorkItem(activityExecutionContext.Activity);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
 
@@ -68,8 +69,10 @@ public static class WorkflowExecutionContextExtensions
         var bookmarkedActivity = bookmarkedActivityContext.Activity;
 
         // Schedule the activity to resume.
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(bookmarkedActivity.Id, null, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
+        var workItem = new ActivityWorkItem(bookmarkedActivity)
+        {
+            ReuseActivityExecutionContextId = bookmarkedActivityContext.Id,
+        };
         workflowExecutionContext.Scheduler.Schedule(workItem);
 
         // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
@@ -90,15 +93,16 @@ public static class WorkflowExecutionContextExtensions
     {
         var scheduler = workflowExecutionContext.Scheduler;
         
-        if(options?.PreventDuplicateScheduling == true && scheduler.Any(x => x.ActivityId == activityNode.NodeId))
+        if(options?.PreventDuplicateScheduling == true && scheduler.Any(x => x.Activity.Id == activityNode.NodeId))
             return;
         
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var toolVersion = workflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
+        var activity = activityNode.Activity;
         var activityId = toolVersion?.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
         var tag = options?.Tag;
         var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
-        var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, activityInvocationOptions), tag);
+        var workItem = new ActivityWorkItem(activity, owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
         var completionCallback = options?.CompletionCallback;
         
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback, tag);

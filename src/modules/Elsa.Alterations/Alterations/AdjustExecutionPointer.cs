@@ -1,7 +1,7 @@
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
-using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Alterations.Alterations;
 
@@ -38,7 +38,8 @@ public class AdjustExecutionPointer : AlterationBase
         // If there's already an activity execution context, then we can just use that.
         if (flowchartActivityExecutionContext != null)
         {
-            flowchart.NextActivityId.se
+            // TODO: Also pass in next activity ID as a parameter to the flowchart activity. 
+            context.WorkflowExecutionContext.ScheduleActivityExecutionContext(flowchartActivityExecutionContext);
         }
         
         return default;

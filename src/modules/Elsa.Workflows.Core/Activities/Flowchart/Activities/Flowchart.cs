@@ -133,7 +133,7 @@ public class Flowchart : Container
 
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
         {
-            var ownerInstanceId = workItem.OwnerActivityInstanceId;
+            var ownerInstanceId = workItem.Owner?.Id;
 
             if (ownerInstanceId == null)
                 return false;
