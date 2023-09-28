@@ -20,7 +20,7 @@ public static class WorkflowExecutionContextExtensions
         var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
         //var workItem = new ActivityWorkItem(workflow.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
-        var workItem = new ActivityWorkItem(workflow.Root);
+        var workItem = new ActivityWorkItem(workflow);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
     
