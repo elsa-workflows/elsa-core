@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// <summary>
 /// A simple container that executes the specified activity.
 /// </summary>
-[Activity("Elsa", "Flow", "A simple container that executes the specified activity.")]
+[Activity("Elsa", "Flow", "A simple container that executes the specified activity.", DisplayName = "Container")]
 [PublicAPI]
 public class FlowNode : Activity
 {
