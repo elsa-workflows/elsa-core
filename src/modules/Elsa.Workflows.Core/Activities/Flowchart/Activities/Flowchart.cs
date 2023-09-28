@@ -29,7 +29,7 @@ public class Flowchart : Container
     }
 
     /// <summary>
-    /// The activity to execute when the workflow starts.
+    /// The activity to execute when the flowchart starts.
     /// </summary>
     [Port]
     [Browsable(false)]
@@ -39,6 +39,12 @@ public class Flowchart : Container
     /// A list of connections between activities.
     /// </summary>
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
+
+    /// <summary>
+    /// The next activity to execute when this flowchart executes.
+    /// </summary>
+    [Browsable(false)]
+    public string? NextActivityId { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
@@ -56,8 +62,63 @@ public class Flowchart : Container
         }
 
         // Schedule the start activity.
-        logger.LogDebug("Scheduling start activity: {StartActivityId}", startActivity.Id);
+        logger.LogDebug("Scheduling activity: {StartActivityId}", startActivity.Id);
         await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
+    }
+
+    private IActivity? GetStartActivity(ActivityExecutionContext context)
+    {
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+
+        logger.LogDebug("Looking for start activity...");
+
+        // If an explicit NextActivityId was provided, use that.
+        var nextActivity = NextActivityId != null ? Activities.FirstOrDefault(x => x.Id == NextActivityId) : default;
+
+        if (nextActivity != null)
+        {
+            logger.LogDebug("An explicit next activity was provided: {NextActivityId}", NextActivityId);
+            return nextActivity;
+        }
+
+        // If there's a trigger that triggered this workflow, use that.
+        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
+        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
+
+        if (triggerActivity != null)
+        {
+            logger.LogDebug("Found trigger activity: {TriggerActivityId}", triggerActivityId);
+            return triggerActivity;
+        }
+
+        // If an explicit Start activity was provided, use that.
+        if (Start != null)
+        {
+            logger.LogDebug("An explicit start activity was provided: {StartActivityId}", Start.Id);
+            return Start;
+        }
+
+        // If there is a Start activity on the flowchart, use that.
+        var startActivity = Activities.FirstOrDefault(x => x is Start);
+
+        if (startActivity != null)
+        {
+            logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
+            return startActivity;
+        }
+
+        // If there is a single activity that has no inbound connections, use that.
+        var root = GetRootActivity();
+
+        if (root != null)
+        {
+            logger.LogDebug("Found a single activity with no inbound connections: {ActivityId}", root.Id);
+            return root;
+        }
+
+        // If no start activity found, return the first activity.
+        logger.LogDebug("No start activity found. Using the first activity");
+        return Activities.FirstOrDefault();
     }
 
     /// <summary>
@@ -110,52 +171,6 @@ public class Flowchart : Container
             yield return current;
             current = current.ParentActivityExecutionContext;
         }
-    }
-
-    private IActivity? GetStartActivity(ActivityExecutionContext context)
-    {
-        var logger = context.GetRequiredService<ILogger<Flowchart>>();
-
-        logger.LogDebug("Looking for start activity...");
-
-        // If there's a trigger that triggered this workflow, use that.
-        var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
-        var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
-
-        if (triggerActivity != null)
-        {
-            logger.LogDebug("Found trigger activity: {TriggerActivityId}", triggerActivityId);
-            return triggerActivity;
-        }
-
-        // If an explicit Start activity was provided, use that.
-        if (Start != null)
-        {
-            logger.LogDebug("An explicit start activity was provided: {StartActivityId}", Start.Id);
-            return Start;
-        }
-
-        // If there is a Start activity on the flowchart, use that.
-        var startActivity = Activities.FirstOrDefault(x => x is Start);
-
-        if (startActivity != null)
-        {
-            logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
-            return startActivity;
-        }
-
-        // If there is a single activity that has no inbound connections, use that.
-        var root = GetRootActivity();
-
-        if (root != null)
-        {
-            logger.LogDebug("Found a single activity with no inbound connections: {ActivityId}", root.Id);
-            return root;
-        }
-
-        // If no start activity found, return the first activity.
-        logger.LogDebug("No start activity found. Using the first activity");
-        return Activities.FirstOrDefault();
     }
 
     private IActivity? GetRootActivity()

@@ -316,36 +316,36 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
-    public ActivityNode FindNodeById(string nodeId) => NodeIdLookup[nodeId];
+    public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup[nodeId];
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.
     /// </summary>
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="ActivityNode"/> with the specified hash of the activity node ID.</returns>
-    public ActivityNode FindNodeByHash(string hash) => NodeHashLookup[hash];
+    public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup[hash];
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
-    public ActivityNode FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
+    public ActivityNode? FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    public IActivity FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
+    public IActivity? FindActivityByNodeId(string nodeId) => FindNodeById(nodeId).Activity;
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    public IActivity FindActivityByActivityId(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId).Activity;
+    public IActivity? FindActivityByActivityId(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId).Activity;
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified hash of the activity node ID from the workflow graph.
     /// </summary>
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="IActivity"/> with the specified hash of the activity node ID.</returns>
-    public IActivity FindActivityByHash(string hash) => FindNodeByHash(hash).Activity;
+    public IActivity? FindActivityByHash(string hash) => FindNodeByHash(hash).Activity;
 
     /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.

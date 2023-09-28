@@ -43,6 +43,8 @@ public class WorkflowState
     /// </summary>
     public WorkflowSubStatus SubStatus { get; set; }
 
+    public ICollection<> Type { get; set; }
+
     /// <summary>
     /// Collected bookmarks.
     /// </summary>
