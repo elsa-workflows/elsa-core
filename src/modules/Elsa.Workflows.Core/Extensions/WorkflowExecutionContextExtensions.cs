@@ -17,9 +17,7 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
-        //var workItem = new ActivityWorkItem(workflow.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
         var workItem = new ActivityWorkItem(workflow);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
@@ -29,7 +27,6 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
         var workItem = new ActivityWorkItem(workflow.Root);
         workflowExecutionContext.Scheduler.Schedule(workItem);
@@ -40,7 +37,6 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(activity);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
@@ -50,7 +46,6 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static void ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workItem = new ActivityWorkItem(activityExecutionContext.Activity);
         workflowExecutionContext.Scheduler.Schedule(workItem);
     }
@@ -96,12 +91,8 @@ public static class WorkflowExecutionContextExtensions
         if(options?.PreventDuplicateScheduling == true && scheduler.Any(x => x.Activity.Id == activityNode.NodeId))
             return;
         
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var toolVersion = workflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
         var activity = activityNode.Activity;
-        var activityId = toolVersion?.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
         var tag = options?.Tag;
-        var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
         var workItem = new ActivityWorkItem(activity, owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
         var completionCallback = options?.CompletionCallback;
         
