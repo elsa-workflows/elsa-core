@@ -33,7 +33,7 @@ public static class ActivityExecutionContextExtensions
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
 
-        if (context.Input.TryGetValue(key, out var v))
+        if (context.WorkflowInput.TryGetValue(key, out var v))
         {
             value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
             return true;
@@ -54,7 +54,7 @@ public static class ActivityExecutionContextExtensions
     public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
-        return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+        return context.WorkflowInput[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
     }
 
     /// <summary>

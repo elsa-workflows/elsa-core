@@ -130,7 +130,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context has finished.
     /// </summary>
     public DateTimeOffset? FinishedAt { get; set; }
-    
+
     /// <summary>
     /// Gets the clock used to determine the current time.
     /// </summary>
@@ -408,11 +408,13 @@ public class WorkflowExecutionContext : IExecutionContext
                 // Declare a dynamic variable on the activity execution context.
                 activityExecutionContext.DynamicVariables.RemoveWhere(x => x.Name == variable.Name);
                 activityExecutionContext.DynamicVariables.Add(variable);
-                
+
                 // Assign the variable to the expression execution context.
                 expressionExecutionContext.CreateVariable(variable.Name, variable.Value);
             }
         }
+
+        activityExecutionContext.ActivityInput = options?.Input ?? new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
         return activityExecutionContext;
     }

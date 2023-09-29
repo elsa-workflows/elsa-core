@@ -159,9 +159,14 @@ public class ActivityExecutionContext : IExecutionContext
     public long ExecutionCount => _executionCount;
 
     /// <summary>
-    /// A dictionary of received inputs.
+    /// A dictionary of received inputs for the current workflow.
     /// </summary>
-    public IDictionary<string, object> Input => WorkflowExecutionContext.Input;
+    public IDictionary<string, object> WorkflowInput => WorkflowExecutionContext.Input;
+
+    /// <summary>
+    /// A dictionary of inputs for the current activity.
+    /// </summary>
+    public IDictionary<string, object> ActivityInput { get; set; } = new Dictionary<string, object>();
 
     /// <summary>
     /// Journal data will be added to the workflow execution log for the "Executed" event.  

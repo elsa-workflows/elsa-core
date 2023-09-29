@@ -78,7 +78,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var activity = context.Activity;
         var inputKey = GetBackgroundActivityOutputKey(activity.Id);
 
-        if (!context.Input.TryGetValue(inputKey, out var capturedOutput))
+        if (!context.WorkflowInput.TryGetValue(inputKey, out var capturedOutput))
             return;
 
         var input = (IDictionary<string, object>)capturedOutput;

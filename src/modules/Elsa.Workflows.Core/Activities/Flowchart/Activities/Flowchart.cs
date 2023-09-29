@@ -40,12 +40,6 @@ public class Flowchart : Container
     /// </summary>
     public ICollection<Connection> Connections { get; set; } = new List<Connection>();
 
-    /// <summary>
-    /// The next activity to execute when this flowchart executes.
-    /// </summary>
-    [Browsable(false)]
-    public string? NextActivityId { get; set; }
-
     /// <inheritdoc />
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
@@ -73,12 +67,15 @@ public class Flowchart : Container
         logger.LogDebug("Looking for start activity...");
 
         // If an explicit NextActivityId was provided, use that.
-        var nextActivity = NextActivityId != null ? Activities.FirstOrDefault(x => x.Id == NextActivityId) : default;
-
-        if (nextActivity != null)
+        if (context.ActivityInput.TryGetValue("NextActivityId", out string nextActivityId))
         {
-            logger.LogDebug("An explicit next activity was provided: {NextActivityId}", NextActivityId);
-            return nextActivity;
+            var nextActivity = Activities.FirstOrDefault(x => x.Id == nextActivityId);
+
+            if (nextActivity != null)
+            {
+                logger.LogDebug("An explicit next activity was provided: {NextActivityId}", nextActivityId);
+                return nextActivity;
+            }
         }
 
         // If there's a trigger that triggered this workflow, use that.
@@ -256,7 +253,7 @@ public class Flowchart : Container
                         var scheduleWorkOptions = new ScheduleWorkOptions
                         {
                             CompletionCallback = OnChildCompletedAsync,
-                            ReuseActivityExecutionContextId = joinContext?.Id,
+                            ExistingActivityExecutionContext = joinContext,
                             PreventDuplicateScheduling = true
                         };
 

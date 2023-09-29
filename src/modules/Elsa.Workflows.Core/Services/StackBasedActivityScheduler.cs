@@ -28,5 +28,8 @@ public class StackBasedActivityScheduler : IActivityScheduler
     public bool Any(Func<ActivityWorkItem, bool> predicate) => _stack.Any(predicate);
 
     /// <inheritdoc />
+    public ActivityWorkItem? Find(Func<ActivityWorkItem, bool> predicate) => _stack.FirstOrDefault(predicate);
+
+    /// <inheritdoc />
     public void Clear() => _stack.Clear();
 }

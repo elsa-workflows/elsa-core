@@ -54,7 +54,7 @@ public class DefaultWorkSchedulerMiddleware : WorkflowExecutionMiddleware
 
         // If all activities are completed, complete the workflow.
         if (context.Status == WorkflowStatus.Running)
-            context.TransitionTo(context.AllActivitiesCompleted() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
+            context.TransitionTo(context.GetAreAllActivitiesCompleted() ? WorkflowSubStatus.Finished : WorkflowSubStatus.Suspended);
     }
 
     private async Task ExecuteWorkItemAsync(WorkflowExecutionContext context, ActivityWorkItem workItem)
@@ -62,7 +62,7 @@ public class DefaultWorkSchedulerMiddleware : WorkflowExecutionMiddleware
         var options = new ActivityInvocationOptions
         {
             Owner = workItem.Owner,
-            ReuseActivityExecutionContextId = workItem.ReuseActivityExecutionContextId,
+            ExistingActivityExecutionContext = workItem.ExistingActivityExecutionContext,
             Tag = workItem.Tag,
             Variables = workItem.Variables
         };
