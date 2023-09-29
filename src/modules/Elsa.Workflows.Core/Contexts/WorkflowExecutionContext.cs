@@ -89,12 +89,12 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// The <see cref="Workflow"/> associated with the execution context.
     /// </summary>
-    public Workflow Workflow { get; }
+    public Workflow Workflow { get; set; }
 
     /// <summary>
     /// A graph of the workflow structure.
     /// </summary>
-    public ActivityNode Graph { get; }
+    public ActivityNode Graph { get; set; }
 
     /// <summary>
     /// The current status of the workflow. 

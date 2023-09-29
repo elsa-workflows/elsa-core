@@ -57,4 +57,11 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter { Id = definitionVersionId };
+        return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
 }

@@ -1,7 +1,8 @@
 using Elsa.Alterations.Core.Contracts;
+using Elsa.Alterations.Core.Entities;
+using Elsa.Alterations.Core.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Core.Contexts;
@@ -9,23 +10,21 @@ namespace Elsa.Alterations.Core.Contexts;
 /// <summary>
 /// Provides contextual information about an alteration.
 /// </summary>
-public class AlterationContext
+public class AlterationHandlerContext
 {
-    private readonly IAlteration _alteration;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="AlterationContext"/> class.
+    /// Initializes a new instance of the <see cref="AlterationHandlerContext"/> class.
     /// </summary>
-    public AlterationContext(
-        string batchId, 
+    public AlterationHandlerContext(
+        AlterationPlan plan, 
         IAlteration alteration, 
         WorkflowExecutionContext workflowExecutionContext, 
         IAlterationLog log, 
         IServiceProvider serviceProvider, 
         CancellationToken cancellationToken)
     {
-        _alteration = alteration;
-        BatchId = batchId;
+        Plan = plan;
+        Alteration = alteration;
         WorkflowExecutionContext = workflowExecutionContext;
         AlterationLog = log;
         ServiceProvider = serviceProvider;
@@ -33,14 +32,19 @@ public class AlterationContext
     }
 
     /// <summary>
-    /// The Id of the batch that this alteration belongs to.
+    /// The alteration plan being executed.
     /// </summary>
-    public string BatchId { get; }
+    public AlterationPlan Plan { get; }
+
+    /// <summary>
+    /// The alteration being handled.
+    /// </summary>
+    public IAlteration Alteration { get; }
 
     /// <summary>
     /// A workflow execution context of the workflow instance being altered. This offers maximum flexibility for altering the workflow state.
     /// </summary>
-    public WorkflowExecutionContext WorkflowExecutionContext { get; }
+    public WorkflowExecutionContext WorkflowExecutionContext { get; set; }
 
     /// <summary>
     /// The workflow of the workflow instance being altered.
@@ -79,7 +83,7 @@ public class AlterationContext
     /// <param name="logLevel">The log level.</param>
     public void Log(string message, LogLevel logLevel = LogLevel.Information)
     {
-        AlterationLog.Log(BatchId, _alteration.Id, message, logLevel);
+        AlterationLog.Append(message, logLevel);
     }
 
     /// <summary>
