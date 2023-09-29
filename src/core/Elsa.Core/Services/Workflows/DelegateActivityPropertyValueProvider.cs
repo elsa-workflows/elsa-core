@@ -20,10 +20,5 @@ namespace Elsa.Services.Workflows
             ActivityExecutionContext context,
             CancellationToken cancellationToken = default) =>
             await ValueProvider(context);
-
-        public ValueTask<bool> IsNonStorablePropertyValue(ActivityExecutionContext context, CancellationToken cancellationToken = default)
-        {
-            return new ValueTask<bool>(false);
-        }
     }
 }

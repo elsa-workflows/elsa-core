@@ -31,11 +31,6 @@ namespace Elsa.Scripting.Liquid.Services
             return string.IsNullOrWhiteSpace(result) ? default : result.Parse(returnType);
         }
 
-        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(false);
-        }
-
         private async Task<TemplateContext> CreateTemplateContextAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
         {
             var context = new TemplateContext(activityExecutionContext, new TemplateOptions());

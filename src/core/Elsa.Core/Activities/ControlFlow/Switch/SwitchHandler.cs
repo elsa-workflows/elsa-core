@@ -27,11 +27,6 @@ namespace Elsa.Activities.ControlFlow
             return evaluatedCases;
         }
 
-        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(false);
-        }
-
         private async IAsyncEnumerable<SwitchCase> EvaluateCasesAsync(IEnumerable<SwitchCaseModel> caseModels, ActivityExecutionContext context, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var validCaseModels = caseModels.Where(x => x.Expressions != null && !string.IsNullOrWhiteSpace(x.Syntax) && x.Expressions.ContainsKey(x.Syntax)).ToList();

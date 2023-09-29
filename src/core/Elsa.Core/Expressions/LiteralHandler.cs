@@ -15,10 +15,5 @@ namespace Elsa.Expressions
             ActivityExecutionContext context,
             CancellationToken cancellationToken) =>
             Task.FromResult(expression.Parse(returnType));
-
-        public Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(false);
-        }
     }
 }

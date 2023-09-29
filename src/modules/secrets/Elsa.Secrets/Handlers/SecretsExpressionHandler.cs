@@ -28,14 +28,5 @@ namespace Elsa.Secrets.Handlers
 
             return await _secretsProvider.GetSecretByNameAsync(expression);
         }
-
-        public async Task<bool> IsNonStorableExpression(string expression, CancellationToken cancellationToken)
-        {
-            Match m;
-            if ((m = fullyQualifiedName.Match(expression)).Success)
-                return await _secretsProvider.IsSecretValueSensitiveData(m.Groups["Type"].Value, m.Groups["Name"].Value);
-
-            return await _secretsProvider.IsSecretValueSensitiveData(expression);
-        }
     }
 }

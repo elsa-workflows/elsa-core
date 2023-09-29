@@ -17,10 +17,12 @@ namespace Elsa.Handlers
     public class PersistActivityPropertyState : INotificationHandler<ActivityExecuted>
     {
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IMediator _mediator;
 
-        public PersistActivityPropertyState(IWorkflowStorageService workflowStorageService)
+        public PersistActivityPropertyState(IWorkflowStorageService workflowStorageService, IMediator mediator)
         {
             _workflowStorageService = workflowStorageService;
+            _mediator = mediator;
         }
         
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
@@ -35,8 +37,9 @@ namespace Elsa.Handlers
             // Persist input properties.
             foreach (var property in inputProperties)
             {
-                var propProvider = notification.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, property.Name);
-                if (propProvider != null && await propProvider.IsNonStorablePropertyValue(notification.ActivityExecutionContext, cancellationToken))
+                var validatePropertyExposure = new ValidatePropertyExposure(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(validatePropertyExposure, cancellationToken);
+                if (!validatePropertyExposure.CanExposeProperty)
                 {
                     continue;
                 }
@@ -50,8 +53,9 @@ namespace Elsa.Handlers
             // Persist output properties.
             foreach (var property in outputProperties)
             {
-                var propProvider = notification.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, property.Name);
-                if (propProvider != null && await propProvider.IsNonStorablePropertyValue(notification.ActivityExecutionContext, cancellationToken))
+                var validatePropertyExposure = new ValidatePropertyExposure(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(validatePropertyExposure, cancellationToken);
+                if (!validatePropertyExposure.CanExposeProperty)
                 {
                     continue;
                 }

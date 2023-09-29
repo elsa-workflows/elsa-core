@@ -6,10 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
+using Elsa.Events;
 using Elsa.Options;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Workflows
 {
@@ -17,11 +20,13 @@ namespace Elsa.Services.Workflows
     {
         private readonly ElsaOptions _elsaOptions;
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ActivityActivator(ElsaOptions options, IWorkflowStorageService workflowStorageService)
+        public ActivityActivator(ElsaOptions options, IWorkflowStorageService workflowStorageService, IServiceProvider serviceProvider)
         {
             _elsaOptions = options;
             _workflowStorageService = workflowStorageService;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type, CancellationToken cancellationToken = default)
@@ -87,6 +92,9 @@ namespace Elsa.Services.Workflows
 
         private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, IActivity activity, object nestedInstance, CancellationToken cancellationToken, string? parentName = null)
         {
+            using var scope = _serviceProvider.CreateScope();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
             var properties = nestedInstance.GetType().GetProperties().Where(IsActivityProperty).ToList();
             var nestedProperties = nestedInstance.GetType().GetProperties().Where(IsActivityObjectProperty).ToList();
             var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
@@ -96,12 +104,13 @@ namespace Elsa.Services.Workflows
             {
                 var propertyName = parentName == null ? property.Name : $"{parentName}_{property.Name}";
 
-                var propProvider = context.WorkflowExecutionContext.WorkflowBlueprint.ActivityPropertyProviders.GetProvider(activity.Id, propertyName);
-                if (propProvider != null && await propProvider.IsNonStorablePropertyValue(context, cancellationToken))
+                var validatePropertyExposure = new ValidatePropertyExposure(context.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, propertyName);
+                await mediator.Publish(validatePropertyExposure, cancellationToken);
+                if (!validatePropertyExposure.CanExposeProperty)
                 {
                     continue;
                 }
-                
+
                 var value = property.GetValue(nestedInstance);
                 var attr = property.GetCustomAttributes<ActivityPropertyAttributeBase>().First();
                 var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? attr.DefaultWorkflowStorageProvider;
