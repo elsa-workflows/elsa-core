@@ -18,7 +18,7 @@ public interface IAlterationLog
     /// <summary>
     /// Appends a range of log entries to the log.
     /// </summary>
-    void AppendRange(IEnumerable<AlterationLogEntry> entries);
+    void AddRange(IEnumerable<AlterationLogEntry> entries);
     
     /// <summary>
     /// Gets the recorded log entries.

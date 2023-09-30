@@ -3,7 +3,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Core.Serialization.Serializers;
 
 /// <inheritdoc />
 public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer

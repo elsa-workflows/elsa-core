@@ -2,11 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Core.Serialization.Serializers;
 
 /// <inheritdoc />
 public class ApiSerializer : IApiSerializer
@@ -49,14 +48,23 @@ public class ApiSerializer : IApiSerializer
         options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.PropertyNameCaseInsensitive = true;
         options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.TypeInfoResolver = new ActivityConstructorContractResolver();
         options.Converters.Add(Create<JsonStringEnumConverter>());
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        var modifiers = new List<Action<JsonTypeInfo>>();
         
         // Give external packages a chance to further configure the serializer options.
         foreach (var configurator in _configurators)
+        {
             configurator.Configure(options);
+            var modifiersToAdd = configurator.GetModifiers();
+            modifiers.AddRange(modifiersToAdd);
+        }
+        
+        // Set up type info resolver.
+        // options.TypeInfoResolver = new ActivityConstructorContractResolver(modifiers);
+
+        options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
 
         return options;
     }

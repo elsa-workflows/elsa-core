@@ -1,10 +1,9 @@
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
-using Elsa.Alterations.Core.Enums;
-using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -50,7 +49,7 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
         var workflowInstanceIds = plan.WorkflowInstanceIds;
         var alterationLog = new DefaultAlterationLog(_systemClock);
         var planResult = new AlterationPlanExecutionResult(alterationLog);
-        
+
         // Apply alterations to workflow instances.
         foreach (var workflowInstanceId in workflowInstanceIds)
         {
@@ -58,9 +57,15 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
             plan.ProcessedWorkflowInstanceIds.Add(workflowInstanceId);
 
             if (!result.HasSucceeded)
+            {
                 result.HasSucceeded = false;
-            
-            planResult.Log.AppendRange(result.Log.LogEntries);
+                planResult.HasSucceeded = false;
+            }
+
+            planResult.Log.AddRange(result.Log.LogEntries);
+
+            if (result.ModifiedWorkflowExecutionContext != null)
+                planResult.ModifiedWorkflowExecutionContexts.Add(result.ModifiedWorkflowExecutionContext);
         }
 
         return planResult;
@@ -119,6 +124,9 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
             }
         }
 
-        return new AlterationExecutionResult(log, true);
+        return new AlterationExecutionResult(log, true)
+        {
+            ModifiedWorkflowExecutionContext = workflowExecutionContext
+        };
     }
 }

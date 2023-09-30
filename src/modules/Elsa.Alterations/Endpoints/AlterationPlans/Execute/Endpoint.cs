@@ -4,12 +4,14 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Common.Contracts;
 using Elsa.Workflows.Core.Contracts;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Endpoints.AlterationPlans.Execute;
 
 /// <summary>
 /// Executes an alteration plan.
 /// </summary>
+[PublicAPI]
 public class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IAlterationPlanExecutor _executor;
@@ -29,7 +31,7 @@ public class Execute : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/alterations/plans/execute");
+        Post("/alteration-plans/execute");
         ConfigurePermissions("execute:alteration-plans");
     }
 
@@ -53,5 +55,9 @@ public class Execute : ElsaEndpoint<Request, Response>
         
         // Persist results.
         await _committer.CommitAsync(result, cancellationToken);
+        
+        // Write response.
+        var response = new Response(result.HasSucceeded, result.Log.LogEntries.ToList());
+        await SendOkAsync(response, cancellationToken);
     }
 }

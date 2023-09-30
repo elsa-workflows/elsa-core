@@ -1,7 +1,6 @@
 using Elsa.Alterations.Core.Abstractions;
-using Elsa.Alterations.Core.Contracts;
 
-namespace Elsa.Alterations.AlterationTypes;
+namespace Elsa.Alterations;
 
 /// <summary>
 /// Modifies a variable.
@@ -16,6 +15,6 @@ public class ModifyVariable : AlterationBase
     /// <summary>
     ///  The new value of the variable.
     /// </summary>
-    public object? NewValue { get; set; }
+    public object? Value { get; set; }
 
 }

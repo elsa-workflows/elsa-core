@@ -1,4 +1,3 @@
-using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;

@@ -2,11 +2,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Core.Serialization.Serializers;
 
 /// <summary>
 /// Serializes and deserializes activities from and to JSON.
@@ -54,7 +53,6 @@ public class JsonActivitySerializer : IActivitySerializer
     {
         var options = new JsonSerializerOptions
         {
-            TypeInfoResolver = new ActivityConstructorContractResolver(),
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
@@ -64,9 +62,18 @@ public class JsonActivitySerializer : IActivitySerializer
         options.Converters.Add(Create<TypeJsonConverter>());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
 
+        var modifiers = new List<Action<JsonTypeInfo>>();
+
         // Give external packages a chance to further configure the serializer options.
         foreach (var configurator in _configurators)
+        {
             configurator.Configure(options);
+            var modifiersToAdd = configurator.GetModifiers();
+            modifiers.AddRange(modifiersToAdd);
+        }
+
+        // Set up type info resolver.
+        options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
 
         return options;
     }

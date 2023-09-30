@@ -1,4 +1,3 @@
-using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
@@ -21,18 +20,18 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
-        var variable = FindVariable(context, alteration, workflow, cancellationToken).Result;
+        var variable = await FindVariable(context, alteration, workflow, cancellationToken);
 
         if (variable == null)
         {
             context.Fail($"Variable with ID {alteration.VariableId} not found");
             return;
         }
-        
+
         await UpdateVariable(context, alteration, variable, cancellationToken);
         context.Succeed();
     }
-    
+
     private async Task UpdateVariable(AlterationHandlerContext handlerContext, ModifyVariable alteration, Variable variable, CancellationToken cancellationToken)
     {
         var variableStorage = variable.StorageDriverType ?? typeof(WorkflowStorageDriver);
@@ -40,17 +39,23 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         var storageDriver = storageDriverManager.Get(variableStorage)!;
         var workflowExecutionContext = handlerContext.WorkflowExecutionContext;
         var storageDriverContext = new StorageDriverContext(workflowExecutionContext, cancellationToken);
-        var newValue = alteration.NewValue;
-        await storageDriver.WriteAsync(variable.Id, newValue!, storageDriverContext);
+        var newValue = alteration.Value;
+        var stateId = GetStateId(variable);
+        await storageDriver.WriteAsync(stateId, newValue!, storageDriverContext);
     }
 
     private async Task<Variable?> FindVariable(AlterationHandlerContext handlerContext, ModifyVariable alteration, Workflow workflow, CancellationToken cancellationToken)
     {
         var activityVisitor = handlerContext.ServiceProvider.GetRequiredService<IActivityVisitor>();
         var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var root = workflow.Root;
-        var graph = await activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
+        var graph = await activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
         var flattenedList = graph.Flatten().ToList();
-        return flattenedList.Where(x => x.Activity is IVariableContainer).SelectMany(x => ((IVariableContainer)x.Activity).Variables).FirstOrDefault(x => x.Id == alteration.VariableId);
+
+        return flattenedList
+            .Where(x => x.Activity is IVariableContainer)
+            .SelectMany(x => ((IVariableContainer)x.Activity).Variables)
+            .FirstOrDefault(x => x.Id == alteration.VariableId);
     }
+
+    private string GetStateId(Variable variable) => variable.Id;
 }

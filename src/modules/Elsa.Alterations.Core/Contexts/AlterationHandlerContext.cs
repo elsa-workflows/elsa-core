@@ -1,6 +1,5 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
-using Elsa.Alterations.Core.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Microsoft.Extensions.Logging;

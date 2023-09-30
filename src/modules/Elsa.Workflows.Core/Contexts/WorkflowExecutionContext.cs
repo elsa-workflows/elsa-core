@@ -116,6 +116,9 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public string Id { get; set; }
 
+    /// <inheritdoc />
+    public IActivity Activity => Workflow;
+
     /// <summary>
     /// An application-specific identifier associated with the execution context.
     /// </summary>

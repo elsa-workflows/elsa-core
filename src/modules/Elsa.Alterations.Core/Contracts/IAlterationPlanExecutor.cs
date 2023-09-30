@@ -1,5 +1,4 @@
 using Elsa.Alterations.Core.Entities;
-using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
 
 namespace Elsa.Alterations.Core.Contracts;

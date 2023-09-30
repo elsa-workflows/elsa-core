@@ -1,6 +1,6 @@
 using Elsa.Alterations.Core.Abstractions;
 
-namespace Elsa.Alterations.AlterationTypes;
+namespace Elsa.Alterations;
 
 /// <summary>
 /// Migrates a workflow instance to a newer version.

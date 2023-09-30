@@ -1,7 +1,7 @@
 using System.Text.Encodings.Web;
+using Elsa.Alterations.Extensions;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
-using Elsa.DropIns;
 using Elsa.DropIns.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -15,7 +15,6 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -149,7 +148,8 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
             })
-            .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
+            .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+            .UseAlterations();
 
         // Initialize drop-ins.
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));

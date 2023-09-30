@@ -46,7 +46,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
                 if (driver == null)
                     continue;
 
-                var id = GetStateId(workflowExecutionContext, context, variable);
+                var id = GetStateId(variable);
                 var value = await driver.ReadAsync(id, storageDriverContext);
                 if (value == null) continue;
 
@@ -64,7 +64,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         
         var contexts = workflowExecutionContext.ActiveActivityExecutionContexts
             .Cast<IExecutionContext>()
-            .Concat(new[]{workflowExecutionContext})
+            //.Concat(new[]{workflowExecutionContext})
             .ToList();
 
         foreach (var context in contexts)
@@ -81,7 +81,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
                 if (driver == null)
                     continue;
                 
-                var id = GetStateId(workflowExecutionContext, context, variable);
+                var id = GetStateId(variable);
                 var value = block.Value;
 
                 if (value == null)
@@ -112,7 +112,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
             if (driver == null)
                 continue;
 
-            var id = GetStateId(context.WorkflowExecutionContext, context, variable);
+            var id = GetStateId(variable);
             await driver.DeleteAsync(id, storageDriverContext);
             register.Blocks.Remove(variable.Id);
         }
@@ -127,5 +127,5 @@ public class VariablePersistenceManager : IVariablePersistenceManager
         return block;
     }
 
-    private string GetStateId(WorkflowExecutionContext workflowExecutionContext, IExecutionContext context, Variable variable) => $"{context.Id}:{workflowExecutionContext.Workflow.Id}:{variable.Name}";
+    private string GetStateId(Variable variable) => variable.Id;
 }

@@ -15,6 +15,8 @@ using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.PortResolvers;
 using Elsa.Workflows.Core.Serialization;
+using Elsa.Workflows.Core.Serialization.Configurators;
+using Elsa.Workflows.Core.Serialization.Serializers;
 using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.IncidentStrategies;
 using Microsoft.Extensions.DependencyInjection;
@@ -137,7 +139,8 @@ public class WorkflowsFeature : FeatureBase
             // Built-in activity services.
             .AddSingleton<IActivityPortResolver, OutboundActivityPortResolver>()
             .AddSingleton<IActivityPortResolver, SwitchActivityPortResolver>()
-            .AddSingleton<ISerializationOptionsConfigurator, CustomSerializationOptionConfigurator>()
+            .AddSingleton<ISerializationOptionsConfigurator, AdditionalConvertersConfigurator>()
+            .AddSingleton<ISerializationOptionsConfigurator, CustomConstructorConfigurator>()
             
             // Domain event handlers.
             .AddHandlersFrom<WorkflowsFeature>()

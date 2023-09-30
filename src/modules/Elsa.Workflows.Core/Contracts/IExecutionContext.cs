@@ -14,6 +14,11 @@ public interface IExecutionContext
     string Id { get; }
     
     /// <summary>
+    /// The activity that is currently being executed.
+    /// </summary>
+    IActivity Activity { get; }
+    
+    /// <summary>
     /// The expression execution context.
     /// </summary>
     ExpressionExecutionContext ExpressionExecutionContext { get; }

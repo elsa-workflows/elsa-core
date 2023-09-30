@@ -4,31 +4,33 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Elsa.Workflows.Core.Serialization.Converters;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Serialization;
+namespace Elsa.Workflows.Core.Serialization.Configurators;
 
 /// <summary>
-/// A custom JSON type info resolver that allows private constructors to be used when deserializing JSON.
+/// Configures the contract resolver to add support for using non-default, private constructors for deserialization.
 /// </summary>
-public class ActivityConstructorContractResolver : DefaultJsonTypeInfoResolver
+public class CustomConstructorConfigurator : SerializationOptionsConfiguratorBase
 {
     /// <inheritdoc />
-    public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+    public override IEnumerable<Action<JsonTypeInfo>> GetModifiers()
     {
-        var jsonTypeInfo = base.GetTypeInfo(type, options);
-
-        if (jsonTypeInfo is not { Kind: JsonTypeInfoKind.Object, CreateObject: null })
-            return jsonTypeInfo;
-
-        var defaultConstructor = GetDefaultConstructor(jsonTypeInfo.Type);
-        if (defaultConstructor != null)
+        // Set the default constructor for all types that have a default constructor.
+        yield return jsonTypeInfo =>
         {
-            jsonTypeInfo.CreateObject = defaultConstructor;
-        }
+            if (jsonTypeInfo is not { Kind: JsonTypeInfoKind.Object, CreateObject: null })
+                return;
 
-        return jsonTypeInfo;
+            var defaultConstructor = GetDefaultConstructor(jsonTypeInfo.Type);
+            if (defaultConstructor != null)
+            {
+                jsonTypeInfo.CreateObject = defaultConstructor;
+            }
+        };
     }
-
+    
     private static Func<object>? GetDefaultConstructor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type type)
     {
         foreach (var constructor in type.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))

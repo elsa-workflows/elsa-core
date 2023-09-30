@@ -9,7 +9,7 @@ using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
 using Elsa.Workflows.Core.State;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Core.Serialization.Serializers;
 
 /// <summary>
 /// Serializes and deserializes workflow states from and to JSON.

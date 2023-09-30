@@ -5,7 +5,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Core.Serialization.Serializers;
 
 /// <summary>
 /// Serializes simple DTOs from and to JSON.

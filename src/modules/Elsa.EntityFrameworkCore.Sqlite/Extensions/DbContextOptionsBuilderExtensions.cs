@@ -2,7 +2,6 @@
 using Elsa.EntityFrameworkCore.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;

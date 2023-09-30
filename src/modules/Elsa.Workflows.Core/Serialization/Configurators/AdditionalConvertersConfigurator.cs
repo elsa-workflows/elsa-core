@@ -1,31 +1,30 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Serialization;
+namespace Elsa.Workflows.Core.Serialization.Configurators;
 
 /// <summary>
 /// Add additional <see cref="JsonConverter"/> objects.
 /// </summary>
-public class CustomSerializationOptionConfigurator : ISerializationOptionsConfigurator
+public class AdditionalConvertersConfigurator : SerializationOptionsConfiguratorBase
 {
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="CustomSerializationOptionConfigurator"/> class.
+    /// Initializes a new instance of the <see cref="AdditionalConvertersConfigurator"/> class.
     /// </summary>
-    public CustomSerializationOptionConfigurator(IServiceProvider serviceProvider)
+    public AdditionalConvertersConfigurator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc />
-    public void Configure(JsonSerializerOptions options)
+    public override void Configure(JsonSerializerOptions options)
     {
         options.Converters.Add(Create<VariableConverterFactory>());
     }
-    
+
     private T Create<T>() => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
 }

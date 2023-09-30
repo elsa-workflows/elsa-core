@@ -29,7 +29,7 @@ public class AlterationExecutionResult
     /// <summary>
     /// An updated workflow execution context to which the alterations have been applied.
     /// </summary>
-    public ICollection<WorkflowExecutionContext> ModifiedWorkflowExecutionContexts { get; } = new List<WorkflowExecutionContext>();
+    public WorkflowExecutionContext? ModifiedWorkflowExecutionContext { get; set; }
 
     /// <summary>
     /// Indicates whether the execution has succeeded.

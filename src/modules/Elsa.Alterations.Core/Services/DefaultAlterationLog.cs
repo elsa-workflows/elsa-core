@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common.Contracts;
@@ -21,7 +20,7 @@ public class DefaultAlterationLog : IAlterationLog
     }
 
     /// <inheritdoc />
-    public void AppendRange(IEnumerable<AlterationLogEntry> entries)
+    public void AddRange(IEnumerable<AlterationLogEntry> entries)
     {
         _logEntries.AddRange(entries);
     }

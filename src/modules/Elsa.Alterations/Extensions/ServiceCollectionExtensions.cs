@@ -1,6 +1,7 @@
-using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Extensions;
 using Elsa.Alterations.Handlers;
+using Elsa.Alterations.Serialization;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Extensions;
@@ -18,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.AddAlterationHandler<MigrateHandler>();
         services.AddAlterationHandler<ModifyVariableHandler>();
         services.AddAlterationHandler<ScheduleFlowchartActivityHandler>();
+        services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
         return services;
     }
 }

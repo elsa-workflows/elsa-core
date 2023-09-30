@@ -1,6 +1,6 @@
 using Elsa.Alterations.Core.Abstractions;
 
-namespace Elsa.Alterations.AlterationTypes;
+namespace Elsa.Alterations;
 
 public class ScheduleFlowchartActivity : AlterationBase
 {
