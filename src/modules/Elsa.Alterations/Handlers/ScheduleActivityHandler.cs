@@ -1,7 +1,7 @@
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Alterations.Handlers;
 
@@ -11,7 +11,7 @@ namespace Elsa.Alterations.Handlers;
 public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
 {
     /// <inheritdoc />
-    protected override ValueTask HandleAsync(AlterationHandlerContext context, ScheduleActivity alteration)
+    protected override async ValueTask HandleAsync(AlterationHandlerContext context, ScheduleActivity alteration)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var activityId = alteration.ActivityId;
@@ -20,7 +20,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         if (activity == null)
         {
             context.Fail($"Activity with ID {activityId} not found");
-            return default;
+            return;
         }
         
         var activityNode = workflowExecutionContext.FindNodeByActivity(activity)!;
@@ -35,12 +35,10 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         if (parentExecutionContext == null)
         {
             context.Fail($"Could not find parent activity execution context for activity with ID {activityId}");
-            return default;
+            return;
         }
 
-        context.WorkflowExecutionContext.Schedule(activityNode, parentExecutionContext, new ScheduleWorkOptions());
+        await parentExecutionContext.SendSignalAsync(new ScheduleChildActivity(activity));
         context.Succeed();
-
-        return default;
     }
 }

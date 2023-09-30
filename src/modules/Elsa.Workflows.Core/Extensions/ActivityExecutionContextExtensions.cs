@@ -279,7 +279,6 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>
-    /// <returns></returns>
     public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
     {
         var current = context.ParentActivityExecutionContext;
@@ -288,6 +287,22 @@ public static class ActivityExecutionContextExtensions
         {
             yield return current;
             current = current.ParentActivityExecutionContext;
+        }
+    }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's descendants.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
+    {
+        var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendent in GetDescendents(child))
+                yield return descendent;
         }
     }
 

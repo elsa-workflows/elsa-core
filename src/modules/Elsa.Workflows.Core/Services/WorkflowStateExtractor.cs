@@ -126,9 +126,8 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var ownerActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            var childNode = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.NodeId == completionCallbackEntry.ChildNodeId)?.ActivityNode;
-
-            // If the child node is null, it means the completion callback was registered for an activity instance that has already completed or was canceled. 
+            var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
+            
             if (childNode == null)
                 continue;
 

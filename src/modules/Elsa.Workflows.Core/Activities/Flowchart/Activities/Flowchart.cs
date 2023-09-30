@@ -26,6 +26,7 @@ public class Flowchart : Container
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
+        OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
     }
 
     /// <summary>
@@ -113,7 +114,7 @@ public class Flowchart : Container
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var activityIds = Activities.Select(x => x.Id).ToList();
-        var descendantContexts = GetDescendents(context).Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var descendantContexts = context.GetDescendents().Where(x => x.ParentActivityExecutionContext == context).ToList();
         var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
 
         var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
@@ -124,7 +125,7 @@ public class Flowchart : Container
                 return false;
 
             var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
-            var ancestors = GetAncestors(ownerContext).ToList();
+            var ancestors = ownerContext.GetAncestors().ToList();
 
             return ancestors.Any(x => x == context);
         });
@@ -132,30 +133,6 @@ public class Flowchart : Container
         var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
 
         return hasRunningActivityInstances || hasPendingWork;
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetDescendents(ActivityExecutionContext activityExecutionContext)
-    {
-        var children = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == activityExecutionContext).ToList();
-
-        foreach (var child in children)
-        {
-            yield return child;
-
-            foreach (var descendent in GetDescendents(child))
-                yield return descendent;
-        }
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetAncestors(ActivityExecutionContext activityExecutionContext)
-    {
-        var current = activityExecutionContext;
-
-        while (current != null)
-        {
-            yield return current;
-            current = current.ParentActivityExecutionContext;
-        }
     }
 
     private IActivity? GetRootActivity()
@@ -300,5 +277,13 @@ public class Flowchart : Container
             // Schedule each child.
             foreach (var activity in outboundActivities) await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
         }
+    }
+    
+    private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var activity = signal.Activity;
+        
+        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
     }
 }
