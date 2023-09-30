@@ -24,9 +24,9 @@ public class AlterationSerializationOptionConfigurator : SerializationOptionsCon
                 DerivedTypes =
                 {
                     // TODO: Make this list extensible.
-                    new JsonDerivedType(typeof(Migrate), "Migrate"),
-                    new JsonDerivedType(typeof(ModifyVariable), "ModifyVariable"),
-                    new JsonDerivedType(typeof(ScheduleFlowchartActivity), "ScheduleFlowchartActivity")
+                    new JsonDerivedType(typeof(Migrate), nameof(Migrate)),
+                    new JsonDerivedType(typeof(ModifyVariable), nameof(ModifyVariable)),
+                    new JsonDerivedType(typeof(ScheduleActivity), nameof(ScheduleActivity))
                 }
             };
         };

@@ -1,20 +1,26 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Results;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Alterations.Core.Services;
 
 /// <inheritdoc />
 public class DefaultAlterationPlanResultCommitter : IAlterationPlanResultCommitter
 {
-    private readonly IWorkflowInstanceManager _workflowInstanceManager;
+    private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
+    private readonly IWorkflowDispatcher _workflowDispatcher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultAlterationPlanResultCommitter"/> class.
     /// </summary>
-    public DefaultAlterationPlanResultCommitter(IWorkflowInstanceManager workflowInstanceManager)
+    public DefaultAlterationPlanResultCommitter(IWorkflowRuntime workflowRuntime, IWorkflowStateExtractor workflowStateExtractor, IWorkflowDispatcher workflowDispatcher)
     {
-        _workflowInstanceManager = workflowInstanceManager;
+        _workflowRuntime = workflowRuntime;
+        _workflowStateExtractor = workflowStateExtractor;
+        _workflowDispatcher = workflowDispatcher;
     }
 
     /// <inheritdoc />
@@ -24,6 +30,13 @@ public class DefaultAlterationPlanResultCommitter : IAlterationPlanResultCommitt
             return;
 
         foreach (var workflowExecutionContext in result.ModifiedWorkflowExecutionContexts)
-            await _workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
+        {
+            var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
+            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
+            
+            // Schedule workflow for execution.
+            var dispatchWorkflowRequest = new DispatchWorkflowInstanceRequest(workflowExecutionContext.Id);
+            await _workflowDispatcher.DispatchAsync(dispatchWorkflowRequest, cancellationToken);
+        }
     }
 }

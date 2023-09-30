@@ -37,11 +37,29 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         var variableStorage = variable.StorageDriverType ?? typeof(WorkflowStorageDriver);
         var storageDriverManager = handlerContext.ServiceProvider.GetRequiredService<IStorageDriverManager>();
         var storageDriver = storageDriverManager.Get(variableStorage)!;
-        var workflowExecutionContext = handlerContext.WorkflowExecutionContext;
-        var storageDriverContext = new StorageDriverContext(workflowExecutionContext, cancellationToken);
+        var activityExecutionContext = FindActivityExecutionContextContainingVariable(handlerContext, variable);
+        
+        if (activityExecutionContext == null)
+        {
+            handlerContext.Fail($"Activity execution context containing variable with ID {variable.Id} not found");
+            return;
+        }
+        
+        var storageDriverContext = new StorageDriverContext(activityExecutionContext, cancellationToken);
         var newValue = alteration.Value;
         var stateId = GetStateId(variable);
         await storageDriver.WriteAsync(stateId, newValue!, storageDriverContext);
+    }
+
+    private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationHandlerContext context, Variable variable)
+    {
+        var query =
+            from activityExecutionContext in context.WorkflowExecutionContext.ActiveActivityExecutionContexts
+            from var in activityExecutionContext.Variables
+            where var.Id == variable.Id
+            select activityExecutionContext;
+        
+        return query.FirstOrDefault();
     }
 
     private async Task<Variable?> FindVariable(AlterationHandlerContext handlerContext, ModifyVariable alteration, Workflow workflow, CancellationToken cancellationToken)

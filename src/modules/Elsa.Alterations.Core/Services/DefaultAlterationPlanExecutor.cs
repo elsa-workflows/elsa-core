@@ -3,10 +3,10 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Results;
 using Elsa.Common.Contracts;
-using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Core.Services;
@@ -14,11 +14,11 @@ namespace Elsa.Alterations.Core.Services;
 /// <inheritdoc />
 public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
 {
+    private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly IEnumerable<IAlterationHandler> _handlers;
-    private readonly IIdentityGenerator _identityGenerator;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
 
@@ -26,19 +26,19 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
     /// Initializes a new instance of the <see cref="DefaultAlterationPlanExecutor"/> class.
     /// </summary>
     public DefaultAlterationPlanExecutor(
+        IWorkflowRuntime workflowRuntime,
         IWorkflowInstanceStore workflowInstanceStore,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         IEnumerable<IAlterationHandler> handlers,
-        IIdentityGenerator identityGenerator,
         ISystemClock systemClock,
         IServiceProvider serviceProvider)
     {
+        _workflowRuntime = workflowRuntime;
         _workflowInstanceStore = workflowInstanceStore;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowExecutionContextFactory = workflowExecutionContextFactory;
         _handlers = handlers;
-        _identityGenerator = identityGenerator;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
     }
@@ -74,23 +74,23 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
     private async Task<AlterationExecutionResult> ProcessWorkflowInstanceAsync(string workflowInstanceId, AlterationPlan plan, CancellationToken cancellationToken)
     {
         // Load workflow instance.
-        var workflowInstance = await _workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = workflowInstanceId }, cancellationToken);
+        var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
         var log = new DefaultAlterationLog(_systemClock);
 
         // If the workflow instance is not found, log an error and continue.
-        if (workflowInstance == null)
+        if (workflowState == null)
         {
             log.Append($"Workflow instance with ID '{workflowInstanceId}' not found.", LogLevel.Error);
             return new AlterationExecutionResult(log, false);
         }
 
         // Load workflow definition.
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionVersionId, cancellationToken);
 
         // If the workflow definition is not found, log an error and continue.
         if (workflowDefinition == null)
         {
-            log.Append($"Workflow definition with ID '{workflowInstance.DefinitionVersionId}' not found.", LogLevel.Error);
+            log.Append($"Workflow definition with ID '{workflowState.DefinitionVersionId}' not found.", LogLevel.Error);
             return new AlterationExecutionResult(log, false);
         }
 
@@ -98,7 +98,7 @@ public class DefaultAlterationPlanExecutor : IAlterationPlanExecutor
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
 
         // Create workflow execution context.
-        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowInstance.Id, workflowInstance.WorkflowState, cancellationTokens: cancellationToken);
+        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowState.Id, workflowState, cancellationTokens: cancellationToken);
 
         // Execute alterations.
         foreach (var alteration in plan.Alterations)

@@ -1,0 +1,46 @@
+using Elsa.Alterations.Core.Abstractions;
+using Elsa.Alterations.Core.Contexts;
+using Elsa.Extensions;
+using Elsa.Workflows.Core.Options;
+
+namespace Elsa.Alterations.Handlers;
+
+/// <summary>
+/// Sets the next activity to be scheduled on a given flowchart activity.
+/// </summary>
+public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
+{
+    /// <inheritdoc />
+    protected override ValueTask HandleAsync(AlterationHandlerContext context, ScheduleActivity alteration)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var activityId = alteration.ActivityId;
+        var activity = workflowExecutionContext.FindActivityById(activityId);
+        
+        if (activity == null)
+        {
+            context.Fail($"Activity with ID {activityId} not found");
+            return default;
+        }
+        
+        var activityNode = workflowExecutionContext.FindNodeByActivity(activity)!;
+        var parentActivityContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Reverse().ToList();
+
+        var parentExecutionContext =
+            (from ancestorNode in activityNode.Ancestors()
+            from parentActivityContext in parentActivityContexts
+            where parentActivityContext.Activity.Id == ancestorNode.Activity.Id
+            select parentActivityContext).FirstOrDefault();
+        
+        if (parentExecutionContext == null)
+        {
+            context.Fail($"Could not find parent activity execution context for activity with ID {activityId}");
+            return default;
+        }
+
+        context.WorkflowExecutionContext.Schedule(activityNode, parentExecutionContext, new ScheduleWorkOptions());
+        context.Succeed();
+
+        return default;
+    }
+}

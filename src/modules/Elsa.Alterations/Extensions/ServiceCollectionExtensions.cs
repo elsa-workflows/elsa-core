@@ -18,7 +18,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddAlterationHandler<MigrateHandler>();
         services.AddAlterationHandler<ModifyVariableHandler>();
-        services.AddAlterationHandler<ScheduleFlowchartActivityHandler>();
+        services.AddAlterationHandler<ScheduleActivityHandler>();
         services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
         return services;
     }

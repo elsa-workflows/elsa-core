@@ -65,19 +65,7 @@ public class Flowchart : Container
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
 
         logger.LogDebug("Looking for start activity...");
-
-        // If an explicit NextActivityId was provided, use that.
-        if (context.ActivityInput.TryGetValue("NextActivityId", out string nextActivityId))
-        {
-            var nextActivity = Activities.FirstOrDefault(x => x.Id == nextActivityId);
-
-            if (nextActivity != null)
-            {
-                logger.LogDebug("An explicit next activity was provided: {NextActivityId}", nextActivityId);
-                return nextActivity;
-            }
-        }
-
+        
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
