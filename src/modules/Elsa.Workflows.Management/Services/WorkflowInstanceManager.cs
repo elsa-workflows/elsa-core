@@ -17,16 +17,23 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
     private readonly INotificationSender _notificationSender;
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowInstanceManager"/> class.
     /// </summary>
-    public WorkflowInstanceManager(IWorkflowInstanceStore store, INotificationSender notificationSender, WorkflowStateMapper workflowStateMapper, IWorkflowStateExtractor workflowStateExtractor)
+    public WorkflowInstanceManager(
+        IWorkflowInstanceStore store, 
+        INotificationSender notificationSender, 
+        WorkflowStateMapper workflowStateMapper, 
+        IWorkflowStateExtractor workflowStateExtractor,
+        IWorkflowStateSerializer workflowStateSerializer)
     {
         _store = store;
         _notificationSender = notificationSender;
         _workflowStateMapper = workflowStateMapper;
         _workflowStateExtractor = workflowStateExtractor;
+        _workflowStateSerializer = workflowStateSerializer;
     }
     
     /// <inheritdoc />
@@ -47,7 +54,7 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
     /// <inheritdoc />
     public async Task<WorkflowInstance> SaveAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
-        var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
+        var workflowState = ExtractWorkflowState(workflowExecutionContext);
         return await SaveAsync(workflowState, cancellationToken);
     }
 
@@ -75,5 +82,17 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
         var count = await _store.DeleteAsync(filter, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowInstancesDeleted(ids), cancellationToken);
         return count;
+    }
+
+    /// <inheritdoc />
+    public WorkflowState ExtractWorkflowState(WorkflowExecutionContext workflowExecutionContext)
+    {
+        return _workflowStateExtractor.Extract(workflowExecutionContext);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        return await _workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
     }
 }

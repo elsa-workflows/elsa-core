@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Features;
 
@@ -28,5 +29,6 @@ public class AlterationsFeature : FeatureBase
     public override void Apply()
     {
         Services.AddAlterations();
+        Services.AddNotificationHandlersFrom<AlterationsFeature>();
     }
 }

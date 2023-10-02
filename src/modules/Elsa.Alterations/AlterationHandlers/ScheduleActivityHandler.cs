@@ -1,9 +1,10 @@
+using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Signals;
 
-namespace Elsa.Alterations.Handlers;
+namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
 /// Sets the next activity to be scheduled on a given flowchart activity.

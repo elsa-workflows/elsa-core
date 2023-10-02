@@ -14,8 +14,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddAlterationsCore(this IServiceCollection services)
     {
-        services.AddSingleton<IAlterationPlanExecutor, DefaultAlterationPlanExecutor>();
-        services.AddSingleton<IAlterationPlanResultCommitter, DefaultAlterationPlanResultCommitter>();
+        services.AddSingleton<IAlterationJobRunner, DefaultAlterationJobRunner>();
         return services;
     }
 

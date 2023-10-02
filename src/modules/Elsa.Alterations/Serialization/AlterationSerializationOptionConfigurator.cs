@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Workflows.Core;
 

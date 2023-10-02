@@ -1,3 +1,4 @@
+using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
@@ -8,7 +9,7 @@ using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Alterations.Handlers;
+namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
 /// Modifies a workflow variable.

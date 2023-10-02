@@ -253,6 +253,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations", "src\modules\Elsa.Alterations\Elsa.Alterations.csproj", "{CC7DE119-736D-4FC5-85DC-70A6770749F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.BackgroundRunner", "src\modules\Elsa.Alterations.BackgroundRunner\Elsa.Alterations.BackgroundRunner.csproj", "{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -631,6 +633,10 @@ Global
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -745,5 +751,6 @@ Global
 		{CF3DA5F1-F98D-49C9-A980-27E570B38B8D} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{8DBEC8F3-908D-46B3-95CA-47EA138AB1A4} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
+		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 	EndGlobalSection
 EndGlobal

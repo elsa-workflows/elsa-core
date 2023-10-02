@@ -20,11 +20,6 @@ public class AlterationPlan : Entity
     public ICollection<string> WorkflowInstanceIds { get; set; } = new List<string>();
 
     /// <summary>
-    /// The IDs of the workflow instances that have been processed.
-    /// </summary>
-    public ICollection<string> ProcessedWorkflowInstanceIds { get; set; } = new List<string>();
-
-    /// <summary>
     /// The status of the plan.
     /// </summary>
     public AlterationPlanStatus Status { get; set; }

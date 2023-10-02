@@ -1,3 +1,4 @@
+using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Common.Models;
@@ -8,7 +9,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Alterations.Handlers;
+namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
 /// Upgrades the version of the workflow instance.

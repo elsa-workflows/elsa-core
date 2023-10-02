@@ -46,4 +46,14 @@ public interface IWorkflowInstanceManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The number of workflow instances that were deleted.</returns>
     Task<long> BulkDeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Extracts the workflow state from the specified workflow execution context.
+    /// </summary>
+    WorkflowState ExtractWorkflowState(WorkflowExecutionContext workflowExecutionContext);
+
+    /// <summary>
+    /// Serializes the specified workflow state.
+    /// </summary>
+    Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
 }

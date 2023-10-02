@@ -1,9 +1,9 @@
 namespace Elsa.Alterations.Core.Enums;
 
 /// <summary>
-/// The status of an alteration plan.
+/// The status of an alteration plan for a workflow instance.
 /// </summary>
-public enum AlterationPlanStatus
+public enum AlterationJobStatus
 {
     /// <summary>
     /// The plan is pending execution.
@@ -21,7 +21,7 @@ public enum AlterationPlanStatus
     Completed,
     
     /// <summary>
-    /// The plan has failed.
+    /// The job has failed.
     /// </summary>
     Failed
 }

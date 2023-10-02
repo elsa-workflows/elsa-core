@@ -1,5 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
+using Elsa.Alterations.Core.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Microsoft.Extensions.Logging;
@@ -18,7 +19,7 @@ public class AlterationHandlerContext
         AlterationPlan plan, 
         IAlteration alteration, 
         WorkflowExecutionContext workflowExecutionContext, 
-        IAlterationLog log, 
+        AlterationLog log, 
         IServiceProvider serviceProvider, 
         CancellationToken cancellationToken)
     {
@@ -63,7 +64,7 @@ public class AlterationHandlerContext
     /// <summary>
     /// The alteration log.
     /// </summary>
-    public IAlterationLog AlterationLog { get; }
+    public AlterationLog AlterationLog { get; }
     
     /// <summary>
     /// A flag indicating whether the alteration has succeeded.

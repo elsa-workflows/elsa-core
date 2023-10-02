@@ -1,11 +1,11 @@
 using Elsa.Alterations.Core.Contracts;
 
-namespace Elsa.Alterations.Endpoints.AlterationPlans.Execute;
+namespace Elsa.Alterations.Core.Models;
 
 /// <summary>
-/// A plan that contains a list of alterations to be applied to a set of workflow instances.
+/// Represents a new alteration plan.
 /// </summary>
-public class Request
+public class NewAlterationPlan
 {
     /// <summary>
     /// The alterations to be applied.

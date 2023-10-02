@@ -1,34 +1,35 @@
-using Elsa.Alterations.Core.Contracts;
-using Elsa.Alterations.Core.Models;
 using Elsa.Common.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Alterations.Core.Services;
+namespace Elsa.Alterations.Core.Models;
 
-/// <inheritdoc />
-public class DefaultAlterationLog : IAlterationLog
+
+/// <summary>
+/// Represents a log of alterations.
+/// </summary>
+public class AlterationLog 
 {
     private readonly ISystemClock _systemClock;
     private readonly List<AlterationLogEntry> _logEntries = new();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultAlterationLog"/> class.
+    /// Initializes a new instance of the <see cref="AlterationLog"/> class.
     /// </summary>
-    public DefaultAlterationLog(ISystemClock systemClock)
+    public AlterationLog(ISystemClock systemClock)
     {
         _systemClock = systemClock;
     }
-
-    /// <inheritdoc />
-    public void AddRange(IEnumerable<AlterationLogEntry> entries)
-    {
-        _logEntries.AddRange(entries);
-    }
-
-    /// <inheritdoc />
+    
+    /// <summary>
+    /// Gets the log entries.
+    /// </summary>
     public IReadOnlyCollection<AlterationLogEntry> LogEntries => _logEntries.ToList().AsReadOnly();
-
-    /// <inheritdoc />
+    
+    /// <summary>
+    /// Appends a log entry.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="logLevel">The log level.</param>
     public void Append(string message, LogLevel logLevel = LogLevel.Information)
     {
         var entry = new AlterationLogEntry(message, logLevel, _systemClock.UtcNow);
