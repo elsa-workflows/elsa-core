@@ -85,7 +85,7 @@ public class AlterationHandlerContext
     public void Succeed(string? message = default)
     {
         HasSucceeded = true;
-        Log(message ?? "Succeeded", LogLevel.Information);
+        Log(message ?? $"{Alteration.GetType().Name} succeeded", LogLevel.Information);
     }
 
     /// <summary>
@@ -95,6 +95,6 @@ public class AlterationHandlerContext
     public void Fail(string? message = default)
     {
         HasFailed = true;
-        Log(message ?? "Failed", LogLevel.Error);
+        Log(message ?? $"{Alteration.GetType().Name} failed", LogLevel.Error);
     }
 }

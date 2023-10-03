@@ -33,6 +33,7 @@ public class MigrateHandler : AlterationHandlerBase<Migrate>
         
         var targetWorkflow = await workflowDefinitionService.MaterializeWorkflowAsync(targetWorkflowDefinition, cancellationToken);
         await UpgradeAsync(context.WorkflowExecutionContext, targetWorkflow, cancellationToken);
+        context.Succeed();
     }
 
     private async Task UpgradeAsync(WorkflowExecutionContext workflowExecutionContext, Workflow workflow, CancellationToken cancellationToken = default)
