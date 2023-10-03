@@ -55,6 +55,12 @@ public class For : Activity
     public Input<bool> OuterBoundInclusive { get; set; } = new(true);
 
     /// <summary>
+    /// Automatically detect whether to count up or down by the specified step size on each iteration. True by default.
+    /// </summary>
+    [Input(Description = "Automatically detect whether to count up or down by the specified step size on each iteration. True by default.")]
+    public Input<bool> AutoStepDirection { get; set; } = new(true);
+
+    /// <summary>
     /// The activity to execute for each iteration.
     /// </summary>
     [Port]
@@ -85,8 +91,10 @@ public class For : Activity
         var start = context.Get(Start);
         var step = context.Get(Step);
         var inclusive = context.Get(OuterBoundInclusive);
-        var increment = end >= start;
+        var autoStepDirection = context.Get(AutoStepDirection);
+        var increment = autoStepDirection ? end >= start : step >= 0;
 
+        step = Math.Abs(step);
         currentValue = currentValue == null ? start : increment ? currentValue + step : currentValue - step;
 
         var isBreaking = context.GetIsBreaking();
