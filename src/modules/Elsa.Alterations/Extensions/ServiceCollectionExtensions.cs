@@ -1,5 +1,6 @@
 using Elsa.Alterations.AlterationHandlers;
 using Elsa.Alterations.Core.Extensions;
+using Elsa.Alterations.Features;
 using Elsa.Alterations.Serialization;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddAlterationHandler<ModifyVariableHandler>();
         services.AddAlterationHandler<ScheduleActivityHandler>();
         services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
+        services.AddNotificationHandlersFrom<AlterationsFeature>();
         return services;
     }
 }

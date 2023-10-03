@@ -29,6 +29,5 @@ public class AlterationsFeature : FeatureBase
     public override void Apply()
     {
         Services.AddAlterations();
-        Services.AddNotificationHandlersFrom<AlterationsFeature>();
     }
 }
