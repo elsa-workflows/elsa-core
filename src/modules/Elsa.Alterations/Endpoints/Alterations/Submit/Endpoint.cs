@@ -28,7 +28,7 @@ public class Submit : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/alteration-plans/submit");
+        Post("/alterations/submit");
         ConfigurePermissions("run:alterations");
     }
 

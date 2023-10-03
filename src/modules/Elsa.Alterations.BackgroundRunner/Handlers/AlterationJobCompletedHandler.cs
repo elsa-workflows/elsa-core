@@ -7,19 +7,26 @@ using Elsa.Mediator.Contracts;
 
 namespace Elsa.Alterations.BackgroundRunner.Handlers;
 
+/// <summary>
+/// Handles <see cref="AlterationJobCompleted"/> notifications and updates the plan status if all jobs are completed.
+/// </summary>
 public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobCompleted>
 {
     private readonly IAlterationPlanStore _alterationPlanStore;
     private readonly IAlterationJobStore _alterationJobStore;
     private readonly ISystemClock _systemClock;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AlterationJobCompletedHandler"/> class.
+    /// </summary>
     public AlterationJobCompletedHandler(IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore, ISystemClock systemClock)
     {
         _alterationPlanStore = alterationPlanStore;
         _alterationJobStore = alterationJobStore;
         _systemClock = systemClock;
     }
-    
+
+    /// <inheritdoc />
     public async Task HandleAsync(AlterationJobCompleted notification, CancellationToken cancellationToken)
     {
         var job = notification.Job;

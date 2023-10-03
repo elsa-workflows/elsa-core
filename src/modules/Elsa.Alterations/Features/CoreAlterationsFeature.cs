@@ -1,10 +1,10 @@
+using Elsa.Alterations.BackgroundRunner.Features;
 using Elsa.Alterations.Core.Features;
 using Elsa.Alterations.Extensions;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Features;
 
@@ -12,6 +12,7 @@ namespace Elsa.Alterations.Features;
 /// Adds the Elsa alterations services.
 /// </summary>
 [DependsOn(typeof(CoreAlterationsFeature))]
+[DependsOn(typeof(AlterationsBackgroundRunnerFeature))]
 public class AlterationsFeature : FeatureBase
 {
     /// <inheritdoc />

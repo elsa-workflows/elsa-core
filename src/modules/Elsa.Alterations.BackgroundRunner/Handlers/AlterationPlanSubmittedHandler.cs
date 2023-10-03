@@ -17,6 +17,9 @@ public class AlterationPlanSubmittedHandler : INotificationHandler<AlterationPla
     private readonly IAlterationJobStore _alterationJobStore;
     private readonly IAlterationJobRunner _alterationJobRunner;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AlterationPlanSubmittedHandler"/> class.
+    /// </summary>
     public AlterationPlanSubmittedHandler(IJobQueue jobQueue, IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore, IAlterationJobRunner alterationJobRunner)
     {
         _jobQueue = jobQueue;
@@ -25,6 +28,7 @@ public class AlterationPlanSubmittedHandler : INotificationHandler<AlterationPla
         _alterationJobRunner = alterationJobRunner;
     }
 
+    /// <inheritdoc />
     public Task HandleAsync(AlterationPlanSubmitted notification, CancellationToken cancellationToken)
     {
         _jobQueue.Enqueue(ct => ExecutePlanAsync(notification.Plan, ct));

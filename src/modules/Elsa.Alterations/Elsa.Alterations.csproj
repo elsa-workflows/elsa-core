@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
 
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
@@ -12,13 +12,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
-      <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
-
-
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
+        <ProjectReference Include="..\Elsa.Alterations.BackgroundRunner\Elsa.Alterations.BackgroundRunner.csproj"/>
+        <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj"/>
+        
     </ItemGroup>
-
-
-
-
 </Project>
