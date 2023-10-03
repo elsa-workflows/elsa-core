@@ -26,14 +26,20 @@ public class AlterationLog
     public IReadOnlyCollection<AlterationLogEntry> LogEntries => _logEntries.ToList().AsReadOnly();
     
     /// <summary>
-    /// Appends a log entry.
+    /// Adds a log entry.
     /// </summary>
     /// <param name="message">The message.</param>
     /// <param name="logLevel">The log level.</param>
-    public void Append(string message, LogLevel logLevel = LogLevel.Information)
+    public void Add(string message, LogLevel logLevel = LogLevel.Information)
     {
         var entry = new AlterationLogEntry(message, logLevel, _systemClock.UtcNow);
         
         _logEntries.Add(entry);
     }
+    
+    /// <summary>
+    /// Adds a set of log entries.
+    /// </summary>
+    /// <param name="entries"></param>
+    public void AddRange(IEnumerable<AlterationLogEntry> entries) => _logEntries.AddRange(entries);
 }

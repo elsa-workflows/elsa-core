@@ -1,4 +1,4 @@
-namespace Elsa.Alterations.Endpoints.AlterationPlans.Submit;
+namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 
 /// <summary>
 /// The response from the <see cref="Execute"/> endpoint.

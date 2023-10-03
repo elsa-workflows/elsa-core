@@ -16,25 +16,18 @@ public class AlterationHandlerContext
     /// Initializes a new instance of the <see cref="AlterationHandlerContext"/> class.
     /// </summary>
     public AlterationHandlerContext(
-        AlterationPlan plan, 
         IAlteration alteration, 
         WorkflowExecutionContext workflowExecutionContext, 
         AlterationLog log, 
         IServiceProvider serviceProvider, 
         CancellationToken cancellationToken)
     {
-        Plan = plan;
         Alteration = alteration;
         WorkflowExecutionContext = workflowExecutionContext;
         AlterationLog = log;
         ServiceProvider = serviceProvider;
         CancellationToken = cancellationToken;
     }
-
-    /// <summary>
-    /// The alteration plan being executed.
-    /// </summary>
-    public AlterationPlan Plan { get; }
 
     /// <summary>
     /// The alteration being handled.
@@ -83,7 +76,7 @@ public class AlterationHandlerContext
     /// <param name="logLevel">The log level.</param>
     public void Log(string message, LogLevel logLevel = LogLevel.Information)
     {
-        AlterationLog.Append(message, logLevel);
+        AlterationLog.Add(message, logLevel);
     }
 
     /// <summary>

@@ -29,11 +29,6 @@ public class AlterationJob : Entity
     public string? SerializedLog { get; set; }
     
     /// <summary>
-    /// The resulting serialized workflow state of the job.
-    /// </summary>
-    public string? SerializedWorkflowState { get; set; }
-    
-    /// <summary>
     /// The date and time at which the job was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }

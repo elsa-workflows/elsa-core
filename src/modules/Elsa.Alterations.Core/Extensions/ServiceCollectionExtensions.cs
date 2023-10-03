@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
         services.AddSingleton<IAlterationJobRunner, DefaultAlterationJobRunner>();
+        services.AddSingleton<IAlterationRunner, DefaultAlterationRunner>();
         return services;
     }
 
