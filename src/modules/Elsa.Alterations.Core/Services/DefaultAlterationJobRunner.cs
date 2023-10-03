@@ -44,7 +44,7 @@ public class DefaultAlterationJobRunner : IAlterationJobRunner
         var result = await _alterationRunner.RunAsync(workflowInstanceId, plan.Alterations, cancellationToken);
         
         job.Status = result.IsSuccessful ? AlterationJobStatus.Completed : AlterationJobStatus.Failed;
-        job.SerializedLog = JsonSerializer.Serialize(result.Log.LogEntries);
+        job.Log = result.Log.LogEntries.ToList();
         job.CompletedAt = _systemClock.UtcNow;
         await _alterationJobStore.SaveAsync(job, cancellationToken);
         await _notificationSender.SendAsync(new AlterationJobCompleted(job), cancellationToken);

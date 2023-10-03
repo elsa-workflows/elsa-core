@@ -1,4 +1,5 @@
 using Elsa.Alterations.Core.Enums;
+using Elsa.Alterations.Core.Models;
 using Elsa.Common.Entities;
 
 namespace Elsa.Alterations.Core.Entities;
@@ -22,11 +23,11 @@ public class AlterationJob : Entity
     /// The status of the job.
     /// </summary>
     public AlterationJobStatus Status { get; set; }
-    
+
     /// <summary>
     /// The serialized log of the job.
     /// </summary>
-    public string? SerializedLog { get; set; }
+    public ICollection<AlterationLogEntry>? Log { get; set; } = new List<AlterationLogEntry>();
     
     /// <summary>
     /// The date and time at which the job was created.
