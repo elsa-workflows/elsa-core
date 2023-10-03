@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
+using Elsa.Http.Exceptions;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
@@ -256,8 +257,8 @@ public class WriteFileHttpResponse : Activity
 
         var manager = context.GetRequiredService<IDownloadableManager>();
         var headers = httpContext.Request.Headers;
-        var eTag = headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
-        var range = headers.TryGetValue(HeaderNames.Range, out header) ? RangeHeaderValue.Parse(header.ToString()) : default;
+        var eTag = GetIfMatchHeaderValue(headers);
+        var range = GetRangeHeaderHeaderValue(headers);
         var options = new DownloadableOptions { ETag = eTag, Range = range };
         return manager.GetDownloadablesAsync(content, options, context.CancellationToken);
     }
@@ -266,6 +267,32 @@ public class WriteFileHttpResponse : Activity
     {
         var provider = context.GetRequiredService<IContentTypeProvider>();
         return provider.TryGetContentType(filename, out var contentType) ? contentType : System.Net.Mime.MediaTypeNames.Application.Octet;
+    }
+    
+    private static RangeHeaderValue? GetRangeHeaderHeaderValue(IHeaderDictionary headers)
+    {
+        try
+        {
+            return headers.TryGetValue(HeaderNames.Range, out var header) ? RangeHeaderValue.Parse(header.ToString()) : default;
+            
+        }
+        catch (Exception e)
+        {
+            throw new HttpBadRequestException("Failed to parse Range header value", e);
+        }
+    }
+    
+    private static EntityTagHeaderValue? GetIfMatchHeaderValue(IHeaderDictionary headers)
+    {
+        try
+        {
+            return headers.TryGetValue(HeaderNames.IfMatch, out var header) ? new EntityTagHeaderValue(header.ToString()) : default;
+            
+        }
+        catch (Exception e)
+        {
+            throw new HttpBadRequestException("Failed to parse If-Match header value", e);
+        }
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
