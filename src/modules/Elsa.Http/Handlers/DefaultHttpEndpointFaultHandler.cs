@@ -2,6 +2,7 @@ using Elsa.Http.Models;
 using Microsoft.AspNetCore.Http;
 using System.Net.Mime;
 using Elsa.Http.Contracts;
+using Elsa.Http.Exceptions;
 using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Http.Handlers;
@@ -16,16 +17,30 @@ public sealed class DefaultHttpEndpointFaultHandler : IHttpEndpointFaultHandler
     {
         var httpContext = context.HttpContext;
         var isTimeoutIncident = GetIsTimeoutFault(context);
-        var statusCode = isTimeoutIncident ? StatusCodes.Status408RequestTimeout : StatusCodes.Status500InternalServerError;
-        
+        var isBadRequest = GetIsBadRequestFault(context);
+        var statusCode = isTimeoutIncident
+            ? StatusCodes.Status408RequestTimeout
+            : isBadRequest
+                ? StatusCodes.Status400BadRequest
+                : StatusCodes.Status500InternalServerError;
+
         httpContext.Response.StatusCode = statusCode;
         return ValueTask.CompletedTask;
     }
 
     private bool GetIsTimeoutFault(HttpEndpointFaultContext context)
     {
+        return ContainsException(context, typeof(OperationCanceledException), typeof(TaskCanceledException), typeof(TimeoutException));
+    }
+
+    private bool GetIsBadRequestFault(HttpEndpointFaultContext context)
+    {
+        return ContainsException(context, typeof(HttpBadRequestException));
+    }
+
+    private bool ContainsException(HttpEndpointFaultContext context, params Type[] exceptionTypes)
+    {
         var workflowState = context.WorkflowState;
-        var exceptionTypes = new[] { typeof(OperationCanceledException), typeof(TaskCanceledException), typeof(TimeoutException) };
         var timeoutIncident = workflowState.Incidents.FirstOrDefault(x => exceptionTypes.Contains(x.Exception?.Type));
 
         return timeoutIncident != null;
