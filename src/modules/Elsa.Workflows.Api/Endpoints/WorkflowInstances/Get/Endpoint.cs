@@ -5,6 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 
+/// <summary>
+/// Gets a specific workflow instance.
+/// </summary>
 [PublicAPI]
 internal class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
 {

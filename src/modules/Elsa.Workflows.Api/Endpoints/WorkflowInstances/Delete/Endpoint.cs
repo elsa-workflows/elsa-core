@@ -5,6 +5,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Delete;
 
+/// <summary>
+/// Deletes the specified workflow instance.
+/// </summary>
 [PublicAPI]
 internal class Delete : ElsaEndpoint<Request>
 {

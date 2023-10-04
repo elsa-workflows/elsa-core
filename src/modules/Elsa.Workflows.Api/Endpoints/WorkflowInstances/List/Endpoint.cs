@@ -10,6 +10,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 
+/// <summary>
+/// List workflow instances.
+/// </summary>
 [PublicAPI]
 internal class List : ElsaEndpoint<Request, Response>
 {
