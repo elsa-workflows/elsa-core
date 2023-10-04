@@ -16,7 +16,7 @@ class BreakForWorkflow : WorkflowBase
             Activities =
             {
                 new WriteLine("Start"),
-                new For(0, 3)
+                new For(0, 3, 1)
                 {
                     CurrentValue = new (currentValue),
                     Body = new Sequence

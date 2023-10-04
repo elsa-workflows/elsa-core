@@ -24,10 +24,11 @@ public class For : Activity
     }
 
     /// <inheritdoc />
-    public For(int start, int end, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public For(int start, int end, int step, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Start = new Input<int>(start);
         End = new Input<int>(end);
+        Step = new Input<int>(step);
     }
 
     /// <summary>
@@ -43,9 +44,9 @@ public class For : Activity
     public Input<int> End { get; set; } = new(0);
 
     /// <summary>
-    /// The step size.
+    /// The step size. To count down, enter a negative number.
     /// </summary>
-    [Input(Description = "The step size.")]
+    [Input(Description = "The step size. To count down, enter a negative number.")]
     public Input<int> Step { get; set; } = new(1);
 
     /// <summary>
@@ -53,12 +54,6 @@ public class For : Activity
     /// </summary>
     [Input(Description = "Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default.")]
     public Input<bool> OuterBoundInclusive { get; set; } = new(true);
-
-    /// <summary>
-    /// Automatically detect whether to count up or down by the specified step size on each iteration. True by default.
-    /// </summary>
-    [Input(Description = "Automatically detect whether to count up or down by the specified step size on each iteration. True by default.")]
-    public Input<bool> AutoStepDirection { get; set; } = new(true);
 
     /// <summary>
     /// The activity to execute for each iteration.
@@ -91,11 +86,9 @@ public class For : Activity
         var start = context.Get(Start);
         var step = context.Get(Step);
         var inclusive = context.Get(OuterBoundInclusive);
-        var autoStepDirection = context.Get(AutoStepDirection);
-        var increment = autoStepDirection ? end >= start : step >= 0;
+        var increment = step >= 0;
 
-        step = Math.Abs(step);
-        currentValue = currentValue == null ? start : increment ? currentValue + step : currentValue - step;
+        currentValue = currentValue == null ? start : (currentValue + step);
 
         var isBreaking = context.GetIsBreaking();
 

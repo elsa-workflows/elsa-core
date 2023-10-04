@@ -18,7 +18,7 @@ public static class ForWorkflow
             Activities =
             {
                 new WriteLine("Counting down from 10 to 1:"),
-                new For(10, 1)
+                new For(10, 1, -1)
                 {
                     CurrentValue = new Output<object?>(currentValueVariable),
                     Body = new Sequence
