@@ -5,7 +5,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Alterations.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 
 /// <summary>
 /// Configures the default workflow runtime to use EF Core persistence providers.

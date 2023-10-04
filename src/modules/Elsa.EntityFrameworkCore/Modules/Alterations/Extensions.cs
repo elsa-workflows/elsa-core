@@ -1,7 +1,7 @@
 ﻿using Elsa.Alterations.Core.Features;
 using JetBrains.Annotations;
 
-namespace Elsa.Alterations.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 
 /// <summary>
 /// Provides extensions to the <see cref="CoreAlterationsFeature"/> feature.

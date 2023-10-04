@@ -255,17 +255,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations", "src\mod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.BackgroundRunner", "src\modules\Elsa.Alterations.BackgroundRunner\Elsa.Alterations.BackgroundRunner.csproj", "{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.EntityFrameworkCore", "src\modules\Elsa.Alterations.Persistence.EntityFrameworkCore\Elsa.Alterations.Persistence.EntityFrameworkCore.csproj", "{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Common", "src\modules\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj", "{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Alterations.Persistence.EntityFrameworkCore.Sqlite\Elsa.Alterations.Persistence.EntityFrameworkCore.Sqlite.csproj", "{8F0617BF-9D68-4E72-AC05-DC1064EFF45B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Alterations.Persistence.EntityFrameworkCore.SqlServer\Elsa.Alterations.Persistence.EntityFrameworkCore.SqlServer.csproj", "{479B8213-74AE-4B36-9BC7-953468071CC7}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.EntityFrameworkCore.MySql", "src\modules\Elsa.Alterations.Persistence.EntityFrameworkCore.MySql\Elsa.Alterations.Persistence.EntityFrameworkCore.MySql.csproj", "{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Alterations.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Alterations.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -649,30 +639,10 @@ Global
 		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8F0617BF-9D68-4E72-AC05-DC1064EFF45B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F0617BF-9D68-4E72-AC05-DC1064EFF45B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8F0617BF-9D68-4E72-AC05-DC1064EFF45B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8F0617BF-9D68-4E72-AC05-DC1064EFF45B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{479B8213-74AE-4B36-9BC7-953468071CC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{479B8213-74AE-4B36-9BC7-953468071CC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{479B8213-74AE-4B36-9BC7-953468071CC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{479B8213-74AE-4B36-9BC7-953468071CC7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -788,11 +758,6 @@ Global
 		{8DBEC8F3-908D-46B3-95CA-47EA138AB1A4} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
-		{CD769FDB-2E54-4ECA-9CEA-07FF88BB03DF} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
-		{8F0617BF-9D68-4E72-AC05-DC1064EFF45B} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
-		{479B8213-74AE-4B36-9BC7-953468071CC7} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
-		{597E494F-EB0A-4CA5-8E8F-6664CD1B63D6} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
-		{70A75DAA-4CA0-434D-B87F-84CBC9A87A2B} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 	EndGlobalSection
 EndGlobal

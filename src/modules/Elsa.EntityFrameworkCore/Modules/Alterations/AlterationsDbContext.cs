@@ -2,7 +2,7 @@
 using Elsa.EntityFrameworkCore.Common;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.Alterations.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 
 /// <summary>
 /// DB context for the runtime module.

@@ -1,4 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Persistence.EntityFrameworkCore.MySql;

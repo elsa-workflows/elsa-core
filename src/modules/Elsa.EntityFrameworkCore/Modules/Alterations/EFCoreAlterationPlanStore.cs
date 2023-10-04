@@ -4,7 +4,7 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.EntityFrameworkCore.Common;
 
-namespace Elsa.Alterations.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 
 /// <summary>
 /// An EF Core implementation of <see cref="IAlterationPlanStore"/>.
