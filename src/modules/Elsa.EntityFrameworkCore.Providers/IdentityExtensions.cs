@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 public static class IdentityExtensions
 {
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use MySql.
+    /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use MySql.
     /// </summary>
     public static EFCoreIdentityPersistenceFeature UseMySql(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -20,7 +20,7 @@ public static class IdentityExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use Sqlite.
+    /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use Sqlite.
     /// </summary>
     public static EFCoreIdentityPersistenceFeature UseSqlite(this EFCoreIdentityPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
     {
@@ -29,7 +29,7 @@ public static class IdentityExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreIdentityPersistenceFeature UseSqlServer(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -38,7 +38,7 @@ public static class IdentityExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreIdentityPersistenceFeature UsePostgreSql(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {

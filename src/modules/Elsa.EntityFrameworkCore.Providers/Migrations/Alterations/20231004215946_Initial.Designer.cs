@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.Providers.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
-    [Migration("20231004212138_Initial")]
+    [Migration("20231004215946_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -25,6 +25,57 @@ namespace Elsa.EntityFrameworkCore.Providers.Migrations.Alterations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PlanId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedLog")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedAt")
+                        .HasDatabaseName("IX_AlterationJob_CompletedAt");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_AlterationJob_CreatedAt");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("IX_AlterationJob_PlanId");
+
+                    b.HasIndex("StartedAt")
+                        .HasDatabaseName("IX_AlterationJob_StartedAt");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("IX_AlterationJob_Status");
+
+                    b.HasIndex("WorkflowInstanceId")
+                        .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
+
+                    b.ToTable("AlterationJobs", "Elsa");
+                });
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {

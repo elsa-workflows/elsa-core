@@ -26,6 +26,7 @@
     
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
         <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />

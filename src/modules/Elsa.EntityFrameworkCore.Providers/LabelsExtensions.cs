@@ -38,7 +38,7 @@ public static class LabelsExtensions
     }
 
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreLabelPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreLabelPersistenceFeature UsePostgreSql(this EFCoreLabelPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {

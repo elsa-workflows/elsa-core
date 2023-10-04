@@ -1,5 +1,5 @@
 using Elsa.Alterations.Core.Entities;
-using Elsa.Alterations.Core.Features;
+using Elsa.Alterations.Features;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -10,20 +10,21 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// <summary>
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
-[DependsOn(typeof(CoreAlterationsFeature))]
-public class EFCoreAlterationPersistenceFeature : PersistenceFeatureBase<AlterationsElsaDbContext>
+[DependsOn(typeof(AlterationsFeature))]
+public class EFCoreAlterationsPersistenceFeature : PersistenceFeatureBase<AlterationsElsaDbContext>
 {
     /// <inheritdoc />
-    public EFCoreAlterationPersistenceFeature(IModule module) : base(module)
+    public EFCoreAlterationsPersistenceFeature(IModule module) : base(module)
     {
     }
 
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<CoreAlterationsFeature>(feature =>
+        Module.Configure<AlterationsFeature>(feature =>
         {
             feature.AlterationPlanStoreFactory = sp => sp.GetRequiredService<EFCoreAlterationPlanStore>();
+            feature.AlterationJobStoreFactory = sp => sp.GetRequiredService<EFCoreAlterationJobStore>();
         });
     }
 
@@ -31,7 +32,8 @@ public class EFCoreAlterationPersistenceFeature : PersistenceFeatureBase<Alterat
     public override void Apply()
     {
         base.Apply();
-        
+
         AddEntityStore<AlterationPlan, EFCoreAlterationPlanStore>();
+        AddEntityStore<AlterationJob, EFCoreAlterationJobStore>();
     }
 }

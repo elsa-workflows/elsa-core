@@ -5,7 +5,6 @@ using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
-using QueryableExtensions = System.Data.Entity.QueryableExtensions;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -332,7 +331,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
         var queryable = query(set.AsQueryable());
 
         queryable = query(queryable);
-        return await QueryableExtensions.LongCountAsync(queryable, cancellationToken);
+        return await queryable.LongCountAsync(cancellationToken: cancellationToken);
     }
 
     /// <summary>

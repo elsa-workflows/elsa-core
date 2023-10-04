@@ -45,7 +45,7 @@ public class AlterationsDbContextFactories : DesignTimeDbContextFactory<Alterati
 }
 
 /// <inheritdoc />
-public class DesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : DbContext
+public class DesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFactoryBase<TDbContext> where TDbContext : Microsoft.EntityFrameworkCore.DbContext
 {
     /// <inheritdoc />
     protected override Assembly Assembly => GetType().Assembly;

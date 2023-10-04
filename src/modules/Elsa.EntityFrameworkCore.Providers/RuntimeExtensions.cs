@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 public static class RuntimeExtensions
 {
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use MySql.
+    /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use MySql.
     /// </summary>
     public static EFCoreWorkflowRuntimePersistenceFeature UseMySql(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -20,7 +20,7 @@ public static class RuntimeExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use Sqlite.
+    /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use Sqlite.
     /// </summary>
     public static EFCoreWorkflowRuntimePersistenceFeature UseSqlite(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
     {
@@ -29,7 +29,7 @@ public static class RuntimeExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreWorkflowRuntimePersistenceFeature UseSqlServer(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -38,7 +38,7 @@ public static class RuntimeExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreWorkflowRuntimePersistenceFeature UsePostgreSql(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {

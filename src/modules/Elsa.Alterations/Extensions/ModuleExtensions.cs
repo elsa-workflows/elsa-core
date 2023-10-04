@@ -1,4 +1,3 @@
-using Elsa.Alterations.Core.Features;
 using Elsa.Alterations.Features;
 using Elsa.Extensions;
 using Elsa.Features.Services;
@@ -14,14 +13,6 @@ public static class ModuleExtensions
     /// Adds the <see cref="AlterationsFeature"/>.
     /// </summary>
     public static IModule UseAlterations(this IModule module, Action<AlterationsFeature>? configure = default)
-    {
-        return module.Use(configure);
-    }
-    
-    /// <summary>
-    /// Adds the <see cref="AlterationsFeature"/>.
-    /// </summary>
-    public static IModule UseAlterations(this IModule module, Action<CoreAlterationsFeature>? configure = default)
     {
         return module.Use(configure);
     }

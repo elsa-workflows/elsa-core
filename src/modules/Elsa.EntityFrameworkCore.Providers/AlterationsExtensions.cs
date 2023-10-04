@@ -10,36 +10,36 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 public static class AlterationsExtensions
 {
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use MySql.
+    /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreAlterationPersistenceFeature UseMySql(this EFCoreAlterationPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreAlterationsPersistenceFeature UseMySql(this EFCoreAlterationsPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(typeof(AlterationsExtensions).Assembly, connectionString, options);
         return feature;
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use Sqlite.
+    /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use Sqlite.
     /// </summary>
-    public static EFCoreAlterationPersistenceFeature UseSqlite(this EFCoreAlterationPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreAlterationsPersistenceFeature UseSqlite(this EFCoreAlterationsPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(typeof(AlterationsExtensions).Assembly, connectionString, options);
         return feature;
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use SqlServer.
     /// </summary>
-    public static EFCoreAlterationPersistenceFeature UseSqlServer(this EFCoreAlterationPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreAlterationsPersistenceFeature UseSqlServer(this EFCoreAlterationsPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(typeof(AlterationsExtensions).Assembly, connectionString, options);
         return feature;
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use SqlServer.
     /// </summary>
-    public static EFCoreAlterationPersistenceFeature UsePostgreSql(this EFCoreAlterationPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreAlterationsPersistenceFeature UsePostgreSql(this EFCoreAlterationsPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(typeof(AlterationsExtensions).Assembly, connectionString, options);
         return feature;

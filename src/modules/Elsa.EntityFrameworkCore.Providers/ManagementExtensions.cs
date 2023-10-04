@@ -29,7 +29,7 @@ public static class ManagementExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreWorkflowDefinitionPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreWorkflowDefinitionPersistenceFeature UseSqlServer(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -38,7 +38,7 @@ public static class ManagementExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreWorkflowDefinitionPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreWorkflowDefinitionPersistenceFeature UsePostgreSql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -74,7 +74,7 @@ public static class ManagementExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="EFCoreWorkflowInstancePersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static EFCoreWorkflowInstancePersistenceFeature UsePostgreSql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -101,7 +101,7 @@ public static class ManagementExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreWorkflowInstancePersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="WorkflowManagementPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static WorkflowManagementPersistenceFeature UseSqlServer(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
@@ -110,7 +110,7 @@ public static class ManagementExtensions
     }
     
     /// <summary>
-    /// Configures the <see cref="EFCoreAlterationPersistenceFeature"/> to use SqlServer.
+    /// Configures the <see cref="WorkflowManagementPersistenceFeature"/> to use SqlServer.
     /// </summary>
     public static WorkflowManagementPersistenceFeature UsePostgreSql(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
