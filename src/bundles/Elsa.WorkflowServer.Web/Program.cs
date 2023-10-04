@@ -15,6 +15,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web;
+using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -159,6 +160,24 @@ services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
+// Swagger API documentation
+services.SwaggerDocument(o =>
+{
+    o.EnableJWTBearerAuth = false;
+    o.DocumentSettings = s =>
+    {
+        s.DocumentName = "v3";
+        s.Title = "Elsa API";
+        s.Version = "v3.0";
+        s.AddAuth("ApiKey", new()
+        {
+            Name = "Authorization",
+            In = NSwag.OpenApiSecurityApiKeyLocation.Header,
+            Type = NSwag.OpenApiSecuritySchemeType.ApiKey
+        });
+    };
+});
+
 // Build the web application.
 var app = builder.Build();
 
@@ -191,6 +210,9 @@ app.UseWorkflows();
 
 // SignalR.
 app.UseWorkflowsSignalRHubs();
+
+// Swagger API documentation
+app.UseSwaggerGen();
 
 // Run.
 app.Run();
