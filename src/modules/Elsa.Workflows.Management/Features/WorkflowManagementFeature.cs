@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Dynamic;
 using System.Reflection;
+using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;

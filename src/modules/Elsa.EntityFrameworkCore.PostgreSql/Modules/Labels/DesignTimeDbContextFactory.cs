@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Labels;
-using Elsa.EntityFrameworkCore.PostgreSql.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Labels;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Modules.Labels;
 

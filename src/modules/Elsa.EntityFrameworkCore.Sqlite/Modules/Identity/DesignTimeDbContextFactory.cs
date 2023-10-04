@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Sqlite.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Sqlite.Modules.Identity;

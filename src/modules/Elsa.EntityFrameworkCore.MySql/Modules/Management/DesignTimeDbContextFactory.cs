@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.MySql.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Management;
 
 namespace Elsa.EntityFrameworkCore.MySql.Modules.Management;
 

@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.SqlServer.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 
 namespace Elsa.EntityFrameworkCore.SqlServer.Modules.Runtime;
 

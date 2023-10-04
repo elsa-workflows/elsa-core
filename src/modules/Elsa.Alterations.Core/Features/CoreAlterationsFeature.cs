@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
+using Elsa.Alterations.Core.Options;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Common.Services;
 using Elsa.Features.Abstractions;
@@ -28,6 +29,17 @@ public class CoreAlterationsFeature : FeatureBase
     /// Gets or sets the factory for the alteration job store.
     /// </summary>
     public Func<IServiceProvider, IAlterationJobStore> AlterationJobStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationJobStore>();
+
+    /// <summary>
+    /// Adds an alteration and its handler.
+    /// </summary>
+    /// <typeparam name="T">The type of alteration.</typeparam>
+    /// <typeparam name="THandler">The type of alteration handler.</typeparam>
+    public CoreAlterationsFeature AddAlteration<T, THandler>() where T : class, IAlteration where THandler : class, IAlterationHandler
+    {
+        Services.AddAlteration<T, THandler>();
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Apply()

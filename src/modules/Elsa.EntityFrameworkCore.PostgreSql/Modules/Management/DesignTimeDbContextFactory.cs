@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.PostgreSql.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Management;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Modules.Management;
 

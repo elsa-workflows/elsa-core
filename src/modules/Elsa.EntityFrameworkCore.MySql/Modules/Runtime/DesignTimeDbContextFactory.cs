@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Runtime;
-using Elsa.EntityFrameworkCore.MySql.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 
 namespace Elsa.EntityFrameworkCore.MySql.Modules.Runtime;
 

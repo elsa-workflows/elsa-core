@@ -1,5 +1,9 @@
 using Elsa.Alterations.Core.Contracts;
+using Elsa.Alterations.Core.Options;
+using Elsa.Alterations.Core.Serialization;
 using Elsa.Alterations.Core.Services;
+using Elsa.Common.Contracts;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Core.Extensions;
@@ -14,18 +18,21 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddAlterationsCore(this IServiceCollection services)
     {
+        services.Configure<AlterationOptions>(_ => { }); // Ensure that the options are configured even if the application doesn't do so.
         services.AddSingleton<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
         services.AddSingleton<IAlterationJobRunner, DefaultAlterationJobRunner>();
         services.AddSingleton<IAlterationRunner, DefaultAlterationRunner>();
+        services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
         return services;
     }
 
     /// <summary>
     /// Adds an alteration handler.
     /// </summary>
-    public static IServiceCollection AddAlterationHandler<T>(this IServiceCollection services) where T: class, IAlterationHandler
+    public static IServiceCollection AddAlteration<T, THandler>(this IServiceCollection services) where T : IAlteration where THandler : class, IAlterationHandler
     {
-        services.AddSingleton<IAlterationHandler, T>();
+        services.Configure<AlterationOptions>(options => options.AlterationTypes.Add(typeof(T)));
+        services.AddSingleton<IAlterationHandler, THandler>();
         return services;
     }
 }

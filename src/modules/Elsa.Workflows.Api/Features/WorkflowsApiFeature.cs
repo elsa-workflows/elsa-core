@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;

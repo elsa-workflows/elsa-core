@@ -25,6 +25,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />

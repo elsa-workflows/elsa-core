@@ -1,34 +1,25 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
+using Elsa.Common.Serialization;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Serialization.Converters;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Serialization.Serializers;
 
-/// <summary>
-/// Serializes and deserializes activities from and to JSON.
-/// </summary>
-public class JsonActivitySerializer : IActivitySerializer
+/// <inheritdoc cref="Elsa.Workflows.Core.Contracts.IActivitySerializer" />
+public class JsonActivitySerializer : ConfigurableSerializer, IActivitySerializer
 {
-    private readonly IEnumerable<ISerializationOptionsConfigurator> _configurators;
-    private readonly IServiceProvider _serviceProvider;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonActivitySerializer"/> class.
     /// </summary>
-    public JsonActivitySerializer(IEnumerable<ISerializationOptionsConfigurator> configurators, IServiceProvider serviceProvider)
+    public JsonActivitySerializer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        _configurators = configurators;
-        _serviceProvider = serviceProvider;
     }
 
     /// <inheritdoc />
     public string Serialize(IActivity activity)
     {
         var options = CreateOptions();
-        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
+        options.Converters.Add(CreateInstance<JsonIgnoreCompositeRootConverterFactory>());
         return JsonSerializer.Serialize(activity, activity.GetType(), options);
     }
 
@@ -36,7 +27,7 @@ public class JsonActivitySerializer : IActivitySerializer
     public string Serialize(object value)
     {
         var options = CreateOptions();
-        options.Converters.Add(Create<JsonIgnoreCompositeRootConverterFactory>());
+        options.Converters.Add(CreateInstance<JsonIgnoreCompositeRootConverterFactory>());
         return JsonSerializer.Serialize(value, options);
     }
 
@@ -49,34 +40,9 @@ public class JsonActivitySerializer : IActivitySerializer
     /// <inheritdoc />
     public T Deserialize<T>(string serializedValue) => JsonSerializer.Deserialize<T>(serializedValue, CreateOptions())!;
 
-    private JsonSerializerOptions CreateOptions()
+    /// <inheritdoc />
+    protected override void AddConverters(JsonSerializerOptions options)
     {
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-        };
-
-        options.Converters.Add(Create<JsonStringEnumConverter>());
-        options.Converters.Add(Create<TypeJsonConverter>());
-        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-
-        var modifiers = new List<Action<JsonTypeInfo>>();
-
-        // Give external packages a chance to further configure the serializer options.
-        foreach (var configurator in _configurators)
-        {
-            configurator.Configure(options);
-            var modifiersToAdd = configurator.GetModifiers();
-            modifiers.AddRange(modifiersToAdd);
-        }
-
-        // Set up type info resolver.
-        options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
-
-        return options;
+        options.Converters.Add(CreateInstance<TypeJsonConverter>());
     }
-
-    private T Create<T>() => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
 }

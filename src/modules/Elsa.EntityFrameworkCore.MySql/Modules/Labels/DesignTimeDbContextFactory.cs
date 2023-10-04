@@ -1,5 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Labels;
-using Elsa.EntityFrameworkCore.MySql.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Modules.Labels;
 
 namespace Elsa.EntityFrameworkCore.MySql.Modules.Labels;
 

@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Workflows.Core.Activities.Flowchart.Serialization;

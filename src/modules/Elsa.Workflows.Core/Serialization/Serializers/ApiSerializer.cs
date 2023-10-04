@@ -1,25 +1,17 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
+using Elsa.Common.Serialization;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Core.Serialization.Serializers;
 
-/// <inheritdoc />
-public class ApiSerializer : IApiSerializer
+/// <inheritdoc cref="Elsa.Workflows.Core.Contracts.IApiSerializer" />
+public class ApiSerializer : ConfigurableSerializer, IApiSerializer
 {
-    private readonly IEnumerable<ISerializationOptionsConfigurator> _configurators;
-    private readonly IServiceProvider _serviceProvider;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ApiSerializer"/> class.
     /// </summary>
-    public ApiSerializer(IServiceProvider serviceProvider, IEnumerable<ISerializationOptionsConfigurator> configurators)
+    public ApiSerializer(IServiceProvider serviceProvider) : base(serviceProvider)
     {
-        _serviceProvider = serviceProvider;
-        _configurators = configurators;
     }
 
     /// <inheritdoc />
@@ -40,34 +32,16 @@ public class ApiSerializer : IApiSerializer
     }
 
     /// <inheritdoc />
-    public JsonSerializerOptions CreateOptions() => ApplyOptions(new JsonSerializerOptions());
-
-    /// <inheritdoc />
-    public JsonSerializerOptions ApplyOptions(JsonSerializerOptions options)
+    protected override void Configure(JsonSerializerOptions options)
     {
-        options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.PropertyNameCaseInsensitive = true;
-        options.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.Converters.Add(Create<JsonStringEnumConverter>());
-        options.Converters.Add(Create<TypeJsonConverter>());
-        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        var modifiers = new List<Action<JsonTypeInfo>>();
-        
-        // Give external packages a chance to further configure the serializer options.
-        foreach (var configurator in _configurators)
-        {
-            configurator.Configure(options);
-            var modifiersToAdd = configurator.GetModifiers();
-            modifiers.AddRange(modifiersToAdd);
-        }
-        
-        // Set up type info resolver.
-        // options.TypeInfoResolver = new ActivityConstructorContractResolver(modifiers);
+    }
+    
+    JsonSerializerOptions IApiSerializer.CreateOptions() => base.CreateOptions();
 
-        options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
-
+    JsonSerializerOptions IApiSerializer.ApplyOptions(JsonSerializerOptions options)
+    {
+        Apply(options);
         return options;
     }
-
-    private T Create<T>() => ActivatorUtilities.CreateInstance<T>(_serviceProvider);
 }
