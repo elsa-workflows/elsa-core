@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
         services.AddSingleton<IAlterationJobRunner, DefaultAlterationJobRunner>();
         services.AddSingleton<IAlterationRunner, DefaultAlterationRunner>();
+        services.AddSingleton<IAlterationSerializer, AlterationSerializer>();
         services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
         return services;
     }
