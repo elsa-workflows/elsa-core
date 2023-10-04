@@ -1,7 +1,7 @@
 using System.Net.Mime;
 using Azure.Messaging.ServiceBus;
 using Elsa.Common.Services;
-using Elsa.Samples.MassTransitActivities.Messages;
+using Elsa.Samples.AspNet.AzureServiceBusActivities.Messages;
 using FastEndpoints;
 
 namespace Elsa.Samples.AspNet.AzureServiceBusActivities.Endpoints.Orders.Create;

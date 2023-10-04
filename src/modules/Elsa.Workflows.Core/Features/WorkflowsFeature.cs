@@ -15,7 +15,6 @@ using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Core.PortResolvers;
-using Elsa.Workflows.Core.Serialization;
 using Elsa.Workflows.Core.Serialization.Configurators;
 using Elsa.Workflows.Core.Serialization.Serializers;
 using Elsa.Workflows.Core.Services;

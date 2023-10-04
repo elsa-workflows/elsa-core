@@ -16,7 +16,7 @@ public abstract class SqlServerDesignTimeDbContextFactoryBase<TDbContext> : IDes
         var builder = new DbContextOptionsBuilder<TDbContext>();
         var connectionString = args.Any() ? args[0] : "Data Source=local";
 
-        builder.UseElsaSqlServer(connectionString);
+        builder.UseElsaSqlServer(GetType().Assembly, connectionString);
 
         return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }

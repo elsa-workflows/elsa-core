@@ -16,7 +16,7 @@ public abstract class PostgreSqlDesignTimeDbContextFactoryBase<TDbContext> : IDe
         var connectionString = args.Any() ? args[0] : "Data Source=local";
         
         var builder = new DbContextOptionsBuilder<TDbContext>();
-        builder.UseElsaPostgreSql(connectionString);
+        builder.UseElsaPostgreSql(GetType().Assembly, connectionString);
 
         return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }

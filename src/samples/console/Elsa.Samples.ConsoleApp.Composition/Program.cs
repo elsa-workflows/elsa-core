@@ -1,4 +1,6 @@
 ﻿using Elsa.Extensions;
+using Elsa.Samples.ConsoleApp.Composition.Activities;
+using Elsa.Samples.ConsoleApp.Composition.Models;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;

@@ -16,7 +16,7 @@ public abstract class SqliteDesignTimeDbContextFactoryBase<TDbContext> : IDesign
         var builder = new DbContextOptionsBuilder<TDbContext>();
         var connectionString = args.Any() ? args[0] : Constants.DefaultConnectionString;
 
-        builder.UseElsaSqlite(connectionString);
+        builder.UseElsaSqlite(GetType().Assembly, connectionString);
 
         return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }

@@ -1,5 +1,4 @@
 ﻿using Elsa.EntityFrameworkCore.Extensions;
-using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -8,7 +7,6 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
-[PublicAPI]
 public abstract class ElsaDbContextBase : DbContext
 {
     /// <summary>

@@ -1,7 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
-using Elsa.Alterations.Core.Options;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Common.Services;
 using Elsa.Features.Abstractions;

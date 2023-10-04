@@ -9,6 +9,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// </summary>
 public class Configurations : IEntityTypeConfiguration<AlterationPlan>
 {
+    /// <inheritdoc />
     public void Configure(EntityTypeBuilder<AlterationPlan> builder)
     {
         builder.Ignore(x => x.Alterations);

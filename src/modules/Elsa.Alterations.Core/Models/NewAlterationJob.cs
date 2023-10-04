@@ -1,4 +1,4 @@
-namespace Elsa.Alterations.Core.Contracts;
+namespace Elsa.Alterations.Core.Models;
 
 public class NewAlterationJob
 {

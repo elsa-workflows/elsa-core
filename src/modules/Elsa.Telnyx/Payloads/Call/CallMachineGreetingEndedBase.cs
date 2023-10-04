@@ -1,3 +1,5 @@
+using Elsa.Telnyx.Payloads.Abstract;
+
 namespace Elsa.Telnyx.Payloads.Call;
 
 public record CallMachineGreetingEndedBase : CallPayload

@@ -11,13 +11,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// </summary>
 public class EFCoreAlterationPlanStore : IAlterationPlanStore
 {
-    private readonly EntityStore<AlterationsDbContext, AlterationPlan> _store;
+    private readonly EntityStore<AlterationsElsaDbContext, AlterationPlan> _store;
     private readonly IAlterationSerializer _alterationSerializer;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreAlterationPlanStore(EntityStore<AlterationsDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer)
+    public EFCoreAlterationPlanStore(EntityStore<AlterationsElsaDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer)
     {
         _store = store;
         _alterationSerializer = alterationSerializer;
@@ -40,20 +40,20 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
         return await _store.CountAsync(filter.Apply, cancellationToken);
     }
 
-    private ValueTask OnSaveAsync(AlterationsDbContext dbContext, AlterationPlan entity, CancellationToken cancellationToken)
+    private ValueTask OnSaveAsync(AlterationsElsaDbContext elsaDbContext, AlterationPlan entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedAlterations").CurrentValue = _alterationSerializer.SerializeMany(entity.Alterations);
-        dbContext.Entry(entity).Property("SerializedWorkflowInstanceIds").CurrentValue = JsonSerializer.Serialize(entity.WorkflowInstanceIds);
+        elsaDbContext.Entry(entity).Property("SerializedAlterations").CurrentValue = _alterationSerializer.SerializeMany(entity.Alterations);
+        elsaDbContext.Entry(entity).Property("SerializedWorkflowInstanceIds").CurrentValue = JsonSerializer.Serialize(entity.WorkflowInstanceIds);
         return default;
     }
 
-    private ValueTask OnLoadAsync(AlterationsDbContext dbContext, AlterationPlan? entity, CancellationToken cancellationToken)
+    private ValueTask OnLoadAsync(AlterationsElsaDbContext elsaDbContext, AlterationPlan? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
             return default;
 
-        var alterationsJson = dbContext.Entry(entity).Property<string>("SerializedAlterations").CurrentValue;
-        var workflowInstanceIdsJson = dbContext.Entry(entity).Property<string>("SerializedWorkflowInstanceIds").CurrentValue;
+        var alterationsJson = elsaDbContext.Entry(entity).Property<string>("SerializedAlterations").CurrentValue;
+        var workflowInstanceIdsJson = elsaDbContext.Entry(entity).Property<string>("SerializedWorkflowInstanceIds").CurrentValue;
         entity.Alterations = _alterationSerializer.DeserializeMany(alterationsJson).ToList();
         entity.WorkflowInstanceIds = JsonSerializer.Deserialize<string[]>(workflowInstanceIdsJson)!;
 

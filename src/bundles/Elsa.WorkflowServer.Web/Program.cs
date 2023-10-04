@@ -4,6 +4,7 @@ using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -149,7 +150,16 @@ services
                 http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-            .UseAlterations();
+            .UseAlterations(alterations =>
+            {
+                alterations.UseEntityFrameworkCore(ef =>
+                {
+                    if (useSqlServer)
+                        ef.UseSqlServer(sqlServerConnectionString);
+                    else
+                        ef.UseSqlite(sqliteConnectionString);
+                });
+            });
 
         // Initialize drop-ins.
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));

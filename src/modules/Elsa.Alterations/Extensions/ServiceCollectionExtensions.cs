@@ -2,7 +2,6 @@ using Elsa.Alterations.AlterationHandlers;
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Extensions;
 using Elsa.Alterations.Features;
-using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Extensions;

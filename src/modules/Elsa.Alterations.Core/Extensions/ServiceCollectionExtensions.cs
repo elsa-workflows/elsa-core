@@ -3,7 +3,6 @@ using Elsa.Alterations.Core.Options;
 using Elsa.Alterations.Core.Serialization;
 using Elsa.Alterations.Core.Services;
 using Elsa.Common.Contracts;
-using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Core.Extensions;

@@ -16,7 +16,7 @@ public abstract class MySqlDesignTimeDbContextFactoryBase<TDbContext> : IDesignT
         var connectionString = args.Any() ? args[0] : "Data Source=local";
 
         var builder = new DbContextOptionsBuilder<TDbContext>();
-        builder.UseElsaMySql(connectionString);
+        builder.UseElsaMySql(GetType().Assembly, connectionString);
 
         return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }

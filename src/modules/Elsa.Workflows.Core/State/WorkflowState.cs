@@ -1,4 +1,3 @@
-using System.Collections;
 using System.ComponentModel.DataAnnotations.Schema;
 using Elsa.Workflows.Core.Models;
 

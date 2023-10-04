@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Serialization.Converters;
 
-namespace Elsa.Workflows.Api.Endpoints.Events.Trigger;
+namespace Elsa.Workflows.Api.Endpoints.Events.TriggerAuthenticated;
 
 internal class Request
 {

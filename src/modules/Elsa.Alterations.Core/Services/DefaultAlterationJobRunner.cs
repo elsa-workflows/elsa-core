@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;

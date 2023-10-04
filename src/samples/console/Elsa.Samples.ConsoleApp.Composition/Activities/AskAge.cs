@@ -4,6 +4,8 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
+namespace Elsa.Samples.ConsoleApp.Composition.Activities;
+
 public class AskAge : Composite<int>
 {
     private readonly Variable<string> _age = new();

@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(CoreAlterationsFeature))]
-public class EFCoreAlterationPersistenceFeature : PersistenceFeatureBase<AlterationsDbContext>
+public class EFCoreAlterationPersistenceFeature : PersistenceFeatureBase<AlterationsElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreAlterationPersistenceFeature(IModule module) : base(module)

@@ -1,4 +1,6 @@
 ﻿using Elsa.Telnyx.Attributes;
+using Elsa.Telnyx.Models;
+using Elsa.Telnyx.Payloads.Abstract;
 
 namespace Elsa.Telnyx.Payloads.Call;
 
