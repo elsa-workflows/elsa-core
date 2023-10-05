@@ -11,7 +11,6 @@ public interface IAlterationHandler
     /// Returns <c>true</c> if the alteration is supported by this handler; otherwise, <c>false</c>.
     /// </summary>
     /// <param name="alteration"></param>
-    /// <returns></returns>
     bool CanHandle(IAlteration alteration);
     
     /// <summary>

@@ -7,5 +7,4 @@ namespace Elsa.Alterations.Core.Abstractions;
 /// </summary>
 public abstract class AlterationBase : IAlteration
 {
-    
 }

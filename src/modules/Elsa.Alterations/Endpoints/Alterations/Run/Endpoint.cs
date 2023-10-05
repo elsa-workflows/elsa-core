@@ -1,7 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Endpoints.Alterations.Run;
@@ -13,10 +11,10 @@ namespace Elsa.Alterations.Endpoints.Alterations.Run;
 public class Run : ElsaEndpoint<Request, Response>
 {
     private readonly IAlterationRunner _alterationRunner;
-    private readonly IWorkflowDispatcher _workflowDispatcher;
+    private readonly IAlteredWorkflowDispatcher _workflowDispatcher;
 
     /// <inheritdoc />
-    public Run(IAlterationRunner alterationRunner, IWorkflowDispatcher workflowDispatcher)
+    public Run(IAlterationRunner alterationRunner, IAlteredWorkflowDispatcher workflowDispatcher)
     {
         _alterationRunner = alterationRunner;
         _workflowDispatcher = workflowDispatcher;
@@ -36,8 +34,7 @@ public class Run : ElsaEndpoint<Request, Response>
         var results = await _alterationRunner.RunAsync(request.WorkflowInstanceIds, request.Alterations, cancellationToken);
 
         // Schedule each successfully updated workflow.
-        foreach (var result in results.Where(x => x.IsSuccessful)) 
-            await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(result.WorkflowInstanceId), cancellationToken);
+        await _workflowDispatcher.DispatchAsync(results, cancellationToken);
 
         // Write response.
         var response = new Response(results);
