@@ -50,7 +50,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(query => Filter(query, filter), cancellationToken).ToList().AsEnumerable();
+        await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
