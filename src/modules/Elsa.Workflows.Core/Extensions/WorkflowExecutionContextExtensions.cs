@@ -49,7 +49,7 @@ public static class WorkflowExecutionContextExtensions
     /// </summary>
     public static ActivityWorkItem ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IDictionary<string, object>? input = default)
     {
-        var workItem = new ActivityWorkItem(activityExecutionContext.Activity, input: input);
+        var workItem = new ActivityWorkItem(activityExecutionContext.Activity, input: input, existingActivityExecutionContext: activityExecutionContext);
         workflowExecutionContext.Scheduler.Schedule(workItem);
         return workItem;
     }
