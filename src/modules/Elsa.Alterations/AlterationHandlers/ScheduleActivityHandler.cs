@@ -2,6 +2,7 @@ using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Signals;
 
 namespace Elsa.Alterations.AlterationHandlers;
@@ -21,6 +22,21 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         if (activity == null)
         {
             context.Fail($"Activity with ID {activityId} not found");
+            return;
+        }
+        
+        // Check to see if there's an existing activity execution context for the activity.
+        var existingActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == activityId);
+        
+        if (existingActivityExecutionContext != null)
+        {
+            // If the activity is in a faulted state, reset it to Running.
+            if (existingActivityExecutionContext.Status == ActivityStatus.Faulted)
+                existingActivityExecutionContext.Status = ActivityStatus.Running;
+            
+            // Schedule the activity execution context.
+            workflowExecutionContext.ScheduleActivityExecutionContext(existingActivityExecutionContext);
+            context.Succeed();
             return;
         }
         
