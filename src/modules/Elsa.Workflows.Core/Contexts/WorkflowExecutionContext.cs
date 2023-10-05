@@ -221,7 +221,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
     /// </summary>
-    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts.Where(x => !x.IsCompleted).ToList();
+    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null).ToList();
 
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
