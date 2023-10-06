@@ -79,12 +79,47 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         workflowExecutionContext.Properties = state.Properties;
     }
-    
+
     private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
+        var activityExecutionContexts = state.ActivityExecutionContexts
+            .Select(CreateActivityExecutionContext)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+        var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
+
+        // Reconstruct hierarchy.
+        foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
+        {
+            var parentContext = lookup[contextState.ParentContextId!];
+            var contextId = contextState.Id;
+            
+            if (lookup.TryGetValue(contextId, out var context))
+            {
+                context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
+                context.ParentActivityExecutionContext = parentContext;
+            }
+        }
+
+        // Assign root expression execution context.
+        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.ParentContext == null);
+
+        foreach (var rootActivityExecutionContext in rootActivityExecutionContexts)
+            rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
+
+        workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
+        return;
+
+        ActivityExecutionContext? CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
         {
             var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
+
+            // Activity can be null in case the workflow instance was migrated to a newer version that no longer contains this activity.
+            if (activity == null)
+                return null;
+
             var properties = activityExecutionContextState.Properties;
             var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
@@ -98,27 +133,6 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
             return activityExecutionContext;
         }
-
-        var activityExecutionContexts = state.ActivityExecutionContexts.Select(CreateActivityExecutionContext).ToList();
-        var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
-
-        // Reconstruct hierarchy.
-        foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
-        {
-            var parentContext = lookup[contextState.ParentContextId!];
-            var contextId = contextState.Id;
-            var context = lookup[contextId];
-            context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
-            context.ParentActivityExecutionContext = parentContext;
-        }
-
-        // Assign root expression execution context.
-        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.ParentContext == null);
-
-        foreach (var rootActivityExecutionContext in rootActivityExecutionContexts)
-            rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
-
-        workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
     }
 
     private static void ApplyCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -127,7 +141,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         {
             var ownerActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
             var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
-            
+
             if (childNode == null)
                 continue;
 
