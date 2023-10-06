@@ -46,7 +46,7 @@ public class DefaultAlterationJobRunner : IAlterationJobRunner
         job.Log = result.Log.LogEntries.ToList();
         job.CompletedAt = _systemClock.UtcNow;
         await _alterationJobStore.SaveAsync(job, cancellationToken);
-        await _notificationSender.SendAsync(new AlterationJobCompleted(job), cancellationToken);
+        await _notificationSender.SendAsync(new AlterationJobCompleted(job, result.WorkflowHasScheduledWork), cancellationToken);
 
         return job;
     }

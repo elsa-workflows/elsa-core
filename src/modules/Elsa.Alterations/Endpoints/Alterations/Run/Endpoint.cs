@@ -33,7 +33,7 @@ public class Run : ElsaEndpoint<Request, Response>
         // Run the alterations.
         var results = await _alterationRunner.RunAsync(request.WorkflowInstanceIds, request.Alterations, cancellationToken);
 
-        // Schedule each successfully updated workflow.
+        // Schedule each successfully updated workflow containing scheduled work.
         await _workflowDispatcher.DispatchAsync(results, cancellationToken);
 
         // Write response.

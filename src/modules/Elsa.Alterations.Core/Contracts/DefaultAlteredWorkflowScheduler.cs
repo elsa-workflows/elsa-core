@@ -20,7 +20,7 @@ public class DefaultAlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
     /// <inheritdoc />
     public async Task DispatchAsync(IEnumerable<RunAlterationsResult> results, CancellationToken cancellationToken = default)
     {
-        foreach (var result in results.Where(x => x.IsSuccessful)) 
+        foreach (var result in results.Where(x => x is { IsSuccessful: true, WorkflowHasScheduledWork: true })) 
             await DispatchAsync(result, cancellationToken);
     }
 

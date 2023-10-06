@@ -1,4 +1,5 @@
 using Elsa.Alterations.Core.Contracts;
+// ReSharper disable CollectionNeverUpdated.Global
 
 namespace Elsa.Alterations.Endpoints.Alterations.Run;
 

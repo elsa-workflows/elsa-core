@@ -30,6 +30,10 @@ public class ResumeWorkflowInstance : INotificationHandler<AlterationJobComplete
         if(job.Status != AlterationJobStatus.Completed)
             return;
         
+        // Check if the workflow contains scheduled work.
+        if(!notification.WorkflowContainsScheduledWork)
+            return;
+        
         // Resume workflow instance.
         await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(job.WorkflowInstanceId), cancellationToken);
     }

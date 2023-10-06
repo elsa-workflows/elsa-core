@@ -55,6 +55,9 @@ public abstract class ConfigurableSerializer
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+        
+        options.Converters.Add(new JsonStringEnumConverter());
+        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
 
         return options;
     }
@@ -71,8 +74,6 @@ public abstract class ConfigurableSerializer
     /// </summary>
     protected virtual void AddConverters(JsonSerializerOptions options)
     {
-        options.Converters.Add(new JsonStringEnumConverter());
-        options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
@@ -20,7 +21,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly IVariablePersistenceManager _variablePersistenceManager;
     private readonly IActivityInvoker _activityInvoker;
     private readonly IServiceProvider _serviceProvider;
@@ -33,7 +33,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         IWorkflowRuntime workflowRuntime,
         IWorkflowDispatcher workflowDispatcher,
         IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         IVariablePersistenceManager variablePersistenceManager,
         IActivityInvoker activityInvoker,
         IServiceProvider serviceProvider,
@@ -42,7 +41,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         _workflowRuntime = workflowRuntime;
         _workflowDispatcher = workflowDispatcher;
         _workflowDefinitionService = workflowDefinitionService;
-        _workflowExecutionContextFactory = workflowExecutionContextFactory;
         _variablePersistenceManager = variablePersistenceManager;
         _activityInvoker = activityInvoker;
         _serviceProvider = serviceProvider;
@@ -64,7 +62,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             throw new Exception("Workflow definition not found");
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        var workflowExecutionContext = await _workflowExecutionContextFactory.CreateAsync(_serviceProvider, workflow, workflowState.Id, workflowState, cancellationTokens: cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 

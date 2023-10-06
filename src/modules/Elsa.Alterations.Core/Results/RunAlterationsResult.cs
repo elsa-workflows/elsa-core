@@ -26,6 +26,11 @@ public class RunAlterationsResult
     /// A log of the alterations that were run.
     /// </summary>
     public AlterationLog Log { get; set; }
+
+    /// <summary>
+    /// A flag indicating whether the workflow has scheduled work.
+    /// </summary>
+    public bool WorkflowHasScheduledWork { get; set; }
     
     /// <summary>
     /// A flag indicating whether the alterations have succeeded.
