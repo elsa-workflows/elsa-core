@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 
 # Define the modules to update
-mods=("Alterations")
-# mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
+# mods=("Alterations")
+mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
 
 # Define the list of providers
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
@@ -21,7 +21,7 @@ connStrings=(
 for module in "${mods[@]}"; do
     # Loop through each provider
     for provider in "${providers[@]}"; do
-        providerPath="./src/modules/Elsa.EntityFrameworkCore.Providers"
+        providerPath="./src/modules/Elsa.EntityFrameworkCore.$provider"
         migrationsPath="Migrations/$module"
     
         echo "Updating migrations for $provider..."
