@@ -61,7 +61,7 @@ internal class TriggerIncomingCallActivities : INotificationHandler<TelnyxWebhoo
             ActivityTypeName = activityTypeName,
             BookmarkPayload = toBookmarkPayload,
             Input = input
-        }, , cancellationToken);
+        }, cancellationToken);
 
         // If any workflows were triggered, don't trigger the catch-all workflows.
         if (fromResults.WorkflowExecutionResults.Any() || toResults.WorkflowExecutionResults.Any())
