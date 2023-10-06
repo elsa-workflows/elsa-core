@@ -8,7 +8,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Providers\Elsa.EntityFrameworkCore.Providers.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>

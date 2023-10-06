@@ -11,7 +11,6 @@
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Providers\Elsa.EntityFrameworkCore.Providers.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper\Elsa.Dapper.csproj"/>

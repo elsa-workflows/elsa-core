@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -18,4 +19,8 @@ public static class ElsaDbContextOptionsExtensions
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(new ElsaDbContextOptionsExtension(options));
         return optionsBuilder;
     }
+
+    public static string GetMigrationsAssemblyName(this ElsaDbContextOptions? options, Assembly migrationsAssembly) => options?.MigrationsAssemblyName ?? migrationsAssembly.GetName().Name!;
+    public static string GetMigrationsHistoryTableName(this ElsaDbContextOptions? options) => options?.MigrationsHistoryTableName ?? ElsaDbContextBase.MigrationsHistoryTable;
+    public static string GetSchemaName(this ElsaDbContextOptions? options) => options?.SchemaName ?? ElsaDbContextBase.ElsaSchema;
 }

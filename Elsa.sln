@@ -249,7 +249,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Background
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Common", "src\modules\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj", "{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Providers", "src\modules\Elsa.EntityFrameworkCore.Providers\Elsa.EntityFrameworkCore.Providers.csproj", "{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.Sqlite", "src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj", "{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.SqlServer", "src\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj", "{1C84408D-A0A7-4513-AD9A-1BA137ABE62C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.MySql", "src\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj", "{E4300D97-1D53-4029-9435-483FB7EC9621}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj", "{84AB9951-3DBF-43A4-8F5D-AEED1102CE88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -621,10 +627,22 @@ Global
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C84408D-A0A7-4513-AD9A-1BA137ABE62C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C84408D-A0A7-4513-AD9A-1BA137ABE62C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C84408D-A0A7-4513-AD9A-1BA137ABE62C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C84408D-A0A7-4513-AD9A-1BA137ABE62C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4300D97-1D53-4029-9435-483FB7EC9621}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4300D97-1D53-4029-9435-483FB7EC9621}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4300D97-1D53-4029-9435-483FB7EC9621}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4300D97-1D53-4029-9435-483FB7EC9621}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84AB9951-3DBF-43A4-8F5D-AEED1102CE88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84AB9951-3DBF-43A4-8F5D-AEED1102CE88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84AB9951-3DBF-43A4-8F5D-AEED1102CE88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84AB9951-3DBF-43A4-8F5D-AEED1102CE88}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
@@ -737,6 +755,9 @@ Global
 		{CC7DE119-736D-4FC5-85DC-70A6770749F6} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{444760FF-1D1A-4B7B-94AA-EA5FCC81BE6B} = {CF3DA5F1-F98D-49C9-A980-27E570B38B8D}
 		{6F30A941-6EB6-4C9B-BF89-9BBAB757B491} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
-		{F2E802B3-0F4C-4BEE-8F8B-3C25B034B413} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{EFE4A814-F58D-4C19-8F7F-B95F4EE343F0} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{1C84408D-A0A7-4513-AD9A-1BA137ABE62C} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{E4300D97-1D53-4029-9435-483FB7EC9621} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
+		{84AB9951-3DBF-43A4-8F5D-AEED1102CE88} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 	EndGlobalSection
 EndGlobal

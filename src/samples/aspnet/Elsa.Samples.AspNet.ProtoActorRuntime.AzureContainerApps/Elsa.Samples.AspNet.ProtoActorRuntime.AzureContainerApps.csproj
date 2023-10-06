@@ -15,7 +15,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Providers\Elsa.EntityFrameworkCore.Providers.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj" />

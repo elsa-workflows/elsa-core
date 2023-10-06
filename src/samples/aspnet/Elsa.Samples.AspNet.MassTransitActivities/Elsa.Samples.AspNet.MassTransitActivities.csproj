@@ -14,6 +14,5 @@
         <ProjectReference Include="..\..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj" />
-        <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Providers\Elsa.EntityFrameworkCore.Providers.csproj" />
     </ItemGroup>
 </Project>
