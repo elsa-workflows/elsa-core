@@ -105,7 +105,7 @@ public class TransferCall : Activity<CallPayload>
 
     private ValueTask InitiatedAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallInitiatedPayload>();
+        var payload = context.GetWorkflowInput<CallInitiatedPayload>();
         var callControlId = payload.CallControlId;
         var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId);
         var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, callControlId);
@@ -116,14 +116,14 @@ public class TransferCall : Activity<CallPayload>
     
     private async ValueTask AnsweredAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallAnsweredPayload>();
+        var payload = context.GetWorkflowInput<CallAnsweredPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Transferred");
     }
 
     private async ValueTask HangupAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallHangupPayload>();
+        var payload = context.GetWorkflowInput<CallHangupPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Hangup");
     }

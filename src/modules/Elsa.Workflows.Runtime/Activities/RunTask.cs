@@ -94,7 +94,7 @@ public class RunTask : Activity<object>, IBookmarksPersistedHandler
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var input = context.GetInput<object>(InputKey);
+        var input = context.GetWorkflowInput<object>(InputKey);
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }

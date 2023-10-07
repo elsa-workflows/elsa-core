@@ -42,6 +42,16 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         // Evaluate input properties.
         await EvaluateInputPropertiesAsync(context);
 
+        // Check if the activity can be executed.
+        if (!await context.Activity.CanExecuteAsync(context))
+        {
+            context.Status = ActivityStatus.Pending;
+            context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
+            return;
+        }
+
+        context.Status = ActivityStatus.Running;
+
         // Execute activity.
         await ExecuteActivityAsync(context);
 

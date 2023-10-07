@@ -54,7 +54,7 @@ public class WebhookEvent : Activity<Payload>
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
+        var input = context.GetWorkflowInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
         context.Set(Result, input.Data.Payload);
         await CompleteAsync(context);
     }

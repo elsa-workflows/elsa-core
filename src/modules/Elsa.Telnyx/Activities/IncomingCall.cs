@@ -63,7 +63,7 @@ public class IncomingCall : Trigger<CallInitiatedPayload>
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var webhookModel = context.GetInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
+        var webhookModel = context.GetWorkflowInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
         var callInitiatedPayload = (CallInitiatedPayload)webhookModel.Data.Payload;
 
         // Store webhook payload as output.

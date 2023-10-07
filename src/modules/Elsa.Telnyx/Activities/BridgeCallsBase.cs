@@ -79,7 +79,7 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallBridgedPayload>()!;
+        var payload = context.GetWorkflowInput<CallBridgedPayload>()!;
         var callControlIdA = CallControlIdA.Get(context);
         var callControlIdB = CallControlIdB.Get(context);;
 

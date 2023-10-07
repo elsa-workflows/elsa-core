@@ -73,6 +73,16 @@ public static class ExpressionExecutionContextExtensions
     public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
     
     /// <summary>
+    /// Returns input sent to the workflow.
+    /// </summary>
+    public static T GetWorkflowInput<T>(this ExpressionExecutionContext context, string key) => context.GetActivityExecutionContext().GetWorkflowInput<T>(key);
+    
+    /// <summary>
+    /// Returns input sent to the workflow.
+    /// </summary>
+    public static T GetWorkflowInput<T>(this ExpressionExecutionContext context) => context.GetActivityExecutionContext().GetWorkflowInput<T>();
+    
+    /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
     public static T? GetInput<T>(this ExpressionExecutionContext context, string key) => context.GetInput(key).ConvertTo<T>();

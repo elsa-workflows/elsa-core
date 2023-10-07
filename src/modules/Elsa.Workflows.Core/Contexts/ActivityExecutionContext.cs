@@ -42,6 +42,7 @@ public class ActivityExecutionContext : IExecutionContext
         Activity = activity;
         ActivityDescriptor = activityDescriptor;
         StartedAt = startedAt;
+        Status = ActivityStatus.Pending;
         Tag = tag;
         CancellationToken = cancellationToken;
         Id = Guid.NewGuid().ToString();
@@ -140,7 +141,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
     /// </summary>
-    public ActivityNode? ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
+    public ActivityNode ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity)!;
 
     /// <summary>
     /// Returns the global node ID for the current activity within the graph.

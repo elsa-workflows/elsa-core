@@ -40,7 +40,7 @@ public class CallHangup : Activity<CallHangupPayload>
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<CallHangupPayload>(WebhookSerializerOptions.Create());
+        var input = context.GetWorkflowInput<CallHangupPayload>(WebhookSerializerOptions.Create());
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }
