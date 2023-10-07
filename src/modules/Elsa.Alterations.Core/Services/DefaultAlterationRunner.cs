@@ -16,10 +16,7 @@ public class DefaultAlterationRunner : IAlterationRunner
 {
     private readonly IEnumerable<IAlterationHandler> _handlers;
     private readonly IWorkflowRuntime _workflowRuntime;
-
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
-
-    //private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly ISystemClock _systemClock;
     private readonly IServiceProvider _serviceProvider;
@@ -31,7 +28,6 @@ public class DefaultAlterationRunner : IAlterationRunner
         IEnumerable<IAlterationHandler> handlers,
         IWorkflowRuntime workflowRuntime,
         IWorkflowDefinitionService workflowDefinitionService,
-        //IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         IWorkflowStateExtractor workflowStateExtractor,
         ISystemClock systemClock,
         IServiceProvider serviceProvider)
@@ -39,7 +35,6 @@ public class DefaultAlterationRunner : IAlterationRunner
         _handlers = handlers;
         _workflowRuntime = workflowRuntime;
         _workflowDefinitionService = workflowDefinitionService;
-        //_workflowExecutionContextFactory = workflowExecutionContextFactory;
         _workflowStateExtractor = workflowStateExtractor;
         _systemClock = systemClock;
         _serviceProvider = serviceProvider;
