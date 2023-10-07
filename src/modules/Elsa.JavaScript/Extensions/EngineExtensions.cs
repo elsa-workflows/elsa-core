@@ -13,4 +13,9 @@ public static class EngineExtensions
     /// Register the specified type <c>T</c> with the engine.
     /// </summary>
     public static void RegisterType<T>(this Engine engine) => engine.SetValue(typeof(T).Name, TypeReference.CreateTypeReference(engine, typeof(T)));
+    
+    /// <summary>
+    /// Register the specified type <c>T</c> with the engine.
+    /// </summary>
+    public static void RegisterType(this Engine engine, Type type) => engine.SetValue(type.Name, TypeReference.CreateTypeReference(engine, type));
 }

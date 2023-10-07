@@ -100,6 +100,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
 
+        // Invoke registered configuration callback.
+        _jintOptions.ConfigureEngineCallback(engine, context);
+
         // Allow listeners invoked by the mediator to configure the engine.
         await _mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
