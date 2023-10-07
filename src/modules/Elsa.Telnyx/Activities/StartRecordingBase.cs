@@ -101,7 +101,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallRecordingSavedPayload>();
+        var payload = context.GetWorkflowInput<CallRecordingSavedPayload>();
         context.Set(Result, payload);
         await HandleCallRecordingSavedAsync(context);
     }

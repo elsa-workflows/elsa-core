@@ -181,7 +181,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallGatherEndedPayload>();
+        var payload = context.GetWorkflowInput<CallGatherEndedPayload>();
         var outcome = payload.Status == "valid" ? "Valid input" : "Invalid input";
         context.Set(Result, payload);
         await context.CompleteActivityWithOutcomesAsync(outcome);

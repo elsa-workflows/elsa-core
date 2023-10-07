@@ -89,14 +89,14 @@ public class DialAndWait : Activity<CallPayload>
 
     private async ValueTask OnCallAnswered(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallAnsweredPayload>();
+        var payload = context.GetWorkflowInput<CallAnsweredPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Answered");
     }
     
     private async ValueTask OnCallHangup(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallHangupPayload>();
+        var payload = context.GetWorkflowInput<CallHangupPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Hangup");
     }

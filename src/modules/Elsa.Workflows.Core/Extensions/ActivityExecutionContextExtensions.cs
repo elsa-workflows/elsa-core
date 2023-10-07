@@ -29,7 +29,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
+    public static bool TryGetWorkflowInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
 
@@ -46,12 +46,12 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetWorkflowInput<T>(typeof(T).Name, serializerOptions);
 
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
         return context.WorkflowInput[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;

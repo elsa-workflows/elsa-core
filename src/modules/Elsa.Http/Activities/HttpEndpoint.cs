@@ -198,7 +198,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(Result, request);
 
         // Read route data, if any.
-        var path = context.GetInput<PathString>(RequestPathInputKey);
+        var path = context.GetWorkflowInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
 
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);

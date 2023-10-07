@@ -40,7 +40,7 @@ public class CallAnswered : Activity<CallAnsweredPayload>
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<CallAnsweredPayload>(WebhookSerializerOptions.Create());
+        var input = context.GetWorkflowInput<CallAnsweredPayload>(WebhookSerializerOptions.Create());
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }
