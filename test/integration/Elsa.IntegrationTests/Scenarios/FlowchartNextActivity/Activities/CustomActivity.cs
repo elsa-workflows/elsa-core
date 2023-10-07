@@ -9,5 +9,5 @@ public class CustomActivity : CodeActivity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         await context.CompleteActivityAsync();
-    }    
+    }
 }

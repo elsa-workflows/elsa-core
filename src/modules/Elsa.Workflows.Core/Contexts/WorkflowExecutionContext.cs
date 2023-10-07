@@ -157,7 +157,7 @@ public class WorkflowExecutionContext : IExecutionContext
 
         workflowExecutionContext.MemoryRegister = workflow.CreateRegister();
         workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
-        
+
         await workflowExecutionContext.SetWorkflowAsync(workflow);
         return workflowExecutionContext;
     }
@@ -339,7 +339,9 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
     /// </summary>
-    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null).ToList();
+    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts
+        .Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null && x.Status != ActivityStatus.Pending)
+        .ToList();
 
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
@@ -363,7 +365,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// The expression execution context for the current workflow execution.
     /// </summary>
-    public ExpressionExecutionContext? ExpressionExecutionContext { get; private set; } = default!;
+    public ExpressionExecutionContext? ExpressionExecutionContext { get; private set; }
 
     /// <inheritdoc />
     public IEnumerable<Variable> Variables => Workflow.Variables;
@@ -450,7 +452,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
     public ActivityNode? FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
-    
+
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
     /// </summary>

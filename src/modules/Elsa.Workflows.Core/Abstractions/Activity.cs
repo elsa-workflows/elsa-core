@@ -89,6 +89,23 @@ public abstract class Activity : IActivity, ISignalHandler
     public ICollection<IBehavior> Behaviors { get; } = new List<IBehavior>();
 
     /// <summary>
+    /// Override this method to return a value indicating whether the activity can execute.
+    /// </summary>
+    protected virtual ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context)
+    {
+        var result = CanExecute(context);
+        return new(result);
+    }
+    
+    /// <summary>
+    /// Override this method to return a value indicating whether the activity can execute.
+    /// </summary>
+    protected virtual bool CanExecute(ActivityExecutionContext context)
+    {
+        return true;
+    }
+
+    /// <summary>
     /// Override this method to implement activity-specific logic.
     /// </summary>
     protected virtual ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -186,6 +203,11 @@ public abstract class Activity : IActivity, ISignalHandler
     protected async ValueTask CompleteAsync(ActivityExecutionContext context)
     {
         await context.CompleteActivityAsync();
+    }
+    
+    async ValueTask<bool> IActivity.CanExecuteAsync(ActivityExecutionContext context)
+    {
+        return await CanExecuteAsync(context);
     }
 
     async ValueTask IActivity.ExecuteAsync(ActivityExecutionContext context)

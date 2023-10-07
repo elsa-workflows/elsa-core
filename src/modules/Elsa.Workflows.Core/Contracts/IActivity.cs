@@ -44,6 +44,11 @@ public interface IActivity
     IDictionary<string, object> Metadata { get; set; }
     
     /// <summary>
+    /// Returns a value indicating whether the activity can execute.
+    /// </summary>
+    ValueTask<bool> CanExecuteAsync(ActivityExecutionContext context);
+    
+    /// <summary>
     /// Invoked when the activity executes.
     /// </summary>
     ValueTask ExecuteAsync(ActivityExecutionContext context);
