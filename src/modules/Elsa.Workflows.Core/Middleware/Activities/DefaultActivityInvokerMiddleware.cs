@@ -46,7 +46,7 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         if (!await context.Activity.CanExecuteAsync(context))
         {
             context.Status = ActivityStatus.Pending;
-            context.AddExecutionLogEntry("Precondition Failed", $"Cannot execute at this time");
+            context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
 
