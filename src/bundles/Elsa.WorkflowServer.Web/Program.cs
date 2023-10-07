@@ -15,7 +15,6 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
-using Elsa.WorkflowServer.Web;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -63,7 +62,6 @@ services
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
-            .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
@@ -100,10 +98,6 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-
-                management.AddVariableType<ApiResponse<User>>("Api");
-                management.AddVariableType<User>("Api");
-                management.AddVariableType<Support>("Api");
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -142,7 +136,10 @@ services
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
+            .UseJavaScript(js =>
+            {
+                js.JintOptions = options => options.AllowClrAccess = true;
+            })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
