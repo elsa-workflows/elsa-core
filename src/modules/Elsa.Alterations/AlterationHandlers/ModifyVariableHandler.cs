@@ -1,6 +1,7 @@
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
@@ -29,11 +30,24 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             return;
         }
 
-        await UpdateVariable(context, alteration, variable, cancellationToken);
+        var convertedValue = ConvertValue(variable, alteration.Value);
+        await UpdateVariable(context, variable, convertedValue, cancellationToken);
         context.Succeed();
     }
 
-    private async Task UpdateVariable(AlterationHandlerContext handlerContext, ModifyVariable alteration, Variable variable, CancellationToken cancellationToken)
+    private object? ConvertValue(Variable variable, object? value)
+    {
+        var variableType = variable.GetType();
+        
+        // If the variable has a type, convert the value into that type.
+        if(variableType.GenericTypeArguments.Length != 1)
+            return value;
+        
+        var type = variableType.GenericTypeArguments[0];
+        return value.ConvertTo(type);
+    }
+
+    private async Task UpdateVariable(AlterationHandlerContext handlerContext, Variable variable, object? value, CancellationToken cancellationToken)
     {
         var variableStorage = variable.StorageDriverType ?? typeof(WorkflowStorageDriver);
         var storageDriverManager = handlerContext.ServiceProvider.GetRequiredService<IStorageDriverManager>();
@@ -47,9 +61,8 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         }
         
         var storageDriverContext = new StorageDriverContext(activityExecutionContext, cancellationToken);
-        var newValue = alteration.Value;
         var stateId = GetStateId(variable);
-        await storageDriver.WriteAsync(stateId, newValue!, storageDriverContext);
+        await storageDriver.WriteAsync(stateId, value!, storageDriverContext);
     }
 
     private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationHandlerContext context, Variable variable)
