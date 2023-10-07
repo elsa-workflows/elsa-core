@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -6,7 +7,6 @@ using Elsa.Http.Features;
 using Elsa.JavaScript.Features;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Serialization;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
 

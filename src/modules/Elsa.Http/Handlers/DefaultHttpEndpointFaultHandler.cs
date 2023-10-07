@@ -1,9 +1,7 @@
 using Elsa.Http.Models;
 using Microsoft.AspNetCore.Http;
-using System.Net.Mime;
 using Elsa.Http.Contracts;
 using Elsa.Http.Exceptions;
-using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Http.Handlers;
 

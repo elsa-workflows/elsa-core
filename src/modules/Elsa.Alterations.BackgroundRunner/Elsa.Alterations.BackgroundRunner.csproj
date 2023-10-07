@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides alteration background job runners.
+        </Description>
+        <PackageTags>elsa module alterations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
+    </ItemGroup>
+
+</Project>

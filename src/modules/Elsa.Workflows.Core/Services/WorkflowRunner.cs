@@ -19,7 +19,6 @@ public class WorkflowRunner : IWorkflowRunner
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly ISystemClock _systemClock;
     private readonly INotificationSender _notificationSender;
 
@@ -32,7 +31,6 @@ public class WorkflowRunner : IWorkflowRunner
         IWorkflowStateExtractor workflowStateExtractor,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
-        IWorkflowExecutionContextFactory workflowExecutionContextFactory,
         ISystemClock systemClock,
         INotificationSender notificationSender)
     {
@@ -41,7 +39,6 @@ public class WorkflowRunner : IWorkflowRunner
         _workflowStateExtractor = workflowStateExtractor;
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
-        _workflowExecutionContextFactory = workflowExecutionContextFactory;
         _systemClock = systemClock;
         _notificationSender = notificationSender;
     }
@@ -96,7 +93,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, instanceId, correlationId, default, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(scope.ServiceProvider, workflow, instanceId, correlationId, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -114,7 +111,7 @@ public class WorkflowRunner : IWorkflowRunner
         var input = options?.Input;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await CreateWorkflowExecutionContextAsync(scope.ServiceProvider, workflow, workflowState.Id, correlationId, workflowState, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(scope.ServiceProvider, workflow, workflowState, correlationId, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
         var bookmarkId = options?.BookmarkId;
         var activityNodeId = options?.ActivityNodeId;
         var activityId = options?.ActivityId;
@@ -133,19 +130,19 @@ public class WorkflowRunner : IWorkflowRunner
         {
             // Schedule the activity.
             var activity = workflowExecutionContext.FindActivityByNodeId(activityNodeId);
-            workflowExecutionContext.ScheduleActivity(activity);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityHash != null)
         {
             // Schedule the activity.
             var activity = workflowExecutionContext.FindActivityByHash(activityHash);
-            workflowExecutionContext.ScheduleActivity(activity);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityId != null)
         {
             // Schedule the activity.
-            var activity = workflowExecutionContext.FindActivityByActivityId(activityId);
-            workflowExecutionContext.ScheduleActivity(activity);
+            var activity = workflowExecutionContext.FindActivityById(activityId);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityInstanceId != null)
         {
@@ -153,9 +150,13 @@ public class WorkflowRunner : IWorkflowRunner
             var activityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
             workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
         }
+        else if (workflowExecutionContext.Scheduler.HasAny)
+        {
+            // Do nothing. The scheduler already has activities to schedule.
+        }
         else
         {
-            // Schedule the workflow itself.
+            // Nothing was scheduled. Schedule the workflow itself.
             workflowExecutionContext.ScheduleWorkflow();
         }
 
@@ -196,16 +197,4 @@ public class WorkflowRunner : IWorkflowRunner
         // Return workflow execution result containing state + bookmarks.
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
-
-    private async Task<WorkflowExecutionContext> CreateWorkflowExecutionContextAsync(
-        IServiceProvider serviceProvider,
-        Workflow workflow,
-        string instanceId,
-        string? correlationId,
-        WorkflowState? workflowState,
-        IDictionary<string, object>? input,
-        ExecuteActivityDelegate? executeActivityDelegate,
-        string? triggerActivityId,
-        CancellationTokens cancellationTokens) =>
-        await _workflowExecutionContextFactory.CreateAsync(serviceProvider, workflow, instanceId, workflowState, input, correlationId, executeActivityDelegate, triggerActivityId, cancellationTokens);
 }

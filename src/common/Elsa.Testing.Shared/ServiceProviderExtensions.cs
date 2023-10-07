@@ -8,7 +8,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

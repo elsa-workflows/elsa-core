@@ -1,7 +1,6 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
 using Elsa.Http.Providers;

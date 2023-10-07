@@ -1,8 +1,11 @@
 using Elsa.Extensions;
+using Elsa.Samples.ConsoleApp.Composition.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
+
+namespace Elsa.Samples.ConsoleApp.Composition.Activities;
 
 public class AskDetails : Composite<Person>
 {

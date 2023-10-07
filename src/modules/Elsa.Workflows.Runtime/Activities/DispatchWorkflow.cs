@@ -110,7 +110,7 @@ public class DispatchWorkflow : Activity<object>
 
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
-        var input = context.Input;
+        var input = context.WorkflowInput;
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }

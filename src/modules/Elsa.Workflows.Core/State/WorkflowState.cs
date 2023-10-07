@@ -65,6 +65,11 @@ public class WorkflowState
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
     
     /// <summary>
+    /// A list of scheduled activities.
+    /// </summary>
+    public ICollection<ActivityWorkItemState> ScheduledActivities { get; set; } = new List<ActivityWorkItemState>();
+    
+    /// <summary>
     /// The current execution log sequence number.
     /// </summary>
     public long ExecutionLogSequence { get; set; }

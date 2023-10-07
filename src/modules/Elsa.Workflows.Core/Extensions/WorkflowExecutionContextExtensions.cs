@@ -15,61 +15,64 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the workflow for execution.
     /// </summary>
-    public static void ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext)
+    public static ActivityWorkItem ScheduleWorkflow(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = default)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
-        var workItem = new ActivityWorkItem(workflow.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow));
+        var workItem = new ActivityWorkItem(workflow, input: input);
         workflowExecutionContext.Scheduler.Schedule(workItem);
+        return workItem;
     }
-    
+
     /// <summary>
     /// Schedules the root activity of the workflow.
     /// </summary>
-    public static void ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext)
+    public static ActivityWorkItem ScheduleRoot(this WorkflowExecutionContext workflowExecutionContext, IDictionary<string, object>? input = default)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
         var workflow = workflowExecutionContext.Workflow;
-        var workItem = new ActivityWorkItem(workflow.Root.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, workflow.Root));
+        var workItem = new ActivityWorkItem(workflow.Root, input: input);
         workflowExecutionContext.Scheduler.Schedule(workItem);
+        return workItem;
     }
 
     /// <summary>
     /// Schedules the specified activity of the workflow.
     /// </summary>
-    public static void ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity)
+    public static ActivityWorkItem ScheduleActivity(this WorkflowExecutionContext workflowExecutionContext, IActivity activity, IDictionary<string, object>? input = default)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activity.Id, null, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activity));
+        var workItem = new ActivityWorkItem(activity, input: input);
         workflowExecutionContext.Scheduler.Schedule(workItem);
+        return workItem;
     }
-    
+
     /// <summary>
     /// Schedules the specified activity execution context of the workflow.
     /// </summary>
-    public static void ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext)
+    public static ActivityWorkItem ScheduleActivityExecutionContext(this WorkflowExecutionContext workflowExecutionContext, ActivityExecutionContext activityExecutionContext, IDictionary<string, object>? input = default)
     {
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(activityExecutionContext.Activity.Id, null, async () => await activityInvoker.InvokeAsync(activityExecutionContext));
+        var workItem = new ActivityWorkItem(activityExecutionContext.Activity, input: input, existingActivityExecutionContext: activityExecutionContext);
         workflowExecutionContext.Scheduler.Schedule(workItem);
+        return workItem;
     }
 
     /// <summary>
     /// Schedules the activity of the specified bookmark.
     /// </summary>
-    public static void ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark)
+    public static ActivityWorkItem? ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark, IDictionary<string, object>? input = default)
     {
         // Get the activity execution context that owns the bookmark.
         var bookmarkedActivityContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
-        
-        if(bookmarkedActivityContext == null)
-            return;
+
+        if (bookmarkedActivityContext == null)
+            return null;
 
         var bookmarkedActivity = bookmarkedActivityContext.Activity;
 
         // Schedule the activity to resume.
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var workItem = new ActivityWorkItem(bookmarkedActivity.Id, null, async () => await activityInvoker.InvokeAsync(bookmarkedActivityContext));
+        var workItem = new ActivityWorkItem(bookmarkedActivity)
+        {
+            ExistingActivityExecutionContext = bookmarkedActivityContext,
+            Input = input ?? new Dictionary<string, object>()
+        };
         workflowExecutionContext.Scheduler.Schedule(workItem);
 
         // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
@@ -77,40 +80,45 @@ public static class WorkflowExecutionContextExtensions
 
         // Store the bookmark to resume in the context.
         workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
+        
+        return workItem;
     }
 
     /// <summary>
     /// Schedules the specified activity.
     /// </summary>
-    public static void Schedule(
+    public static ActivityWorkItem Schedule(
         this WorkflowExecutionContext workflowExecutionContext,
         ActivityNode activityNode,
         ActivityExecutionContext owner,
         ScheduleWorkOptions? options = default)
     {
         var scheduler = workflowExecutionContext.Scheduler;
-        
-        if(options?.PreventDuplicateScheduling == true && scheduler.Any(x => x.ActivityId == activityNode.NodeId))
-            return;
-        
-        var activityInvoker = workflowExecutionContext.GetRequiredService<IActivityInvoker>();
-        var toolVersion = workflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
-        var activityId = toolVersion?.Major >= 3 ? activityNode.Activity.Id : activityNode.NodeId;
+
+        if (options?.PreventDuplicateScheduling == true)
+        {
+            var existingWorkItem = scheduler.Find(x => x.Activity.Id == activityNode.NodeId);
+
+            if (existingWorkItem != null)
+                return existingWorkItem;
+        }
+
+        var activity = activityNode.Activity;
         var tag = options?.Tag;
-        var activityInvocationOptions = new ActivityInvocationOptions(owner, tag, options?.Variables, options?.ReuseActivityExecutionContextId);
-        var workItem = new ActivityWorkItem(activityId, owner.Id, async () => await activityInvoker.InvokeAsync(workflowExecutionContext, activityNode.Activity, activityInvocationOptions), tag);
+        var workItem = new ActivityWorkItem(activity, owner, tag, options?.Variables, options?.ExistingActivityExecutionContext, options?.Input);
         var completionCallback = options?.CompletionCallback;
-        
+
         workflowExecutionContext.AddCompletionCallback(owner, activityNode, completionCallback, tag);
         scheduler.Schedule(workItem);
-        
+
+        return workItem;
     }
 
     /// <summary>
     /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
     public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActiveActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
-    
+
     /// <summary>
     /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.
     /// </summary>

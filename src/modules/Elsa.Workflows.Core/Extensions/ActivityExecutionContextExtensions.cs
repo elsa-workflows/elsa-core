@@ -33,7 +33,7 @@ public static class ActivityExecutionContextExtensions
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
 
-        if (context.Input.TryGetValue(key, out var v))
+        if (context.WorkflowInput.TryGetValue(key, out var v))
         {
             value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
             return true;
@@ -54,7 +54,7 @@ public static class ActivityExecutionContextExtensions
     public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
-        return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+        return context.WorkflowInput[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
     }
 
     /// <summary>
@@ -279,7 +279,6 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>
-    /// <returns></returns>
     public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
     {
         var current = context.ParentActivityExecutionContext;
@@ -288,6 +287,22 @@ public static class ActivityExecutionContextExtensions
         {
             yield return current;
             current = current.ParentActivityExecutionContext;
+        }
+    }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's descendants.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
+    {
+        var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendent in GetDescendents(child))
+                yield return descendent;
         }
     }
 

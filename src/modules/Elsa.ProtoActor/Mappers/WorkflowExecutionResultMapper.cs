@@ -1,5 +1,4 @@
 using Elsa.ProtoActor.Extensions;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Results;
 using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.ProtoBuf.WorkflowExecutionResponse;
 

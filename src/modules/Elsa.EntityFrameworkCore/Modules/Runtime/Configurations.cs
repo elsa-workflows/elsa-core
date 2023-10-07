@@ -1,3 +1,4 @@
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -61,6 +62,7 @@ public class Configurations :
         builder.Property<string>("SerializedException");
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedOutputs");
+        builder.Property(x => x.Status).HasConversion<string>();
         
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");

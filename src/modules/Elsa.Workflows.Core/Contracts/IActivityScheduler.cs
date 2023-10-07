@@ -36,6 +36,12 @@ public interface IActivityScheduler
     bool Any(Func<ActivityWorkItem, bool> predicate);
     
     /// <summary>
+    /// Returns the first work item matching the specified predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate to match.</param>
+    ActivityWorkItem? Find(Func<ActivityWorkItem, bool> predicate);
+    
+    /// <summary>
     /// Clears all work items from the scheduler.
     /// </summary>
     void Clear();

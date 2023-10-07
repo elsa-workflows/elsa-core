@@ -254,6 +254,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _version = workflowState.DefinitionVersion;
         _workflowHost = await CreateWorkflowHostAsync(workflowState, Context.CancellationToken);
 
+        SaveWorkflowInstance(workflowState);
         return new ImportWorkflowStateResponse();
     }
 

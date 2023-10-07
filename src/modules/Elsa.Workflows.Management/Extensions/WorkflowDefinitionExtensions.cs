@@ -1,6 +1,6 @@
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Management.Extensions;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Extension methods for <see cref="WorkflowDefinition"/>.

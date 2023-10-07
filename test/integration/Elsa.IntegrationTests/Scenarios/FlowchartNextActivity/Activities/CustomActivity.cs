@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;

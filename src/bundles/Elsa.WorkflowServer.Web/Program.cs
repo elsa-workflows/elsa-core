@@ -1,9 +1,10 @@
 using System.Text.Encodings.Web;
+using Elsa.Alterations.Extensions;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
-using Elsa.DropIns;
 using Elsa.DropIns.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -14,8 +15,6 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
-using Elsa.WorkflowServer.Web;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -63,7 +62,6 @@ services
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
-            .AddTypeAlias<ApiResponse<User>>("ApiResponse[User]")
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
@@ -100,10 +98,6 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-
-                management.AddVariableType<ApiResponse<User>>("Api");
-                management.AddVariableType<User>("Api");
-                management.AddVariableType<Support>("Api");
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -142,14 +136,27 @@ services
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript(js => js.JintOptions = options => options.AllowClrAccess = true)
+            .UseJavaScript(js =>
+            {
+                js.JintOptions = options => options.AllowClrAccess = true;
+            })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
                 http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
             })
-            .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options));
+            .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+            .UseAlterations(alterations =>
+            {
+                alterations.UseEntityFrameworkCore(ef =>
+                {
+                    if (useSqlServer)
+                        ef.UseSqlServer(sqlServerConnectionString);
+                    else
+                        ef.UseSqlite(sqliteConnectionString);
+                });
+            });
 
         // Initialize drop-ins.
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));

@@ -10,14 +10,14 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper\Elsa.Dapper.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Environments\Elsa.Environments.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj"/>
@@ -37,8 +37,12 @@
 
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.8.2"/>
-        <PackageReference Include="Proto.Persistence.Sqlite" Version="1.1.0"/>
-        <PackageReference Include="Proto.Persistence.SqlServer" Version="1.3.1-alpha.0.2"/>
+        <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
+        <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="App_Data\" />
     </ItemGroup>
     
 </Project>

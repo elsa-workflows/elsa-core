@@ -12,19 +12,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="LinqKit" Version="1.2.3" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.3" />
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.3" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.3" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
     </ItemGroup>
     
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />

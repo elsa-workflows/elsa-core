@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 
 namespace Elsa.Telnyx.Serialization;
 

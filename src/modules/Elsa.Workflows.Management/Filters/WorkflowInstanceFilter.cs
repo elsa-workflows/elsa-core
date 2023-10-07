@@ -81,8 +81,6 @@ public class WorkflowInstanceFilter
     /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
-    /// <param name="query">The query to apply the filter to.</param>
-    /// <returns>The filtered query.</returns>
     public IQueryable<WorkflowInstance> Apply(IQueryable<WorkflowInstance> query)
     {
         var filter = this;

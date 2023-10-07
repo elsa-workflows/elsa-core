@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Services;
@@ -27,9 +28,10 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             CreatedAt = workflowExecutionContext.CreatedAt
         };
 
-        ExportProperties(state, workflowExecutionContext);
+        ExtractProperties(state, workflowExecutionContext);
         ExtractActiveActivityExecutionContexts(state, workflowExecutionContext);
         ExtractCompletionCallbacks(state, workflowExecutionContext);
+        ExtractScheduledActivities(state, workflowExecutionContext);
 
         return state;
     }
@@ -64,10 +66,11 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         ApplyProperties(state, workflowExecutionContext);
         ApplyActivityExecutionContexts(state, workflowExecutionContext);
         ApplyCompletionCallbacks(state, workflowExecutionContext);
+        ApplyScheduledActivities(state, workflowExecutionContext);
         return workflowExecutionContext;
     }
 
-    private void ExportProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void ExtractProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         state.Properties = workflowExecutionContext.Properties;
     }
@@ -77,14 +80,68 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.Properties = state.Properties;
     }
 
+    private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    {
+        var activityExecutionContexts = state.ActivityExecutionContexts
+            .Select(CreateActivityExecutionContext)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
+
+        var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
+
+        // Reconstruct hierarchy.
+        foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
+        {
+            var parentContext = lookup[contextState.ParentContextId!];
+            var contextId = contextState.Id;
+            
+            if (lookup.TryGetValue(contextId, out var context))
+            {
+                context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
+                context.ParentActivityExecutionContext = parentContext;
+            }
+        }
+
+        // Assign root expression execution context.
+        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.ParentContext == null);
+
+        foreach (var rootActivityExecutionContext in rootActivityExecutionContexts)
+            rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
+
+        workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
+        return;
+
+        ActivityExecutionContext? CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
+        {
+            var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
+
+            // Activity can be null in case the workflow instance was migrated to a newer version that no longer contains this activity.
+            if (activity == null)
+                return null;
+
+            var properties = activityExecutionContextState.Properties;
+            var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
+            activityExecutionContext.Id = activityExecutionContextState.Id;
+            activityExecutionContext.Properties = properties;
+            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
+            activityExecutionContext.Status = activityExecutionContextState.Status;
+            activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
+            activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
+            activityExecutionContext.Tag = activityExecutionContextState.Tag;
+            activityExecutionContext.DynamicVariables = activityExecutionContextState.DynamicVariables;
+
+            return activityExecutionContext;
+        }
+    }
+
     private static void ApplyCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var ownerActivityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            var childNode = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.NodeId == completionCallbackEntry.ChildNodeId)?.ActivityNode;
+            var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
 
-            // If the child node is null, it means the completion callback was registered for an activity instance that has already completed or was canceled. 
             if (childNode == null)
                 continue;
 
@@ -92,6 +149,25 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
             var tag = completionCallbackEntry.Tag;
             workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
+        }
+    }
+
+    private void ApplyScheduledActivities(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    {
+        foreach (var activityWorkItemState in state.ScheduledActivities)
+        {
+            var activity = workflowExecutionContext.FindActivityById(activityWorkItemState.ActivityId);
+
+            if (activity == null)
+                continue;
+
+            var ownerContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == activityWorkItemState.OwnerContextId);
+            var existingActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityWorkItemState.ExistingActivityExecutionContextId);
+            var variables = activityWorkItemState.Variables;
+            var input = activityWorkItemState.Input;
+            var tag = activityWorkItemState.Tag;
+            var workItem = new ActivityWorkItem(activity, ownerContext, tag, variables, existingActivityExecutionContext, input);
+            workflowExecutionContext.Scheduler.Schedule(workItem);
         }
     }
 
@@ -124,7 +200,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 var parentContext = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == parentId);
 
                 if (parentContext == null)
-                    throw new Exception("We lost a context");
+                    throw new Exception("We lost a context. This could indicate a bug in a parent activity that completed before (some of) its child activities.");
             }
 
             var activityExecutionContextState = new ActivityExecutionContextState
@@ -148,44 +224,20 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         state.ActivityExecutionContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Reverse().Select(CreateActivityExecutionContextState).ToList();
     }
 
-    private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void ExtractScheduledActivities(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        ActivityExecutionContext CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
-        {
-            var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
-            var properties = activityExecutionContextState.Properties;
-            var activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity);
-            activityExecutionContext.Id = activityExecutionContextState.Id;
-            activityExecutionContext.Properties = properties;
-            activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
-            activityExecutionContext.Status = activityExecutionContextState.Status;
-            activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
-            activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
-            activityExecutionContext.Tag = activityExecutionContextState.Tag;
-            activityExecutionContext.DynamicVariables = activityExecutionContextState.DynamicVariables;
+        var scheduledActivities = workflowExecutionContext
+            .Scheduler.List()
+            .Select(x => new ActivityWorkItemState
+            {
+                ActivityId = x.Activity.Id,
+                OwnerContextId = x.Owner?.Id,
+                Tag = x.Tag,
+                Variables = x.Variables?.ToList(),
+                ExistingActivityExecutionContextId = x.ExistingActivityExecutionContext?.Id,
+                Input = x.Input
+            });
 
-            return activityExecutionContext;
-        }
-
-        var activityExecutionContexts = state.ActivityExecutionContexts.Select(CreateActivityExecutionContext).ToList();
-        var lookup = activityExecutionContexts.ToDictionary(x => x.Id);
-
-        // Reconstruct hierarchy.
-        foreach (var contextState in state.ActivityExecutionContexts.Where(x => !string.IsNullOrWhiteSpace(x.ParentContextId)))
-        {
-            var parentContext = lookup[contextState.ParentContextId!];
-            var contextId = contextState.Id;
-            var context = lookup[contextId];
-            context.ExpressionExecutionContext.ParentContext = parentContext.ExpressionExecutionContext;
-            context.ParentActivityExecutionContext = parentContext;
-        }
-
-        // Assign root expression execution context.
-        var rootActivityExecutionContexts = activityExecutionContexts.Where(x => x.ExpressionExecutionContext.ParentContext == null);
-
-        foreach (var rootActivityExecutionContext in rootActivityExecutionContexts)
-            rootActivityExecutionContext.ExpressionExecutionContext.ParentContext = workflowExecutionContext.ExpressionExecutionContext;
-
-        workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
+        state.ScheduledActivities = scheduledActivities.ToList();
     }
 }

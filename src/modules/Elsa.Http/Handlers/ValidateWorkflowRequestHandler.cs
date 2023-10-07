@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Management.Models;

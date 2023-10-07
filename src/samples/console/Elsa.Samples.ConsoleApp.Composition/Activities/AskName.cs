@@ -5,6 +5,8 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 
+namespace Elsa.Samples.ConsoleApp.Composition.Activities;
+
 public class AskName : Composite<string>
 {
     private readonly Variable<string> _name = new();

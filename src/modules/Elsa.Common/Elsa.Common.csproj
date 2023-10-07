@@ -20,6 +20,8 @@
     <ItemGroup>
         <PackageReference Include="LinqKit.Core" Version="1.2.3" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
+        <PackageReference Include="System.Text.Json" Version="7.0.3" />
     </ItemGroup>
+
 
 </Project>

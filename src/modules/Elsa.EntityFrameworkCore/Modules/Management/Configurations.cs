@@ -36,8 +36,8 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
     {
         builder.Ignore(x => x.WorkflowState);
         builder.Property<string>("Data");
-        builder.Property(x => x.Status).HasConversion<EnumToStringConverter<WorkflowStatus>>();
-        builder.Property(x => x.SubStatus).HasConversion<EnumToStringConverter<WorkflowSubStatus>>();
+        builder.Property(x => x.Status).HasConversion<string>();
+        builder.Property(x => x.SubStatus).HasConversion<string>();
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}");
         builder.HasIndex(x => new { x.Status, x.DefinitionId }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.DefinitionId)}");
