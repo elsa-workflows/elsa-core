@@ -16,7 +16,9 @@ public class DefaultAlterationRunner : IAlterationRunner
 {
     private readonly IEnumerable<IAlterationHandler> _handlers;
     private readonly IWorkflowRuntime _workflowRuntime;
+
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
+
     //private readonly IWorkflowExecutionContextFactory _workflowExecutionContextFactory;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly ISystemClock _systemClock;
@@ -92,7 +94,7 @@ public class DefaultAlterationRunner : IAlterationRunner
 
         // Execute alterations.
         await RunAsync(workflowExecutionContext, alterations, log, cancellationToken);
-        
+
         // Update workflow state.
         workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
 
@@ -101,12 +103,14 @@ public class DefaultAlterationRunner : IAlterationRunner
 
         // Check if the workflow has scheduled work.
         result.WorkflowHasScheduledWork = workflowExecutionContext.Scheduler.HasAny;
-        
+
         return result;
     }
 
     private async Task RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
     {
+        var commitActions = new List<Func<Task>>();
+
         foreach (var alteration in alterations)
         {
             // Find handler.
@@ -126,6 +130,14 @@ public class DefaultAlterationRunner : IAlterationRunner
             // If the handler has failed, mark the result as failed.
             if (alterationHandlerContext.HasFailed)
                 break;
+
+            // Collect the commit handler, if any.
+            if (alterationHandlerContext.CommitAction != null)
+                commitActions.Add(alterationHandlerContext.CommitAction);
         }
+
+        // Execute commit handlers.
+        foreach (var commitAction in commitActions)
+            await commitAction();
     }
 }

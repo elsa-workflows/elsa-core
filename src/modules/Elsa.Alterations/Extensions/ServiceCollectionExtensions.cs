@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.AddAlteration<Migrate, MigrateHandler>();
         services.AddAlteration<ModifyVariable, ModifyVariableHandler>();
         services.AddAlteration<ScheduleActivity, ScheduleActivityHandler>();
+        services.AddAlteration<CancelActivity, CancelActivityHandler>();
         services.AddNotificationHandlersFrom<AlterationsFeature>();
         return services;
     }

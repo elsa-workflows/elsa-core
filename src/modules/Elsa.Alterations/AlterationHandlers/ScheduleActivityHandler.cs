@@ -8,7 +8,7 @@ using Elsa.Workflows.Core.Signals;
 namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
-/// Sets the next activity to be scheduled on a given flowchart activity.
+/// Schedules an activity for execution.
 /// </summary>
 public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
 {

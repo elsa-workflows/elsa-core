@@ -140,7 +140,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> metadata about the current activity.
     /// </summary>
-    public ActivityNode ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
+    public ActivityNode? ActivityNode => WorkflowExecutionContext.FindNodeByActivity(Activity);
 
     /// <summary>
     /// Returns the global node ID for the current activity within the graph.

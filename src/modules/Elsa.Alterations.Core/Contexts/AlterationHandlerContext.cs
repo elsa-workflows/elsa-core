@@ -15,10 +15,10 @@ public class AlterationHandlerContext
     /// Initializes a new instance of the <see cref="AlterationHandlerContext"/> class.
     /// </summary>
     public AlterationHandlerContext(
-        IAlteration alteration, 
-        WorkflowExecutionContext workflowExecutionContext, 
-        AlterationLog log, 
-        IServiceProvider serviceProvider, 
+        IAlteration alteration,
+        WorkflowExecutionContext workflowExecutionContext,
+        AlterationLog log,
+        IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
         Alteration = alteration;
@@ -57,17 +57,22 @@ public class AlterationHandlerContext
     /// The alteration log.
     /// </summary>
     public AlterationLog AlterationLog { get; }
-    
+
     /// <summary>
     /// A flag indicating whether the alteration has succeeded.
     /// </summary>
     public bool HasSucceeded { get; private set; }
-    
+
     /// <summary>
     /// A flag indicating whether the alteration has failed.
     /// </summary>
     public bool HasFailed { get; private set; }
-    
+
+    /// <summary>
+    /// An optional action to be executed when the alteration is committed. Set this to perform permanent side effects such as deleting records form the database.
+    /// </summary>
+    public Func<Task>? CommitAction { get; set; }
+
     /// <summary>
     /// Logs a message.
     /// </summary>
@@ -81,10 +86,36 @@ public class AlterationHandlerContext
     /// <summary>
     /// Marks the alteration as succeeded.
     /// </summary>
-    public void Succeed(string? message = default)
+    public void Succeed()
+    {
+        Succeed($"{Alteration.GetType().Name} succeeded");
+    }
+
+    /// <summary>
+    /// Marks the alteration as succeeded.
+    /// </summary>
+    public void Succeed(Func<Task> commitAction)
+    {
+        Succeed();
+        CommitAction = commitAction;
+    }
+
+    /// <summary>
+    /// Marks the alteration as succeeded.
+    /// </summary>
+    public void Succeed(string message)
     {
         HasSucceeded = true;
-        Log(message ?? $"{Alteration.GetType().Name} succeeded", LogLevel.Information);
+        Log(message, LogLevel.Information);
+    }
+
+    /// <summary>
+    /// Marks the alteration as succeeded.
+    /// </summary>
+    public void Succeed(string message, Func<Task> commitAction)
+    {
+        Succeed(message);
+        CommitAction = commitAction;
     }
 
     /// <summary>
