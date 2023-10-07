@@ -450,6 +450,11 @@ public class WorkflowExecutionContext : IExecutionContext
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
     public ActivityNode? FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
+    
+    /// <summary>
+    /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
+    /// </summary>
+    public ActivityNode? FindNodeByActivityId(string activityId) => Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.

@@ -38,11 +38,11 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
+        await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
 
     /// <inheritdoc />
     public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.CountAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), cancellationToken);
