@@ -17,7 +17,7 @@ namespace Elsa.Alterations.AlterationHandlers;
 public class MigrateHandler : AlterationHandlerBase<Migrate>
 {
     /// <inheritdoc />
-    protected override async ValueTask HandleAsync(AlterationHandlerContext context, Migrate alteration)
+    protected override async ValueTask HandleAsync(AlterationContext context, Migrate alteration)
     {
         var workflowDefinitionService = context.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var definitionId = context.Workflow.Identity.DefinitionId;
@@ -32,29 +32,8 @@ public class MigrateHandler : AlterationHandlerBase<Migrate>
         }
         
         var targetWorkflow = await workflowDefinitionService.MaterializeWorkflowAsync(targetWorkflowDefinition, cancellationToken);
-        await UpgradeAsync(context.WorkflowExecutionContext, targetWorkflow, cancellationToken);
+        await context.WorkflowExecutionContext.SetWorkflowAsync(targetWorkflow);
         
         context.Succeed();
-    }
-
-    private async Task UpgradeAsync(WorkflowExecutionContext workflowExecutionContext, Workflow workflow, CancellationToken cancellationToken = default)
-    {
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var activityVisitor = workflowExecutionContext.GetRequiredService<IActivityVisitor>();
-        var graph = await activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
-        var flattenedList = graph.Flatten().ToList();
-        var activityTypes = flattenedList.Select(x => x.Activity.GetType()).Distinct().ToList();
-        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistry>();
-        await activityRegistry.RegisterAsync(activityTypes, cancellationToken);
-        
-        var needsIdentityAssignment = flattenedList.Any(x => string.IsNullOrEmpty(x.Activity.Id));
-
-        if (needsIdentityAssignment)
-        {
-            var identityGraphService = workflowExecutionContext.GetRequiredService<IIdentityGraphService>();
-            identityGraphService.AssignIdentities(flattenedList);
-        }
-        
-        await workflowExecutionContext.SetWorkflowAsync(workflow);
     }
 }

@@ -130,19 +130,19 @@ public class WorkflowRunner : IWorkflowRunner
         {
             // Schedule the activity.
             var activity = workflowExecutionContext.FindActivityByNodeId(activityNodeId);
-            workflowExecutionContext.ScheduleActivity(activity);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityHash != null)
         {
             // Schedule the activity.
             var activity = workflowExecutionContext.FindActivityByHash(activityHash);
-            workflowExecutionContext.ScheduleActivity(activity);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityId != null)
         {
             // Schedule the activity.
             var activity = workflowExecutionContext.FindActivityById(activityId);
-            workflowExecutionContext.ScheduleActivity(activity);
+            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
         }
         else if (activityInstanceId != null)
         {
@@ -156,7 +156,7 @@ public class WorkflowRunner : IWorkflowRunner
         }
         else
         {
-            // Nothing eas scheduled. Schedule the workflow itself.
+            // Nothing was scheduled. Schedule the workflow itself.
             workflowExecutionContext.ScheduleWorkflow();
         }
 

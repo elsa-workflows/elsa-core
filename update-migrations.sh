@@ -33,6 +33,6 @@ for module in "${mods[@]}"; do
         rm -rf "${providerPath:?}/${migrationsPath}"
     
         # 2. Run the migrations command
-        dotnet ef migrations add Initial -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath" -- --connectionString "${connStrings[$provider]}" --provider "$provider"
+        dotnet ef migrations add Initial -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath" -- --connectionString "${connStrings[$provider]}"
     done
 done

@@ -17,5 +17,5 @@ public interface IAlterationHandler
     /// Applies the alteration to the specified context.
     /// </summary>
     /// <param name="context">A context object that contains information for the alteration and provides a way to alter the workflow instance and control the alteration process.</param>
-    ValueTask HandleAsync(AlterationHandlerContext context);
+    ValueTask HandleAsync(AlterationContext context);
 }

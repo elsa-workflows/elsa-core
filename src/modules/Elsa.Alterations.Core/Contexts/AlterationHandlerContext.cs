@@ -9,22 +9,20 @@ namespace Elsa.Alterations.Core.Contexts;
 /// <summary>
 /// Provides contextual information about an alteration.
 /// </summary>
-public class AlterationHandlerContext
+public class AlterationContext
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="AlterationHandlerContext"/> class.
+    /// Initializes a new instance of the <see cref="AlterationContext"/> class.
     /// </summary>
-    public AlterationHandlerContext(
+    public AlterationContext(
         IAlteration alteration,
         WorkflowExecutionContext workflowExecutionContext,
         AlterationLog log,
-        IServiceProvider serviceProvider,
         CancellationToken cancellationToken)
     {
         Alteration = alteration;
         WorkflowExecutionContext = workflowExecutionContext;
         AlterationLog = log;
-        ServiceProvider = serviceProvider;
         CancellationToken = cancellationToken;
     }
 
@@ -51,7 +49,7 @@ public class AlterationHandlerContext
     /// <summary>
     /// The service provider.
     /// </summary>
-    public IServiceProvider ServiceProvider { get; }
+    public IServiceProvider ServiceProvider => WorkflowExecutionContext.ServiceProvider;
 
     /// <summary>
     /// The alteration log.

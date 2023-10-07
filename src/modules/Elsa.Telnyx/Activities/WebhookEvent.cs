@@ -4,7 +4,7 @@ using Elsa.Extensions;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Memory;

@@ -1,5 +1,8 @@
-﻿namespace Elsa.Telnyx.Payloads.Abstract;
+﻿namespace Elsa.Telnyx.Payloads.Abstractions;
 
+/// <summary>
+/// A base class for payloads that are related to a call.
+/// </summary>
 public abstract record CallPayload : Payload
 {
     public string CallControlId { get; init; } = default!;

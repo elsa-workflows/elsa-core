@@ -12,7 +12,7 @@ public abstract class AlterationHandlerBase : IAlterationHandler
     public abstract bool CanHandle(IAlteration alteration);
 
     /// <inheritdoc />
-    public abstract ValueTask HandleAsync(AlterationHandlerContext context);
+    public abstract ValueTask HandleAsync(AlterationContext context);
 }
 
 /// <inheritdoc />
@@ -22,12 +22,12 @@ public abstract class AlterationHandlerBase<T> : AlterationHandlerBase where T :
     public override bool CanHandle(IAlteration alteration) => alteration is T;
 
     /// <inheritdoc />
-    public override ValueTask HandleAsync(AlterationHandlerContext context) => HandleAsync(context, (T)context.Alteration);
+    public override ValueTask HandleAsync(AlterationContext context) => HandleAsync(context, (T)context.Alteration);
 
     /// <summary>
     /// Applies the alteration to the specified context.
     /// </summary>
     /// <param name="context">A context object that contains information for the alteration and provides a way to alter the workflow instance and control the alteration process.</param>
     /// <param name="alteration">A strongly typed alteration.</param>
-    protected abstract ValueTask HandleAsync(AlterationHandlerContext context, T alteration);
+    protected abstract ValueTask HandleAsync(AlterationContext context, T alteration);
 }

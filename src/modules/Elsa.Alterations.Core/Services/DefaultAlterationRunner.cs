@@ -88,7 +88,11 @@ public class DefaultAlterationRunner : IAlterationRunner
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
 
         // Execute alterations.
-        await RunAsync(workflowExecutionContext, alterations, log, cancellationToken);
+        var success = await RunAsync(workflowExecutionContext, alterations, log, cancellationToken);
+        
+        // If the alterations have failed, exit.
+        if (!success)
+            return result;
 
         // Update workflow state.
         workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
@@ -102,37 +106,35 @@ public class DefaultAlterationRunner : IAlterationRunner
         return result;
     }
 
-    private async Task RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
+    private async Task<bool> RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
     {
         var commitActions = new List<Func<Task>>();
 
         foreach (var alteration in alterations)
         {
-            // Find handler.
-            var handler = _handlers.FirstOrDefault(x => x.CanHandle(alteration));
+            // Find handlers.
+            var handlers = _handlers.Where(x => x.CanHandle(alteration)).ToList();
 
-            // If no handler is found, log an error and continue.
-            if (handler == null)
+            foreach (var handler in handlers)
             {
-                log.Add($"No handler found for alteration '{alteration.GetType().Name}'.", LogLevel.Error);
-                continue;
+                // Execute handler.
+                var alterationContext = new AlterationContext(alteration, workflowExecutionContext, log, cancellationToken);
+                await handler.HandleAsync(alterationContext);
+
+                // If the handler has failed, exit.
+                if (alterationContext.HasFailed)
+                    return false;
+
+                // Collect the commit handler, if any.
+                if (alterationContext.CommitAction != null)
+                    commitActions.Add(alterationContext.CommitAction);
             }
-
-            // Execute handler.
-            var alterationHandlerContext = new AlterationHandlerContext(alteration, workflowExecutionContext, log, _serviceProvider, cancellationToken);
-            await handler.HandleAsync(alterationHandlerContext);
-
-            // If the handler has failed, mark the result as failed.
-            if (alterationHandlerContext.HasFailed)
-                break;
-
-            // Collect the commit handler, if any.
-            if (alterationHandlerContext.CommitAction != null)
-                commitActions.Add(alterationHandlerContext.CommitAction);
         }
 
         // Execute commit handlers.
         foreach (var commitAction in commitActions)
             await commitAction();
+        
+        return true;
     }
 }

@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Requests;
 namespace Elsa.Alterations.Handlers;
 
 /// <summary>
-/// Resumes a workflow instance when an alteration job has been completed.
+/// Resumes a workflow instance when an alteration job has been completed and the workflow contains scheduled work.
 /// </summary>
 public class ResumeWorkflowInstance : INotificationHandler<AlterationJobCompleted>
 {

@@ -13,7 +13,7 @@ namespace Elsa.Alterations.AlterationHandlers;
 public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
 {
     /// <inheritdoc />
-    protected override async ValueTask HandleAsync(AlterationHandlerContext context, ScheduleActivity alteration)
+    protected override async ValueTask HandleAsync(AlterationContext context, ScheduleActivity alteration)
     {
         if (alteration.ActivityInstanceId == null && alteration.ActivityId == null)
         {
@@ -71,7 +71,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         context.Succeed();
     }
 
-    private static ActivityExecutionContext? GetActivityExecutionContext(AlterationHandlerContext context, ScheduleActivity alteration)
+    private static ActivityExecutionContext? GetActivityExecutionContext(AlterationContext context, ScheduleActivity alteration)
     {
         if (alteration.ActivityInstanceId != null)
             return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);

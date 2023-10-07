@@ -117,7 +117,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
-    public static bool GetAreAllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActiveActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
+    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActiveActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
 
     /// <summary>
     /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.

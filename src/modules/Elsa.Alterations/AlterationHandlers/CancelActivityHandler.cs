@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Filters;
 namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
-/// Schedules an activity for execution.
+/// Cancels an activity.
 /// </summary>
 public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
 {
@@ -24,7 +24,7 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
     }
 
     /// <inheritdoc />
-    protected override async ValueTask HandleAsync(AlterationHandlerContext context, CancelActivity alteration)
+    protected override async ValueTask HandleAsync(AlterationContext context, CancelActivity alteration)
     {
         if (alteration.ActivityInstanceId == null && alteration.ActivityId == null)
         {
@@ -55,7 +55,7 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
         await _bookmarkManager.DeleteManyAsync(filter, cancellationToken);
     }
 
-    private static ActivityExecutionContext? GetActivityExecutionContext(AlterationHandlerContext context, CancelActivity alteration)
+    private static ActivityExecutionContext? GetActivityExecutionContext(AlterationContext context, CancelActivity alteration)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
 

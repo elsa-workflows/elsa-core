@@ -18,7 +18,7 @@ namespace Elsa.Alterations.AlterationHandlers;
 public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
 {
     /// <inheritdoc />
-    protected override async ValueTask HandleAsync(AlterationHandlerContext context, ModifyVariable alteration)
+    protected override async ValueTask HandleAsync(AlterationContext context, ModifyVariable alteration)
     {
         var workflow = context.Workflow;
         var cancellationToken = context.CancellationToken;
@@ -47,16 +47,16 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         return value.ConvertTo(type);
     }
 
-    private async Task UpdateVariable(AlterationHandlerContext handlerContext, Variable variable, object? value, CancellationToken cancellationToken)
+    private async Task UpdateVariable(AlterationContext context, Variable variable, object? value, CancellationToken cancellationToken)
     {
         var variableStorage = variable.StorageDriverType ?? typeof(WorkflowStorageDriver);
-        var storageDriverManager = handlerContext.ServiceProvider.GetRequiredService<IStorageDriverManager>();
+        var storageDriverManager = context.ServiceProvider.GetRequiredService<IStorageDriverManager>();
         var storageDriver = storageDriverManager.Get(variableStorage)!;
-        var activityExecutionContext = FindActivityExecutionContextContainingVariable(handlerContext, variable);
+        var activityExecutionContext = FindActivityExecutionContextContainingVariable(context, variable);
         
         if (activityExecutionContext == null)
         {
-            handlerContext.Fail($"Activity execution context containing variable with ID {variable.Id} not found");
+            context.Fail($"Activity execution context containing variable with ID {variable.Id} not found");
             return;
         }
         
@@ -65,7 +65,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         await storageDriver.WriteAsync(stateId, value!, storageDriverContext);
     }
 
-    private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationHandlerContext context, Variable variable)
+    private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationContext context, Variable variable)
     {
         var query =
             from activityExecutionContext in context.WorkflowExecutionContext.ActiveActivityExecutionContexts
@@ -76,9 +76,9 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
         return query.FirstOrDefault();
     }
 
-    private async Task<Variable?> FindVariable(AlterationHandlerContext handlerContext, ModifyVariable alteration, Workflow workflow, CancellationToken cancellationToken)
+    private async Task<Variable?> FindVariable(AlterationContext context, ModifyVariable alteration, Workflow workflow, CancellationToken cancellationToken)
     {
-        var activityVisitor = handlerContext.ServiceProvider.GetRequiredService<IActivityVisitor>();
+        var activityVisitor = context.ServiceProvider.GetRequiredService<IActivityVisitor>();
         var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
         var graph = await activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
         var flattenedList = graph.Flatten().ToList();

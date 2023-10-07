@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace Elsa.EntityFrameworkCore.Common.Abstractions;
 
 /// <summary>
-/// A design-time factory supporting various database providers.
+/// A design-time factory base class that can be inherited from by provider-specific implementations.
 /// </summary>
 public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDbContextFactory<TDbContext> where TDbContext : DbContext
 {
@@ -16,15 +16,15 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
         var builder = new DbContextOptionsBuilder<TDbContext>();
         var connectionStringOption = new Option<string>("--connectionString", "Specifies the connection string.");
         var command = new RootCommand();
-        
+
         command.AddOption(connectionStringOption);
 
         var parser = new Parser(command);
         var parseResult = parser.Parse(args);
         var connectionString = parseResult.GetValueForOption(connectionStringOption) ?? "Data Source=local";
- 
+
         ConfigureBuilder(builder, connectionString);
-        
+
         return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }
 

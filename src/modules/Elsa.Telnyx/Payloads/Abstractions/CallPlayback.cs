@@ -1,4 +1,4 @@
-﻿namespace Elsa.Telnyx.Payloads.Abstract;
+﻿namespace Elsa.Telnyx.Payloads.Abstractions;
 
 public abstract record CallPlayback : CallPayload
 {

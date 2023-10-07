@@ -12,7 +12,7 @@ using JetBrains.Annotations;
 namespace Elsa.Alterations.Endpoints.Workflows.Retry;
 
 /// <summary>
-/// Executes an alteration plan.
+/// Retries the specified workflow instances.
 /// </summary>
 [PublicAPI]
 public class Retry : ElsaEndpoint<Request, Response>
@@ -49,11 +49,9 @@ public class Retry : ElsaEndpoint<Request, Response>
         {
             // Setup an alteration plan.
             var activityIds = GetActivityIds(request, workflowInstance).ToList();
-            var alterations = new List<IAlteration>();
-
-            foreach (var activityId in activityIds)
-                alterations.Add(new ScheduleActivity { ActivityId = activityId });
+            var alterations = activityIds.Select(activityId => new ScheduleActivity { ActivityId = activityId }).Cast<IAlteration>().ToList();
             
+            // Run the plan.
             var results = await _alterationRunner.RunAsync(request.WorkflowInstanceIds, alterations, cancellationToken);
             allResults.AddRange(results);
             

@@ -6,7 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Telnyx.Activities;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Options;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Telnyx.Providers;
 using Microsoft.Extensions.DependencyInjection;
 

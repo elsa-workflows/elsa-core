@@ -1,7 +1,7 @@
 namespace Elsa.Alterations.Endpoints.Workflows.Retry;
 
 /// <summary>
-/// A plan that contains a list of alterations to be applied to a set of workflow instances.
+/// A request to retry one or more faulted workflow instances.
 /// </summary>
 public class Request
 {

@@ -6,7 +6,7 @@ using Elsa.Telnyx.Attributes;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
