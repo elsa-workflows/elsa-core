@@ -19,7 +19,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreIdentityPersistenceFeature UseMySql(this EFCoreIdentityPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreIdentityPersistenceFeature UseMySql(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -28,7 +28,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreAlterationsPersistenceFeature UseMySql(this EFCoreAlterationsPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreAlterationsPersistenceFeature UseMySql(this EFCoreAlterationsPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -37,7 +37,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreLabelPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreLabelPersistenceFeature UseMySql(this EFCoreLabelPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreLabelPersistenceFeature UseMySql(this EFCoreLabelPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -46,7 +46,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowDefinitionPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreWorkflowDefinitionPersistenceFeature UseMySql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreWorkflowDefinitionPersistenceFeature UseMySql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -55,7 +55,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowInstancePersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreWorkflowInstancePersistenceFeature UseMySql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreWorkflowInstancePersistenceFeature UseMySql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -64,7 +64,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="WorkflowManagementPersistenceFeature"/> to use MySql.
     /// </summary>
-    public static WorkflowManagementPersistenceFeature UseMySql(this WorkflowManagementPersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static WorkflowManagementPersistenceFeature UseMySql(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
@@ -73,7 +73,7 @@ public static class MySqlProvidersExtensions
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use MySql.
     /// </summary>
-    public static EFCoreWorkflowRuntimePersistenceFeature UseMySql(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString = Constants.DefaultConnectionString, ElsaDbContextOptions? options = default)
+    public static EFCoreWorkflowRuntimePersistenceFeature UseMySql(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaMySql(Assembly, connectionString, options);
         return feature;
