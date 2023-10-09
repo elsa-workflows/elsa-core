@@ -76,7 +76,7 @@ public class StartAt : Trigger
     protected override void Execute(ActivityExecutionContext context)
     {
         // If external input was received, it means this activity got triggered and does not need to create a bookmark.
-        if (context.TryGetInput<DateTimeOffset>(InputKey, out _)) 
+        if (context.TryGetWorkflowInput<DateTimeOffset>(InputKey, out _)) 
             return;
         
         // No external input received, so create a bookmark.

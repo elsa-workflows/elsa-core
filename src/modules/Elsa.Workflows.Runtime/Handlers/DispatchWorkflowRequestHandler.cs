@@ -3,7 +3,6 @@ using Elsa.Mediator.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 

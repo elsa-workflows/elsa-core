@@ -13,5 +13,6 @@ public record ScheduleWorkOptions(
     ActivityCompletionCallback? CompletionCallback = default, 
     object? Tag = default, 
     ICollection<Variable>? Variables = default, 
-    string? ReuseActivityExecutionContextId = default, 
-    bool PreventDuplicateScheduling = false);
+    ActivityExecutionContext? ExistingActivityExecutionContext = default, 
+    bool PreventDuplicateScheduling = false,
+    IDictionary<string, object>? Input = default);

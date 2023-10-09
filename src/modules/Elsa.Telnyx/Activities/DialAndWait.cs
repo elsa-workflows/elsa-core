@@ -7,6 +7,7 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
+using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Telnyx.Payloads.Call;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
@@ -88,14 +89,14 @@ public class DialAndWait : Activity<CallPayload>
 
     private async ValueTask OnCallAnswered(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallAnsweredPayload>();
+        var payload = context.GetWorkflowInput<CallAnsweredPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Answered");
     }
     
     private async ValueTask OnCallHangup(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallHangupPayload>();
+        var payload = context.GetWorkflowInput<CallHangupPayload>();
         Result.Set(context, payload);
         await context.CompleteActivityWithOutcomesAsync("Hangup");
     }

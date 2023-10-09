@@ -4,7 +4,7 @@ using Elsa.Extensions;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Memory;
@@ -54,7 +54,7 @@ public class WebhookEvent : Activity<Payload>
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var input = context.GetInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
+        var input = context.GetWorkflowInput<TelnyxWebhook>(WebhookSerializerOptions.Create());
         context.Set(Result, input.Data.Payload);
         await CompleteAsync(context);
     }

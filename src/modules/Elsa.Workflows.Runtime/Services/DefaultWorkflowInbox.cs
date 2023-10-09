@@ -7,7 +7,6 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Services;

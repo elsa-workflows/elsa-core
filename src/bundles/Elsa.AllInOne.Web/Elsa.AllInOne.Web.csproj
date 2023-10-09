@@ -11,11 +11,11 @@
     <ItemGroup>
         <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
-        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj" />

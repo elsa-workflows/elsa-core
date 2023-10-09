@@ -102,7 +102,7 @@ public class MessageReceived : Trigger
 
     private async ValueTask Resume(ActivityExecutionContext context)
     {
-        var receivedMessage = context.GetInput<ReceivedServiceBusMessageModel>(InputKey);
+        var receivedMessage = context.GetWorkflowInput<ReceivedServiceBusMessageModel>(InputKey);
         await SetResultAsync(receivedMessage, context);
         await context.CompleteActivityAsync();
     }

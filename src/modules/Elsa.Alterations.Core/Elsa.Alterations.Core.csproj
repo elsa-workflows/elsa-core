@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides core interfaces, models and services that support the alteration engine.
+        </Description>
+        <PackageTags>elsa module alterations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+    </ItemGroup>
+</Project>

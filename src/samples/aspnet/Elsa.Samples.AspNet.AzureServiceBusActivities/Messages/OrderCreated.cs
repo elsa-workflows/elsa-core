@@ -1,4 +1,4 @@
-namespace Elsa.Samples.MassTransitActivities.Messages;
+namespace Elsa.Samples.AspNet.AzureServiceBusActivities.Messages;
 
 // ReSharper disable once InconsistentNaming
 public record OrderCreated(

@@ -32,7 +32,7 @@ public class DefaultIncidentStrategyResolver : IIncidentStrategyResolver
 
     private Type ResolveStrategyType(ActivityExecutionContext context)
     {
-        // First check if the Workflow is configured with an incident strategy.
+        // First check if the workflow is configured with an incident strategy.
         // If no strategy was configured there, use the application-level configured strategy.
         
         var strategyType = context.WorkflowExecutionContext.Workflow.Options.IncidentStrategyType;

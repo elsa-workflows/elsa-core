@@ -12,7 +12,6 @@
         <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>

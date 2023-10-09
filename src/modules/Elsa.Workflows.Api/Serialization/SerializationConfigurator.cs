@@ -1,10 +1,10 @@
 using System.Text.Json;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Serialization;
 
-internal class SerializationConfigurator : ISerializationOptionsConfigurator
+internal class SerializationConfigurator : SerializationOptionsConfiguratorBase
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -13,7 +13,7 @@ internal class SerializationConfigurator : ISerializationOptionsConfigurator
         _serviceProvider = serviceProvider;
     }
     
-    public void Configure(JsonSerializerOptions options)
+    public override void Configure(JsonSerializerOptions options)
     {
         options.Converters.Add(ActivatorUtilities.GetServiceOrCreateInstance<ArgumentJsonConverterFactory>(_serviceProvider));
     }

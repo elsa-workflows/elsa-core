@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 /// Performs a boolean condition and returns an outcome based on the the result.
 /// </summary>
 [FlowNode("True", "False")]
-[Activity("Elsa", "Branching", "Evaluate a Boolean condition to determine which path to execute next.")]
+[Activity("Elsa", "Branching", "Evaluate a Boolean condition to determine which path to execute next.", DisplayName = "Decision")]
 [PublicAPI]
 public class FlowDecision : Activity
 {

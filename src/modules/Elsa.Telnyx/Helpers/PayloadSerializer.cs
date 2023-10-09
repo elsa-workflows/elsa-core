@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Elsa.Telnyx.Payloads;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 
 namespace Elsa.Telnyx.Helpers;
 

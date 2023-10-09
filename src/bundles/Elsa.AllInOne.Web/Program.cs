@@ -1,8 +1,8 @@
 using Elsa.AllInOne.Web.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Extensions;
 using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,10 +28,7 @@ services
         })
         .UseDefaultAuthentication()
         .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-        .UseWorkflowRuntime(runtime =>
-        {
-            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-        })
+        .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseScheduling()
         .UseJavaScript()
         .UseLiquid()

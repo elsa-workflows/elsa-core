@@ -6,6 +6,11 @@ namespace Elsa.Workflows.Core;
 public enum ActivityStatus
 {
     /// <summary>
+    /// The activity is in the Pending state.
+    /// </summary>
+    Pending,
+    
+    /// <summary>
     /// The activity is in the Running state. Note that event if an activity is running, it may not be executing.
     /// </summary>
     Running,

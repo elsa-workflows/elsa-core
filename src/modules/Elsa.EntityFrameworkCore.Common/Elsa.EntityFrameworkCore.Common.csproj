@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides common Entity Framework Core types for implementing EF Core persistence of varipus ELsa modules.
+        </Description>
+        <PackageTags>elsa module persistence efcore</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="LinqKit" Version="1.2.4"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.11"/>
+        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.11"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="7.0.11"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.11">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj"/>
+    </ItemGroup>
+
+</Project>

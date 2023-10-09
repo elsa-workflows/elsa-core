@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Activities;
 using Elsa.Workflows.Core.Activities.Flowchart.Models;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.IntegrationTests.Scenarios.Incidents.Workflows;

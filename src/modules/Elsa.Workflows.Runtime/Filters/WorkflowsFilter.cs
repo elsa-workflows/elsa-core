@@ -1,6 +1,4 @@
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Filters;
 

@@ -1,3 +1,3 @@
-﻿namespace Elsa.Telnyx.Payloads.Call;
+﻿namespace Elsa.Telnyx.Models;
 
 public record CallRecordingUrls(string? Wav, string? Mp3);

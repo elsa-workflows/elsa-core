@@ -5,7 +5,6 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
@@ -283,16 +282,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
 
-    private async Task<WorkflowExecutionResult?> StartWorkflowAsync(string definitionId, VersionOptions versionOptions, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken)
-    {
-        var workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
-
-        if (workflowHost == null)
-            return null;
-
-        return await StartWorkflowAsync(workflowHost, options);
-    }
-
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeOptions options)
     {
         var workflowInstanceId = string.IsNullOrEmpty(options.InstanceId) ? _identityGenerator.GenerateId() : options.InstanceId;
@@ -316,11 +305,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 workflowState.Incidents,
                 default);
         }
-    }
-
-    private async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
-    {
-        return await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
     }
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken)
@@ -364,8 +348,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
+        await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
     }
 
     private async Task StoreBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, string? correlationId, CancellationToken cancellationToken)

@@ -4,7 +4,6 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Management.Services;
@@ -55,6 +54,13 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     public async Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
+        return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter { Id = definitionVersionId };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 }

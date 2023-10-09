@@ -7,7 +7,7 @@ using Elsa.Samples.AspNet.DynamicActivityProvider.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Management;
 using Humanizer;
 
 namespace Elsa.Samples.AspNet.DynamicActivityProvider.ActivityProviders;

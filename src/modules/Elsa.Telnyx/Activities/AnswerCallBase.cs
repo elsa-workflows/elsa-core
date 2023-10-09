@@ -67,7 +67,7 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>
 
     private async ValueTask ResumeAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetInput<CallAnsweredPayload>();
+        var payload = context.GetWorkflowInput<CallAnsweredPayload>();
         context.Set(Result, payload);
         await HandleConnectedAsync(context);
     }

@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
@@ -10,5 +9,5 @@ public class CustomActivity : CodeActivity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         await context.CompleteActivityAsync();
-    }    
+    }
 }

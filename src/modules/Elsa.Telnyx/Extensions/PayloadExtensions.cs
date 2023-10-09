@@ -1,5 +1,5 @@
 using Elsa.Telnyx.Models;
-using Elsa.Telnyx.Payloads.Abstract;
+using Elsa.Telnyx.Payloads.Abstractions;
 
 namespace Elsa.Telnyx.Extensions;
 

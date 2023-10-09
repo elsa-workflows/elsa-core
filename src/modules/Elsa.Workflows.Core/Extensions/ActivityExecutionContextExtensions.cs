@@ -29,11 +29,11 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Attempts to get a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static bool TryGetInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
+    public static bool TryGetWorkflowInput<T>(this ActivityExecutionContext context, string key, out T value, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
 
-        if (context.Input.TryGetValue(key, out var v))
+        if (context.WorkflowInput.TryGetValue(key, out var v))
         {
             value = v.ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
             return true;
@@ -46,15 +46,15 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetInput<T>(typeof(T).Name, serializerOptions);
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, JsonSerializerOptions? serializerOptions = default) => context.GetWorkflowInput<T>(typeof(T).Name, serializerOptions);
 
     /// <summary>
     /// Gets a value from the input provided via <see cref="WorkflowExecutionContext"/>. If a value was found, an attempt is made to convert it into the specified type <code>T</code>.
     /// </summary>
-    public static T GetInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
+    public static T GetWorkflowInput<T>(this ActivityExecutionContext context, string key, JsonSerializerOptions? serializerOptions = default)
     {
         var wellKnownTypeRegistry = context.GetRequiredService<IWellKnownTypeRegistry>();
-        return context.Input[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
+        return context.WorkflowInput[key].ConvertTo<T>(new ObjectConverterOptions(serializerOptions, wellKnownTypeRegistry))!;
     }
 
     /// <summary>
@@ -279,7 +279,6 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Returns a flattened list of the current context's ancestors.
     /// </summary>
-    /// <returns></returns>
     public static IEnumerable<ActivityExecutionContext> GetAncestors(this ActivityExecutionContext context)
     {
         var current = context.ParentActivityExecutionContext;
@@ -288,6 +287,22 @@ public static class ActivityExecutionContextExtensions
         {
             yield return current;
             current = current.ParentActivityExecutionContext;
+        }
+    }
+    
+    /// <summary>
+    /// Returns a flattened list of the current context's descendants.
+    /// </summary>
+    public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
+    {
+        var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+
+        foreach (var child in children)
+        {
+            yield return child;
+
+            foreach (var descendent in GetDescendents(child))
+                yield return descendent;
         }
     }
 

@@ -26,10 +26,11 @@ public class Flowchart : Container
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
+        OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
     }
 
     /// <summary>
-    /// The activity to execute when the workflow starts.
+    /// The activity to execute when the flowchart starts.
     /// </summary>
     [Port]
     [Browsable(false)]
@@ -56,60 +57,8 @@ public class Flowchart : Container
         }
 
         // Schedule the start activity.
-        logger.LogDebug("Scheduling start activity: {StartActivityId}", startActivity.Id);
+        logger.LogDebug("Scheduling activity: {StartActivityId}", startActivity.Id);
         await context.ScheduleActivityAsync(startActivity, OnChildCompletedAsync);
-    }
-
-    /// <summary>
-    /// Checks if there is any pending work for the flowchart.
-    /// </summary>
-    private bool HasPendingWork(ActivityExecutionContext context)
-    {
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var activityIds = Activities.Select(x => x.Id).ToList();
-        var descendantContexts = GetDescendents(context).Where(x => x.ParentActivityExecutionContext == context).ToList();
-        var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
-
-        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
-        {
-            var ownerInstanceId = workItem.OwnerActivityInstanceId;
-
-            if (ownerInstanceId == null)
-                return false;
-
-            var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
-            var ancestors = GetAncestors(ownerContext).ToList();
-
-            return ancestors.Any(x => x == context);
-        });
-
-        var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
-
-        return hasRunningActivityInstances || hasPendingWork;
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetDescendents(ActivityExecutionContext activityExecutionContext)
-    {
-        var children = activityExecutionContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == activityExecutionContext).ToList();
-
-        foreach (var child in children)
-        {
-            yield return child;
-
-            foreach (var descendent in GetDescendents(child))
-                yield return descendent;
-        }
-    }
-
-    private static IEnumerable<ActivityExecutionContext> GetAncestors(ActivityExecutionContext activityExecutionContext)
-    {
-        var current = activityExecutionContext;
-
-        while (current != null)
-        {
-            yield return current;
-            current = current.ParentActivityExecutionContext;
-        }
     }
 
     private IActivity? GetStartActivity(ActivityExecutionContext context)
@@ -117,7 +66,7 @@ public class Flowchart : Container
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
 
         logger.LogDebug("Looking for start activity...");
-
+        
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
@@ -156,6 +105,34 @@ public class Flowchart : Container
         // If no start activity found, return the first activity.
         logger.LogDebug("No start activity found. Using the first activity");
         return Activities.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Checks if there is any pending work for the flowchart.
+    /// </summary>
+    private bool HasPendingWork(ActivityExecutionContext context)
+    {
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var activityIds = Activities.Select(x => x.Id).ToList();
+        var descendantContexts = context.GetDescendents().Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var activityExecutionContexts = descendantContexts.Where(x => activityIds.Contains(x.Activity.Id)).ToList();
+
+        var hasPendingWork = workflowExecutionContext.Scheduler.List().Any(workItem =>
+        {
+            var ownerInstanceId = workItem.Owner?.Id;
+
+            if (ownerInstanceId == null)
+                return false;
+
+            var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+            var ancestors = ownerContext.GetAncestors().ToList();
+
+            return ancestors.Any(x => x == context);
+        });
+
+        var hasRunningActivityInstances = activityExecutionContexts.Any(x => x.Status == ActivityStatus.Running);
+
+        return hasRunningActivityInstances || hasPendingWork;
     }
 
     private IActivity? GetRootActivity()
@@ -241,7 +218,7 @@ public class Flowchart : Container
                         var scheduleWorkOptions = new ScheduleWorkOptions
                         {
                             CompletionCallback = OnChildCompletedAsync,
-                            ReuseActivityExecutionContextId = joinContext?.Id,
+                            ExistingActivityExecutionContext = joinContext,
                             PreventDuplicateScheduling = true
                         };
 
@@ -300,5 +277,13 @@ public class Flowchart : Container
             // Schedule each child.
             foreach (var activity in outboundActivities) await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
         }
+    }
+    
+    private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var activity = signal.Activity;
+        
+        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
     }
 }

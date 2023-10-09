@@ -32,7 +32,7 @@ public class MessageReceived : Trigger<object>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity and we need to block execution by creating a bookmark.
-        if (!context.TryGetInput<object>(InputKey, out var message))
+        if (!context.TryGetWorkflowInput<object>(InputKey, out var message))
         {
             // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext));

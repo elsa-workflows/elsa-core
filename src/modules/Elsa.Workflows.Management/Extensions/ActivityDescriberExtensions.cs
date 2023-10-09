@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Extensions;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Provides extension methods for <see cref="IActivityDescriber"/>.
