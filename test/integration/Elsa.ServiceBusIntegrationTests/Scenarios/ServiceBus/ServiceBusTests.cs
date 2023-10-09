@@ -42,6 +42,7 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
                 .AddWorkflow<ReceiveOneMessageWorkflow>()
                 .AddWorkflow<ReceiveMessageWorkflow>()
                 .AddWorkflow<SendOneMessageWorkflow>()
+                .AddWorkflow<SendOneMessageWithCorrelationIdWorkflow>()
                 .ConfigureServices(services =>
                 {
                     services
@@ -210,11 +211,11 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
                 .Returns(senderMock.Object);
             senderMock
                 .Setup(sender =>
-                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(),It.IsAny<CancellationToken>()))
-                .Callback<ServiceBusMessage,CancellationToken>(async (sb, c) =>
+                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<ServiceBusMessage, CancellationToken>(async (sb, c) =>
                 {
                     _testOutputHelper.WriteLine("Sending Message from activity");
-            
+
                     await _worker.StartWorkerAsync("topicName", "subscriptionName");
                     await _sbProcessorManager
                         .Get("topicName", "subscriptionName")
@@ -224,6 +225,78 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
 
             //Start Workflow
             var workflowDefinitionId = typeof(SendOneMessageWorkflow).Name;
+            var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+            var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
+            var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+
+            /*
+             * Workflow don't receive any message so it should be
+             * Running
+             * Suspended
+             */
+            Assert.Equal(WorkflowStatus.Running, workflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
+
+
+            //Start Worker to send Message on topicName/suscriptionName
+            //await _worker.StartWorkerAsync("topicName", "subscriptionName");
+            //await _sbProcessorManager
+            //    .Get("topicName", "subscriptionName")
+            //    .SendMessage<dynamic>(new { hello = "world" }, null);
+
+            //Wait for receiving first message
+            var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
+            _testOutputHelper.WriteLine($"wait1 : {wait1}");
+
+            await Task.Delay(500); //Todo find how to remove delay
+            var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+            /*
+             * We sent 1 message so Workflow must be 
+             * Finished
+             * Finished
+             * 
+             * with no timeout for the first message. (True ResetEvent)
+             */
+            Assert.NotNull(lastWorkflowState);
+            Assert.Equal(WorkflowStatus.Finished, lastWorkflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Finished, lastWorkflowState.SubStatus);
+            Assert.True(wait1);
+        }
+
+        [Fact(DisplayName = "1 Send - 1 Receive - with correlationId - Should Finished - without race condition")]
+        public async Task Send_1_Message_And_Correlate_Receive_Response()
+        {
+            var correlationId = "EEE3D9CC-2279-4CE5-8F4F-FC6C65BF8814";
+            _sbProcessorManager.Init("topicName", "subscriptionName");
+            
+            //Init waitEvent :
+            _resetEventManager.Init("receive1");
+
+            //Init BackGround
+            await InitRegistryAndBackGroundServiceWorkerAsync();
+
+            var senderMock = new Mock<ServiceBusSender>();
+            _serviceBusClient
+                .Setup(sb =>
+                sb.CreateSender(It.IsAny<string>())
+                )
+                .Returns(senderMock.Object);
+            senderMock
+                .Setup(sender =>
+                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
+                .Callback<ServiceBusMessage, CancellationToken>(async (sb, c) =>
+                {
+                    _testOutputHelper.WriteLine("Sending Message from activity");
+
+                    await _worker.StartWorkerAsync("topicName", "subscriptionName");
+                    await _sbProcessorManager
+                        .Get("topicName", "subscriptionName")
+                        .SendMessage<dynamic>(new { hello = "world" }, correlationId);
+                })
+                .Returns(Task.CompletedTask);
+
+            //Start Workflow
+            var workflowDefinitionId = typeof(SendOneMessageWithCorrelationIdWorkflow).Name;
             var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
             var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
             var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
