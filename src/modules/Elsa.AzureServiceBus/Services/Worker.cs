@@ -110,6 +110,7 @@ public class Worker : IAsyncDisposable
             ActivityTypeName = activityTypeName,
             BookmarkPayload = payload,
             Input = input,
+            CorrelationId = correlationId
         });
 
         _logger.LogInformation($"{results.WorkflowExecutionResults.Count()} workflow triggered by the service bus message");
