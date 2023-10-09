@@ -90,6 +90,11 @@ namespace Elsa.Services.Workflows
             await StoreAppliedObjectValuesAsync(context, activity, activity, cancellationToken);
         }
 
+        /// <summary>
+        /// Recursively store activity's properties
+        /// </summary>
+        /// <param name="activity">The parent activity of all the activity properties</param>
+        /// <param name="nestedInstance">The activity or the recursively generated object from the activity's properties</param>
         private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, IActivity activity, object nestedInstance, CancellationToken cancellationToken, string? parentName = null)
         {
             using var scope = _serviceProvider.CreateScope();
@@ -104,9 +109,9 @@ namespace Elsa.Services.Workflows
             {
                 var propertyName = parentName == null ? property.Name : $"{parentName}_{property.Name}";
 
-                var validatePropertyExposure = new ValidatePropertyExposure(context.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, propertyName);
-                await mediator.Publish(validatePropertyExposure, cancellationToken);
-                if (!validatePropertyExposure.CanExposeProperty)
+                var serializingProperty = new SerializingProperty(context.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, propertyName);
+                await mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
                 {
                     continue;
                 }

@@ -37,9 +37,9 @@ namespace Elsa.Handlers
             // Persist input properties.
             foreach (var property in inputProperties)
             {
-                var validatePropertyExposure = new ValidatePropertyExposure(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
-                await _mediator.Publish(validatePropertyExposure, cancellationToken);
-                if (!validatePropertyExposure.CanExposeProperty)
+                var serializingProperty = new SerializingProperty(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
                 {
                     continue;
                 }
@@ -53,9 +53,9 @@ namespace Elsa.Handlers
             // Persist output properties.
             foreach (var property in outputProperties)
             {
-                var validatePropertyExposure = new ValidatePropertyExposure(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
-                await _mediator.Publish(validatePropertyExposure, cancellationToken);
-                if (!validatePropertyExposure.CanExposeProperty)
+                var serializingProperty = new SerializingProperty(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
                 {
                     continue;
                 }

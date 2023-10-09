@@ -9,7 +9,8 @@ using System.Threading.Tasks;
 using Elsa.Secrets.Persistence.Specifications;
 using System.Linq;
 using Elsa.Secrets.Encryption;
-using Microsoft.Extensions.Configuration;
+using Elsa.Secrets.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Manager
 {
@@ -20,18 +21,13 @@ namespace Elsa.Secrets.Manager
         private readonly string _encryptionKey;
         private readonly string[] _encryptedProperties;
 
-        public SecretsManager(ISecretsStore secretsStore, IConfiguration configuration)
+        public SecretsManager(ISecretsStore secretsStore, IOptions<SecretsConfigOptions> options)
         {
             _secretsStore = secretsStore;
             
-            var section = configuration.GetSection("Elsa:Features:Secrets");
-            _encryptionEnabled = section.GetValue<bool>("EncryptionEnabled");
-            _encryptionKey = section.GetValue<string>("EncryptionKey");
-            _encryptedProperties = section.GetSection("EncryptedProperties")
-                .AsEnumerable()
-                .Select(x => x.Value)
-                .Where(x => !string.IsNullOrEmpty(x))
-                .ToArray();
+            _encryptionEnabled = options.Value.Enabled ?? false;
+            _encryptionKey = options.Value.EncryptionKey;
+            _encryptedProperties = options.Value.EncryptedProperties;
         }
 
         public async Task<Secret?> GetSecretById(string id, CancellationToken cancellationToken = default) {

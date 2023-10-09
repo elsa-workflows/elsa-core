@@ -78,10 +78,10 @@ namespace Elsa.Server.Api.Services
         {
             if (propertyDescriptor.IsDesignerCritical)
             {
-                var validatePropertyExposure = new ValidatePropertyExposure(workflowBlueprint, activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
-                await _mediator.Publish(validatePropertyExposure, cancellationToken);
+                var serializingProperty = new SerializingProperty(workflowBlueprint, activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
 
-                if (validatePropertyExposure.CanExposeProperty)
+                if (serializingProperty.CanSerialize)
                 {
                     try
                     {
