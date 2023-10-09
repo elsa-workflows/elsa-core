@@ -29,8 +29,8 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
         private readonly Mock<ServiceBusClient> _serviceBusClient = new();
 
         private IWorkerManager _worker;
-        private BackgroundCommandSenderHostedService _hosted;
-
+        private readonly BackgroundCommandSenderHostedService _hosted;
+        private readonly BackgroundEventPublisherHostedService _backgroundEventService;
         private readonly ITestResetEventManager _resetEventManager = new TestResetEventManager();
         private readonly ITestOutputHelper _testOutputHelper;
         private readonly IServiceBusProcessorManager _sbProcessorManager;
@@ -41,6 +41,7 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
                 .WithCapturingTextWriter(_capturingTextWriter)
                 .AddWorkflow<ReceiveOneMessageWorkflow>()
                 .AddWorkflow<ReceiveMessageWorkflow>()
+                .AddWorkflow<SendOneMessageWorkflow>()
                 .ConfigureServices(services =>
                 {
                     services
@@ -56,12 +57,18 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
                         var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
                         return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
                     })
+                    .AddSingleton(sp =>
+                    {
+                        var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                        return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
+                    })
                     ;
                 })
                 .Build();
 
             _worker = _services.GetRequiredService<IWorkerManager>();
             _hosted = _services.GetRequiredService<BackgroundCommandSenderHostedService>();
+            _backgroundEventService = _services.GetRequiredService<BackgroundEventPublisherHostedService>();
             _sbProcessorManager = _services.GetRequiredService<IServiceBusProcessorManager>();
 
             _testOutputHelper = testOutputHelper;
@@ -77,11 +84,8 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             _resetEventManager.Init("receive1");
             _resetEventManager.Init("receive2");
 
-            //Init Registries to use StartWorkflow
-            await _services.PopulateRegistriesAsync();
-
-            //Start background services for CommandHandler
-            await _hosted.StartAsync(CancellationToken.None);
+            //Init BackGround
+            await InitRegistryAndBackGroundServiceWorkerAsync();
 
             //Start Workflow
             var workflowDefinitionId = typeof(ReceiveMessageWorkflow).Name;
@@ -127,6 +131,16 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             Assert.False(wait2);
         }
 
+        private async Task InitRegistryAndBackGroundServiceWorkerAsync()
+        {
+            //Init Registries to use StartWorkflow
+            await _services.PopulateRegistriesAsync();
+
+            //Start background services for CommandHandler
+            await _hosted.StartAsync(CancellationToken.None);
+            await _backgroundEventService.StartAsync(CancellationToken.None);
+        }
+
         [Fact(DisplayName = "1 Receive - Sending 1 message - Should Finished")]
         public async Task Receive_1_Message_Should_Finish_With_One_Receive()
         {
@@ -135,11 +149,8 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             //Init waitEvent :
             _resetEventManager.Init("receive1");
 
-            //Init Registries to use StartWorkflow
-            await _services.PopulateRegistriesAsync();
-
-            //Start background services for CommandHandler
-            await _hosted.StartAsync(CancellationToken.None);
+            //Init BackGround
+            await InitRegistryAndBackGroundServiceWorkerAsync();
 
             //Start Workflow
             var workflowDefinitionId = typeof(ReceiveOneMessageWorkflow).Name;
@@ -179,6 +190,130 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             Assert.Equal(WorkflowSubStatus.Finished, lastWorkflowState.SubStatus);
             Assert.True(wait1);
         }
+
+        [Fact(DisplayName = "1 Send - 1 Receive - Should Finished - without race condition")]
+        public async Task Send_1_Message_And_Receive_Response()
+        {
+            _sbProcessorManager.Init("topicName", "subscriptionName");
+
+            //Init waitEvent :
+            _resetEventManager.Init("receive1");
+
+            //Init BackGround
+            await InitRegistryAndBackGroundServiceWorkerAsync();
+
+            var senderMock = new Mock<ServiceBusSender>();
+            _serviceBusClient
+                .Setup(sb =>
+                sb.CreateSender(It.IsAny<string>())
+                )
+                .Returns(senderMock.Object);
+            senderMock
+                .Setup(sender =>
+                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(),It.IsAny<CancellationToken>()))
+                .Callback<ServiceBusMessage,CancellationToken>(async (sb, c) =>
+                {
+                    _testOutputHelper.WriteLine("Sending Message from activity");
+            
+                    await _worker.StartWorkerAsync("topicName", "subscriptionName");
+                    await _sbProcessorManager
+                        .Get("topicName", "subscriptionName")
+                        .SendMessage<dynamic>(new { hello = "world" }, null);
+                })
+                .Returns(Task.CompletedTask);
+
+            //Start Workflow
+            var workflowDefinitionId = typeof(SendOneMessageWorkflow).Name;
+            var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+            var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
+            var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+
+            /*
+             * Workflow don't receive any message so it should be
+             * Running
+             * Suspended
+             */
+            Assert.Equal(WorkflowStatus.Running, workflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
+
+
+            //Start Worker to send Message on topicName/suscriptionName
+            //await _worker.StartWorkerAsync("topicName", "subscriptionName");
+            //await _sbProcessorManager
+            //    .Get("topicName", "subscriptionName")
+            //    .SendMessage<dynamic>(new { hello = "world" }, null);
+
+            //Wait for receiving first message
+            var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
+            _testOutputHelper.WriteLine($"wait1 : {wait1}");
+
+            await Task.Delay(500); //Todo find how to remove delay
+            var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+            /*
+             * We sent 1 message so Workflow must be 
+             * Finished
+             * Finished
+             * 
+             * with no timeout for the first message. (True ResetEvent)
+             */
+            Assert.NotNull(lastWorkflowState);
+            Assert.Equal(WorkflowStatus.Finished, lastWorkflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Finished, lastWorkflowState.SubStatus);
+            Assert.True(wait1);
+        }
+
+
+        [Fact(DisplayName = "1 Receive - Listening from other topic - Should not trigger")]
+        public async Task Receive_1_Message_Should_Not_Trigger()
+        {
+            _sbProcessorManager.Init("topicName1", "subscriptionName1");
+            
+            //Init waitEvent :
+            _resetEventManager.Init("receive1");
+            _resetEventManager.Init("receive2");
+
+            //Init BackGround
+            await InitRegistryAndBackGroundServiceWorkerAsync();
+
+            //Start Workflow
+            var workflowDefinitionId = typeof(ReceiveMessageWorkflow).Name;
+            var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+            var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
+            var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+
+            /*
+             * Workflow don't receive any message so it should be
+             * Running
+             * Suspended
+             */
+            Assert.Equal(WorkflowStatus.Running, workflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
+
+            //Start Worker to send Message on topicName/suscriptionName
+            await _worker.StartWorkerAsync("topicName1", "subscriptionName1");
+            await _sbProcessorManager
+                .Get("topicName1", "subscriptionName1")
+                .SendMessage<dynamic>(new { hello = "world" }, null);
+
+            //Wait for receiving first message
+            var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
+            _testOutputHelper.WriteLine($"wait1 : {wait1}");
+
+            var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+            /*
+             * We don't send 2 messages so Workflow must be 
+             * Running
+             * Suspended
+             * 
+             * with a timeout on Wait for 2nd Message. (False ResetEvent)
+             */
+            Assert.NotNull(lastWorkflowState);
+            Assert.Equal(WorkflowStatus.Running, lastWorkflowState.Status);
+            Assert.Equal(WorkflowSubStatus.Suspended, lastWorkflowState.SubStatus);
+            Assert.False(wait1);
+            
+        }
+
 
         public void Dispose()
         {
