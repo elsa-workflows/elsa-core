@@ -7,7 +7,7 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 
-namespace Elsa.Dapper.Modules.Identity.Services;
+namespace Elsa.Dapper.Modules.Identity.Stores;
 
 /// <summary>
 /// A Dapper implementation of <see cref="IApplicationStore"/>.

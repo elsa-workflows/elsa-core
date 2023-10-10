@@ -13,7 +13,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Dapper.Modules.Management.Services;
+namespace Elsa.Dapper.Modules.Management.Stores;
 
 /// <summary>
 /// Provides a Dapper implementation of <see cref="IWorkflowInstanceStore"/>.
