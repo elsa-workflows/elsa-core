@@ -24,6 +24,14 @@ public interface IActivityExecutionStore
     Task SaveManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Finds the activity execution records matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter to use when finding the activity execution record.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The activity execution record, if found.</returns>
+    Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Finds all activity execution records matching the specified filter.
     /// </summary>
     /// <param name="filter">The filter to use when finding activity execution records.</param>
