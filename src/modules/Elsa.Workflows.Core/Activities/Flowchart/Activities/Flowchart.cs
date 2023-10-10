@@ -278,7 +278,19 @@ public class Flowchart : Container
     {
         var flowchartContext = context.ReceiverActivityExecutionContext;
         var activity = signal.Activity;
-        
-        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+        var activityExecutionContext = signal.ActivityExecutionContext;
+
+        if (activityExecutionContext != null)
+        {
+            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new ScheduleWorkOptions
+            {
+                ExistingActivityExecutionContext = activityExecutionContext,
+                CompletionCallback = OnChildCompletedAsync,
+            });
+        }
+        else
+        {
+            await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+        }
     }
 }
