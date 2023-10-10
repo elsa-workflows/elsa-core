@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 
@@ -32,5 +33,12 @@ public class DefaultActivityExecutionManager : IActivityExecutionManager
         }
 
         return records.Count;
+    }
+
+    /// <inheritdoc />
+    public async Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(record, cancellationToken);
+        await _notificationSender.SendAsync(new ActivityExecutionRecordUpdated(record), cancellationToken);
     }
 }

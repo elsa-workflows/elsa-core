@@ -15,19 +15,20 @@ namespace Elsa.Workflows.Api.RealTime.Handlers;
 public class BroadcastWorkflowProgress :
     INotificationHandler<ActivityExecutionLogUpdated>,
     INotificationHandler<ActivityExecutionRecordDeleted>,
+    INotificationHandler<ActivityExecutionRecordUpdated>,
     INotificationHandler<WorkflowExecutionLogUpdated>,
     INotificationHandler<WorkflowInstanceSaved>
 {
     private readonly IHubContext<WorkflowInstanceHub, IWorkflowInstanceClient> _hubContext;
-    private readonly IActivityExecutionService _activityExecutionService;
+    private readonly IActivityExecutionStatsService _activityExecutionStatsService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BroadcastWorkflowProgress"/> class.
     /// </summary>
-    public BroadcastWorkflowProgress(IHubContext<WorkflowInstanceHub, IWorkflowInstanceClient> hubContext, IActivityExecutionService activityExecutionService)
+    public BroadcastWorkflowProgress(IHubContext<WorkflowInstanceHub, IWorkflowInstanceClient> hubContext, IActivityExecutionStatsService activityExecutionStatsService)
     {
         _hubContext = hubContext;
-        _activityExecutionService = activityExecutionService;
+        _activityExecutionStatsService = activityExecutionStatsService;
     }
 
     /// <inheritdoc />
@@ -35,7 +36,7 @@ public class BroadcastWorkflowProgress :
     {
         var workflowInstanceId = notification.WorkflowExecutionContext.Id;
         var activityIds = notification.Records.Select(x => x.ActivityId).Distinct().ToList();
-        var stats = (await _activityExecutionService.GetStatsAsync(workflowInstanceId, activityIds, cancellationToken)).ToList();
+        var stats = (await _activityExecutionStatsService.GetStatsAsync(workflowInstanceId, activityIds, cancellationToken)).ToList();
         var clients = _hubContext.Clients.Group(workflowInstanceId);
         var message = new ActivityExecutionLogUpdatedMessage(stats);
 
@@ -48,11 +49,16 @@ public class BroadcastWorkflowProgress :
         var record = notification.Record;
         var workflowInstanceId = record.WorkflowInstanceId;
         var activityId = record.ActivityId;
-        var stats = await _activityExecutionService.GetStatsAsync(workflowInstanceId, activityId, cancellationToken);
-        var clients = _hubContext.Clients.Group(workflowInstanceId);
-        var message = new ActivityExecutionLogUpdatedMessage(new[] { stats });
+        await BroadcastActivityExecutionLogUpdatedAsync(workflowInstanceId, activityId, cancellationToken);
+    }
 
-        await clients.ActivityExecutionLogUpdatedAsync(message, cancellationToken);
+    /// <inheritdoc />
+    public async Task HandleAsync(ActivityExecutionRecordUpdated notification, CancellationToken cancellationToken)
+    {
+        var record = notification.Record;
+        var workflowInstanceId = record.WorkflowInstanceId;
+        var activityId = record.ActivityId;
+        await BroadcastActivityExecutionLogUpdatedAsync(workflowInstanceId, activityId, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -73,5 +79,14 @@ public class BroadcastWorkflowProgress :
         var message = new WorkflowInstanceUpdatedMessage(workflowInstanceId);
 
         await clients.WorkflowInstanceUpdatedAsync(message, cancellationToken);
+    }
+    
+    private async Task BroadcastActivityExecutionLogUpdatedAsync(string workflowInstanceId, string activityId, CancellationToken cancellationToken)
+    {
+        var stats = await _activityExecutionStatsService.GetStatsAsync(workflowInstanceId, activityId, cancellationToken);
+        var clients = _hubContext.Clients.Group(workflowInstanceId);
+        var message = new ActivityExecutionLogUpdatedMessage(new[] { stats });
+
+        await clients.ActivityExecutionLogUpdatedAsync(message, cancellationToken);
     }
 }

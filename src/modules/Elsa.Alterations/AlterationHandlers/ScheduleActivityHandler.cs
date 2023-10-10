@@ -31,7 +31,8 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
                 existingActivityExecutionContext.Status = ActivityStatus.Running;
 
             // Schedule the activity execution context.
-            workflowExecutionContext.ScheduleActivityExecutionContext(existingActivityExecutionContext);
+            var parentContext = existingActivityExecutionContext.ParentActivityExecutionContext;
+            await parentContext!.SendSignalAsync(new ScheduleChildActivity(existingActivityExecutionContext));
             context.Succeed();
             return;
         }
@@ -53,7 +54,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         }
 
         // Find the parent activity execution context within which to schedule the activity.
-        var parentActivityContexts = workflowExecutionContext.ActiveActivityExecutionContexts.Reverse().ToList();
+        var parentActivityContexts = workflowExecutionContext.ActivityExecutionContexts.Reverse().ToList();
 
         var parentExecutionContext =
             (from ancestorNode in activityNode.Ancestors()
@@ -77,7 +78,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
             return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);
 
         if (alteration.ActivityId != null)
-            return context.WorkflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
+            return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
 
         return null;
     }

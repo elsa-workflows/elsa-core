@@ -14,13 +14,17 @@ namespace Elsa.Alterations.AlterationHandlers;
 public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
 {
     private readonly IBookmarkManager _bookmarkManager;
+    private readonly IActivityExecutionManager _activityExecutionManager;
+    private readonly IActivityExecutionMapper _activityExecutionMapper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CancelActivityHandler"/> class.
     /// </summary>
-    public CancelActivityHandler(IBookmarkManager bookmarkManager)
+    public CancelActivityHandler(IBookmarkManager bookmarkManager, IActivityExecutionManager activityExecutionManager, IActivityExecutionMapper activityExecutionMapper)
     {
         _bookmarkManager = bookmarkManager;
+        _activityExecutionManager = activityExecutionManager;
+        _activityExecutionMapper = activityExecutionMapper;
     }
 
     /// <inheritdoc />
@@ -46,13 +50,25 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
 
         await activityExecutionContext.CancelActivityAsync();
         var cancellationToken = context.CancellationToken;
-        context.Succeed(() => RemoveBookmarksAsync(activityExecutionContext.Id, cancellationToken));
+        context.Succeed(() => CleanupAsync(activityExecutionContext, cancellationToken));
+    }
+
+    private async Task CleanupAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+    {
+        await RemoveBookmarksAsync(activityExecutionContext.Id, cancellationToken);
+        await SaveActivityExecutionRecordAsync(activityExecutionContext);
     }
 
     private async Task RemoveBookmarksAsync(string activityInstanceId, CancellationToken cancellationToken)
     {
         var filter = new BookmarkFilter { ActivityInstanceId = activityInstanceId };
         await _bookmarkManager.DeleteManyAsync(filter, cancellationToken);
+    }
+
+    private async Task SaveActivityExecutionRecordAsync(ActivityExecutionContext activityExecutionContext)
+    {
+        var activityExecutionRecord = _activityExecutionMapper.Map(activityExecutionContext);
+        await _activityExecutionManager.SaveAsync(activityExecutionRecord, CancellationToken.None);
     }
 
     private static ActivityExecutionContext? GetActivityExecutionContext(AlterationContext context, CancelActivity alteration)
@@ -63,7 +79,7 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
             return workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);
 
         if (alteration.ActivityId != null)
-            return workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
+            return workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
 
         return null;
     }

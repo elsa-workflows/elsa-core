@@ -1,3 +1,4 @@
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Workflows.Runtime.Contracts;
@@ -14,4 +15,9 @@ public interface IActivityExecutionManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The number of activity execution records deleted.</returns>
     Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Saves the specified activity execution record.
+    /// </summary>
+    Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default);
 }
