@@ -12,7 +12,11 @@ namespace Elsa.Workflows.Api.RealTime.Handlers;
 /// <summary>
 /// Broadcasts workflow progress to clients.
 /// </summary>
-public class BroadcastWorkflowProgress : INotificationHandler<ActivityExecutionLogUpdated>, INotificationHandler<WorkflowExecutionLogUpdated>, INotificationHandler<WorkflowInstanceSaved>
+public class BroadcastWorkflowProgress :
+    INotificationHandler<ActivityExecutionLogUpdated>,
+    INotificationHandler<ActivityExecutionRecordDeleted>,
+    INotificationHandler<WorkflowExecutionLogUpdated>,
+    INotificationHandler<WorkflowInstanceSaved>
 {
     private readonly IHubContext<WorkflowInstanceHub, IWorkflowInstanceClient> _hubContext;
     private readonly IActivityExecutionService _activityExecutionService;
@@ -34,7 +38,20 @@ public class BroadcastWorkflowProgress : INotificationHandler<ActivityExecutionL
         var stats = (await _activityExecutionService.GetStatsAsync(workflowInstanceId, activityIds, cancellationToken)).ToList();
         var clients = _hubContext.Clients.Group(workflowInstanceId);
         var message = new ActivityExecutionLogUpdatedMessage(stats);
-        
+
+        await clients.ActivityExecutionLogUpdatedAsync(message, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(ActivityExecutionRecordDeleted notification, CancellationToken cancellationToken)
+    {
+        var record = notification.Record;
+        var workflowInstanceId = record.WorkflowInstanceId;
+        var activityId = record.ActivityId;
+        var stats = await _activityExecutionService.GetStatsAsync(workflowInstanceId, activityId, cancellationToken);
+        var clients = _hubContext.Clients.Group(workflowInstanceId);
+        var message = new ActivityExecutionLogUpdatedMessage(new[] { stats });
+
         await clients.ActivityExecutionLogUpdatedAsync(message, cancellationToken);
     }
 
@@ -44,7 +61,7 @@ public class BroadcastWorkflowProgress : INotificationHandler<ActivityExecutionL
         var workflowInstanceId = notification.WorkflowExecutionContext.Id;
         var clients = _hubContext.Clients.Group(workflowInstanceId);
         var message = new WorkflowExecutionLogUpdatedMessage();
-        
+
         await clients.WorkflowExecutionLogUpdatedAsync(message, cancellationToken);
     }
 
@@ -54,7 +71,7 @@ public class BroadcastWorkflowProgress : INotificationHandler<ActivityExecutionL
         var workflowInstanceId = notification.WorkflowInstance.Id;
         var clients = _hubContext.Clients.Group(workflowInstanceId);
         var message = new WorkflowInstanceUpdatedMessage(workflowInstanceId);
-        
+
         await clients.WorkflowInstanceUpdatedAsync(message, cancellationToken);
     }
 }
