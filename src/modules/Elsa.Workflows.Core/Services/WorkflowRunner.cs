@@ -147,7 +147,7 @@ public class WorkflowRunner : IWorkflowRunner
         else if (activityInstanceId != null)
         {
             // Schedule the activity.
-            var activityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
+            var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
             workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
         }
         else if (workflowExecutionContext.Scheduler.HasAny)

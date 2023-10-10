@@ -45,7 +45,7 @@ public class ParallelForEach<T> : Activity
 
         foreach (var item in items)
         {
-            // For each item, declare a new variable the work to be scheduled.
+            // For each item, declare a new variable for the work to be scheduled.
             var currentValueVariable = new Variable<T>("CurrentValue", item)
             {
                 // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
