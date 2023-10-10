@@ -11,13 +11,13 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.Report;
 internal class Report : ElsaEndpoint<Request, Response>
 {
     private readonly IActivityExecutionStore _store;
-    private readonly IActivityExecutionService _activityExecutionService;
+    private readonly IActivityExecutionStatsService _activityExecutionStatsService;
 
     /// <inheritdoc />
-    public Report(IActivityExecutionStore store, IActivityExecutionService activityExecutionService)
+    public Report(IActivityExecutionStore store, IActivityExecutionStatsService activityExecutionStatsService)
     {
         _store = store;
-        _activityExecutionService = activityExecutionService;
+        _activityExecutionStatsService = activityExecutionStatsService;
     }
 
     /// <inheritdoc />
@@ -30,7 +30,7 @@ internal class Report : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var stats = (await _activityExecutionService.GetStatsAsync(request.WorkflowInstanceId, request.ActivityIds, cancellationToken)).ToList();
+        var stats = (await _activityExecutionStatsService.GetStatsAsync(request.WorkflowInstanceId, request.ActivityIds, cancellationToken)).ToList();
         
         return new Response
         {

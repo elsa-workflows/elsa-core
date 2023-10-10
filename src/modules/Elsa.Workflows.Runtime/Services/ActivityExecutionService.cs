@@ -8,14 +8,14 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class ActivityExecutionService : IActivityExecutionService
+public class ActivityExecutionStatsService : IActivityExecutionStatsService
 {
     private readonly IActivityExecutionStore _store;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ActivityExecutionService"/> class.
+    /// Initializes a new instance of the <see cref="ActivityExecutionStatsService"/> class.
     /// </summary>
-    public ActivityExecutionService(IActivityExecutionStore store)
+    public ActivityExecutionStatsService(IActivityExecutionStore store)
     {
         _store = store;
     }

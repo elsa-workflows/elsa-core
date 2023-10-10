@@ -37,6 +37,13 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
+    public Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
     public Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var result = _store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();

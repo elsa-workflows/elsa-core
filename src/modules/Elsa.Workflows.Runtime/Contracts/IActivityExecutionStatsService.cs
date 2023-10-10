@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// <summary>
 /// A service for reading activity execution logs.
 /// </summary>
-public interface IActivityExecutionService
+public interface IActivityExecutionStatsService
 {
     /// <summary>
     /// Gets execution stats for the specified activities.

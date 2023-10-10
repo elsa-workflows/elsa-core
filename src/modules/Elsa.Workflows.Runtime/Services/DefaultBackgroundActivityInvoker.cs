@@ -64,7 +64,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
-        var activityExecutionContext = workflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
+        var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
         // Load persistent variables for the activity to use.
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);

@@ -191,7 +191,7 @@ public class WorkflowExecutionContext : IExecutionContext
         Nodes = nodes;
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
-        NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
+        NodeActivityIdLookup = nodes.ToDictionary(x => x.Activity.Id);
     }
 
     /// <summary>
@@ -275,7 +275,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; private set; } = default!;
+    public IDictionary<string, ActivityNode> NodeActivityIdLookup { get; private set; } = default!;
 
     /// <summary>
     /// The <see cref="IActivityScheduler"/> for the execution context.
@@ -335,13 +335,6 @@ public class WorkflowExecutionContext : IExecutionContext
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
     /// </summary>
     public ICollection<ActivityCompletionCallbackEntry> CompletionCallbacks => new ReadOnlyCollection<ActivityCompletionCallbackEntry>(_completionCallbackEntries);
-
-    /// <summary>
-    /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
-    /// </summary>
-    public IReadOnlyCollection<ActivityExecutionContext> ActiveActivityExecutionContexts => ActivityExecutionContexts
-        .Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null && x.Status != ActivityStatus.Pending)
-        .ToList();
 
     /// <summary>
     /// A list of <see cref="ActivityExecutionContext"/>s that are currently active.
@@ -451,12 +444,12 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
-    public ActivityNode? FindNodeByActivity(IActivity activity) => NodeActivityLookup[activity];
+    public ActivityNode? FindNodeByActivity(IActivity activity) => NodeActivityIdLookup[activity.Id];
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
     /// </summary>
-    public ActivityNode? FindNodeByActivityId(string activityId) => Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
+    public ActivityNode? FindNodeByActivityId(string activityId) => NodeActivityIdLookup[activityId];
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
@@ -560,7 +553,18 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Adds the specified <see cref="ActivityExecutionContext"/> to the workflow execution context.
     /// </summary>
-    internal void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
+    public void AddActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Add(context);
+    
+    /// <summary>
+    /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
+    /// </summary>
+    public void RemoveActivityExecutionContext(ActivityExecutionContext context) => _activityExecutionContexts.Remove(context);
+    
+    /// <summary>
+    /// Removes the specified <see cref="ActivityExecutionContext"/> from the workflow execution context.
+    /// </summary>
+    /// <param name="predicate">The predicate used to filter the activity execution contexts to remove.</param>
+    public void RemoveActivityExecutionContext(Func<ActivityExecutionContext, bool> predicate) => _activityExecutionContexts.RemoveWhere(predicate); 
 
     /// <summary>
     /// Records the output of the specified activity into the current workflow execution context. 

@@ -295,7 +295,7 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetDescendents(this ActivityExecutionContext context)
     {
-        var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
         foreach (var child in children)
         {
@@ -310,7 +310,7 @@ public static class ActivityExecutionContextExtensions
     /// Returns a flattened list of the current context's immediate active children.
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetActiveChildren(this ActivityExecutionContext context) =>
-        context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
+        context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context);
 
     /// <summary>
     /// Returns a flattened list of the current context's immediate children.
@@ -323,7 +323,7 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityExecutionContext> GetDescendants(this ActivityExecutionContext context)
     {
-        var children = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var children = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
         foreach (var child in children)
         {
@@ -398,7 +398,7 @@ public static class ActivityExecutionContextExtensions
             return;
 
         // Update all child contexts.
-        var childContexts = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var childContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
         foreach (var childContext in childContexts)
             await childContext.CancelActivityAsync();
@@ -445,9 +445,12 @@ public static class ActivityExecutionContextExtensions
         // Remove completion callbacks.
         context.ClearCompletionCallbacks();
 
-        // Remove all associated variables.
-        var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-        await variablePersistenceManager.DeleteVariablesAsync(context);
+        // Remove all associated variables, unless this is the root context - in which case we want to keep the variables since we're not deleting that one.
+        if (context.ParentActivityExecutionContext != null)
+        {
+            var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
+            await variablePersistenceManager.DeleteVariablesAsync(context);
+        }
 
         // Update the completed at timestamp.
         context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
@@ -508,11 +511,11 @@ public static class ActivityExecutionContextExtensions
     public static async Task CancelActivityAsync(this ActivityExecutionContext context)
     {
         // If the activity is not running, do nothing.
-        if (context.Status != ActivityStatus.Running)
+        if (context.Status != ActivityStatus.Running && context.Status != ActivityStatus.Faulted)
             return;
 
         // Select all child contexts.
-        var childContexts = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
+        var childContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
 
         foreach (var childContext in childContexts)
             await CancelActivityAsync(childContext);

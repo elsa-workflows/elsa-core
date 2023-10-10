@@ -68,7 +68,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
     private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationContext context, Variable variable)
     {
         var query =
-            from activityExecutionContext in context.WorkflowExecutionContext.ActiveActivityExecutionContexts
+            from activityExecutionContext in context.WorkflowExecutionContext.ActivityExecutionContexts
             from var in activityExecutionContext.Variables
             where var.Id == variable.Id
             select activityExecutionContext;
