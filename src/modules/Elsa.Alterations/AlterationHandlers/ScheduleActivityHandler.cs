@@ -37,6 +37,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
             return;
         }
 
+        // Schedule a new activity instance.
         var activityId = alteration.ActivityId;
 
         if (activityId == null)
@@ -76,9 +77,6 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
     {
         if (alteration.ActivityInstanceId != null)
             return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);
-
-        if (alteration.ActivityId != null)
-            return context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
 
         return null;
     }
