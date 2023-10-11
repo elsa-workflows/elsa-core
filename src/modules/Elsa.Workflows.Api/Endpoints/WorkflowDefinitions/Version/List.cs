@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
+/// <summary>
+/// Lists the available versions of the specified workflow definition.
+/// </summary>
 [PublicAPI]
 internal class ListVersions : EndpointWithoutRequest
 {

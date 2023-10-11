@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetManyById;
 
+/// <summary>
+/// Gets definitions of the workflows specified by a list of Ids.
+/// </summary>
 [PublicAPI]
 internal class GetManyById : ElsaEndpoint<Request>
 {

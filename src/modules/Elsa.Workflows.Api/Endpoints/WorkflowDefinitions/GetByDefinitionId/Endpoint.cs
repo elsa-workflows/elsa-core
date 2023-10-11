@@ -11,6 +11,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetByDefinitionId;
 
+/// <summary>
+/// Gets the specified workflow definition.
+/// </summary>
 [PublicAPI]
 internal class GetByDefinitionId : ElsaEndpoint<Request>
 {
