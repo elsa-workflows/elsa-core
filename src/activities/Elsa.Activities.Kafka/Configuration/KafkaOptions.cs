@@ -27,5 +27,10 @@ namespace Elsa.Activities.Kafka.Configuration
         /// Security protocol to be used for communication with brokers
         /// </summary>
         public Confluent.Kafka.SecurityProtocol SecurityProtocol { get; set; }
+
+        /// <summary>
+        /// If the kafka activities / triggers don't have a connection string specified (Empty string), use this one instead.
+        /// </summary>
+        public string? DefaultConnectionString { get; set; }
     }
 }

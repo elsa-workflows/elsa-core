@@ -23,7 +23,7 @@ namespace Elsa.Activities.Kafka.Services
         private readonly ILogger _logger;
         private readonly IBookmarkSerializer _bookmarkSerializer;
         private readonly KafkaOptions _kafkaOptions;
-        
+
         public WorkerManager(
             IServiceProvider serviceProvider,
             ILogger<WorkerManager> logger,
@@ -113,13 +113,13 @@ namespace Elsa.Activities.Kafka.Services
                 var worker = _workers.FirstOrDefault(x => x.Topic == configuration.Topic && x.Group == configuration.Group);
 
                 // Create worker if not found and a topic and connectionString are provided.
-                if (worker is null && !IsNullOrEmpty(configuration.Topic) && !IsNullOrEmpty(configuration.ConnectionString))
+                if (worker is null && !IsNullOrEmpty(configuration.Topic) && (!IsNullOrEmpty(configuration.ConnectionString) || !IsNullOrEmpty(_kafkaOptions.DefaultConnectionString)))
                 {
                     worker = ActivatorUtilities.CreateInstance<Worker>(
                         _serviceProvider,
                         configuration.Topic,
                         configuration.Group ?? "",
-                        new Client(configuration, _kafkaOptions),
+                        new Client(configuration, _kafkaOptions, _kafkaOptions.DefaultConnectionString ?? ""),
                         (Func<Worker, IClient, Task>)(async (w, c) => await RemoveAndRespawnWorkerAsync(w, c, tag, configuration)));
 
                     _logger.LogDebug("Created worker for {QueueOrTopic}", worker.Topic);

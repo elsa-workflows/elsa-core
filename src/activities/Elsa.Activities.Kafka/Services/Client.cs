@@ -18,11 +18,12 @@ namespace Elsa.Activities.Kafka.Services
         private Func<KafkaMessageEvent, Task>? _messageHandler;
         private Func<Exception, Task>? _errHandler;
         private readonly KafkaOptions _kafkaOptions;
-
-        public Client(KafkaConfiguration configuration, KafkaOptions options)
+        private string _fallbackConnectionString;
+        public Client(KafkaConfiguration configuration, KafkaOptions options, string fallbackConnectionString = "")
         {
             Configuration = configuration;
             _kafkaOptions = options;
+            _fallbackConnectionString = fallbackConnectionString;
         }
 
         public KafkaConfiguration Configuration { get; }
@@ -39,7 +40,7 @@ namespace Elsa.Activities.Kafka.Services
 
             var consumerConfig = new ConsumerConfig(Configuration.Headers)
             {
-                BootstrapServers = Configuration.ConnectionString,
+                BootstrapServers = String.IsNullOrEmpty(Configuration.ConnectionString) ? _fallbackConnectionString : Configuration.ConnectionString,
                 GroupId = group,
                 AutoOffsetReset = Configuration.AutoOffsetReset,
                 SaslMechanism = _kafkaOptions.SaslMechanism,
@@ -77,7 +78,7 @@ namespace Elsa.Activities.Kafka.Services
                           }
                       }, _cancellationToken);
             }
-            
+
             return Task.CompletedTask;
         }
 
