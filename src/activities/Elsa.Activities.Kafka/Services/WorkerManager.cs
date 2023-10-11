@@ -119,7 +119,7 @@ namespace Elsa.Activities.Kafka.Services
                         _serviceProvider,
                         configuration.Topic,
                         configuration.Group ?? "",
-                        new Client(configuration, _kafkaOptions, _kafkaOptions.DefaultConnectionString ?? ""),
+                        new Client(configuration, _kafkaOptions),
                         (Func<Worker, IClient, Task>)(async (w, c) => await RemoveAndRespawnWorkerAsync(w, c, tag, configuration)));
 
                     _logger.LogDebug("Created worker for {QueueOrTopic}", worker.Topic);
