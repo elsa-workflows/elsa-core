@@ -1,7 +1,6 @@
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
-using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
@@ -28,41 +27,46 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
     }
 
     /// <inheritdoc />
-    protected override async ValueTask HandleAsync(AlterationContext context, CancelActivity alteration)
+    protected override ValueTask HandleAsync(AlterationContext context, CancelActivity alteration)
     {
         if (alteration.ActivityInstanceId == null && alteration.ActivityId == null)
         {
             context.Fail("Either ActivityInstanceId or ActivityId must be specified");
-            return;
+            return ValueTask.CompletedTask;
         }
 
-        var activityExecutionContext = GetActivityExecutionContext(context, alteration);
+        var activityExecutionContexts = GetActivityExecutionContexts(context, alteration).ToList();
 
-        if (activityExecutionContext == null)
+        if (!activityExecutionContexts.Any())
         {
             context.Fail(
                 alteration.ActivityInstanceId != null
                     ? $"Activity execution context with ID {alteration.ActivityInstanceId} not found"
-                    : $"Activity execution context for activity with ID {alteration.ActivityId} not found");
+                    : $"Activity execution contexts for activity with ID {alteration.ActivityId} not found");
 
-            return;
+            return ValueTask.CompletedTask;
         }
 
-        await activityExecutionContext.CancelActivityAsync();
-        var cancellationToken = context.CancellationToken;
-        context.Succeed(() => CleanupAsync(activityExecutionContext, cancellationToken));
+        context.Succeed(() => CleanupAsync(activityExecutionContexts));
+        return ValueTask.CompletedTask;
     }
 
-    private async Task CleanupAsync(ActivityExecutionContext activityExecutionContext, CancellationToken cancellationToken)
+    private async Task CleanupAsync(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
     {
-        await RemoveBookmarksAsync(activityExecutionContext.Id, cancellationToken);
+        foreach (var activityExecutionContext in activityExecutionContexts) 
+            await CleanupAsync(activityExecutionContext);
+    }
+    
+    private async Task CleanupAsync(ActivityExecutionContext activityExecutionContext)
+    {
+        await RemoveBookmarksAsync(activityExecutionContext);
         await SaveActivityExecutionRecordAsync(activityExecutionContext);
     }
 
-    private async Task RemoveBookmarksAsync(string activityInstanceId, CancellationToken cancellationToken)
+    private async Task RemoveBookmarksAsync(ActivityExecutionContext activityExecutionContext)
     {
-        var filter = new BookmarkFilter { ActivityInstanceId = activityInstanceId };
-        await _bookmarkManager.DeleteManyAsync(filter, cancellationToken);
+        var filter = new BookmarkFilter { ActivityInstanceId = activityExecutionContext.Id };
+        await _bookmarkManager.DeleteManyAsync(filter, activityExecutionContext.CancellationToken);
     }
 
     private async Task SaveActivityExecutionRecordAsync(ActivityExecutionContext activityExecutionContext)
@@ -71,16 +75,14 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
         await _activityExecutionManager.SaveAsync(activityExecutionRecord, CancellationToken.None);
     }
 
-    private static ActivityExecutionContext? GetActivityExecutionContext(AlterationContext context, CancelActivity alteration)
+    private static IEnumerable<ActivityExecutionContext> GetActivityExecutionContexts(AlterationContext context, CancelActivity alteration)
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
 
-        if (alteration.ActivityInstanceId != null)
-            return workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == alteration.ActivityInstanceId);
-
-        if (alteration.ActivityId != null)
-            return workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == alteration.ActivityId);
-
-        return null;
+        return alteration.ActivityInstanceId != null
+            ? workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Id == alteration.ActivityInstanceId)
+            : alteration.ActivityId != null
+                ? workflowExecutionContext.ActivityExecutionContexts.Where(x => x.Activity.Id == alteration.ActivityId)
+                : Enumerable.Empty<ActivityExecutionContext>();
     }
 }
