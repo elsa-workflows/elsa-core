@@ -92,6 +92,15 @@ public class Flowchart : Container
             logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
             return startActivity;
         }
+        
+        // If there's an activity marked as "Can Start Workflow", use that.
+        var canStartWorkflowActivity = Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
+        
+        if(canStartWorkflowActivity != null)
+        {
+            logger.LogDebug("An activity marked as 'Can Start Workflow' was found: {CanStartWorkflowActivityId}", canStartWorkflowActivity.Id);
+            return canStartWorkflowActivity;
+        }
 
         // If there is a single activity that has no inbound connections, use that.
         var root = GetRootActivity();
