@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - v3
+    tags:
+      - preview-*hotfix-* # e.g. preview-1.0.0-hotfix-1
   release:
     types: [ prereleased ]
 env:
