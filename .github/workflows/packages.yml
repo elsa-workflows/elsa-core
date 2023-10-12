@@ -25,7 +25,13 @@ jobs:
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/v3
       - name: Set VERSION variable
-        run: echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG_NAME=${{ github.ref }} # e.g., refs/tags/preview-740-hotfix-1
+            TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
+            echo "VERSION=3.0.0-preview-${TAG_NAME}.${{github.run_number}}" >> $GITHUB_ENV
+          else
+            echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
       - name: Build designer package
         working-directory: ./src/modules/Elsa.Workflows.Designer
         run: |
