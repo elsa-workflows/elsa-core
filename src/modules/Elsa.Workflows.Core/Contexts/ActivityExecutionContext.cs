@@ -176,7 +176,7 @@ public class ActivityExecutionContext : IExecutionContext
     public IDictionary<string, object?> JournalData { get; } = new Dictionary<string, object?>();
 
     /// <summary>
-    /// Stores the evaluated inputs for the current activity.
+    /// Stores the evaluated inputs, serialized, for the current activity for historical purposes.
     /// </summary>
     public IDictionary<string, object> ActivityState { get; set; } = new Dictionary<string, object>();
 

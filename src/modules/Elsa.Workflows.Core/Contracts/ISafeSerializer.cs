@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
@@ -9,6 +11,11 @@ public interface ISafeSerializer
     /// Serializes the specified state.
     /// </summary>
     ValueTask<string> SerializeAsync(object? value, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Serializes the specified state to a <see cref="JsonElement"/> object.
+    /// </summary>
+    ValueTask<JsonElement> SerializeToElementAsync(object? value, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deserializes the specified state.

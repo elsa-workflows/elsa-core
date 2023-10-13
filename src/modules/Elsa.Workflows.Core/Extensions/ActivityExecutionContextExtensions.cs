@@ -233,9 +233,13 @@ public static class ActivityExecutionContextExtensions
             value = input;
         }
 
-        // Store the input value in the activity state.
+        // Store the serialized input value in the activity state.
+        // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
         if (inputDescriptor.IsSerializable != false)
-            context.ActivityState[inputDescriptor.Name] = value!;
+        {
+            var serializedValue = await context.GetRequiredService<ISafeSerializer>().SerializeToElementAsync(value);
+            context.ActivityState[inputDescriptor.Name] = serializedValue;
+        }
 
         return value;
     }
@@ -289,7 +293,7 @@ public static class ActivityExecutionContextExtensions
             current = current.ParentActivityExecutionContext;
         }
     }
-    
+
     /// <summary>
     /// Returns a flattened list of the current context's descendants.
     /// </summary>
