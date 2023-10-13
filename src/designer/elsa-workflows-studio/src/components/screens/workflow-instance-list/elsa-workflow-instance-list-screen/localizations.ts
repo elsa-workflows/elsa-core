@@ -81,6 +81,170 @@ export const resources = {
       }
     }
   },
+  'es-ES': {
+    'default': {
+      'Title': 'Ejecuciones de flujos',
+      'Search': 'Buscar',
+      'Untitled': 'Sin título',
+      'Table': {
+        'Id': 'ID',
+        'CorrelationId': 'Correlation ID',
+        'Workflow': 'Flujo',
+        'Version': 'Versión',
+        'InstanceName': 'Nombre de la Instancia',
+        'Status': 'Estado',
+        'Created': 'Creado',
+        'Finished': 'Finalizado',
+        'LastExecuted': 'Última ejecución',
+        'Faulted': 'Errado',
+        'ContextMenu': {
+          'View': 'Ver',
+          'Cancel': 'Cancelar',
+          'Delete': 'Eliminar',
+          'Retry': 'Reintentar'
+        }
+      },
+      'CancelDialog': {
+        'Title': 'Cancelar intancia del flujo',
+        'Message': '¿Está seguro de que desea cancelar esta intancia del flujo?'
+      },
+      'DeleteDialog': {
+        'Title': 'Eliminar intancia del flujo',
+        'Message': '¿Está seguro de que desea eliminar esta intancia del flujo?'
+      },
+      'BulkCancelDialog': {
+        'Title': 'Cancelar las intancias del flujo seleccionadas',
+        'Message': '¿Está seguro de que desea cancelar todas las intancias del flujo seleccionadas?'
+      },
+      'BulkDeleteDialog': {
+        'Title': 'Eliminar las intancias del flujo seleccionadas',
+        'Message': '¿Está seguro de que desea eliminar todas las intancias del flujo seleccionadas?'
+      },
+      'BulkRetryDialog': {
+        'Title': 'Procesar de nuevo las intancias del flujo seleccionadas',
+        'Message': '¿Está seguro de que desea procesar de nuevo todas las intancias del flujo seleccionadas?'
+      },
+      'Pager': {
+        'Display': 'Mostrando desde {{Start}} hasta {{End}} de {{Results}} resultados'
+      },
+      'BulkActions': {
+        'Title': 'Acciones masivas',
+        'Actions': {
+          'Cancel': 'Cancelar',
+          'Delete': 'Eliminar',
+          'Retry': 'Reintentar'
+        }
+      },
+      'Filters': {
+        'Workflow': {
+          'Label': 'Flujo',
+          'All': 'Todos'
+        },
+        'Status': {
+          'All': 'Todos',
+          'Label': 'Estado',
+          'Running': 'Corriendo',
+          'Idle': 'Inactivo',
+          'Suspended': 'Suspendido',
+          'Faulted': 'Errado',
+          'Finished': 'Finalizado',
+          'Cancelled': 'Cancelado'
+        },
+        'Sort': {
+          'Label': 'Ordenar',
+          'SelectedLabel': 'Ordenar por: {{Key}}',
+          'Finished': 'Finalizado',
+          'LastExecuted': 'Ultima ejecución',
+          'Started': 'Iniciado'
+        },
+        'PageSize': {
+          'SelectedLabel': 'Tamaño de página: {{Size}}',
+        }
+      }
+    }
+  },
+  'pt-PT': {
+    'default': {
+      'Title': 'Execuções de Fluxos',
+      'Search': 'Buscar',
+      'Untitled': 'Sem titulo',
+      'Table': {
+        'Id': 'ID',
+        'CorrelationId': 'Correlation ID',
+        'Workflow': 'Fluxos',
+        'Version': 'Versão',
+        'InstanceName': 'Nome da instância',
+        'Status': 'Status',
+        'Created': 'Criado',
+        'Finished': 'Finalizado',
+        'LastExecuted': 'Última execução',
+        'Faulted': 'Erro',
+        'ContextMenu': {
+          'View': 'Ver',
+          'Cancel': 'Cancelar',
+          'Delete': 'Deletar',
+          'Retry': 'Repetir'
+        }
+      },
+      'CancelDialog': {
+        'Title': 'Cancelar instância de fluxo',
+        'Message': 'Tem certeza de que deseja cancelar esta instância de fluxo'
+      },
+      'DeleteDialog': {
+        'Title': 'Excluir instância do fluxo',
+        'Message': 'Tem certeza de que deseja remover esta instância de fluxo?'
+      },
+      'BulkCancelDialog': {
+        'Title': 'Cancelar instâncias de fluxo selecionadas',
+        'Message': 'Tem certeza de que deseja cancelar todas as instâncias de fluxo selecionadas?'
+      },
+      'BulkDeleteDialog': {
+        'Title': 'Excluir instâncias de fluxo selecionadas',
+        'Message': 'Tem certeza de que deseja excluir todas as instâncias de fluxo selecionadas?'
+      },
+      'BulkRetryDialog': {
+        'Title': 'Repetir instâncias de fluxo selecionadas',
+        'Message': 'Tem certeza de que deseja repetir todas as instâncias de fluxo selecionadas?'
+      },
+      'Pager': {
+        'Display': 'Mostrando {{Start}} a {{End}} de {{Results}} resultados'
+      },
+      'BulkActions': {
+        'Title': 'Ações em Massa',
+        'Actions': {
+          'Cancel': 'Cancelar',
+          'Delete': 'Deletar',
+          'Retry': 'Repetir'
+        }
+      },
+      'Filters': {
+        'Workflow': {
+          'Label': 'Fluxos',
+          'All': 'Todos'
+        },
+        'Status': {
+          'All': 'Todos',
+          'Label': 'Status',
+          'Running': 'Em andamento',
+          'Idle': ' Antigo',
+          'Suspended': 'Suspenso',
+          'Faulted': 'Erro',
+          'Finished': 'Terminado',
+          'Cancelled': 'Cancelado'
+        },
+        'Sort': {
+          'Label': 'Ordenar',
+          'SelectedLabel': 'Ordenar por: {{Key}}',
+          'Finished': 'Finalizado',
+          'LastExecuted': 'Última execução',
+          'Started': 'Iniciado'
+        },
+        'PageSize': {
+          'SelectedLabel': 'Paginação: {{Size}}',
+        }
+      }
+    }
+  },
   'zh-CN': {
     'default': {
       'Title': '工作流实例',
