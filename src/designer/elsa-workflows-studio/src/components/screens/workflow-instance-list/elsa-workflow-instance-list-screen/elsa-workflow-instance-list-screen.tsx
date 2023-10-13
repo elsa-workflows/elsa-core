@@ -475,7 +475,7 @@ export class ElsaWorkflowInstanceListScreen {
           <div class="elsa-flex-1 elsa-px-4 elsa-flex elsa-justify-between sm:elsa-px-6 lg:elsa-px-8">
             <div class="elsa-flex-1 elsa-flex">
               <form class="elsa-w-full elsa-flex md:ml-0" onSubmit={e => this.onSearch(e)}>
-                <label htmlFor="search_field" class="elsa-sr-only">Search</label>
+                <label htmlFor="search_field" class="elsa-sr-only">{t('Search')}</label>
                 <div class="elsa-relative elsa-w-full elsa-text-gray-400 focus-within:elsa-text-gray-600">
                   <div
                     class="elsa-absolute elsa-inset-y-0 elsa-left-0 elsa-flex elsa-items-center elsa-pointer-events-none">
