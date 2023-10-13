@@ -10,10 +10,8 @@ namespace Elsa.Http.ContentWriters;
 /// </summary>
 public class JsonContentFactory : IHttpContentFactory
 {
-    private readonly List<string> _supportedContentTypes = new() { MediaTypeNames.Application.Json, "text/json" };
-
     /// <inheritdoc />
-    public bool SupportsContentType(string contentType) => _supportedContentTypes.Contains(contentType);
+    public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Json, "text/json" };
 
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string contentType)
