@@ -13,6 +13,34 @@ export const resources = {
       }
     }
   },
+  'es-ES': {
+    'default': {
+      'Name': 'Nombre',
+      'Instances': 'Instancias',
+      'LatestVersion': 'Ultima Versión',
+      'PublishedVersion': 'Versión Publicada',
+      'Edit': 'Editar',
+      'Delete': 'Eliminar',
+      'DeleteConfirmationModel': {
+        'Title': 'Eliminar Definción de Flujo',
+        'Message': '¿Está seguro de que desea eliminar permanentemente este flujo, incluidas todas sus ejecuciones?'
+      }
+    }
+  },
+  'pt-PT': {
+    'default': {
+      'Name': 'Nome',
+      'Instances': 'Instâncias',
+      'LatestVersion': 'Última Versão',
+      'PublishedVersion': 'Versão Publicada',
+      'Edit': 'Editar',
+      'Delete': 'Excluir',
+      'DeleteConfirmationModel': {
+        'Title': 'Remover definição do fluxo',
+        'Message': 'Tem certeza de que deseja excluir permanentemente este fluxo, incluindo todas as suas execuções?'
+      }
+    }
+  },
   'zh-CN': {
     'default': {
       'Name': '名称',
