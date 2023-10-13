@@ -1,9 +1,9 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
+using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
-using Elsa.Http.Providers;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Exceptions;
@@ -40,7 +40,7 @@ public class WriteHttpResponse : Activity
     /// </summary>
     [Input(
         Description = "The content type to write when sending the response.",
-        OptionsProvider = typeof(WriteHttpResponseContentTypeOptionsProvider),
+        OptionsProvider = typeof(HttpContentTypeOptionsProvider),
         UIHint = InputUIHints.Dropdown
     )]
     public Input<string?> ContentType { get; set; } = default!;
@@ -105,8 +105,9 @@ public class WriteHttpResponse : Activity
         if (string.IsNullOrWhiteSpace(contentType))
             contentType = DetermineContentType(content);
 
-        var contentWriter = context.GetServices<IHttpContentFactory>().FirstOrDefault(x => x.SupportsContentType(contentType)) ?? new TextContentFactory();
-        var httpContent = contentWriter.CreateHttpContent(content, contentType);
+        var factories = context.GetServices<IHttpContentFactory>();
+        var factory = factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == contentType)) ?? new TextContentFactory();
+        var httpContent = factory.CreateHttpContent(content, contentType);
 
         // Set content type.
         response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
