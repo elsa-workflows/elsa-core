@@ -4,7 +4,7 @@ using Elsa.ActivityResults;
 using Elsa.Attributes;
 using Elsa.Services;
 using Elsa.Services.Models;
-using Storage.Net.Blobs;
+using FluentStorage.Blobs;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Activities.BlobStorage

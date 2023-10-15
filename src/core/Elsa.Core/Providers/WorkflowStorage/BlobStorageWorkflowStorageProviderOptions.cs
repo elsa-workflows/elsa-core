@@ -1,6 +1,6 @@
 using System;
-using Storage.Net;
-using Storage.Net.Blobs;
+using FluentStorage;
+using FluentStorage.Blobs;
 
 namespace Elsa.Providers.WorkflowStorage
 {

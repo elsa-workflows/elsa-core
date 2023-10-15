@@ -4,7 +4,7 @@ using Elsa.Models;
 using Elsa.Providers.Workflows;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Storage.Net;
+using FluentStorage;
 
 namespace Elsa.Samples.FileBasedWorkflow
 {

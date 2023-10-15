@@ -19,11 +19,12 @@
         <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.0" />
         <PackageReference Include="DistributedLock.Core" Version="1.0.4" />
         <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
+        <PackageReference Include="FluentStorage" Version="5.4.0" />
         <PackageReference Include="Humanizer.Core" Version="2.13.14" />
         <PackageReference Include="MediatR" Version="12.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="7.0.0" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="6.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
@@ -33,12 +34,12 @@
         <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
+        <PackageReference Include="netbox" Version="2.5.3" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="4.0.0" />
         <PackageReference Include="Rebus.ServiceProvider" Version="8.4.0" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
-        <PackageReference Include="Storage.Net" Version="9.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
         <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
     </ItemGroup>

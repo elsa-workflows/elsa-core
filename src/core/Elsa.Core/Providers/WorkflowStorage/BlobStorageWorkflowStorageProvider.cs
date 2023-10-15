@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Elsa.Serialization;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using Storage.Net.Blobs;
+using FluentStorage.Blobs;
 
 namespace Elsa.Providers.WorkflowStorage
 {
