@@ -3,12 +3,14 @@ using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Services;
 using Elsa.Workflows.Runtime.Notifications;
+using JetBrains.Annotations;
 
 namespace Elsa.Webhooks.Handlers;
 
 /// <summary>
 /// Handles the <see cref="RunTaskRequest"/> notification and asynchronously invokes all registered webhook endpoints.
 /// </summary>
+[UsedImplicitly]
 public class RunTaskHandler : INotificationHandler<RunTaskRequest>
 {
     private readonly IWebhookDispatcher _webhookDispatcher;

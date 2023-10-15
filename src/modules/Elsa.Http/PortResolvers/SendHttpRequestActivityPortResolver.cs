@@ -5,7 +5,7 @@ namespace Elsa.Http.PortResolvers;
 /// <summary>
 /// Returns a list of outbound activities for a given <see cref="SendHttpRequest"/> activity's expected status codes.
 /// </summary>
-public class SendHttpRequestActivityPortResolver : IActivityPortResolver
+public class SendHttpRequestActivityResolver : IActivityResolver
 {
     /// <inheritdoc />
     public int Priority => 0;
@@ -14,7 +14,7 @@ public class SendHttpRequestActivityPortResolver : IActivityPortResolver
     public bool GetSupportsActivity(IActivity activity) => activity is SendHttpRequest;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var ports = GetPortsInternal(activity);
         return new(ports);

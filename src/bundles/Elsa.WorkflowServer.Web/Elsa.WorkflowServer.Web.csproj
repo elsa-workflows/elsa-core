@@ -40,9 +40,5 @@
         <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
         <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="App_Data\" />
-    </ItemGroup>
     
 </Project>

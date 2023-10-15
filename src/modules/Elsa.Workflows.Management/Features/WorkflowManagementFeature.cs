@@ -171,7 +171,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
-            .AddSingleton<IActivityPortResolver, WorkflowDefinitionActivityPortResolver>()
+            .AddSingleton<IActivityResolver, WorkflowDefinitionActivityResolver>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddSingleton<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
