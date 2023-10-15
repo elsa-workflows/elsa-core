@@ -27,6 +27,8 @@ builder.Services.AddElsa(elsa =>
             options.SigningKey = "secret-token-signing-key";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
+        
+        identity.UseAdminUserProvider();
     });
 
     // Expose API endpoints.
