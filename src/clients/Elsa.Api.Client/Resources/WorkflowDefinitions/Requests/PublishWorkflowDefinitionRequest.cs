@@ -1,6 +1,6 @@
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 
 /// <summary>
-/// Request to retract a workflow definition.
+/// Request to publish a workflow definition.
 /// </summary>
-public record RetractWorkflowDefinitionRequest;
+public record PublishWorkflowDefinitionRequest;
