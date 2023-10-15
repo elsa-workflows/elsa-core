@@ -22,7 +22,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     ActivityName = table.Column<string>(type: "TEXT", nullable: true),
                     StartedAt = table.Column<string>(type: "TEXT", nullable: false),
                     HasBookmarks = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false),
                     CompletedAt = table.Column<string>(type: "TEXT", nullable: true),
                     SerializedActivityState = table.Column<string>(type: "TEXT", nullable: true),
                     SerializedException = table.Column<string>(type: "TEXT", nullable: true),

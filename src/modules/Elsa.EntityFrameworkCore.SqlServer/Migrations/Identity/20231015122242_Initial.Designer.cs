@@ -2,55 +2,61 @@
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
+namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    [Migration("20231006063735_Initial")]
+    [Migration("20231015122242_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.11");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("HashedApiKey")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HashedApiKeySalt")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HashedClientSecret")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HashedClientSecretSalt")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
 
                     b.HasKey("Id");
@@ -63,21 +69,21 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
 
-                    b.ToTable("Applications");
+                    b.ToTable("Applications", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Permissions")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("Permissions");
 
                     b.HasKey("Id");
@@ -86,29 +92,29 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("HashedPassword")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HashedPasswordSalt")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("TEXT")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
 
                     b.HasKey("Id");
@@ -117,7 +123,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

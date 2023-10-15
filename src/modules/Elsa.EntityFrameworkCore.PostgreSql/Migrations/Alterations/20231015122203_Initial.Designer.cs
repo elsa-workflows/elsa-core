@@ -5,13 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
-    [Migration("20231006063601_Initial")]
+    [Migration("20231015122203_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -21,35 +22,37 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "7.0.11")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PlanId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("SerializedLog")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -77,25 +80,25 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SerializedAlterations")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("SerializedWorkflowInstanceIds")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("datetime(6)");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

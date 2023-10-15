@@ -35,7 +35,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     StartedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     HasBookmarks = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CompletedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     SerializedActivityState = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),

@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    [Migration("20231006063739_Initial")]
+    [Migration("20231015122250_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
