@@ -136,7 +136,8 @@ public class WorkflowBuilder : IWorkflowBuilder
         var root = Root ?? new Sequence();
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
-        var workflowMetadata = new WorkflowMetadata(Name, Description);
+        var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
+        var workflowMetadata = new WorkflowMetadata(name, Description);
         var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly);
 
         // If a Result variable is defined, install it into the workflow so we can capture the output into it.
