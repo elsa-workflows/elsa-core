@@ -17,7 +17,7 @@ export class WorkflowDefinitionsApi {
 
   async publish(request: PublishWorkflowDefinitionRequest): Promise<WorkflowDefinition> {
     const httpClient = await this.getHttpClient();
-    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/publish`);
+    const response = await httpClient.post<WorkflowDefinition>(`workflow-definitions/${request.definitionId}/publish`, request);
     return response.data;
   }
 
