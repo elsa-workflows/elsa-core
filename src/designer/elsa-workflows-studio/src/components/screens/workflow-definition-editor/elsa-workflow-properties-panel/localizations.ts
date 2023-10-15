@@ -12,6 +12,32 @@ export const resources = {
       'Draft': 'Draft'
     }
   },
+  'es-ES': {
+    default: {
+      'Name': 'Nombre',
+      'DisplayName': 'Nombre para mostrar',
+      'Untitled': 'Sin titulo',
+      'Id': 'Id',
+      'Version': 'Última versión',
+      'PublishedVersion': 'Versión publicada',
+      'Status': 'Estado',
+      'Published': 'Publicado',
+      'Draft': 'Borrador'
+    }
+  },
+  'pt-PT': {
+    default: {
+      'Name': 'Nome',
+      'DisplayName': 'Nome de exibição',
+      'Untitled': 'Sem titulo',
+      'Id': 'Id',
+      'Version': 'Última versão',
+      'PublishedVersion': 'Versão publicada',
+      'Status': 'Estado',
+      'Published': 'Publicado',
+      'Draft': 'Rascunho'
+    }
+  },
   'zh-CN': {
     default: {
       'Name': '名称',
