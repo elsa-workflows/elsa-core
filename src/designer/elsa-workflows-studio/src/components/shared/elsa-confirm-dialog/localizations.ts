@@ -5,6 +5,18 @@ export const resources = {
       'No': 'No'
     }
   },
+  'es-ES': {
+    'default': {
+      'Yes': 'Si',
+      'No': 'No'
+    }
+  },
+  'pt-PT': {
+    'default': {
+      'Yes': 'Sim',
+      'No': 'Não'
+    }
+  },
   'zh-CN': {
     'default': {
       'Yes': '是',

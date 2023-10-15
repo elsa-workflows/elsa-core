@@ -8,6 +8,24 @@ export const resources = {
       'Export': 'Export',
     }
   },
+  'es-ES': {
+    'default': {
+      'Publish': 'Publicar',
+      'Publishing': 'Publicando',
+      'Unpublish': 'Despublicar',
+      'Import': 'Importar',
+      'Export': 'Exportar',
+    }
+  },
+  'pt-PT': {
+    'default': {
+      'Publish': 'Publicar',
+      'Publishing': 'Publicando',
+      'Unpublish': 'Cancelar Publicação',
+      'Import': 'Importar',
+      'Export': 'Exportar',
+    }
+  },
   'zh-CN': {
     'default': {
       'Publish': '发布',
