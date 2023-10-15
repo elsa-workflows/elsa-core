@@ -160,6 +160,8 @@ services
 
         // Initialize drop-ins.
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
+
+        elsa.AddSwagger();
     });
 
 services.AddHealthChecks();
@@ -195,6 +197,10 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities
 app.UseWorkflows();
+
+// Swagger API documentation
+if (app.Environment.IsDevelopment())
+    app.UseSwaggerUI();
 
 // SignalR.
 app.UseWorkflowsSignalRHubs();
