@@ -26,12 +26,12 @@ public class MassTransitAlterationsFeature : FeatureBase
     public override void Configure()
     {
         Module.Configure<AlterationsFeature>(feature => feature.AlterationJobDispatcherFactory = sp => sp.GetRequiredService<MassTransitAlterationJobDispatcher>());
+        Module.AddMassTransitConsumer<RunAlterationJobConsumer>();
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
         Services.AddSingleton<MassTransitAlterationJobDispatcher>();
-        Module.AddMassTransitConsumer<RunAlterationJobConsumer>();
     }
 }
