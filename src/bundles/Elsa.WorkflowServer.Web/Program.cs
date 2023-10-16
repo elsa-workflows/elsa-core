@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using Elsa.Alterations.Extensions;
+using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -156,6 +157,8 @@ services
                     else
                         ef.UseSqlite(sqliteConnectionString);
                 });
+
+                alterations.UseMassTransitDispatcher();
             });
 
         // Initialize drop-ins.

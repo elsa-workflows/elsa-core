@@ -4,12 +4,14 @@ using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
+using JetBrains.Annotations;
 
-namespace Elsa.Alterations.BackgroundRunner.Handlers;
+namespace Elsa.Alterations.Handlers;
 
 /// <summary>
 /// Handles <see cref="AlterationJobCompleted"/> notifications and updates the plan status if all jobs are completed.
 /// </summary>
+[UsedImplicitly]
 public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobCompleted>
 {
     private readonly IAlterationPlanStore _alterationPlanStore;
