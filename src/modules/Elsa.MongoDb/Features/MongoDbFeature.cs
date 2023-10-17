@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MongoDb.Options;
@@ -51,6 +52,7 @@ public class MongoDbFeature : FeatureBase
         BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
         BsonSerializer.RegisterSerializer(typeof(Variable), new VariableSerializer());
         BsonSerializer.RegisterSerializer(typeof(Version), new VersionSerializer());
+        BsonSerializer.RegisterSerializer(typeof(JsonElement), new JsonElementSerializer());
     }
 
     private static void RegisterClassMaps()

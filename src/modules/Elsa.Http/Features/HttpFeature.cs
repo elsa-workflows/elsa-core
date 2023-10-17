@@ -176,7 +176,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IActivityPropertyOptionsProvider, HttpContentTypeOptionsProvider>()
 
             // Port resolvers.
-            .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
+            .AddSingleton<IActivityResolver, SendHttpRequestActivityResolver>()
 
             // HTTP endpoint handlers.
             .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()

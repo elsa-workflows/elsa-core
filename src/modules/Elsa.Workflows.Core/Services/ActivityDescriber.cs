@@ -47,7 +47,7 @@ public class ActivityDescriber : IActivityDescriber
 
         var embeddedPorts =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
+            where typeof(IActivity).IsAssignableFrom(prop.PropertyType)
             let portAttr = prop.GetCustomAttribute<PortAttribute>()
             let portBrowsableAttr = prop.GetCustomAttribute<BrowsableAttribute>()
             select new Port

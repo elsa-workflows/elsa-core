@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Returns the root activity for a given <see cref="WorkflowDefinitionActivity"/>.
 /// </summary>
-public class WorkflowDefinitionActivityPortResolver : IActivityPortResolver
+public class WorkflowDefinitionActivityResolver : IActivityResolver
 {
     /// <inheritdoc />
     public int Priority => 0;
@@ -14,7 +14,7 @@ public class WorkflowDefinitionActivityPortResolver : IActivityPortResolver
     public bool GetSupportsActivity(IActivity activity) => activity is WorkflowDefinitionActivity;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var definitionActivity = (WorkflowDefinitionActivity)activity;
         var root = definitionActivity.Root;

@@ -7,12 +7,12 @@ namespace Elsa.Workflows.Core.Services;
 public class ActivityVisitor : IActivityVisitor
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IEnumerable<IActivityPortResolver> _portResolvers;
+    private readonly IEnumerable<IActivityResolver> _portResolvers;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityVisitor(IEnumerable<IActivityPortResolver> portResolvers, IServiceProvider serviceProvider)
+    public ActivityVisitor(IEnumerable<IActivityResolver> portResolvers, IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
         _portResolvers = portResolvers.OrderByDescending(x => x.Priority).ToList();
@@ -46,7 +46,7 @@ public class ActivityVisitor : IActivityVisitor
         if (resolver == null)
             return;
 
-        var ports = await resolver.GetPortsAsync(pair.Activity, cancellationToken);
+        var ports = await resolver.GetActivitiesAsync(pair.Activity, cancellationToken);
 
         foreach (var port in ports)
         {

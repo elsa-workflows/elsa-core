@@ -95,10 +95,11 @@ public interface IWorkflowDefinitionsApi
     /// Publishes a workflow definition.
     /// </summary>
     /// <param name="definitionId">The ID of the workflow definition to publish.</param>
+    /// <param name="request">An empty object to satisfy the request body requirement.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/publish")]
     [Headers(MediaTypeNames.Application.Json)]
-    Task<WorkflowDefinition> PublishAsync(string definitionId, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition> PublishAsync(string definitionId, PublishWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retracts a workflow definition.

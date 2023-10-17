@@ -5,9 +5,9 @@ using Elsa.Workflows.Core.Contracts;
 namespace Elsa.Workflows.Core.PortResolvers;
 
 /// <summary>
-/// Returns a list of outbound activities for a given activity.
+/// Returns a list of outbound activities for a given activity by reflecting over its public properties matching <see cref="IActivity"/> and <c>ICollection{IActivity}</c>.
 /// </summary>
-public class OutboundActivityPortResolver : IActivityPortResolver
+public class PropertyBasedActivityResolver : IActivityResolver
 {
     /// <inheritdoc />
     public int Priority => -1;
@@ -16,22 +16,20 @@ public class OutboundActivityPortResolver : IActivityPortResolver
     public bool GetSupportsActivity(IActivity activity) => true;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetPortsAsync(IActivity activity, CancellationToken cancellationToken = default) =>
-        new(GetSinglePorts(activity)
+    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default) =>
+        new(GetActivities(activity)
             .Where(x => x != null)
             .Select(x => x!)
             .ToHashSet());
 
 
-    private static IEnumerable<IActivity?> GetSinglePorts(IActivity activity)
+    private static IEnumerable<IActivity?> GetActivities(IActivity activity)
     {
         var activityType = activity.GetType();
 
         var ports =
             from prop in activityType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
-            let portAttr = prop.GetCustomAttribute<PortAttribute>()
-            where portAttr != null
             let value = prop.GetValue(activity)
             let isCollection = GetPropertyIsCollection(prop.PropertyType)
             select isCollection ? (IEnumerable<IActivity>)value : new[] { (IActivity)value };

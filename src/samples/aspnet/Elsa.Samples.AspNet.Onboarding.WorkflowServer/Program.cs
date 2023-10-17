@@ -27,6 +27,8 @@ builder.Services.AddElsa(elsa =>
             options.SigningKey = "secret-token-signing-key";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
+        
+        identity.UseAdminUserProvider();
     });
 
     // Expose API endpoints.
@@ -35,14 +37,28 @@ builder.Services.AddElsa(elsa =>
     // Use default authentication (JWT + ApiKey).
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
 
+    // Enable SignalR for sending events to Elsa Studio for real-time updates.
+    elsa.UseRealTimeWorkflows();
+    
+    // Use Webhooks feature.
     elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
 });
+
+builder.Services.AddHealthChecks();
+builder.Services.AddControllers();
+builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseCors();
 app.UseHttpsRedirection();
+app.MapHealthChecks("/");
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();
+app.UseJsonSerializationErrorHandler();
+app.UseWorkflows();
+app.UseWorkflowsSignalRHubs();
 app.Run();

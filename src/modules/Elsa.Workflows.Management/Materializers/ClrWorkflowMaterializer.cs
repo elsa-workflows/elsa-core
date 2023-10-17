@@ -1,5 +1,6 @@
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,7 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IServiceProvider _serviceProvider;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ClrWorkflowMaterializer"/> class.
     /// </summary>
@@ -45,6 +46,9 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
         var workflowBuilder = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, workflowBuilderType);
         var workflowDefinitionBuilder = _workflowBuilderFactory.CreateBuilder();
         var workflow = await workflowDefinitionBuilder.BuildWorkflowAsync(workflowBuilder, cancellationToken);
+
+        // Assign identities from the definition.
+        workflow.Identity = new WorkflowIdentity(definition.DefinitionId, definition.Version, definition.Id);
 
         return workflow;
     }

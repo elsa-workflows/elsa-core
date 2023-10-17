@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20231006063720_Initial")]
+    [Migration("20231015122231_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
