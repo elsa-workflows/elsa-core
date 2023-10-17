@@ -1,6 +1,7 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
+using MassTransit;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -14,6 +15,15 @@ public static class ModuleExtensions
     /// Enable and configure MassTransit.
     /// </summary>
     public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = default) => module.Use(configure);
+
+    /// <summary>
+    /// Registers the specified consumer with MassTransit.
+    /// </summary>
+    public static IModule AddMassTransitConsumer<T>(this IModule module) where T : IConsumer
+    {
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>());
+        return module;
+    }
 
     /// <summary>
     /// Enable and configure the RabbitMQ broker for MassTransit.

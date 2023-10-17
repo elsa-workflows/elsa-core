@@ -40,6 +40,11 @@ public class DefaultAlterationJobRunner : IAlterationJobRunner
         var job = (await _alterationJobStore.FindAsync(new AlterationJobFilter { Id = jobId }, cancellationToken))!;
         var plan = (await _alterationPlanStore.FindAsync(new AlterationPlanFilter { Id = job.PlanId }, cancellationToken))!;
         var workflowInstanceId = job.WorkflowInstanceId;
+        
+        job.Status = AlterationJobStatus.Running;
+        job.StartedAt = _systemClock.UtcNow;
+        await _alterationJobStore.SaveAsync(job, cancellationToken);
+        
         var result = await _alterationRunner.RunAsync(workflowInstanceId, plan.Alterations, cancellationToken);
         
         job.Status = result.IsSuccessful ? AlterationJobStatus.Completed : AlterationJobStatus.Failed;

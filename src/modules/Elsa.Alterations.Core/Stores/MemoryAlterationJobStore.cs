@@ -49,6 +49,13 @@ public class MemoryAlterationJobStore : IAlterationJobStore
     }
 
     /// <inheritdoc />
+    public Task<IEnumerable<string>> FindManyIdsAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
+    {
+        var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).ToList().AsEnumerable();
+        return Task.FromResult(ids);
+    }
+
+    /// <inheritdoc />
     public Task<long> CountAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();

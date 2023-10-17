@@ -25,7 +25,7 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<DispatchWorkflowRequestConsumer>());
+        Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer>();
         Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
     }
 

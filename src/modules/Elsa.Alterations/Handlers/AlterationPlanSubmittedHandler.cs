@@ -4,28 +4,34 @@ using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Mediator.Contracts;
+using JetBrains.Annotations;
 
-namespace Elsa.Alterations.BackgroundRunner.Handlers;
+namespace Elsa.Alterations.Handlers;
 
 /// <summary>
 /// Handles <see cref="AlterationPlanSubmitted"/> notifications and runs the plan in the background.
 /// </summary>
+[UsedImplicitly]
 public class AlterationPlanSubmittedHandler : INotificationHandler<AlterationPlanSubmitted>
 {
-    private readonly IJobQueue _jobQueue;
     private readonly IAlterationPlanStore _alterationPlanStore;
     private readonly IAlterationJobStore _alterationJobStore;
-    private readonly IAlterationJobRunner _alterationJobRunner;
+    private readonly IAlterationJobDispatcher _alterationJobDispatcher;
+    private readonly IJobQueue _jobQueue;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AlterationPlanSubmittedHandler"/> class.
     /// </summary>
-    public AlterationPlanSubmittedHandler(IJobQueue jobQueue, IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore, IAlterationJobRunner alterationJobRunner)
+    public AlterationPlanSubmittedHandler(
+        IAlterationPlanStore alterationPlanStore, 
+        IAlterationJobStore alterationJobStore, 
+        IAlterationJobDispatcher alterationJobDispatcher,
+        IJobQueue jobQueue)
     {
-        _jobQueue = jobQueue;
         _alterationPlanStore = alterationPlanStore;
         _alterationJobStore = alterationJobStore;
-        _alterationJobRunner = alterationJobRunner;
+        _alterationJobDispatcher = alterationJobDispatcher;
+        _jobQueue = jobQueue;
     }
 
     /// <inheritdoc />
@@ -47,17 +53,10 @@ public class AlterationPlanSubmittedHandler : INotificationHandler<AlterationPla
 
         // Create a job for each job in the plan.
         var filter = new AlterationJobFilter { PlanId = plan.Id };
-        var alterationJobs = await _alterationJobStore.FindManyAsync(filter, cancellationToken);
+        var alterationJobIds = await _alterationJobStore.FindManyIdsAsync(filter, cancellationToken);
 
         // Enqueue each job.
-        foreach (var alterationJob in alterationJobs)
-        {
-            _jobQueue.Enqueue(ct => ExecuteJobAsync(alterationJob.Id, ct));
-        }
-    }
-
-    private async Task ExecuteJobAsync(string alterationJobId, CancellationToken cancellationToken)
-    {
-        await _alterationJobRunner.RunAsync(alterationJobId, cancellationToken);
+        foreach (var jobId in alterationJobIds) 
+            await _alterationJobDispatcher.DispatchAsync(jobId, cancellationToken);
     }
 }
