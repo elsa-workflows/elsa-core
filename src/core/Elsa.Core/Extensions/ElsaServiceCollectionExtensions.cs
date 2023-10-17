@@ -41,7 +41,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using NodaTime;
 using Rebus.Handlers;
-using Storage.Net;
+using FluentStorage;
 using BackgroundWorker = Elsa.Services.BackgroundWorker;
 using IDistributedLockProvider = Elsa.Services.IDistributedLockProvider;
 
