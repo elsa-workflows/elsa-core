@@ -115,14 +115,16 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return referenceResolver?.ResolveReference(refId)!;
         }
 
-        var isHashSet = Array.Exists(targetType.GetInterfaces(), (Type type) => type.IsGenericType && (typeof(ISet<>) == type.GetGenericTypeDefinition()));
         var values = model.TryGetProperty(ItemsPropertyName, out var itemsProp) ? itemsProp.EnumerateArray().ToList() : model.GetProperty(ValuesPropertyName).EnumerateArray().ToList();
         var id = model.TryGetProperty(IdPropertyName, out var idProp) ? idProp.GetString() : default;
-        var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : isHashSet ? Activator.CreateInstance(targetType) : (IList)Activator.CreateInstance(targetType)!;
+        var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : Activator.CreateInstance(targetType)!;
         var index = 0;
 
         if (id != null)
             referenceResolver?.AddReference(id, collection);
+
+        var isHashSet = targetType.GenericTypeArguments.Length == 1 && typeof(ISet<>).MakeGenericType(targetType.GenericTypeArguments[0]).IsAssignableFrom(targetType);
+        var addSetMethod = targetType.GetMethod("Add", new[] { elementType })!;
 
         foreach (var element in values)
         {
@@ -131,9 +133,9 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 array.SetValue(deserializedElement, index++);
             }
-            else if (collection is ISet<object> hashSet)
+            else if (isHashSet)
             {
-                hashSet.Add(deserializedElement);
+                addSetMethod.Invoke(collection, new[] { deserializedElement });
             }
             else if (collection is IList list)
             {
@@ -306,23 +308,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         switch (reader.TokenType)
         {
             case JsonTokenType.StartArray:
+            {
+                var list = new List<object>();
+                while (reader.Read())
                 {
-                    var list = new List<object>();
-                    while (reader.Read())
+                    switch (reader.TokenType)
                     {
-                        switch (reader.TokenType)
-                        {
-                            default:
-                                list.Add(Read(ref reader, typeof(object), options));
-                                break;
+                        default:
+                            list.Add(Read(ref reader, typeof(object), options));
+                            break;
 
-                            case JsonTokenType.EndArray:
-                                return list;
-                        }
+                        case JsonTokenType.EndArray:
+                            return list;
                     }
-
-                    throw new JsonException();
                 }
+
+                throw new JsonException();
+            }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
                 var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();

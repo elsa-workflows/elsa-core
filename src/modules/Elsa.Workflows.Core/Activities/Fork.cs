@@ -33,7 +33,6 @@ public class Fork : Activity
     /// <summary>
     /// The branches to schedule.
     /// </summary>
-    [Port]
     public ICollection<IActivity> Branches { get; set; } = new List<IActivity>();
 
     /// <inheritdoc />
