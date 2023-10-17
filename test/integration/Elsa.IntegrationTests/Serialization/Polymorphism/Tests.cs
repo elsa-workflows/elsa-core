@@ -58,31 +58,18 @@ public class Tests
             },
             metadata,
             new Model("Payload"),
+            new HashSet<Model>
+            {
+                new()
+                {
+                    Text = "I'm a model in a set!"
+                }
+            },
             new Dictionary<string, Model>
             {
                 ["Hello"] = new("Hello", 1, true),
-                ["World"] = new("World", 2)
+                ["World"] = new("World", 2),
             }
-        );
-    }
-    
-    private Model CreateModel2()
-    {
-        // Create a model with various nested properties
-        var metadata = new ExpandoObject() as IDictionary<string, object>;
-
-        // Initialize metadata with test data.
-        metadata["Models"] = new List<Model>
-        {
-            new(Text: "Hello World")
-        };
-
-        return new Model(
-            Metadata: metadata
-            // Items : new List<Model>
-            // {
-            //     new(Items: new List<Model> { new(Metadata: metadata) }),
-            // }
         );
     }
 

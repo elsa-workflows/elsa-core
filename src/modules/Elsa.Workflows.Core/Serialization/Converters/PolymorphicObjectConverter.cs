@@ -117,11 +117,14 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         var values = model.TryGetProperty(ItemsPropertyName, out var itemsProp) ? itemsProp.EnumerateArray().ToList() : model.GetProperty(ValuesPropertyName).EnumerateArray().ToList();
         var id = model.TryGetProperty(IdPropertyName, out var idProp) ? idProp.GetString() : default;
-        var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : (IList)Activator.CreateInstance(targetType)!;
+        var collection = targetType.IsArray ? Array.CreateInstance(elementType, values.Count) : Activator.CreateInstance(targetType)!;
         var index = 0;
 
         if (id != null)
             referenceResolver?.AddReference(id, collection);
+
+        var isHashSet = targetType.GenericTypeArguments.Length == 1 && typeof(ISet<>).MakeGenericType(targetType.GenericTypeArguments[0]).IsAssignableFrom(targetType);
+        var addSetMethod = targetType.GetMethod("Add", new[] { elementType })!;
 
         foreach (var element in values)
         {
@@ -130,9 +133,13 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 array.SetValue(deserializedElement, index++);
             }
-            else
+            else if (isHashSet)
             {
-                collection.Add(deserializedElement);
+                addSetMethod.Invoke(collection, new[] { deserializedElement });
+            }
+            else if (collection is IList list)
+            {
+                list.Add(deserializedElement);
             }
         }
 
@@ -163,7 +170,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         // Special case for Newtonsoft.Json and System.Text.Json types.
         // Newtonsoft.Json types are not supported by the System.Text.Json serializer and should be written as a string instead.
-        // We include metadata about the type so that we can deserialize it later. 
+        // We include metadata about the type so that we can deserialize it later.
         if (type == typeof(JObject) || type == typeof(JArray) || type == typeof(JsonObject) || type == typeof(JsonArray))
         {
             writer.WriteStartObject();
@@ -200,7 +207,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
             value = sanitized;
         }
-        
+
         var jsonElement = JsonDocument.Parse(JsonSerializer.Serialize(value, type, newOptions)).RootElement;
 
         // If the value is a string, serialize it directly.
@@ -265,6 +272,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                         case JsonTokenType.StartArray:
                             depth++;
                             break;
+
                         case JsonTokenType.EndObject:
                         case JsonTokenType.EndArray:
                             depth--;
@@ -309,6 +317,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                         default:
                             list.Add(Read(ref reader, typeof(object), options));
                             break;
+
                         case JsonTokenType.EndArray:
                             return list;
                     }
@@ -328,6 +337,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                             if (dict.Count == 1 && dict.TryGetValue(RefPropertyName, out var referencedObject))
                                 return referencedObject;
                             return dict;
+
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
@@ -350,6 +360,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                             }
 
                             break;
+
                         default:
                             throw new JsonException();
                     }
