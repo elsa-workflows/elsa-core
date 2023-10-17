@@ -7,7 +7,7 @@ namespace Elsa.Services.Models
 {
     public class ActivityBlueprintWrapper : IActivityBlueprintWrapper
     {
-        protected ActivityExecutionContext ActivityExecutionContext { get; }
+        public ActivityExecutionContext ActivityExecutionContext { get; }
 
         public ActivityBlueprintWrapper(ActivityExecutionContext activityExecutionContext)
         {

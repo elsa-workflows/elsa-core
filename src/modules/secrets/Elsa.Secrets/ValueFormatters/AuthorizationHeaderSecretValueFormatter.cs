@@ -11,6 +11,11 @@ namespace Elsa.Secrets.ValueFormatters
         public string Type => "Authorization";
 
         public Task<string> FormatSecretValue(Secret secret) => Task.FromResult(ConvertPropertiesToString(secret.Properties));
+        public bool IsSecretValueSensitiveData(Secret secret)
+        {
+            var usedProperties = secret.Properties.Where(x => x.Expressions.Count > 0);
+            return usedProperties.Any(x => x.IsEncrypted);
+        }
 
         private static string ConvertPropertiesToString(ICollection<SecretProperty> properties)
         {

@@ -3,6 +3,7 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Persistence.Specifications;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -16,18 +17,17 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     [Produces(MediaTypeNames.Application.Json)]
     public class List : Controller
     {
-        private readonly ISecretsStore _secretStore;
-        public List(ISecretsStore secretStore)
-        { 
-            _secretStore = secretStore;
+        private readonly ISecretsManager _secretsManager;
+        public List(ISecretsManager secretsManager)
+        {
+            _secretsManager = secretsManager;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<Secret>))]
         public async Task<ActionResult<IEnumerable<Secret>>> Handle(CancellationToken cancellationToken = default)
         {
-            var specification = Specification<Secret>.Identity;
-            var items = await _secretStore.FindManyAsync(specification, cancellationToken: cancellationToken);
+            var items = await _secretsManager.GetSecretViewModels(cancellationToken);
 
             return Json(items);
         }

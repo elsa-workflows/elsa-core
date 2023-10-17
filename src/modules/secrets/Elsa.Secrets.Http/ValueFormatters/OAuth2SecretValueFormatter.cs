@@ -41,5 +41,10 @@ namespace Elsa.Secrets.Http.ValueFormatters
             
             return $"{response.TokenType ?? "Bearer"} {response.AccessToken}";
         }
+
+        public bool IsSecretValueSensitiveData(Secret secret)
+        {
+            return false;
+        }
     }
 }

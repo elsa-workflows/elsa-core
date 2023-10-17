@@ -6,10 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.ControlFlow;
 using Elsa.Attributes;
+using Elsa.Events;
 using Elsa.Options;
 using Elsa.Providers.WorkflowStorage;
 using Elsa.Services.Models;
 using Elsa.Services.WorkflowStorage;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Services.Workflows
 {
@@ -17,11 +20,13 @@ namespace Elsa.Services.Workflows
     {
         private readonly ElsaOptions _elsaOptions;
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ActivityActivator(ElsaOptions options, IWorkflowStorageService workflowStorageService)
+        public ActivityActivator(ElsaOptions options, IWorkflowStorageService workflowStorageService, IServiceProvider serviceProvider)
         {
             _elsaOptions = options;
             _workflowStorageService = workflowStorageService;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<IActivity> ActivateActivityAsync(ActivityExecutionContext context, Type type, CancellationToken cancellationToken = default)
@@ -82,20 +87,36 @@ namespace Elsa.Services.Workflows
 
         private async ValueTask StoreAppliedValuesAsync(ActivityExecutionContext context, IActivity activity, CancellationToken cancellationToken)
         {
-            await StoreAppliedObjectValuesAsync(context, activity, cancellationToken);
+            await StoreAppliedObjectValuesAsync(context, activity, activity, cancellationToken);
         }
 
-        private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, object activity, CancellationToken cancellationToken, string? parentName = null)
+        /// <summary>
+        /// Recursively store activity's properties
+        /// </summary>
+        /// <param name="activity">The parent activity of all the activity properties</param>
+        /// <param name="nestedInstance">The activity or the recursively generated object from the activity's properties</param>
+        private async ValueTask StoreAppliedObjectValuesAsync(ActivityExecutionContext context, IActivity activity, object nestedInstance, CancellationToken cancellationToken, string? parentName = null)
         {
-            var properties = activity.GetType().GetProperties().Where(IsActivityProperty).ToList();
-            var nestedProperties = activity.GetType().GetProperties().Where(IsActivityObjectProperty).ToList();
+            using var scope = _serviceProvider.CreateScope();
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+
+            var properties = nestedInstance.GetType().GetProperties().Where(IsActivityProperty).ToList();
+            var nestedProperties = nestedInstance.GetType().GetProperties().Where(IsActivityObjectProperty).ToList();
             var propertyStorageProviderDictionary = context.ActivityBlueprint.PropertyStorageProviders;
             var workflowStorageContext = new WorkflowStorageContext(context.WorkflowInstance, context.ActivityId);
 
             foreach (var property in properties)
             {
                 var propertyName = parentName == null ? property.Name : $"{parentName}_{property.Name}";
-                var value = property.GetValue(activity);
+
+                var serializingProperty = new SerializingProperty(context.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, propertyName);
+                await mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
+                {
+                    continue;
+                }
+
+                var value = property.GetValue(nestedInstance);
                 var attr = property.GetCustomAttributes<ActivityPropertyAttributeBase>().First();
                 var providerName = propertyStorageProviderDictionary.GetItem(propertyName) ?? attr.DefaultWorkflowStorageProvider;
                 await _workflowStorageService.SaveAsync(providerName, workflowStorageContext, propertyName, value, cancellationToken);
@@ -105,7 +126,7 @@ namespace Elsa.Services.Workflows
             {
                 var instance = Activator.CreateInstance(nestedProperty.PropertyType);
                 var propertyName = parentName == null ? nestedProperty.Name : $"{parentName}_{nestedProperty.Name}";
-                await StoreAppliedObjectValuesAsync(context, instance, cancellationToken, propertyName);
+                await StoreAppliedObjectValuesAsync(context, activity, instance, cancellationToken, propertyName);
             }
         }
 

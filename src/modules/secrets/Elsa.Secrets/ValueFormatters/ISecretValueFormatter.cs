@@ -7,5 +7,6 @@ namespace Elsa.Secrets.ValueFormatters
     {
         string Type { get; }
         Task<string> FormatSecretValue(Secret secret);
+        bool IsSecretValueSensitiveData(Secret secret);
     }
 }
