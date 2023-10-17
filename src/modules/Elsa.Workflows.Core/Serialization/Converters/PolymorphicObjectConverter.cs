@@ -131,7 +131,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 array.SetValue(deserializedElement, index++);
             }
-            else if (collection is HashSet<object> hashSet)
+            else if (collection is ISet<object> hashSet)
             {
                 hashSet.Add(deserializedElement);
             }
