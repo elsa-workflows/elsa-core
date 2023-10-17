@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -87,5 +88,34 @@ public static class ServiceProviderExtensions
     {
         var workflowDefinitionId = typeof(TWorkflow).Name;
         return await services.RunWorkflowUntilEndAsync(workflowDefinitionId, input);
+    }
+
+    /// <summary>
+    /// Runs the specified activity.
+    /// </summary>
+    /// <param name="services">The service provider.</param>
+    /// <param name="activity">The activity to run.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The result of running the activity.</returns>
+    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, CancellationToken cancellationToken = default)
+    {
+        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
+        return result;
+    }
+
+    /// <summary>
+    /// Runs the specified activity.
+    /// </summary>
+    /// <param name="services">The service provider.</param>
+    /// <param name="activity">The activity to run.</param>
+    /// <param name="options">An set of options.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The result of running the activity.</returns>
+    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
+        return result;
     }
 }
