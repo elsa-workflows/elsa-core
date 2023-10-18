@@ -15,13 +15,12 @@ RUN npm --version
 
 # restore packages
 COPY src/. ./src
+COPY ./NuGet.Config ./
 COPY *.props ./
-RUN dotnet restore "./src/bundles/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj"
 
-# build Elsa.Workflows.Designer npm package
-WORKDIR /source/src/modules/Elsa.Workflows.Designer
-RUN npm install
-RUN npm run build
+# Restore packages.
+RUN dotnet restore "./src/bundles/ElsaStudioWebAssembly/ElsaStudioWebAssembly.csproj"
+RUN dotnet restore "./src/bundles/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries)
 WORKDIR /source/src/bundles/Elsa.AllInOne.Web

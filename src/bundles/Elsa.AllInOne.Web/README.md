@@ -1,6 +1,7 @@
 # Server
 
 This project represents an Elsa application that hosts workflows and exposes API endpoints to manage & execute workflows.
+It also hosts the Elsa Studio Web Assembly project, which replaces the Stencil implementation.
 
 ## Secrets
 The following are the secrets stored in hashed form in appsettings.json:
