@@ -13,10 +13,10 @@ public record Model(
     ICollection<Model>? Items = default,
     object? Metadata = default,
     object? Payload = default,
-    IDictionary<string, Model>? Properties = default
-)
+    object? HashSet = default,
+    IDictionary<string, Model>? Properties = default)
 {
-    public Model() : this(null, default, default, null, default, default, default)
+    public Model() : this(null, default, default, null, default, default, default, default)
     {
     }
 }

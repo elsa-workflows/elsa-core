@@ -12,15 +12,17 @@ public class WorkflowBuilder : IWorkflowBuilder
     private readonly IActivityVisitor _activityVisitor;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly IActivityRegistry _activityRegistry;
+    private readonly IIdentityGenerator _identityGenerator;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry)
+    public WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
     {
         _activityVisitor = activityVisitor;
         _identityGraphService = identityGraphService;
         _activityRegistry = activityRegistry;
+        _identityGenerator = identityGenerator;
         Result = new Variable();
     }
 
@@ -72,28 +74,22 @@ public class WorkflowBuilder : IWorkflowBuilder
         var variable = new Variable<T>();
         Variables.Add(variable);
         variable.WithWorkflowStorage();
+        variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.  
         return variable;
     }
 
     /// <inheritdoc />
     public Variable<T> WithVariable<T>(string name, T value)
     {
-        var variable = new Variable<T>
-        {
-            Name = name,
-            Value = value
-        }.WithWorkflowStorage();
-
-        Variables.Add(variable);
+        var variable = WithVariable<T>();
         return variable;
     }
 
     /// <inheritdoc />
     public Variable<T> WithVariable<T>(T value)
     {
-        var variable = value != null ? new Variable<T>(value) : new Variable<T>();
-        variable.WithWorkflowStorage();
-        Variables.Add(variable);
+        var variable = WithVariable<T>();
+        variable.Value = value;
         return variable;
     }
 
@@ -135,12 +131,13 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = DefinitionId ?? Guid.NewGuid().ToString("N");
-        var id = Id ?? Guid.NewGuid().ToString("N");
+        var definitionId = DefinitionId ?? _identityGenerator.GenerateId();
+        var id = Id ?? _identityGenerator.GenerateId();
         var root = Root ?? new Sequence();
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;
-        var workflowMetadata = new WorkflowMetadata(Name, Description);
+        var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
+        var workflowMetadata = new WorkflowMetadata(name, Description);
         var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly);
 
         // If a Result variable is defined, install it into the workflow so we can capture the output into it.

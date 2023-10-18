@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;
@@ -14,7 +15,6 @@ using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
-using Elsa.Http.Providers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
@@ -173,10 +173,10 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
 
             // Activity property options providers.
-            .AddSingleton<IActivityPropertyOptionsProvider, WriteHttpResponseContentTypeOptionsProvider>()
+            .AddSingleton<IActivityPropertyOptionsProvider, HttpContentTypeOptionsProvider>()
 
             // Port resolvers.
-            .AddSingleton<IActivityPortResolver, SendHttpRequestActivityPortResolver>()
+            .AddSingleton<IActivityResolver, SendHttpRequestActivityResolver>()
 
             // HTTP endpoint handlers.
             .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()

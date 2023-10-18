@@ -57,10 +57,11 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Schedules the activity of the specified bookmark.
     /// </summary>
+    /// <returns>The created work item, or <c>null</c> if the specified bookmark doesn't exist in the <see cref="WorkflowExecutionContext"/></returns> 
     public static ActivityWorkItem? ScheduleBookmark(this WorkflowExecutionContext workflowExecutionContext, Bookmark bookmark, IDictionary<string, object>? input = default)
     {
         // Get the activity execution context that owns the bookmark.
-        var bookmarkedActivityContext = workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
+        var bookmarkedActivityContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == bookmark.ActivityInstanceId);
 
         if (bookmarkedActivityContext == null)
             return null;
@@ -80,7 +81,7 @@ public static class WorkflowExecutionContextExtensions
 
         // Store the bookmark to resume in the context.
         workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
-        
+
         return workItem;
     }
 
@@ -117,7 +118,7 @@ public static class WorkflowExecutionContextExtensions
     /// <summary>
     /// Returns true if all activities have completed or canceled, false otherwise.
     /// </summary>
-    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActiveActivityExecutionContexts.All(x => x.Status != ActivityStatus.Running);
+    public static bool AllActivitiesCompleted(this WorkflowExecutionContext workflowExecutionContext) => workflowExecutionContext.ActivityExecutionContexts.All(x => x.IsCompleted);
 
     /// <summary>
     /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.

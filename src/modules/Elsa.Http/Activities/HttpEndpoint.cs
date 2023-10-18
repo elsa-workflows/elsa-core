@@ -159,7 +159,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext));
+            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false);
             return;
         }
 

@@ -8,6 +8,16 @@ namespace Elsa.Workflows.Runtime.Filters;
 public class ActivityExecutionRecordFilter
 {
     /// <summary>
+    /// The ID of the activity execution record.
+    /// </summary>
+    public string? Id { get; set; }
+    
+    /// <summary>
+    /// The IDs of the activity execution records.
+    /// </summary>
+    public ICollection<string>? Ids { get; set; }
+    
+    /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
     public string? WorkflowInstanceId { get; set; }
@@ -38,6 +48,8 @@ public class ActivityExecutionRecordFilter
     public IQueryable<ActivityExecutionRecord> Apply(IQueryable<ActivityExecutionRecord> queryable)
     {
         var filter = this;
+        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
         if (filter.WorkflowInstanceId != null) queryable = queryable.Where(x => x.WorkflowInstanceId == filter.WorkflowInstanceId);
         if (filter.WorkflowInstanceIds != null) queryable = queryable.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);

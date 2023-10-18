@@ -92,6 +92,15 @@ public class Flowchart : Container
             logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
             return startActivity;
         }
+        
+        // If there's an activity marked as "Can Start Workflow", use that.
+        var canStartWorkflowActivity = Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
+        
+        if(canStartWorkflowActivity != null)
+        {
+            logger.LogDebug("An activity marked as 'Can Start Workflow' was found: {CanStartWorkflowActivityId}", canStartWorkflowActivity.Id);
+            return canStartWorkflowActivity;
+        }
 
         // If there is a single activity that has no inbound connections, use that.
         var root = GetRootActivity();
@@ -124,7 +133,7 @@ public class Flowchart : Container
             if (ownerInstanceId == null)
                 return false;
 
-            var ownerContext = context.WorkflowExecutionContext.ActiveActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
+            var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
             var ancestors = ownerContext.GetAncestors().ToList();
 
             return ancestors.Any(x => x == context);
@@ -214,7 +223,7 @@ public class Flowchart : Container
                     else
                     {
                         // Select an existing activity execution context for this activity, if any.
-                        var joinContext = flowchartContext.WorkflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == flowchartContext && x.Activity == activity);
+                        var joinContext = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == flowchartContext && x.Activity == activity);
                         var scheduleWorkOptions = new ScheduleWorkOptions
                         {
                             CompletionCallback = OnChildCompletedAsync,
@@ -251,11 +260,6 @@ public class Flowchart : Container
                         logger.LogDebug("Completing flowchart");
                         await flowchartContext.CompleteActivityAsync();
                     }
-                    else
-                    {
-                        logger.LogDebug("Faulted activities found. Faulting flowchart");
-                        flowchartContext.Status = ActivityStatus.Faulted;
-                    }
                 }
             }
         }
@@ -283,7 +287,19 @@ public class Flowchart : Container
     {
         var flowchartContext = context.ReceiverActivityExecutionContext;
         var activity = signal.Activity;
-        
-        await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+        var activityExecutionContext = signal.ActivityExecutionContext;
+
+        if (activityExecutionContext != null)
+        {
+            await flowchartContext.ScheduleActivityAsync(activityExecutionContext.Activity, new ScheduleWorkOptions
+            {
+                ExistingActivityExecutionContext = activityExecutionContext,
+                CompletionCallback = OnChildCompletedAsync,
+            });
+        }
+        else
+        {
+            await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+        }
     }
 }

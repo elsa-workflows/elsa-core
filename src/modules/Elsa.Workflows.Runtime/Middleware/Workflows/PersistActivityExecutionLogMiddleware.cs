@@ -1,11 +1,7 @@
-using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
@@ -16,12 +12,18 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IActivityExecutionStore _activityExecutionStore;
+    private readonly IActivityExecutionMapper _activityExecutionMapper;
     private readonly INotificationSender _notificationSender;
 
     /// <inheritdoc />
-    public PersistActivityExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IActivityExecutionStore activityExecutionStore, INotificationSender notificationSender) : base(next)
+    public PersistActivityExecutionLogMiddleware(
+        WorkflowMiddlewareDelegate next, 
+        IActivityExecutionStore activityExecutionStore, 
+        IActivityExecutionMapper activityExecutionMapper, 
+        INotificationSender notificationSender) : base(next)
     {
         _activityExecutionStore = activityExecutionStore;
+        _activityExecutionMapper = activityExecutionMapper;
         _notificationSender = notificationSender;
     }
 
@@ -38,68 +40,9 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         var activityExecutionContexts = context.ActivityExecutionContexts;
         
         // Persist activity execution entries.
-        var entries = activityExecutionContexts.Select(activityExecutionContext =>
-        {
-            // Get any outcomes that were added to the activity execution context.
-            var outcomes = activityExecutionContext.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
-            var payload = new Dictionary<string, object>();
-            
-            if(outcomes != null)
-                payload.Add("Outcomes", outcomes);
-            
-            // Get any outputs that were added to the activity execution context.
-            var activity = activityExecutionContext.Activity;
-            var expressionExecutionContext = activityExecutionContext.ExpressionExecutionContext;
-            var activityDescriptor = activityExecutionContext.ActivityDescriptor;
-            var outputDescriptors = activityDescriptor.Outputs;
-            
-            var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
-            {
-                if(x.IsSerializable == false)
-                    return "(not serializable)";
-                
-                var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
-                
-                if(cachedValue != default)
-                    return cachedValue;
-                
-                if(x.ValueGetter(activity) is Output output && activityExecutionContext.TryGet(output.MemoryBlockReference(), out var outputValue))
-                    return outputValue;
-                
-                return default;
-            });
-            
-            return new ActivityExecutionRecord
-            {
-                Id = activityExecutionContext.Id,
-                ActivityId = activityExecutionContext.Activity.Id,
-                WorkflowInstanceId = context.Id,
-                ActivityType = activityExecutionContext.Activity.Type,
-                ActivityName = activityExecutionContext.Activity.Name,
-                ActivityState = activityExecutionContext.ActivityState,
-                Outputs = outputs,
-                Payload = payload,
-                Exception = ExceptionState.FromException(activityExecutionContext.Exception),
-                ActivityTypeVersion = activityExecutionContext.Activity.Version,
-                StartedAt = activityExecutionContext.StartedAt,
-                HasBookmarks = activityExecutionContext.Bookmarks.Any(),
-                Status = GetAggregateStatus(activityExecutionContext),
-                CompletedAt = activityExecutionContext.CompletedAt
-            };
-        }).ToList();
+        var entries = activityExecutionContexts.Select(_activityExecutionMapper.Map).ToList();
 
         await _activityExecutionStore.SaveManyAsync(entries, cancellationToken);
         await _notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, entries), cancellationToken);
-    }
-
-    private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
-    {
-        // If any child activity is faulted, the aggregate status is faulted.
-        var descendantContexts = context.GetDescendants().ToList();
-        
-        if (descendantContexts.Any(x => x.Status == ActivityStatus.Faulted))
-            return ActivityStatus.Faulted;
-
-        return context.Status;
     }
 }

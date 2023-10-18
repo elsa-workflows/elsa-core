@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+
+    <PropertyGroup>
+        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <Description>
+            Provides alteration background job runners using MassTransit.
+        </Description>
+        <PackageTags>elsa module alterations masstransit</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
+    </ItemGroup>
+
+
+
+
+</Project>

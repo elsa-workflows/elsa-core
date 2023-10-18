@@ -2,6 +2,7 @@ using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
@@ -45,8 +46,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
-
-        return result;
+        
+        return result.ConvertTo(returnType);
     }
 
     private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, CancellationToken cancellationToken)

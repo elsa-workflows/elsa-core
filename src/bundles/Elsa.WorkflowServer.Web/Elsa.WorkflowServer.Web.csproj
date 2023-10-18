@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
@@ -39,10 +40,6 @@
         <PackageReference Include="Azure.Identity" Version="1.8.2"/>
         <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
         <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="App_Data\" />
     </ItemGroup>
     
 </Project>

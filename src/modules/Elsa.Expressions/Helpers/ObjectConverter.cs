@@ -130,6 +130,10 @@ public static class ObjectConverter
             }
         }
 
+        if (typeof(IEnumerable<object>).IsAssignableFrom(underlyingSourceType))
+            if (underlyingTargetType == typeof(string))
+                return JsonSerializer.Serialize(value);
+
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
         if (targetTypeConverter.CanConvertFrom(underlyingSourceType))

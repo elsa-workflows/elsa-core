@@ -24,7 +24,7 @@ public class ActivityInvoker : IActivityInvoker
 
         // Perform a lookup to make sure the activity execution context is part of the workflow execution context.
         var activityExecutionContext = existingActivityExecutionContext != null
-            ? workflowExecutionContext.ActiveActivityExecutionContexts.FirstOrDefault(x => x.Id == existingActivityExecutionContext.Id)
+            ? workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == existingActivityExecutionContext.Id)
             : default;
 
         if (activityExecutionContext == null)

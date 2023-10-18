@@ -18,7 +18,6 @@ public abstract class Container : Activity, IVariableContainer
     /// <summary>
     /// The <see cref="IActivity"/>s to execute.
     /// </summary>
-    [Port]
     public ICollection<IActivity> Activities { get; set; } = new List<IActivity>();
 
     /// <summary>

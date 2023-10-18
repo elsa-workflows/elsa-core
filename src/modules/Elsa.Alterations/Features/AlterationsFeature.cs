@@ -1,13 +1,12 @@
-using Elsa.Alterations.BackgroundRunner.Features;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
+using Elsa.Alterations.Services;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
-using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +15,6 @@ namespace Elsa.Alterations.Features;
 /// <summary>
 /// Adds the Elsa alterations services.
 /// </summary>
-[DependsOn(typeof(AlterationsBackgroundRunnerFeature))]
 public class AlterationsFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -33,6 +31,11 @@ public class AlterationsFeature : FeatureBase
     /// Gets or sets the factory for the alteration job store.
     /// </summary>
     public Func<IServiceProvider, IAlterationJobStore> AlterationJobStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationJobStore>();
+    
+    /// <summary>
+    /// Gets or sets the factory for the alteration job dispatcher.
+    /// </summary>
+    public Func<IServiceProvider, IAlterationJobDispatcher> AlterationJobDispatcherFactory { get; set; } = sp => sp.GetRequiredService<BackgroundAlterationJobDispatcher>();
 
     /// <summary>
     /// Adds an alteration and its handler.
@@ -56,11 +59,13 @@ public class AlterationsFeature : FeatureBase
     {
         Services.AddAlterations();
         Services.AddAlterationsCore();
+        Services.AddSingleton<BackgroundAlterationJobDispatcher>();
         Services.AddSingleton<MemoryAlterationPlanStore>();
         Services.AddSingleton<MemoryAlterationJobStore>();
         Services.AddSingleton(new MemoryStore<AlterationPlan>());
         Services.AddSingleton(new MemoryStore<AlterationJob>());
         Services.AddSingleton(AlterationPlanStoreFactory);
         Services.AddSingleton(AlterationJobStoreFactory);
+        Services.AddSingleton(AlterationJobDispatcherFactory);
     }
 }

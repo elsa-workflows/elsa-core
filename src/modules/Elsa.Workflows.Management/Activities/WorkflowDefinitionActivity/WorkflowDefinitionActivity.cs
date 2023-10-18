@@ -128,6 +128,25 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             context.WorkflowExecutionContext.TransientProperties.Remove(nameof(CompleteCompositeSignal));
         }
 
+        // Copy any collected outputs into the synthetic properties.
+        foreach (var outputDescriptor in targetContext.ActivityDescriptor.Outputs)
+        {
+            // Create a local scope variable for each output property.
+            var variable = new Variable
+            {
+                Id = outputDescriptor.Name,
+                Name = outputDescriptor.Name
+            };
+
+            // Use the variable to read the value from the memory.
+            var value = variable.Get(targetContext);
+
+            // Assign the value to the output synthetic property.
+            var output = SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputValue) ? (Output?)outputValue : default;
+            targetContext.Set(output, value);
+        }
+
+        // Complete this activity with the signal value.
         await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 

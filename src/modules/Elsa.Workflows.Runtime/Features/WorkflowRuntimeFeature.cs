@@ -160,10 +160,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityInvoker)
             .AddSingleton<IBookmarkManager, DefaultBookmarkManager>()
+            .AddSingleton<IActivityExecutionManager, DefaultActivityExecutionManager>()
+            .AddSingleton<IActivityExecutionStatsService, ActivityExecutionStatsService>()
+            .AddSingleton<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
             .AddSingleton<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddSingleton<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddSingleton<ITaskReporter, TaskReporter>()
-            .AddSingleton<IActivityExecutionService, ActivityExecutionService>()
             .AddSingleton<SynchronousTaskDispatcher>()
             .AddSingleton<BackgroundTaskDispatcher>()
             .AddSingleton<IEventPublisher, EventPublisher>()
@@ -174,8 +176,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Noop stores.
-            .AddSingleton<NoopWorkflowExecutionLogStore>()
-            .AddSingleton<NoopActivityExecutionStore>()
+            .AddSingleton<MemoryWorkflowExecutionLogStore>()
+            .AddSingleton<MemoryActivityExecutionStore>()
             
             // Memory stores.
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()

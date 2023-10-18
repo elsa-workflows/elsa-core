@@ -8,15 +8,13 @@ namespace Elsa.Http.ContentWriters;
 /// </summary>
 public class TextContentFactory : IHttpContentFactory
 {
-    private readonly List<string> _supportedContentTypes = new()
+    /// <inheritdoc />
+    public IEnumerable<string> SupportedContentTypes => new[]
     {
         MediaTypeNames.Text.Plain,
         MediaTypeNames.Text.RichText,
         MediaTypeNames.Text.Html,
     };
-
-    /// <inheritdoc />
-    public bool SupportsContentType(string contentType) => _supportedContentTypes.Contains(contentType);
 
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string contentType)

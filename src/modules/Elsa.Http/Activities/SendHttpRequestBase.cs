@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Elsa.Extensions;
+using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -18,7 +19,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     protected SendHttpRequestBase(string? source = default, int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
@@ -47,7 +48,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// </summary>
     [Input(
         Description = "The content type to use when sending the request.",
-        Options = new[] { "", "text/plain", "text/html", "application/json", "application/xml", "application/x-www-form-urlencoded" },
+        OptionsProvider = typeof(HttpContentTypeOptionsProvider),
         UIHint = InputUIHints.Dropdown
     )]
     public Input<string?> ContentType { get; set; } = default!;
@@ -89,7 +90,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// Handles an exception that occurred while sending the request.
     /// </summary>
     protected abstract ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception);
-    
+
     /// <summary>
     /// Handles <see cref="TaskCanceledException"/> that occurred while sending the request.
     /// </summary>
@@ -111,7 +112,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
             await HandleResponseAsync(context, response);
         }
-        catch(HttpRequestException e)
+        catch (HttpRequestException e)
         {
             context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Error", e.Message);
@@ -165,14 +166,20 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
         if (contentType != null && content != null)
         {
-            var contentWriters = context.GetServices<IHttpContentFactory>();
-            var contentWriter = SelectContentWriter(contentType, contentWriters);
-            request.Content = contentWriter.CreateHttpContent(content, contentType);
+            var factories = context.GetServices<IHttpContentFactory>();
+            var factory = SelectContentWriter(contentType, factories);
+            request.Content = factory.CreateHttpContent(content, contentType);
         }
 
         return request;
     }
 
-    private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> requestContentWriters) =>
-        string.IsNullOrWhiteSpace(contentType) ? new JsonContentFactory() : requestContentWriters.First(w => w.SupportsContentType(contentType));
+    private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> factories)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+            return new JsonContentFactory();
+
+        var parsedContentType = new System.Net.Mime.ContentType(contentType);
+        return factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == parsedContentType.MediaType)) ?? new JsonContentFactory();
+    }
 }
