@@ -32,15 +32,7 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds the Elsa client to the service collection.
     /// </summary>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default)
-    {
-        return services.AddElsaClient(builder => builder.AddHttpMessageHandler<ApiHttpMessageHandler>() , configureOptions);
-    }
-
-    /// <summary>
-    /// Adds the Elsa client to the service collection.
-    /// </summary>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<IHttpClientBuilder> configureHttpClientBuilder, Action<ElsaClientOptions>? configureOptions = default)
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default, Action<IHttpClientBuilder>? configureHttpClientBuilder = default)
     {
         services.Configure(configureOptions ?? (_ => { }));
         services.AddScoped<ApiHttpMessageHandler>();
@@ -59,17 +51,6 @@ public static class DependencyInjectionExtensions
         services.AddApi<IJavaScriptApi>(CreateRefitSettings, configureHttpClientBuilder);
         return services;
     }
-
-    /// <summary>
-    /// Adds a refit client for the specified API type.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="settings">The refit settings.</param>
-    /// <typeparam name="T">The API type.</typeparam>
-    public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings) where T : class
-    {
-        services.AddApi<T>(settings, builder => builder.AddHttpMessageHandler<ApiHttpMessageHandler>());
-    }
     
     /// <summary>
     /// Adds a refit client for the specified API type.
@@ -78,10 +59,11 @@ public static class DependencyInjectionExtensions
     /// <param name="settings">The refit settings.</param>
     /// <param name="configureHttpClientBuilder">A delegate to configure the HTTP client builder.</param>
     /// <typeparam name="T">The API type.</typeparam>
-    public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings, Action<IHttpClientBuilder> configureHttpClientBuilder) where T : class
+    public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings, Action<IHttpClientBuilder>? configureHttpClientBuilder = default) where T : class
     {
         var builder = services.AddRefitClient<T>(settings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
-        configureHttpClientBuilder(builder);
+        builder.AddHttpMessageHandler<ApiHttpMessageHandler>();
+        configureHttpClientBuilder?.Invoke(builder);
     }
     
     /// <summary>
