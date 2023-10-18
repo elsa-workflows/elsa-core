@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
-        <ProjectReference Include="..\Elsa.Alterations.BackgroundRunner\Elsa.Alterations.BackgroundRunner.csproj"/>
         <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj"/>
         
     </ItemGroup>
