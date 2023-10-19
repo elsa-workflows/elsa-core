@@ -14,7 +14,9 @@ export class FlowSwitchPortProvider implements PortProvider {
       return [];
 
     const cases = activity.cases ?? [];
-    return cases.map(x => ({name: x.label, displayName: x.label, type: PortType.Flow}));
+    const ports = cases.map(x => ({name: x.label, displayName: x.label, type: PortType.Flow}));
+    const defaultPort: Port = {name: 'Default', displayName: 'Default', type: PortType.Flow};
+    return [...ports, defaultPort];
   }
 
   resolvePort(portName: string, context: PortProviderContext): Activity | Array<Activity> {
