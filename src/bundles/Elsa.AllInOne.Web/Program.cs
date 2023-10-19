@@ -32,10 +32,11 @@ services
         .UseScheduling()
         .UseJavaScript()
         .UseLiquid()
-        .UseHttp()
+        .UseHttp(http => http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options))
         .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
         .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
         .UseWorkflowsApi()
+        .UseRealTimeWorkflows()
         .AddActivitiesFrom<Program>()
         .AddWorkflowsFrom<Program>()
     );
@@ -59,6 +60,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseBlazorFrameworkFiles();
 app.MapHealthChecks("/health");
 app.UseRouting();
 app.UseCors();
@@ -67,5 +69,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();
 app.UseWorkflows();
-app.MapRazorPages();
+app.UseWorkflowsSignalRHubs();
+app.MapFallbackToPage("/_Host");
 app.Run();
