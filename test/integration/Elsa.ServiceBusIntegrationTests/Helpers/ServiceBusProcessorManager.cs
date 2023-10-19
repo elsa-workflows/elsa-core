@@ -1,17 +1,17 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Elsa.ServiceBusIntegrationTests.Contracts;
-using Moq;
+using NSubstitute;
 using Xunit.Abstractions;
 
 namespace Elsa.ServiceBusIntegrationTests.Helpers
 {
     public class ServiceBusProcessorManager : IServiceBusProcessorManager
     {
-        private readonly IMock<ServiceBusClient> _serviceBusClient;
+        private readonly ServiceBusClient _serviceBusClient;
         private readonly ITestOutputHelper _testOutputHelper;
         private readonly IDictionary<(string topicName, string subscriptionName), ServiceBusProcessorTest> _serviceBusProcessors
             = new Dictionary<(string topicName, string subscriptionName), ServiceBusProcessorTest>();
-        public ServiceBusProcessorManager(IMock<ServiceBusClient> serviceBusClient, ITestOutputHelper testOutputHelper)
+        public ServiceBusProcessorManager(ServiceBusClient serviceBusClient, ITestOutputHelper testOutputHelper)
         {
             _serviceBusClient = serviceBusClient;
             _testOutputHelper = testOutputHelper;
@@ -24,18 +24,15 @@ namespace Elsa.ServiceBusIntegrationTests.Helpers
                 throw new ArgumentException($"ServiceBusProcessor with topic:{topic}, subscription:{subscription} already initialized");
 
             processor = new ServiceBusProcessorTest(_testOutputHelper);
-            (_serviceBusClient as Mock<ServiceBusClient>)
-                .Setup(sb =>
-                    sb.CreateProcessor(It.Is<string>(s => s == topic),
-                    It.IsAny<string>(),
-                    It.IsAny<ServiceBusProcessorOptions>())
+            _serviceBusClient
+                .CreateProcessor(Arg.Is<string>(s => s == topic),
+                    Arg.Any<string>(),
+                    Arg.Any<ServiceBusProcessorOptions>()
                     )
-                .Callback<string, string, ServiceBusProcessorOptions>(
-                    (t, s, sbO) =>
-                    {
-                        _testOutputHelper.WriteLine("ServiceBusClient");
-                    })
-                .Returns(processor);
+                .Returns((c)=> {
+                    _testOutputHelper.WriteLine("ServiceBusClient");
+                    return processor;
+                });
 
             _serviceBusProcessors.Add((topic,subscription), processor);
             return processor;

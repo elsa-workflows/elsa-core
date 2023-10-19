@@ -6,7 +6,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using System.Collections.ObjectModel;
 using Xunit.Abstractions;
 using Elsa.Mediator.HostedServices;
@@ -17,6 +16,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.ServiceBusIntegrationTests.Contracts;
 using Elsa.ServiceBusIntegrationTests.Scenarios.workflows;
 using Elsa.ServiceBusIntegrationTests.Helpers;
+using NSubstitute;
 
 namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
 {
@@ -26,7 +26,7 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
         private readonly IServiceProvider _services;
         private readonly CapturingTextWriter _capturingTextWriter = new();
 
-        private readonly Mock<ServiceBusClient> _serviceBusClient = new();
+        private readonly ServiceBusClient _serviceBusClient = Substitute.For<ServiceBusClient>();
 
         private IWorkerManager _worker;
         private readonly BackgroundCommandSenderHostedService _hosted;
@@ -46,8 +46,7 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
                 .ConfigureServices(services =>
                 {
                     services
-                    .AddSingleton<IMock<ServiceBusClient>>(_serviceBusClient)
-                    .AddSingleton(_serviceBusClient.Object)
+                    .AddSingleton<ServiceBusClient>(_serviceBusClient)
                     .AddSingleton<IServiceBusProcessorManager, ServiceBusProcessorManager>()
 
                     .AddSingleton<IWorkerManager, WorkerManager>()
@@ -203,25 +202,27 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             //Init BackGround
             await InitRegistryAndBackGroundServiceWorkerAsync();
 
-            var senderMock = new Mock<ServiceBusSender>();
+            var senderMock = Substitute.For<ServiceBusSender>();
             _serviceBusClient
-                .Setup(sb =>
-                sb.CreateSender(It.IsAny<string>())
-                )
-                .Returns(senderMock.Object);
+                .CreateSender(Arg.Any<string>())
+                .Returns(senderMock);
+
+
             senderMock
-                .Setup(sender =>
-                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<ServiceBusMessage, CancellationToken>(async (sb, c) =>
+                .SendMessageAsync(Arg.Any<ServiceBusMessage>(), Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(async (callback) =>
                 {
+                    var sb = callback.Arg<ServiceBusMessage>();
+                    var c = callback.Arg<CancellationToken>();
+
                     _testOutputHelper.WriteLine("Sending Message from activity");
 
                     await _worker.StartWorkerAsync("topicName", "subscriptionName");
                     await _sbProcessorManager
                         .Get("topicName", "subscriptionName")
                         .SendMessage<dynamic>(new { hello = "world" }, null);
-                })
-                .Returns(Task.CompletedTask);
+                });
+
 
             //Start Workflow
             var workflowDefinitionId = typeof(SendOneMessageWorkflow).Name;
@@ -236,13 +237,6 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
              */
             Assert.Equal(WorkflowStatus.Running, workflowState.Status);
             Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
-
-
-            //Start Worker to send Message on topicName/suscriptionName
-            //await _worker.StartWorkerAsync("topicName", "subscriptionName");
-            //await _sbProcessorManager
-            //    .Get("topicName", "subscriptionName")
-            //    .SendMessage<dynamic>(new { hello = "world" }, null);
 
             //Wait for receiving first message
             var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
@@ -275,25 +269,25 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
             //Init BackGround
             await InitRegistryAndBackGroundServiceWorkerAsync();
 
-            var senderMock = new Mock<ServiceBusSender>();
+            var senderMock = Substitute.For<ServiceBusSender>();
             _serviceBusClient
-                .Setup(sb =>
-                sb.CreateSender(It.IsAny<string>())
-                )
-                .Returns(senderMock.Object);
+                .CreateSender(Arg.Any<string>())
+                .Returns(senderMock);
+
             senderMock
-                .Setup(sender =>
-                    sender.SendMessageAsync(It.IsAny<ServiceBusMessage>(), It.IsAny<CancellationToken>()))
-                .Callback<ServiceBusMessage, CancellationToken>(async (sb, c) =>
+                .SendMessageAsync(Arg.Any<ServiceBusMessage>(), Arg.Any<CancellationToken>())
+                .ReturnsForAnyArgs(async (callback) =>
                 {
+                    var sb = callback.Arg<ServiceBusMessage>();
+                    var c = callback.Arg<CancellationToken>();
+
                     _testOutputHelper.WriteLine("Sending Message from activity");
 
                     await _worker.StartWorkerAsync("topicName", "subscriptionName");
                     await _sbProcessorManager
                         .Get("topicName", "subscriptionName")
                         .SendMessage<dynamic>(new { hello = "world" }, correlationId);
-                })
-                .Returns(Task.CompletedTask);
+                });
 
             //Start Workflow
             var workflowDefinitionId = typeof(SendOneMessageWithCorrelationIdWorkflow).Name;
@@ -308,13 +302,6 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.ServiceBus
              */
             Assert.Equal(WorkflowStatus.Running, workflowState.Status);
             Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
-
-
-            //Start Worker to send Message on topicName/suscriptionName
-            //await _worker.StartWorkerAsync("topicName", "subscriptionName");
-            //await _sbProcessorManager
-            //    .Get("topicName", "subscriptionName")
-            //    .SendMessage<dynamic>(new { hello = "world" }, null);
 
             //Wait for receiving first message
             var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
