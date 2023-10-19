@@ -57,8 +57,8 @@ public class FlowJoin : Activity, IJoinNode
             }
             case FlowJoinMode.WaitAny:
             {
-                await context.CompleteActivityAsync();
                 await ClearBookmarksAsync(flowchart, context);
+                await context.CompleteActivityAsync();
                 break;
             }
         }
