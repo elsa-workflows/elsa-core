@@ -19,18 +19,20 @@ public class Worker : IAsyncDisposable
     private readonly ServiceBusProcessor _processor;
     private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IHasher _hasher;
+    private readonly IWorkflowInbox _workflowInbox;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
         _workflowDispatcher = workflowDispatcher;
         _hasher = hasher;
+        _workflowInbox = workflowInbox;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -102,8 +104,16 @@ public class Worker : IAsyncDisposable
         var messageModel = CreateMessageModel(message);
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
-        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, payload, correlationId, default, default, input);
-        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
+
+        var results = await _workflowInbox.SubmitAsync(new Workflows.Runtime.Models.NewWorkflowInboxMessage()
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkPayload = payload,
+            Input = input,
+            CorrelationId = correlationId
+        });
+
+        _logger.LogInformation($"{results.WorkflowExecutionResults.Count()} workflow triggered by the service bus message");
     }
 
     private ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message) =>
