@@ -55,7 +55,7 @@ public class WorkflowExecutionContext : IExecutionContext
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
-        SubStatus = WorkflowSubStatus.Executing;
+        SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
         _activityExecutionContexts = new List<ActivityExecutionContext>();
@@ -591,6 +591,7 @@ public class WorkflowExecutionContext : IExecutionContext
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
         subStatus switch
         {
+            WorkflowSubStatus.Pending => WorkflowStatus.Running,
             WorkflowSubStatus.Cancelled => WorkflowStatus.Finished,
             WorkflowSubStatus.Executing => WorkflowStatus.Running,
             WorkflowSubStatus.Faulted => WorkflowStatus.Finished,
