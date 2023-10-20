@@ -14,6 +14,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Memory;
 using Humanizer;
 using Jint;
+using Jint.Runtime;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
@@ -67,7 +68,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => SetVariableInScope(context, name, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(name => GetVariableInScope(context, name)));
         engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
-        engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdOrNodeId, outputName) => GetOutput(context, activityIdOrNodeId, outputName)));
+        engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => GetOutput(context, activityIdName, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
 
         // Create variable getters and setters for each variable.
@@ -127,13 +128,18 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return workflowExecutionContext.GetLastActivityResult();
     }
 
-    private static object? GetOutput(ExpressionExecutionContext context, string activityId, string? outputName)
+    private static object? GetOutput(ExpressionExecutionContext context, string activityIdOrName, string? outputName)
     {
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var activityExecutionContext = context.GetActivityExecutionContext();
+        var activity = activityExecutionContext.FindActivityByIdOrName(activityIdOrName);
+
+        if (activity == null)
+            throw new JavaScriptException("Activity not found.");
+        
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activityId && x.OutputName == outputName).ToList();
-        var currentActivityExecutionContext = context.GetActivityExecutionContext();
-        var containerIds = currentActivityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
+        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
+        var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
         var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
         var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
         return outputRecord?.Value;

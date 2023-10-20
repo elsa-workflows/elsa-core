@@ -10,7 +10,6 @@ internal static class WorkflowExecutionContextExtensions
     public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
-
         var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
 
         if (currentContainerNode == null)
@@ -40,5 +39,20 @@ internal static class WorkflowExecutionContextExtensions
 
         foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
+    }
+    
+    public static IActivity? FindActivityByIdOrName(this ActivityExecutionContext activityExecutionContext, string idOrName)
+    {
+        // Get current container.
+        var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
+
+        if (currentContainerNode == null)
+            return null;
+
+        // Get all nodes in the current container
+        var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+        var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
+        var node = containedNodes.FirstOrDefault(x => x.Activity.Name == idOrName || x.Activity.Id == idOrName);
+        return node?.Activity;
     }
 }
