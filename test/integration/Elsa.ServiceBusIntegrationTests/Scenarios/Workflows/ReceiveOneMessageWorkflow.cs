@@ -4,13 +4,13 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.ServiceBusIntegrationTests.Contracts;
 
-namespace Elsa.ServiceBusIntegrationTests.Scenarios.workflows
+namespace Elsa.ServiceBusIntegrationTests.Scenarios.Workflows
 {
-    public class ReceiveMessageWorkflow : WorkflowBase
+    public class ReceiveOneMessageWorkflow : WorkflowBase
     {
         private readonly ITestResetEventManager _waitHandleTestManager;
 
-        public ReceiveMessageWorkflow(ITestResetEventManager waitHandleTestManager)
+        public ReceiveOneMessageWorkflow(ITestResetEventManager waitHandleTestManager)
         {
             _waitHandleTestManager = waitHandleTestManager;
         }
@@ -23,11 +23,8 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.workflows
                 {
                     new MessageReceived("topicName","subscriptionName"),
                     new WriteLine(context=> {_waitHandleTestManager.Set("receive1"); return "first receive ok"; }),
-                    new MessageReceived("topicName1","subscriptionName1"),
-                    new WriteLine(context=> {_waitHandleTestManager.Set("receive2"); return "Ok"; }),
                 }
             };
         }
-
     }
 }

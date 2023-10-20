@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.ServiceBusIntegrationTests.Contracts;
-using Elsa.ServiceBusIntegrationTests.Scenarios.workflows;
+using Elsa.ServiceBusIntegrationTests.Scenarios.Workflows;
 using Elsa.ServiceBusIntegrationTests.Helpers;
 using NSubstitute;
 

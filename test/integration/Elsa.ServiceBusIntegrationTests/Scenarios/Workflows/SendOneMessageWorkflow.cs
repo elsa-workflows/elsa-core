@@ -4,7 +4,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.ServiceBusIntegrationTests.Contracts;
 
-namespace Elsa.ServiceBusIntegrationTests.Scenarios.workflows
+namespace Elsa.ServiceBusIntegrationTests.Scenarios.Workflows
 {
     public class SendOneMessageWorkflow : WorkflowBase
     {
@@ -17,17 +17,21 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.workflows
 
         protected override void Build(IWorkflowBuilder builder)
         {
-            builder.Root = new Sequence()
+            builder.Root = new Sequence
             {
                 Activities =
                 {
-                    new SendMessage()
+                    new SendMessage
                     {
-                        QueueOrTopic = new ("sendTopic1"),
-                        MessageBody = new Workflows.Core.Models.Input<object>("HEllo World"),
+                        QueueOrTopic = new("sendTopic1"),
+                        MessageBody = new ("Hello World"),
                     },
-                    new MessageReceived("topicName","subscriptionName"),
-                    new WriteLine(context=> {_waitHandleTestManager.Set("receive1"); return "first receive ok"; }),
+                    new MessageReceived("topicName", "subscriptionName"),
+                    new WriteLine(_ =>
+                    {
+                        _waitHandleTestManager.Set("receive1");
+                        return "first receive ok";
+                    }),
                 }
             };
         }
@@ -44,21 +48,25 @@ namespace Elsa.ServiceBusIntegrationTests.Scenarios.workflows
 
         protected override void Build(IWorkflowBuilder builder)
         {
-            builder.Root = new Sequence()
+            builder.Root = new Sequence
             {
                 Activities =
                 {
-                    new SendMessage()
+                    new SendMessage
                     {
-                        QueueOrTopic = new ("sendTopic1"),
-                        MessageBody = new Workflows.Core.Models.Input<object>("HEllo World"),
+                        QueueOrTopic = new("sendTopic1"),
+                        MessageBody = new("Hello World"),
                     },
-                    new Correlate()
+                    new Correlate
                     {
-                        CorrelationId = new ("EEE3D9CC-2279-4CE5-8F4F-FC6C65BF8814")
+                        CorrelationId = new("EEE3D9CC-2279-4CE5-8F4F-FC6C65BF8814")
                     },
-                    new MessageReceived("topicName","subscriptionName"),
-                    new WriteLine(context=> {_waitHandleTestManager.Set("receive1"); return "first receive ok"; }),
+                    new MessageReceived("topicName", "subscriptionName"),
+                    new WriteLine(context =>
+                    {
+                        _waitHandleTestManager.Set("receive1");
+                        return "first receive ok";
+                    }),
                 }
             };
         }
