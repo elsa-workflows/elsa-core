@@ -63,6 +63,7 @@ internal class Create : ElsaEndpoint<Request, Response>
             user.Name,
             password,
             user.Roles,
+            user.TenantId,
             hashedPassword.EncodeSecret(),
             hashedPassword.EncodeSalt());
 
