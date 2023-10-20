@@ -10,15 +10,21 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class RuntimeElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public RuntimeElsaDbContext(DbContextOptions options) : base(options)
+    public RuntimeElsaDbContext(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
+        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
+        _serviceProvider = serviceProvider;
     }
-    
+
+    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
+    private readonly IServiceProvider _serviceProvider;
+
     /// <summary>
     /// The workflow triggers.
     /// </summary>
     public DbSet<StoredTrigger> Triggers { get; set; } = default!;
-    
+
     /// <summary>
     /// The workflow execution log records.
     /// </summary>
@@ -28,7 +34,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The activity execution records.
     /// </summary>
     public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
-    
+
     /// <summary>
     /// The workflow bookmarks.
     /// </summary>
@@ -48,6 +54,8 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
+
+        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
     }
 
         /// <inheritdoc />
