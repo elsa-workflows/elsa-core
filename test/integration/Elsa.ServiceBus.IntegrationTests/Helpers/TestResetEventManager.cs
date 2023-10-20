@@ -1,6 +1,6 @@
-﻿using Elsa.ServiceBusIntegrationTests.Contracts;
+﻿using Elsa.ServiceBus.IntegrationTests.Contracts;
 
-namespace Elsa.ServiceBusIntegrationTests.Helpers
+namespace Elsa.ServiceBus.IntegrationTests.Helpers
 {
     public class TestResetEventManager : ITestResetEventManager
     {

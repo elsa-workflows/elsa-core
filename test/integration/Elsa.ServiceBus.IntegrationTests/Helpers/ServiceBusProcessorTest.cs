@@ -2,7 +2,7 @@
 using System.Text.Json;
 using Xunit.Abstractions;
 
-namespace Elsa.ServiceBusIntegrationTests.Helpers
+namespace Elsa.ServiceBus.IntegrationTests.Helpers
 {
     public class ServiceBusProcessorTest : ServiceBusProcessor
     {
@@ -17,8 +17,14 @@ namespace Elsa.ServiceBusIntegrationTests.Helpers
             var args = CreateMessageArgs(payload, correlationId, attempt);
             await base.OnProcessMessageAsync(args);
         }
-
-        public ProcessMessageEventArgs CreateMessageArgs<T>(T payload, string correlationId, int deliveryCount = 1)
+        
+        public override Task StartProcessingAsync(CancellationToken cancellationToken = default)
+        {
+            _testOutputHelper.WriteLine("Receiving Service Bus Message");
+            return Task.CompletedTask;
+        }
+        
+        private ProcessMessageEventArgs CreateMessageArgs<T>(T payload, string correlationId, int deliveryCount = 1)
         {
             var payloadJson = JsonSerializer.Serialize(payload);
             var props = new Dictionary<string, object>() { };
@@ -28,16 +34,12 @@ namespace Elsa.ServiceBusIntegrationTests.Helpers
                 deliveryCount: deliveryCount,
                 correlationId: correlationId,
                 properties: props
-                );
+            );
             
 
             var args = new ProcessMessageEventArgs(message, null, new CancellationToken());
 
             return args;
-        }
-        public override async Task StartProcessingAsync(CancellationToken cancellationToken = default)
-        {
-            _testOutputHelper.WriteLine("Receiving Service Bus Message");
         }
 
     }

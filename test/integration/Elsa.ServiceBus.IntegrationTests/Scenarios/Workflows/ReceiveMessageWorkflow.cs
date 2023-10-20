@@ -1,10 +1,10 @@
 ﻿using Elsa.AzureServiceBus.Activities;
+using Elsa.ServiceBus.IntegrationTests.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.ServiceBusIntegrationTests.Contracts;
 
-namespace Elsa.ServiceBusIntegrationTests.Scenarios.Workflows
+namespace Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows
 {
     public class ReceiveMessageWorkflow : WorkflowBase
     {

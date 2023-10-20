@@ -1,6 +1,6 @@
-﻿using Elsa.ServiceBusIntegrationTests.Helpers;
+﻿using Elsa.ServiceBus.IntegrationTests.Helpers;
 
-namespace Elsa.ServiceBusIntegrationTests.Contracts
+namespace Elsa.ServiceBus.IntegrationTests.Contracts
 {
     public interface IServiceBusProcessorManager
     {

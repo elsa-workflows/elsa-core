@@ -1,4 +1,4 @@
-﻿namespace Elsa.ServiceBusIntegrationTests.Contracts
+﻿namespace Elsa.ServiceBus.IntegrationTests.Contracts
 {
     public interface ITestResetEventManager
     {
