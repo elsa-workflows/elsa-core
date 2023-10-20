@@ -12,12 +12,11 @@ public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
         var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowBuilderFactory = services.GetRequiredService<IWorkflowBuilderFactory>();
+        services.GetRequiredService<IWorkflowBuilderFactory>();
         _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
     }
 
