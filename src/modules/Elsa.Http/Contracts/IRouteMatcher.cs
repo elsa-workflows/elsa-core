@@ -10,5 +10,5 @@ public interface IRouteMatcher
     /// <summary>
     /// Matches a given request path against the specified route template.
     /// </summary>
-    RouteValueDictionary? Match(string routeTemplate, string requestPath);
+    RouteValueDictionary? Match(string routeTemplate, string route);
 }

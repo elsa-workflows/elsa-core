@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -25,30 +27,35 @@ public class RouteTable : IRouteTable
     private ConcurrentDictionary<string, string> Routes => _cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, string>())!;
 
     /// <inheritdoc />
-    public void Add(string path)
+    public void Add(string route)
     {
-        if (path.Contains("//"))
+        if (route.Contains("//"))
         {
-            _logger.LogWarning("Path cannot contain double slashes. Ignoring path: {Path}", path);
+            _logger.LogWarning("Path cannot contain double slashes. Ignoring path: {Path}", route);
             return;
         }
 
-        Routes.TryAdd(path, path);
+        var normalizedRoute = route.NormalizeRoute();
+        Routes.TryAdd(normalizedRoute, normalizedRoute);
     }
 
     /// <inheritdoc />
-    public void Remove(string path) => Routes.TryRemove(path, out _);
-
-    /// <inheritdoc />
-    public void AddRange(IEnumerable<string> paths)
+    public void Remove(string route)
     {
-        foreach (var path in paths) Add(path);
+        var normalizedRoute = route.NormalizeRoute();
+        Routes.TryRemove(normalizedRoute, out _);
     }
 
     /// <inheritdoc />
-    public void RemoveRange(IEnumerable<string> paths)
+    public void AddRange(IEnumerable<string> routes)
     {
-        foreach (var path in paths) Remove(path);
+        foreach (var route in routes) Add(route);
+    }
+
+    /// <inheritdoc />
+    public void RemoveRange(IEnumerable<string> routes)
+    {
+        foreach (var route in routes) Remove(route);
     }
 
     /// <inheritdoc />

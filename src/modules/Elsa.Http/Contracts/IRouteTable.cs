@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Elsa.Http.Contracts;
 
 /// <summary>
@@ -5,8 +7,27 @@ namespace Elsa.Http.Contracts;
 /// </summary>
 public interface IRouteTable : IEnumerable<string>
 {
-    void Add(string path);
-    void Remove(string path);
-    void AddRange(IEnumerable<string> paths);
-    void RemoveRange(IEnumerable<string> paths);
+    /// <summary>
+    /// Adds a route to the table.
+    /// </summary>
+    /// <param name="route">The route to add.</param>
+    void Add(string route);
+
+    /// <summary>
+    /// Removes a route from the table.
+    /// </summary>
+    /// <param name="route">The route to remove.</param>
+    void Remove(string route);
+
+    /// <summary>
+    /// Adds a range of routes to the table.
+    /// </summary>
+    /// <param name="routes">The routes to add.</param>
+    void AddRange(IEnumerable<string> routes);
+
+    /// <summary>
+    /// Removes a range of routes from the table.
+    /// </summary>
+    /// <param name="routes">The routes to remove.</param>
+    void RemoveRange(IEnumerable<string> routes);
 }

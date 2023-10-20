@@ -1,4 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
@@ -436,7 +440,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
     {
         // Generate bookmark data for path and selected methods.
-        var path = context.Get(Path);
+        var normalizedRoute = context.Get(Path)!.NormalizeRoute();
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
@@ -444,7 +448,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
         return methods
-            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
+            .Select(x => new HttpEndpointBookmarkPayload(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
             .Cast<object>()
             .ToArray();
     }

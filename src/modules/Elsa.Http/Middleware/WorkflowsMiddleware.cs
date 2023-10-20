@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
@@ -10,6 +13,8 @@ using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows.Core;
@@ -85,7 +90,7 @@ public class WorkflowsMiddleware
     public async Task InvokeAsync(HttpContext httpContext)
     {
         var path = GetPath(httpContext);
-        var basePath = _options.BasePath;
+        var basePath = _options.BasePath?.ToString().NormalizeRoute();
 
         // If the request path does not match the configured base path to handle workflows, then skip.
         if (!string.IsNullOrWhiteSpace(basePath))
@@ -97,7 +102,7 @@ public class WorkflowsMiddleware
             }
 
             // Strip the base path.
-            path = path[basePath.Value.Value!.Length..];
+            path = path[basePath.Length..];
         }
 
         var matchingPath = GetMatchingRoute(path);
@@ -249,7 +254,7 @@ public class WorkflowsMiddleware
         }
     }
 
-    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.ToLowerInvariant();
+    private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.NormalizeRoute();
 
     private async Task<bool> HandleNoWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowMatch> workflowMatches, PathString? basePath)
     {
