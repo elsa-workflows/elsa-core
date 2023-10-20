@@ -1,3 +1,4 @@
+using System.IO;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Models;

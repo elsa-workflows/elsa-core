@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
 using System.Net.Mime;
 
 namespace Elsa.Http.ContentWriters;

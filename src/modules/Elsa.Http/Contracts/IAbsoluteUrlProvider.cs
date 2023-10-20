@@ -1,3 +1,5 @@
+using System;
+
 namespace Elsa.Http.Contracts;
 
 /// <summary>

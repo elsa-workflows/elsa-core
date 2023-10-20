@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Elsa.Http.Models;
 using Microsoft.AspNetCore.Http;
 using Elsa.Http.Contracts;

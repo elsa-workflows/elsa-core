@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Net.Http;
+
 namespace Elsa.Http.ContentWriters;
 
 /// <summary>

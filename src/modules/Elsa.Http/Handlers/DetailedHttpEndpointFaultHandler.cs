@@ -1,4 +1,7 @@
+using System;
+using System.Linq;
 using System.Net.Mime;
+using System.Threading.Tasks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Workflows.Core.Contracts;

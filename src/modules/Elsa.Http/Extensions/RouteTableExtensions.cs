@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using Elsa.Http;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;

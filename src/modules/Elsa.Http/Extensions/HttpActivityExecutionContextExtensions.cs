@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;

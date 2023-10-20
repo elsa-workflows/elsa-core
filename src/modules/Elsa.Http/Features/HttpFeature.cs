@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using Elsa.Common.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
