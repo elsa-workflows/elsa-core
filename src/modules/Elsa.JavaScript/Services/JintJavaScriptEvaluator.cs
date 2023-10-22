@@ -67,7 +67,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => SetVariableInScope(context, name, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(name => GetVariableInScope(context, name)));
-        engine.SetValue("getInput", (Func<string, object?>)(name => context.GetWorkflowExecutionContext().Input.GetValue(name)));
+        engine.SetValue("getInput", (Func<string, object?>)(name => GetInput(context, name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => GetOutput(context, activityIdName, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
 
@@ -126,6 +126,20 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var workflowExecutionContext = context.GetWorkflowExecutionContext();
         return workflowExecutionContext.GetLastActivityResult();
+    }
+
+    private object? GetInput(ExpressionExecutionContext expressionExecutionContext, string name)
+    {
+        // If there's a variable in the current scope with the specified name, return that.
+        var variable = expressionExecutionContext.GetVariable(name);
+        
+        if (variable != null)
+            return variable.Get(expressionExecutionContext);
+        
+        // Otherwise, return the input.
+        var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
+        var input = workflowExecutionContext.Input;
+        return input.TryGetValue(name, out var value) ? value : default;
     }
 
     private static object? GetOutput(ExpressionExecutionContext context, string activityIdOrName, string? outputName)
