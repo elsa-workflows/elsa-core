@@ -35,6 +35,16 @@ public class AzureServiceBusFeature : FeatureBase
     /// </summary>
     public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
 
+    /// <summary>
+    /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
+    /// </summary>
+    public Func<IServiceProvider, ServiceBusClient> ServiceBusClientFactory { get; set; } = sp => new(GetConnectionString(sp));
+    
+    /// <summary>
+    /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
+    /// </summary>
+    public Func<IServiceProvider, ServiceBusAdministrationClient> ServiceBusAdministrationClientFactory { get; set; } = sp => new(GetConnectionString(sp));
+
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
@@ -57,8 +67,8 @@ public class AzureServiceBusFeature : FeatureBase
         Services.Configure(AzureServiceBusOptions);
 
         Services
-            .AddSingleton(CreateServiceBusManagementClient)
-            .AddSingleton(CreateServiceBusClient)
+            .AddSingleton(ServiceBusAdministrationClientFactory)
+            .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
             .AddSingleton<IWorkerManager, WorkerManager>()
             .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
@@ -72,9 +82,6 @@ public class AzureServiceBusFeature : FeatureBase
         // Handlers.
         Services.AddHandlersFrom<UpdateWorkers>();
     }
-    
-    private static ServiceBusClient CreateServiceBusClient(IServiceProvider serviceProvider) => new(GetConnectionString(serviceProvider));
-    private static ServiceBusAdministrationClient CreateServiceBusManagementClient(IServiceProvider serviceProvider) => new(GetConnectionString(serviceProvider));
 
     private static string GetConnectionString(IServiceProvider serviceProvider)
     {
