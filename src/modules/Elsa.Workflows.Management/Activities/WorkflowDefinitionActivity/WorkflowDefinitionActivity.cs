@@ -48,71 +48,6 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
-    private void CopyInputOutputToVariables(ActivityExecutionContext context)
-    {
-        foreach (var inputDescriptor in context.ActivityDescriptor.Inputs)
-        {
-            var input = SyntheticProperties.TryGetValue(inputDescriptor.Name, out var inputValue) ? (Input?)inputValue : default;
-            var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
-
-            // Create a local scope variable for each input property.
-            var variable = new Variable
-            {
-                Id = inputDescriptor.Name,
-                Name = inputDescriptor.Name,
-                StorageDriverType = inputDescriptor.StorageDriverType
-            };
-
-            context.ExpressionExecutionContext.Memory.Declare(variable);
-            variable.Set(context, evaluatedExpression);
-        }
-
-        foreach (var outputDescriptor in context.ActivityDescriptor.Outputs)
-        {
-            // Create a local scope variable for each output property.
-            var variable = new Variable
-            {
-                Id = outputDescriptor.Name,
-                Name = outputDescriptor.Name
-            };
-
-            context.ExpressionExecutionContext.Memory.Declare(variable);
-        }
-    }
-
-    private void DeclareInputOutputAsVariables(InitializationContext context)
-    {
-        var activityRegistry = context.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(Type, Version)!;
-
-        // Declare input variables.
-        foreach (var inputDescriptor in activityDescriptor.Inputs)
-        {
-            // Create a local scope variable for each input property.
-            var variable = new Variable(inputDescriptor.Name)
-            {
-                Id = inputDescriptor.Name,
-                Name = inputDescriptor.Name,
-                StorageDriverType = inputDescriptor.StorageDriverType
-            };
-
-            Variables.Declare(variable);
-        }
-
-        // Declare output variables.
-        foreach (var outputDescriptor in activityDescriptor.Outputs)
-        {
-            // Create a local scope variable for each output property.
-            var variable = new Variable(outputDescriptor.Name)
-            {
-                Id = outputDescriptor.Name,
-                Name = outputDescriptor.Name
-            };
-
-            Variables.Declare(variable);
-        }
-    }
-
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
@@ -150,10 +85,66 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
-    async ValueTask IInitializable.InitializeAsync(InitializationContext context)
+    private void CopyInputOutputToVariables(ActivityExecutionContext context)
     {
-        var serviceProvider = context.ServiceProvider;
-        var cancellationToken = context.CancellationToken;
+        var serviceProvider = context.GetRequiredService<IServiceProvider>();
+
+        DeclareInputAsVariables(serviceProvider, (descriptor, variable) =>
+        {
+            var inputName = descriptor.Name;
+            var input = SyntheticProperties.TryGetValue(inputName, out var inputValue) ? (Input?)inputValue : default;
+            var evaluatedExpression = input != null ? context.Get(input.MemoryBlockReference()) : default;
+
+            context.ExpressionExecutionContext.Memory.Declare(variable);
+            variable.Set(context, evaluatedExpression);
+        });
+
+        DeclareOutputAsVariables(serviceProvider, (descriptor, variable) => context.ExpressionExecutionContext.Memory.Declare(variable));
+    }
+
+    private void DeclareInputAsVariables(IServiceProvider serviceProvider, Action<InputDescriptor, Variable> configureVariable)
+    {
+        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
+        
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
+        {
+            var inputName = inputDescriptor.Name;
+            var unsafeInputName = PropertyNameHelper.GetUnsafePropertyName(typeof(WorkflowDefinitionActivity), inputName);
+
+            var variable = new Variable
+            {
+                Id = unsafeInputName,
+                Name = unsafeInputName,
+                StorageDriverType = inputDescriptor.StorageDriverType
+            };
+
+            configureVariable(inputDescriptor, variable);
+        }
+    }
+
+    private void DeclareOutputAsVariables(IServiceProvider serviceProvider, Action<OutputDescriptor, Variable> configureVariable)
+    {
+        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        var activityDescriptor = activityRegistry.Find(Type, Version)!;
+        
+        foreach (var outputDescriptor in activityDescriptor.Outputs)
+        {
+            var outputName = outputDescriptor.Name;
+            var unsafeOutputName = PropertyNameHelper.GetUnsafePropertyName(typeof(WorkflowDefinitionActivity), outputName);
+
+            var variable = new Variable
+            {
+                Id = unsafeOutputName,
+                Name = unsafeOutputName
+            };
+            
+            configureVariable(outputDescriptor, variable);
+        }
+    }
+
+    private async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
         var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var filter = new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId };
 
@@ -162,29 +153,32 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         else
             filter.VersionOptions = VersionOptions.SpecificVersion(Version);
 
-        var workflowDefinition = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        var workflowDefinition =
+            await workflowDefinitionStore.FindAsync(filter, cancellationToken)
+            ?? (await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken)
+                ?? await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken));
+
+        return workflowDefinition;
+    }
+
+    async ValueTask IInitializable.InitializeAsync(InitializationContext context)
+    {
+        var serviceProvider = context.ServiceProvider;
+        var cancellationToken = context.CancellationToken;
+        var workflowDefinition = await FindWorkflowDefinitionAsync(serviceProvider, cancellationToken);
 
         if (workflowDefinition == null)
-        {
-            // Find the latest published version.
-            workflowDefinition = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken);
-
-            if (workflowDefinition == null)
-            {
-                // Find the latest version.
-                workflowDefinition = await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken);
-            }
-
-            if (workflowDefinition == null)
-                throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
-        }
+            throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
         // Construct the root activity stored in the activity definitions.
         var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
         var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
 
-        DeclareInputOutputAsVariables(context);
+        // Declare input and output variables.
+        DeclareInputAsVariables(serviceProvider, (inputDescriptor, variable) => Variables.Declare(variable));
+        DeclareOutputAsVariables(serviceProvider, (outputDescriptor, variable) => Variables.Declare(variable));
 
+        // Set the root activity.
         Root = root;
     }
 }
