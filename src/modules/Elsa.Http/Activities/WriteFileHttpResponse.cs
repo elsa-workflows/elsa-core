@@ -70,6 +70,16 @@ public class WriteFileHttpResponse : Activity
     [Input(Description = "The correlation ID of the download used to resume a download. If left empty, the x-download-id header will be used.")]
     public Input<string> DownloadCorrelationId { get; set; } = default!;
 
+    /// <summary>
+    /// The Authorization header value to send with the request.
+    /// </summary>
+    /// <example>Bearer {some-access-token}</example>
+    [Input(
+        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
+        Category = "Security"
+    )]
+    public Input<string?> Authorization { get; set; } = default!;
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -264,7 +274,8 @@ public class WriteFileHttpResponse : Activity
         var headers = httpContext.Request.Headers;
         var eTag = GetIfMatchHeaderValue(headers);
         var range = GetRangeHeaderHeaderValue(headers);
-        var options = new DownloadableOptions { ETag = eTag, Range = range };
+        var authorization = Authorization.GetOrDefault(context);
+        var options = new DownloadableOptions { ETag = eTag, Range = range, Authorization = authorization };
         return manager.GetDownloadablesAsync(content, options, context.CancellationToken);
     }
 

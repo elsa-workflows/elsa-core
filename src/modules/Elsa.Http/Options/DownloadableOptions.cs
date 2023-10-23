@@ -16,4 +16,9 @@ public class DownloadableOptions
     /// Gets or sets the range.
     /// </summary>
     public RangeHeaderValue? Range { get; set; }
+
+    /// <summary>
+    /// Authorization attribute to use.
+    /// </summary>
+    public string? Authorization { get; set; }
 }

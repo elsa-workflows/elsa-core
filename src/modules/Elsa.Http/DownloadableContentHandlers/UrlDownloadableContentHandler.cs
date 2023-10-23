@@ -41,6 +41,7 @@ public class UrlDownloadableContentHandler : DownloadableContentHandlerBase
             // TODO: Uncomment the next two lines if we implement file caching for this handler.
             // ETag = context.Options.ETag,
             // Range = context.Options.Range
+            Authorization = context.Options.Authorization ?? ""
         };
         var response = await _fileDownloader.DownloadAsync(url, options, cancellationToken);
         var eTag = response.Headers.ETag?.Tag;

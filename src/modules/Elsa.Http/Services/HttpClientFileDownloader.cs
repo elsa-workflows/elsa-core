@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Http.Contracts;
@@ -26,6 +27,9 @@ public class HttpClientFileDownloader : IFileDownloader
     public async Task<HttpResponseMessage> DownloadAsync(Uri url, FileDownloadOptions? options = default, CancellationToken cancellationToken = default)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+        if (options?.Authorization != null)
+            request.Headers.Authorization = AuthenticationHeaderValue.Parse(options?.Authorization);
 
         if (options?.ETag != null)
             request.Headers.IfNoneMatch.Add(options.ETag);
