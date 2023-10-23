@@ -100,24 +100,24 @@ public class WriteHttpResponse : Activity
         // Get content and content type.
         var content = context.Get(Content);
 
-        if (content == null)
-            return;
+        if (content != null)
+        {
+            var contentType = ContentType.GetOrDefault(context);
 
-        var contentType = ContentType.GetOrDefault(context);
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = DetermineContentType(content);
 
-        if (string.IsNullOrWhiteSpace(contentType))
-            contentType = DetermineContentType(content);
+            var factories = context.GetServices<IHttpContentFactory>();
+            var factory = factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == contentType)) ?? new TextContentFactory();
+            var httpContent = factory.CreateHttpContent(content, contentType);
 
-        var factories = context.GetServices<IHttpContentFactory>();
-        var factory = factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == contentType)) ?? new TextContentFactory();
-        var httpContent = factory.CreateHttpContent(content, contentType);
+            // Set content type.
+            response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
 
-        // Set content type.
-        response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
-
-        // Write content.
-        if(statusCode != HttpStatusCode.NoContent)
-            await httpContent.CopyToAsync(response.Body);
+            // Write content.
+            if (statusCode != HttpStatusCode.NoContent)
+                await httpContent.CopyToAsync(response.Body);
+        }
         
         // Complete activity.
         await context.CompleteActivityAsync();
