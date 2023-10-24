@@ -8,6 +8,8 @@ namespace Elsa.Activities.Kafka.Models
 {
     public class MessageReceivedInput
     {
+        public string? MessageHeaders { get; set; }
+
         public string? MessageString { get; set; }
 
         public byte[]? MessageBytes { get; set; }
