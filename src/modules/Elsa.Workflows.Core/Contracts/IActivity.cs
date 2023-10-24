@@ -13,6 +13,11 @@ public interface IActivity
     string Id { get; set; }
     
     /// <summary>
+    /// An identifier that is unique within a the entire workflow graph. 
+    /// </summary>
+    string NodeId { get; set; }
+    
+    /// <summary>
     /// An optional name by which the activity can be referenced.
     /// </summary>
     string? Name { get; set; }

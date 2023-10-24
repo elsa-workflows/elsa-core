@@ -98,7 +98,7 @@ public static class WorkflowExecutionContextExtensions
 
         if (options?.PreventDuplicateScheduling == true)
         {
-            var existingWorkItem = scheduler.Find(x => x.Activity.Id == activityNode.NodeId);
+            var existingWorkItem = scheduler.Find(x => x.Activity.NodeId == activityNode.NodeId);
 
             if (existingWorkItem != null)
                 return existingWorkItem;

@@ -44,6 +44,7 @@ public class IdentityGraphService : IIdentityGraphService
         foreach (var node in flattenedList)
         {
             node.Activity.Id = CreateId(node, identityCounters, flattenedList);
+            node.Activity.NodeId = node.NodeId;
             AssignInputOutputs(node.Activity);
 
             if (node.Activity is IVariableContainer variableContainer)
