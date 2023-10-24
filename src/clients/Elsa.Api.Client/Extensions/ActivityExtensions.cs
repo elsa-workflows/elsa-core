@@ -145,4 +145,9 @@ public static class ActivityExtensions
     /// Sets the root activity in the specified activity.
     /// </summary>
     public static void SetRoot(this JsonObject container, JsonObject root) => container.SetProperty(root, "root");
+    
+    /// <summary>
+    /// Gets the root activity in the specified activity.
+    /// </summary>
+    public static string? GetWorkflowDefinitionId(this JsonObject activity) => activity.GetProperty<string?>("workflowDefinitionId");
 }

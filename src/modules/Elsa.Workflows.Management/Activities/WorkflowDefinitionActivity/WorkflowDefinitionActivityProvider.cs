@@ -63,8 +63,8 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         var rootPort = new Port
         {
             Name = nameof(WorkflowDefinitionActivity.Root),
-            DisplayName = "Root",
-            IsBrowsable = true,
+            DisplayName = "Content",
+            IsBrowsable = false,
             Type = PortType.Embedded
         };
 
