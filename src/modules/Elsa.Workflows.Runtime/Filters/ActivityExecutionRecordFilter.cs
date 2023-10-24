@@ -36,6 +36,16 @@ public class ActivityExecutionRecordFilter
     /// The IDs of the activities.
     /// </summary>
     public ICollection<string>? ActivityIds { get; set; }
+    
+    /// <summary>
+    /// The node ID of the activity.
+    /// </summary>
+    public string? ActivityNodeId { get; set; }
+
+    /// <summary>
+    /// The node IDs of the activities.
+    /// </summary>
+    public ICollection<string>? ActivityNodeIds { get; set; }
 
     /// <summary>
     /// Whether to include completed activity execution records. If not specified, all activity execution records will be included.
@@ -54,6 +64,8 @@ public class ActivityExecutionRecordFilter
         if (filter.WorkflowInstanceIds != null) queryable = queryable.Where(x => filter.WorkflowInstanceIds.Contains(x.WorkflowInstanceId));
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);
         if (filter.ActivityIds != null && filter.ActivityIds.Any()) queryable = queryable.Where(x => filter.ActivityIds.Contains(x.ActivityId));
+        if (filter.ActivityNodeId != null) queryable = queryable.Where(x => x.ActivityNodeId == filter.ActivityNodeId);
+        if (filter.ActivityNodeIds != null && filter.ActivityNodeIds.Any()) queryable = queryable.Where(x => filter.ActivityNodeIds.Contains(x.ActivityNodeId));
         if (filter.Completed != null) queryable = filter.Completed == true ? queryable.Where(x => x.CompletedAt != null) : queryable.Where(x => x.CompletedAt == null);
 
         return queryable;

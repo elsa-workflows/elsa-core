@@ -134,8 +134,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         foreach (var definition in publishedWorkflowDefinitions)
         {
             var root = _activitySerializer.Deserialize(definition.StringData!);
-            var useActivityIdAsNodeId = definition.CreatedWithModernTooling();
-            var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
+            var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
             var flattenedList = graph.Flatten().ToList();
             var definitionId = dependency.DefinitionId;
             var version = dependency.Version;

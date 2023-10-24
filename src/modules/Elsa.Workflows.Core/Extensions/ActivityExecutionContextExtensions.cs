@@ -525,14 +525,10 @@ public static class ActivityExecutionContextExtensions
             await CancelActivityAsync(childContext);
 
         var publisher = context.GetRequiredService<INotificationSender>();
-        var workflow = context.WorkflowExecutionContext.Workflow;
         context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
         context.ClearCompletionCallbacks();
-
-        workflow.WhenCreatedWithModernTooling(
-            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityId == context.Activity.Id),
-            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId));
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
 
         // Add an execution log entry.
         context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);

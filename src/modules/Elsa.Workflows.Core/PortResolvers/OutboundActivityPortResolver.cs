@@ -21,8 +21,7 @@ public class PropertyBasedActivityResolver : IActivityResolver
             .Where(x => x != null)
             .Select(x => x!)
             .ToHashSet());
-
-
+    
     private static IEnumerable<IActivity?> GetActivities(IActivity activity)
     {
         var activityType = activity.GetType();

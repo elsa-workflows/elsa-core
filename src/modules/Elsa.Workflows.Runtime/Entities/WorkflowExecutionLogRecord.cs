@@ -60,7 +60,7 @@ public class WorkflowExecutionLogRecord : Entity
     /// <summary>
     /// The unique ID of the node within the workflow graph.
     /// </summary>
-    public string NodeId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = default!;
 
     /// <summary>
     /// The time stamp of the log entry.

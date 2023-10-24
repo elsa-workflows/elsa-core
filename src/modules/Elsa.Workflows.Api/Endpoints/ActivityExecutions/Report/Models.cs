@@ -13,9 +13,9 @@ internal class Request
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <summary>
-    /// The ID of the activity to get the execution record for.
+    /// The node IDs of the activities to get the execution records for.
     /// </summary>
-    public ICollection<string> ActivityIds { get; set; } = default!;
+    public ICollection<string> ActivityNodeIds { get; set; } = default!;
 }
 
 internal class Response

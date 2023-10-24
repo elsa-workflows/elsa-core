@@ -12,11 +12,21 @@ public static class ActivityExtensions
     /// Gets the type name of the specified activity.
     /// </summary>
     public static string GetTypeName(this JsonObject activity) => activity.GetProperty<string>("type")!;
-    
+
+    /// <summary>
+    /// Gets the type name of the specified activity.
+    /// </summary>
+    public static void SetTypeName(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "type");
+
     /// <summary>
     /// Gets the version of the specified activity.
     /// </summary>
     public static int GetVersion(this JsonObject activity) => activity.GetProperty<int>("version");
+
+    /// <summary>
+    /// Gets the version of the specified activity.
+    /// </summary>
+    public static void SetVersion(this JsonObject activity, int value) => activity.SetProperty(JsonValue.Create(value), "version");
 
     /// <summary>
     /// Gets the ID of the specified activity.
@@ -27,7 +37,17 @@ public static class ActivityExtensions
     /// Sets the ID of the specified activity.
     /// </summary>
     public static void SetId(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "id");
-    
+
+    /// <summary>
+    /// Gets the node ID of the specified activity.
+    /// </summary>
+    public static string GetNodeId(this JsonObject activity) => activity.GetProperty<string>("nodeId")!;
+
+    /// <summary>
+    /// Sets the node ID of the specified activity.
+    /// </summary>
+    public static void SetNodeId(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "nodeId");
+
     /// <summary>
     /// Gets the name of the specified activity.
     /// </summary>
@@ -115,9 +135,14 @@ public static class ActivityExtensions
     /// Sets the connections in the specified flowchart.
     /// </summary>
     public static void SetConnections(this JsonObject flowchart, IEnumerable<Connection> connections) => flowchart.SetProperty(JsonValue.Create(connections), "connections");
-    
+
     /// <summary>
     /// Gets the root activity in the specified activity.
     /// </summary>
     public static JsonObject? GetRoot(this JsonObject activity) => activity.GetProperty("root") as JsonObject;
+
+    /// <summary>
+    /// Sets the root activity in the specified activity.
+    /// </summary>
+    public static void SetRoot(this JsonObject container, JsonObject root) => container.SetProperty(root, "root");
 }

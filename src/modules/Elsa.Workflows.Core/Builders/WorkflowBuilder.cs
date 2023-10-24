@@ -146,9 +146,8 @@ public class WorkflowBuilder : IWorkflowBuilder
             workflow.ResultVariable = Result;
             workflow.Result = new Output<object>(Result);
         }
-
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var graph = await _activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
+        
+        var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register all activity types first. The identity graph service will need to know about all activity types.

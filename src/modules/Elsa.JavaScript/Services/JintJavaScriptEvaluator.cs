@@ -267,8 +267,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         // Select activities with outputs.
         var activityExecutionContext = context.GetActivityExecutionContext();
-        var toolVersion = activityExecutionContext.WorkflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion;
-        var useActivityName = toolVersion?.Major >= 3;
+        var useActivityName = activityExecutionContext.WorkflowExecutionContext.Workflow.CreatedWithModernTooling();
         var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
 
         if (useActivityName)

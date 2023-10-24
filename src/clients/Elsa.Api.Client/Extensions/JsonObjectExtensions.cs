@@ -9,6 +9,14 @@ namespace Elsa.Api.Client.Extensions;
 public static class JsonObjectExtensions
 {
     /// <summary>
+    /// Returns true if the specified <see cref="JsonObject"/> represents an activity.
+    /// </summary>
+    public static bool IsActivity(this JsonObject obj)
+    {
+        return obj.ContainsKey("type") && obj.ContainsKey("id") && obj.ContainsKey("version");
+    }
+    
+    /// <summary>
     /// Serializes the specified value to a <see cref="JsonObject"/>.
     /// </summary>
     /// <param name="value">The value to serialize.</param>

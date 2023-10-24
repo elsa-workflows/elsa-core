@@ -19,16 +19,16 @@ public class ActivityVisitor : IActivityVisitor
     }
 
     /// <inheritdoc />
-    public async Task<ActivityNode> VisitAsync(IActivity activity, bool useActivityIdAsNodeId, CancellationToken cancellationToken = default)
+    public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var collectedActivities = new HashSet<IActivity>(new[] { activity });
-        var graph = new ActivityNode(activity, useActivityIdAsNodeId);
+        var graph = new ActivityNode(activity);
         var collectedNodes = new HashSet<ActivityNode>(new[] { graph });
-        await VisitRecursiveAsync((graph, activity), collectedActivities, collectedNodes, useActivityIdAsNodeId, cancellationToken);
+        await VisitRecursiveAsync((graph, activity), collectedActivities, collectedNodes, cancellationToken);
         return graph;
     }
 
-    private async Task VisitRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, bool useActivityIdAsNodeId, CancellationToken cancellationToken)
+    private async Task VisitRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
         if (pair.Activity is IInitializable initializable)
         {
@@ -36,36 +36,36 @@ public class ActivityVisitor : IActivityVisitor
             await initializable.InitializeAsync(context);
         }
 
-        await VisitPortsRecursiveAsync(pair, collectedActivities, collectedNodes, useActivityIdAsNodeId, cancellationToken);
+        await VisitPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
     }
 
-    private async Task VisitPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, bool useActivityIdAsNodeId, CancellationToken cancellationToken)
+    private async Task VisitPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
     {
         var resolver = _portResolvers.FirstOrDefault(x => x.GetSupportsActivity(pair.Activity));
 
         if (resolver == null)
             return;
 
-        var ports = await resolver.GetActivitiesAsync(pair.Activity, cancellationToken);
+        var activities = await resolver.GetActivitiesAsync(pair.Activity, cancellationToken);
 
-        foreach (var port in ports)
+        foreach (var activity in activities)
         {
             // Continue if the specified activity was already encountered.
-            if (collectedActivities.Contains(port))
+            if (collectedActivities.Contains(activity))
                 continue;
 
-            var childNode = collectedNodes.FirstOrDefault(x => x.Activity == port);
+            var childNode = collectedNodes.FirstOrDefault(x => x.Activity == activity);
 
             if (childNode == null)
             {
-                childNode = new ActivityNode(port, useActivityIdAsNodeId);
+                childNode = new ActivityNode(activity);
                 collectedNodes.Add(childNode);
             }
 
             childNode.Parents.Add(pair.Node);
             pair.Node.Children.Add(childNode);
-            collectedActivities.Add(port);
-            await VisitRecursiveAsync((childNode, port), collectedActivities, collectedNodes, useActivityIdAsNodeId, cancellationToken);
+            collectedActivities.Add(activity);
+            await VisitRecursiveAsync((childNode, activity), collectedActivities, collectedNodes, cancellationToken);
         }
     }
 }
