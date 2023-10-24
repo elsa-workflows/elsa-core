@@ -49,8 +49,8 @@ public class FlowJoin : Activity, IJoinNode
 
                 if (haveAllInboundActivitiesExecuted)
                 {
-                    await context.CompleteActivityAsync();
                     await ClearBookmarksAsync(flowchart, context);
+                    await context.CompleteActivityAsync();
                 }
 
                 break;
