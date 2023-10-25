@@ -60,6 +60,7 @@ public class WorkflowExecutionContext : IExecutionContext
         CorrelationId = correlationId;
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
+        IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
         Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
@@ -168,10 +169,9 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <param name="workflow">The workflow to assign.</param>
     public async Task SetWorkflowAsync(Workflow workflow)
     {
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
         var activityVisitor = GetRequiredService<IActivityVisitor>();
         var root = workflow;
-        var graph = await activityVisitor.VisitAsync(root, useActivityIdAsNodeId, CancellationTokens.ApplicationCancellationToken);
+        var graph = await activityVisitor.VisitAsync(root, CancellationTokens.ApplicationCancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register activity types.
@@ -191,10 +191,7 @@ public class WorkflowExecutionContext : IExecutionContext
         Nodes = nodes;
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
-
-        // Only new tooling uses unique activity IDs. For older tooling, we will rely on a linear search.
-        if (workflow.CreatedWithModernTooling())
-            NodeActivityIdLookup = nodes.ToDictionary(x => x.Activity.Id);
+        NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
     }
 
     /// <summary>
@@ -278,12 +275,17 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<string, ActivityNode>? NodeActivityIdLookup { get; private set; } = default!;
+    public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; private set; } = default!;
 
     /// <summary>
     /// The <see cref="IActivityScheduler"/> for the execution context.
     /// </summary>
     public IActivityScheduler Scheduler { get; }
+    
+    /// <summary>
+    /// Gets the <see cref="IIdentityGenerator"/>.
+    /// </summary>
+    public IIdentityGenerator IdentityGenerator { get; }
 
     /// <summary>
     /// A collection of collected bookmarks during workflow execution. 
@@ -449,13 +451,13 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public ActivityNode? FindNodeByActivity(IActivity activity)
     {
-        return NodeActivityIdLookup?[activity.Id] ?? Nodes.FirstOrDefault(x => x.Activity == activity);
+        return NodeActivityLookup.TryGetValue(activity, out var node) ? node : default;
     }
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
     /// </summary>
-    public ActivityNode? FindNodeByActivityId(string activityId) => NodeActivityIdLookup?[activityId] ?? Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
+    public ActivityNode? FindNodeByActivityId(string activityId) => Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
@@ -523,7 +525,8 @@ public class WorkflowExecutionContext : IExecutionContext
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationTokens.ApplicationCancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
+        var id = IdentityGenerator.GenerateId();
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;

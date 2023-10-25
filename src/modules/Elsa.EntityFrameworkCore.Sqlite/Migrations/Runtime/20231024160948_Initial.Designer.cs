@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20231015122215_Initial")]
+    [Migration("20231024160948_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -29,6 +29,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityNodeId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityType")
@@ -75,6 +79,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
+
+                    b.HasIndex("ActivityNodeId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
@@ -215,6 +222,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("ActivityName")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ActivityNodeId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -226,10 +237,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Message")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("NodeId")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ParentActivityInstanceId")
@@ -276,6 +283,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
+
+                    b.HasIndex("ActivityNodeId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

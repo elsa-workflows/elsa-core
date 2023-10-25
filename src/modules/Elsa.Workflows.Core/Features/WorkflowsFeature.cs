@@ -49,7 +49,7 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
     /// </summary>
-    public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new ShortGuidIdentityGenerator();
+    public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
 
     /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.

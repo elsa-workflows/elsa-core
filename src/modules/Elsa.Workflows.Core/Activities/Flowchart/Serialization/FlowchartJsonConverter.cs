@@ -30,6 +30,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
+        var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
         var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
@@ -46,6 +47,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var flowChart = new Activities.Flowchart
         {
             Id = id,
+            NodeId = nodeId!,
             Name = name,
             Metadata = metadata,
             Start = start,
@@ -83,6 +85,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             value.Type,
             value.Version,
             value.Id,
+            value.NodeId,
             value.Metadata,
             CustomProperties = customProperties,
             Start = value.Start?.Id,

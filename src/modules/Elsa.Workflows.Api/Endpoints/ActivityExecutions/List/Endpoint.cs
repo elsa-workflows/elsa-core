@@ -36,7 +36,7 @@ internal class List : ElsaEndpoint<Request, ListResponse<ActivityExecutionRecord
         var filter = new ActivityExecutionRecordFilter
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
-            ActivityId = request.ActivityId,
+            ActivityNodeId = request.ActivityNodeId,
             Completed = request.Completed
         };
         var order = new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending);

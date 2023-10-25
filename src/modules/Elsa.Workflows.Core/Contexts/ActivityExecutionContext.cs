@@ -25,6 +25,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
     /// </summary>
     public ActivityExecutionContext(
+        string id,
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
         ExpressionExecutionContext expressionExecutionContext,
@@ -45,7 +46,7 @@ public class ActivityExecutionContext : IExecutionContext
         Status = ActivityStatus.Pending;
         Tag = tag;
         CancellationToken = cancellationToken;
-        Id = Guid.NewGuid().ToString();
+        Id = id;
     }
 
     /// <summary>
@@ -147,7 +148,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// Returns the global node ID for the current activity within the graph.
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
-    public string NodeId => WorkflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion >= new Version(3, 0) ? Activity.Id : ActivityNode.NodeId;
+    public string NodeId => ActivityNode.NodeId;
 
     /// <summary>
     /// A list of bookmarks created by the current activity.

@@ -1,6 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
+using System.Text.Json.Nodes;
+using Elsa.Api.Client.Extensions;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Api.Client.Shared.Models;
 
 /// <summary>
 /// Represents an activity in the context of an hierarchical tree structure, providing access to its siblings, parents and children.
@@ -11,11 +12,23 @@ public class ActivityNode
     /// Initializes a new instance of the <see cref="ActivityNode"/> class.
     /// </summary>
     /// <param name="activity">The activity.</param>
-    public ActivityNode(IActivity activity)
+    /// <param name="propertyName">The name of the property that contains the activity.</param>
+    public ActivityNode(JsonObject activity, string? propertyName)
     {
         Activity = activity;
+        PropertyName = propertyName;
     }
+    
+    /// <summary>
+    /// Gets the activity.
+    /// </summary>
+    public JsonObject Activity { get; }
 
+    /// <summary>
+    /// Gets the property name that contains the activity.
+    /// </summary>
+    public string? PropertyName { get; }
+    
     /// <summary>
     /// Gets the node ID.
     /// </summary>
@@ -23,16 +36,11 @@ public class ActivityNode
     {
         get
         {
-            var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
-            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
+            var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.GetId()).ToList();
+            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.GetId()}" : Activity.GetId();
         }
     }
 
-    /// <summary>
-    /// Gets the activity.
-    /// </summary>
-    public IActivity Activity { get; }
-    
     /// <summary>
     /// Gets the parents of this node.
     /// </summary>

@@ -49,8 +49,8 @@ public class FlowJoin : Activity, IJoinNode
 
                 if (haveAllInboundActivitiesExecuted)
                 {
-                    await context.CompleteActivityAsync();
                     await ClearBookmarksAsync(flowchart, context);
+                    await context.CompleteActivityAsync();
                 }
 
                 break;
@@ -69,7 +69,7 @@ public class FlowJoin : Activity, IJoinNode
         // Cancel all activities between this join activity and its most recent fork.
         var connections = flowchart.Connections;
         var workflowExecutionContext = context.WorkflowExecutionContext;
-        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x.Activity).ToList();
+        var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x!.Activity).ToList();
         var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
 
         // Cancel each inbound activity.

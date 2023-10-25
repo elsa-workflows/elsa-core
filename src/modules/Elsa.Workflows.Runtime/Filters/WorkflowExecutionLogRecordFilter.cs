@@ -41,6 +41,16 @@ public class WorkflowExecutionLogRecordFilter
     /// The IDs of the activities.
     /// </summary>
     public ICollection<string>? ActivityIds { get; set; }
+    
+    /// <summary>
+    /// The node ID of the activity.
+    /// </summary>
+    public string? ActivityNodeId { get; set; }
+
+    /// <summary>
+    /// The node IDs of the activities.
+    /// </summary>
+    public ICollection<string>? ActivityNodeIds { get; set; }
 
     /// <summary>
     /// The name of the event.
@@ -65,6 +75,8 @@ public class WorkflowExecutionLogRecordFilter
         if (filter.ParentActivityInstanceId != null) queryable = queryable.Where(x => x.ParentActivityInstanceId == filter.ParentActivityInstanceId);
         if (filter.ActivityId != null) queryable = queryable.Where(x => x.ActivityId == filter.ActivityId);
         if (filter.ActivityIds != null) queryable = queryable.Where(x => filter.ActivityIds.Contains(x.ActivityId));
+        if (filter.ActivityNodeId != null) queryable = queryable.Where(x => x.ActivityNodeId == filter.ActivityNodeId);
+        if (filter.ActivityNodeIds != null) queryable = queryable.Where(x => filter.ActivityNodeIds.Contains(x.ActivityNodeId));
         if (filter.EventName != null) queryable = queryable.Where(x => x.EventName == filter.EventName);
         if (filter.EventNames != null) queryable = queryable.Where(x => filter.EventNames.Contains(x.EventName!));
         

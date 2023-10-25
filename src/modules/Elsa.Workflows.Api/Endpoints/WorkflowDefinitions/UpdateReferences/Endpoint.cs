@@ -41,7 +41,6 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
         }
 
         var affectedWorkflows = await _workflowDefinitionManager.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
-
         var response = new Response(affectedWorkflows.Select(w => w.Name ?? w.DefinitionId));
         await SendOkAsync(response, cancellationToken);
     }

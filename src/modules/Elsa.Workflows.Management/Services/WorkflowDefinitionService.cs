@@ -41,8 +41,7 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
             throw new Exception("Provider not found");
 
         var workflow = await provider.MaterializeAsync(definition, cancellationToken);
-        var useActivityIdAsNodeId = definition.CreatedWithModernTooling();
-        var graph = (await _activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken)).Flatten().ToList();
+        var graph = (await _activityVisitor.VisitAsync(workflow, cancellationToken)).Flatten().ToList();
 
         // Assign identities.
         _identityGraphService.AssignIdentities(graph);

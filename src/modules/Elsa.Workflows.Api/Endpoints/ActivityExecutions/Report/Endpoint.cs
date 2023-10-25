@@ -30,7 +30,7 @@ internal class Report : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var stats = (await _activityExecutionStatsService.GetStatsAsync(request.WorkflowInstanceId, request.ActivityIds, cancellationToken)).ToList();
+        var stats = (await _activityExecutionStatsService.GetStatsAsync(request.WorkflowInstanceId, request.ActivityNodeIds, cancellationToken)).ToList();
         
         return new Response
         {

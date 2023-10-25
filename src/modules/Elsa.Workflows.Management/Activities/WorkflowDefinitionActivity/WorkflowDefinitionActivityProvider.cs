@@ -64,7 +64,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         {
             Name = nameof(WorkflowDefinitionActivity.Root),
             DisplayName = "Root",
-            IsBrowsable = true,
+            IsBrowsable = false,
             Type = PortType.Embedded
         };
 

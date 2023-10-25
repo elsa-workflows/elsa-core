@@ -107,6 +107,7 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
             ActivityType = source.ActivityType,
             ActivityName = source.ActivityName,
             WorkflowInstanceId = source.WorkflowInstanceId,
@@ -128,6 +129,7 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
             ActivityType = source.ActivityType,
             ActivityName = source.ActivityName,
             WorkflowInstanceId = source.WorkflowInstanceId,

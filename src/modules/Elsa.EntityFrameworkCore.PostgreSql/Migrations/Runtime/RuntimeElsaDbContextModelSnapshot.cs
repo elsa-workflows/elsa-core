@@ -35,6 +35,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("ActivityName")
                         .HasColumnType("text");
 
+                    b.Property<string>("ActivityNodeId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -78,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityName");
+
+                    b.HasIndex("ActivityNodeId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType");
@@ -217,6 +224,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("ActivityName")
                         .HasColumnType("text");
 
+                    b.Property<string>("ActivityNodeId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("ActivityType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -228,10 +239,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("Message")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NodeId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("ParentActivityInstanceId")
@@ -277,6 +284,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("ActivityName")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityName");
+
+                    b.HasIndex("ActivityNodeId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityNodeId");
 
                     b.HasIndex("ActivityType")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityType");

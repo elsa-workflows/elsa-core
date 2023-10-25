@@ -23,14 +23,13 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        await AssignIdentitiesAsync(workflow, useActivityIdAsNodeId, cancellationToken);
+        await AssignIdentitiesAsync((IActivity)workflow, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task AssignIdentitiesAsync(IActivity root, bool useActivityIdAsNodeId, CancellationToken cancellationToken = default)
+    public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
-        var graph = await _activityVisitor.VisitAsync(root, useActivityIdAsNodeId, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
         AssignIdentities(graph);
     }
 
@@ -45,6 +44,7 @@ public class IdentityGraphService : IIdentityGraphService
         foreach (var node in flattenedList)
         {
             node.Activity.Id = CreateId(node, identityCounters, flattenedList);
+            node.Activity.NodeId = node.NodeId;
             AssignInputOutputs(node.Activity);
 
             if (node.Activity is IVariableContainer variableContainer)
