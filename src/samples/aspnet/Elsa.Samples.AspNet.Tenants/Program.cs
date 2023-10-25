@@ -3,11 +3,14 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Tenants.Extensions;
 using Elsa.Tenants.Helpers;
 using FastEndpoints.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
+
+var identitySection = configuration.GetSection("Identity");
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -26,6 +29,8 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
     elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
+    elsa.UseIdentity(identity => identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options)));
+    elsa.UseTenants(configuration => configuration.UseConfigurationBasedTenantProvider(options => identitySection.Bind(options)));
 
     elsa
         .UseHttp()
