@@ -53,12 +53,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     /// <inheritdoc />
     public async Task<bool> DeleteByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { Id = id};
+        var filter = new WorkflowDefinitionFilter { Id = id };
         var definition = await _store.FindAsync(filter, cancellationToken);
-        
+
         if (definition == null)
             return false;
-        
+
         return await DeleteVersionAsync(definition, cancellationToken);
     }
 
@@ -93,10 +93,10 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.SpecificVersion(versionToDelete) };
         var definitionToDelete = await _store.FindAsync(filter, cancellationToken);
-        
+
         if (definitionToDelete == null)
             return false;
-        
+
         return await DeleteVersionAsync(definitionToDelete, cancellationToken);
     }
 
@@ -105,8 +105,8 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
         var latestVersion = await _store.FindAsync(filter, cancellationToken);
-        
-        if(latestVersion != null)
+
+        if (latestVersion != null)
         {
             latestVersion.IsLatest = false;
             await _store.SaveAsync(latestVersion, cancellationToken);
@@ -125,12 +125,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default)
     {
         var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
-        
+
         var publishedWorkflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
         {
             VersionOptions = VersionOptions.Published
         }, cancellationToken)).ToList();
-        
+
         foreach (var definition in publishedWorkflowDefinitions)
         {
             var root = _activitySerializer.Deserialize(definition.StringData!);
@@ -144,7 +144,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
             foreach (var node in nodes.Where(activity => activity.Activity.Version < version))
             {
-                var activity = (WorkflowDefinitionActivity) node.Activity;
+                var activity = (WorkflowDefinitionActivity)node.Activity;
                 activity.Version = version;
                 activity.WorkflowDefinitionVersionId = dependency.Id;
 
@@ -158,22 +158,22 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
                 definition.StringData = serializedData;
             }
         }
-        
-        if(updatedWorkflowDefinitions.Any())
+
+        if (updatedWorkflowDefinitions.Any())
             await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
 
         return updatedWorkflowDefinitions;
     }
-    
+
     private async Task<bool> DeleteVersionAsync(WorkflowDefinition definitionToDelete, CancellationToken cancellationToken)
     {
         if (definitionToDelete.IsPublished)
         {
             throw new Exception("Published version cannot be deleted before retracting it");
         }
-        
+
         await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
-        
+
         var filter = new WorkflowDefinitionFilter { Id = definitionToDelete.Id };
         var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
 
@@ -188,7 +188,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
     private async Task EnsureLastVersionIsLatestAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken)
     {
-        foreach (var definitionId in definitionIds) 
+        foreach (var definitionId in definitionIds)
             await EnsureLastVersionIsLatestAsync(definitionId, cancellationToken);
     }
 

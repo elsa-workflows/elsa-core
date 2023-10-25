@@ -2,7 +2,7 @@ namespace Elsa.Workflows.Core.Contracts;
 
 /// <summary>
 /// An activity resolver inspects a given activity and returns its contained activities.
-/// Node resolvers are used to inspect a workflow structure and build a graph of nodes from it for easy node traversal.
+/// They are used to inspect a workflow structure and build a graph of nodes from it for easy node traversal.
 /// </summary>
 public interface IActivityResolver
 {
@@ -18,8 +18,5 @@ public interface IActivityResolver
     /// <summary>
     /// Returns a list of contained activities for the specified activity.
     /// </summary>
-    /// <param name="activity"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
     ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default);
 }
