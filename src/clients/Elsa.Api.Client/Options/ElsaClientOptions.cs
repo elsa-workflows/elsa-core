@@ -1,3 +1,6 @@
+using Elsa.Api.Client.HttpMessageHandlers;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Api.Client.Options;
 
 /// <summary>
@@ -19,4 +22,9 @@ public class ElsaClientOptions
     /// Gets or sets a delegate that can be used to configure the HTTP client.
     /// </summary>
     public Action<IServiceProvider, HttpClient>? ConfigureHttpClient { get; set; }
+
+    /// <summary>
+    /// Gets or sets a delegate that can be used to configure the HTTP client message handler.
+    /// </summary>
+    public Func<IServiceProvider, HttpMessageHandler> HttpMessageHandlerFactory { get; set; } = sp => sp.GetRequiredService<ApiHttpMessageHandler>();
 }

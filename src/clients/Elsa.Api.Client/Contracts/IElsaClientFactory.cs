@@ -1,5 +1,4 @@
 using Elsa.Api.Client.Options;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.Client.Contracts;
 
@@ -11,5 +10,5 @@ public interface IElsaClientFactory
     /// <summary>
     /// Creates a new <see cref="IElsaClient"/> instance.
     /// </summary>
-    IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions, Action<IHttpClientBuilder>? configureHttpClientBuilder = default);
+    IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions, Action<ElsaClientBuilderOptions>? configureHttpClientBuilder = default);
 }

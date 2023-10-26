@@ -11,7 +11,7 @@ namespace Elsa.Api.Client.Services;
 public class ElsaClientFactory : IElsaClientFactory
 {
     /// <inheritdoc />
-    public IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions, Action<IHttpClientBuilder>? configureHttpClientBuilder = default)
+    public IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions, Action<ElsaClientBuilderOptions>? configureHttpClientBuilder = default)
     {
         var services = new ServiceCollection().AddElsaClient(configureOptions, configureHttpClientBuilder).BuildServiceProvider();
         return services.GetRequiredService<IElsaClient>();

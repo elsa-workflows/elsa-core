@@ -32,38 +32,39 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds the Elsa client to the service collection.
     /// </summary>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default, Action<IHttpClientBuilder>? configureHttpClientBuilder = default)
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default, Action<ElsaClientBuilderOptions>? configureBuilderOptions = default)
     {
+        var builderOptions = new ElsaClientBuilderOptions();
+        configureBuilderOptions?.Invoke(builderOptions);
+        
         services.Configure(configureOptions ?? (_ => { }));
         services.AddScoped<ApiHttpMessageHandler>();
         services.AddScoped<IElsaClient, ElsaClient>();
 
-        services.AddApi<IWorkflowDefinitionsApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IWorkflowInstancesApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IActivityDescriptorsApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IActivityExecutionsApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IStorageDriversApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IVariableTypesApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IWorkflowActivationStrategiesApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IIncidentStrategiesApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<ILoginApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IFeaturesApi>(CreateRefitSettings, configureHttpClientBuilder);
-        services.AddApi<IJavaScriptApi>(CreateRefitSettings, configureHttpClientBuilder);
+        services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
+        services.AddApi<IWorkflowInstancesApi>(builderOptions);
+        services.AddApi<IActivityDescriptorsApi>(builderOptions);
+        services.AddApi<IActivityExecutionsApi>(builderOptions);
+        services.AddApi<IStorageDriversApi>(builderOptions);
+        services.AddApi<IVariableTypesApi>(builderOptions);
+        services.AddApi<IWorkflowActivationStrategiesApi>(builderOptions);
+        services.AddApi<IIncidentStrategiesApi>(builderOptions);
+        services.AddApi<ILoginApi>(builderOptions);
+        services.AddApi<IFeaturesApi>(builderOptions);
+        services.AddApi<IJavaScriptApi>(builderOptions);
         return services;
     }
-    
+
     /// <summary>
     /// Adds a refit client for the specified API type.
     /// </summary>
     /// <param name="services">The service collection.</param>
-    /// <param name="settings">The refit settings.</param>
-    /// <param name="configureHttpClientBuilder">A delegate to configure the HTTP client builder.</param>
-    /// <typeparam name="T">The API type.</typeparam>
-    public static void AddApi<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings> settings, Action<IHttpClientBuilder>? configureHttpClientBuilder = default) where T : class
+    /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
+    /// <typeparam name="T">The type representing the API.</typeparam>
+    public static void AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
-        var builder = services.AddRefitClient<T>(settings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
-        builder.AddHttpMessageHandler<ApiHttpMessageHandler>();
-        configureHttpClientBuilder?.Invoke(builder);
+        var builder = services.AddRefitClient<T>(CreateRefitSettings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        httpClientBuilderOptions?.ConfigureHttpClientBuilder?.Invoke(builder);
     }
     
     /// <summary>
@@ -98,6 +99,8 @@ public static class DependencyInjectionExtensions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
+
+        var elsaClientOptions = serviceProvider.GetRequiredService<IOptions<ElsaClientOptions>>().Value;
         
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
         serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
@@ -106,7 +109,7 @@ public static class DependencyInjectionExtensions
         var settings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
-            HttpMessageHandlerFactory = serviceProvider.GetRequiredService<ApiHttpMessageHandler>
+            HttpMessageHandlerFactory = () => elsaClientOptions.HttpMessageHandlerFactory(serviceProvider)
         };    
             
         return settings;
