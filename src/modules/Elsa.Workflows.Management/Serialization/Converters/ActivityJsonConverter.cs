@@ -72,6 +72,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
             notFoundActivity.OriginalActivityJson = activityRoot.ToString();
+            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
+            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
             return notFoundActivity;
         }
 

@@ -26,15 +26,15 @@ public static class ActivityPropertyExtensions
 
     /// <summary>
     /// Gets a flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
-    /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
+    /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
+    /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     public static bool GetRunAsynchronously(this IActivity activity) => activity.CustomProperties.GetValueOrDefault(RunAsynchronouslyPropertyName, () => false);
 
     /// <summary>
     /// Sets a flag indicating if this activity should execute synchronously or asynchronously.
-    /// By default, activities with an <see cref="Workflows.Core.Models.ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
-    /// will execute synchronously, while activities of the <see cref="Workflows.Core.Models.ActivityKind.Job"/> kind will execute asynchronously.
+    /// By default, activities with an <see cref="ActivityKind"/> of <see cref="Action"/>, <see cref="Task"/> or <see cref="Trigger"/>
+    /// will execute synchronously, while activities of the <see cref="ActivityKind.Job"/> kind will execute asynchronously.
     /// </summary>
     public static void SetRunAsynchronously(this IActivity activity, bool value) => activity.CustomProperties[RunAsynchronouslyPropertyName[0]] = value;
 
@@ -59,4 +59,24 @@ public static class ActivityPropertyExtensions
         var source = $"{Path.GetFileName(sourceFile)}:{lineNumber}";
         activity.SetSource(source);
     }
+    
+    /// <summary>
+    /// Gets the display text for the specified activity.
+    /// </summary>
+    public static string? GetDisplayText(this IActivity activity) => activity.Metadata.TryGetValue("displayText", out var value) ? value.ToString() : default;
+    
+    /// <summary>
+    /// Sets the display text for the specified activity.
+    /// </summary>
+    public static void SetDisplayText(this IActivity activity, string value) => activity.Metadata["displayText"] = value;
+    
+    /// <summary>
+    /// Gets the description for the specified activity.
+    /// </summary>
+    public static string? GetDescription(this IActivity activity) => activity.Metadata.TryGetValue("description", out var value) ? value.ToString() : default;
+    
+    /// <summary>
+    /// Sets the description for the specified activity.
+    /// </summary>
+    public static void SetDescription(this IActivity activity, string value) => activity.Metadata["description"] = value;
 }
