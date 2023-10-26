@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Core.Exceptions;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Core.Activities;
@@ -38,4 +39,10 @@ public class NotFoundActivity : CodeActivity
     /// The original activity JSON.
     /// </summary>
     public string OriginalActivityJson { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void Execute(ActivityExecutionContext context)
+    {
+        throw new ActivityNotFoundException(MissingTypeName, MissingTypeVersion);
+    }
 }
