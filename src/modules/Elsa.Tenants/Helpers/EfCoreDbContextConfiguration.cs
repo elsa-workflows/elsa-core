@@ -19,7 +19,6 @@ public static class EfCoreDbContextConfiguration
         {
             //Add global filter on DbContext to split data between tenants
             ITenantAccessor tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
-            var tenant = await tenantAccessor.GetCurrentTenantAsync();
 
             foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
             {
@@ -34,11 +33,7 @@ public static class EfCoreDbContextConfiguration
                 {
                     ParameterExpression parameter = Expression.Parameter(entityType.ClrType);
 
-                    Expression<Func<Entity, bool>> filterExpr = entity =>
-                        tenant != null &&
-                        tenant.TenantId != null &&
-                        entity.TenantId == tenant.TenantId;
-
+                    Expression<Func<Entity, bool>> filterExpr = entity => entity.TenantId == tenantAccessor.GetCurrentTenantIdAsync().Result;
                     Expression body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
                     LambdaExpression lambdaExpression = Expression.Lambda(body, parameter);
 
