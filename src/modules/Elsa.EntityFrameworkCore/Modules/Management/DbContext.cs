@@ -12,7 +12,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class ManagementElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public ManagementElsaDbContext(DbContextOptions options) : base(options)
+    public ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
@@ -26,7 +26,7 @@ public class ManagementElsaDbContext : ElsaDbContextBase
     /// The workflow definitions.
     /// </summary>
     public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
-    
+
     /// <summary>
     /// The workflow instances.
     /// </summary>

@@ -1,4 +1,5 @@
-﻿using Elsa.Identity.Entities;
+﻿using Elsa.Identity.Contracts;
+using Elsa.Identity.Models;
 using Elsa.Tenants.Entities;
 using Elsa.Tenants.Models;
 using Elsa.Tenants.Providers;

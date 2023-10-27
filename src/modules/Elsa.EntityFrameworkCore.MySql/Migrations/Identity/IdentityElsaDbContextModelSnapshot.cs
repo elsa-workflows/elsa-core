@@ -53,6 +53,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -79,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("Permissions");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -110,6 +116,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

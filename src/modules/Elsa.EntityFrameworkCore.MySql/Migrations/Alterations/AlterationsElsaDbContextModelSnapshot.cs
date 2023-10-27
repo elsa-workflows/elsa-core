@@ -41,8 +41,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -91,8 +95,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

@@ -10,6 +10,7 @@
     <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
+    <ProjectReference Include="..\..\..\modules\Elsa.SasTokens\Elsa.SasTokens.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.Tenants\Elsa.Tenants.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
   </ItemGroup>

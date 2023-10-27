@@ -10,7 +10,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 public class IdentityElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public IdentityElsaDbContext(DbContextOptions options) : base(options)
+    public IdentityElsaDbContext(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
@@ -24,7 +24,7 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     /// The users.
     /// </summary>
     public DbSet<User> Users { get; set; } = default!;
-    
+
     /// <summary>
     /// The applications.
     /// </summary>

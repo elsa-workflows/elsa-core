@@ -1,7 +1,7 @@
-﻿using System.CommandLine;
-using System.CommandLine.Parsing;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 
 namespace Elsa.EntityFrameworkCore.Common.Abstractions;
 
@@ -25,7 +25,7 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
 
         ConfigureBuilder(builder, connectionString);
 
-        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options);
+        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options, null);
     }
 
     /// <summary>
