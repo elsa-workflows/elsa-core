@@ -11,10 +11,10 @@ providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
 # Connection strings for each provider
 typeset -A connStrings
 connStrings=(
-    MySql "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
-    SqlServer ""
-    Sqlite ""
-    PostgreSql ""
+    MySql "Host=localhost;Database=elsa_efcore;Username=mysql;Password=password"
+    SqlServer "Host=localhost;Database=elsa_efcore;Username=sqlserver;Password=password"
+    Sqlite "Data Source=elsa.sqlite.db"
+    PostgreSql "Host=localhost;Database=elsa_efcore;Username=postgres;Password=Test1234!;Pooling=true;"
 )
 
 # Loop through each module

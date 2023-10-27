@@ -55,7 +55,14 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
 
+    }
+
+    /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
         _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
+
+        base.OnModelCreating(modelBuilder);
     }
 
         /// <inheritdoc />

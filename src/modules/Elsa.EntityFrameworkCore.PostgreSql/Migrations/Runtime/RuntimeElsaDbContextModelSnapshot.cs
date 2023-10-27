@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -69,6 +69,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -183,6 +186,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -254,6 +260,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("Source")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("Timestamp")
@@ -356,6 +365,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedInput")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowInstanceId")

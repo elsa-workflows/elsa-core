@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -70,6 +70,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -183,6 +186,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -254,6 +260,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Source")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("Timestamp")
@@ -356,6 +365,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedInput")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WorkflowInstanceId")

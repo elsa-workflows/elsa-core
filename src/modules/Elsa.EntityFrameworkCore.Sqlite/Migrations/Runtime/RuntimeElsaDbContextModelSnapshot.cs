@@ -14,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.13");
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
@@ -63,6 +63,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -178,6 +181,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -249,6 +255,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Source")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Timestamp")
@@ -354,6 +363,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedInput")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowInstanceId")

@@ -6,7 +6,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Labels;
 
 public class LabelsElsaDbContext : ElsaDbContextBase
 {
-    public LabelsElsaDbContext(DbContextOptions options) : base(options)
+    public LabelsElsaDbContext(DbContextOptions<LabelsElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;

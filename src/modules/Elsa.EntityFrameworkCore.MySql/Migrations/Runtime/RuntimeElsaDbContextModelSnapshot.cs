@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
@@ -67,6 +67,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -180,6 +183,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -251,6 +257,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("longtext");
 
                     b.Property<string>("Source")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("Timestamp")
@@ -353,6 +362,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedInput")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("longtext");
 
                     b.Property<string>("WorkflowInstanceId")

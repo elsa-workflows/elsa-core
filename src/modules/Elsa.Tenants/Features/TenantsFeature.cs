@@ -35,6 +35,7 @@ public class TenantsFeature : FeatureBase
         Services
             .AddSingleton<ConfigurationTenantProvider>()
             .AddSingleton<ITenantAccessor, TenantAccessor>()
+            .AddSingleton(TenantProvider)
         ;
     }
     /// <summary>

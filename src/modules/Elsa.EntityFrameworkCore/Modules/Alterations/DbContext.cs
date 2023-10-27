@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 public class AlterationsElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public AlterationsElsaDbContext(DbContextOptions options) : base(options)
+    public AlterationsElsaDbContext(DbContextOptions<AlterationsElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
         _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
@@ -25,7 +25,7 @@ public class AlterationsElsaDbContext : ElsaDbContextBase
     /// The alteration plans.
     /// </summary>
     public DbSet<AlterationPlan> AlterationPlans { get; set; } = default!;
-    
+
     /// <summary>
     /// The alteration jobs.
     /// </summary>
@@ -47,7 +47,7 @@ public class AlterationsElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<AlterationPlan>(config);
         modelBuilder.ApplyConfiguration<AlterationJob>(config);
     }
-    
+
     /// <inheritdoc />
     protected override void SetupForOracle(ModelBuilder modelBuilder)
     {

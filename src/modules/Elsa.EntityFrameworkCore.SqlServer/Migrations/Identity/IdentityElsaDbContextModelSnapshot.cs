@@ -56,6 +56,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -82,6 +85,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Permissions");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -113,6 +119,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("Roles");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

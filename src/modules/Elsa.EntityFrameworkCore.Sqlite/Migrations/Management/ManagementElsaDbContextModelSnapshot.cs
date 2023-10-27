@@ -64,6 +64,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ToolVersion")
                         .HasColumnType("TEXT");
 
@@ -135,6 +138,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 
                     b.Property<string>("SubStatus")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UpdatedAt")
