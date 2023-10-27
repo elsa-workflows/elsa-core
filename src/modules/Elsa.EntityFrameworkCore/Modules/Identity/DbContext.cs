@@ -12,7 +12,13 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     /// <inheritdoc />
     public IdentityElsaDbContext(DbContextOptions options) : base(options)
     {
+        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
+        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
+        _serviceProvider = serviceProvider;
     }
+
+    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// The users.
@@ -36,5 +42,13 @@ public class IdentityElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<User>(config);
         modelBuilder.ApplyConfiguration<Application>(config);
         modelBuilder.ApplyConfiguration<Role>(config);
+    }
+
+    /// <inheritdoc />
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
+
+        base.OnModelCreating(modelBuilder);
     }
 }
