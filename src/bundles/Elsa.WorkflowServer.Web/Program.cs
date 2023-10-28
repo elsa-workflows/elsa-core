@@ -4,6 +4,7 @@ using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -16,16 +17,20 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Quartz.EntityFrameworkCore.Sqlite;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
+using Quartz;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
 const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
+const bool useQuartz = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -134,13 +139,13 @@ services
             {
                 if (useHangfire)
                     scheduling.UseHangfireScheduler();
+
+                if (useQuartz)
+                    scheduling.UseQuartzScheduler();
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript(js =>
-            {
-                js.JintOptions = options => options.AllowClrAccess = true;
-            })
+            .UseJavaScript(js => { js.JintOptions = options => options.AllowClrAccess = true; })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
@@ -161,7 +166,14 @@ services
                 alterations.UseMassTransitDispatcher();
             });
 
-        // Initialize drop-ins.
+        if (useQuartz)
+        {
+            elsa.UseQuartz(quartz =>
+            {
+                quartz.UseSqlite(sqliteConnectionString);
+            });
+        }
+        
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
 
         elsa.AddSwagger();

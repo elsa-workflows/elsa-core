@@ -33,7 +33,13 @@ public class QuartzFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Services.AddQuartzHostedService(ConfigureQuartzHostedService);
+        var type = Type.GetType("Quartz.QuartzHostedService, Quartz.Extensions.Hosting")!;
+        Module.ConfigureHostedService(type);
+        
+        if (ConfigureQuartzHostedService != null) 
+            Services.Configure(ConfigureQuartzHostedService);
+
+        //Services.AddQuartzHostedService(ConfigureQuartzHostedService);
     }
 
     /// <inheritdoc />
