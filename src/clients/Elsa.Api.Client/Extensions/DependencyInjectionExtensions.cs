@@ -14,6 +14,7 @@ using Elsa.Api.Client.Resources.StorageDrivers.Contracts;
 using Elsa.Api.Client.Resources.VariableTypes.Contracts;
 using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
@@ -52,6 +53,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<ILoginApi>(builderOptions);
         services.AddApi<IFeaturesApi>(builderOptions);
         services.AddApi<IJavaScriptApi>(builderOptions);
+        services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
         return services;
     }
 
