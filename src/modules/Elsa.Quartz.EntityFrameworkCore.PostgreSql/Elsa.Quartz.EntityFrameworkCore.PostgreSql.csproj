@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.4.1-ef7" />
-        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.4.1-ef7" />
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.4.1-ef7" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13">
             <PrivateAssets>all</PrivateAssets>

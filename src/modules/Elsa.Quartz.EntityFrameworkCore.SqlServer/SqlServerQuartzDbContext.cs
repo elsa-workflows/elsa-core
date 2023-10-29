@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Elsa.Quartz.EntityFrameworkCore.SqlServer;
 
 /// <summary>
-/// Quartz DbContext for SQLite
+/// Quartz DbContext for SQL Server.
 /// </summary>
 [UsedImplicitly]
 public class SqlServerQuartzDbContext : DbContext
@@ -22,7 +22,7 @@ public class SqlServerQuartzDbContext : DbContext
 }
 
 /// <summary>
-/// Design-time factory for Quartz DbContext for SQLite
+/// Design-time factory for Quartz DbContext for SQL Server.
 /// </summary>
 [UsedImplicitly]
 public class SqlServerQuartzDbContextFactory : DesignTimeDbContextFactoryBase<SqlServerQuartzDbContext>

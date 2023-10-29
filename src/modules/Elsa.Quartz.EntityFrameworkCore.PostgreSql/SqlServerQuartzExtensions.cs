@@ -1,5 +1,5 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Quartz.EntityFrameworkCore.SqlServer;
+using Elsa.Quartz.EntityFrameworkCore.PostgreSql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -10,20 +10,20 @@ using Quartz;
 namespace Elsa.EntityFrameworkCore.Extensions;
 
 /// <summary>
-/// Provides extensions to configure EF Core to use SQL Server.
+/// Provides extensions to configure EF Core to use PostgreSQL.
 /// </summary>
 [PublicAPI]
-public static class SqlServerQuartzExtensions
+public static class PostgreSqlQuartzExtensions
 {
     /// <summary>
-    /// Configures the <see cref="QuartzFeature"/> to use the SQL Server job store.
+    /// Configures the <see cref="QuartzFeature"/> to use the PostgreSQL job store.
     /// </summary>
     public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
     {
-        feature.Services.AddDbContextFactory<SqlServerQuartzDbContext>(options =>
+        feature.Services.AddDbContextFactory<PostgreSqlQuartzDbContext>(options =>
         {
-            // Use SQL Server migrations.
-            options.UseSqlServer(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(SqlServerQuartzDbContext).Assembly.GetName().Name); });
+            // Use PostgreSQL migrations.
+            options.UseNpgsql(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(PostgreSqlQuartzDbContext).Assembly.GetName().Name); });
         });
 
         feature.ConfigureQuartz += quartz =>
@@ -31,7 +31,7 @@ public static class SqlServerQuartzExtensions
             quartz.UsePersistentStore(store =>
             {
                 store.UseNewtonsoftJsonSerializer();
-                store.UseSqlServer(connectionString);
+                store.UsePostgres(connectionString);
                 
                 if (useClustering)
                     store.UseClustering();
@@ -39,7 +39,7 @@ public static class SqlServerQuartzExtensions
         };
 
         // Configure the Quartz hosted service to run migrations.
-        feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqlServerQuartzDbContext>>(-100);
+        feature.Module.ConfigureHostedService<RunMigrationsHostedService<PostgreSqlQuartzDbContext>>(-100);
 
         return feature;
     }

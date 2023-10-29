@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Quartz.EntityFrameworkCore.SqlServer.Migrations
 {
     [DbContext(typeof(SqlServerQuartzDbContext))]
-    [Migration("20231028173131_AddQuartz")]
+    [Migration("20231029143236_AddQuartz")]
     partial class AddQuartz
     {
         /// <inheritdoc />
