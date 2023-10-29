@@ -135,7 +135,7 @@ export class WorkflowInstanceBrowser {
                 <th><span class="lg:tw-pl-2">ID</span></th>
                 <th>Correlation</th>
                 <th>Workflow</th>
-                <th class="tw-align-right">Version</th>
+                <th class="tw-text-center">Version</th>
                 <th>Name</th>
                 <th>Status</th>
                 <th>Created</th>
@@ -163,7 +163,7 @@ export class WorkflowInstanceBrowser {
 
                     <td>{workflowInstance.correlationId}</td>
                     <td>{workflowName}</td>
-                    <td class="tw-align-right">{workflowInstance.version}</td>
+                    <td class="tw-text-center">{workflowInstance.version}</td>
                     <td>{workflowInstance.name}</td>
                     <td>
                       <div class="tw-flex tw-items-center tw-space-x-3 lg:tw-pl-2">
