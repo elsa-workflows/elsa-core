@@ -10,7 +10,7 @@ public static class DictionaryExtensions
     /// <summary>
     /// Returns the value of the specified property if it exists, otherwise the default value.
     /// </summary>
-    public static T? TryGetValue<T>(this IDictionary<string, object> dictionary, string key, Func<T>? defaultValue = default, JsonSerializerOptions? serializerOptions = default)
+    public static T TryGetValue<T>(this IDictionary<string, object> dictionary, string key, Func<T>? defaultValue = default, JsonSerializerOptions? serializerOptions = default)
     {
         var caseInsensitiveDictionary = ToCaseInsensitiveDictionary(dictionary);
 
@@ -23,7 +23,7 @@ public static class DictionaryExtensions
         }
 
         if (defaultValue == null)
-            return default;
+            return default!;
 
         var defaultVal = defaultValue()!;
         dictionary[key] = defaultVal;

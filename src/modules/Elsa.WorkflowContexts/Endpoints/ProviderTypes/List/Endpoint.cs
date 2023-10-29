@@ -1,11 +1,12 @@
 using Elsa.Abstractions;
+using Elsa.Models;
 using Elsa.WorkflowContexts.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.WorkflowContexts.Endpoints.ProviderTypes.List;
 
-[PublicAPI]
-internal class List : ElsaEndpointWithoutRequest<Response>
+[UsedImplicitly]
+internal class List : ElsaEndpointWithoutRequest<ListResponse<WorkflowContextProviderDescriptor>>
 {
     private readonly ICollection<WorkflowContextProviderDescriptor> _providerDescriptors;
 
@@ -23,14 +24,14 @@ internal class List : ElsaEndpointWithoutRequest<Response>
         ConfigurePermissions("read:workflow-context-provider-descriptors");
     }
 
-    public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)
+    public override Task<ListResponse<WorkflowContextProviderDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        return Task.FromResult(new Response(_providerDescriptors, _providerDescriptors.Count));
+        return Task.FromResult(new ListResponse<WorkflowContextProviderDescriptor>(_providerDescriptors));
     }
 }
 
-[PublicAPI]
+[UsedImplicitly]
 internal record Response(ICollection<WorkflowContextProviderDescriptor> Descriptors, int Count);
 
-[PublicAPI]
+[UsedImplicitly]
 internal record WorkflowContextProviderDescriptor(string Name, Type Type);
