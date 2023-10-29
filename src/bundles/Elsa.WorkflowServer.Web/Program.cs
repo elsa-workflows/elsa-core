@@ -27,6 +27,7 @@ const bool useSqlServer = false;
 const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
+const bool useQuartz = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -135,13 +136,13 @@ services
             {
                 if (useHangfire)
                     scheduling.UseHangfireScheduler();
+
+                if (useQuartz)
+                    scheduling.UseQuartzScheduler();
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript(js =>
-            {
-                js.JintOptions = options => options.AllowClrAccess = true;
-            })
+            .UseJavaScript(js => { js.JintOptions = options => options.AllowClrAccess = true; })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
@@ -163,7 +164,14 @@ services
             })
             .UseWorkflowContexts();
 
-        // Initialize drop-ins.
+        if (useQuartz)
+        {
+            elsa.UseQuartz(quartz =>
+            {
+                quartz.UseSqlite(sqliteConnectionString);
+            });
+        }
+        
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
 
         elsa.AddSwagger();

@@ -63,7 +63,13 @@ public class Module : IModule
     /// <inheritdoc />
     public IModule ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService
     {
-        _hostedServiceDescriptors.Add(new HostedServiceDescriptor(priority, typeof(T)));
+        return ConfigureHostedService(typeof(T), priority);
+    }
+
+    /// <inheritdoc />
+    public IModule ConfigureHostedService(Type hostedServiceType, int priority = 0)
+    {
+        _hostedServiceDescriptors.Add(new HostedServiceDescriptor(priority, hostedServiceType));
         return this;
     }
 
