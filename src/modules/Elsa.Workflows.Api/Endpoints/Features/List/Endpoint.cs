@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Features.Contracts;
 using Elsa.Features.Models;
+using Elsa.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.Features.List;
@@ -9,7 +10,7 @@ namespace Elsa.Workflows.Api.Endpoints.Features.List;
 /// Returns a list of installed features.
 /// </summary>
 [PublicAPI]
-internal class List : ElsaEndpointWithoutRequest<Response>
+internal class List : ElsaEndpointWithoutRequest<ListResponse<FeatureDescriptor>>
 {
     private readonly IInstalledFeatureRegistry _installedFeatureRegistry;
 
@@ -27,14 +28,11 @@ internal class List : ElsaEndpointWithoutRequest<Response>
     }
 
     /// <inheritdoc />
-    public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)
+    public override Task<ListResponse<FeatureDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
         var descriptors = _installedFeatureRegistry.List().ToList();
-        var response = new Response(descriptors);
+        var response = new ListResponse<FeatureDescriptor>(descriptors);
 
         return Task.FromResult(response);
     }
 }
-
-[PublicAPI]
-internal record Response(ICollection<FeatureDescriptor> InstalledFeatures);

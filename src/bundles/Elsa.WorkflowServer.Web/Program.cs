@@ -17,6 +17,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.WorkflowServer.Web.WorkflowContexts;
 using Elsa.Quartz.EntityFrameworkCore.Sqlite;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -164,7 +165,8 @@ services
                 });
 
                 alterations.UseMassTransitDispatcher();
-            });
+            })
+            .UseWorkflowContexts();
 
         if (useQuartz)
         {
@@ -179,6 +181,8 @@ services
         elsa.AddSwagger();
     });
 
+services.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();
+services.AddWorkflowContextProvider<OrderWorkflowContextProvider>();
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
