@@ -19,12 +19,12 @@ public class QuartzFeature : FeatureBase
     /// A delegate that can be used to configure Quartz.NET options.
     /// </summary>
     public Action<QuartzOptions>? ConfigureQuartzOptions { get; set; }
-    
+
     /// <summary>
     /// A delegate that can be used to configure Quartz.NET itself.
     /// </summary>
     public Action<IServiceCollectionQuartzConfigurator>? ConfigureQuartz { get; set; }
-    
+
     /// <summary>
     /// A delegate that can be used to configure Quartz.NET hosted service.
     /// </summary>
@@ -35,11 +35,9 @@ public class QuartzFeature : FeatureBase
     {
         var type = Type.GetType("Quartz.QuartzHostedService, Quartz.Extensions.Hosting")!;
         Module.ConfigureHostedService(type);
-        
-        if (ConfigureQuartzHostedService != null) 
-            Services.Configure(ConfigureQuartzHostedService);
 
-        //Services.AddQuartzHostedService(ConfigureQuartzHostedService);
+        if (ConfigureQuartzHostedService != null)
+            Services.Configure(ConfigureQuartzHostedService);
     }
 
     /// <inheritdoc />
@@ -49,10 +47,7 @@ public class QuartzFeature : FeatureBase
             Services.Configure(ConfigureQuartzOptions);
 
         Services
-            .AddQuartz(configure =>
-            {
-                ConfigureQuartzInternal(configure, ConfigureQuartz);
-            });
+            .AddQuartz(configure => { ConfigureQuartzInternal(configure, ConfigureQuartz); });
     }
 
     private static void ConfigureQuartzInternal(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
