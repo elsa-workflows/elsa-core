@@ -15,6 +15,7 @@
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.Sqlite\Elsa.Quartz.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.FileStorage\Elsa.FileStorage.csproj" />
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Dapper\Elsa.Dapper.csproj"/>
@@ -39,6 +40,7 @@
 
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.8.2"/>
+        <PackageReference Include="FluentStorage.Azure.Blobs" Version="5.2.2" />
         <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
         <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>
     </ItemGroup>

@@ -1,4 +1,5 @@
 using System.Text.Encodings.Web;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Dapper.Extensions;
@@ -17,6 +18,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web.WorkflowContexts;
+using FluentStorage;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -65,6 +67,10 @@ services
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
+            .UseFileStorage(sp =>
+            {
+                return StorageFactory.Blobs.AzureBlobStorageWithSas(configuration.GetConnectionString("AzureStorageSasUrl"));
+            })
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
