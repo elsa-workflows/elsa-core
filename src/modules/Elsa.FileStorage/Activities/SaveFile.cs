@@ -1,7 +1,11 @@
-﻿using Elsa.Extensions;
+﻿using System.Collections;
+using System.IO.Compression;
+using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
+using FluentStorage.Blobs;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.FileStorage.Activities;
 
@@ -14,7 +18,7 @@ public class SaveFile : CodeActivity
     /// <summary>
     /// Gets or sets the file data to save.
     /// </summary>
-    public Input<Stream> Data { get; set; } = default!;
+    public Input<object> Data { get; set; } = default!;
 
     /// <summary>
     /// Gets or sets the path to save the file to.
@@ -30,11 +34,50 @@ public class SaveFile : CodeActivity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
-        var data = Data.Get(context);
+        var data = await ResolveAsStreamAsync(Data.Get(context), cancellationToken);
         var path = Path.Get(context);
         var append = Append.GetOrDefault(context);
         var blobStorageProvider = context.GetRequiredService<IBlobStorageProvider>();
         var blobStorage = blobStorageProvider.GetBlobStorage();
         await blobStorage.WriteAsync(path, data, append, cancellationToken);
+    }
+
+    private async Task<Stream> ResolveAsStreamAsync(object data, CancellationToken cancellationToken)
+    {
+        if(data is Stream stream)
+            return stream;
+        
+        if(data is IFormFile formFile)
+            return formFile.OpenReadStream();
+
+        if (data is not string && data is IEnumerable enumerable)
+        {
+            var files = enumerable.Cast<object>().ToList();
+            return files.Count == 1 ? await ResolveAsStreamAsync(files[0], cancellationToken) : await CreateZipArchiveAsync(files, cancellationToken);
+        }
+        
+        throw new NotSupportedException($"The provided data type is not supported: {data.GetType().Name}");
+    }
+    
+    private async Task<Stream> CreateZipArchiveAsync(IEnumerable files, CancellationToken cancellationToken = default)
+    {
+        var currentFileIndex = 0;
+        var zipStream = new MemoryStream();
+        var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true);
+        
+        foreach (var file in files)
+        {
+            var entryName = $"file-{currentFileIndex}.bin";
+            var entry = zipArchive.CreateEntry(entryName);
+            var fileStream = await ResolveAsStreamAsync(file, cancellationToken);
+            await using var entryStream = entry.Open();
+            await fileStream.CopyToAsync(entryStream, cancellationToken);
+            await entryStream.FlushAsync(cancellationToken);
+            entryStream.Close();
+            currentFileIndex++;
+        }
+
+        zipStream.Seek(0, SeekOrigin.Begin);
+        return zipStream;
     }
 }
