@@ -23,7 +23,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs the Storage feature.
     /// </summary>
-    public static IModule UseFileStorage(this IModule module, Action<BlobStorageFeature>? configure = default)
+    public static IModule UseFileStorage(this IModule module, Action<FileStorageFeature>? configure = default)
     {
         module.Use(configure);
         return module;

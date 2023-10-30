@@ -11,10 +11,10 @@ namespace Elsa.FileStorage.Features;
 /// <summary>
 /// The Storage feature provides activities to interact with a storage provider.
 /// </summary>
-public class BlobStorageFeature : FeatureBase
+public class FileStorageFeature : FeatureBase
 {
     /// <inheritdoc />
-    public BlobStorageFeature(IModule module) : base(module)
+    public FileStorageFeature(IModule module) : base(module)
     {
     }
 
@@ -26,7 +26,7 @@ public class BlobStorageFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.AddActivitiesFrom<BlobStorageFeature>();
+        Module.AddActivitiesFrom<FileStorageFeature>();
     }
 
     /// <inheritdoc />
