@@ -1,10 +1,10 @@
 ﻿using System.Collections;
 using System.IO.Compression;
+using System.Text;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using FluentStorage.Blobs;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.FileStorage.Activities;
@@ -18,16 +18,19 @@ public class SaveFile : CodeActivity
     /// <summary>
     /// Gets or sets the file data to save.
     /// </summary>
+    [Input(Description = "The file data to save. This can be a stream, binary data, a string, a form file or a collection of files.")]
     public Input<object> Data { get; set; } = default!;
 
     /// <summary>
     /// Gets or sets the path to save the file to.
     /// </summary>
+    [Input(Description = "The path to save the file to.")]
     public Input<string> Path { get; set; } = default!;
 
     /// <summary>
     /// Gets or sets a value indicating whether to append to the file if it already exists.
     /// </summary>
+    [Input(Description = "Whether to append to the file if it already exists.")]
     public Input<bool> Append { get; set; } = default!;
 
     /// <inheritdoc />
@@ -47,10 +50,16 @@ public class SaveFile : CodeActivity
         if(data is Stream stream)
             return stream;
         
+        if(data is byte[] bytes)
+            return new MemoryStream(bytes);
+        
         if(data is IFormFile formFile)
             return formFile.OpenReadStream();
+        
+        if(data is string stringData)
+            return new MemoryStream(Encoding.UTF8.GetBytes(stringData));
 
-        if (data is not string && data is IEnumerable enumerable)
+        if (data is IEnumerable enumerable)
         {
             var files = enumerable.Cast<object>().ToList();
             return files.Count == 1 ? await ResolveAsStreamAsync(files[0], cancellationToken) : await CreateZipArchiveAsync(files, cancellationToken);

@@ -14,6 +14,7 @@ public class OpenFile : CodeActivity<Stream>
     /// <summary>
     /// Gets or sets the path to save the file to.
     /// </summary>
+    [Input(Description = "The path to the file to open.")]
     public Input<string> Path { get; set; } = default!;
 
     /// <inheritdoc />
