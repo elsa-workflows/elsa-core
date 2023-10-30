@@ -13,14 +13,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Confluent.Kafka" Version="1.9.0" />
       <PackageReference Include="Confluent.SchemaRegistry" Version="1.9.0" />
       <PackageReference Include="Confluent.SchemaRegistry.Serdes.Avro" Version="1.9.0" />
       <PackageReference Include="System.Reactive" Version="5.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
 
 </Project>
