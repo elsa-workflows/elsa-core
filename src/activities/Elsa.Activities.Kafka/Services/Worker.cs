@@ -92,7 +92,7 @@ namespace Elsa.Activities.Kafka.Services
             using var scope = _scopeFactory.CreateScope();
             var config = _client.Configuration;
             var tenantId = await _tenantIdResolver.ResolveAsync(ev, config.Topic, config.Group, Tags, cancellationToken);
-            var workflowInput = new WorkflowInput(new MessageReceivedInput() { MessageBytes = ev.Message.Value, MessageString = Encoding.ASCII.GetString(ev.Message.Value), MessageHeaders = JsonConvert.SerializeObject(GetHeaders(ev.Message.Headers,false)) });
+            var workflowInput = new WorkflowInput(new MessageReceivedInput() { MessageBytes = ev.Message.Value, MessageString = Encoding.ASCII.GetString(ev.Message.Value), MessageHeaders = GetHeaders(ev.Message.Headers,false) });
 
             // Schema extraction if injected
             var schemaResolver = scope.ServiceProvider.GetRequiredService<ISchemaResolver>();

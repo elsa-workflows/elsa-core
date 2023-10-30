@@ -1,3 +1,4 @@
+using Confluent.Kafka;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace Elsa.Activities.Kafka.Models
 {
     public class MessageReceivedInput
     {
-        public string? MessageHeaders { get; set; }
+        public Dictionary<string, string>? MessageHeaders { get; set; }
 
         public string? MessageString { get; set; }
 
