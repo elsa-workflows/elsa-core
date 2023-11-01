@@ -1,3 +1,4 @@
+using System.Collections;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core;
@@ -15,8 +16,19 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class ExpressionExecutionContextExtensions
 {
+    /// <summary>
+    /// The key used to store the <see cref="WorkflowExecutionContext"/> in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
+    /// </summary>
     public static readonly object WorkflowExecutionContextKey = new();
+    
+    /// <summary>
+    /// The key used to store the <see cref="ActivityExecutionContext"/> in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
+    /// </summary>
     public static readonly object ActivityExecutionContextKey = new();
+    
+    /// <summary>
+    /// The
+    /// </summary>
     public static readonly object InputKey = new();
     public static readonly object WorkflowKey = new();
 
@@ -246,5 +258,87 @@ public static class ExpressionExecutionContextExtensions
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Returns the value of the specified variable.
+    /// </summary>
+    public static object GetVariableInScope(this ExpressionExecutionContext context, string variableName)
+    {
+        var variable = context.GetVariable(variableName);
+        var value = variable?.Get(context);
+
+        return ConvertIEnumerableToArray(value);
+    }
+
+    /// <summary>
+    /// Gets all variables names in scope.
+    /// </summary>
+    public static IEnumerable<string> GetVariableNamesInScope(this ExpressionExecutionContext context) =>
+        EnumerateVariablesInScope(context)
+            .Select(x => x.Name)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct();
+    
+    /// <summary>
+    /// Gets all variables in scope.
+    /// </summary>
+    public static IEnumerable<Variable> GetVariablesInScope(this ExpressionExecutionContext context) =>
+        EnumerateVariablesInScope(context)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
+            .DistinctBy(x => x.Name);
+
+    /// <summary>
+    /// Sets the value of a named variable in the context.
+    /// </summary>
+    public static void SetVariableInScope(this ExpressionExecutionContext context, string variableName, object? value)
+    {
+        var q = from v in EnumerateVariablesInScope(context)
+            where v.Name == variableName
+            where v.TryGet(context, out _)
+            select v;
+
+        var variable = q.FirstOrDefault();
+        variable?.Set(context, value);
+    }
+
+    /// <summary>
+    /// Enumerates all variables in scope.
+    /// </summary>
+    public static IEnumerable<Variable> EnumerateVariablesInScope(this ExpressionExecutionContext context)
+    {
+        var currentScope = context;
+
+        while (currentScope != null)
+        {
+            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
+                break;
+
+            var variables = activityExecutionContext.Variables;
+
+            foreach (var variable in variables)
+                yield return variable;
+
+            currentScope = currentScope.ParentContext;
+        }
+    }
+    
+    private static object ConvertIEnumerableToArray(object? obj)
+    {
+        if (obj == null)
+            return null!;
+
+        // If it's not an IEnumerable or it's a string or dictionary, return the original object.
+        if (obj is not IEnumerable enumerable || obj is string || obj is IDictionary)
+            return obj;
+
+        // Use LINQ to convert the IEnumerable to an array.
+        var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
+
+        if (elementType == null)
+            return obj;
+
+        var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
+        return toArrayMethod.Invoke(null, new object[] { enumerable })!;
     }
 }

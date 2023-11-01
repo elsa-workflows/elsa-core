@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -47,7 +46,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
-        
+
         return result.ConvertTo(returnType);
     }
 
@@ -65,8 +64,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
-        engine.SetValue("setVariable", (Action<string, object>)((name, value) => SetVariableInScope(context, name, value)));
-        engine.SetValue("getVariable", (Func<string, object?>)(name => GetVariableInScope(context, name)));
+        engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariableInScope(name, value)));
+        engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariableInScope(name)));
         engine.SetValue("getInput", (Func<string, object?>)(name => GetInput(context, name)));
         engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => GetOutput(context, activityIdName, outputName)));
         engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
@@ -132,10 +131,10 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         // If there's a variable in the current scope with the specified name, return that.
         var variable = expressionExecutionContext.GetVariable(name);
-        
+
         if (variable != null)
             return variable.Get(expressionExecutionContext);
-        
+
         // Otherwise, return the input.
         var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
         var input = workflowExecutionContext.Input;
@@ -150,7 +149,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         if (activity == null)
             throw new JavaScriptException("Activity not found.");
-        
+
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
         var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
         var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
@@ -191,77 +190,16 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        var variableNames = GetVariableNamesInScope(context).ToList();
+        var variableNames = context.GetVariableNamesInScope().ToList();
 
         foreach (var variableName in variableNames)
         {
             var pascalName = variableName.Pascalize();
-            engine.SetValue($"get{pascalName}", (Func<object?>)(() => GetVariableInScope(context, variableName)));
-            engine.SetValue($"set{pascalName}", (Action<object?>)(value => SetVariableInScope(context, variableName, value)));
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariableInScope(variableName)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariableInScope(variableName, value)));
         }
     }
 
-    private static IEnumerable<string> GetVariableNamesInScope(ExpressionExecutionContext context) =>
-        EnumerateVariablesInScope(context)
-            .Select(x => x.Name)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct();
-
-    private static object GetVariableInScope(ExpressionExecutionContext context, string variableName)
-    {
-        var variable = context.GetVariable(variableName);
-        var value = variable?.Get(context);
-
-        return ConvertIEnumerableToArray(value);
-    }
-
-    private static object ConvertIEnumerableToArray(object? obj)
-    {
-        if (obj == null)
-            return null!;
-
-        // If it's not an IEnumerable or it's a string or dictionary, return the original object.
-        if (obj is not IEnumerable enumerable || obj is string || obj is IDictionary)
-            return obj;
-
-        // Use LINQ to convert the IEnumerable to an array.
-        var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
-
-        if (elementType == null)
-            return obj;
-
-        var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
-        return toArrayMethod.Invoke(null, new object[] { enumerable })!;
-    }
-
-    private static void SetVariableInScope(ExpressionExecutionContext context, string variableName, object? value)
-    {
-        var q = from v in EnumerateVariablesInScope(context)
-            where v.Name == variableName
-            where v.TryGet(context, out _)
-            select v;
-
-        var variable = q.FirstOrDefault();
-        variable?.Set(context, value);
-    }
-
-    private static IEnumerable<Variable> EnumerateVariablesInScope(ExpressionExecutionContext context)
-    {
-        var currentScope = context;
-
-        while (currentScope != null)
-        {
-            if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
-                break;
-
-            var variables = activityExecutionContext.Variables;
-
-            foreach (var variable in variables)
-                yield return variable;
-
-            currentScope = currentScope.ParentContext;
-        }
-    }
 
     private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
     {
