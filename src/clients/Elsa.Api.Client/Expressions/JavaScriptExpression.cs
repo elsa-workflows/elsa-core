@@ -28,7 +28,7 @@ public class JavaScriptExpression : IExpression
     /// <summary>
     /// Gets or sets the JavaScript expression.
     /// </summary>
-    public string? Value { get; set; } = default!;
+    public string? Value { get; set; }
 
     /// <summary>
     /// Returns the JavaScript expression.

@@ -49,6 +49,7 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
         expressionTypeName switch
         {
             "Literal" => typeof(LiteralExpression),
+            "CSharp" => typeof(CSharpExpression),
             "JavaScript" => typeof(JavaScriptExpression),
             "Liquid" => typeof(LiquidExpression),
             "Object" => typeof(ObjectExpression),
@@ -59,6 +60,7 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
         expressionType.Name switch
         {
             nameof(LiteralExpression) => "Literal",
+            nameof(CSharpExpression) => "CSharp",
             nameof(JavaScriptExpression) => "JavaScript",
             nameof(LiquidExpression) => "Liquid",
             nameof(ObjectExpression) => "Object",

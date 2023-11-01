@@ -146,6 +146,7 @@ services
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
+            .UseCSharp()
             .UseJavaScript(js => { js.JintOptions = options => options.AllowClrAccess = true; })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
