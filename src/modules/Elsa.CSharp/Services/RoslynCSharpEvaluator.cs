@@ -26,7 +26,10 @@ public class RoslynCSharpEvaluator : ICSharpEvaluator
     /// <inheritdoc />
     public async Task<object?> EvaluateAsync(string expression, Type returnType, ExpressionExecutionContext context, CancellationToken cancellationToken = default)
     {
-        var scriptOptions = ScriptOptions.Default.AddReferences(typeof(Globals).Assembly).AddImports(typeof(Globals).Namespace);
+        var scriptOptions = ScriptOptions.Default
+            .AddReferences(typeof(Globals).Assembly, typeof(Enumerable).Assembly)
+            .AddImports(typeof(Globals).Namespace, typeof(Enumerable).Namespace);
+
         var globals = new Globals(new ExecutionContextProxy(context));
         var script = CSharpScript.Create("", scriptOptions, typeof(Globals));
         var notification = new EvaluatingCSharp(script, scriptOptions, context);

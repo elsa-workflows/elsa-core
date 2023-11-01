@@ -16,7 +16,7 @@ public class MagicWorkflow : WorkflowBase
         {
             Activities =
             {
-                new SetVariable<int>(magicNumberVariable, context => context.GetWorkflowInput<int>("MagicNumber")),
+                new SetVariable<int>(magicNumberVariable, context => context.GetInput<int>("MagicNumber")),
                 new WriteLine(context => $"Magic number is {magicNumberVariable.Get(context)}"),
                 new CustomActivity(context => magicNumberVariable.Get(context)),
                 new WriteLine("Done")

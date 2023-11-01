@@ -5,15 +5,11 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
-using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Memory;
 using Humanizer;
 using Jint;
-using Jint.Runtime;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
@@ -66,17 +62,16 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
         engine.SetValue("setVariable", (Action<string, object>)((name, value) => context.SetVariableInScope(name, value)));
         engine.SetValue("getVariable", (Func<string, object?>)(name => context.GetVariableInScope(name)));
-        engine.SetValue("getInput", (Func<string, object?>)(name => GetInput(context, name)));
-        engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => GetOutput(context, activityIdName, outputName)));
-        engine.SetValue("getLastResult", (Func<object?>)(() => GetLastResult(context)));
+        engine.SetValue("getInput", (Func<string, object?>)(name => context.GetInput(name)));
+        engine.SetValue("getOutputFrom", (Func<string, string?, object?>)((activityIdName, outputName) => context.GetOutput(activityIdName, outputName)));
+        engine.SetValue("getLastResult", (Func<object?>)(() => context.GetLastResult()));
 
         // Create variable getters and setters for each variable.
         CreateVariableAccessors(engine, context);
 
         // Create workflow input accessors - only if the current activity is not part of a composite activity definition.
         // Otherwise, the workflow input accessors will hide the composite activity input accessors which rely on variable accessors created above.
-        if (!IsInsideCompositeActivity(context))
-            CreateInputAccessors(engine, context);
+        CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
         CreateActivityOutputAccessors(engine, context);
@@ -110,82 +105,15 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return engine;
     }
 
-    private static bool IsInsideCompositeActivity(ExpressionExecutionContext context)
+    private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
-            return false;
+        if (context.IsInsideCompositeActivity())
+            return;
 
-        // If the first workflow definition in the ancestor hierarchy and that workflow definition has a parent, then we are inside a composite activity.
-        var firstWorkflowContext = activityExecutionContext.GetAncestors().FirstOrDefault(x => x.Activity is Workflow);
+        var inputs = context.GetWorkflowInputs();
 
-        return firstWorkflowContext?.ParentActivityExecutionContext != null;
-    }
-
-    private static object? GetLastResult(ExpressionExecutionContext context)
-    {
-        var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        return workflowExecutionContext.GetLastActivityResult();
-    }
-
-    private object? GetInput(ExpressionExecutionContext expressionExecutionContext, string name)
-    {
-        // If there's a variable in the current scope with the specified name, return that.
-        var variable = expressionExecutionContext.GetVariable(name);
-
-        if (variable != null)
-            return variable.Get(expressionExecutionContext);
-
-        // Otherwise, return the input.
-        var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
-        var input = workflowExecutionContext.Input;
-        return input.TryGetValue(name, out var value) ? value : default;
-    }
-
-    private static object? GetOutput(ExpressionExecutionContext context, string activityIdOrName, string? outputName)
-    {
-        var workflowExecutionContext = context.GetWorkflowExecutionContext();
-        var activityExecutionContext = context.GetActivityExecutionContext();
-        var activity = activityExecutionContext.FindActivityByIdOrName(activityIdOrName);
-
-        if (activity == null)
-            throw new JavaScriptException("Activity not found.");
-
-        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
-        var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
-        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
-        var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
-        return outputRecord?.Value;
-    }
-
-    private void CreateInputAccessors(Engine engine, ExpressionExecutionContext context)
-    {
-        // Only create workflow input accessors if the current activity is not part of a composite activity definition.
-        if (context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
-        {
-            var input = workflowExecutionContext.Input;
-
-            foreach (var inputEntry in input)
-            {
-                var inputPascalName = inputEntry.Key.Pascalize();
-                var inputValue = inputEntry.Value;
-                engine.SetValue($"get{inputPascalName}", (Func<object?>)(() => inputValue));
-            }
-        }
-        else
-        {
-            // We end up here when we are evaluating an expression during trigger indexing.
-            // The scenario being that a workflow definition might have variables declared, that we want to be able to access from JavaScript expressions.
-            foreach (var block in context.Memory.Blocks.Values)
-            {
-                if (block.Metadata is not VariableBlockMetadata variableBlockMetadata)
-                    continue;
-
-                var variable = variableBlockMetadata.Variable;
-                var variablePascalName = variable.Name.Pascalize();
-                engine.SetValue($"get{variablePascalName}", (Func<object?>)(() => block.Value));
-            }
-        }
+        foreach (var input in inputs)
+            engine.SetValue($"get{input.Name}", (Func<object?>)(() => input.Value));
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
@@ -200,30 +128,13 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-
     private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
     {
-        // Select activities with outputs.
-        var activityExecutionContext = context.GetActivityExecutionContext();
-        var useActivityName = activityExecutionContext.WorkflowExecutionContext.Workflow.CreatedWithModernTooling();
-        var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
+        var activityOutputs = context.GetActivityOutputs();
 
-        if (useActivityName)
-            activitiesWithOutputs = activitiesWithOutputs.Where(x => !string.IsNullOrWhiteSpace(x.Activity.Name));
-
-        foreach (var activityWithOutput in activitiesWithOutputs)
-        {
-            var activity = activityWithOutput.Activity;
-            var activityDescriptor = activityWithOutput.ActivityDescriptor;
-
-            foreach (var output in activityDescriptor.Outputs)
-            {
-                var outputPascalName = output.Name.Pascalize();
-                var activityIdentifier = useActivityName ? activity.Name : activity.Id;
-                var activityIdPascalName = activityIdentifier.Pascalize();
-                engine.SetValue($"get{outputPascalName}From{activityIdPascalName}", (Func<object?>)(() => GetOutput(context, activity.Id, output.Name)));
-            }
-        }
+        foreach (var activityOutput in activityOutputs)
+        foreach (var outputName in activityOutput.OutputNames)
+            engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
 
     private static object ExecuteExpressionAndGetResult(Engine engine, string expression)

@@ -1,3 +1,4 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using JetBrains.Annotations;
@@ -23,9 +24,9 @@ public class ExecutionContextProxy
     /// <summary>
     /// Gets the value of the specified variable.
     /// </summary>
-    public T GetVariable<T>(string name)
+    public T? GetVariable<T>(string name)
     {
-        return (T)_context.GetVariableInScope(name);
+        return _context.GetVariableInScope(name).ConvertTo<T>();
     }
 
     /// <summary>

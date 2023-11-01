@@ -7,6 +7,7 @@ using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Services;
+using Humanizer;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -78,31 +79,6 @@ public static class ExpressionExecutionContextExtensions
     /// <param name="activityExecutionContext"></param>
     /// <returns></returns>
     public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
-
-    /// <summary>
-    /// Returns the input of the current activity.
-    /// </summary>
-    public static IDictionary<string, object> GetInput(this ExpressionExecutionContext context) => (IDictionary<string, object>)context.TransientProperties[InputKey];
-    
-    /// <summary>
-    /// Returns input sent to the workflow.
-    /// </summary>
-    public static T GetWorkflowInput<T>(this ExpressionExecutionContext context, string key) => context.GetActivityExecutionContext().GetWorkflowInput<T>(key);
-    
-    /// <summary>
-    /// Returns input sent to the workflow.
-    /// </summary>
-    public static T GetWorkflowInput<T>(this ExpressionExecutionContext context) => context.GetActivityExecutionContext().GetWorkflowInput<T>();
-    
-    /// <summary>
-    /// Returns the value of the specified input.
-    /// </summary>
-    public static T? GetInput<T>(this ExpressionExecutionContext context, string key) => context.GetInput(key).ConvertTo<T>();
-    
-    /// <summary>
-    /// Returns the value of the specified input.
-    /// </summary>
-    public static object? GetInput(this ExpressionExecutionContext context, string key) => context.GetInput().TryGetValue(key, out var value) ? value : default;
 
     /// <summary>
     /// Returns the value of the specified input.
@@ -320,6 +296,148 @@ public static class ExpressionExecutionContextExtensions
                 yield return variable;
 
             currentScope = currentScope.ParentContext;
+        }
+    }
+    
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
+    /// <param name="expressionExecutionContext"></param>
+    /// <param name="name">The name of the input.</param>
+    /// <typeparam name="T">The type of the input.</typeparam>
+    /// <returns>The value of the specified input.</returns>
+    public static T? GetInput<T>(this ExpressionExecutionContext expressionExecutionContext, string name)
+    {
+        var value = expressionExecutionContext.GetInput(name);
+        return value != null ? (T) value : default;
+    }
+
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
+    /// <param name="expressionExecutionContext"></param>
+    /// <param name="name">The name of the input.</param>
+    /// <returns>The value of the specified input.</returns>
+    public static object? GetInput(this ExpressionExecutionContext expressionExecutionContext, string name)
+    {
+        // If there's a variable in the current scope with the specified name, return that.
+        var variable = expressionExecutionContext.GetVariable(name);
+    
+        if (variable != null)
+            return variable.Get(expressionExecutionContext);
+    
+        // Otherwise, return the input.
+        var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
+        var input = workflowExecutionContext.Input;
+        return input.TryGetValue(name, out var value) ? value : default;
+    }
+
+    /// <summary>
+    /// Returns the value of the specified input.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="activityIdOrName">The ID or name of the activity.</param>
+    /// <param name="outputName">The name of the output.</param>
+    /// <returns>The value of the specified output.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the activity is not found.</exception>
+    public static object? GetOutput(this ExpressionExecutionContext context, string activityIdOrName, string? outputName)
+    {
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        var activityExecutionContext = context.GetActivityExecutionContext();
+        var activity = activityExecutionContext.FindActivityByIdOrName(activityIdOrName);
+
+        if (activity == null)
+            throw new InvalidOperationException("Activity not found.");
+
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        var outputRecordCandidates = outputRegister.FindMany(x => x.ActivityId == activity.Id && x.OutputName == outputName).ToList();
+        var containerIds = activityExecutionContext.GetAncestors().Select(x => x.Id).ToList();
+        var filteredOutputRecordCandidates = outputRecordCandidates.Where(x => containerIds.Contains(x.ContainerId)).ToList();
+        var outputRecord = filteredOutputRecordCandidates.FirstOrDefault();
+        return outputRecord?.Value;
+    }
+
+    /// <summary>
+    /// Returns all activity outputs.
+    /// </summary>
+    public static IEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
+    {
+        var activityExecutionContext = context.GetActivityExecutionContext();
+        var useActivityName = activityExecutionContext.WorkflowExecutionContext.Workflow.CreatedWithModernTooling();
+        var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
+
+        if (useActivityName)
+            activitiesWithOutputs = activitiesWithOutputs.Where(x => !string.IsNullOrWhiteSpace(x.Activity.Name));
+
+        foreach (var activityWithOutput in activitiesWithOutputs)
+        {
+            var activity = activityWithOutput.Activity;
+            var activityDescriptor = activityWithOutput.ActivityDescriptor;
+            
+            var activityIdentifier = useActivityName ? activity.Name : activity.Id;
+            var activityIdPascalName = activityIdentifier.Pascalize();
+            
+            foreach (var output in activityDescriptor.Outputs)
+            {
+                var outputPascalName = output.Name.Pascalize();
+                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[] { outputPascalName });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns a value indicating whether the current activity is inside a composite activity.
+    /// </summary>
+    public static bool IsInsideCompositeActivity(this ExpressionExecutionContext context)
+    {
+        if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+            return false;
+
+        // If the first workflow definition in the ancestor hierarchy and that workflow definition has a parent, then we are inside a composite activity.
+        var firstWorkflowContext = activityExecutionContext.GetAncestors().FirstOrDefault(x => x.Activity is Workflow);
+
+        return firstWorkflowContext?.ParentActivityExecutionContext != null;
+    }
+
+    /// <summary>
+    /// Returns the result of the activity that was executed before the current activity.
+    /// </summary>
+    public static object? GetLastResult(this ExpressionExecutionContext context)
+    {
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
+        return workflowExecutionContext.GetLastActivityResult();
+    }
+
+    /// <summary>
+    /// Returns all activity inputs.
+    /// </summary>
+    public static IEnumerable<WorkflowInput> GetWorkflowInputs(this ExpressionExecutionContext context)
+    {
+        // Check if we are evaluating an expression during workflow execution.
+        if (context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+        {
+            var input = workflowExecutionContext.Input;
+
+            foreach (var inputEntry in input)
+            {
+                var inputPascalName = inputEntry.Key.Pascalize();
+                var inputValue = inputEntry.Value;
+                yield return new WorkflowInput(inputPascalName, inputValue);
+            }
+        }
+        else
+        {
+            // We end up here when we are evaluating an expression during trigger indexing.
+            // The scenario being that a workflow definition might have variables declared, that we want to be able to access from JavaScript expressions.
+            foreach (var block in context.Memory.Blocks.Values)
+            {
+                if (block.Metadata is not VariableBlockMetadata variableBlockMetadata)
+                    continue;
+
+                var variable = variableBlockMetadata.Variable;
+                var variablePascalName = variable.Name.Pascalize();
+                yield return new WorkflowInput(variablePascalName, block.Value);
+            }
         }
     }
     
