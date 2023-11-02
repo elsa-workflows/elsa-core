@@ -9,7 +9,7 @@ using Microsoft.CodeAnalysis.Scripting;
 namespace Elsa.CSharp.Services;
 
 /// <summary>
-/// A c# expression evaluator using Roslyn.
+/// A C# expression evaluator using Roslyn.
 /// </summary>
 public class RoslynCSharpEvaluator : ICSharpEvaluator
 {

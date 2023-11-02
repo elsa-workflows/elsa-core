@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.CSharp.Features;
 
 /// <summary>
-/// Installs c# integration.
+/// Installs C# integration.
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]

@@ -3,7 +3,7 @@ using Elsa.Expressions.Models;
 namespace Elsa.CSharp.Expressions;
 
 /// <summary>
-/// A reference to a c# expression.
+/// A reference to a C# expression.
 /// </summary>
 public class CSharpExpressionBlockReference : MemoryBlockReference
 {

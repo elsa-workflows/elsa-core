@@ -5,7 +5,7 @@ using Elsa.Expressions.Models;
 namespace Elsa.CSharp.Expressions;
 
 /// <summary>
-/// Evaluates c# expressions.
+/// Evaluates C# expressions.
 /// </summary>
 public class CSharpExpressionHandler : IExpressionHandler
 {

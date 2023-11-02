@@ -4,13 +4,13 @@ using JetBrains.Annotations;
 namespace Elsa.CSharp.Contracts;
 
 /// <summary>
-/// Evaluates c# expressions.
+/// Evaluates C# expressions.
 /// </summary>
 [PublicAPI]
 public interface ICSharpEvaluator
 {
     /// <summary>
-    /// Evaluates a c# expression.
+    /// Evaluates a C# expression.
     /// </summary>
     /// <param name="expression">The expression to evaluate.</param>
     /// <param name="returnType">The type of the return value.</param>
