@@ -8,13 +8,13 @@ public class Globals
     /// <summary>
     /// Initializes a new instance of the <see cref="Globals"/> class.
     /// </summary>
-    public Globals(ExecutionContextProxy context)
+    public Globals(ExecutionContextProxy executionContext)
     {
-        Context = context;
+        ExecutionContext = executionContext;
     }
 
     /// <summary>
     /// Gets the current execution context.
     /// </summary>
-    public ExecutionContextProxy Context { get; }
+    public ExecutionContextProxy ExecutionContext { get; }
 }

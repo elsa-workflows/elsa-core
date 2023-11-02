@@ -11,14 +11,14 @@ namespace Elsa.CSharp.Models;
 [UsedImplicitly]
 public class ExecutionContextProxy
 {
-    private readonly ExpressionExecutionContext _context;
+    private readonly ExpressionExecutionContext _expressionExecutionContext;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExecutionContextProxy"/> class.
     /// </summary>
-    public ExecutionContextProxy(ExpressionExecutionContext context)
+    public ExecutionContextProxy(ExpressionExecutionContext expressionExecutionContext)
     {
-        _context = context;
+        _expressionExecutionContext = expressionExecutionContext;
     }
 
     /// <summary>
@@ -26,7 +26,7 @@ public class ExecutionContextProxy
     /// </summary>
     public T? GetVariable<T>(string name)
     {
-        return _context.GetVariableInScope(name).ConvertTo<T>();
+        return _expressionExecutionContext.GetVariableInScope(name).ConvertTo<T>();
     }
 
     /// <summary>
@@ -34,6 +34,6 @@ public class ExecutionContextProxy
     /// </summary>
     public void SetVariable(string name, object? value)
     {
-        _context.SetVariable(name, value);
+        _expressionExecutionContext.SetVariable(name, value);
     }
 }
