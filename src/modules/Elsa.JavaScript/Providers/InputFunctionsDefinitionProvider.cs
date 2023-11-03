@@ -6,7 +6,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Humanizer;
 
-namespace Elsa.Workflows.Management.Scripting.JavaScript;
+namespace Elsa.JavaScript.Providers;
 
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.

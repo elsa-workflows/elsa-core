@@ -18,7 +18,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Dsl\Elsa.Dsl.csproj" />
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 

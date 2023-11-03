@@ -43,15 +43,6 @@ public static class ModuleExtensions
     }
 
     /// <summary>
-    /// Adds the JavaScript integration feature.
-    /// </summary>
-    public static WorkflowManagementFeature UseJavaScriptIntegration(this WorkflowManagementFeature feature, Action<JavaScriptIntegrationFeature>? configure = default)
-    {
-        feature.Module.Configure(configure);
-        return feature;
-    }
-
-    /// <summary>
     /// Adds the Elsa DSL integration feature.
     /// </summary>
     public static WorkflowManagementFeature UseDslIntegration(this WorkflowManagementFeature feature, Action<DslIntegrationFeature>? configure = default)

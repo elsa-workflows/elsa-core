@@ -106,18 +106,17 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     {
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(Type, Version)!;
-        
+
         foreach (var inputDescriptor in activityDescriptor.Inputs)
         {
             var inputName = inputDescriptor.Name;
             var unsafeInputName = PropertyNameHelper.GetUnsafePropertyName(typeof(WorkflowDefinitionActivity), inputName);
+            var variableType = typeof(Variable<>).MakeGenericType(inputDescriptor.Type);
+            var variable = (Variable)Activator.CreateInstance(variableType)!;
 
-            var variable = new Variable
-            {
-                Id = unsafeInputName,
-                Name = unsafeInputName,
-                StorageDriverType = inputDescriptor.StorageDriverType
-            };
+            variable.Id = unsafeInputName;
+            variable.Name = unsafeInputName;
+            variable.StorageDriverType = inputDescriptor.StorageDriverType;
 
             configureVariable(inputDescriptor, variable);
         }
@@ -127,7 +126,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     {
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         var activityDescriptor = activityRegistry.Find(Type, Version)!;
-        
+
         foreach (var outputDescriptor in activityDescriptor.Outputs)
         {
             var outputName = outputDescriptor.Name;
@@ -138,7 +137,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
                 Id = unsafeOutputName,
                 Name = unsafeOutputName
             };
-            
+
             configureVariable(outputDescriptor, variable);
         }
     }

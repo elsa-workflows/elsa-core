@@ -4,12 +4,10 @@ using Elsa.Expressions.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.JavaScript.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dsl.Features;
 
-[DependsOn(typeof(JavaScriptFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 public class DslFeature : FeatureBase
 {

@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Management.HostedServices;
+namespace Elsa.JavaScript.HostedServices;
 
 /// <summary>
 /// Registers variable types with the JavaScript type alias registry
