@@ -37,5 +37,8 @@ public class CSharpFeature : FeatureBase
 
         // Handlers.
         Services.AddNotificationHandlersFrom<CSharpFeature>();
+        
+        // Activities.
+        Module.AddActivitiesFrom<CSharpFeature>();
     }
 }

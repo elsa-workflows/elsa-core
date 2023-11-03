@@ -1,5 +1,6 @@
 ﻿using Elsa.Expressions.Models;
 using JetBrains.Annotations;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace Elsa.CSharp.Contracts;
 
@@ -15,7 +16,15 @@ public interface ICSharpEvaluator
     /// <param name="expression">The expression to evaluate.</param>
     /// <param name="returnType">The type of the return value.</param>
     /// <param name="context">The context in which the expression is evaluated.</param>
+    /// <param name="configureScriptOptions">An optional callback to configure the script options.</param>
+    /// <param name="configureScript">An optional callback to configure the script.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The result of the evaluation.</returns>
-    Task<object?> EvaluateAsync(string expression, Type returnType, ExpressionExecutionContext context, CancellationToken cancellationToken = default);
+    Task<object?> EvaluateAsync(
+        string expression, 
+        Type returnType, 
+        ExpressionExecutionContext context,
+        Func<ScriptOptions, ScriptOptions>? configureScriptOptions = default,
+        Func<Script<object>, Script<object>>? configureScript = default,
+        CancellationToken cancellationToken = default);
 }

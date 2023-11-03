@@ -19,7 +19,7 @@ public class ConfigureWorkflowVariables : INotificationHandler<EvaluatingCSharp>
         var expressionExecutionContext = notification.Context;
         var variables = expressionExecutionContext.GetVariablesInScope().ToList();
         var sb = new StringBuilder();
-        sb.AppendLine("public class WorkflowVariablesWrapper {");
+        sb.AppendLine("public partial class WorkflowVariablesWrapper {");
         sb.AppendLine("\tpublic WorkflowVariablesWrapper(ExecutionContextProxy executionContext) => ExecutionContext = executionContext;");
         sb.AppendLine("\tpublic ExecutionContextProxy ExecutionContext { get; }");
 
