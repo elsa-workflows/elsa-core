@@ -27,10 +27,6 @@ public class MustHaveTenantIdBeforeSavingStrategy : IBeforeSavingDbContextStrate
     public async Task Execute(EntityEntry entityEntry)
     {
         var entity = (Entity)entityEntry.Entity;
-        var tenant = await _tenantAccessor.GetCurrentTenantAsync();
-        if (tenant is null)
-            return;
-
-        entity.TenantId = tenant.TenantId;
+        entity.TenantId = await _tenantAccessor.GetCurrentTenantIdAsync();
     }
 }

@@ -11,15 +11,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 public class AlterationsElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public AlterationsElsaDbContext(DbContextOptions<AlterationsElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
+    public AlterationsElsaDbContext(DbContextOptions<AlterationsElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
-        _serviceProvider = serviceProvider;
     }
-
-    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
-    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// The alteration plans.
@@ -36,8 +30,6 @@ public class AlterationsElsaDbContext : ElsaDbContextBase
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.Ignore<AlterationLogEntry>();
-
-        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
     }
 
     /// <inheritdoc />

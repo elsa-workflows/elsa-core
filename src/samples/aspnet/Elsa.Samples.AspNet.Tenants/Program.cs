@@ -43,7 +43,9 @@ builder.Services.AddElsa(elsa =>
         })
         .UseDefaultAuthentication();
 
-    elsa.UseTenants(configuration => configuration.UseConfigurationBasedTenantProvider(options => identitySection.Bind(options)));
+    elsa.UseTenants(configuration => configuration
+        .UseConfigurationBasedTenantProvider(options => identitySection.Bind(options))
+        .UseEfcoreStrategies());
 
     elsa
         .UseHttp()

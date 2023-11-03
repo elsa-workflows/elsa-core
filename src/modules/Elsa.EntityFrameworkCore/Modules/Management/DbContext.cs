@@ -12,15 +12,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class ManagementElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : base(options)
+    public ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
-        _serviceProvider = serviceProvider;
     }
-
-    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
-    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// The workflow definitions.
@@ -38,8 +32,6 @@ public class ManagementElsaDbContext : ElsaDbContextBase
         base.OnModelCreating(modelBuilder);
         modelBuilder.Ignore<WorkflowState>();
         modelBuilder.Ignore<ActivityIncident>();
-
-        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
     }
 
     /// <inheritdoc />

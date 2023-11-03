@@ -5,7 +5,6 @@ internal class Request
     public string Name { get; set; } = default!;
     public string? Password { get; set; }
     public ICollection<string>? Roles { get; set; }
-    public string? TenantId { get; set; }
 }
 
 internal record Response(

@@ -1,8 +1,10 @@
+using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Tenants.Accessors;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
+using Elsa.Tenants.Strategies;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Features;
@@ -41,11 +43,22 @@ public class TenantsFeature : FeatureBase
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
     /// </summary>
-    public void UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
+    public TenantsFeature UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
     {
         TenantProvider = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
 
         if (configure != null)
             TenantsOptions += configure;
+
+        return this;
+    }
+
+    public TenantsFeature UseEfcoreStrategies()
+    {
+        Services
+            .AddTransient<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
+        ;
+
+        return this;
     }
 }
