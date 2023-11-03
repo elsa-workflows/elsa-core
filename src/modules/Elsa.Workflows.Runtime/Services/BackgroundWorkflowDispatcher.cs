@@ -33,6 +33,8 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             TriggerActivityId = request.TriggerActivityId
         };
 
+        //TODO JBD : Set TenantId here for TenantAccessor backgroundTenantId ? (and add tenantId to the request ?
+
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();
     }

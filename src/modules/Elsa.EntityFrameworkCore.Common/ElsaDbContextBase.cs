@@ -43,7 +43,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
 
         _serviceProvider = serviceProvider;
-        _dbContextStrategies = serviceProvider.GetServices<IDbContextStrategy>();
     }
 
     /// <summary>
@@ -120,9 +119,10 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
     private async Task OnBeforeSaving()
     {
+        var dbContextStrategies = _serviceProvider.GetServices<IDbContextStrategy>();
         foreach (EntityEntry entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
-            IEnumerable<IBeforeSavingDbContextStrategy> beforeSavingDbContextStrategies = _dbContextStrategies
+            IEnumerable<IBeforeSavingDbContextStrategy> beforeSavingDbContextStrategies = dbContextStrategies
                 .OfType<IBeforeSavingDbContextStrategy>()
                 .Where(strategy => strategy.CanExecute(entry).Result);
 
