@@ -181,7 +181,8 @@ export class ElsaMultiExpressionEditor {
                                   language={monacoLanguage}
                                   editorHeight={this.editorHeight}
                                   singleLineMode={this.singleLineMode}
-                                  context={this.context}/>
+                                  context={this.context}
+                                  opensModal/>
         </div>
         <div class={defaultEditorClass}>
           <slot/>
