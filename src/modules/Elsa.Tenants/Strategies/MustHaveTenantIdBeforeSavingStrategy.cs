@@ -19,7 +19,7 @@ public class MustHaveTenantIdBeforeSavingStrategy : IBeforeSavingDbContextStrate
     {
         var states = new List<EntityState>() { EntityState.Added };
 
-        return await _tenantAccessor.GetCurrentTenantAsync() != null &&
+        return await _tenantAccessor.GetCurrentTenantIdAsync() != null &&
             entityEntry?.Entity is Entity &&
             states.Contains(entityEntry.State);
     }

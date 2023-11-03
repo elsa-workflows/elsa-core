@@ -29,23 +29,48 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, ITenantProvider> TenantProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
 
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="ITenantAccessor"/>.
+    /// </summary>
+    public Func<IServiceProvider, ITenantAccessor> TenantAccessor { get; set; } = sp => sp.GetRequiredService<TenantAccessor>();
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(TenantsOptions);
 
         Services
-            .AddSingleton<ConfigurationTenantProvider>()
-            .AddSingleton<ITenantAccessor, TenantAccessor>()
+            .AddSingleton(TenantAccessor)
             .AddSingleton(TenantProvider)
         ;
     }
+
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
     /// </summary>
     public TenantsFeature UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
     {
+        Services
+            .AddSingleton<TenantAccessor>()
+            .AddSingleton<ConfigurationTenantProvider>();
+
+        TenantAccessor = sp => sp.GetRequiredService<TenantAccessor>();
         TenantProvider = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
+
+        if (configure != null)
+            TenantsOptions += configure;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
+    /// </summary>
+    public TenantsFeature UseExternalTenantProvider(Action<TenantsOptions>? configure = default)
+    {
+        Services.AddSingleton<ExternalTenantAccessor>();
+
+        TenantAccessor = sp => sp.GetRequiredService<ExternalTenantAccessor>();
 
         if (configure != null)
             TenantsOptions += configure;
@@ -56,7 +81,7 @@ public class TenantsFeature : FeatureBase
     public TenantsFeature UseEfcoreStrategies()
     {
         Services
-            .AddTransient<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
+            .AddSingleton<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
         ;
 
         return this;
