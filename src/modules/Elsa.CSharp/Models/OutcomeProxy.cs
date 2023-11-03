@@ -1,27 +1,32 @@
-// ReSharper disable once CheckNamespace
+using Elsa.Expressions.Models;
+
 namespace Elsa.CSharp.Models;
 
-public partial class Globals
+/// <summary>
+/// Provides access to activity outcomes.
+/// </summary>
+public class OutcomeProxy
 {
     /// <summary>
     /// Gets the key of the outcomes property.
     /// </summary>
     public static readonly object OutcomePropertiesKey = new();
-    
+
     /// <summary>
-    /// Sets the outcome of the current activity.
+    /// Initializes a new instance of the <see cref="OutcomeProxy"/> class.
     /// </summary>
-    /// <param name="outcomeName">The name of the outcome.</param>
-    public void SetOutcome(string outcomeName)
+    public OutcomeProxy(ExpressionExecutionContext expressionExecutionContext)
     {
-        ExpressionExecutionContext.TransientProperties[OutcomePropertiesKey] = new[] { outcomeName };
+        ExpressionExecutionContext = expressionExecutionContext;
     }
-    
+
+    private ExpressionExecutionContext ExpressionExecutionContext { get; }
+
     /// <summary>
     /// Sets the outcome of the current activity.
     /// </summary>
     /// <param name="outcomeNames">The names of the outcomes.</param>
-    public void SetOutcomes(params string[] outcomeNames)
+    public void Set(params string[] outcomeNames)
     {
         ExpressionExecutionContext.TransientProperties[OutcomePropertiesKey] = outcomeNames;
     }

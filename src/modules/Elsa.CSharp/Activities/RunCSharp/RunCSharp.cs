@@ -26,7 +26,7 @@ public class RunCSharp : CodeActivity<object?>
     {
         Script = new Input<string>(script);
     }
-    
+
     /// <summary>
     /// A list of possible outcomes. Use "SetOutcome(string)" to set the outcome. Use "SetOutcomes(params string[])" to set multiple outcomes.
     /// </summary>
@@ -63,7 +63,7 @@ public class RunCSharp : CodeActivity<object?>
             context.Set(Result, result);
 
         // Get the outcome or outcomes set by the script, if any. If not set, use "Done".
-        var outcomes = context.ExpressionExecutionContext.TransientProperties.GetValueOrDefault(Globals.OutcomePropertiesKey, () => new[] { "Done" })!;
+        var outcomes = context.ExpressionExecutionContext.TransientProperties.GetValueOrDefault(OutcomeProxy.OutcomePropertiesKey, () => new[] { "Done" })!;
 
         // Complete the activity with the outcome.
         await context.CompleteActivityWithOutcomesAsync(outcomes);

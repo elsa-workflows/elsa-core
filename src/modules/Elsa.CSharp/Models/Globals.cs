@@ -1,4 +1,3 @@
-using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 
@@ -16,7 +15,25 @@ public partial class Globals
     {
         ExpressionExecutionContext = expressionExecutionContext;
         ExecutionContext = new ExecutionContextProxy(expressionExecutionContext);
+        Input = new InputProxy(expressionExecutionContext);
+        Output = new OutputProxy(expressionExecutionContext);
+        Outcome = new OutcomeProxy(expressionExecutionContext);
     }
+
+    /// <summary>
+    /// Provides access to activity outcomes.
+    /// </summary>
+    public OutcomeProxy Outcome { get; set; }
+
+    /// <summary>
+    /// Provides access to activity outputs.
+    /// </summary>
+    public OutputProxy Output { get; set; }
+
+    /// <summary>
+    /// Provides access to workflow inputs.
+    /// </summary>
+    public InputProxy Input { get; set; }
 
     /// <summary>
     /// Gets the current execution context.
@@ -36,36 +53,6 @@ public partial class Globals
         get => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId;
         set => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId = value;
     }
-    
-    /// <summary>
-    /// Gets the value of the specified variable.
-    /// </summary>
-    public T? GetVariable<T>(string name) => ExpressionExecutionContext.GetVariableInScope(name).ConvertTo<T>();
-
-    /// <summary>
-    /// Sets the value of the specified variable.
-    /// </summary>
-    public void SetVariable(string name, object? value) => ExpressionExecutionContext.SetVariable(name, value);
-    
-    /// <summary>
-    /// Gets the value of the specified input.
-    /// </summary>
-    /// <param name="name">The name of the input.</param>
-    /// <returns>The value of the input.</returns>
-    public object? GetInput(string name) => ExpressionExecutionContext.GetInput(name);
-    
-    /// <summary>
-    /// Gets the value of the specified output.
-    /// </summary>
-    /// <param name="activityIdOrName">The ID or name of the activity that produced the output.</param>
-    /// <param name="outputName">The name of the output.</param>
-    /// <returns>The value of the output.</returns>
-    public object? GetOutputFrom(string activityIdOrName, string? outputName = default) => ExpressionExecutionContext.GetOutput(activityIdOrName, outputName);
-    
-    /// <summary>
-    /// Gets the result of the last activity that executed.
-    /// </summary>
-    public object? GetLastResult() => ExpressionExecutionContext.GetLastResult();
     
     private ExpressionExecutionContext ExpressionExecutionContext { get; }
 }

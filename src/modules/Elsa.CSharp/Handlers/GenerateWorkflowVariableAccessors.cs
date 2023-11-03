@@ -19,10 +19,13 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         var expressionExecutionContext = notification.Context;
         var variables = expressionExecutionContext.GetVariablesInScope().ToList();
         var sb = new StringBuilder();
-        sb.AppendLine("public partial class WorkflowVariablesWrapper {");
-        sb.AppendLine("\tpublic WorkflowVariablesWrapper(ExecutionContextProxy executionContext) => ExecutionContext = executionContext;");
+        sb.AppendLine("public partial class WorkflowVariablesProxy {");
+        sb.AppendLine("\tpublic WorkflowVariablesProxy(ExecutionContextProxy executionContext) => ExecutionContext = executionContext;");
         sb.AppendLine("\tpublic ExecutionContextProxy ExecutionContext { get; }");
-
+        sb.AppendLine();
+        sb.AppendLine("\tpublic T? Get<T>(string name) => ExecutionContext.GetVariable<T>(name);");
+        sb.AppendLine("\tpublic void Set(string name, object? value) => ExecutionContext.SetVariable(name, value);");
+        sb.AppendLine();
         foreach (var variable in variables)
         {
             var variableName = variable.Name.Pascalize();
@@ -30,13 +33,13 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
             var friendlyTypeName = GetFriendlyTypeName(variableType);
             sb.AppendLine($"\tpublic {friendlyTypeName} {variableName}");
             sb.AppendLine("\t{");
-            sb.AppendLine($"\t\tget => ExecutionContext.GetVariable<{friendlyTypeName}>(\"{variableName}\");");
-            sb.AppendLine($"\t\tset => ExecutionContext.SetVariable(\"{variableName}\", value);");
+            sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{variableName}\");");
+            sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
             sb.AppendLine("\t}");
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Variables = new WorkflowVariablesWrapper(ExecutionContext);");
+        sb.AppendLine("var Variable = new WorkflowVariablesProxy(ExecutionContext);");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }
