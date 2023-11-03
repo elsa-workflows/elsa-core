@@ -152,6 +152,7 @@ services
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
             .UseJavaScript(options => options.AllowClrAccess = true)
+            .UsePython()
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {

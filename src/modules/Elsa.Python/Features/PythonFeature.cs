@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Python.Features;
 
 /// <summary>
-/// Installs C# integration.
+/// Installs Python integration.
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
@@ -27,14 +27,14 @@ public class PythonFeature : FeatureBase
     }
     
     /// <summary>
-    /// Configures the <see cref="PythonOptions"/>.
+    /// Configures the <see cref="Options.PythonOptions"/>.
     /// </summary>
-    public Action<PythonOptions> RoslynOptions { get; set; } = _ => { };
+    public Action<PythonOptions> PythonOptions { get; set; } = _ => { };
     
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(RoslynOptions);
+        Services.Configure(PythonOptions);
         
         // C# services.
         Services

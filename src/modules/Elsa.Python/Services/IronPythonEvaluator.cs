@@ -1,5 +1,10 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Mediator.Contracts;
 using Elsa.Python.Contracts;
+using Elsa.Python.Models;
+using Elsa.Python.Notifications;
+using IronPython.Hosting;
 
 namespace Elsa.Python.Services;
 
@@ -8,12 +13,25 @@ namespace Elsa.Python.Services;
 /// </summary>
 public class IronPythonEvaluator : IPythonEvaluator
 {
+    private readonly INotificationSender _notificationSender;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IronPythonEvaluator"/> class.
+    /// </summary>
+    public IronPythonEvaluator(INotificationSender notificationSender)
+    {
+        _notificationSender = notificationSender;
+    }
+    
     /// <inheritdoc />
     public async Task<object?> EvaluateAsync(string expression, Type returnType, ExpressionExecutionContext context, CancellationToken cancellationToken = default)
     {
-        var eng = IronPython.Hosting.Python.CreateEngine();
-        var scope = eng.CreateScope();
-        var result = eng.Execute(expression, scope);
-        return result;
+        var engine = IronPython.Hosting.Python.CreateEngine();
+        var scope = engine.CreateScope();
+        scope.SetVariable("execution_context", new ExecutionContextProxy(context));
+        var notification = new EvaluatingPython(engine, scope, context);
+        await _notificationSender.SendAsync(notification, cancellationToken);
+        var result = (object?)engine.Execute(expression, scope);
+        return result.ConvertTo(returnType);
     }
 }
