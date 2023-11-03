@@ -11,7 +11,7 @@ namespace Elsa.CSharp.Handlers;
 /// Configures the C# evaluator with methods to access workflow variables.
 /// </summary>
 [UsedImplicitly]
-public class ConfigureWorkflowVariables : INotificationHandler<EvaluatingCSharp>
+public class GenerateWorkflowVariableAccessors : INotificationHandler<EvaluatingCSharp>
 {
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingCSharp notification, CancellationToken cancellationToken)
@@ -36,7 +36,7 @@ public class ConfigureWorkflowVariables : INotificationHandler<EvaluatingCSharp>
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Context = new WorkflowVariablesWrapper(ExecutionContext);");
+        sb.AppendLine("var Variables = new WorkflowVariablesWrapper(ExecutionContext);");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }

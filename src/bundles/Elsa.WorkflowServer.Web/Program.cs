@@ -146,8 +146,12 @@ services
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseCSharp()
-            .UseJavaScript(js => { js.JintOptions = options => options.AllowClrAccess = true; })
+            .UseCSharp(options =>
+            {
+                options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
+                options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
+            })
+            .UseJavaScript(options => options.AllowClrAccess = true)
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
@@ -215,10 +219,10 @@ app.UseWorkflowsApi(routePrefix);
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 
-// Elsa HTTP Endpoint activities
+// Elsa HTTP Endpoint activities.
 app.UseWorkflows();
 
-// Swagger API documentation
+// Swagger API documentation.
 if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 

@@ -6,13 +6,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using Microsoft.CodeAnalysis.Scripting;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.CSharp.Activities;
 
 /// <summary>
-/// Executes JavaScript code.
+/// Executes C# code.
 /// </summary>
 [Activity("Elsa", "Scripting", "Executes C# code", DisplayName = "Run C#")]
 public class RunCSharp : CodeActivity<object?>
@@ -29,7 +28,7 @@ public class RunCSharp : CodeActivity<object?>
     }
     
     /// <summary>
-    /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
+    /// A list of possible outcomes. Use "SetOutcome(string)" to set the outcome. Use "SetOutcomes(params string[])" to set multiple outcomes.
     /// </summary>
     [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
     public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;

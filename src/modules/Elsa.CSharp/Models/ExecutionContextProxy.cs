@@ -9,16 +9,19 @@ namespace Elsa.CSharp.Models;
 /// Provides access to the current execution context.
 /// </summary>
 [UsedImplicitly]
-public class ExecutionContextProxy
+public partial class ExecutionContextProxy
 {
-    private readonly ExpressionExecutionContext _expressionExecutionContext;
+    /// <summary>
+    /// Gets the current execution context.
+    /// </summary>
+    public ExpressionExecutionContext ExpressionExecutionContext { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExecutionContextProxy"/> class.
     /// </summary>
     public ExecutionContextProxy(ExpressionExecutionContext expressionExecutionContext)
     {
-        _expressionExecutionContext = expressionExecutionContext;
+        ExpressionExecutionContext = expressionExecutionContext;
     }
 
     /// <summary>
@@ -26,7 +29,7 @@ public class ExecutionContextProxy
     /// </summary>
     public T? GetVariable<T>(string name)
     {
-        return _expressionExecutionContext.GetVariableInScope(name).ConvertTo<T>();
+        return ExpressionExecutionContext.GetVariableInScope(name).ConvertTo<T>();
     }
 
     /// <summary>
@@ -34,6 +37,6 @@ public class ExecutionContextProxy
     /// </summary>
     public void SetVariable(string name, object? value)
     {
-        _expressionExecutionContext.SetVariable(name, value);
+        ExpressionExecutionContext.SetVariable(name, value);
     }
 }

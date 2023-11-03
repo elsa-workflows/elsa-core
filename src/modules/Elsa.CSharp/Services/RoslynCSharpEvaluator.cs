@@ -11,14 +11,14 @@ namespace Elsa.CSharp.Services;
 /// <summary>
 /// A C# expression evaluator using Roslyn.
 /// </summary>
-public class RoslynCSharpEvaluator : ICSharpEvaluator
+public class CSharpEvaluator : ICSharpEvaluator
 {
     private readonly INotificationSender _notificationSender;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="RoslynCSharpEvaluator"/> class.
+    /// Initializes a new instance of the <see cref="CSharpEvaluator"/> class.
     /// </summary>
-    public RoslynCSharpEvaluator(INotificationSender notificationSender)
+    public CSharpEvaluator(INotificationSender notificationSender)
     {
         _notificationSender = notificationSender;
     }
@@ -32,9 +32,7 @@ public class RoslynCSharpEvaluator : ICSharpEvaluator
         Func<Script<object>, Script<object>>? configureScript = default,
         CancellationToken cancellationToken = default)
     {
-        var scriptOptions = ScriptOptions.Default
-            .AddReferences(typeof(Globals).Assembly, typeof(Enumerable).Assembly)
-            .AddImports(typeof(Globals).Namespace, typeof(Enumerable).Namespace);
+        var scriptOptions = ScriptOptions.Default;
 
         if (configureScriptOptions != null)
             scriptOptions = configureScriptOptions(scriptOptions);

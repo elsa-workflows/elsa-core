@@ -1,4 +1,5 @@
 using Elsa.CSharp.Features;
+using Elsa.CSharp.Options;
 using Elsa.Features.Services;
 
 // ReSharper disable once CheckNamespace
@@ -16,5 +17,13 @@ public static class ModuleExtensions
     {
         module.Configure(configure);
         return module;
+    }
+    
+    /// <summary>
+    /// Setup the <see cref="CSharpFeature"/> feature.
+    /// </summary>
+    public static IModule UseCSharp(this IModule module, Action<CSharpOptions> configureOptions)
+    {
+        return module.UseCSharp(csharp => csharp.RoslynOptions += configureOptions);
     }
 }

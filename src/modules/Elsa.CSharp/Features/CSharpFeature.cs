@@ -1,6 +1,7 @@
 using Elsa.Common.Features;
 using Elsa.CSharp.Contracts;
 using Elsa.CSharp.Expressions;
+using Elsa.CSharp.Options;
 using Elsa.CSharp.Providers;
 using Elsa.CSharp.Services;
 using Elsa.Expressions.Contracts;
@@ -25,13 +26,20 @@ public class CSharpFeature : FeatureBase
     {
     }
     
+    /// <summary>
+    /// Configures the <see cref="RoslynOptions"/>.
+    /// </summary>
+    public Action<CSharpOptions> RoslynOptions { get; set; } = _ => { };
+    
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(RoslynOptions);
+        
         // C# services.
         Services
             .AddSingleton<IExpressionSyntaxProvider, CSharpExpressionSyntaxProvider>()
-            .AddSingleton<ICSharpEvaluator, RoslynCSharpEvaluator>()
+            .AddSingleton<ICSharpEvaluator, CSharpEvaluator>()
             .AddExpressionHandler<CSharpExpressionHandler, CSharpExpression>()
             ;
 
