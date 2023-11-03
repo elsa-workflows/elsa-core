@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common.Abstractions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,9 +28,4 @@ public class ElsaDbContextOptions
     /// Gets or sets a delegate that can be used to add additionnal entity configuration to Elsa's DbContext.
     /// </summary>
     public Action<ModelBuilder, IServiceProvider>? AdditionnalEntityConfigurations { get; set; }
-
-    /// <summary>
-    /// Get or sets the DbContextStrategies to apply on the DbContext
-    /// </summary>
-    public IEnumerable<IDbContextStrategy> dbContextStrategies { get; set; }
 }

@@ -10,15 +10,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class RuntimeElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public RuntimeElsaDbContext(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
+    public RuntimeElsaDbContext(DbContextOptions options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
-        var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
-        _serviceProvider = serviceProvider;
     }
-
-    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
-    private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
     /// The workflow triggers.
@@ -58,14 +52,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     }
 
     /// <inheritdoc />
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
-
-        base.OnModelCreating(modelBuilder);
-    }
-
-        /// <inheritdoc />
     protected override void SetupForOracle(ModelBuilder modelBuilder)
     {
         // In order to use data more than 2000 char we have to use NCLOB.
