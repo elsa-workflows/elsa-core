@@ -24,6 +24,6 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule UseCSharp(this IModule module, Action<CSharpOptions> configureOptions)
     {
-        return module.UseCSharp(csharp => csharp.RoslynOptions += configureOptions);
+        return module.UseCSharp(csharp => csharp.CSharpOptions += configureOptions);
     }
 }

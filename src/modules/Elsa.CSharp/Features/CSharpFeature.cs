@@ -27,14 +27,14 @@ public class CSharpFeature : FeatureBase
     }
     
     /// <summary>
-    /// Configures the <see cref="RoslynOptions"/>.
+    /// Configures the <see cref="CSharpOptions"/>.
     /// </summary>
-    public Action<CSharpOptions> RoslynOptions { get; set; } = _ => { };
+    public Action<CSharpOptions> CSharpOptions { get; set; } = _ => { };
     
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(RoslynOptions);
+        Services.Configure(CSharpOptions);
         
         // C# services.
         Services

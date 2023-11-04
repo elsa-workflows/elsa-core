@@ -51,6 +51,7 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
             "Literal" => typeof(LiteralExpression),
             "CSharp" => typeof(CSharpExpression),
             "JavaScript" => typeof(JavaScriptExpression),
+            "Python" => typeof(PythonExpression),
             "Liquid" => typeof(LiquidExpression),
             "Object" => typeof(ObjectExpression),
             _ => throw new ArgumentOutOfRangeException(nameof(expressionTypeName), expressionTypeName, null)
@@ -62,6 +63,7 @@ public class ExpressionJsonConverter : JsonConverter<IExpression>
             nameof(LiteralExpression) => "Literal",
             nameof(CSharpExpression) => "CSharp",
             nameof(JavaScriptExpression) => "JavaScript",
+            nameof(PythonExpression) => "Python",
             nameof(LiquidExpression) => "Liquid",
             nameof(ObjectExpression) => "Object",
             _ => throw new ArgumentOutOfRangeException(nameof(expressionType), expressionType, null)

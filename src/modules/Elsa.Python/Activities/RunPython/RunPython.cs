@@ -1,48 +1,47 @@
 ﻿using System.Runtime.CompilerServices;
-using Elsa.CSharp.Contracts;
-using Elsa.CSharp.Extensions;
-using Elsa.CSharp.Models;
 using Elsa.Extensions;
+using Elsa.Python.Contracts;
+using Elsa.Python.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.CSharp.Activities;
+namespace Elsa.Python.Activities;
 
 /// <summary>
-/// Executes C# code.
+/// Executes Python code.
 /// </summary>
-[Activity("Elsa", "Scripting", "Executes C# code", DisplayName = "Run C#")]
-public class RunCSharp : CodeActivity<object?>
+[Activity("Elsa", "Scripting", "Executes Python code", DisplayName = "Run Python")]
+public class RunPython : CodeActivity<object?>
 {
     /// <inheritdoc />
-    public RunCSharp([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public RunPython([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public RunCSharp(string script, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
+    public RunPython(string script, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Script = new Input<string>(script);
     }
-
+    
     /// <summary>
     /// The script to run.
     /// </summary>
     [Input(
         Description = "The script to run.",
         UIHint = InputUIHints.CodeEditor,
-        OptionsProvider = typeof(RunCSharpOptionsProvider)
+        OptionsProvider = typeof(RunPythonOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
-    
+
     /// <summary>
     /// A list of possible outcomes. Use "SetOutcome(string)" to set the outcome. Use "SetOutcomes(params string[])" to set multiple outcomes.
     /// </summary>
     [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
     public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
-
+    
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -52,8 +51,8 @@ public class RunCSharp : CodeActivity<object?>
         if (string.IsNullOrWhiteSpace(script))
             return;
 
-        // Get a C# evaluator.
-        var evaluator = context.GetRequiredService<ICSharpEvaluator>();
+        // Get a Python evaluator.
+        var evaluator = context.GetRequiredService<IPythonEvaluator>();
 
         // Run the script.
         var result = await evaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, context.CancellationToken);
