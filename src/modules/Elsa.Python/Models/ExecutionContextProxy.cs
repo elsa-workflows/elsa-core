@@ -1,7 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.Python.Models;
