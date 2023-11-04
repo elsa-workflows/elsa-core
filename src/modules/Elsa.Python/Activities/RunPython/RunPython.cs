@@ -10,7 +10,7 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Python.Activities;
 
 /// <summary>
-/// Executes C# code.
+/// Executes Python code.
 /// </summary>
 [Activity("Elsa", "Scripting", "Executes Python code", DisplayName = "Run Python")]
 public class RunPython : CodeActivity<object?>
