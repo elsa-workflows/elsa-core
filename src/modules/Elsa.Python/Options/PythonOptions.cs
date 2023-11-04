@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Scripting.Hosting;
 
 namespace Elsa.Python.Options;
 
@@ -11,6 +12,11 @@ public class PythonOptions
     /// Gets or sets the Python script files to load.
     /// </summary>
     public ICollection<string> Scripts { get; } = new List<string>();
+    
+    /// <summary>
+    /// Gets or sets a list of callbacks that are invoked when the Python engine is being configured.
+    /// </summary>
+    public ICollection<Action<ScriptScope>> ScriptScopes { get; } = new List<Action<ScriptScope>>();
     
     /// <summary>
     /// Appends a script to the Python engine.
@@ -30,5 +36,13 @@ public class PythonOptions
     public void AddScript(string script)
     {
         Scripts.Add(script);
+    }
+    
+    /// <summary>
+    /// Registers a callback that is invoked when the Python engine is being configured.
+    /// </summary>
+    public void ConfigureScriptScope(Action<ScriptScope> configure)
+    {
+        ScriptScopes.Add(configure);
     }
 }
