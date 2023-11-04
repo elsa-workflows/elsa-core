@@ -1,4 +1,7 @@
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
+// ReSharper disable InconsistentNaming
 
 namespace Elsa.Python.Models;
 
@@ -19,4 +22,14 @@ public class InputProxy
     /// Gets the expression execution context.
     /// </summary>
     public ExpressionExecutionContext Context { get; set; }
+    
+    /// <summary>
+    /// Gets the value of the specified input.
+    /// </summary>
+    public object? get(string name) => Context.GetInput(name);
+    
+    /// <summary>
+    /// Gets the value of the specified input.
+    /// </summary>
+    public object? get(Type type, string name) => Context.GetInput(name).ConvertTo(type);
 }

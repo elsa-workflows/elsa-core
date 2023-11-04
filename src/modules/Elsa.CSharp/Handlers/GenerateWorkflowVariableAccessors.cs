@@ -1,5 +1,6 @@
 using System.Text;
 using Elsa.CSharp.Notifications;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Humanizer;
@@ -30,7 +31,7 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         {
             var variableName = variable.Name.Pascalize();
             var variableType = variable.GetVariableType();
-            var friendlyTypeName = GetFriendlyTypeName(variableType);
+            var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Angle);
             sb.AppendLine($"\tpublic {friendlyTypeName} {variableName}");
             sb.AppendLine("\t{");
             sb.AppendLine($"\t\tget => Get<{friendlyTypeName}>(\"{variableName}\");");
@@ -42,30 +43,5 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         sb.AppendLine("var Variable = new WorkflowVariablesProxy(ExecutionContext);");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Gets a friendly type name for the specified type that is suitable for constructing C# code.
-    /// </summary>
-    private static string GetFriendlyTypeName(Type type)
-    {
-        if (!type.IsGenericType)
-            return type.FullName!;
-
-        var sb = new StringBuilder();
-        sb.Append(type.Namespace);
-        sb.Append('.');
-        sb.Append(type.Name[..type.Name.IndexOf('`')]);
-        sb.Append('<');
-        var genericArgs = type.GetGenericArguments();
-        for (var i = 0; i < genericArgs.Length; i++)
-        {
-            if (i > 0)
-                sb.Append(", ");
-            sb.Append(GetFriendlyTypeName(genericArgs[i]));
-        }
-
-        sb.Append('>');
-        return sb.ToString();
     }
 }

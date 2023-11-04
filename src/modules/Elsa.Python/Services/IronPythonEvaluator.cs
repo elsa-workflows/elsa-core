@@ -4,7 +4,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Python.Contracts;
 using Elsa.Python.Models;
 using Elsa.Python.Notifications;
-using IronPython.Hosting;
 
 namespace Elsa.Python.Services;
 
@@ -28,8 +27,21 @@ public class IronPythonEvaluator : IPythonEvaluator
     {
         var engine = IronPython.Hosting.Python.CreateEngine();
         var scope = engine.CreateScope();
-        scope.SetVariable("execution_context", new ExecutionContextProxy(context));
         var notification = new EvaluatingPython(engine, scope, context);
+        
+        // Add imports.
+        notification.AppendScript(sb =>
+        {
+            sb.AppendLine("import System");
+            sb.AppendLine("import clr");
+        });
+        
+        // Add globals.
+        scope.SetVariable("execution_context", new ExecutionContextProxy(context));
+        scope.SetVariable("input", new InputProxy(context));
+        scope.SetVariable("output", new OutputProxy(context));
+        scope.SetVariable("outcome", new OutcomeProxy(context));
+        
         await _notificationSender.SendAsync(notification, cancellationToken);
         var result = (object?)engine.Execute(expression, scope);
         return result.ConvertTo(returnType);
