@@ -87,6 +87,19 @@ namespace Elsa.Services
 
             foreach (var nestedProperty in nestedProperties)
             {
+
+                var propertyName = nestedInstanceName == null ? nestedProperty.Name : $"{nestedInstanceName}_{nestedProperty.Name}";
+                if (providers.TryGetValue(propertyName, out var provider))
+                {
+                    var value = await provider.GetValueAsync(activityExecutionContext, cancellationToken);
+                    
+                    if (value != null)
+                    {
+                        nestedProperty.SetValue(nestedInstance, value);
+                        continue;
+                    }
+                }
+
                 var instance = Activator.CreateInstance(nestedProperty.PropertyType);
 
                 var nextInstanceName = nestedInstanceName == null ? nestedProperty.Name : $"{nestedInstanceName}_{nestedProperty.Name}";

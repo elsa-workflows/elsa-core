@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Rebus.RabbitMq;
 
 namespace Elsa.Activities.RabbitMq.Services
 {
@@ -41,7 +42,9 @@ namespace Elsa.Activities.RabbitMq.Services
                 }))
                 .Transport(t =>
                 {
-                    t.UseRabbitMq(Configuration.ConnectionString, Configuration.ClientId).InputQueueOptions(x => x.SetAutoDelete(Configuration.AutoDeleteQueue));
+                    t.UseRabbitMq(Configuration.ConnectionString, Configuration.ClientId)
+                        .InputQueueOptions(x => x.SetAutoDelete(Configuration.AutoDeleteQueue))
+                        .Ssl(new SslSettings(Configuration.EnableSSL, Configuration.SslHost, version: Configuration.SslProtocols));
                 })
                 .Start();
 
@@ -64,7 +67,11 @@ namespace Elsa.Activities.RabbitMq.Services
         {
             _bus = Configure
                 .With(_activator)
-                .Transport(t => t.UseRabbitMqAsOneWayClient(Configuration.ConnectionString).InputQueueOptions(o => o.SetAutoDelete(autoDelete: true)))
+                .Transport(t =>
+                {
+                    t.UseRabbitMqAsOneWayClient(Configuration.ConnectionString).InputQueueOptions(o => o.SetAutoDelete(autoDelete: true))
+                        .Ssl(new SslSettings(Configuration.EnableSSL, Configuration.SslHost, version: Configuration.SslProtocols));
+                })
                 .Start();
         }
 
