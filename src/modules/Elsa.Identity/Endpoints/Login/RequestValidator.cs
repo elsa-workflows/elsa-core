@@ -9,7 +9,7 @@ internal class RequestValidator : Validator<Request>
 {
     public RequestValidator()
     {
-        RuleFor(x => x.Username).NotEmpty();
-        RuleFor(x => x.Password).NotEmpty();
+        RuleFor(x => x.Username).NotNull();
+        RuleFor(x => x.Password).NotNull();
     }
 }
