@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Security.Authentication;
 using Elsa.Activities.RabbitMq.Helpers;
 using Elsa.ActivityResults;
 using Elsa.Attributes;

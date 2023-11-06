@@ -5,8 +5,6 @@ using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Rebus.Messages;
 using System;
-using System.Linq;
-using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
