@@ -4,9 +4,8 @@ using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
-using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -19,12 +18,12 @@ namespace Elsa.Secrets.Api.Endpoints.OAuth2;
 [Produces(MediaTypeNames.Application.Json)]
 public class GetUrl : Controller
 {
-	private readonly ISecretsStore _secretStore;
+	private readonly ISecretsManager _secretsManager;
 	private readonly IConfiguration _configuration;
 
-	public GetUrl(ISecretsStore secretStore, IConfiguration configuration)
+	public GetUrl(ISecretsManager secretsManager, IConfiguration configuration)
 	{ 
-		_secretStore = secretStore;
+		_secretsManager = secretsManager;
 		_configuration = configuration;
 	}
 
@@ -32,7 +31,7 @@ public class GetUrl : Controller
 	[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
 	public async Task<ActionResult<IEnumerable<Secret>>> Handle(string secretId, CancellationToken cancellationToken = default)
 	{
-		var secret = await _secretStore.FindByIdAsync(secretId, cancellationToken);
+		var secret = await _secretsManager.GetSecretById(secretId, cancellationToken);
 		if (secret == null)
 			return NotFound();
 

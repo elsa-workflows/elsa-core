@@ -33,7 +33,7 @@ namespace Elsa.Secrets.Persistence.MongoDb
             secretsOptionsBuilder.UseSecretsMongoDbPersistence(options => options.ConnectionString = connectionString);
             services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
-            elsa.AddSecrets();
+            elsa.AddSecrets(configuration);
         }
     }
 }

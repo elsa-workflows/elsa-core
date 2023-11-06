@@ -17,10 +17,12 @@ namespace Elsa.Handlers
     public class PersistActivityPropertyState : INotificationHandler<ActivityExecuted>
     {
         private readonly IWorkflowStorageService _workflowStorageService;
+        private readonly IMediator _mediator;
 
-        public PersistActivityPropertyState(IWorkflowStorageService workflowStorageService)
+        public PersistActivityPropertyState(IWorkflowStorageService workflowStorageService, IMediator mediator)
         {
             _workflowStorageService = workflowStorageService;
+            _mediator = mediator;
         }
         
         public async Task Handle(ActivityExecuted notification, CancellationToken cancellationToken)
@@ -35,6 +37,13 @@ namespace Elsa.Handlers
             // Persist input properties.
             foreach (var property in inputProperties)
             {
+                var serializingProperty = new SerializingProperty(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
+                {
+                    continue;
+                }
+                
                 var value = property.GetValue(activity);
                 var inputAttr = property.GetCustomAttribute<ActivityInputAttribute>();
                 var defaultProviderName = inputAttr.DefaultWorkflowStorageProvider; 
@@ -44,6 +53,13 @@ namespace Elsa.Handlers
             // Persist output properties.
             foreach (var property in outputProperties)
             {
+                var serializingProperty = new SerializingProperty(activityExecutionContext.WorkflowExecutionContext.WorkflowBlueprint, activity.Id, property.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
+                if (!serializingProperty.CanSerialize)
+                {
+                    continue;
+                }
+
                 var value = property.GetValue(activity);
                 var outputAttr = property.GetCustomAttribute<ActivityOutputAttribute>();
                 var defaultProviderName = outputAttr.DefaultWorkflowStorageProvider; 

@@ -10,6 +10,28 @@ export const resources = {
       'Display': '{{template}}'
     }
   },
+  'es-ES': {
+    'default': {
+      'Previous': 'Anterior',
+      'Next': 'Siguiente',
+      'From': 'Mostrando desde',
+      'To': 'hasta',
+      'Of': 'de',
+      'Results': 'resultados',
+      'Display': '{{template}}'
+    }
+  },
+  'pt-PT': {
+    'default': {
+      'Previous': 'Anterior',
+      'Next': 'Seguinte',
+      'From': 'Mostrando',
+      'To': 'a',
+      'Of': 'de',
+      'Results': 'resultados',
+      'Display': '{{template}}'
+    }
+  },
   'zh-CN': {
     'default': {
       'Previous': '上一页',

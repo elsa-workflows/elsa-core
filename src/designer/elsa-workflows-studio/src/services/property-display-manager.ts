@@ -24,9 +24,9 @@ export class PropertyDisplayManager {
     this.drivers[controlType] = driverFactory;
   }
 
-  display(model: ActivityModel | SecretModel, property: ActivityPropertyDescriptor | SecretPropertyDescriptor, onUpdated?: () => void) {
+  display(model: ActivityModel | SecretModel, property: ActivityPropertyDescriptor | SecretPropertyDescriptor, onUpdated?: () => void, isEncrypted?: boolean) {
     const driver = this.getDriver(property.uiHint);
-    return driver.display(model, property, onUpdated);
+    return driver.display(model, property, onUpdated, isEncrypted);
   }
 
   update(model: ActivityModel | SecretModel, property: ActivityPropertyDescriptor | SecretPropertyDescriptor, form: FormData) {

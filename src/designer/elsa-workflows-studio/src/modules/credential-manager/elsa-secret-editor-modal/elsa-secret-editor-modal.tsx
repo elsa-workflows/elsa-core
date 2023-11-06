@@ -6,7 +6,7 @@ import { loadTranslations } from "../../../components/i18n/i18n-loader";
 import { eventBus, propertyDisplayManager } from "../../../services";
 import { FormContext, textInput } from "../../../utils/forms";
 import secretState from "../utils/secret.store";
-import { SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
+import { SecretDefinitionProperty, SecretDescriptor, SecretEditorRenderProps, SecretModel, SecretPropertyDescriptor } from "../models/secret.model";
 import { SecretEventTypes } from "../models/secret.events";
 import state from '../../../utils/store';
 import { SyntaxNames } from '../../../models';
@@ -146,6 +146,7 @@ export class ElsaSecretEditorModal {
   };
 
   onShowSecretEditor = async (secret: SecretModel, animate: boolean) => {
+
     this.secretModel = JSON.parse(JSON.stringify(secret));
     this.secretDescriptor = secretState.secretsDescriptors.find(x => x.type == secret.type);
     this.formContext = new FormContext(this.secretModel, newValue => this.secretModel = newValue);
@@ -250,11 +251,21 @@ export class ElsaSecretEditorModal {
     );
   }
 
+  propertyChanged(property: SecretDefinitionProperty) {
+    this.updateCounter++
+
+    if (property?.isEncrypted) {
+      property.isEncrypted = false;
+    }
+  }
+
   renderPropertyEditor(secret: SecretModel, property: SecretPropertyDescriptor) {
+    var propertyValue = secret.properties.find(x => x.name === property.name);
+
     const key = `secret-property-input:${secret.id}:${property.name}`;
-    const display = propertyDisplayManager.display(secret, property);
+    const display = propertyDisplayManager.display(secret, property, null, propertyValue?.isEncrypted);
     const id = `${property.name}Control`;
 
-    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display} onChange={() => this.updateCounter++}/>;
+    return <elsa-control key={key} id={id} class="sm:elsa-col-span-6" content={display} onChange={() => this.propertyChanged(propertyValue)}/>;
   }
 }

@@ -13,8 +13,8 @@ using Elsa.Services.Models;
 using LinqKit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Storage.Net;
-using Storage.Net.Blobs;
+using FluentStorage;
+using FluentStorage.Blobs;
 
 namespace Elsa.Providers.Workflows
 {

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
+using Elsa.Events;
 using Elsa.Exceptions;
 using Elsa.Metadata;
 using Elsa.Models;
@@ -10,6 +11,7 @@ using Elsa.Server.Api.Endpoints.WorkflowRegistry;
 using Elsa.Server.Api.Mapping;
 using Elsa.Services;
 using Elsa.Services.Models;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Server.Api.Services
@@ -20,13 +22,15 @@ namespace Elsa.Server.Api.Services
         private readonly IActivityTypeService _activityTypeService;
         private readonly IMapper _mapper;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IMediator _mediator;
 
-        public WorkflowBlueprintMapper(IWorkflowBlueprintReflector workflowBlueprintReflector, IActivityTypeService activityTypeService, IMapper mapper, IServiceScopeFactory serviceScopeFactory)
+        public WorkflowBlueprintMapper(IWorkflowBlueprintReflector workflowBlueprintReflector, IActivityTypeService activityTypeService, IMapper mapper, IServiceScopeFactory serviceScopeFactory, IMediator mediator)
         {
             _workflowBlueprintReflector = workflowBlueprintReflector;
             _activityTypeService = activityTypeService;
             _mapper = mapper;
             _serviceScopeFactory = serviceScopeFactory;
+            _mediator = mediator;
         }
 
         public async ValueTask<WorkflowBlueprintModel> MapAsync(IWorkflowBlueprint workflowBlueprint, CancellationToken cancellationToken = default)
@@ -70,17 +74,23 @@ namespace Elsa.Server.Api.Services
             return (inputProperties, outputProperties);
         }
 
-        private static async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken)
+        private async Task<object?> GetPropertyValueAsync(IWorkflowBlueprint workflowBlueprint, IActivityBlueprintWrapper activityBlueprintWrapper, ActivityInputDescriptor propertyDescriptor, CancellationToken cancellationToken)
         {
             if (propertyDescriptor.IsDesignerCritical)
             {
-                try
+                var serializingProperty = new SerializingProperty(workflowBlueprint, activityBlueprintWrapper.ActivityBlueprint.Id, propertyDescriptor.Name);
+                await _mediator.Publish(serializingProperty, cancellationToken);
+
+                if (serializingProperty.CanSerialize)
                 {
-                    return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
-                }
-                catch (Exception e)
-                {
-                    throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                    try
+                    {
+                        return await activityBlueprintWrapper.EvaluatePropertyValueAsync(propertyDescriptor.Name, cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new WorkflowException("Failed to evaluate a designer-critical property value. Please make sure that the value does not rely on external context.", e);
+                    }
                 }
             }
 

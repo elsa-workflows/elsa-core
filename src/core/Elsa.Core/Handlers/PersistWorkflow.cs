@@ -27,7 +27,7 @@ namespace Elsa.Handlers
         {
             var behavior = notification.WorkflowExecutionContext.WorkflowBlueprint.PersistenceBehavior;
 
-            if (behavior == WorkflowPersistenceBehavior.ActivityExecuted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
+            if (behavior == WorkflowPersistenceBehavior.ActivityExecuted || behavior == WorkflowPersistenceBehavior.WorkflowPassCompleted || notification.ActivityExecutionContext.ActivityBlueprint.PersistWorkflow)
                 await SaveWorkflowAsync(notification.WorkflowExecutionContext.WorkflowInstance, cancellationToken);
         }
 

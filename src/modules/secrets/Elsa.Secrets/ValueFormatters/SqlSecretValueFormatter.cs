@@ -14,9 +14,18 @@ namespace Elsa.Secrets.ValueFormatters
 
         public virtual string SettingSeparator => ";";
 
-        public Task<string> FormatSecretValue(Secret secret) => Task.FromResult(ConvertPropertiesToString(secret.Properties, KeyValueSeparator, SettingSeparator));
+        public Task<string> FormatSecretValue(Secret secret)
+        {
+            return Task.FromResult(ConvertPropertiesToString(secret.Properties, KeyValueSeparator, SettingSeparator));
+        }
 
-        private static string ConvertPropertiesToString(ICollection<SecretProperty> properties, string keyValueSeparator, string settingSeparator)
+        public bool IsSecretValueSensitiveData(Secret secret)
+        {
+            var usedProperties = secret.Properties.Where(x => x.Expressions.Count > 0);
+            return usedProperties.Any(x => x.IsEncrypted);
+        }
+
+        private static string ConvertPropertiesToString(IEnumerable<SecretProperty> properties, string keyValueSeparator, string settingSeparator)
         {
             var sb = new StringBuilder();
             

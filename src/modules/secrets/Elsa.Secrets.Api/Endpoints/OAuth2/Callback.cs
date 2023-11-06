@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Http.Services;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -14,13 +15,13 @@ namespace Elsa.Secrets.Api.Endpoints.OAuth2
     [Produces("application/json")]
     public class SetAuthCodeCallback : Controller
     {
-        private readonly ISecretsStore _secretsStore;
+        private readonly ISecretsManager _secretsManager;
         private readonly IOAuth2TokenService _tokenService;
         private readonly IConfiguration _configuration;
         
-        public SetAuthCodeCallback(ISecretsStore secretsStore, IOAuth2TokenService tokenService, IConfiguration configuration)
+        public SetAuthCodeCallback(ISecretsManager secretsManager, IOAuth2TokenService tokenService, IConfiguration configuration)
         {
-            _secretsStore = secretsStore;
+            _secretsManager = secretsManager;
             _tokenService = tokenService;
             _configuration = configuration;
         }
@@ -28,7 +29,7 @@ namespace Elsa.Secrets.Api.Endpoints.OAuth2
         [HttpGet]
         public async Task<ActionResult> Handle(string state, string code, CancellationToken cancellationToken = default)
         {
-            var secret = await _secretsStore.FindByIdAsync(state, cancellationToken);
+            var secret = await _secretsManager.GetSecretById(state, cancellationToken);
 
             if (secret == null)
                 return NotFound();
