@@ -5,6 +5,8 @@ using Elsa.Services.Models;
 using Microsoft.Extensions.Logging;
 using Rebus.Messages;
 using System;
+using System.Linq;
+using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,7 +52,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
             var config = _client.Configuration;
 
-            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
+            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers, config.EnableSSL, config.SslHost, config.SslProtocolsString);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
             using var scope = _scopeFactory.CreateScope();
