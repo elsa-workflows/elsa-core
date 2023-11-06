@@ -4,7 +4,7 @@ import {  eventBus } from "../../..";
 import { WebhookDefinitionSummary } from "../../elsa-webhooks/models";
 import Tunnel from "../../../data/dashboard";
 import { createElsaSecretsClient, ElsaSecretsClient } from "../services/credential-manager.client";
-import { SecretDescriptor, SecretModel } from "../models/secret.model";
+import { SecretDefinitionProperty, SecretDescriptor, SecretModel } from "../models/secret.model";
 import { SecretEventTypes } from "../models/secret.events";
 
 @Component({
@@ -68,13 +68,14 @@ export class CredentialManagerListScreen {
       await this.showSecretEditorInternal(secretModel, true);
     }
 
-    mapProperties(properties) {
+    mapProperties(properties: SecretDefinitionProperty[]) {
       return properties.map(prop => {
         return {
           expressions: {
             Literal: prop.expressions.Literal
           },
-          name: prop.name
+          name: prop.name,
+          isEncrypted: prop.isEncrypted
         }
       });
     }

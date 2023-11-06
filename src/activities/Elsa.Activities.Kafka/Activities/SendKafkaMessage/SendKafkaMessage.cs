@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Confluent.Kafka;
 using Elsa.Activities.Kafka.Configuration;
 using Elsa.Activities.Kafka.Helpers;
 using Elsa.Activities.Kafka.Services;
@@ -10,6 +7,9 @@ using Elsa.Design;
 using Elsa.Expressions;
 using Elsa.Services;
 using Elsa.Services.Models;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.Kafka.Activities.SendKafkaMessage
 {
@@ -22,10 +22,12 @@ namespace Elsa.Activities.Kafka.Activities.SendKafkaMessage
     public class SendKafkaMessage : Activity
     {
         private readonly IMessageSenderClientFactory _messageSenderClientFactory;
+        private readonly KafkaOptions _kafkaOptions;
 
-        public SendKafkaMessage(IMessageSenderClientFactory messageSenderClientFactory)
+        public SendKafkaMessage(IMessageSenderClientFactory messageSenderClientFactory, KafkaOptions kafkaOptions)
         {
             _messageSenderClientFactory = messageSenderClientFactory;
+            _kafkaOptions = kafkaOptions;
         }
 
         [ActivityInput(
@@ -62,7 +64,7 @@ namespace Elsa.Activities.Kafka.Activities.SendKafkaMessage
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new KafkaConfiguration(ConnectionString, Topic, "", Headers, ClientId);
+            var config = new KafkaConfiguration(String.IsNullOrEmpty(ConnectionString) ? _kafkaOptions.DefaultConnectionString ?? "" : ConnectionString, Topic, "", Headers, ClientId);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 

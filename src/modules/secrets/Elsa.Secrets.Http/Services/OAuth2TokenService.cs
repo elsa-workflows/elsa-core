@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Elsa.Secrets.Http.Extensions;
 using Elsa.Secrets.Http.Models;
+using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
 using Microsoft.Extensions.Logging;
@@ -24,13 +25,13 @@ public class OAuth2TokenService : IOAuth2TokenService
 {
 	private readonly ILogger<OAuth2TokenService> _logger;
 	private readonly IHttpClientFactory _httpClientFactory;
-	private readonly ISecretsStore _secretsStore;
+	private readonly ISecretsManager _secretsManager;
 
-	public OAuth2TokenService(IHttpClientFactory httpClientFactory, ILogger<OAuth2TokenService> logger, ISecretsStore secretsStore)
+	public OAuth2TokenService(IHttpClientFactory httpClientFactory, ILogger<OAuth2TokenService> logger, ISecretsManager secretsManager)
 	{
 		_logger = logger;
 		_httpClientFactory = httpClientFactory;
-		_secretsStore = secretsStore;
+		_secretsManager = secretsManager;
 	}
 	
 	private static string Base64Encode(string plainText) 
@@ -89,7 +90,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 			
 			var tokenData = result.ToTokenData();
 			secret.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
-			await _secretsStore.UpdateAsync(secret);
+			await _secretsManager.AddOrUpdateSecret(secret);
 
 			return result;
 		}
@@ -131,7 +132,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 			if (response.StatusCode == HttpStatusCode.Unauthorized || !string.IsNullOrEmpty(result?.Error))
 			{
 				secret.RemoveProperty("Token");
-				await _secretsStore.UpdateAsync(secret);
+				await _secretsManager.AddOrUpdateSecret(secret);
 				throw new Exception("OAuth2 refresh token has expired - credential must be authorized with OAuth2 provider");
 			}
 
@@ -146,7 +147,7 @@ public class OAuth2TokenService : IOAuth2TokenService
 				tokenData.RefreshToken = refreshToken;
 			}
 			secret.AddOrUpdateProperty("Token", JsonConvert.SerializeObject(tokenData));
-			await _secretsStore.UpdateAsync(secret);
+			await _secretsManager.AddOrUpdateSecret(secret);
 
 			return result;
 		}

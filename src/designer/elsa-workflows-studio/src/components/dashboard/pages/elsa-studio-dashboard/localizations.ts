@@ -5,6 +5,11 @@ export const resources = {
       'WorkflowInstances': 'Workflow Instances',
       'WorkflowRegistry': 'Workflow Registry',
       'WebhookDefinitions': 'Webhook Definitions',
+    },
+    menuItems: {
+      'workflow-definitions': 'Workflow Definitions',
+      'workflow-instances': 'Workflow Instances',
+      'workflow-registry': 'Workflow Registry',
     }
   },
   'zh-CN': {
@@ -42,6 +47,19 @@ export const resources = {
       'workflow-definitions': 'Definiciones de flujos',
       'workflow-instances': 'Ejecuciones de flujos',
       'workflow-registry': 'Registro de flujos',
+    }
+  },
+  'pt-PT': {
+    default: {
+      'WorkflowDefinitions': 'Definições de Fluxos',
+      'WorkflowInstances': 'Execuções de Fluxos',
+      'WorkflowRegistry': 'Registro de Fluxos',
+      'WebhookDefinitions': 'Definições de Webhooks',
+    },
+    menuItems: {
+      'workflow-definitions': 'Definições de Fluxos',
+      'workflow-instances': 'Execuções de Fluxos',
+      'workflow-registry': 'Registro de Fluxos',
     }
   },
   'de-DE': {

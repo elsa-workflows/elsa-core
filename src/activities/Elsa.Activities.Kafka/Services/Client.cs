@@ -39,7 +39,7 @@ namespace Elsa.Activities.Kafka.Services
 
             var consumerConfig = new ConsumerConfig(Configuration.Headers)
             {
-                BootstrapServers = Configuration.ConnectionString,
+                BootstrapServers = String.IsNullOrEmpty(Configuration.ConnectionString) ? _kafkaOptions.DefaultConnectionString ?? "" : Configuration.ConnectionString,
                 GroupId = group,
                 AutoOffsetReset = Configuration.AutoOffsetReset,
                 SaslMechanism = _kafkaOptions.SaslMechanism,
@@ -77,7 +77,7 @@ namespace Elsa.Activities.Kafka.Services
                           }
                       }, _cancellationToken);
             }
-            
+
             return Task.CompletedTask;
         }
 

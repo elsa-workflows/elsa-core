@@ -35,7 +35,7 @@ namespace Elsa.Secrets.Persistence.EntityFramework.Core
             secretsOptionsBuilder.UseEntityFrameworkPersistence(options => Configure(options, connectionString));
             services.AddScoped(sp => secretsOptionsBuilder.SecretsOptions.SecretsStoreFactory(sp));
 
-            elsa.AddSecrets();
+            elsa.AddSecrets(configuration);
         }
 
         protected virtual string GetDefaultConnectionString() => throw new Exception($"No connection string specified for the {ProviderName} provider");
