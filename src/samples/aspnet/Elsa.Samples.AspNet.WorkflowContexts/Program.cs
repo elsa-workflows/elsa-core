@@ -37,13 +37,18 @@ services
                 .UsePersistentVariables()
                 .UseBookmarkPersistence()
                 .UseWorkflowExecutionLogPersistence()
+                .UseWorkflowExecutionLogPersistence()
+                .UseActivityExecutionLogPersistence()
                 .UseWorkflowContexts()
+                .UseExceptionHandling()
                 .UseDefaultActivityScheduler()
             );
             
             // Configure activity execution pipeline to handle workflow contexts.
             workflows.WithActivityExecutionPipeline(pipeline => pipeline
                 .Reset()
+                .UseExceptionHandling()
+                .UseExecutionLogging()
                 .UseWorkflowContexts()
                 .UseBackgroundActivityInvoker()
             );
