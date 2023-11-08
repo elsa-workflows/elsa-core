@@ -47,6 +47,21 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration)]
         public string ConnectionString { get; set; } = default!;
 
+
+        [ActivityInput( Order = 3,Category = PropertyCategories.Configuration)]
+        public bool EnableSSL { get; set; }
+
+        [ActivityInput( Order = 4,Category = PropertyCategories.Configuration)]
+        public string SSLHost { get; set; }
+
+        [ActivityInput(
+            Order = 5,
+            Category = PropertyCategories.Configuration,
+            UIHint = ActivityInputUIHints.CheckList,
+            DefaultSyntax = SyntaxNames.Json,
+            Options = new[] { "Ssl2", "Ssl3", "Tls", "Tls11", "Tls12", "Tls13" })]
+        public HashSet<string> SslProtocols { get; set; } = new() { };
+
         public string ClientId => RabbitMqClientConfigurationHelper.GetClientId(Id);
 
 
