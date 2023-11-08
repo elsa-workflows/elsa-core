@@ -145,6 +145,7 @@ export namespace Components {
         "propertyModel": ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
+        "dialogWidth": string;
         "hide": (animate?: boolean) => Promise<void>;
         "show": (animate?: boolean) => Promise<void>;
     }
@@ -1065,6 +1066,7 @@ declare namespace LocalJSX {
         "propertyModel"?: ActivityDefinitionProperty;
     }
     interface ElsaModalDialog {
+        "dialogWidth"?: string;
         "onHidden"?: (event: CustomEvent<any>) => void;
         "onShown"?: (event: CustomEvent<any>) => void;
     }

@@ -680,12 +680,12 @@ export class ElsaWorkflowDefinitionEditorScreen {
     return (
       <elsa-modal-dialog ref={el => {
           monacoEditorDialogService.monacoEditorDialog = el;
-        }}>
+        }} dialogWidth='80vw'>
           <div slot="content" class="elsa-py-8 elsa-px-4">
             <elsa-monaco
               value=""
               language="javascript"
-              editor-height="400px"
+              editor-height="80vh"
               single-line={false}
               onValueChanged={e => {
                 monacoEditorDialogService.currentValue = e.detail.value;

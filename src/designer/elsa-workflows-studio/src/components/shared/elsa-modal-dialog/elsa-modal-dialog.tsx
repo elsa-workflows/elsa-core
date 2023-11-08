@@ -1,4 +1,4 @@
-import {Component, Host, h, State, Listen, Method, Event, EventEmitter} from '@stencil/core';
+import {Component, Host, h, State, Listen, Method, Event, EventEmitter, Prop} from '@stencil/core';
 import {enter, leave} from 'el-transition'
 import {eventBus} from "../../../services";
 import {EventTypes} from "../../../models";
@@ -13,6 +13,7 @@ export class ElsaModalDialog {
   @State() isVisible: boolean;
   overlay: HTMLElement
   modal: HTMLElement
+  @Prop({attribute : 'dialog-width', reflect: true}) dialogWidth: string = '56em'
 
   render() {
     return this.renderModal();
@@ -87,8 +88,8 @@ export class ElsaModalDialog {
                  data-transition-leave="elsa-ease-in elsa-duration-200"
                  data-transition-leave-start="elsa-opacity-0 elsa-translate-y-0 sm:elsa-scale-100"
                  data-transition-leave-end="elsa-opacity-0 elsa-translate-y-4 sm:elsa-translate-y-0 sm:elsa-scale-95"
-                 class="hidden elsa-inline-block sm:elsa-align-top elsa-bg-white elsa-rounded-lg elsa-text-left elsa-overflow-visible elsa-shadow-xl elsa-transform elsa-transition-all sm:elsa-my-8 sm:elsa-align-top sm:elsa-max-w-4xl sm:elsa-w-full"
-                 role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+                 class="hidden elsa-inline-block sm:elsa-align-top elsa-bg-white elsa-rounded-lg elsa-text-left elsa-overflow-visible elsa-shadow-xl elsa-transform elsa-transition-all sm:elsa-my-8 sm:elsa-align-top sm:elsa-w-full"
+                 role="dialog" aria-modal="true" aria-labelledby="modal-headline" style={{'max-width' : this.dialogWidth}}>
               <div class="modal-content">
                 <slot name="content"/>
               </div>
