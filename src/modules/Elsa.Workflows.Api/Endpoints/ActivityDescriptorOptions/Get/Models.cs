@@ -1,12 +1,16 @@
+using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;
 
 internal class Request
 {
-    public string TypeName { get; set; }
+    
+    public string ActivityTypeName { get; set; } = default!;
     public int? Version { get; set; }
-    public string PropertyName { get; set; }
+    public string PropertyName { get; set; } = default!;
+    
+    public object? Context { get; set; }
 }
 
 [PublicAPI]

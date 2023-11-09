@@ -24,14 +24,14 @@ internal class Get : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override void Configure()
     {
-        Get("/descriptors/activities/{typeName}/options/{propertyName}");
+        Get("/descriptors/activities/{activityTypeName}/options/{propertyName}");
         ConfigurePermissions("read:*", "read:activity-descriptors-options");
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var descriptor = request.Version == null ? _registry.Find(request.TypeName) : _registry.Find(request.TypeName, request.Version.Value);
+        var descriptor = request.Version == null ? _registry.Find(request.ActivityTypeName) : _registry.Find(request.ActivityTypeName, request.Version.Value);
         if (descriptor == null)
             await SendNotFoundAsync(cancellationToken);
 
@@ -42,7 +42,7 @@ internal class Get : ElsaEndpoint<Request, Response>
 
         var optionsResolver = new PropertyOptionsResolver(_serviceProvider);
 
-        var inputOptions = await optionsResolver.GetOptionsAsync(propertyDescriptor!.PropertyInfo, cancellationToken);
+        var inputOptions = await optionsResolver.GetOptionsAsync(propertyDescriptor!.PropertyInfo, request.Context, cancellationToken);
 
         await SendOkAsync(new Response(inputOptions), cancellationToken);
     }
