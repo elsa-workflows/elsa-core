@@ -1,4 +1,5 @@
-﻿using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
+﻿using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
+using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
@@ -14,12 +15,16 @@ public interface IElsaClient
     /// Gets the workflow definitions API.
     /// </summary>
     IWorkflowDefinitionsApi WorkflowDefinitions { get; }
-    
+
     /// <summary>
     /// Gets the activity descriptors API.
     /// </summary>
     IActivityDescriptorsApi ActivityDescriptors { get; }
-    
+
+    /// <summary>
+    /// Get the activity descriptor Options API
+    /// </summary>
+    IActivityDescriptorOptionsApi ActivityDescriptorOptions { get; }
     /// <summary>
     /// Gets the workflow instances API.
     /// </summary>

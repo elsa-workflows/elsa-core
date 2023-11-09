@@ -1,4 +1,5 @@
 using Elsa.Api.Client.Contracts;
+using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -15,11 +16,13 @@ public class ElsaClient : IElsaClient
     public ElsaClient(IWorkflowDefinitionsApi workflowDefinitions
         , IWorkflowInstancesApi workflowInstances
         , IActivityDescriptorsApi activityDescriptors
+        , IActivityDescriptorOptionsApi activityDescriptorOptions
         , IJavaScriptApi javaScript)
     {
         WorkflowDefinitions = workflowDefinitions;
         WorkflowInstances = workflowInstances;
         ActivityDescriptors = activityDescriptors;
+        ActivityDescriptorOptions = activityDescriptorOptions;
         JavaScript = javaScript;
     }
 
@@ -28,6 +31,9 @@ public class ElsaClient : IElsaClient
 
     /// <inheritdoc />
     public IActivityDescriptorsApi ActivityDescriptors { get; }
+    
+    /// <inheritdoc />
+    public IActivityDescriptorOptionsApi ActivityDescriptorOptions { get; }
 
     /// <inheritdoc />
     public IWorkflowInstancesApi WorkflowInstances { get; }
