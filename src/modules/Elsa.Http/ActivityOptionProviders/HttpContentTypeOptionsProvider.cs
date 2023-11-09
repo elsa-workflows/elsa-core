@@ -24,7 +24,7 @@ public class HttpContentTypeOptionsProvider : IActivityPropertyOptionsProvider
     }
 
     /// <inheritdoc />
-    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property, CancellationToken cancellationToken = default)
+    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property,object? context, CancellationToken cancellationToken = default)
     {
         var contentTypes = _httpContentFactories.SelectMany(x => x.SupportedContentTypes).Distinct().OrderBy(x => x).ToArray();
 

@@ -24,6 +24,12 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     /// <inheritdoc />
     public async ValueTask<IDictionary<string, object>?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
+        return await GetOptionsAsync(propertyInfo,null,  cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<IDictionary<string, object>?> GetOptionsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
 
         if (inputAttribute?.OptionsProvider != null)
@@ -32,7 +38,7 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
 
             using var scope = _serviceProvider.CreateScope();
             var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
-            return await provider.GetOptionsAsync(propertyInfo, cancellationToken);
+            return await provider.GetOptionsAsync(propertyInfo,context,  cancellationToken);
         }
 
         if (inputAttribute?.OptionsMethod is not null)
