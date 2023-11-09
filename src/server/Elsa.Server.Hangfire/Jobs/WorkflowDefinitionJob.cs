@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Exceptions;
 using Elsa.Services;
+using Hangfire;
 
 namespace Elsa.Server.Hangfire.Jobs
 {
@@ -10,7 +11,8 @@ namespace Elsa.Server.Hangfire.Jobs
         private readonly IWorkflowLaunchpad _launchpad;
         public WorkflowDefinitionJob(IWorkflowLaunchpad launchpad) => _launchpad = launchpad;
 
-        public async Task ExecuteAsync(ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+        [JobDisplayName("{0}")]
+        public async Task ExecuteAsync(string jobName, ExecuteWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
         {
             try
             {

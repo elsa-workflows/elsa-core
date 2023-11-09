@@ -104,11 +104,11 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             foreach (var job in recurringJobs)
                 _recurringJobManager.RemoveIfExists(job.Id);
         }
-
+        
         private IEnumerable<RecurringJobDto> QueryRecurringJobs()
         {
             using var connection = _jobStorage.GetConnection();
-            return connection.GetRecurringJobs().Where(x => x.Job.Type == typeof(RunHangfireWorkflowInstanceJob));
+            return connection.GetRecurringJobs().Where(x => x.Job?.Type == typeof(RunHangfireWorkflowInstanceJob));
         }
 
         private void DeleteScheduledJob(RunHangfireWorkflowInstanceJobModel data)

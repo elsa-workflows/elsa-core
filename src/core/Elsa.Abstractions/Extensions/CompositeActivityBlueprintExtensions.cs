@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Elsa.Models;
 using Elsa.Services.Models;
@@ -9,6 +9,19 @@ namespace Elsa
     {
         public static IEnumerable<IActivityBlueprint> GetEndActivities(this ICompositeActivityBlueprint workflowBlueprint) => workflowBlueprint.Activities.Where(x => !workflowBlueprint.GetOutboundConnections(x.Id).Any());
         public static IActivityBlueprint? GetActivity(this ICompositeActivityBlueprint workflowBlueprint, string id) => workflowBlueprint.Activities.FirstOrDefault(x => x.Id == id);
+        public static string? GetJobName(this ICompositeActivityBlueprint workflowBlueprint, string? activityId = null)
+        {
+            if (string.IsNullOrWhiteSpace(activityId) == false)
+            {
+                var activity = workflowBlueprint?.GetActivity(activityId);
+                if (activity is not null)
+                    return $"{workflowBlueprint?.DisplayName ?? workflowBlueprint?.Name ?? workflowBlueprint?.Id}->{activity?.DisplayName ?? activity?.Name ?? activity?.Id}";
+            }
+            if (workflowBlueprint is not null)
+                return $"{workflowBlueprint?.DisplayName ?? workflowBlueprint?.Name ?? workflowBlueprint?.Id}";
+            return null;
+        }
+
         public static IEnumerable<IActivityBlueprint> GetActivities(this ICompositeActivityBlueprint workflowBlueprint, IEnumerable<string> ids) => workflowBlueprint.Activities.Where(x => ids.Contains(x.Id));
 
         public static IEnumerable<IActivityBlueprint> GetBlockingActivities(this ICompositeActivityBlueprint workflowBlueprint, WorkflowInstance workflowInstance) =>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -6,9 +7,12 @@ using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Hangfire.Extensions;
 using Elsa.Activities.Temporal.Hangfire.Jobs;
 using Elsa.Activities.Temporal.Hangfire.Models;
+using Elsa.Models;
+using Elsa.Services;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using NodaTime;
 
 namespace Elsa.Activities.Temporal.Hangfire.Services
@@ -17,6 +21,7 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
     {
         private readonly IBackgroundJobClient _backgroundJobClient;
         private readonly IRecurringJobManager _recurringJobManager;
+        private readonly IServiceProvider _serviceProvider;
         private readonly JobStorage _jobStorage;
 
         public HangfireWorkflowDefinitionScheduler(IBackgroundJobClient backgroundJobClient, IRecurringJobManager recurringJobManager, JobStorage jobStorage)
@@ -26,23 +31,23 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             _jobStorage = jobStorage;
         }
 
-        public Task ScheduleAsync(string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
+        public Task ScheduleAsync(string jobName, string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
         {
             var cronExpression = interval?.ToCronExpression();
             var data = CreateData(workflowDefinitionId, activityId, cronExpression);
 
-            ScheduleJob(data, startAt);
+            ScheduleJob(jobName, data, startAt);
 
             if (cronExpression != null)
-                ScheduleRecurringJob(data, cronExpression);
+                ScheduleRecurringJob(jobName, data, cronExpression);
 
             return Task.CompletedTask;
         }
 
-        public Task ScheduleAsync(string workflowDefinitionId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
+        public Task ScheduleAsync(string jobName, string workflowDefinitionId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
         {
             var data = CreateData(workflowDefinitionId, activityId, cronExpression);
-            ScheduleRecurringJob(data, cronExpression);
+            ScheduleRecurringJob(jobName, data, cronExpression);
             return Task.CompletedTask;
         }
 
@@ -68,12 +73,15 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             return Task.CompletedTask;
         }
 
-        private void ScheduleJob(RunHangfireWorkflowDefinitionJobModel data, Instant instant) => _backgroundJobClient.Schedule<RunHangfireWorkflowDefinitionJob>(job => job.ExecuteAsync(data), instant.ToDateTimeOffset());
+        private void ScheduleJob(string jobName, RunHangfireWorkflowDefinitionJobModel data, Instant instant)
+        {
+            _backgroundJobClient.Schedule<RunHangfireWorkflowDefinitionJob>(job => job.ExecuteAsync(jobName, data), instant.ToDateTimeOffset());
+        }
 
-        private void ScheduleRecurringJob(RunHangfireWorkflowDefinitionJobModel data, string cronExpression)
+        private void ScheduleRecurringJob(string jobName, RunHangfireWorkflowDefinitionJobModel data, string cronExpression)
         {
             var identity = data.GetIdentity();
-            _recurringJobManager.AddOrUpdate<RunHangfireWorkflowDefinitionJob>(identity, job => job.ExecuteAsync(data), cronExpression);
+            _recurringJobManager.AddOrUpdate<RunHangfireWorkflowDefinitionJob>(identity, job => job.ExecuteAsync(jobName, data), cronExpression);
         }
 
         private void DeleteRecurringJob(RunHangfireWorkflowDefinitionJobModel data)
@@ -149,7 +157,7 @@ namespace Elsa.Activities.Temporal.Hangfire.Services
             DeleteScheduledJobs(jobIds);
         }
 
-        private static RunHangfireWorkflowDefinitionJobModel GetJobModel(Job job) => (RunHangfireWorkflowDefinitionJobModel)job.Args[0];
+        private static RunHangfireWorkflowDefinitionJobModel GetJobModel(Job job) => (RunHangfireWorkflowDefinitionJobModel)job.Args[1];
 
         private static RunHangfireWorkflowDefinitionJobModel CreateData(string workflowDefinitionId, string activityId, string? cronExpression = default) => new(workflowDefinitionId, activityId, cronExpression);
     }

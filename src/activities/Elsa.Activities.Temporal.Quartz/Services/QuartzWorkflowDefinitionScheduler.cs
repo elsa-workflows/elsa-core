@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Activities.Temporal.Common.Services;
 using Elsa.Activities.Temporal.Quartz.Jobs;
@@ -28,7 +28,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             _logger = logger;
         }
 
-        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
+        public async Task ScheduleAsync(string jobName, string workflowDefinitionId, string activityId, Instant startAt, Duration? interval, CancellationToken cancellationToken = default)
         {
             var triggerBuilder = CreateTrigger(workflowDefinitionId, activityId).StartAt(startAt.ToDateTimeOffset());
             
@@ -39,7 +39,7 @@ namespace Elsa.Activities.Temporal.Quartz.Services
             await ScheduleJob(trigger, cancellationToken);
         }
 
-        public async Task ScheduleAsync(string workflowDefinitionId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
+        public async Task ScheduleAsync(string jobName, string workflowDefinitionId, string activityId, string cronExpression, CancellationToken cancellationToken = default)
         {
             var trigger = CreateTrigger(workflowDefinitionId, activityId).WithCronSchedule(cronExpression).Build();
             await ScheduleJob(trigger, cancellationToken);
