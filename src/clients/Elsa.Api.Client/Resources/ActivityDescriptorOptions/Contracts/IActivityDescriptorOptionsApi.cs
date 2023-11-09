@@ -12,10 +12,11 @@ public interface IActivityDescriptorOptionsApi
     /// <summary>
     /// Lists activity descriptors options.
     /// </summary>
-    /// <param name="typeName">Type Name of the activity</param>
-    /// <param name="propertyName"></param>
+    /// <param name="activityTypeName">The TypeName of the activity </param>
+    /// <param name="propertyName">The name of the property</param>
+    /// <param name="request">The context request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response containing the activity descriptors.</returns>
-    [Get("/descriptors/activities/{typeName}/options/{propertyName}")]
-    Task<GetActivityDescriptorOptionsResponse> GetAsync(string typeName, string propertyName, CancellationToken cancellationToken = default);
+    [Get("/descriptors/activities/{activityTypeName}/options/{propertyName}")]
+    Task<GetActivityDescriptorOptionsResponse> GetAsync(string activityTypeName, string propertyName, [Body]GetActivityDescriptorOptionsRequest request, CancellationToken cancellationToken = default);
 }
