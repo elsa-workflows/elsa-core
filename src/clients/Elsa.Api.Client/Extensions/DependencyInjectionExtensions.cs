@@ -4,6 +4,7 @@ using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.HttpMessageHandlers;
 using Elsa.Api.Client.Options;
+using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityExecutions.Contracts;
 using Elsa.Api.Client.Resources.Features.Contracts;
@@ -45,6 +46,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
         services.AddApi<IActivityDescriptorsApi>(builderOptions);
+        services.AddApi<IActivityDescriptorOptionsApi>(builderOptions);
         services.AddApi<IActivityExecutionsApi>(builderOptions);
         services.AddApi<IStorageDriversApi>(builderOptions);
         services.AddApi<IVariableTypesApi>(builderOptions);
