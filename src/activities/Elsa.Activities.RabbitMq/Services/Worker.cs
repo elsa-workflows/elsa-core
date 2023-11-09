@@ -50,7 +50,7 @@ namespace Elsa.Activities.RabbitMq.Services
 
             var config = _client.Configuration;
 
-            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers);
+            var bookmark = new MessageReceivedBookmark(config.ExchangeName, config.RoutingKey, config.ConnectionString, config.Headers, config.EnableSsl, config.SslHost, config.SslProtocolsString);
             var launchContext = new WorkflowsQuery(ActivityType, bookmark);
 
             using var scope = _scopeFactory.CreateScope();

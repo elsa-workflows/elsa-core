@@ -96,9 +96,12 @@ namespace Elsa.Activities.RabbitMq.Testing
                 var routingKey = await activity.EvaluatePropertyValueAsync(x => x.RoutingKey, cancellationToken);
                 var exchangeName = await activity.EvaluatePropertyValueAsync(x => x.ExchangeName, cancellationToken);
                 var headers = await activity.EvaluatePropertyValueAsync(x => x.Headers, cancellationToken);
+                var enableSSL = await activity.EvaluatePropertyValueAsync(x => x.EnableSsl, cancellationToken);
+                var sslHost = await activity.EvaluatePropertyValueAsync(x => x.SslHost, cancellationToken);
+                var sslProtocols = await activity.EvaluatePropertyValueAsync(x => x.SslProtocols, cancellationToken);
                 var clientId = RabbitMqClientConfigurationHelper.GetTestClientId(activity.ActivityBlueprint.Id);
 
-                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!, clientId, autoDeleteQueue: true);
+                var config = new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers!, clientId, enableSSL, sslHost, sslProtocols, autoDeleteQueue: true);
 
                 yield return config;
             }

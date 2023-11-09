@@ -108,9 +108,12 @@ namespace Elsa.Activities.RabbitMq.Services
             var exchangeName = bookmark.ExchangeName;
             var routingKey = bookmark.RoutingKey;
             var headers = bookmark.Headers;
+            var enableSsl = bookmark.SslEnabled;
+            var sslHost = bookmark.SslHost;
+            var sslProtocols = bookmark.SslProtocols;
             var clientId = RabbitMqClientConfigurationHelper.GetClientId(activityId);
 
-            return new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers, clientId);
+            return new RabbitMqBusConfiguration(connectionString!, exchangeName!, routingKey!, headers, clientId, enableSsl, sslHost, sslProtocols);
         }
 
         private async Task DisposeExistingWorkersAsync()

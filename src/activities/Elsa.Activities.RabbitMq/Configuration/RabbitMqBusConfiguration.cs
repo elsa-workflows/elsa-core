@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Authentication;
 
 namespace Elsa.Activities.RabbitMq.Configuration
 {
@@ -11,13 +13,19 @@ namespace Elsa.Activities.RabbitMq.Configuration
         public Dictionary<string, string> Headers { get; }
         public string ClientId { get; }
         public bool AutoDeleteQueue { get; }
+        public bool EnableSsl { get; }
+        public string SslHost { get; }
+        public SslProtocols SslProtocols { get; }
 
-        public RabbitMqBusConfiguration(string connectionString, string exchangeName, string routingKey, Dictionary<string, string> headers, string clientId, bool autoDeleteQueue = false)
+        public RabbitMqBusConfiguration(string connectionString, string exchangeName, string routingKey, Dictionary<string, string> headers, string clientId, bool enableSsl, string sslHost, IEnumerable<string> sslProtocols, bool autoDeleteQueue = false)
         {
             ConnectionString = connectionString;
             ExchangeName = exchangeName;
             RoutingKey = routingKey;
             Headers = headers ?? new Dictionary<string, string>();
+            EnableSsl = enableSsl;
+            SslHost = sslHost;
+            SslProtocols = ResolveSslProtocols(sslProtocols ?? Array.Empty<string>());
             ClientId = clientId;
             AutoDeleteQueue = autoDeleteQueue;
         }
@@ -30,5 +38,28 @@ namespace Elsa.Activities.RabbitMq.Configuration
         }
 
         public string TopicFullName => string.IsNullOrEmpty(ExchangeName) ? RoutingKey : $"{RoutingKey}@{ExchangeName}";
+
+        public IEnumerable<string> SslProtocolsString => Enum.GetValues(typeof(SslProtocols))
+            .Cast<SslProtocols>()
+            .Where(c => SslProtocols.HasFlag(c) && c != SslProtocols.None)
+            .Select(c => c.ToString());
+
+        private SslProtocols ResolveSslProtocols(IEnumerable<string> sslProtocols)
+        {
+            var parsed = sslProtocols
+                .Select(s =>
+                {
+                    var val = (SslProtocols)Enum.Parse(typeof(System.Security.Authentication.SslProtocols), s);
+                    return val;
+                }).ToList();
+
+            SslProtocols values = SslProtocols.None;
+
+            foreach (var sslProtocol in parsed)
+            {
+                values |= sslProtocol;
+            }
+            return values;
+        }
     }
 }
