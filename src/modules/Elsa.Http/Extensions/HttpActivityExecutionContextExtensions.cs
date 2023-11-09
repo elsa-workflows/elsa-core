@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Models;
@@ -20,7 +14,7 @@ internal static class HttpActivityExecutionContextExtensions
 
         if (contentParser == null)
             return null;
-        
+
         return await contentParser.ReadAsync(content, returnType, cancellationToken);
     }
 
@@ -28,19 +22,12 @@ internal static class HttpActivityExecutionContextExtensions
     {
         var value = context.Get(input.MemoryBlockReference());
 
-        if (value is IDictionary<string, string[]> dictionary1)
-            return dictionary1;
-
-        if (value is IDictionary<string, string> dictionary2)
-            return dictionary2.ToDictionary(x => x.Key, x => new[] { x.Value });
-
-        if (value is IDictionary<string, object> dictionary3)
-            return dictionary3.ToDictionary(
-                pair => pair.Key,
-                pair => pair.Value is ICollection<object> collection
-                    ? collection.Select(x => x.ToString()!).ToArray()
-                    : new[] { pair.Value.ToString()! });
-
-        return Array.Empty<KeyValuePair<string, string[]>>();
+        return value switch
+        {
+            IDictionary<string, string[]> dictionary1 => dictionary1,
+            IDictionary<string, string> dictionary2 => dictionary2.ToDictionary(x => x.Key, x => new[] { x.Value }),
+            IDictionary<string, object> dictionary3 => dictionary3.ToDictionary(pair => pair.Key, pair => pair.Value is ICollection<object> collection ? collection.Select(x => x.ToString()!).ToArray() : new[] { pair.Value.ToString()! }),
+            _ => Array.Empty<KeyValuePair<string, string[]>>()
+        };
     }
 }
