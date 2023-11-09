@@ -123,6 +123,9 @@
       <None Update="Scenarios\ParentChildOutputMapping\Workflows\sum.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\WorkflowOutputMapping\Workflows\workflow-output.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
 
 
 

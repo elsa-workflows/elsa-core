@@ -50,7 +50,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
-        var targetContext = context.TargetContext;
+        var activityExecutionContext = context.TargetContext;
 
         // Do we have a "complete composite" signal that triggered the completion?
         var completeCompositeSignal = context.WorkflowExecutionContext.TransientProperties.TryGetValue(nameof(CompleteCompositeSignal), out var signal) ? (CompleteCompositeSignal)signal : default;
@@ -64,7 +64,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
 
         // Copy any collected outputs into the synthetic properties.
-        foreach (var outputDescriptor in targetContext.ActivityDescriptor.Outputs)
+        foreach (var outputDescriptor in activityExecutionContext.ActivityDescriptor.Outputs)
         {
             // Create a local scope variable for each output property.
             var variable = new Variable
@@ -74,15 +74,15 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             };
 
             // Use the variable to read the value from the memory.
-            var value = variable.Get(targetContext);
+            var value = variable.Get(activityExecutionContext);
 
             // Assign the value to the output synthetic property.
             var output = SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputValue) ? (Output?)outputValue : default;
-            targetContext.Set(output, value);
+            activityExecutionContext.Set(output, value);
         }
 
         // Complete this activity with the signal value.
-        await targetContext.CompleteActivityAsync(completeCompositeSignal?.Value);
+        await activityExecutionContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
     private void CopyInputOutputToVariables(ActivityExecutionContext context)

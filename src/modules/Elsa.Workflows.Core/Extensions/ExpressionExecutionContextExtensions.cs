@@ -21,16 +21,17 @@ public static class ExpressionExecutionContextExtensions
     /// The key used to store the <see cref="WorkflowExecutionContext"/> in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
     /// </summary>
     public static readonly object WorkflowExecutionContextKey = new();
-    
+
     /// <summary>
     /// The key used to store the <see cref="ActivityExecutionContext"/> in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
     /// </summary>
     public static readonly object ActivityExecutionContextKey = new();
-    
+
     /// <summary>
     /// The
     /// </summary>
     public static readonly object InputKey = new();
+
     public static readonly object WorkflowKey = new();
 
     /// <summary>
@@ -64,14 +65,14 @@ public static class ExpressionExecutionContextExtensions
     /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
     /// </summary>
     public static WorkflowExecutionContext GetWorkflowExecutionContext(this ExpressionExecutionContext context) => (WorkflowExecutionContext)context.TransientProperties[WorkflowExecutionContextKey];
-    
+
     /// <summary>
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
     public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
-    
+
     /// <summary>
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
     /// </summary>
@@ -84,18 +85,18 @@ public static class ExpressionExecutionContextExtensions
     /// Returns the value of the specified input.
     /// </summary>
     public static T? Get<T>(this ExpressionExecutionContext context, Input<T>? input) => input != null ? context.GetBlock(input.MemoryBlockReference).Value.ConvertTo<T>() : default;
-    
+
     /// <summary>
     /// Returns the value of the specified output.
     /// </summary>
     public static T? Get<T>(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value.ConvertTo<T>();
-    
+
     /// <summary>
     /// Returns the value of the specified output.
     /// </summary>
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
-    
-    
+
+
     /// <summary>
     /// Returns the value of the variable with the specified name.
     /// </summary>
@@ -112,7 +113,7 @@ public static class ExpressionExecutionContextExtensions
             if (metadata!.Variable.Name == name)
                 return metadata.Variable;
         }
-        
+
         return localScopeOnly ? null : context.ParentContext?.GetVariable(name);
     }
 
@@ -122,23 +123,23 @@ public static class ExpressionExecutionContextExtensions
     public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
     {
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
-        
-        if(existingVariable != null)
+
+        if (existingVariable != null)
             throw new Exception($"Variable {name} already exists in the context.");
-        
+
         var variable = new Variable(name, value)
         {
             StorageDriverType = storageDriverType ?? typeof(WorkflowStorageDriver)
         };
-        
+
         // Find the first parent context that has a variable container.
         // If not found, use the current context.
         var variableContainerContext = context.GetVariableContainerContext();
-        
+
         variableContainerContext.Set(variable, value, configure);
         return variable;
     }
-    
+
     /// <summary>
     /// Returns the first parent context that contains a variable container.
     /// </summary>
@@ -157,17 +158,17 @@ public static class ExpressionExecutionContextExtensions
     public static Variable SetVariable<T>(this ExpressionExecutionContext context, string name, T? value, Action<MemoryBlock>? configure = default)
     {
         var variable = context.GetVariable(name);
-        
-        if(variable == null)
+
+        if (variable == null)
             return CreateVariable(context, name, value, configure: configure);
 
         // Get the context where the variable is defined.
         var contextWithVariable = context.FindContextContainingBlock(variable.Id) ?? context;
-        
+
         // Set the value on the variable.
         variable.Value = value;
         variable.Set(contextWithVariable, value, configure);
-        
+
         // Return the variable.
         return variable;
     }
@@ -177,7 +178,20 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static void Set(this ExpressionExecutionContext context, Output? output, object? value, Action<MemoryBlock>? configure = default)
     {
-        if (output != null) context.Set(output.MemoryBlockReference(), value, configure);
+        if (output != null)
+        {
+            // Set the value on the output.
+            var outputMemoryBlockReference = output.MemoryBlockReference();
+            context.Set(outputMemoryBlockReference, value, configure);
+
+            // If the referenced output is a workflow output definition, set the value on the workflow execution context.
+            var workflowExecutionContext = context.GetWorkflowExecutionContext();
+            var workflow = workflowExecutionContext.Workflow;
+            var workflowOutputDefinition = workflow.Outputs.FirstOrDefault(x => x.Name == outputMemoryBlockReference.Id);
+
+            if (workflowOutputDefinition != null)
+                workflowExecutionContext.Output[workflowOutputDefinition.Name] = value!;
+        }
     }
 
     /// <summary>
@@ -197,8 +211,8 @@ public static class ExpressionExecutionContextExtensions
         while (currentContext != null)
         {
             var register = currentContext.Memory;
-            
-            foreach (var entry in register.Blocks) 
+
+            foreach (var entry in register.Blocks)
                 memoryBlocks.TryAdd(entry.Key, entry.Value);
 
             currentContext = currentContext.ParentContext;
@@ -255,7 +269,7 @@ public static class ExpressionExecutionContextExtensions
             .Select(x => x.Name)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct();
-    
+
     /// <summary>
     /// Gets all variables in scope.
     /// </summary>
@@ -298,7 +312,7 @@ public static class ExpressionExecutionContextExtensions
             currentScope = currentScope.ParentContext;
         }
     }
-    
+
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
@@ -309,7 +323,7 @@ public static class ExpressionExecutionContextExtensions
     public static T? GetInput<T>(this ExpressionExecutionContext expressionExecutionContext, string name)
     {
         var value = expressionExecutionContext.GetInput(name);
-        return value != null ? (T) value : default;
+        return value != null ? (T)value : default;
     }
 
     /// <summary>
@@ -322,18 +336,17 @@ public static class ExpressionExecutionContextExtensions
     {
         // If there's a variable in the current scope with the specified name, return that.
         var variable = expressionExecutionContext.GetVariable(name);
-    
+
         if (variable != null)
             return variable.Get(expressionExecutionContext);
-    
+
         // Otherwise, return the input.
         var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
         var input = workflowExecutionContext.Input;
         return input.TryGetValue(name, out var value) ? value : default;
     }
 
-    
-    
+
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
@@ -375,10 +388,10 @@ public static class ExpressionExecutionContextExtensions
         {
             var activity = activityWithOutput.Activity;
             var activityDescriptor = activityWithOutput.ActivityDescriptor;
-            
+
             var activityIdentifier = useActivityName ? activity.Name : activity.Id;
             var activityIdPascalName = activityIdentifier.Pascalize();
-            
+
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
@@ -442,7 +455,7 @@ public static class ExpressionExecutionContextExtensions
             }
         }
     }
-    
+
     private static object ConvertIEnumerableToArray(object? obj)
     {
         if (obj == null)
