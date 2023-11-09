@@ -13,7 +13,7 @@ namespace Elsa.Activities.RabbitMq.Configuration
         public Dictionary<string, string> Headers { get; }
         public string ClientId { get; }
         public bool AutoDeleteQueue { get; }
-        public bool EnableSSL { get; }
+        public bool EnableSsl { get; }
         public string SslHost { get; }
         public SslProtocols SslProtocols { get; }
 
@@ -23,7 +23,7 @@ namespace Elsa.Activities.RabbitMq.Configuration
             ExchangeName = exchangeName;
             RoutingKey = routingKey;
             Headers = headers ?? new Dictionary<string, string>();
-            EnableSSL = enableSsl;
+            EnableSsl = enableSsl;
             SslHost = sslHost;
             SslProtocols = ResolveSslProtocols(sslProtocols ?? Array.Empty<string>());
             ClientId = clientId;

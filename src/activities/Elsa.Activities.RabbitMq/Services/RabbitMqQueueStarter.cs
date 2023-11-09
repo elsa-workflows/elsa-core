@@ -109,7 +109,7 @@ namespace Elsa.Activities.RabbitMq.Services
             var routingKey = bookmark.RoutingKey;
             var headers = bookmark.Headers;
             var enableSsl = bookmark.SslEnabled;
-            var sslHost = bookmark.SSLHost;
+            var sslHost = bookmark.SslHost;
             var sslProtocols = bookmark.SslProtocols;
             var clientId = RabbitMqClientConfigurationHelper.GetClientId(activityId);
 

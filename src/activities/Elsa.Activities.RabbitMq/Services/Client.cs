@@ -44,7 +44,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 {
                     t.UseRabbitMq(Configuration.ConnectionString, Configuration.ClientId)
                         .InputQueueOptions(x => x.SetAutoDelete(Configuration.AutoDeleteQueue))
-                        .Ssl(new SslSettings(Configuration.EnableSSL, Configuration.SslHost, version: Configuration.SslProtocols));
+                        .Ssl(new SslSettings(Configuration.EnableSsl, Configuration.SslHost, version: Configuration.SslProtocols));
                 })
                 .Start();
 
@@ -69,7 +69,7 @@ namespace Elsa.Activities.RabbitMq.Services
                 .With(_activator)
                 .Transport(t => t.UseRabbitMqAsOneWayClient(Configuration.ConnectionString)
                     .InputQueueOptions(o => o.SetAutoDelete(autoDelete: true))
-                    .Ssl(new SslSettings(Configuration.EnableSSL, Configuration.SslHost, version: Configuration.SslProtocols))
+                    .Ssl(new SslSettings(Configuration.EnableSsl, Configuration.SslHost, version: Configuration.SslProtocols))
                 )
                 .Start();
         }

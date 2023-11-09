@@ -64,14 +64,16 @@ namespace Elsa.Activities.RabbitMq
         [ActivityInput(
             Order = 2,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            Category = PropertyCategories.Configuration)]
-        public bool EnableSSL { get; set; }
+            Category = PropertyCategories.Configuration,
+            Name = "Enable SSL")]
+        public bool EnableSsl { get; set; }
 
         [ActivityInput(
             Order = 3,
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid },
-            Category = PropertyCategories.Configuration)]
-        public string SSLHost { get; set; }
+            Category = PropertyCategories.Configuration,
+            Name = "SSL Host")]
+        public string SslHost { get; set; }
 
         [ActivityInput(
             Order = 4,
@@ -79,7 +81,8 @@ namespace Elsa.Activities.RabbitMq
             Category = PropertyCategories.Configuration,
             UIHint = ActivityInputUIHints.CheckList,
             DefaultSyntax = SyntaxNames.Json,
-            Options = new[] { "Ssl2", "Ssl3", "Tls", "Tls11", "Tls12", "Tls13" }
+            Options = new[] { "Ssl2", "Ssl3", "Tls", "Tls11", "Tls12", "Tls13" },
+            Name = "SSL Protocols"
         )]
         public HashSet<string> SslProtocols { get; set; } = new() { };
 
@@ -87,7 +90,7 @@ namespace Elsa.Activities.RabbitMq
 
         protected override async ValueTask<IActivityExecutionResult> OnExecuteAsync(ActivityExecutionContext context)
         {
-            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers, ClientId, EnableSSL, SSLHost, SslProtocols);
+            var config = new RabbitMqBusConfiguration(ConnectionString, ExchangeName, RoutingKey, Headers, ClientId, EnableSsl, SslHost, SslProtocols);
 
             var client = await _messageSenderClientFactory.GetSenderAsync(config);
 

@@ -18,7 +18,7 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
             RoutingKey = routingKey;
             ConnectionString = connectionString;
             SslEnabled = sslEnabled;
-            SSLHost = sslHost;
+            SslHost = sslHost;
             SslProtocols = sslProtocols ?? new List<string>();
             Headers = headers ?? new Dictionary<string, string>();
         }
@@ -32,7 +32,7 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
         [JsonProperty(Order = 4)]
         public bool SslEnabled { get; set; } = default!;
         [JsonProperty(Order = 5)]
-        public string SSLHost { get; set; } = default!;
+        public string SslHost { get; set; } = default!;
         [JsonProperty(Order = 6)]
         public Dictionary<string, string> Headers { get; set; } = default!;
         [JsonProperty(Order = 7)]
@@ -50,8 +50,8 @@ namespace Elsa.Activities.RabbitMq.Bookmarks
                         routingKey: (await context.ReadActivityPropertyAsync(x => x.RoutingKey, cancellationToken))!,
                         connectionString: (await context.ReadActivityPropertyAsync(x => x.ConnectionString, cancellationToken))!,
                         headers: (await context.ReadActivityPropertyAsync(x => x.Headers, cancellationToken))!,
-                        sslEnabled:(await context.ReadActivityPropertyAsync(x => x.EnableSSL, cancellationToken))!,
-                        sslHost: (await context.ReadActivityPropertyAsync(x => x.SSLHost, cancellationToken))!,
+                        sslEnabled:(await context.ReadActivityPropertyAsync(x => x.EnableSsl, cancellationToken))!,
+                        sslHost: (await context.ReadActivityPropertyAsync(x => x.SslHost, cancellationToken))!,
                         sslProtocols: (await context.ReadActivityPropertyAsync(x => x.SslProtocols, cancellationToken))!
                 ))
             };
