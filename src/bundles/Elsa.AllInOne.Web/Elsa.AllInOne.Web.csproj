@@ -26,8 +26,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.12"/>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.118"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.118"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.134"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.134"/>
     </ItemGroup>
 
 </Project>
