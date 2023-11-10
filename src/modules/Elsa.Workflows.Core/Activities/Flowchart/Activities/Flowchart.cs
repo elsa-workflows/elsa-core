@@ -66,7 +66,7 @@ public class Flowchart : Container
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
 
         logger.LogDebug("Looking for start activity...");
-        
+
         // If there's a trigger that triggered this workflow, use that.
         var triggerActivityId = context.WorkflowExecutionContext.TriggerActivityId;
         var triggerActivity = triggerActivityId != null ? Activities.FirstOrDefault(x => x.Id == triggerActivityId) : default;
@@ -92,11 +92,11 @@ public class Flowchart : Container
             logger.LogDebug("A Start activity was found: {StartActivityId}", startActivity.Id);
             return startActivity;
         }
-        
+
         // If there's an activity marked as "Can Start Workflow", use that.
         var canStartWorkflowActivity = Activities.FirstOrDefault(x => x.GetCanStartWorkflow());
-        
-        if(canStartWorkflowActivity != null)
+
+        if (canStartWorkflowActivity != null)
         {
             logger.LogDebug("An activity marked as 'Can Start Workflow' was found: {CanStartWorkflowActivityId}", canStartWorkflowActivity.Id);
             return canStartWorkflowActivity;
@@ -132,6 +132,9 @@ public class Flowchart : Container
 
             if (ownerInstanceId == null)
                 return false;
+
+            if (ownerInstanceId == context.Id)
+                return true;
 
             var ownerContext = context.WorkflowExecutionContext.ActivityExecutionContexts.First(x => x.Id == ownerInstanceId);
             var ancestors = ownerContext.GetAncestors().ToList();
@@ -282,7 +285,7 @@ public class Flowchart : Container
             foreach (var activity in outboundActivities) await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
         }
     }
-    
+
     private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
     {
         var flowchartContext = context.ReceiverActivityExecutionContext;
