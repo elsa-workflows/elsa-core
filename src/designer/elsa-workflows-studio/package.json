@@ -40,7 +40,7 @@
     "@types/jquery-mousewheel": "^3.1.9",
     "ajv": "^8.10.0",
     "async-mutex": "^0.3.2",
-    "axios": "^0.26.1",
+    "axios": "^1.6.0",
     "axios-middleware": "^0.3.1",
     "cronstrue": "^1.125.0",
     "d3": "7.8.5",
