@@ -20,7 +20,7 @@ public class Expression
     /// </summary>
     /// <param name="type">The type of the expression.</param>
     /// <param name="value">The expression.</param>
-    public Expression(string type, string value)
+    public Expression(string type, string? value = default)
     {
         Type = type;
         Value = value;

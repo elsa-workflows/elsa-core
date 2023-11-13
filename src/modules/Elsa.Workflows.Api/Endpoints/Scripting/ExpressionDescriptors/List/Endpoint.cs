@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Models;
 using JetBrains.Annotations;
@@ -9,8 +10,15 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors.List;
 /// Returns a TypeScript definition that is used by the Monaco editor to display intellisense for JavaScript expressions.
 /// </summary>
 [UsedImplicitly]
-internal class List : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptor>>
+internal class List : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptorModel>>
 {
+    private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
+
+    public List(IExpressionDescriptorRegistry expressionDescriptorRegistry)
+    {
+        _expressionDescriptorRegistry = expressionDescriptorRegistry;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -19,8 +27,21 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescript
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(CancellationToken cancellationToken)
+    public override Task HandleAsync(CancellationToken cancellationToken)
     {
-        
+        var descriptors = _expressionDescriptorRegistry.ListAll().ToList();
+        var models = Map(descriptors).ToList();
+        var response = new ListResponse<ExpressionDescriptorModel>(models);
+        return SendOkAsync(response, cancellationToken);
+    }
+
+    private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);
+
+    private static ExpressionDescriptorModel Map(ExpressionDescriptor descriptor)
+    {
+        var properties = descriptor.Properties;
+        return new ExpressionDescriptorModel(descriptor.Type, descriptor.DisplayName, properties);
     }
 }
+
+internal record ExpressionDescriptorModel(string Type, string DisplayName, IDictionary<string, object> Properties);

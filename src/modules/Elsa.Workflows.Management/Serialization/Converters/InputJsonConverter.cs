@@ -4,7 +4,6 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
-using Expression = System.Linq.Expressions.Expression;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -49,7 +48,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
                     ? memoryReferenceIdElement.GetString()
                     : default;
 
-            var expression = expressionElement.Deserialize<Expression>();
+            var expression = expressionElement.Deserialize<Expression>(options);
             var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
 
             if (memoryBlockReference == null)

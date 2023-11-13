@@ -14,6 +14,6 @@ public interface IExpressionDescriptorsApi
     /// <summary>
     /// Sends a request to retrieve all available expression descriptors.
     /// </summary>
-    [Get("/scripting/expression-descriptors")]
+    [Get("/descriptors/expression-descriptors")]
     Task<ListResponse<ExpressionDescriptor>> ListAsync(CancellationToken cancellationToken);
 }
