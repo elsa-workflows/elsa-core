@@ -24,7 +24,7 @@ internal class Get : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override void Configure()
     {
-        Get("/descriptors/activities/{activityTypeName}/options/{propertyName}");
+        Post("/descriptors/activities/{activityTypeName}/options/{propertyName}");
         ConfigurePermissions("read:*", "read:activity-descriptors-options");
     }
 
