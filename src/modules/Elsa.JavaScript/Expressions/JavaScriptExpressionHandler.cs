@@ -1,4 +1,5 @@
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Contracts;
 
@@ -22,7 +23,7 @@ public class JavaScriptExpressionHandler : IExpressionHandler
     /// <inheritdoc />
     public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var javaScriptExpression = expression.Value as string ?? "";
+        var javaScriptExpression = expression.Value.ConvertTo<string>() ?? "";
         return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression, returnType, context);
     }
 }

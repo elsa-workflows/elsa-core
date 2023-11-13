@@ -20,14 +20,21 @@ namespace Elsa.Testing.Shared;
 [PublicAPI]
 public static class ServiceProviderExtensions
 {
+    private static bool _isConfigured;
+
     /// <summary>
     /// Updates the registries.
     /// </summary>
     /// <param name="services">The services.</param>
     public static async Task PopulateRegistriesAsync(this IServiceProvider services)
     {
+        if (_isConfigured)
+            return;
+
         var registriesPopulator = services.GetRequiredService<IRegistriesPopulator>();
         await registriesPopulator.PopulateAsync();
+
+        _isConfigured = true;
     }
 
     /// <summary>
@@ -99,6 +106,7 @@ public static class ServiceProviderExtensions
     /// <returns>The result of running the activity.</returns>
     public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, CancellationToken cancellationToken = default)
     {
+        await services.PopulateRegistriesAsync();
         var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
         return result;

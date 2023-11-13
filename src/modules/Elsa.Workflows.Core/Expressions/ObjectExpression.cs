@@ -14,7 +14,7 @@ public class ObjectExpressionHandler : IExpressionHandler
     /// <inheritdoc />
     public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var value = expression.Value as string;
+        var value = expression.Value.ConvertTo<string>() ?? "";
 
         if (string.IsNullOrWhiteSpace(value))
             return ValueTask.FromResult(default(object?));

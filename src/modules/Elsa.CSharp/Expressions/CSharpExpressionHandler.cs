@@ -1,5 +1,6 @@
 using Elsa.CSharp.Contracts;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 
 namespace Elsa.CSharp.Expressions;
@@ -22,7 +23,7 @@ public class CSharpExpressionHandler : IExpressionHandler
     /// <inheritdoc />
     public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var script = expression.Value?.ToString() ?? string.Empty;
+        var script = expression.Value.ConvertTo<string>() ?? "";
         return await _cSharpEvaluator.EvaluateAsync(script, returnType, context);
     }
 }

@@ -19,24 +19,6 @@ public class WellKnownTypeRegistry : IWellKnownTypeRegistry
     public static IWellKnownTypeRegistry CreateDefault()
     {
         var registry = new WellKnownTypeRegistry();
-        registry.RegisterType<object>("Object");
-        registry.RegisterType<string>("String");
-        registry.RegisterType<bool>("Boolean");
-        registry.RegisterType<short>("Int16");
-        registry.RegisterType<int>("Int32");
-        registry.RegisterType<long>("Int64");
-        registry.RegisterType<decimal>("Decimal");
-        registry.RegisterType<float>("Single");
-        registry.RegisterType<double>("Double");
-        registry.RegisterType<Guid>("Guid");
-        registry.RegisterType<DateTime>("DateTime");
-        registry.RegisterType<DateTimeOffset>("DateTimeOffset");
-        registry.RegisterType<TimeSpan>("TimeSpan");
-        registry.RegisterType<DateOnly>("DateOnly");
-        registry.RegisterType<TimeOnly>("TimeOnly");
-        registry.RegisterType<ExpandoObject>("JSON");
-        registry.RegisterType<IDictionary<string, string>>("StringDictionary");
-        registry.RegisterType<IDictionary<string, object>>("ObjectDictionary");
         return registry;
     }
 

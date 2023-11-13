@@ -18,11 +18,15 @@ public class ExpressionOptions
     public ExpressionOptions()
     {
         AliasTypeDictionary = new ReadOnlyDictionary<string, Type>(_aliasTypeDictionary);
-        
+
+        this.AddTypeAlias<short>("Int16");
+        this.AddTypeAlias<int>("Int32");
+        this.AddTypeAlias<long>("Int64");
+        this.AddTypeAlias<long>("Long");
+        this.AddTypeAlias<float>("Single");
         this.AddTypeAlias<object>("Object");
         this.AddTypeAlias<string>("String");
         this.AddTypeAlias<bool>("Boolean");
-        this.AddTypeAlias<long>("Long");
         this.AddTypeAlias<decimal>("Decimal");
         this.AddTypeAlias<double>("Double");
         this.AddTypeAlias<Guid>("Guid");
@@ -30,19 +34,18 @@ public class ExpressionOptions
         this.AddTypeAlias<DateTimeOffset>("DateTimeOffset");
         this.AddTypeAlias<TimeSpan>("TimeSpan");
         this.AddTypeAlias<ExpandoObject>("ExpandoObject");
-        
-        // Aliases.
-        this.AddTypeAlias<ExpandoObject>("JSON"); 
+        this.AddTypeAlias<ExpandoObject>("JSON");
         this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
         this.AddTypeAlias<IDictionary<string, string>>("StringMap");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectMap");
+        this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
     }
 
     /// <summary>
     /// Gets the type alias dictionary.
     /// </summary>
     public IDictionary<string, Type> AliasTypeDictionary { get; set; }
-    
+
     /// <summary>
     /// Registers a well known type alias.
     /// </summary>

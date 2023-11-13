@@ -1,4 +1,5 @@
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Python.Contracts;
 
@@ -22,7 +23,7 @@ public class PythonExpressionHandler : IExpressionHandler
     /// <inheritdoc />
     public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var pythonExpression = expression.Value as string ?? "";
+        var pythonExpression = expression.Value.ConvertTo<string>() ?? "";
         return await _evaluator.EvaluateAsync(pythonExpression, returnType, context);
     }
 }
