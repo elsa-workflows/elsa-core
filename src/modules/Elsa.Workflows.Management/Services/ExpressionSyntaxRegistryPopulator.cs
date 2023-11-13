@@ -3,15 +3,15 @@ using Elsa.Expressions.Contracts;
 namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
-public class ExpressionSyntaxRegistryPopulator : IExpressionSyntaxRegistryPopulator
+public class ExpressionDescriptorRegistryPopulator : IExpressionDescriptorRegistryPopulator
 {
-    private readonly IEnumerable<IExpressionSyntaxProvider> _providers;
-    private readonly IExpressionSyntaxRegistry _registry;
+    private readonly IEnumerable<IExpressionDescriptorProvider> _providers;
+    private readonly IExpressionDescriptorRegistry _registry;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ExpressionSyntaxRegistryPopulator"/> class.
+    /// Initializes a new instance of the <see cref="ExpressionDescriptorRegistryPopulator"/> class.
     /// </summary>
-    public ExpressionSyntaxRegistryPopulator(IEnumerable<IExpressionSyntaxProvider> providers, IExpressionSyntaxRegistry registry)
+    public ExpressionDescriptorRegistryPopulator(IEnumerable<IExpressionDescriptorProvider> providers, IExpressionDescriptorRegistry registry)
     {
         _providers = providers;
         _registry = registry;
@@ -23,7 +23,7 @@ public class ExpressionSyntaxRegistryPopulator : IExpressionSyntaxRegistryPopula
         foreach (var provider in _providers)
         {
             var descriptors = await provider.GetDescriptorsAsync(cancellationToken);
-            _registry.AddMany(descriptors);
+            _registry.AddRange(descriptors);
         }
     }
 }

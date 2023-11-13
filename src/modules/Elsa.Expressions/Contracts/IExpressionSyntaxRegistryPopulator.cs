@@ -1,12 +1,12 @@
 namespace Elsa.Expressions.Contracts;
 
 /// <summary>
-/// Populates the expression syntax registry.
+/// Populates the expression descriptor registry.
 /// </summary>
-public interface IExpressionSyntaxRegistryPopulator
+public interface IExpressionDescriptorRegistryPopulator
 {
     /// <summary>
-    /// Populates the expression syntax registry.
+    /// Populates the expression descriptor registry.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask PopulateRegistryAsync(CancellationToken cancellationToken = default);

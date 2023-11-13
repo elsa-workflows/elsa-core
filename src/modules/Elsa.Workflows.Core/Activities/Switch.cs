@@ -113,35 +113,30 @@ public class SwitchCase
     /// <param name="label">The label of the case.</param>
     /// <param name="condition">The condition to evaluate.</param>
     /// <param name="activity">The activity to schedule when the condition evaluates to true.</param>
-    public SwitchCase(string label, IExpression condition, IActivity activity)
+    public SwitchCase(string label, Expression condition, IActivity activity)
     {
         Label = label;
         Condition = condition;
         Activity = activity;
     }
-
+    
     /// <inheritdoc />
-    public SwitchCase(string label, DelegateBlockReference<bool> condition, IActivity activity) : this(label, new DelegateExpression(condition), activity)
+    public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, Expression.DelegateExpression(condition), activity)
     {
     }
 
     /// <inheritdoc />
-    public SwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, Expression.DelegateExpression(condition), activity)
     {
     }
 
     /// <inheritdoc />
-    public SwitchCase(string label, Func<ValueTask<bool>> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, Expression.DelegateExpression(condition), activity)
     {
     }
 
     /// <inheritdoc />
-    public SwitchCase(string label, Func<ExpressionExecutionContext, bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
-    {
-    }
-
-    /// <inheritdoc />
-    public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, new DelegateBlockReference<bool>(condition), activity)
+    public SwitchCase(string label, Func<bool> condition, IActivity activity) : this(label, Expression.DelegateExpression(condition), activity)
     {
     }
 
@@ -153,7 +148,7 @@ public class SwitchCase
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    public IExpression Condition { get; set; } = new LiteralExpression(false);
+    public Expression Condition { get; set; } = Expression.LiteralExpression(false);
 
     /// <summary>
     /// The activity to schedule when the condition evaluates to true.

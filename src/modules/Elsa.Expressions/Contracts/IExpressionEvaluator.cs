@@ -14,7 +14,7 @@ public interface IExpressionEvaluator
     /// <param name="context">The context in which the expression is evaluated.</param>
     /// <typeparam name="T">The type of the result.</typeparam>
     /// <returns>The result of the evaluation.</returns>
-    ValueTask<T?> EvaluateAsync<T>(IExpression expression, ExpressionExecutionContext context);
+    ValueTask<T?> EvaluateAsync<T>(Expression expression, ExpressionExecutionContext context);
     
     /// <summary>
     /// Evaluates the specified expression and returns the result.
@@ -23,5 +23,5 @@ public interface IExpressionEvaluator
     /// <param name="returnType">The type of the result.</param>
     /// <param name="context">The context in which the expression is evaluated.</param>
     /// <returns>The result of the evaluation.</returns>
-    ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context);
+    ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context);
 }

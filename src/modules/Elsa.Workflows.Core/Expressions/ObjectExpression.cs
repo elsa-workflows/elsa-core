@@ -6,26 +6,15 @@ using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.Expressions;
 
-public class ObjectExpression : IExpression
-{
-    public ObjectExpression(string? value) => Value = value;
-    public string? Value { get; }
-}
-
-public class ObjectExpression<T> : ObjectExpression
-{
-    public ObjectExpression(T? value) : base(JsonSerializer.Serialize(value))
-    {
-    }
-}
-
+/// <summary>
+/// Evaluates an object expression.
+/// </summary>
 public class ObjectExpressionHandler : IExpressionHandler
 {
     /// <inheritdoc />
-    public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var jsonExpression = (ObjectExpression)expression;
-        var value = jsonExpression.Value;
+        var value = expression.Value as string;
 
         if (string.IsNullOrWhiteSpace(value))
             return ValueTask.FromResult(default(object?));

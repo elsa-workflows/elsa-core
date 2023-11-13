@@ -5,37 +5,37 @@ namespace Elsa.Expressions.Contracts;
 /// <summary>
 /// A registry for expression syntaxes.
 /// </summary>
-public interface IExpressionSyntaxRegistry
+public interface IExpressionDescriptorRegistry
 {
     /// <summary>
     /// Adds a descriptor to the registry.
     /// </summary>
     /// <param name="descriptor">The descriptor to add.</param>
-    void Add(ExpressionSyntaxDescriptor descriptor);
+    void Add(ExpressionDescriptor descriptor);
     
     /// <summary>
     /// Adds many descriptors to the registry.
     /// </summary>
     /// <param name="descriptors">The descriptors to add.</param>
-    void AddMany(IEnumerable<ExpressionSyntaxDescriptor> descriptors);
+    void AddRange(IEnumerable<ExpressionDescriptor> descriptors);
     
     /// <summary>
     /// Lists all descriptors in the registry.
     /// </summary>
     /// <returns>A list of descriptors.</returns>
-    IEnumerable<ExpressionSyntaxDescriptor> ListAll();
+    IEnumerable<ExpressionDescriptor> ListAll();
     
     /// <summary>
     /// Finds a descriptor matching the specified predicate.
     /// </summary>
     /// <param name="predicate">The predicate.</param>
     /// <returns>A descriptor or null if none was found.</returns>
-    ExpressionSyntaxDescriptor? Find(Func<ExpressionSyntaxDescriptor, bool> predicate);
+    ExpressionDescriptor? Find(Func<ExpressionDescriptor, bool> predicate);
     
     /// <summary>
     /// Finds a descriptor matching the specified syntax.
     /// </summary>
-    /// <param name="syntax">The syntax.</param>
+    /// <param name="type">The syntax.</param>
     /// <returns>A descriptor or null if none was found.</returns>
-    ExpressionSyntaxDescriptor? Find(string syntax);
+    ExpressionDescriptor? Find(string type);
 }

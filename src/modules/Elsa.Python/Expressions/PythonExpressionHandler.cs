@@ -20,9 +20,9 @@ public class PythonExpressionHandler : IExpressionHandler
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var pythonExpression = (PythonExpression)expression;
-        return await _evaluator.EvaluateAsync(pythonExpression.Value, returnType, context);
+        var pythonExpression = expression.Value as string ?? "";
+        return await _evaluator.EvaluateAsync(pythonExpression, returnType, context);
     }
 }

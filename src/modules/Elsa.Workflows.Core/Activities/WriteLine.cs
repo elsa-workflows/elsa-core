@@ -29,13 +29,13 @@ public class WriteLine : CodeActivity
 
     /// <inheritdoc />
     public WriteLine(Func<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
-        : this(new DelegateBlockReference<string>(text), source, line)
+        : this(Expression.DelegateExpression(text), source, line)
     {
     }
 
     /// <inheritdoc />
     public WriteLine(Func<ExpressionExecutionContext, string?> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) 
-        : this(new DelegateBlockReference<string?>(text), source, line)
+        : this(Expression.DelegateExpression(text), source, line)
     {
     }
 
@@ -46,7 +46,7 @@ public class WriteLine : CodeActivity
     public WriteLine(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(literal);
 
     /// <inheritdoc />
-    public WriteLine(DelegateBlockReference delegateBlockExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(delegateBlockExpression);
+    public WriteLine(Expression expression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = new Input<string>(expression, new MemoryBlockReference());
 
     /// <inheritdoc />
     public WriteLine(Input<string> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = text;

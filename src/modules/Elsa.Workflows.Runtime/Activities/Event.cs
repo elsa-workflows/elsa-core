@@ -30,13 +30,13 @@ public class Event : Trigger<object?>
     
     /// <inheritdoc />
     public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string>(eventName), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
     {
     }
 
     /// <inheritdoc />
     public Event(Func<ExpressionExecutionContext, string?> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string?>(eventName), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
     {
     }
 
@@ -47,10 +47,6 @@ public class Event : Trigger<object?>
     /// <inheritdoc />
     public Event(Literal<string> literal, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
         EventName = new Input<string>(literal);
-
-    /// <inheritdoc />
-    public Event(DelegateBlockReference delegateBlockExpression, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) =>
-        EventName = new Input<string>(delegateBlockExpression);
 
     /// <inheritdoc />
     public Event(Input<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => EventName = eventName;

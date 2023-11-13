@@ -51,10 +51,9 @@ public class JavaScriptFeature : FeatureBase
         
         // JavaScript services.
         Services
-            .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
-            .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
+            .AddExpressionDescriptorProvider<JavaScriptExpressionDescriptorProvider>()
             ;
 
         // Type definition services.

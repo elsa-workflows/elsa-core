@@ -1,5 +1,3 @@
-using System.Text.Encodings.Web;
-using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Dapper.Extensions;
@@ -18,7 +16,6 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.WorkflowServer.Web.WorkflowContexts;
-using FluentStorage;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -151,21 +148,21 @@ services
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
             })
-            .UseJavaScript(options =>
-            {
-                options.AllowClrAccess = true;
-                options.ConfigureEngine(engine =>
-                {
-                    engine.Execute("function greet(name) { return `Hello ${name}!`; }");
-                    engine.Execute("function sayHelloWorld() { return greet('World'); }");
-                });
-            })
-            .UsePython(options =>
-            {
-                options.AddScript("def greet(name): return f\"Hello {name}!\";");
-                options.AddScript("def say_hello_world(): return greet(\"World\");");
-            })
-            .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
+            // .UseJavaScript(options =>
+            // {
+            //     options.AllowClrAccess = true;
+            //     options.ConfigureEngine(engine =>
+            //     {
+            //         engine.Execute("function greet(name) { return `Hello ${name}!`; }");
+            //         engine.Execute("function sayHelloWorld() { return greet('World'); }");
+            //     });
+            // })
+            // .UsePython(options =>
+            // {
+            //     options.AddScript("def greet(name): return f\"Hello {name}!\";");
+            //     options.AddScript("def say_hello_world(): return greet(\"World\");");
+            // })
+            // .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);

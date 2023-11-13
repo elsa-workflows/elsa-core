@@ -1,70 +1,34 @@
-using System.Text.Json;
 using Elsa.Expressions.Contracts;
 
 namespace Elsa.Expressions.Models;
 
 /// <summary>
-/// Describes an expression syntax.
+/// Describes an expression type.
 /// </summary>
-public class ExpressionSyntaxDescriptor
+public class ExpressionDescriptor
 {
     /// <summary>
     /// Gets or sets the syntax name.
     /// </summary>
-    public string Syntax { get; init; } = default!;
-    
-    /// <summary>
-    /// Gets or sets the expression type.
-    /// </summary>
-    public Type Type { get; init; } = default!;
-    
-    /// <summary>
-    /// Gets or sets a delegate that creates an expression.
-    /// </summary>
-    public Func<ExpressionConstructorContext, IExpression> CreateExpression { get; init; } = default!;
-    
-    /// <summary>
-    /// Gets or sets a delegate that creates a memory block reference.
-    /// </summary>
-    public Func<BlockReferenceConstructorContext, MemoryBlockReference> CreateBlockReference { get; init; } = default!;
-    
-    /// <summary>
-    /// Gets or sets a delegate that creates a serializable object.
-    /// </summary>
-    public Func<SerializableObjectConstructorContext, object> CreateSerializableObject { get; init; } = default!;
-}
+    public string Type { get; init; } = default!;
 
-/// <summary>
-/// Contextual information for creating an expression.
-/// </summary>
-/// <param name="Element">The JSON element containing the expression.</param>
-/// <param name="SerializerOptions">The JSON serializer options.</param>
-public record ExpressionConstructorContext(JsonElement Element, JsonSerializerOptions SerializerOptions);
-
-/// <summary>
-/// Contextual information for creating a memory block reference.
-/// </summary>
-/// <param name="Expression">The expression.</param>
-public record BlockReferenceConstructorContext(IExpression Expression)
-{
     /// <summary>
-    /// Gets the expression.
+    /// Gets or sets the display name of the expression type.
     /// </summary>
-    /// <typeparam name="T">The expression type.</typeparam>
-    /// <returns>The expression.</returns>
-    public T GetExpression<T>() => (T)Expression;
-}
+    public string DisplayName { get; set; } = default!;
 
-/// <summary>
-/// Contextual information for creating a serializable object.
-/// </summary>
-/// <param name="Expression">The expression.</param>
-public record SerializableObjectConstructorContext(IExpression Expression)
-{
     /// <summary>
-    /// Gets the expression.
+    /// Gets or sets the expression type properties.
     /// </summary>
-    /// <typeparam name="T">The expression type.</typeparam>
-    /// <returns>The expression.</returns>
-    public T GetExpression<T>() => (T)Expression;
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+    /// <summary>
+    /// Gets or sets the expression handler factory.
+    /// </summary>
+    public Func<IServiceProvider, IExpressionHandler> HandlerFactory { get; set; } = default!;
+
+    /// <summary>
+    /// Gets or sets the memory block reference factory.
+    /// </summary>
+    public Func<MemoryBlockReference> MemoryBlockReferenceFactory { get; set; } = () => new MemoryBlockReference();
 }

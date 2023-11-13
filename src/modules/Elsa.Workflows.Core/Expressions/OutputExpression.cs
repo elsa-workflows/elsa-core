@@ -5,27 +5,15 @@ using Elsa.Workflows.Core.Models;
 
 namespace Elsa.Workflows.Core.Expressions;
 
-public class OutputExpression : IExpression
-{
-    public OutputExpression(Output? output)
-    {
-        Output = output;
-    }
-
-    public OutputExpression()
-    {
-    }
-
-    public Output? Output { get; set; }
-}
-
+/// <summary>
+/// Evaluates an <see cref="Output"/> expression.
+/// </summary>
 public class OutputExpressionHandler : IExpressionHandler
 {
-    public ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    /// <inheritdoc />
+    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var outputExpression = (OutputExpression)expression;
-        var output = outputExpression.Output!;
-        var value = context.Get(output);
+        var value = expression.Value is Output output ? context.Get(output) : default;
         return ValueTask.FromResult(value);
     }
 }

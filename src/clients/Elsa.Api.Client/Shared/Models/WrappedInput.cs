@@ -1,4 +1,4 @@
-using Elsa.Api.Client.Contracts;
+using Elsa.Api.Client.Resources.Scripting.Models;
 
 namespace Elsa.Api.Client.Shared.Models;
 
@@ -15,7 +15,7 @@ public class WrappedInput
     /// <summary>
     /// Gets or sets the expression of this input.
     /// </summary>
-    public IExpression Expression { get; set; } = default!;
+    public Expression Expression { get; set; } = default!;
 
     /// <summary>
     /// Gets or sets the memory reference of this input.

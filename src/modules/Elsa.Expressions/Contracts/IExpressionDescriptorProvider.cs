@@ -5,10 +5,10 @@ namespace Elsa.Expressions.Contracts;
 /// <summary>
 /// Provides descriptors for expression syntaxes.
 /// </summary>
-public interface IExpressionSyntaxProvider
+public interface IExpressionDescriptorProvider
 {
     /// <summary>
     /// Gets the descriptors for the expression syntaxes supported by this provider.
     /// </summary>
-    ValueTask<IEnumerable<ExpressionSyntaxDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default);
 }

@@ -4,6 +4,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Core.Models;
+using Expression = System.Linq.Expressions.Expression;
 
 namespace Elsa.Workflows.Management.Serialization.Converters;
 
@@ -12,12 +13,12 @@ namespace Elsa.Workflows.Management.Serialization.Converters;
 /// </summary>
 public class InputJsonConverter<T> : JsonConverter<Input<T>>
 {
-    private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
+    private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
 
     /// <inheritdoc />
-    public InputJsonConverter(IExpressionSyntaxRegistry expressionSyntaxRegistry)
+    public InputJsonConverter(IExpressionDescriptorRegistry expressionDescriptorRegistry)
     {
-        _expressionSyntaxRegistry = expressionSyntaxRegistry;
+        _expressionDescriptorRegistry = expressionDescriptorRegistry;
     }
 
     /// <inheritdoc />
@@ -38,7 +39,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             var expressionElement = doc.RootElement.TryGetProperty("expression", out var expressionElementValue) ? expressionElementValue : default;
             var expressionTypeNameElement = expressionElement.ValueKind != JsonValueKind.Undefined ? expressionElement.TryGetProperty("type", out var expressionTypeNameElementValue) ? expressionTypeNameElementValue : default : default;
             var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : default;
-            var expressionSyntaxDescriptor = expressionTypeName != null ? _expressionSyntaxRegistry.Find(expressionTypeName) : default;
+            var expressionDescriptor = expressionTypeName != null ? _expressionDescriptorRegistry.Find(expressionTypeName) : default;
 
             doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement);
 
@@ -48,9 +49,8 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
                     ? memoryReferenceIdElement.GetString()
                     : default;
 
-            var context = new ExpressionConstructorContext(expressionElement, options);
-            var expression = expressionSyntaxDescriptor?.CreateExpression(context);
-            var memoryBlockReference = expression != null ? expressionSyntaxDescriptor?.CreateBlockReference(new BlockReferenceConstructorContext(expression)) : memoryReferenceId != null ? new ReadReference(memoryReferenceId) : default;
+            var expression = expressionElement.Deserialize<Expression>();
+            var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
 
             if (memoryBlockReference == null)
                 return default!;
@@ -69,15 +69,14 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     public override void Write(Utf8JsonWriter writer, Input<T> value, JsonSerializerOptions options)
     {
         var expression = value.Expression;
-        var expressionType = expression?.GetType();
+        var expressionType = expression?.Type;
         var targetType = value.Type;
         var memoryReferenceId = value.MemoryBlockReference().Id;
-        var expressionSyntaxDescriptor = expression != null ? _expressionSyntaxRegistry.Find(x => x.Type == expressionType) : default;
 
         var model = new
         {
             TypeName = targetType,
-            Expression = expressionSyntaxDescriptor?.CreateSerializableObject(new SerializableObjectConstructorContext(expression!)),
+            Expression = expression!,
             MemoryReference = new
             {
                 Id = memoryReferenceId

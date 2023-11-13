@@ -10,7 +10,7 @@ public class DefaultRegistriesPopulator : IRegistriesPopulator
 {
     private readonly IWorkflowDefinitionStorePopulator _workflowDefinitionStorePopulator;
     private readonly IActivityRegistryPopulator _activityRegistryPopulator;
-    private readonly IExpressionSyntaxRegistryPopulator _expressionSyntaxRegistryPopulator;
+    private readonly IExpressionDescriptorRegistryPopulator _expressionDescriptorRegistryPopulator;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PopulateRegistriesHostedService"/> class.
@@ -18,18 +18,18 @@ public class DefaultRegistriesPopulator : IRegistriesPopulator
     public DefaultRegistriesPopulator(
         IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator,
         IActivityRegistryPopulator activityRegistryPopulator,
-        IExpressionSyntaxRegistryPopulator expressionSyntaxRegistryPopulator)
+        IExpressionDescriptorRegistryPopulator expressionDescriptorRegistryPopulator)
     {
         _workflowDefinitionStorePopulator = workflowDefinitionStorePopulator;
         _activityRegistryPopulator = activityRegistryPopulator;
-        _expressionSyntaxRegistryPopulator = expressionSyntaxRegistryPopulator;
+        _expressionDescriptorRegistryPopulator = expressionDescriptorRegistryPopulator;
     }
 
     /// <inheritdoc />
     public async Task PopulateAsync(CancellationToken cancellationToken = default)
     {
         // Stage 0: Populate the expression syntax registry.
-        await _expressionSyntaxRegistryPopulator.PopulateRegistryAsync(cancellationToken);
+        await _expressionDescriptorRegistryPopulator.PopulateRegistryAsync(cancellationToken);
 
         // Stage 1: Populate the activity registry.
         // Because workflow definitions can be used as activities, we need to make sure that the activity registry is populated before we populate the workflow definition store.

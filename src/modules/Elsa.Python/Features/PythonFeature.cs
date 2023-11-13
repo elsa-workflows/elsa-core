@@ -38,9 +38,8 @@ public class PythonFeature : FeatureBase
         
         // C# services.
         Services
-            .AddSingleton<IExpressionSyntaxProvider, PythonExpressionSyntaxProvider>()
             .AddSingleton<IPythonEvaluator, IronPythonEvaluator>()
-            .AddExpressionHandler<PythonExpressionHandler, PythonExpression>()
+            .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>()
             ;
 
         // Handlers.
