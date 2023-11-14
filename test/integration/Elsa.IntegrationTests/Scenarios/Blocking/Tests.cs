@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -15,17 +16,19 @@ public class Tests
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
+    private readonly IServiceProvider _services;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowBuilderFactory = services.GetRequiredService<IWorkflowBuilderFactory>();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowBuilderFactory = _services.GetRequiredService<IWorkflowBuilderFactory>();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Subsequent activity does not get scheduled when previous activity created a bookmark")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<BlockingSequentialWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1" }, lines);
@@ -34,6 +37,7 @@ public class Tests
     [Fact(DisplayName = "Subsequent activities are scheduled when resuming workflow using bookmark")]
     public async Task Test2()
     {
+        await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BlockingSequentialWorkflow>();
         
         // Start workflow.

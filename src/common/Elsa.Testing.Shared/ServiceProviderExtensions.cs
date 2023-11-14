@@ -20,21 +20,14 @@ namespace Elsa.Testing.Shared;
 [PublicAPI]
 public static class ServiceProviderExtensions
 {
-    private static bool _isConfigured;
-
     /// <summary>
     /// Updates the registries.
     /// </summary>
     /// <param name="services">The services.</param>
-    public static async Task PopulateRegistriesAsync(this IServiceProvider services)
+    public static Task PopulateRegistriesAsync(this IServiceProvider services)
     {
-        if (_isConfigured)
-            return;
-
         var registriesPopulator = services.GetRequiredService<IRegistriesPopulator>();
-        await registriesPopulator.PopulateAsync();
-
-        _isConfigured = true;
+        return registriesPopulator.PopulateAsync();
     }
 
     /// <summary>

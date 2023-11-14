@@ -137,11 +137,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             var inputModel = new
             {
                 TypeName = inputType,
-                Expression = new Expression
-                {
-                    Type = expressionType!,
-                    Value = input
-                },
+                Expression = expression,
                 MemoryReference = new
                 {
                     Id = memoryReferenceId

@@ -21,7 +21,7 @@ public class Tests
         _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Fact(DisplayName = "Child activity receives workflow input from parent event if same name.")]
+    [Fact(DisplayName = "Child activity receives workflow input from parent even if same name.")]
     public async Task Test1()
     {
         // Populate registries.

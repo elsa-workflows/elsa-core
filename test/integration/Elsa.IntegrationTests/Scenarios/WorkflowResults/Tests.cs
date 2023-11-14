@@ -56,7 +56,7 @@ public class Tests
         {
             Activities =
             {
-                new SetVariable()
+                new SetVariable
                 {
                     Variable = variable,
                     Value = new (expectedValue)

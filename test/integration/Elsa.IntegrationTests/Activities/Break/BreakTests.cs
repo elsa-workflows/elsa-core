@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.IntegrationTests.Activities.Workflows;
@@ -13,16 +14,18 @@ public class BreakTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public BreakTests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Break exits out of ForEach")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<BreakForEachWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "C#", "End" }, lines);
@@ -31,6 +34,7 @@ public class BreakTests
     [Fact(DisplayName = "Break exits out of immediate ForEach only")]
     public async Task Test2()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<NestedForEachWithBreakWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "C#", "Classes", "Rust", "Classes", "Go", "Classes" }, lines);
@@ -39,6 +43,7 @@ public class BreakTests
     [Fact(DisplayName = "Break exits out of For")]
     public async Task Test3()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<BreakForWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "0", "1", "End" }, lines);
@@ -47,6 +52,7 @@ public class BreakTests
     [Fact(DisplayName = "Break exits out of While")]
     public async Task Test4()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<BreakWhileWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
@@ -55,6 +61,7 @@ public class BreakTests
     [Fact(DisplayName = "Break removes the right bookmarks")]
     public async Task Test5()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<BreakWhileWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);

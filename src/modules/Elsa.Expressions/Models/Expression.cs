@@ -25,69 +25,65 @@ public class Expression
         Type = type;
         Value = value;
     }
-    
+
     /// <summary>
     /// Gets or sets the expression type.
     /// </summary>
     public string Type { get; set; } = default!;
-    
+
     /// <summary>
     /// Gets or sets the expression.
     /// </summary>
     public object? Value { get; set; }
-    
+
     /// <summary>
     /// Creates an expression that represents a literal value.
     /// </summary>
     /// <param name="value">The literal value.</param>
     /// <returns>An expression that represents a literal value.</returns>
     public static Expression LiteralExpression(object? value) => new("Literal", value);
-    
+
     /// <summary>
     /// Creates an expression that represents a delegate.
     /// </summary>
     /// <param name="value">The delegate.</param>
     /// <typeparam name="T">The return type of the delegate.</typeparam>
     /// <returns>An expression that represents a delegate.</returns>
-    public static Expression DelegateExpression<T>(Func<ExpressionExecutionContext, ValueTask<T>> value) => new()
+    public static Expression DelegateExpression(Func<ExpressionExecutionContext, ValueTask<object?>> value) => new()
     {
         Type = "Delegate",
         Value = value
     };
-    
+
     /// <summary>
     /// Creates an expression that represents a delegate.
     /// </summary>
     /// <param name="value">The delegate.</param>
     /// <typeparam name="T">The return type of the delegate.</typeparam>
     /// <returns>An expression that represents a delegate.</returns>
-    public static Expression DelegateExpression<T>(Func<ValueTask<T>> value) => new()
-    {
-        Type = "Delegate",
-        Value = value
-    };
-    
+    public static Expression DelegateExpression<T>(Func<ExpressionExecutionContext, ValueTask<T>> value) => DelegateExpression(async context => (object?)await value(context));
+
     /// <summary>
     /// Creates an expression that represents a delegate.
     /// </summary>
     /// <param name="value">The delegate.</param>
     /// <typeparam name="T">The return type of the delegate.</typeparam>
     /// <returns>An expression that represents a delegate.</returns>
-    public static Expression DelegateExpression<T>(Func<ExpressionExecutionContext, T> value) => new()
-    {
-        Type = "Delegate",
-        Value = value
-    };
-    
+    public static Expression DelegateExpression<T>(Func<ValueTask<T>> value) => DelegateExpression(_ => ValueTask.FromResult<object?>(value()));
+
     /// <summary>
     /// Creates an expression that represents a delegate.
     /// </summary>
     /// <param name="value">The delegate.</param>
     /// <typeparam name="T">The return type of the delegate.</typeparam>
     /// <returns>An expression that represents a delegate.</returns>
-    public static Expression DelegateExpression<T>(Func<T> value) => new()
-    {
-        Type = "Delegate",
-        Value = value
-    };
+    public static Expression DelegateExpression<T>(Func<ExpressionExecutionContext, T> value) => DelegateExpression(context => ValueTask.FromResult<object?>(value(context)));
+
+    /// <summary>
+    /// Creates an expression that represents a delegate.
+    /// </summary>
+    /// <param name="value">The delegate.</param>
+    /// <typeparam name="T">The return type of the delegate.</typeparam>
+    /// <returns>An expression that represents a delegate.</returns>
+    public static Expression DelegateExpression<T>(Func<T> value) => DelegateExpression(_ => ValueTask.FromResult<object?>(value()));
 }
