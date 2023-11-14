@@ -43,7 +43,13 @@ public class JavaScriptFeature : FeatureBase
     {
         ConfigureHostedService<RegisterVariableTypesWithJavaScriptHostedService>();
     }
-    
+
+    /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<JavaScriptFeature>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {

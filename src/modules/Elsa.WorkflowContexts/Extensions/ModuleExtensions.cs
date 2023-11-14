@@ -19,6 +19,7 @@ public static class ModuleExtensions
     public static IModule UseWorkflowContexts(this IModule module, Action<WorkflowContextsFeature>? configure = default)
     {
         module.Use(configure);
+        module.Use<WorkflowContextsJavaScriptFeature>();
         return module;
     }
 }

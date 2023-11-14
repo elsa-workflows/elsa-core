@@ -7,7 +7,7 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.Scripting.JavaScript.TypeDefinitions;
+namespace Elsa.JavaScript.Endpoints.TypeDefinitions;
 
 /// <summary>
 /// Returns a TypeScript definition that is used by the Monaco editor to display intellisense for JavaScript expressions.

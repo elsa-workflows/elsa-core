@@ -1,5 +1,6 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Python.Expressions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,7 +20,8 @@ internal class PythonExpressionDescriptorProvider : IExpressionDescriptorProvide
     private ExpressionDescriptor CreatePythonDescriptor() => new()
     {
         Type = TypeName,
-        DisplayName = "C#",
+        DisplayName = "Python",
+        Properties = new { MonacoLanguage = "python" }.ToDictionary(),
         HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<PythonExpressionHandler>
     };
 }

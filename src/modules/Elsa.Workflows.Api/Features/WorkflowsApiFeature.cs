@@ -17,7 +17,6 @@ namespace Elsa.Workflows.Api.Features;
 /// </summary>
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(JavaScriptFeature))]
 [DependsOn(typeof(HttpFeature))]
 [DependsOn(typeof(SasTokensFeature))]
 public class WorkflowsApiFeature : FeatureBase

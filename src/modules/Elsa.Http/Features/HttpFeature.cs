@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
 using Elsa.Common.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
@@ -21,7 +18,6 @@ using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.JavaScript.Features;
-using Elsa.Liquid.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
@@ -38,8 +34,6 @@ namespace Elsa.Http.Features;
 /// Installs services related to HTTP services and activities.
 /// </summary>
 [DependsOn(typeof(MemoryCacheFeature))]
-[DependsOn(typeof(LiquidFeature))]
-[DependsOn(typeof(JavaScriptFeature))]
 public class HttpFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -127,8 +121,6 @@ public class HttpFeature : FeatureBase
 
             management.AddActivitiesFrom<HttpFeature>();
         });
-
-        Services.AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>();
     }
 
     /// <inheritdoc />
@@ -161,8 +153,11 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddSingleton<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddSingleton(ContentTypeProvider)
-            .AddNotificationHandlersFrom<UpdateRouteTable>()
             .AddHttpContextAccessor()
+            
+            // Handlers.
+            .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
+            .AddNotificationHandler<UpdateRouteTable>()
 
             // Content parsers.
             .AddSingleton<IHttpContentParser, StringHttpContentParser>()
@@ -200,9 +195,6 @@ public class HttpFeature : FeatureBase
             // File caches.
             .AddSingleton(FileCache)
             .AddSingleton<ZipManager>()
-
-            // Add mediator handlers.
-            .AddNotificationHandlersFrom<HttpFeature>()
 
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.

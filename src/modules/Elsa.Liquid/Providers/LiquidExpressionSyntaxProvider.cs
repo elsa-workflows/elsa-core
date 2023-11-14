@@ -1,5 +1,6 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Liquid.Expressions;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +35,7 @@ public class LiquidExpressionDescriptorProvider : IExpressionDescriptorProvider
     {
         Type = TypeName,
         DisplayName = "Liquid",
+        Properties = new { MonacoLanguage = "liquid" }.ToDictionary(),
         HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<LiquidExpressionHandler> 
     };
 }
