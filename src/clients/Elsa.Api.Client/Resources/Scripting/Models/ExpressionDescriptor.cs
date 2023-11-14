@@ -37,6 +37,16 @@ public class ExpressionDescriptor
     public string DisplayName { get; set; } = default!;
     
     /// <summary>
+    /// Gets or sets whether the expression value is serializable.
+    /// </summary>
+    public bool IsSerializable { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether the expression type is browsable.
+    /// </summary>
+    public bool IsBrowsable { get; set; } = true;
+    
+    /// <summary>
     /// Gets or sets the expression type properties.
     /// </summary>
     public IDictionary<string, string> Properties { get; set; } = new Dictionary<string, string>();

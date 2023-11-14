@@ -23,6 +23,11 @@ public class ExpressionDescriptor
     public bool IsSerializable { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether the expression type is browsable.
+    /// </summary>
+    public bool IsBrowsable { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the expression type properties.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();

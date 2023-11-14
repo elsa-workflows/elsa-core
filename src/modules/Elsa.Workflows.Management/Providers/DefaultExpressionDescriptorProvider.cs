@@ -28,19 +28,21 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
     [Obsolete("Use Object instead.")]
     private ExpressionDescriptor CreateJsonDescriptor() => CreateDescriptor<ObjectExpressionHandler>("Json", "Json");
 
-    private ExpressionDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpressionHandler>("Delegate", "Delegate", false);
-    private ExpressionDescriptor CreateVariableDescriptor() => CreateDescriptor<VariableExpressionHandler>("Variable", "Variable", true, () => new Variable());
+    private ExpressionDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpressionHandler>("Delegate", "Delegate", false, false);
+    private ExpressionDescriptor CreateVariableDescriptor() => CreateDescriptor<VariableExpressionHandler>("Variable", "Variable", true, true, () => new Variable());
 
     private static ExpressionDescriptor CreateDescriptor<THandler>(
         string type,
         string displayName,
         bool isSerializable = true,
+        bool isBrowsable = true,
         Func<MemoryBlockReference>? memoryBlockReferenceFactory = default) where THandler : IExpressionHandler =>
         new()
         {
             Type = type,
             DisplayName = displayName,
             IsSerializable = isSerializable,
+            IsBrowsable = isBrowsable,
             HandlerFactory = sp => ActivatorUtilities.GetServiceOrCreateInstance<THandler>(sp),
             MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference())
         };

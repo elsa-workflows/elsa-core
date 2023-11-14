@@ -40,8 +40,13 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescript
     private static ExpressionDescriptorModel Map(ExpressionDescriptor descriptor)
     {
         var properties = descriptor.Properties;
-        return new ExpressionDescriptorModel(descriptor.Type, descriptor.DisplayName, properties);
+        return new ExpressionDescriptorModel(
+            descriptor.Type,
+            descriptor.DisplayName,
+            descriptor.IsSerializable,
+            descriptor.IsBrowsable,
+            properties);
     }
 }
 
-internal record ExpressionDescriptorModel(string Type, string DisplayName, IDictionary<string, object> Properties);
+internal record ExpressionDescriptorModel(string Type, string DisplayName, bool IsSerializable, bool IsBrowsable, IDictionary<string, object> Properties);
