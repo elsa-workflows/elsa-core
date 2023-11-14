@@ -1,7 +1,7 @@
 namespace Elsa.Features.Attributes;
 
 /// <summary>
-/// Specifies that the feature is enabled automatically whn the specified feature is enabled.
+/// Specifies that the feature is enabled automatically when the specified feature is enabled.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class DependencyOfAttribute : Attribute

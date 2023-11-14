@@ -20,8 +20,4 @@
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Endpoints\Scripting\JavaScript\" />
-    </ItemGroup>
-
 </Project>
