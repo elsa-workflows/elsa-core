@@ -39,10 +39,10 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     {
         base.Apply();
 
-        Services.AddSingleton<DapperTriggerStore>();
-        Services.AddSingleton<DapperBookmarkStore>();
-        Services.AddSingleton<DapperWorkflowInboxMessageStore>();
-        Services.AddSingleton<DapperWorkflowExecutionLogStore>();
-        Services.AddSingleton<DapperActivityExecutionRecordStore>();
+        Services.AddScoped<DapperTriggerStore>();
+        Services.AddScoped<DapperBookmarkStore>();
+        Services.AddScoped<DapperWorkflowInboxMessageStore>();
+        Services.AddScoped<DapperWorkflowExecutionLogStore>();
+        Services.AddScoped<DapperActivityExecutionRecordStore>();
     }
 }

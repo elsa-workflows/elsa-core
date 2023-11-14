@@ -1,5 +1,6 @@
-using System.Reflection;
-using System.Threading.Channels;
+using Elsa.Mediator.Channels;
+using Elsa.Mediator.Contracts;
+using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Middleware.Command;
 using Elsa.Mediator.Middleware.Command.Contracts;
 using Elsa.Mediator.Middleware.Notification;
@@ -7,14 +8,13 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 using Elsa.Mediator.Middleware.Request;
 using Elsa.Mediator.Middleware.Request.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Mediator.Channels;
-using Elsa.Mediator.Contracts;
-using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
 using Elsa.Mediator.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Reflection;
+using System.Threading.Channels;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -90,14 +90,14 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static IServiceCollection AddMessageConsumer<T, TConsumer>(this IServiceCollection services) where TConsumer : class, IConsumer<T> where T : notnull
     {
-        return services.AddSingleton<IConsumer<T>, TConsumer>();
+        return services.AddScoped<IConsumer<T>, TConsumer>();
     }
 
     /// <summary>
     /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
     /// </summary>
     public static IServiceCollection AddCommandHandler<THandler>(this IServiceCollection services) where THandler : class, ICommandHandler =>
-        services.AddSingleton<ICommandHandler, THandler>();
+        services.AddScoped<ICommandHandler, THandler>();
 
     /// <summary>
     /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
@@ -113,7 +113,7 @@ public static class DependencyInjectionExtensions
         where THandler : class, ICommandHandler<TCommand, TResult>
         where TCommand : ICommand<TResult>
     {
-        return services.AddSingleton<ICommandHandler, THandler>();
+        return services.AddScoped<ICommandHandler, THandler>();
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddNotificationHandler<THandler>(this IServiceCollection services)
         where THandler : class, INotificationHandler
     {
-        return services.AddSingleton<INotificationHandler, THandler>();
+        return services.AddScoped<INotificationHandler, THandler>();
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddNotificationHandler<THandler, TNotification>(this IServiceCollection services)
         where THandler : class, INotificationHandler<TNotification>
         where TNotification : INotification =>
-        services.AddSingleton<INotificationHandler, THandler>();
+        services.AddScoped<INotificationHandler, THandler>();
 
     /// <summary>
     /// Registers a <see cref="INotificationHandler{T}"/> with the service container.
@@ -139,7 +139,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddNotificationHandler<THandler, TNotification>(this IServiceCollection services, Func<IServiceProvider, THandler> factory)
         where THandler : class, INotificationHandler<TNotification>
         where TNotification : INotification =>
-        services.AddSingleton<INotificationHandler, THandler>(factory);
+        services.AddScoped<INotificationHandler, THandler>(factory);
 
     /// <summary>
     /// Registers a <see cref="IRequestHandler{TRequest,TResponse}"/> with the service container.
@@ -148,7 +148,7 @@ public static class DependencyInjectionExtensions
         where THandler : class, IRequestHandler<TRequest, TResponse>
         where TRequest : IRequest<TResponse>?
     {
-        return services.AddSingleton<IRequestHandler, THandler>();
+        return services.AddScoped<IRequestHandler, THandler>();
     }
 
     /// <summary>
@@ -226,7 +226,7 @@ public static class DependencyInjectionExtensions
         var types = assembly.DefinedTypes.Where(x => serviceType.IsAssignableFrom(x));
 
         foreach (var type in types)
-            services.AddSingleton(serviceType, type);
+            services.AddScoped(serviceType, type);
 
         return services;
     }

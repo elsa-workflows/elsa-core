@@ -1,19 +1,19 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Services;
-using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
 using Elsa.ServiceBus.IntegrationTests.Contracts;
 using Elsa.ServiceBus.IntegrationTests.Helpers;
 using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
-using Microsoft.Extensions.Options;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Testing.Shared;
+using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NSubstitute;
+using Xunit.Abstractions;
 
 namespace Elsa.ServiceBus.IntegrationTests.Scenarios.ServiceBus;
 
@@ -41,15 +41,16 @@ public class ServiceBusTest : IDisposable
             {
                 services
                     .AddSingleton(_serviceBusClient)
-                    .AddSingleton<IServiceBusProcessorManager, ServiceBusProcessorManager>()
-                    .AddSingleton<IWorkerManager, WorkerManager>()
+                    .AddScoped<IServiceBusProcessorManager, ServiceBusProcessorManager>()
+                    .AddScoped<IWorkerManager, WorkerManager>()
                     .AddSingleton(_resetEventManager)
-                    .AddSingleton(sp =>
+
+                    .AddScoped(sp =>
                     {
                         var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
                         return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
                     })
-                    .AddSingleton(sp =>
+                    .AddScoped(sp =>
                     {
                         var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
                         return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);

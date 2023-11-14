@@ -55,5 +55,5 @@ public class RedisClusterMemberStorage : IClusterMemberStore
 You can then register the implementation with the service collection:
 
 ```csharp
-services.AddSingleton<IClusterMemberStore, RedisClusterMemberStore>();
+services.AddScoped<IClusterMemberStore, RedisClusterMemberStore>();
 ```

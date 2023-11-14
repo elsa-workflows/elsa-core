@@ -15,5 +15,5 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <typeparam name="T">The type of the workflow definition provider.</typeparam>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddSingleton<IWorkflowProvider, T>();
+    public static IServiceCollection AddWorkflowDefinitionProvider<T>(this IServiceCollection services) where T : class, IWorkflowProvider => services.AddScoped<IWorkflowProvider, T>();
 }

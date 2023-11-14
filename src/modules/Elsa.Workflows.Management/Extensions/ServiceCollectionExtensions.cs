@@ -11,5 +11,5 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers a <see cref="IActivityProvider"/>.
     /// </summary>
-    public static IServiceCollection AddActivityProvider<T>(this IServiceCollection services) where T : class, IActivityProvider => services.AddSingleton<IActivityProvider, T>();
+    public static IServiceCollection AddActivityProvider<T>(this IServiceCollection services) where T : class, IActivityProvider => services.AddScoped<IActivityProvider, T>();
 }

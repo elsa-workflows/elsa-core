@@ -165,39 +165,39 @@ public class IdentityFeature : FeatureBase
 
         // User providers.
         Services
-            .AddSingleton<AdminUserProvider>()
-            .AddSingleton<StoreBasedUserProvider>()
-            .AddSingleton<ConfigurationBasedUserProvider>();
+            .AddScoped<AdminUserProvider>()
+            .AddScoped<StoreBasedUserProvider>()
+            .AddScoped<ConfigurationBasedUserProvider>();
         
         // Application providers.
         Services
-            .AddSingleton<StoreBasedApplicationProvider>()
-            .AddSingleton<ConfigurationBasedApplicationProvider>();
+            .AddScoped<StoreBasedApplicationProvider>()
+            .AddScoped<ConfigurationBasedApplicationProvider>();
         
         // Role providers.
         Services
-            .AddSingleton<AdminRoleProvider>()
-            .AddSingleton<StoreBasedRoleProvider>()
-            .AddSingleton<ConfigurationBasedRoleProvider>();
+            .AddScoped<AdminRoleProvider>()
+            .AddScoped<StoreBasedRoleProvider>()
+            .AddScoped<ConfigurationBasedRoleProvider>();
 
         // Services.
         Services
-            .AddSingleton(UserStore)
-            .AddSingleton(ApplicationStore)
-            .AddSingleton(RoleStore)
-            .AddSingleton(UserProvider)
-            .AddSingleton(ApplicationProvider)
-            .AddSingleton(RoleProvider)
-            .AddSingleton<ISecretHasher, DefaultSecretHasher>()
-            .AddSingleton<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
-            .AddSingleton<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
-            .AddSingleton<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
-            .AddSingleton<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
-            .AddSingleton<IApiKeyParser>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
-            .AddSingleton<IClientIdGenerator, DefaultClientIdGenerator>()
-            .AddSingleton<ISecretGenerator, DefaultSecretGenerator>()
-            .AddSingleton<IRandomStringGenerator, DefaultRandomStringGenerator>()
-            .AddSingleton<DefaultApiKeyGeneratorAndParser>()
+            .AddScoped(UserStore)
+            .AddScoped(ApplicationStore)
+            .AddScoped(RoleStore)
+            .AddScoped(UserProvider)
+            .AddScoped(ApplicationProvider)
+            .AddScoped(RoleProvider)
+            .AddScoped<ISecretHasher, DefaultSecretHasher>()
+            .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
+            .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
+            .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
+            .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
+            .AddScoped<IApiKeyParser>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
+            .AddScoped<IClientIdGenerator, DefaultClientIdGenerator>()
+            .AddScoped<ISecretGenerator, DefaultSecretGenerator>()
+            .AddScoped<IRandomStringGenerator, DefaultRandomStringGenerator>()
+            .AddScoped<DefaultApiKeyGeneratorAndParser>()
             ;
     }
 }

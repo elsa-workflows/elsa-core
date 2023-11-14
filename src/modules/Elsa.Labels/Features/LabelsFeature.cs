@@ -43,8 +43,8 @@ public class LabelsFeature : FeatureBase
         Services
             .AddMemoryStore<Label, InMemoryLabelStore>()
             .AddMemoryStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
-            .AddSingleton(LabelStore)
-            .AddSingleton(WorkflowDefinitionLabelStore)
+            .AddScoped(LabelStore)
+            .AddScoped(WorkflowDefinitionLabelStore)
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

@@ -24,6 +24,6 @@ public class WorkflowInstancesFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton(WorkflowInstanceStore);
+        Services.AddScoped(WorkflowInstanceStore);
     }
 }

@@ -83,7 +83,7 @@ public class ProtoActorFeature : FeatureBase
         var services = Services;
 
         // Register ActorSystem.
-        services.AddSingleton(sp =>
+        services.AddScoped(sp =>
         {
             var systemConfig = Proto.ActorSystemConfig
                 .Setup()
@@ -118,22 +118,22 @@ public class ProtoActorFeature : FeatureBase
         Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
 
         // Persistence.
-        services.AddSingleton(PersistenceProvider);
+        services.AddScoped(PersistenceProvider);
 
         // Mappers.
         services
-            .AddSingleton<BookmarkMapper>()
-            .AddSingleton<ExceptionMapper>()
-            .AddSingleton<WorkflowExecutionResultMapper>()
-            .AddSingleton<ActivityIncidentStateMapper>()
-            .AddSingleton<WorkflowStatusMapper>()
-            .AddSingleton<WorkflowSubStatusMapper>();
+            .AddScoped<BookmarkMapper>()
+            .AddScoped<ExceptionMapper>()
+            .AddScoped<WorkflowExecutionResultMapper>()
+            .AddScoped<ActivityIncidentStateMapper>()
+            .AddScoped<WorkflowStatusMapper>()
+            .AddScoped<WorkflowSubStatusMapper>();
 
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();
 
         // Cluster.
-        services.AddSingleton(sp => sp.GetRequiredService<ActorSystem>().Cluster());
+        services.AddScoped(sp => sp.GetRequiredService<ActorSystem>().Cluster());
 
         // Actors.
         services

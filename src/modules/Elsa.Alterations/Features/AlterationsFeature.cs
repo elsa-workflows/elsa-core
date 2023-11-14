@@ -26,12 +26,12 @@ public class AlterationsFeature : FeatureBase
     /// Gets or sets the factory for the alteration plan store.
     /// </summary>
     public Func<IServiceProvider, IAlterationPlanStore> AlterationPlanStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationPlanStore>();
-    
+
     /// <summary>
     /// Gets or sets the factory for the alteration job store.
     /// </summary>
     public Func<IServiceProvider, IAlterationJobStore> AlterationJobStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationJobStore>();
-    
+
     /// <summary>
     /// Gets or sets the factory for the alteration job dispatcher.
     /// </summary>
@@ -47,7 +47,7 @@ public class AlterationsFeature : FeatureBase
         Services.AddAlteration<T, THandler>();
         return this;
     }
-    
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -59,13 +59,13 @@ public class AlterationsFeature : FeatureBase
     {
         Services.AddAlterations();
         Services.AddAlterationsCore();
-        Services.AddSingleton<BackgroundAlterationJobDispatcher>();
-        Services.AddSingleton<MemoryAlterationPlanStore>();
-        Services.AddSingleton<MemoryAlterationJobStore>();
-        Services.AddSingleton(new MemoryStore<AlterationPlan>());
-        Services.AddSingleton(new MemoryStore<AlterationJob>());
-        Services.AddSingleton(AlterationPlanStoreFactory);
-        Services.AddSingleton(AlterationJobStoreFactory);
-        Services.AddSingleton(AlterationJobDispatcherFactory);
+        Services.AddScoped<BackgroundAlterationJobDispatcher>();
+
+        Services.AddMemoryStore<AlterationPlan, MemoryAlterationPlanStore>();
+        Services.AddMemoryStore<AlterationJob, MemoryAlterationJobStore>();
+
+        Services.AddScoped(AlterationPlanStoreFactory);
+        Services.AddScoped(AlterationJobStoreFactory);
+        Services.AddScoped(AlterationJobDispatcherFactory);
     }
 }
