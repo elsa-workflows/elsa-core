@@ -119,62 +119,62 @@ public class WorkflowsFeature : FeatureBase
         services
 
             // Core.
-            .AddSingleton<IActivityInvoker, ActivityInvoker>()
-            .AddSingleton<IWorkflowRunner, WorkflowRunner>()
-            .AddSingleton<IActivityVisitor, ActivityVisitor>()
-            .AddSingleton<IIdentityGraphService, IdentityGraphService>()
-            .AddSingleton<IWorkflowStateExtractor, WorkflowStateExtractor>()
-            .AddSingleton<IActivitySchedulerFactory, ActivitySchedulerFactory>()
-            .AddSingleton<IHasher, Hasher>()
-            .AddSingleton<IBookmarkHasher, BookmarkHasher>()
-            .AddSingleton(IdentityGenerator)
-            .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
+            .AddScoped<IActivityInvoker, ActivityInvoker>()
+            .AddScoped<IWorkflowRunner, WorkflowRunner>()
+            .AddScoped<IActivityVisitor, ActivityVisitor>()
+            .AddScoped<IIdentityGraphService, IdentityGraphService>()
+            .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
+            .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
+            .AddScoped<IHasher, Hasher>()
+            .AddScoped<IBookmarkHasher, BookmarkHasher>()
+            .AddScoped(IdentityGenerator)
+            .AddScoped<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
             .AddSingleton<IActivityFactory, ActivityFactory>()
             .AddTransient<WorkflowBuilder>()
-            .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
-            .AddSingleton<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
-            .AddSingleton<IVariablePersistenceManager, VariablePersistenceManager>()
-            .AddSingleton<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
+            .AddScoped(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
+            .AddScoped<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
+            .AddScoped<IVariablePersistenceManager, VariablePersistenceManager>()
+            .AddScoped<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()
             .AddTransient<IIncidentStrategy, ContinueWithIncidentsStrategy>()
 
             // Pipelines.
-            .AddSingleton<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
-            .AddSingleton<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
+            .AddScoped<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
+            .AddScoped<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
 
             // Built-in activity services.
-            .AddSingleton<IActivityResolver, PropertyBasedActivityResolver>()
-            .AddSingleton<IActivityResolver, SwitchActivityResolver>()
-            .AddSingleton<ISerializationOptionsConfigurator, AdditionalConvertersConfigurator>()
-            .AddSingleton<ISerializationOptionsConfigurator, CustomConstructorConfigurator>()
+            .AddScoped<IActivityResolver, PropertyBasedActivityResolver>()
+            .AddScoped<IActivityResolver, SwitchActivityResolver>()
+            .AddScoped<ISerializationOptionsConfigurator, AdditionalConvertersConfigurator>()
+            .AddScoped<ISerializationOptionsConfigurator, CustomConstructorConfigurator>()
 
             // Domain event handlers.
             .AddHandlersFrom<WorkflowsFeature>()
 
             // Stream providers.
-            .AddSingleton(StandardInStreamProvider)
-            .AddSingleton(StandardOutStreamProvider)
+            .AddScoped(StandardInStreamProvider)
+            .AddScoped(StandardOutStreamProvider)
 
             // Storage drivers.
-            .AddSingleton<IStorageDriverManager, StorageDriverManager>()
+            .AddScoped<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
-            .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
-            .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
-            .AddSingleton<IActivitySerializer, JsonActivitySerializer>()
-            .AddSingleton<IApiSerializer, ApiSerializer>()
-            .AddSingleton<ISafeSerializer, SafeSerializer>()
+            .AddScoped<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
+            .AddScoped<IPayloadSerializer, JsonPayloadSerializer>()
+            .AddScoped<IActivitySerializer, JsonActivitySerializer>()
+            .AddScoped<IApiSerializer, ApiSerializer>()
+            .AddScoped<ISafeSerializer, SafeSerializer>()
 
             // Instantiation strategies.
-            .AddSingleton<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
+            .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
 
             // Logging
             .AddLogging();

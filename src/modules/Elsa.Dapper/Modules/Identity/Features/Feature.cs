@@ -38,8 +38,8 @@ public class DapperIdentityPersistenceFeature : FeatureBase
     {
         base.Apply();
 
-        Services.AddSingleton<DapperUserStore>();
-        Services.AddSingleton<DapperApplicationStore>();
-        Services.AddSingleton<DapperRoleStore>();
+        Services.AddScoped<DapperUserStore>();
+        Services.AddScoped<DapperApplicationStore>();
+        Services.AddScoped<DapperRoleStore>();
     }
 }

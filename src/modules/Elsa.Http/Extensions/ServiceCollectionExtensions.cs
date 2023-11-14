@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddHttpCorrelationIdSelector<T>(this IServiceCollection services) where T : class, IHttpCorrelationIdSelector
     {
-        services.AddSingleton<IHttpCorrelationIdSelector, T>();
+        services.AddScoped<IHttpCorrelationIdSelector, T>();
         return services;
     }
     
@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddHttpCorrelationIdSelector(this IServiceCollection services, Func<IServiceProvider, IHttpCorrelationIdSelector> factory)
     {
-        services.AddSingleton(factory);
+        services.AddScoped(factory);
         return services;
     }
 }

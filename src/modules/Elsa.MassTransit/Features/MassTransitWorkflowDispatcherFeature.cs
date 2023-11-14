@@ -41,6 +41,6 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
         EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
         
-        Services.AddSingleton<MassTransitWorkflowDispatcher>();
+        Services.AddScoped<MassTransitWorkflowDispatcher>();
     }
 }

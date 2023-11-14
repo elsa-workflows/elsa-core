@@ -39,9 +39,9 @@ public class QuartzSchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
-        Services.AddSingleton<QuartzWorkflowScheduler>();
-        Services.AddSingleton<QuartzCronParser>();
+        Services.AddScoped<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
+        Services.AddScoped<QuartzWorkflowScheduler>();
+        Services.AddScoped<QuartzCronParser>();
         Services.AddQuartz(quartz => quartz
             .AddJob<RunWorkflowJob>(job => job.WithIdentity(RunWorkflowJob.JobKey).StoreDurably())
             .AddJob<ResumeWorkflowJob>(job => job.WithIdentity(ResumeWorkflowJob.JobKey).StoreDurably()));

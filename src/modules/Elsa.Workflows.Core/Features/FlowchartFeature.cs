@@ -19,6 +19,6 @@ public class FlowchartFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>();
+        Services.AddScoped<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>();
     }
 }

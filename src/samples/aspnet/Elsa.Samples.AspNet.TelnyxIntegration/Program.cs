@@ -74,7 +74,7 @@ services
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityTokenOptions.ConfigureJwtBearerOptions);
 
 services.AddHttpContextAccessor();
-services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
+services.AddScoped<IAuthorizationHandler, LocalHostRequirementHandler>();
 
 // Grant localhost requests security root privileges.
 services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));

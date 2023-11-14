@@ -64,10 +64,10 @@ public class WebhooksFeature : FeatureBase
     {
         Services
             .AddHandlersFrom<WebhooksFeature>()
-            .AddSingleton<BackgroundWebhookDispatcher>()
-            .AddSingleton(WebhookDispatcher)
-            .AddSingleton<IWebhookRegistrationService, DefaultWebhookRegistrationService>()
-            .AddSingleton<IWebhookRegistrationProvider, OptionsWebhookRegistrationProvider>();
+            .AddScoped<BackgroundWebhookDispatcher>()
+            .AddScoped(WebhookDispatcher)
+            .AddScoped<IWebhookRegistrationService, DefaultWebhookRegistrationService>()
+            .AddScoped<IWebhookRegistrationProvider, OptionsWebhookRegistrationProvider>();
 
         Services.Configure(WebhookOptions);
 

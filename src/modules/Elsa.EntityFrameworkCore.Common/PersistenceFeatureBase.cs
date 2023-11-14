@@ -21,16 +21,16 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// Gets or sets a value indicating whether to use context pooling.
     /// </summary>
     public bool UseContextPooling { get; set; }
-    
+
     /// <summary>
     /// Gets or sets a value indicating whether to run migrations.
     /// </summary>
     public bool RunMigrations { get; set; } = true;
-    
+
     /// <summary>
     /// Gets or sets the lifetime of the <see cref="IDbContextFactory{TContext}"/>. Defaults to <see cref="ServiceLifetime.Singleton"/>.
     /// </summary>
-    public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Singleton;
+    public ServiceLifetime DbContextFactoryLifetime { get; set; } = ServiceLifetime.Scoped;
 
     /// <summary>
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
@@ -64,8 +64,8 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     protected void AddStore<TEntity, TStore>() where TEntity : class where TStore : class
     {
         Services
-            .AddSingleton<Store<TDbContext, TEntity>>()
-            .AddSingleton<TStore>()
+            .AddScoped<Store<TDbContext, TEntity>>()
+            .AddScoped<TStore>()
             ;
     }
 
@@ -77,8 +77,8 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     protected void AddEntityStore<TEntity, TStore>() where TEntity : Entity where TStore : class
     {
         Services
-            .AddSingleton<EntityStore<TDbContext, TEntity>>()
-            .AddSingleton<TStore>()
+            .AddScoped<EntityStore<TDbContext, TEntity>>()
+            .AddScoped<TStore>()
             ;
     }
 }
