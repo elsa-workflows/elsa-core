@@ -324,7 +324,7 @@ public class ServiceBusTest : IDisposable
         _resetEventManager.Init("receive1");
         _resetEventManager.Init("receive2");
 
-        // Init BackGround
+        // Init backGround
         await InitRegistryAndBackGroundServiceWorkerAsync();
 
         // Start Workflow
@@ -334,7 +334,7 @@ public class ServiceBusTest : IDisposable
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
         /*
-         * Workflow don't receive any message so it should be
+         * Workflow doesn't receive any message so it should be
          * Running
          * Suspended
          */

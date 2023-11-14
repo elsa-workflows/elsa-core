@@ -18,6 +18,11 @@ public class ExpressionDescriptor
     public string DisplayName { get; set; } = default!;
 
     /// <summary>
+    /// Gets or sets whether the expression value is serializable.
+    /// </summary>
+    public bool IsSerializable { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the expression type properties.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();

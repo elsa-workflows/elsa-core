@@ -48,7 +48,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
                     ? memoryReferenceIdElement.GetString()
                     : default;
 
-            var expression = expressionElement.Deserialize<Expression>(options);
+            var expression = expressionElement.ValueKind == JsonValueKind.Object ? expressionElement.Deserialize<Expression>(options) : new Expression(expressionTypeName!, null);
             var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
 
             if (memoryBlockReference == null)
@@ -69,13 +69,19 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     {
         var expression = value.Expression;
         var expressionType = expression?.Type;
+        var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
+        
+        if (expressionDescriptor == null)
+            throw new JsonException($"Could not find an expression descriptor for expression type '{expressionType}'.");
+        
         var targetType = value.Type;
         var memoryReferenceId = value.MemoryBlockReference().Id;
+        var expressionValue = expressionDescriptor.IsSerializable ? expression : null;
 
         var model = new
         {
             TypeName = targetType,
-            Expression = expression!,
+            Expression = expressionValue!,
             MemoryReference = new
             {
                 Id = memoryReferenceId
