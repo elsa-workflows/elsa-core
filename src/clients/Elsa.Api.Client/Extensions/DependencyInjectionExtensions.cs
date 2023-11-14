@@ -55,6 +55,7 @@ public static class DependencyInjectionExtensions
         services.AddApi<ILoginApi>(builderOptions);
         services.AddApi<IFeaturesApi>(builderOptions);
         services.AddApi<IJavaScriptApi>(builderOptions);
+        services.AddApi<IExpressionDescriptorsApi>(builderOptions);
         services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
         return services;
     }
@@ -108,7 +109,6 @@ public static class DependencyInjectionExtensions
         
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
         serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
-        serializerOptions.Converters.Add(new ExpressionJsonConverterFactory());
 
         var settings = new RefitSettings
         {

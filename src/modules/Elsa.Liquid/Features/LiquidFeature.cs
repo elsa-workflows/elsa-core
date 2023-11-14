@@ -41,10 +41,9 @@ public class LiquidFeature : FeatureBase
         
         Services
             .AddHandlersFrom<ConfigureLiquidEngine>()
-            .AddSingleton<IExpressionSyntaxProvider, LiquidExpressionSyntaxProvider>()
             .AddSingleton<ILiquidTemplateManager, LiquidTemplateManager>()
             .AddSingleton<LiquidParser>()
-            .AddExpressionHandler<LiquidExpressionHandler, LiquidExpression>()
+            .AddExpressionDescriptorProvider<LiquidExpressionDescriptorProvider>()
             .AddLiquidFilter<JsonFilter>("json")
             .AddLiquidFilter<Base64Filter>("base64")
             .AddLiquidFilter<DictionaryKeysFilter>("keys")

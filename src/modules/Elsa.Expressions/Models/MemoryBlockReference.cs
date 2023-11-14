@@ -5,19 +5,19 @@ namespace Elsa.Expressions.Models;
 /// <summary>
 /// A base class for types that represent a reference to a block of memory. 
 /// </summary>
-public abstract class MemoryBlockReference
+public class MemoryBlockReference
 {
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MemoryBlockReference"/> class.
     /// </summary>
-    protected MemoryBlockReference()
+    public MemoryBlockReference()
     {
     }
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MemoryBlockReference"/> class.
     /// </summary>
-    protected MemoryBlockReference(string id) => Id = id;
+    public MemoryBlockReference(string id) => Id = id;
 
     /// <summary>
     /// The ID of the memory block.
@@ -27,7 +27,7 @@ public abstract class MemoryBlockReference
     /// <summary>
     /// Declares the memory block.
     /// </summary>
-    public abstract MemoryBlock Declare();
+    public virtual MemoryBlock Declare() => new();
     
     /// <summary>
     /// Returns true if the memory block is defined in the specified memory register.
@@ -84,6 +84,6 @@ public abstract class MemoryBlockReference
 /// A base class for types that represent a reference to a block of memory.
 /// </summary>
 /// <typeparam name="T">The type of the memory block.</typeparam>
-public abstract class MemoryBlockReference<T> : MemoryBlockReference
+public class MemoryBlockReference<T> : MemoryBlockReference
 {
 }

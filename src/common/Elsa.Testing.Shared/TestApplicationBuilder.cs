@@ -121,9 +121,4 @@ public class TestApplicationBuilder
         _configureElsa += elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Blobs.DirectoryFiles(Path.Combine(workflowsDirectory)));
         return this;
     }
-
-    private static string GetWorkflowsDirectory()
-    {
-        return Path.Combine("Scenarios", "DependencyWorkflows", "Workflows");
-    }
 }

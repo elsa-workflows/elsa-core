@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
@@ -14,16 +15,18 @@ public class ImplicitWorkflowTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public ImplicitWorkflowTests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Implicit loop workflows are executed correctly")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<ImplicitLoopWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "Retry", "End" }, lines);
@@ -32,6 +35,7 @@ public class ImplicitWorkflowTests
     [Fact(DisplayName = "Implicit loop workflows complete the workflow")]
     public async Task Test2()
     {
+        await _services.PopulateRegistriesAsync();
         var result = await _workflowRunner.RunAsync<ImplicitLoopWorkflow>();
         Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
     }

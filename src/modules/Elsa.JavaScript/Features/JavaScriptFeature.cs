@@ -43,7 +43,13 @@ public class JavaScriptFeature : FeatureBase
     {
         ConfigureHostedService<RegisterVariableTypesWithJavaScriptHostedService>();
     }
-    
+
+    /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<JavaScriptFeature>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
@@ -51,10 +57,9 @@ public class JavaScriptFeature : FeatureBase
         
         // JavaScript services.
         Services
-            .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
-            .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
+            .AddExpressionDescriptorProvider<JavaScriptExpressionDescriptorProvider>()
             ;
 
         // Type definition services.

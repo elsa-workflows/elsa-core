@@ -89,6 +89,10 @@ public class Module : IModule
             ConfigureFeature(feature);
         }
 
+        // Filter out features that depend on other features that are not installed.
+        _features = ExcludeFeaturesWithMissingDependencies(_features.Values).ToDictionary(x => x.GetType(), x => x);
+
+        // Add hosted services in order of priority.
         foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
             Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.Type));
 
@@ -109,6 +113,17 @@ public class Module : IModule
         }
 
         Services.AddSingleton<IInstalledFeatureRegistry>(registry);
+    }
+
+    private IEnumerable<IFeature> ExcludeFeaturesWithMissingDependencies(IEnumerable<IFeature> features)
+    {
+        return
+            from feature in features
+            let featureType = feature.GetType()
+            let dependencyOfAttributes = featureType.GetCustomAttributes<DependencyOfAttribute>().ToList()
+            let missingDependencies = dependencyOfAttributes.Where(x => !_features.ContainsKey(x.Type)).ToList()
+            where !missingDependencies.Any()
+            select feature;
     }
 
     private void ConfigureFeature(IFeature feature)

@@ -14,5 +14,5 @@ public interface IExpressionHandler
     /// <param name="returnType">The expected return type.</param>
     /// <param name="context">The context in which the expression is evaluated.</param>
     /// <returns>The result of the evaluation.</returns>
-    ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context);
+    ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context);
 }

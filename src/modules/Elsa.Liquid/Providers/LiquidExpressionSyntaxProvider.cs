@@ -1,41 +1,41 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Liquid.Expressions;
 using Elsa.Workflows.Core.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Providers;
 
-public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
+/// <summary>
+/// Provides Liquid expression descriptors.
+/// </summary>
+public class LiquidExpressionDescriptorProvider : IExpressionDescriptorProvider
 {
-    public const string SyntaxName = "Liquid";
+    /// <summary>
+    /// Gets the name of the expression type.
+    /// </summary>
+    public const string TypeName = "Liquid";
     private readonly IIdentityGenerator _identityGenerator;
-    public LiquidExpressionSyntaxProvider(IIdentityGenerator identityGenerator) => _identityGenerator = identityGenerator;
+    
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LiquidExpressionDescriptorProvider"/> class.
+    /// </summary>
+    public LiquidExpressionDescriptorProvider(IIdentityGenerator identityGenerator) => _identityGenerator = identityGenerator;
 
-    public ValueTask<IEnumerable<ExpressionSyntaxDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var liquidDescriptor = CreateLiquidDescriptor();
 
-        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { liquidDescriptor });
+        return ValueTask.FromResult<IEnumerable<ExpressionDescriptor>>(new[] { liquidDescriptor });
     }
 
-    private ExpressionSyntaxDescriptor CreateLiquidDescriptor() => new()
+    private ExpressionDescriptor CreateLiquidDescriptor() => new()
     {
-        Syntax = SyntaxName,
-        Type = typeof(LiquidExpression),
-        CreateExpression = CreateLiquidExpression,
-        CreateBlockReference = context => new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>()),
-        CreateSerializableObject = context => new
-        {
-            Type = SyntaxName,
-            context.GetExpression<LiquidExpression>().Value
-        }
+        Type = TypeName,
+        DisplayName = "Liquid",
+        Properties = new { MonacoLanguage = "liquid" }.ToDictionary(),
+        HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<LiquidExpressionHandler> 
     };
-
-    private IExpression CreateLiquidExpression(ExpressionConstructorContext context)
-    {
-        var code = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
-        return new LiquidExpression(code);
-    }
-
-    private string GenerateId() => _identityGenerator.GenerateId();
 }

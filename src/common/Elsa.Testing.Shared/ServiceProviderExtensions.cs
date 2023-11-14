@@ -24,10 +24,10 @@ public static class ServiceProviderExtensions
     /// Updates the registries.
     /// </summary>
     /// <param name="services">The services.</param>
-    public static async Task PopulateRegistriesAsync(this IServiceProvider services)
+    public static Task PopulateRegistriesAsync(this IServiceProvider services)
     {
         var registriesPopulator = services.GetRequiredService<IRegistriesPopulator>();
-        await registriesPopulator.PopulateAsync();
+        return registriesPopulator.PopulateAsync();
     }
 
     /// <summary>
@@ -99,6 +99,7 @@ public static class ServiceProviderExtensions
     /// <returns>The result of running the activity.</returns>
     public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, CancellationToken cancellationToken = default)
     {
+        await services.PopulateRegistriesAsync();
         var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
         var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
         return result;

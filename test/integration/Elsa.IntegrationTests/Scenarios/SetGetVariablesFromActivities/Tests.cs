@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.SetGetVariablesFromActivities.Workflows;
@@ -13,17 +14,19 @@ public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        services.GetRequiredService<IWorkflowBuilderFactory>();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services.GetRequiredService<IWorkflowBuilderFactory>();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Activities can set and get variables internally")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync(); 
         await _workflowRunner.RunAsync<SampleWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Bar" }, lines);

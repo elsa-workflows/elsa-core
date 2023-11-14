@@ -22,4 +22,4 @@ public partial class WorkflowDefinitionBuilderInterpreter
     }
 }
 
-public record ExternalExpressionReference(IExpression Expression, MemoryBlockReference BlockReference);
+public record ExternalExpressionReference(Expression Expression, MemoryBlockReference BlockReference);

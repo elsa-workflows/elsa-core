@@ -21,10 +21,10 @@ public class LiquidExpressionHandler : IExpressionHandler
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var liquidExpression = (LiquidExpression)expression;
-        var renderedString = await _liquidTemplateManager.RenderAsync(liquidExpression.Value, context);
+        var liquidExpression = expression.Value.ConvertTo<string>() ?? "";
+        var renderedString = await _liquidTemplateManager.RenderAsync(liquidExpression, context);
         return renderedString.ConvertTo(returnType);
     }
 }

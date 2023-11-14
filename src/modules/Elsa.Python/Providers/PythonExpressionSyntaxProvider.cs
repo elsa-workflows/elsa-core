@@ -1,36 +1,27 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Python.Expressions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Python.Providers;
 
-internal class PythonExpressionSyntaxProvider : IExpressionSyntaxProvider
+internal class PythonExpressionDescriptorProvider : IExpressionDescriptorProvider
 {
-    private const string SyntaxName = "Python";
+    private const string TypeName = "Python";
     
-    public ValueTask<IEnumerable<ExpressionSyntaxDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var javaScript = CreatePythonDescriptor();
 
-        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { javaScript });
+        return ValueTask.FromResult<IEnumerable<ExpressionDescriptor>>(new[] { javaScript });
     }
 
-    private ExpressionSyntaxDescriptor CreatePythonDescriptor() => new()
+    private ExpressionDescriptor CreatePythonDescriptor() => new()
     {
-        Syntax = SyntaxName,
-        Type = typeof(PythonExpression),
-        CreateExpression = CreateCSharpExpression,
-        CreateBlockReference = context => new PythonExpressionBlockReference(context.GetExpression<PythonExpression>()),
-        CreateSerializableObject = context => new
-        {
-            Type = SyntaxName,
-            context.GetExpression<PythonExpression>().Value
-        }
+        Type = TypeName,
+        DisplayName = "Python",
+        Properties = new { MonacoLanguage = "python" }.ToDictionary(),
+        HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<PythonExpressionHandler>
     };
-
-    private IExpression CreateCSharpExpression(ExpressionConstructorContext context)
-    {
-        var script = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
-        return new PythonExpression(script);
-    }
 }

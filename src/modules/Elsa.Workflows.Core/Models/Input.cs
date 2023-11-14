@@ -1,8 +1,6 @@
 using System.Text.Json.Serialization;
 using Elsa.Expressions;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Memory;
 
 namespace Elsa.Workflows.Core.Models;
@@ -19,14 +17,20 @@ public abstract class Input : Argument
     }
     
     /// <inheritdoc />
-    protected Input(IExpression? expression, MemoryBlockReference memoryBlockReference, Type type) : base(memoryBlockReference)
+    protected Input(Expression? expression, MemoryBlockReference memoryBlockReference, Type type) : base(memoryBlockReference)
     {
         Expression = expression;
         Type = type;
     }
 
-    public IExpression? Expression { get; }
+    /// <summary>
+    /// Gets or sets the expression.
+    /// </summary>
+    public Expression? Expression { get; }
 
+    /// <summary>
+    /// Gets the type of the input.
+    /// </summary>
     [JsonPropertyName("typeName")] public Type Type { get; set; }
 }
 
@@ -46,71 +50,57 @@ public class Input<T> : Input
     }
 
     /// <inheritdoc />
-    public Input(Func<T> @delegate, string? id = default) : this(new DelegateBlockReference(() => @delegate(), id))
+    public Input(Func<T> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate, string? id = default) : this(new DelegateBlockReference<T>(@delegate, id))
+    public Input(Func<ExpressionExecutionContext, ValueTask<T?>> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ValueTask<T?>> @delegate) : this(new DelegateBlockReference<T>(@delegate))
+    public Input(Func<ValueTask<T?>> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Func<ExpressionExecutionContext, T> @delegate) : this(new DelegateBlockReference<T>(@delegate))
+    public Input(Func<ExpressionExecutionContext, T> @delegate, string? id = default) : this(Expression.DelegateExpression(@delegate), new MemoryBlockReference(id!))
     {
     }
 
     /// <inheritdoc />
-    public Input(Variable variable) : base(new VariableExpression(variable), variable, typeof(T))
+    public Input(Variable variable) : base(new Expression("Variable", variable), variable, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(Output output) : base(new OutputExpression(output), output.MemoryBlockReference(), typeof(T))
+    public Input(Output output) : base(new Expression("Output", output), output.MemoryBlockReference(), typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(Literal<T> literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
+    public Input(Literal<T> literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(Literal literal) : base(new LiteralExpression(literal.Value), literal, typeof(T))
+    public Input(Literal literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
     
     /// <inheritdoc />
-    public Input(ObjectLiteral<T> literal) : base(new ObjectExpression(literal.Value), literal, typeof(T))
+    public Input(ObjectLiteral<T> literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(ObjectLiteral literal) : base(new ObjectExpression(literal.Value), literal, typeof(T))
+    public Input(ObjectLiteral literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
 
     /// <inheritdoc />
-    public Input(DelegateBlockReference delegateBlockReference) : base(new DelegateExpression(delegateBlockReference), delegateBlockReference, typeof(T))
-    {
-    }
-
-    /// <inheritdoc />
-    public Input(ElsaExpression expression) : this(new ElsaExpressionBlockReference(expression))
-    {
-    }
-
-    /// <inheritdoc />
-    public Input(IExpression expression, MemoryBlockReference memoryBlockReference) : base(expression, memoryBlockReference, typeof(T))
-    {
-    }
-
-    private Input(ElsaExpressionBlockReference expressionBlockReference) : base(expressionBlockReference.Expression, expressionBlockReference, typeof(T))
+    public Input(Expression expression, MemoryBlockReference memoryBlockReference) : base(expression, memoryBlockReference, typeof(T))
     {
     }
 }

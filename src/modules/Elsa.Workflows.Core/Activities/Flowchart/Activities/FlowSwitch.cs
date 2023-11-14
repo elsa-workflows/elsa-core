@@ -1,4 +1,3 @@
-using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -8,7 +7,6 @@ using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
 using JetBrains.Annotations;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
 
 namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
 
@@ -62,44 +60,4 @@ public class FlowSwitch : Activity
 
         return matchingCases;
     }
-}
-
-/// <summary>
-/// Represents an individual case of the <see cref="FlowSwitch"/> activity.
-/// </summary>
-public class FlowSwitchCase
-{
-    [JsonConstructor]
-    public FlowSwitchCase()
-    {
-    }
-
-    public FlowSwitchCase(string label, IExpression condition)
-    {
-        Label = label;
-        Condition = condition;
-    }
-
-    public FlowSwitchCase(string label, DelegateBlockReference<bool> condition) : this(label, new DelegateExpression(condition))
-    {
-    }
-
-    public FlowSwitchCase(string label, Func<ExpressionExecutionContext, ValueTask<bool>> condition) : this(label, new DelegateBlockReference<bool>(condition))
-    {
-    }
-
-    public FlowSwitchCase(string label, Func<ValueTask<bool>> condition) : this(label, new DelegateBlockReference<bool>(condition))
-    {
-    }
-
-    public FlowSwitchCase(string label, Func<ExpressionExecutionContext, bool> condition) : this(label, new DelegateBlockReference<bool>(condition))
-    {
-    }
-
-    public FlowSwitchCase(string label, Func<bool> condition) : this(label, new DelegateBlockReference<bool>(condition))
-    {
-    }
-
-    public string Label { get; set; } = default!;
-    public IExpression Condition { get; set; } = new LiteralExpression(false);
 }

@@ -73,14 +73,14 @@ public class ServiceBusTest : IDisposable
         _sbProcessorManager.Init("topicName", "subscriptionName");
         _sbProcessorManager.Init("topicName1", "subscription1");
 
-        //Init waitEvent :
+        // Init waitEvent:
         _resetEventManager.Init("receive1");
         _resetEventManager.Init("receive2");
 
-        //Init BackGround
+        // Init BackGround
         await InitRegistryAndBackGroundServiceWorkerAsync();
 
-        //Start Workflow
+        // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveMessageWorkflow);
         var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
@@ -324,7 +324,7 @@ public class ServiceBusTest : IDisposable
         _resetEventManager.Init("receive1");
         _resetEventManager.Init("receive2");
 
-        // Init BackGround
+        // Init backGround
         await InitRegistryAndBackGroundServiceWorkerAsync();
 
         // Start Workflow
@@ -334,7 +334,7 @@ public class ServiceBusTest : IDisposable
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
         /*
-         * Workflow don't receive any message so it should be
+         * Workflow doesn't receive any message so it should be
          * Running
          * Suspended
          */

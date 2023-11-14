@@ -38,9 +38,8 @@ public class CSharpFeature : FeatureBase
         
         // C# services.
         Services
-            .AddSingleton<IExpressionSyntaxProvider, CSharpExpressionSyntaxProvider>()
+            .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
             .AddSingleton<ICSharpEvaluator, CSharpEvaluator>()
-            .AddExpressionHandler<CSharpExpressionHandler, CSharpExpression>()
             ;
 
         // Handlers.

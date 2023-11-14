@@ -64,13 +64,13 @@ public class RunTask : Activity<object>
 
     /// <inheritdoc />
     public RunTask(Func<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string>(taskName), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(taskName), new MemoryBlockReference()), source, line)
     {
     }
 
     /// <inheritdoc />
     public RunTask(Func<ExpressionExecutionContext, string?> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
-        : this(new DelegateBlockReference<string?>(taskName), source, line)
+        : this(new Input<string>(Expression.DelegateExpression(taskName), new MemoryBlockReference()), source, line)
     {
     }
 
@@ -80,6 +80,8 @@ public class RunTask : Activity<object>
     /// <inheritdoc />
     public RunTask(Literal<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) => TaskName = new Input<string>(taskName);
 
+    /// <inheritdoc />
+    public RunTask(Input<string> taskName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => TaskName = taskName;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

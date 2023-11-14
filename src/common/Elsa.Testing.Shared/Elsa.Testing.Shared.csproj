@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+        <PackageReference Include="xunit.extensibility.core" Version="2.4.2" />
     </ItemGroup>
 
     <ItemGroup>

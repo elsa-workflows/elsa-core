@@ -1,4 +1,5 @@
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Contracts;
 
@@ -20,9 +21,9 @@ public class JavaScriptExpressionHandler : IExpressionHandler
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(IExpression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
     {
-        var javaScriptExpression = (JavaScriptExpression)expression;
-        return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression.Value, returnType, context);
+        var javaScriptExpression = expression.Value.ConvertTo<string>() ?? "";
+        return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression, returnType, context);
     }
 }

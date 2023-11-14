@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
-using Elsa.Api.Client.Contracts;
-using Elsa.Api.Client.Expressions;
+using Elsa.Api.Client.Resources.Scripting.Models;
 
 namespace Elsa.Api.Client.Shared.Models;
 
@@ -18,7 +17,7 @@ public class SwitchCase
     /// <summary>
     /// Gets or sets the condition of the case.
     /// </summary>
-    public IExpression Condition { get; set; } = new JavaScriptExpression("");
+    public Expression Condition { get; set; } = Expression.CreateLiteral("");
 
     /// <summary>
     /// When used in a <see cref="Switch"/> activity, specifies the activity to schedule when the condition evaluates to true.

@@ -6,17 +6,21 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Expressions.Features;
 
+/// <summary>
+/// Installs and configures the expressions feature.
+/// </summary>
 public class ExpressionsFeature : FeatureBase
 {
+    /// <inheritdoc />
     public ExpressionsFeature(IModule module) : base(module)
     {
     }
 
+    /// <inheritdoc />
     public override void Configure()
     {
         Services
             .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
-            .AddSingleton<IExpressionHandlerRegistry, ExpressionHandlerRegistry>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
     }
 }

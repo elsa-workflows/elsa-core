@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Activities;
@@ -13,16 +14,18 @@ public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Setting a variable should be captured when the ResultVariable is set")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         var expectedValue = "Some value";
         var variable1 = new Variable();
         
@@ -45,6 +48,7 @@ public class Tests
     [Fact(DisplayName = "Setting a variable should be captured when the ResultVariable is set")]
     public async Task Test2()
     {
+        await _services.PopulateRegistriesAsync();
         var expectedValue = "Some value";
         var variable = new Variable<string>();
         
@@ -52,7 +56,7 @@ public class Tests
         {
             Activities =
             {
-                new SetVariable()
+                new SetVariable
                 {
                     Variable = variable,
                     Value = new (expectedValue)
