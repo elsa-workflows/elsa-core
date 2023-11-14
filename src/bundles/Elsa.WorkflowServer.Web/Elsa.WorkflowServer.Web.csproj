@@ -15,6 +15,8 @@
         <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.Sqlite\Elsa.Quartz.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.FileStorage\Elsa.FileStorage.csproj" />
@@ -41,7 +43,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Identity" Version="1.8.2"/>
+        <PackageReference Include="Azure.Identity" Version="1.10.4"/>
         <PackageReference Include="FluentStorage.Azure.Blobs" Version="5.2.2" />
         <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
         <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>

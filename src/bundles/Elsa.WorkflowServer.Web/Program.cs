@@ -28,6 +28,8 @@ const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
+const bool useMassTransitAzureServiceBus = true;
+const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -37,6 +39,8 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
+var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
+var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 
 // Add Elsa services.
 services
@@ -186,14 +190,18 @@ services
 
         if (useQuartz)
         {
-            elsa.UseQuartz(quartz =>
-            {
-                quartz.UseSqlite(sqliteConnectionString);
-            });
+            elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
         }
         
-        elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
+        elsa.UseMassTransit(massTransit =>
+        {
+            if (useMassTransitAzureServiceBus)
+                massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+            else if (useMassTransitRabbitMq)
+                massTransit.UseRabbitMq(rabbitMqConnectionString);
+        });
 
+        elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
     });
 

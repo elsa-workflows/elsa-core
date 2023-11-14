@@ -24,34 +24,4 @@ public static class ModuleExtensions
         module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>());
         return module;
     }
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString) => feature.UseRabbitMq(new Uri(connectionString), null);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri connectionString) => feature.UseRabbitMq(connectionString, null);
-    
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, RabbitMqOptions options) => feature.UseRabbitMq(null, options);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    private static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri? connectionString, RabbitMqOptions? options)
-    {
-        void Configure(RabbitMqServiceBusFeature bus)
-        {
-            bus.ConnectionString = connectionString;
-            bus.Options = options;
-        }
-
-        feature.Module.Configure((Action<RabbitMqServiceBusFeature>) Configure);
-        return feature;
-    }
 }

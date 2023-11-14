@@ -1,13 +1,15 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
+using Elsa.MassTransit.RabbitMq.Options;
 using MassTransit;
 
-namespace Elsa.MassTransit.Features;
+namespace Elsa.MassTransit.RabbitMq.Features;
 
 /// <summary>
-/// Configures MassTransit to use the RabbitMQ broker.
+/// Configures MassTransit to use the RabbitMQ transport.
 /// </summary>
 [DependsOn(typeof(MassTransitFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase

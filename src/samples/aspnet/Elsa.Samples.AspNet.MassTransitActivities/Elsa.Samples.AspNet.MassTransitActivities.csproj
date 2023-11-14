@@ -12,6 +12,7 @@
         <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
+        <ProjectReference Include="..\..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Designer\Elsa.Workflows.Designer.csproj" />
