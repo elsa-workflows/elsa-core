@@ -1,9 +1,13 @@
+using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Messages;
 using Elsa.MassTransit.Options;
+using Elsa.Workflows.Runtime.Activities;
 using MassTransit;
+using MassTransit.Configuration;
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
@@ -32,13 +36,13 @@ public class AzureServiceBusFeature : FeatureBase
             {
                 configure.AddServiceBusMessageScheduler();
                 
-                configure.UsingAzureServiceBus((context, configurator) =>
+                configure.UsingAzureServiceBus((context, serviceBus) =>
                 {
                     if (ConnectionString != null) 
-                        configurator.Host(ConnectionString);
+                        serviceBus.Host(ConnectionString);
                     
-                    configurator.UseServiceBusMessageScheduler();
-                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    serviceBus.UseServiceBusMessageScheduler();
+                    serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });
