@@ -16,7 +16,4 @@
         <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
     </ItemGroup>
 
-
-
-
 </Project>
