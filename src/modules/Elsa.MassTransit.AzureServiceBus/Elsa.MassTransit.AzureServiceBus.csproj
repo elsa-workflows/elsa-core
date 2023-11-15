@@ -6,14 +6,17 @@
     <PropertyGroup>
         <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
-            Provides alteration background job runners using MassTransit.
+            Provides integration of Azure Service Bus with MassTransit's integration of Elsa.
         </Description>
-        <PackageTags>elsa module alterations masstransit</PackageTags>
+        <PackageTags>elsa module service-bus masstransit azure-service-bus</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
         <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.1.2" />
     </ItemGroup>
 
 </Project>

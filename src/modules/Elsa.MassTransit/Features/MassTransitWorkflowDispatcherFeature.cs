@@ -4,8 +4,10 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;
@@ -32,6 +34,13 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
+        var queueAddress = new Uri($"queue:elsa-{queueName}");
+        EndpointConvention.Map<DispatchWorkflowDefinition>(queueAddress);
+        EndpointConvention.Map<DispatchWorkflowInstance>(queueAddress);
+        EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
+        EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
+        
         Services.AddSingleton<MassTransitWorkflowDispatcher>();
     }
 }

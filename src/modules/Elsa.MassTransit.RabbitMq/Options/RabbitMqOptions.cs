@@ -1,4 +1,4 @@
-namespace Elsa.MassTransit.Options;
+namespace Elsa.MassTransit.RabbitMq.Options;
 
 /// <summary>
 /// Provides settings to the RabbitMQ broker for MassTransit.

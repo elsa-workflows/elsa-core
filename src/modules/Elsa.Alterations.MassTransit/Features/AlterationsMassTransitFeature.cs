@@ -1,11 +1,13 @@
 using Elsa.Alterations.Features;
 using Elsa.Alterations.MassTransit.Consumers;
+using Elsa.Alterations.MassTransit.Messages;
 using Elsa.Alterations.MassTransit.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.MassTransit.Features;
@@ -32,6 +34,9 @@ public class MassTransitAlterationsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<RunAlterationJobConsumer>();
+        var queueAddress = new Uri($"queue:elsa-{queueName}");
+        EndpointConvention.Map<RunAlterationJob>(queueAddress);
         Services.AddSingleton<MassTransitAlterationJobDispatcher>();
     }
 }

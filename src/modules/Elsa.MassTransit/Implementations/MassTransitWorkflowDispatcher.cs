@@ -23,7 +23,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Publish(new DispatchWorkflowDefinition(
+        await _bus.Send(new DispatchWorkflowDefinition(
             request.DefinitionId,
             request.VersionOptions,
             request.Input,
@@ -37,7 +37,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Publish(new DispatchWorkflowInstance(
+        await _bus.Send(new DispatchWorkflowInstance(
             request.InstanceId,
             request.BookmarkId,
             request.ActivityId,
@@ -53,7 +53,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Publish(new DispatchTriggerWorkflows(
+        await _bus.Send(new DispatchTriggerWorkflows(
             request.ActivityTypeName,
             request.BookmarkPayload,
             request.CorrelationId,
@@ -67,7 +67,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Publish(new DispatchResumeWorkflows(
+        await _bus.Send(new DispatchResumeWorkflows(
             request.ActivityTypeName,
             request.BookmarkPayload,
             request.CorrelationId,

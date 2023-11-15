@@ -23,6 +23,6 @@ public class MassTransitAlterationJobDispatcher : IAlterationJobDispatcher
     public async ValueTask DispatchAsync(string jobId, CancellationToken cancellationToken = default)
     {
         var message = new RunAlterationJob(jobId);
-        await _bus.Publish(message, cancellationToken);
+        await _bus.Send(message, cancellationToken);
     }
 }
