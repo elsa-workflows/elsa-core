@@ -23,6 +23,8 @@ public class HttpContentTypeOptionsProvider : IActivityPropertyOptionsProvider
         _httpContentFactories = httpContentFactories;
     }
 
+    public bool isRefreashable => false;
+
     /// <inheritdoc />
     public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property,object? context, CancellationToken cancellationToken = default)
     {

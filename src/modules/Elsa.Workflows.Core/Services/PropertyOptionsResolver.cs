@@ -22,23 +22,29 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
     }
 
     /// <inheritdoc />
-    public async ValueTask<IDictionary<string, object>?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
+    public async ValueTask<OptionsProviderResult?> GetOptionsAsync(PropertyInfo propertyInfo, CancellationToken cancellationToken = default)
     {
-        return await GetOptionsAsync(propertyInfo,null,  cancellationToken);
+        return await GetOptionsAsync(propertyInfo, null, cancellationToken);       
     }
 
+
+    //TODO: Return a new model with {MetadataProvider: {} , OptionsItems :{}}
+    //Refresh Always, When PropertyChanged, static ?
     /// <inheritdoc />
-    public async ValueTask<IDictionary<string, object>?> GetOptionsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
+    public async ValueTask<OptionsProviderResult?> GetOptionsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
-
+        var optionsProviderResult = new OptionsProviderResult();
         if (inputAttribute?.OptionsProvider != null)
         {
             var providerType = inputAttribute.OptionsProvider;
 
             using var scope = _serviceProvider.CreateScope();
             var provider = (IActivityPropertyOptionsProvider)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
-            return await provider.GetOptionsAsync(propertyInfo,context,  cancellationToken);
+
+            optionsProviderResult.OptionsItems = await provider.GetOptionsAsync(propertyInfo,context,  cancellationToken);
+            optionsProviderResult.ProviderMetadata.Add("isRefreshable", provider.isRefreashable);
+            return optionsProviderResult;
         }
 
         if (inputAttribute?.OptionsMethod is not null)
@@ -51,12 +57,16 @@ public class PropertyOptionsResolver : IPropertyOptionsResolver
                 throw new InvalidOperationException($"Could not find static method '{methodName}' on type '{activityType}'.");
 
             var optionsTask = (ValueTask<IDictionary<string, object>>)method.Invoke(null, new object[] { propertyInfo, cancellationToken })!;
-            var options = await optionsTask;
-            return options;
+            optionsProviderResult.OptionsItems = await optionsTask;
+            optionsProviderResult.ProviderMetadata.Add("isRefreshable", false);
+            return optionsProviderResult;
         }
 
         var defaultOptions = inputAttribute?.Options ?? (TryGetEnumOptions(propertyInfo, out var items) ? items : null);
-        return defaultOptions != null ? new Dictionary<string, object> { ["items"] = defaultOptions } : null;
+        optionsProviderResult.OptionsItems = defaultOptions != null ? new Dictionary<string, object> { ["items"] = defaultOptions } : null;
+        optionsProviderResult.ProviderMetadata.Add("isRefreshable", false);
+
+        return optionsProviderResult;
     }
 
     private bool TryGetEnumOptions(PropertyInfo activityPropertyInfo, out IList<SelectListItem>? items)
