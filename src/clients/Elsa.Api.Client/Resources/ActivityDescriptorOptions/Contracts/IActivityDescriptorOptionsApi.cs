@@ -17,6 +17,6 @@ public interface IActivityDescriptorOptionsApi
     /// <param name="request">The context request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response containing the activity descriptors.</returns>
-    [Get("/descriptors/activities/{activityTypeName}/options/{propertyName}")]
+    [Post("/descriptors/activities/{activityTypeName}/options/{propertyName}")]
     Task<GetActivityDescriptorOptionsResponse> GetAsync(string activityTypeName, string propertyName, [Body]GetActivityDescriptorOptionsRequest request, CancellationToken cancellationToken = default);
 }
