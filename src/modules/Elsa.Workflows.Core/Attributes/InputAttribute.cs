@@ -94,4 +94,14 @@ public class InputAttribute : Attribute
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;
+
+    /// <summary>
+    /// The property Name on which this input depends. 
+    /// </summary>
+    public string[]? DependsOn { get; set; }
+
+    /// <summary>
+    /// The property Name which can change the activatation of this property
+    /// </summary>
+    public string[]? ActivatedBy { get; set; }
 }

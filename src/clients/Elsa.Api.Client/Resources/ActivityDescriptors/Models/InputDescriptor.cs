@@ -54,4 +54,20 @@ public class InputDescriptor : PropertyDescriptor
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
     public string? StorageDriverType { get; set; }
+
+    /// <summary>
+    /// True if the data provided is dynamic
+    /// </summary>
+    public bool IsRefreashable { get; set; }
+
+    /// <summary>
+    /// The property Name on which this input depends. 
+    /// </summary>
+    public string[]? DependsOn { get; set; }
+
+    /// <summary>
+    /// The property Name which can change the activatation of this property
+    /// </summary>
+    public string[]? ActivatedBy { get; set; }
+
 }
