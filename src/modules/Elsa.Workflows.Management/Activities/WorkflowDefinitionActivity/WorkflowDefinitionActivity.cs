@@ -77,8 +77,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             var value = variable.Get(activityExecutionContext);
 
             // Assign the value to the output synthetic property.
+            // Make sure to select a parent scope to avoid naming collisions between outputs defined on the current scope and outputs defined on parent scopes.
+            var parentActivityExecutionContext = activityExecutionContext.ParentActivityExecutionContext ?? activityExecutionContext;
             var output = SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputValue) ? (Output?)outputValue : default;
-            activityExecutionContext.Set(output, value);
+            parentActivityExecutionContext.Set(output, value);
         }
 
         // Complete this activity with the signal value.

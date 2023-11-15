@@ -41,4 +41,26 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Result: 9" }, lines);
     }
+    
+    [Fact(DisplayName = "Multiple parent/child workflows receive output from child workflows even when using same output names.")]
+    public async Task Test2()
+    {
+        // Populate registries.
+        await _services.PopulateRegistriesAsync();
+
+        // Import workflows.
+        await _services.ImportWorkflowDefinitionAsync("Scenarios/ParentChildOutputMapping/Workflows/a.json");
+        await _services.ImportWorkflowDefinitionAsync("Scenarios/ParentChildOutputMapping/Workflows/b.json");
+        await _services.ImportWorkflowDefinitionAsync("Scenarios/ParentChildOutputMapping/Workflows/c.json");
+
+        // Import root workflow.
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync("Scenarios/ParentChildOutputMapping/Workflows/d.json");
+
+        // Execute.
+        await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
+
+        // Assert expected output.
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[] { "FooBar" }, lines);
+    }
 }
