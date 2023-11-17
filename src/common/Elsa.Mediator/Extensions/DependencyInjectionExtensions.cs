@@ -33,13 +33,13 @@ public static class DependencyInjectionExtensions
         services.Configure(configure ?? (_ => { }));
 
         return services
-                .AddSingleton<IMediator, DefaultMediator>()
-                .AddSingleton<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
-                .AddSingleton<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
-                .AddSingleton<INotificationSender>(sp => sp.GetRequiredService<IMediator>())
-                .AddSingleton<IRequestPipeline, RequestPipeline>()
-                .AddSingleton<ICommandPipeline, CommandPipeline>()
-                .AddSingleton<INotificationPipeline, NotificationPipeline>()
+                .AddScoped<IMediator, DefaultMediator>()
+                .AddScoped<IRequestSender>(sp => sp.GetRequiredService<IMediator>())
+                .AddScoped<ICommandSender>(sp => sp.GetRequiredService<IMediator>())
+                .AddScoped<INotificationSender>(sp => sp.GetRequiredService<IMediator>())
+                .AddScoped<IRequestPipeline, RequestPipeline>()
+                .AddScoped<ICommandPipeline, CommandPipeline>()
+                .AddScoped<INotificationPipeline, NotificationPipeline>()
             ;
     }
 
@@ -58,13 +58,17 @@ public static class DependencyInjectionExtensions
             .AddHostedService<JobRunnerHostedService>()
             .AddHostedService(sp =>
             {
-                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(sp, options.CommandWorkerCount);
+                using var scope = sp.CreateScope();
+
+                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundCommandSenderHostedService>(scope.ServiceProvider, options.CommandWorkerCount);
             })
             .AddHostedService(sp =>
             {
-                var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
-                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(sp, options.NotificationWorkerCount);
+                using var scope = sp.CreateScope();
+
+                var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
+                return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(scope.ServiceProvider, options.NotificationWorkerCount);
             });
     }
 

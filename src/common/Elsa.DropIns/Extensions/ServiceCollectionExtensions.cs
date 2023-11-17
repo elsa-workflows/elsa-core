@@ -19,7 +19,7 @@ internal static class ServiceCollectionExtensions
     public static IServiceCollection AddDropInInstaller(this IServiceCollection services, Action<DropInOptions>? configureOptions = default)
     {
         services.AddDropInCore(configureOptions);
-        services.AddScoped<IDropInInstaller, DropInInstaller>();
+        services.AddSingleton<IDropInInstaller, DropInInstaller>();
         
         return services;
     }

@@ -67,7 +67,7 @@ public class WebhooksFeature : FeatureBase
             .AddScoped<BackgroundWebhookDispatcher>()
             .AddScoped(WebhookDispatcher)
             .AddScoped<IWebhookRegistrationService, DefaultWebhookRegistrationService>()
-            .AddScoped<IWebhookRegistrationProvider, OptionsWebhookRegistrationProvider>();
+            .AddSingleton<IWebhookRegistrationProvider, OptionsWebhookRegistrationProvider>();
 
         Services.Configure(WebhookOptions);
 
