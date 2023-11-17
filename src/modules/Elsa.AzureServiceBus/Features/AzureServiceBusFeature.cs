@@ -67,10 +67,10 @@ public class AzureServiceBusFeature : FeatureBase
         Services.Configure(AzureServiceBusOptions);
 
         Services
-            .AddScoped(ServiceBusAdministrationClientFactory)
-            .AddScoped(ServiceBusClientFactory)
-            .AddScoped<ConfigurationQueueTopicAndSubscriptionProvider>()
-            .AddScoped<IWorkerManager, WorkerManager>()
+            .AddSingleton(ServiceBusAdministrationClientFactory)
+            .AddSingleton(ServiceBusClientFactory)
+            .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
+            .AddSingleton<IWorkerManager, WorkerManager>()
             .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
 
         // Definition providers.

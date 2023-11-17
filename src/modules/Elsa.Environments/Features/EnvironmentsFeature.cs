@@ -37,7 +37,7 @@ public class EnvironmentsFeature : FeatureBase
     {
         Services.Configure(EnvironmentsOptions);
 
-        Services.AddScoped<IEnvironmentsProvider, ConfigurationEnvironmentsProvider>();
-        Services.AddScoped<IEnvironmentsManager, DefaultEnvironmentsManager>();
+        Services.AddSingleton<IEnvironmentsProvider, ConfigurationEnvironmentsProvider>();
+        Services.AddSingleton<IEnvironmentsManager, DefaultEnvironmentsManager>();
     }
 }

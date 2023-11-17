@@ -33,7 +33,7 @@ public class HangfireSchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<HangfireWorkflowScheduler>();
-        Services.AddScoped<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
+        Services.AddSingleton<HangfireWorkflowScheduler>();
+        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
     }
 }

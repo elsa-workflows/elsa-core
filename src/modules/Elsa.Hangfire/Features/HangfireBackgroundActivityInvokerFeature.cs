@@ -31,6 +31,6 @@ public class HangfireBackgroundActivitySchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<HangfireBackgroundActivityScheduler>();
+        Services.AddSingleton<HangfireBackgroundActivityScheduler>();
     }
 }

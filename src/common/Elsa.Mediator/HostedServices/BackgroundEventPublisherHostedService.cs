@@ -1,7 +1,8 @@
-using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Threading.Channels;
 
 namespace Elsa.Mediator.HostedServices;
 
@@ -12,16 +13,16 @@ public class BackgroundEventPublisherHostedService : BackgroundService
 {
     private readonly int _workerCount;
     private readonly INotificationsChannel _notificationsChannel;
-    private readonly INotificationSender _notificationSender;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IList<Channel<INotification>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public BackgroundEventPublisherHostedService(int workerCount, INotificationsChannel notificationsChannel, INotificationSender notificationSender, ILogger<BackgroundEventPublisherHostedService> logger)
+    public BackgroundEventPublisherHostedService(int workerCount, INotificationsChannel notificationsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundEventPublisherHostedService> logger)
     {
         _workerCount = workerCount;
         _notificationsChannel = notificationsChannel;
-        _notificationSender = notificationSender;
+        _scopeFactory = scopeFactory;
         _logger = logger;
         _outputs = new List<Channel<INotification>>(workerCount);
     }
@@ -39,7 +40,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         }
 
         var channelReader = _notificationsChannel.Reader;
-        
+
         await foreach (var notification in channelReader.ReadAllAsync(cancellationToken))
         {
             var output = _outputs[index];
@@ -59,7 +60,10 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         {
             try
             {
-                await _notificationSender.SendAsync(notification, NotificationStrategy.FireAndForget, cancellationToken);
+                using var scope = _scopeFactory.CreateScope();
+                var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+
+                await notificationSender.SendAsync(notification, NotificationStrategy.FireAndForget, cancellationToken);
             }
             catch (Exception e)
             {

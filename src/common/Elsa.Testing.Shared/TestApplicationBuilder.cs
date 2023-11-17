@@ -31,7 +31,7 @@ public class TestApplicationBuilder
 
         _services
             .AddSingleton(testOutputHelper)
-            .AddScoped<IConfiguration, ConfigurationManager>()
+            .AddSingleton<IConfiguration, ConfigurationManager>()
             .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
 
         _configureElsa += elsa => elsa
