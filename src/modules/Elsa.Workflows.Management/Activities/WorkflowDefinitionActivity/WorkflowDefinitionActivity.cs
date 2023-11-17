@@ -66,21 +66,22 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         // Copy any collected outputs into the synthetic properties.
         foreach (var outputDescriptor in activityExecutionContext.ActivityDescriptor.Outputs)
         {
-            // Create a local scope variable for each output property.
-            var variable = new Variable
+            var output = (Output?)outputDescriptor.ValueGetter(activityExecutionContext.Activity);
+            var value = activityExecutionContext.Get(output);
+
+            if (value == null)
             {
-                Id = outputDescriptor.Name,
-                Name = outputDescriptor.Name
-            };
+                // If direct output mapping is used, we can read the output value directly from the memory.
+                value = activityExecutionContext.Get(outputDescriptor.Name);
 
-            // Use the variable to read the value from the memory.
-            var value = variable.Get(activityExecutionContext);
-
-            // Assign the value to the output synthetic property.
-            // Make sure to select a parent scope to avoid naming collisions between outputs defined on the current scope and outputs defined on parent scopes.
-            var parentActivityExecutionContext = activityExecutionContext.ParentActivityExecutionContext ?? activityExecutionContext;
-            var output = SyntheticProperties.TryGetValue(outputDescriptor.Name, out var outputValue) ? (Output?)outputValue : default;
-            parentActivityExecutionContext.Set(output, value);
+                // Make sure to select a parent scope to avoid naming collisions between outputs defined on the current scope and outputs defined on parent scopes.
+                var parentActivityExecutionContext = activityExecutionContext.ParentActivityExecutionContext ?? activityExecutionContext;
+                parentActivityExecutionContext.Set(output, value, outputDescriptor.Name);
+            }
+            else
+            {
+                activityExecutionContext.Set(output, value, outputDescriptor.Name);
+            }
         }
 
         // Complete this activity with the signal value.

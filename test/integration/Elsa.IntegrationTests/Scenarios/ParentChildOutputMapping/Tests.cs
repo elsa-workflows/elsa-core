@@ -63,4 +63,26 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "FooBar" }, lines);
     }
+    
+    [Fact(DisplayName = "Parent workflow receives output from child workflow when using SetOutput activity.")]
+    public async Task Test3()
+    {
+        // Populate registries.
+        await _services.PopulateRegistriesAsync();
+
+        // Import child workflow.
+        var producerFileName = "Scenarios/ParentChildOutputMapping/Workflows/producer.json";
+        await _services.ImportWorkflowDefinitionAsync(producerFileName);
+
+        // Import parent workflow.
+        var consumerFileName = "Scenarios/ParentChildOutputMapping/Workflows/consumer.json";
+        var workflowDefinition = await _services.ImportWorkflowDefinitionAsync(consumerFileName);
+
+        // Execute.
+        await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
+
+        // Assert expected output.
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[] { "Foo" }, lines);
+    }
 }

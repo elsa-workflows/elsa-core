@@ -144,6 +144,12 @@
       <None Update="Scenarios\ParentChildOutputMapping\Workflows\d.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\ParentChildOutputMapping\Workflows\producer.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\ParentChildOutputMapping\Workflows\consumer.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
 
 
 
