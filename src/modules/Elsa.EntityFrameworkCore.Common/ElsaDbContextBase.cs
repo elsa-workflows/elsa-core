@@ -25,24 +25,31 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     public static string MigrationsHistoryTable { get; set; } = "__EFMigrationsHistory";
 
     /// <summary>
+    /// Current TenantId of the user or of the background workflow.
+    /// </summary>
+    public string? TenantId { get; set; }
+
+    /// <summary>
     /// Service Provider used in some strategies and filters.
     /// </summary>
     protected readonly IServiceProvider _serviceProvider;
 
-    private readonly IEnumerable<IDbContextStrategy> _dbContextStrategies;
-    private readonly Action<ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
+    private readonly Action<ElsaDbContextBase, ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
     protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
+        _serviceProvider = serviceProvider;
+
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
         // ReSharper disable once VirtualMemberCallInConstructor
         _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
 
-        _serviceProvider = serviceProvider;
+        elsaDbContextOptions?.AdditionnalDbContextConstructorAction?.Invoke(this, options, _serviceProvider);
     }
 
     /// <summary>
@@ -72,7 +79,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         if (Database.IsOracle()) SetupForOracle(modelBuilder);
 
 
-        _additionnalEntityConfigurations?.Invoke(modelBuilder, _serviceProvider);
+        _additionnalEntityConfigurations?.Invoke(this, modelBuilder, _serviceProvider);
     }
 
     /// <summary>

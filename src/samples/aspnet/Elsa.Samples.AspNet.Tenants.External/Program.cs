@@ -22,7 +22,7 @@ var identitySection = configuration.GetSection("Identity");
 builder.Services.AddControllers();
 builder.Services.AddElsa(elsa =>
 {
-    var dbContextOptions = new ElsaDbContextOptions();
+    ElsaDbContextOptions dbContextOptions = EfCoreDbContextBuilder.BuildDbContextTenantOption();
     string postgresConnectionString = configuration.GetConnectionString("Postgres")!;
     string schema = configuration.GetConnectionString("Schema")!;
 
@@ -31,7 +31,6 @@ builder.Services.AddElsa(elsa =>
         dbContextOptions.SchemaName = schema;
         dbContextOptions.MigrationsAssemblyName = typeof(Program).Assembly.GetName().Name;
     }
-    dbContextOptions.AdditionnalEntityConfigurations = EfCoreDbContextConfiguration.BuildTenantFilterConfiguration();
 
     elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
     elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
@@ -103,6 +102,7 @@ builder.Services.SwaggerDocument(options =>
         documentSetting.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("bearer"));
     };
 });
+
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 var app = builder.Build();

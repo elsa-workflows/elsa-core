@@ -1,9 +1,13 @@
-﻿using Elsa.Identity.Contracts;
+﻿using Elsa.Common.Contracts;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.Accessors;
 
+/// <summary>
+/// Provide the current tenant based on current User in the UserStore
+/// </summary>
 public class TenantAccessor : ITenantAccessor
 {
     private readonly IUserProvider _userProvider;
