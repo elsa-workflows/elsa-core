@@ -1,19 +1,21 @@
-﻿using Elsa.EntityFrameworkCore.Extensions;
+﻿using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Common;
-
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
-public abstract class ElsaDbContextBase : DbContext
+public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 {
     /// <summary>
-    /// The schema used by Elsa.
+    /// The default schema used by Elsa.
     /// </summary>
     public static string ElsaSchema { get; set;  } = "Elsa";
-
+    private string _schema;
+    /// <inheritdoc/>
+    public string Schema => _schema;
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
@@ -25,15 +27,15 @@ public abstract class ElsaDbContextBase : DbContext
     protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
-        
+
         // ReSharper disable once VirtualMemberCallInConstructor
-        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
 
     /// <summary>
     /// The schema used by Elsa.
     /// </summary>
-    protected virtual string Schema { get; set; }
+   // protected virtual string Schema { get; set; }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
