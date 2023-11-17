@@ -1,5 +1,4 @@
 using Elsa;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -18,7 +17,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 builder.Services.AddControllers();
 builder.Services.AddElsa(elsa =>
 {
-    var dbContextOptions = new ElsaDbContextOptions();
+    var dbContextOptions = EfCoreDbContextBuilder.BuildDbContextTenantOption();
     string postgresConnectionString = configuration.GetConnectionString("Postgres")!;
     string schema = configuration.GetConnectionString("Schema")!;
 
@@ -27,7 +26,6 @@ builder.Services.AddElsa(elsa =>
         dbContextOptions.SchemaName = schema;
         dbContextOptions.MigrationsAssemblyName = typeof(Program).Assembly.GetName().Name;
     }
-    dbContextOptions.AdditionnalEntityConfigurations = EfCoreDbContextConfiguration.BuildTenantFilterConfiguration();
 
     elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
     elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));

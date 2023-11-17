@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Commands;
@@ -12,13 +13,15 @@ namespace Elsa.Workflows.Runtime.Services;
 public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
 {
     private readonly ICommandSender _commandSender;
+    private readonly ITenantAccessor _tenantAccessor;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public BackgroundWorkflowDispatcher(ICommandSender commandSender)
+    public BackgroundWorkflowDispatcher(ICommandSender commandSender, ITenantAccessor tenantAccessor)
     {
         _commandSender = commandSender;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -32,8 +35,6 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             InstanceId = request.InstanceId,
             TriggerActivityId = request.TriggerActivityId
         };
-
-        //TODO JBD : Set TenantId here for TenantAccessor backgroundTenantId ? (and add tenantId to the request ?
 
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();
@@ -51,6 +52,9 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId};
+
+        //TODO JBD : Set TenantId here for TenantAccessor backgroundTenantId ? (or add tenantId to the request ?)
+        _tenantAccessor.SetCurrentTenantId("");
 
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowInstanceResponse();

@@ -1,9 +1,15 @@
-﻿using Elsa.Tenants.Options;
+﻿using Elsa.Common.Contracts;
+using Elsa.Tenants.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 
 namespace Elsa.Tenants.Accessors;
+
+/// <summary>
+/// Provide the current tenant based on current User's claims.
+/// This implementation doesn't need UserStore.
+/// </summary>
 public class ExternalTenantAccessor : ITenantAccessor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -25,8 +31,7 @@ public class ExternalTenantAccessor : ITenantAccessor
         if (_currentBackgroundWorklowTenantId != null)
             return Task.FromResult(_currentBackgroundWorklowTenantId);
 
-        string? tenantId;
-        tenantId = _httpContextAccessor.HttpContext?.User?.FindFirst(_options.Value.CustomTenantIdClaimsType ?? ClaimConstants.TenantId)?.Value;
+        string? tenantId = _httpContextAccessor.HttpContext?.User?.FindFirst(_options.Value.CustomTenantIdClaimsType ?? ClaimConstants.TenantId)?.Value;
 
         return Task.FromResult(tenantId);
     }

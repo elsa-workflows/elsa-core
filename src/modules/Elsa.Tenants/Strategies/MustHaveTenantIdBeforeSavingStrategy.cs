@@ -1,6 +1,6 @@
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
-using Elsa.Tenants.Accessors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 

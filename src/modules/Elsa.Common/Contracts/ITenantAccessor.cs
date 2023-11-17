@@ -1,4 +1,4 @@
-﻿namespace Elsa.Tenants.Accessors;
+﻿namespace Elsa.Common.Contracts;
 public interface ITenantAccessor
 {
 

@@ -1,10 +1,15 @@
+using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Tenants.Accessors;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Strategies;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Features;
@@ -12,6 +17,7 @@ namespace Elsa.Tenants.Features;
 /// <summary>
 /// Configures liquid functionality.
 /// </summary>
+[DependsOn(typeof(WorkflowRuntimeFeature))]
 public class TenantsFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -34,15 +40,26 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, ITenantAccessor> TenantAccessor { get; set; } = sp => sp.GetRequiredService<TenantAccessor>();
 
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(TenantsOptions);
 
         Services
-            .AddSingleton(TenantAccessor)
-            .AddSingleton(TenantProvider)
+            .AddScoped(TenantAccessor)
+            .AddScoped(TenantProvider)
         ;
+
+        //TODO JBD : Replace the WorkflowDispatcher by another implementation that manage tenants
+        Module.Configure<WorkflowRuntimeFeature>(feature =>
+        {
+            feature.WorkflowDispatcher = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+        });
     }
 
     /// <summary>
@@ -51,8 +68,8 @@ public class TenantsFeature : FeatureBase
     public TenantsFeature UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
     {
         Services
-            .AddSingleton<TenantAccessor>()
-            .AddSingleton<ConfigurationTenantProvider>();
+            .AddScoped<TenantAccessor>()
+            .AddScoped<ConfigurationTenantProvider>();
 
         TenantAccessor = sp => sp.GetRequiredService<TenantAccessor>();
         TenantProvider = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
@@ -68,7 +85,8 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public TenantsFeature UseExternalTenantProvider(Action<TenantsOptions>? configure = default)
     {
-        Services.AddSingleton<ExternalTenantAccessor>();
+        Services
+            .AddScoped<ExternalTenantAccessor>();
 
         TenantAccessor = sp => sp.GetRequiredService<ExternalTenantAccessor>();
 
@@ -81,7 +99,7 @@ public class TenantsFeature : FeatureBase
     public TenantsFeature UseEfcoreStrategies()
     {
         Services
-            .AddSingleton<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
+            .AddScoped<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
         ;
 
         return this;
