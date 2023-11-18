@@ -143,7 +143,7 @@ export class FlowchartComponent {
       edges.push({id: index, source: connection.source, target: connection.target});
     });
 
-    let data = {nodes: nodes, edges: edges}
+    let data = {nodes: nodes, edges: edges.map(e => ({...e, source: {...e.source, cell: e.source.activity}, target: {...e.target, cell: e.target.activity}}))}
     let newLayout = dagreLayout.layout(data);
 
     newLayout.nodes.forEach(node => {
