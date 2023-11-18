@@ -32,22 +32,22 @@ public class Expression
     public string Type { get; set; } = default!;
 
     /// <summary>
-    /// Gets or sets the C# expression.
+    /// Gets or sets the value representing the expression.
     /// </summary>
-    public string? Value { get; set; }
+    public object? Value { get; set; }
 
     /// <summary>
     /// Returns the C# expression.
     /// </summary>
-    public override string ToString() => Value ?? "";
+    public override string ToString() => Value?.ToString() ?? "";
     
     /// <summary>
     /// Creates a literal expression.
     /// </summary>
-    public static Expression CreateLiteral(string value) => new Expression("Literal", value);
+    public static Expression CreateLiteral(string value) => new("Literal", value);
     
     /// <summary>
     /// Creates an object expression.
     /// </summary>
-    public static Expression CreateObject(string value) => new Expression("Object", value);
+    public static Expression CreateObject(string value) => new("Object", value);
 }
