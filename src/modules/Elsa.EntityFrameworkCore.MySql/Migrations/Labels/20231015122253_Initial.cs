@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,18 +8,23 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
     /// <inheritdoc />
     public partial class Initial : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Initial(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Elsa");
+                name: _schema.Schema);
 
             migrationBuilder.AlterDatabase()
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
                 name: "Labels",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false)
@@ -40,7 +46,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
 
             migrationBuilder.CreateTable(
                 name: "WorkflowDefinitionLabels",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false)
@@ -60,19 +66,19 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
 
             migrationBuilder.CreateIndex(
                 name: "WorkflowDefinitionLabel_LabelId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitionLabels",
                 column: "LabelId");
 
             migrationBuilder.CreateIndex(
                 name: "WorkflowDefinitionLabel_WorkflowDefinitionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitionLabels",
                 column: "WorkflowDefinitionId");
 
             migrationBuilder.CreateIndex(
                 name: "WorkflowDefinitionLabel_WorkflowDefinitionVersionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitionLabels",
                 column: "WorkflowDefinitionVersionId");
         }
@@ -82,11 +88,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
         {
             migrationBuilder.DropTable(
                 name: "Labels",
-                schema: "Elsa");
+                schema: _schema.Schema);
 
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitionLabels",
-                schema: "Elsa");
+                schema: _schema.Schema);
         }
     }
 }
