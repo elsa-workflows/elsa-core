@@ -1,13 +1,20 @@
 using System.Text;
-using Microsoft.Scripting.Hosting;
+using JetBrains.Annotations;
+using Python.Runtime;
 
 namespace Elsa.Python.Options;
 
 /// <summary>
 /// Options for the Python expression evaluator.
 /// </summary>
+[PublicAPI]
 public class PythonOptions
 {
+    /// <summary>
+    /// Gets or sets the path to the Python DLL. Alternatively, you can set the PYTHON_DLL environment variable, which is required if you leave this property empty.
+    /// </summary>
+    public string? PythonDllPath { get; set; }
+    
     /// <summary>
     /// Gets or sets the Python script files to load.
     /// </summary>
@@ -16,7 +23,7 @@ public class PythonOptions
     /// <summary>
     /// Gets or sets a list of callbacks that are invoked when the Python engine is being configured.
     /// </summary>
-    public ICollection<Action<ScriptScope>> ScriptScopes { get; } = new List<Action<ScriptScope>>();
+    public ICollection<Action<PyModule>> Scopes { get; } = new List<Action<PyModule>>();
     
     /// <summary>
     /// Appends a script to the Python engine.
@@ -41,8 +48,8 @@ public class PythonOptions
     /// <summary>
     /// Registers a callback that is invoked when the Python engine is being configured.
     /// </summary>
-    public void ConfigureScriptScope(Action<ScriptScope> configure)
+    public void ConfigureScriptScope(Action<PyModule> configure)
     {
-        ScriptScopes.Add(configure);
+        Scopes.Add(configure);
     }
 }

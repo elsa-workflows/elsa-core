@@ -27,7 +27,7 @@ public class OutcomeProxy
     /// Sets the outcome of the current activity.
     /// </summary>
     /// <param name="outcomeNames">The names of the outcomes.</param>
-    public void set(params string[] outcomeNames)
+    public void Set(params string[] outcomeNames)
     {
         ExpressionExecutionContext.TransientProperties[OutcomePropertiesKey] = outcomeNames;
     }

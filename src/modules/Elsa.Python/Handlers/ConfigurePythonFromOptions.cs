@@ -25,8 +25,8 @@ public class ConfigurePythonFromOptions : INotificationHandler<EvaluatingPython>
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingPython notification, CancellationToken cancellationToken)
     {
-        foreach (var script in _options.Scripts)
-            notification.AppendScript(script);
+        foreach (var action in _options.Scopes) action(notification.Scope);
+        foreach (var script in _options.Scripts) notification.AppendScript(script);
 
         return Task.CompletedTask;
     }

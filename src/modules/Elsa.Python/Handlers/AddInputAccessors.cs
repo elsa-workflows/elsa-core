@@ -14,9 +14,9 @@ public class AddInputAccessors : INotificationHandler<EvaluatingPython>
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingPython notification, CancellationToken cancellationToken)
     {
-        var scope = notification.ScriptScope;
+        var scope = notification.Scope;
         var inputProxy = new InputProxy(notification.Context);
-        scope.SetVariable("input", inputProxy);
+        scope.Set("input", inputProxy);
         return Task.CompletedTask;
     }
 }

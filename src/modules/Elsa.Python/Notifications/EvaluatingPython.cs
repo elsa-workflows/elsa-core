@@ -1,14 +1,14 @@
 using System.Text;
 using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
-using Microsoft.Scripting.Hosting;
+using Python.Runtime;
 
 namespace Elsa.Python.Notifications;
 
 /// <summary>
 /// This notification is published every time a Python expression is about to be evaluated, giving subscribers a chance to modify the Python engine.
 /// </summary>
-public record EvaluatingPython(ScriptEngine Engine, ScriptScope ScriptScope, ExpressionExecutionContext Context) : INotification
+public record EvaluatingPython(PyModule Scope, ExpressionExecutionContext Context) : INotification
 {
     /// <summary>
     /// Appends a script to the Python engine.
@@ -27,7 +27,6 @@ public record EvaluatingPython(ScriptEngine Engine, ScriptScope ScriptScope, Exp
     /// <param name="script">The script to append.</param>
     public void AppendScript(string script)
     {
-        var engine = Engine;
-        engine.Execute(script, ScriptScope);
+        Scope.Exec(script);
     }
 }

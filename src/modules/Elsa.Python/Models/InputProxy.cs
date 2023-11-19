@@ -26,10 +26,10 @@ public class InputProxy
     /// <summary>
     /// Gets the value of the specified input.
     /// </summary>
-    public object? get(string name) => Context.GetInput(name);
+    public object? Get(string name) => Context.GetInput(name);
     
     /// <summary>
     /// Gets the value of the specified input.
     /// </summary>
-    public object? get(Type type, string name) => Context.GetInput(name).ConvertTo(type);
+    public object? Get(Type type, string name) => Context.GetInput(name).ConvertTo(type);
 }

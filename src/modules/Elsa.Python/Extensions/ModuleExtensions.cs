@@ -1,6 +1,5 @@
 using Elsa.Features.Services;
 using Elsa.Python.Features;
-using Elsa.Python.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -17,13 +16,5 @@ public static class ModuleExtensions
     {
         module.Configure(configure);
         return module;
-    }
-    
-    /// <summary>
-    /// Setup the <see cref="PythonFeature"/> feature.
-    /// </summary>
-    public static IModule UsePython(this IModule module, Action<PythonOptions> configureOptions)
-    {
-        return module.UsePython(python => python.PythonOptions += configureOptions);
     }
 }

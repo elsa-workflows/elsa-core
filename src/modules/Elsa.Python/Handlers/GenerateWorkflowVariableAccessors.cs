@@ -31,14 +31,14 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
             var friendlyTypeName = variableType.GetFriendlyTypeName(Brackets.Square);
             sb.AppendLine($"    @property");
             sb.AppendLine($"    def {variableName}(self):");
-            sb.AppendLine($"        return self.execution_context.GetVariable({friendlyTypeName}, '{variableName}')");
+            sb.AppendLine($"        return self.execution_context.GetVariable[{friendlyTypeName}]('{variableName}')");
             sb.AppendLine($"    @{variableName}.setter");
             sb.AppendLine($"    def {variableName}(self, value):");
             sb.AppendLine($"        self.execution_context.SetVariable('{variableName}', value)");
         }
 
         sb.AppendLine();
-        sb.AppendLine("variable = WorkflowVariablesProxy(execution_context);");
+        sb.AppendLine("variables = WorkflowVariablesProxy(execution_context);");
 
         notification.AppendScript(sb.ToString());
 

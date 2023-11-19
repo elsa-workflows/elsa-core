@@ -1,12 +1,11 @@
 using Elsa.Common.Features;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Python.Contracts;
-using Elsa.Python.Expressions;
+using Elsa.Python.HostedServices;
 using Elsa.Python.Options;
 using Elsa.Python.Providers;
 using Elsa.Python.Services;
@@ -25,26 +24,32 @@ public class PythonFeature : FeatureBase
     public PythonFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <summary>
     /// Configures the <see cref="Options.PythonOptions"/>.
     /// </summary>
     public Action<PythonOptions> PythonOptions { get; set; } = _ => { };
-    
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        Module.ConfigureHostedService<PythonGlobalInterpreterManager>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(PythonOptions);
-        
-        // C# services.
+
+        // Python services.
         Services
-            .AddSingleton<IPythonEvaluator, IronPythonEvaluator>()
+            .AddSingleton<IPythonEvaluator, PythonNetPythonEvaluator>()
             .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>()
             ;
 
         // Handlers.
         Services.AddNotificationHandlersFrom<PythonFeature>();
-        
+
         // Activities.
         Module.AddActivitiesFrom<PythonFeature>();
     }

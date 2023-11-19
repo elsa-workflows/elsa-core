@@ -29,7 +29,7 @@ public class OutputProxy
     /// <param name="activityIdOrName">The ID or name of the activity that produced the output.</param>
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
-    public object? get(string activityIdOrName, string? outputName = default) => Context.GetOutput(activityIdOrName, outputName);
+    public object? Get(string activityIdOrName, string? outputName = default) => Context.GetOutput(activityIdOrName, outputName);
 
     /// <summary>
     /// Gets the value of the specified output.
@@ -38,10 +38,10 @@ public class OutputProxy
     /// <param name="activityIdOrName">The ID or name of the activity that produced the output.</param>
     /// <param name="outputName">The name of the output.</param>
     /// <returns>The value of the output.</returns>
-    public object? get(Type returnType, string activityIdOrName, string? outputName = default) => get(activityIdOrName, outputName).ConvertTo(returnType);
+    public object? Get(Type returnType, string activityIdOrName, string? outputName = default) => Get(activityIdOrName, outputName).ConvertTo(returnType);
     
     /// <summary>
     /// Gets the result of the last activity that executed.
     /// </summary>
-    public object? last_result => Context.GetLastResult();
+    public object? LastResult => Context.GetLastResult();
 }
