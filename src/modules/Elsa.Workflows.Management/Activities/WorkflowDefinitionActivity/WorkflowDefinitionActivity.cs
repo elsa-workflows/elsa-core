@@ -67,21 +67,16 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         foreach (var outputDescriptor in activityExecutionContext.ActivityDescriptor.Outputs)
         {
             var output = (Output?)outputDescriptor.ValueGetter(activityExecutionContext.Activity);
-            var value = activityExecutionContext.Get(output);
+            // If direct output mapping is used, we can read the output value directly from the memory.
+            var value = activityExecutionContext.Get(output) ?? activityExecutionContext.Get(outputDescriptor.Name);
 
-            if (value == null)
-            {
-                // If direct output mapping is used, we can read the output value directly from the memory.
-                value = activityExecutionContext.Get(outputDescriptor.Name);
-
-                // Make sure to select a parent scope to avoid naming collisions between outputs defined on the current scope and outputs defined on parent scopes.
-                var parentActivityExecutionContext = activityExecutionContext.ParentActivityExecutionContext ?? activityExecutionContext;
-                parentActivityExecutionContext.Set(output, value, outputDescriptor.Name);
-            }
-            else
-            {
-                activityExecutionContext.Set(output, value, outputDescriptor.Name);
-            }
+            // Make sure to select a parent scope to avoid naming collisions between outputs defined on the current scope and outputs defined on parent scopes.
+            var parentActivityExecutionContext = activityExecutionContext.ParentActivityExecutionContext?.GetAncestors()
+                .Any(x => x.ActivityDescriptor.Outputs.Any(y => y.Name == outputDescriptor.Name)) == true
+                ? activityExecutionContext.ParentActivityExecutionContext ?? activityExecutionContext
+                : activityExecutionContext;
+                
+            parentActivityExecutionContext.Set(output, value, outputDescriptor.Name);
         }
 
         // Complete this activity with the signal value.

@@ -59,7 +59,7 @@ public class SetOutput : CodeActivity
             return;
         
         var ancestorOutput = (Output)ancestorOutputDescriptor.ValueGetter(ancestorActivity)!;
-        ancestorContext.Set(ancestorOutput, outputValue);
+        ancestorContext.Set(ancestorOutput, outputValue, outputName);
 
         // If the ancestor activity is the root workflow, we need to update the workflow execution context's output collection as well.
         if (ancestorContext.ParentActivityExecutionContext == null)
