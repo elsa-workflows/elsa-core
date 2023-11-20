@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.118" />
-        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.118" />
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.118" />
+        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.140" />
+        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.140" />
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.140" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.9"/>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.9" PrivateAssets="all"/>
         <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
