@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 /// Imports a JSON file containing a workflow definition.
 /// </summary>
 [PublicAPI]
-internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinitionModel>
+internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
@@ -46,7 +46,12 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
         if (Files.Any())
-            await ImportFilesAsync(Files, cancellationToken);
+        {
+            var count = await ImportFilesAsync(Files, cancellationToken);
+            
+            if (!ValidationFailed)
+                await SendOkAsync(new { Count = count }, cancellationToken);
+        }
         else
         {
             var definitionId = model.DefinitionId;
@@ -68,8 +73,10 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
             await SendErrorsAsync(400, cancellationToken);
     }
 
-    private async Task ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
+    private async Task<int> ImportFilesAsync(IFormFileCollection files, CancellationToken cancellationToken)
     {
+        var count = 0;
+        
         foreach (var file in files)
         {
             var fileStream = file.OpenReadStream();
@@ -81,6 +88,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
             if (isJsonFile)
             {
                 await ImportJsonStreamAsync(fileStream, cancellationToken);
+                count++;
             }
             else
             {
@@ -94,9 +102,12 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel, WorkflowDefinition
 
                     var jsonStream = entry.Open();
                     await ImportJsonStreamAsync(jsonStream, cancellationToken);
+                    count++;
                 }
             }
         }
+        
+        return count;
     }
 
     private async Task ImportJsonStreamAsync(Stream jsonStream, CancellationToken cancellationToken)

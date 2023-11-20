@@ -170,6 +170,15 @@ public interface IWorkflowDefinitionsApi
     Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Imports a workflow definition.
+    /// </summary>
+    /// <param name="files">The files to import.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/workflow-definitions/import")]
+    [Multipart]
+    Task<ImportFilesResponse> ImportFilesAsync([AliasAs("files")] List<StreamPart> files, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Updates the references of consuming workflow definitions to point to the latest version of the specified definition.
     /// </summary>
     /// <param name="definitionId">The definition ID of the workflow definition to update references for.</param>
