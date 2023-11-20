@@ -151,6 +151,14 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}")]
     Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Exports a set of workflow definitions.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow definitions to export.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/export/workflow-definitions")]
+    Task<IApiResponse<Stream>> BulkExportAsync(BulkExportWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Imports a workflow definition.
