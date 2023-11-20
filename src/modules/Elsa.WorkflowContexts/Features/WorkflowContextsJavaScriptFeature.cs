@@ -24,7 +24,7 @@ public class WorkflowContextsJavaScriptFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ConfigureJavaScriptEngine>();
+        Services.AddScoped<ConfigureJavaScriptEngine>();
         Services.AddNotificationHandler<ConfigureJavaScriptEngine, EvaluatingJavaScript>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
         Services.AddTypeDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
         Services.AddFunctionDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());

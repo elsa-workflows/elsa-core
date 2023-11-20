@@ -30,7 +30,7 @@ public class QuartzSchedulerFeature : FeatureBase
         {
             // Configure the scheduling feature to use the Quartz workflow scheduler.
             scheduling.WorkflowScheduler = sp => sp.GetRequiredService<QuartzWorkflowScheduler>();
-            
+
             // Configure the cron parser to use the Quartz cron parser.
             scheduling.CronParser = sp => sp.GetRequiredService<QuartzCronParser>();
         });
@@ -39,7 +39,7 @@ public class QuartzSchedulerFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
+        Services.AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>();
         Services.AddScoped<QuartzWorkflowScheduler>();
         Services.AddScoped<QuartzCronParser>();
         Services.AddQuartz(quartz => quartz

@@ -43,7 +43,7 @@ public class PythonFeature : FeatureBase
 
         // Python services.
         Services
-            .AddSingleton<IPythonEvaluator, PythonNetPythonEvaluator>()
+            .AddScoped<IPythonEvaluator, PythonNetPythonEvaluator>()
             .AddExpressionDescriptorProvider<PythonExpressionDescriptorProvider>()
             ;
 
