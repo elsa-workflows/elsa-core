@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
 using Microsoft.Extensions.Caching.Memory;

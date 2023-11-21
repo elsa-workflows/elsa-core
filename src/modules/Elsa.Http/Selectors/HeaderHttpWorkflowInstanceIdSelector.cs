@@ -1,4 +1,3 @@
-using System.Linq;
 using Elsa.Http.Abstractions;
 using Microsoft.AspNetCore.Http;
 

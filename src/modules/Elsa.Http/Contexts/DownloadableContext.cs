@@ -1,4 +1,3 @@
-using System.Threading;
 using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 

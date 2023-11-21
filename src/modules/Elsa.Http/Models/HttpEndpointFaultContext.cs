@@ -1,4 +1,3 @@
-using System.Threading;
 using Elsa.Workflows.Core.State;
 using Microsoft.AspNetCore.Http;
 

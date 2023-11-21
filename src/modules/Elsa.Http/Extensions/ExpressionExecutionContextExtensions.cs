@@ -1,4 +1,3 @@
-using System;
 using Elsa.Expressions.Models;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;

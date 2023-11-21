@@ -1,8 +1,5 @@
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;

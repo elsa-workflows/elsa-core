@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Elsa.Http.Contracts;
+﻿using Elsa.Http.Contracts;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Http.HostedServices;

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Elsa.Http.Models;
 
 namespace Elsa.Http.Contracts;
