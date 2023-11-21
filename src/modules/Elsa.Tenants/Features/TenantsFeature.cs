@@ -4,12 +4,12 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Tenants.Accessors;
+using Elsa.Tenants.Handlers;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
+using Elsa.Tenants.Services;
 using Elsa.Tenants.Strategies;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Features;
@@ -40,10 +40,16 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, ITenantAccessor> TenantAccessor { get; set; } = sp => sp.GetRequiredService<TenantAccessor>();
 
-    /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+    /// <inheritdoc />
+    public override void Configure()
+    {
+
+        Module.Configure<WorkflowRuntimeFeature>(feature =>
+        {
+            feature.WorkflowDispatcher = sp => sp.GetRequiredService<BackgroundTenantWorkflowDispatcher>();
+            feature.DispatchWorkflowCommandHandler = sp => sp.GetRequiredService<DispatchTenantWorkflowRequestHandler>();
+        });
+    }
 
     /// <inheritdoc />
     public override void Apply()
@@ -51,15 +57,11 @@ public class TenantsFeature : FeatureBase
         Services.Configure(TenantsOptions);
 
         Services
+            .AddScoped<BackgroundTenantWorkflowDispatcher>()
+            .AddScoped<DispatchTenantWorkflowRequestHandler>()
             .AddScoped(TenantAccessor)
             .AddScoped(TenantProvider)
         ;
-
-        //TODO JBD : Replace the WorkflowDispatcher by another implementation that manage tenants
-        Module.Configure<WorkflowRuntimeFeature>(feature =>
-        {
-            feature.WorkflowDispatcher = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
-        });
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -11,6 +10,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
+using System.Text.Json.Serialization;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -140,7 +140,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(x => true, x =>  x.DefinitionId, cancellationToken);
+        return await _store.CountAsync(x => true, x => x.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -148,6 +148,12 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         var exists = await _store.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, cancellationToken);
         return !exists;
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
+    {
+        return await _store.GetTenantIdAsync<WorkflowDefinition>(x => x.DefinitionId == definitionId, cancellationToken);
     }
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
@@ -202,7 +208,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
     }
-    
+
     private class WorkflowDefinitionState
     {
         [JsonConstructor]

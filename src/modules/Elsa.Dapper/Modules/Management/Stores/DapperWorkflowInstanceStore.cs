@@ -126,6 +126,13 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
         return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
+        return instance?.TenantId;
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query

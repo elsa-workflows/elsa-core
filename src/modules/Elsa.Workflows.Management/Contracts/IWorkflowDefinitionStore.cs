@@ -141,7 +141,7 @@ public interface IWorkflowDefinitionStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if any workflow definition matches the specified filter.</returns>
     Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns the number of logical workflow definitions.
     /// </summary>
@@ -154,4 +154,12 @@ public interface IWorkflowDefinitionStore
     /// <param name="definitionId">The definition ID to exclude from the check.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Finds the tenant ID of the workflow definition for a specified ID.
+    /// </summary>
+    /// <param name="definitionId">The ID of the definition to get.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>tenant ID if an definition was found and if it has a tenant ID, or null</returns>
+    Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken);
 }

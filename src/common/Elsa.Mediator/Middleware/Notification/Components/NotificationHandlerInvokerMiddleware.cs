@@ -38,6 +38,8 @@ public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
         var handlers = _notificationHandlers.Where(x => handlerType.IsInstanceOfType(x)).DistinctBy(x => x.GetType()).ToArray();
         var strategyContext = new NotificationStrategyContext(notification, handlers, _logger, _serviceProvider, context.CancellationToken);
 
+        //TODO JBD Set tenantId here or in every handler ?
+
         await context.NotificationStrategy.PublishAsync(strategyContext);
 
         // Invoke next middleware.

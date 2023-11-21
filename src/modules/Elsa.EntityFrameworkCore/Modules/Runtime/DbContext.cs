@@ -10,7 +10,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class RuntimeElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public RuntimeElsaDbContext(DbContextOptions options, IServiceProvider serviceProvider) : base(options, serviceProvider)
+    public RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
 

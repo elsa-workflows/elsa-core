@@ -1,5 +1,6 @@
 ﻿using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -15,7 +16,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema { get; set;  } = "Elsa";
+    public static string ElsaSchema { get; set; } = "Elsa";
     private string _schema;
     /// <inheritdoc/>
     public string Schema => _schema;
