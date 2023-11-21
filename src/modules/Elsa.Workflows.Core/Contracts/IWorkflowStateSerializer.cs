@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Workflows.Core.State;
 
 namespace Elsa.Workflows.Core.Contracts;
@@ -21,6 +22,22 @@ public interface IWorkflowStateSerializer
     /// <param name="workflowState">The workflow state to serialize.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
+    Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Serializes the specified workflow state.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to serialize.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The serialized workflow state.</returns>
+    Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Serializes the specified workflow state.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to serialize.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The serialized workflow state.</returns>
     Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default);
     
     /// <summary>
@@ -30,6 +47,14 @@ public interface IWorkflowStateSerializer
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
     Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Deserializes the specified serialized state.
+    /// </summary>
+    /// <param name="serializedState">The serialized state.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The deserialized workflow state.</returns>
+    Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deserializes the specified serialized state.

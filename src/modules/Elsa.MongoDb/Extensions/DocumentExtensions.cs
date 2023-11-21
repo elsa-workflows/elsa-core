@@ -35,8 +35,10 @@ public static class DocumentExtensions
     /// </summary>
     /// <param name="document">The document.</param>
     /// <typeparam name="TDocument">The type of the document.</typeparam>
-    public static Expression<Func<TDocument, bool>> BuildIdFilter<TDocument>(this TDocument document) => 
-        document.BuildFilter("Id");
+    public static Expression<Func<TDocument, bool>> BuildIdFilter<TDocument>(this TDocument document)
+    {
+        return document.BuildFilter("Id");
+    }
 
     /// <summary>
     /// Builds a filter expression for the Id property name of the specified documents.
@@ -57,8 +59,11 @@ public static class DocumentExtensions
         var ids = documents.Select(document => idProperty.GetValue(document)).ToList();
         return Builders<TDocument>.Filter.In(propertyName, ids);
     }
-    
-    private static Expression<Func<TDocument, bool>> BuildFilter<TDocument>(this TDocument document, string propertyName)
+
+    /// <summary>
+    /// Builds a filter expression for the specified property name.
+    /// </summary>
+    public static Expression<Func<TDocument, bool>> BuildFilter<TDocument>(this TDocument document, string propertyName)
     {
         var parameter = Expression.Parameter(typeof(TDocument), "x");
         var expressionProperty = Expression.Property(parameter, propertyName);

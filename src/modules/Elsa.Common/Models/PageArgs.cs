@@ -6,6 +6,11 @@ namespace Elsa.Common.Models;
 public record PageArgs
 {
     /// <summary>
+    /// Gets pagination arguments that returns all items.
+    /// </summary>
+    public static PageArgs All => new() { Offset = null, Limit = null };
+    
+    /// <summary>
     /// Creates pagination arguments from a page number and page size.
     /// </summary>
     /// <param name="page">The zero-based page number.</param>

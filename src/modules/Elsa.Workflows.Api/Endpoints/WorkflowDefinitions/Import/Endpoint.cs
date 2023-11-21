@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 
 /// <summary>
-/// Imports a JSON file containing a workflow definition.
+/// Imports JSON and/or ZIP files containing a workflow definitions.
 /// </summary>
 [PublicAPI]
 internal class Import : ElsaEndpoint<WorkflowDefinitionModel>

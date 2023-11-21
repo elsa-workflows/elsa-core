@@ -30,18 +30,38 @@ public class JsonPayloadSerializer : IPayloadSerializer
     }
 
     /// <inheritdoc />
+    public JsonElement SerializeToElement(object payload)
+    {
+        var options = GetPayloadSerializerOptions();
+        return JsonSerializer.SerializeToElement(payload, options);
+    }
+
+    /// <inheritdoc />
     public object Deserialize(string payload)
     {
         return Deserialize<object>(payload);
     }
-    
+
+    /// <inheritdoc />
+    public object Deserialize(JsonElement payload)
+    {
+        return Deserialize<object>(payload);
+    }
+
     /// <inheritdoc />
     public T Deserialize<T>(string payload)
     {
         var options = GetPayloadSerializerOptions();
         return JsonSerializer.Deserialize<T>(payload, options)!;
     }
-    
+
+    /// <inheritdoc />
+    public T Deserialize<T>(JsonElement payload)
+    {
+        var options = GetPayloadSerializerOptions();
+        return payload.Deserialize<T>(options)!;
+    }
+
     private JsonSerializerOptions GetPayloadSerializerOptions()
     {
         var options = new JsonSerializerOptions

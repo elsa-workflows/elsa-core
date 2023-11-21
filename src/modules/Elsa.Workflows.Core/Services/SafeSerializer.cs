@@ -43,11 +43,20 @@ public class SafeSerializer : ISafeSerializer
     public async ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default)
     {
         var options = CreateOptions();
-        var notification = new SafeSerializerDeserializing(json, options);
+        var notification = new SafeSerializerDeserializing(options);
         await _notificationSender.SendAsync(notification, cancellationToken);
         return JsonSerializer.Deserialize<T>(json, options)!;
     }
-    
+
+    /// <inheritdoc />
+    public async ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default)
+    {
+        var options = CreateOptions();
+        var notification = new SafeSerializerDeserializing(options);
+        await _notificationSender.SendAsync(notification, cancellationToken);
+        return element.Deserialize<T>(options)!;
+    }
+
     private JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions

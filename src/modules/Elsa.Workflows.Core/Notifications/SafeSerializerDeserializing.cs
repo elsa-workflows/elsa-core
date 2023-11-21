@@ -3,4 +3,7 @@ using Elsa.Mediator.Contracts;
 
 namespace Elsa.Workflows.Core.Notifications;
 
-public record SafeSerializerDeserializing(string Json, JsonSerializerOptions Options) : INotification;
+/// <summary>
+/// Triggered when an object is being serialized.
+/// </summary>
+public record SafeSerializerDeserializing(JsonSerializerOptions Options) : INotification;

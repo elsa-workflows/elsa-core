@@ -1,13 +1,20 @@
 using System.IO.Compression;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Abstractions;
+using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Humanizer;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Export;
@@ -18,14 +25,31 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Export;
 [UsedImplicitly]
 internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
 {
-    private readonly IWorkflowInstanceStore _store;
-    private readonly IApiSerializer _serializer;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private readonly IActivityExecutionStore _activityExecutionStore;
+    private readonly IWorkflowExecutionLogStore _workflowExecutionLogStore;
+    private readonly IBookmarkStore _bookmarkStore;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer;
+    private readonly IPayloadSerializer _payloadSerializer;
+    private readonly ISafeSerializer _safeSerializer;
 
     /// <inheritdoc />
-    public Export(IWorkflowInstanceStore store, IWorkflowInstanceManager workflowDefinitionService, IApiSerializer serializer)
+    public Export(
+        IWorkflowInstanceStore workflowInstanceStore,
+        IActivityExecutionStore activityExecutionStore,
+        IWorkflowExecutionLogStore workflowExecutionLogStore,
+        IBookmarkStore bookmarkStore,
+        IWorkflowStateSerializer workflowStateSerializer,
+        IPayloadSerializer payloadSerializer,
+        ISafeSerializer safeSerializer)
     {
-        _store = store;
-        _serializer = serializer;
+        _workflowInstanceStore = workflowInstanceStore;
+        _activityExecutionStore = activityExecutionStore;
+        _workflowExecutionLogStore = workflowExecutionLogStore;
+        _bookmarkStore = bookmarkStore;
+        _workflowStateSerializer = workflowStateSerializer;
+        _payloadSerializer = payloadSerializer;
+        _safeSerializer = safeSerializer;
     }
 
     /// <inheritdoc />
@@ -37,17 +61,16 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         if (request.Id != null || request.Ids.Count == 1)
-            await DownloadSingleInstanceAsync(request.Id ?? request.Ids.First(), cancellationToken);
-        else
-            await DownloadMultipleInstancesAsync(request.Ids, cancellationToken);
+            return DownloadSingleInstanceAsync(request, request.Id ?? request.Ids.First(), cancellationToken);
+        return DownloadMultipleInstancesAsync(request, cancellationToken);
     }
 
-    private async Task DownloadMultipleInstancesAsync(ICollection<string> ids, CancellationToken cancellationToken)
+    private async Task DownloadMultipleInstancesAsync(Request request, CancellationToken cancellationToken)
     {
-        var instances = (await _store.FindManyAsync(new WorkflowInstanceFilter { Ids = ids }, cancellationToken: cancellationToken)).ToList();
+        var instances = (await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceFilter { Ids = request.Ids }, cancellationToken: cancellationToken)).ToList();
 
         if (!instances.Any())
         {
@@ -61,9 +84,9 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
             // Create a JSON file for each workflow definition:
             foreach (var instance in instances)
             {
-                var model = CreateWorkflowInstanceModel(instance);
+                var model = await CreateExportModelAsync(request, instance, cancellationToken);
                 var binaryJson = SerializeWorkflowInstance(model);
-                var fileName = GetFileName(model);
+                var fileName = GetFileName(instance.WorkflowState);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
                 await using var entryStream = entry.Open();
                 await entryStream.WriteAsync(binaryJson, cancellationToken);
@@ -75,9 +98,9 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         await SendBytesAsync(zipStream.ToArray(), "workflow-instances.zip", cancellation: cancellationToken);
     }
 
-    private async Task DownloadSingleInstanceAsync(string id, CancellationToken cancellationToken)
+    private async Task DownloadSingleInstanceAsync(Request request, string id, CancellationToken cancellationToken)
     {
-        var instance = (await _store.FindManyAsync(new WorkflowInstanceFilter { Id = id }, cancellationToken: cancellationToken)).FirstOrDefault();
+        var instance = (await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceFilter { Id = id }, cancellationToken: cancellationToken)).FirstOrDefault();
 
         if (instance == null)
         {
@@ -85,30 +108,76 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
             return;
         }
 
-        var model = CreateWorkflowInstanceModel(instance);
+        var model = await CreateExportModelAsync(request, instance, cancellationToken);
         var binaryJson = SerializeWorkflowInstance(model);
-        var fileName = GetFileName(model);
+        var fileName = GetFileName(instance.WorkflowState);
 
         await SendBytesAsync(binaryJson, fileName, cancellation: cancellationToken);
     }
 
-    private string GetFileName(WorkflowInstanceModel instance)
+    private async Task<ExportedWorkflowState> CreateExportModelAsync(Request request, WorkflowInstance instance, CancellationToken cancellationToken)
     {
-        var hasWorkflowName = !string.IsNullOrWhiteSpace(instance.Name);
-        var workflowName = hasWorkflowName ? instance.Name!.Trim() : instance.Id;
-        var fileName = $"workflow-instance-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
+        var workflowState = instance.WorkflowState;
+        var executionLogRecords = request.IncludeWorkflowExecutionLog ? await LoadWorkflowExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
+        var activityExecutionLogRecords = request.IncludeActivityExecutionLog ? await LoadActivityExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
+        var bookmarks = request.IncludeBookmarks ? await LoadBookmarksAsync(workflowState.Id, cancellationToken) : null;
+        var workflowStateElement = await _workflowStateSerializer.SerializeToElementAsync(workflowState, cancellationToken);
+        var bookmarksElement = bookmarks != null ? SerializeBookmarks(bookmarks) : default(JsonElement?);
+        var executionLogRecordsElement = executionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(executionLogRecords, cancellationToken) : default(JsonElement?);
+        var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(activityExecutionLogRecords, cancellationToken) : default(JsonElement?);
+        var model = new ExportedWorkflowState(workflowStateElement, bookmarksElement, activityExecutionLogRecordsElement, executionLogRecordsElement);
+        return model;
+    }
+
+    private JsonElement SerializeBookmarks(IEnumerable<StoredBookmark> bookmarks)
+    {
+        var jsonBookmarkNodes = bookmarks.Select(x => new JsonObject
+        {
+            ["id"] = x.BookmarkId,
+            ["activityTypeName"] = x.ActivityTypeName,
+            ["workflowInstanceId"] = x.WorkflowInstanceId,
+            ["activityInstanceId"] = x.ActivityInstanceId,
+            ["hash"] = x.Hash,
+            ["correlationId"] = x.CorrelationId,
+            ["createdAt"] = x.CreatedAt,
+            ["payload"] = JsonObject.Create(_payloadSerializer.SerializeToElement(x.Payload!)),
+            ["metadata"] = JsonObject.Create(_payloadSerializer.SerializeToElement(x.Metadata!))
+        }).Cast<JsonNode>().ToArray();
+
+        var jsonBookmarkArray = new JsonArray(jsonBookmarkNodes);
+        return JsonSerializer.SerializeToElement(jsonBookmarkArray);
+    }
+
+    private async Task<IEnumerable<StoredBookmark>> LoadBookmarksAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    {
+        var filter = new BookmarkFilter { WorkflowInstanceId = workflowInstanceId };
+        return await _bookmarkStore.FindManyAsync(filter, cancellationToken);
+    }
+
+    private async Task<IEnumerable<ActivityExecutionRecord>> LoadActivityExecutionLogRecordsAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    {
+        var filter = new ActivityExecutionRecordFilter { WorkflowInstanceId = workflowInstanceId };
+        var order = new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending);
+        return await _activityExecutionStore.FindManyAsync(filter, order, cancellationToken);
+    }
+
+    private async Task<IEnumerable<WorkflowExecutionLogRecord>> LoadWorkflowExecutionLogRecordsAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    {
+        var filter = new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = workflowInstanceId };
+        var order = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(x => x.Timestamp, OrderDirection.Ascending);
+        var page = await _workflowExecutionLogStore.FindManyAsync(filter, PageArgs.All, order, cancellationToken);
+        return page.Items;
+    }
+
+    private static string GetFileName(WorkflowState instance)
+    {
+        var fileName = $"workflow-instance-{instance.Id.ToLowerInvariant()}.json";
         return fileName;
     }
 
-    private byte[] SerializeWorkflowInstance(WorkflowInstanceModel model)
+    private static byte[] SerializeWorkflowInstance(ExportedWorkflowState model)
     {
-        var serializerOptions = _serializer.CreateOptions();
-        var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
+        var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model);    
         return binaryJson;
-    }
-
-    private WorkflowInstanceModel CreateWorkflowInstanceModel(WorkflowInstance instance)
-    {
-        return Map.FromEntity(instance);
     }
 }
