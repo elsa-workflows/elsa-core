@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -6,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 
 [PublicAPI]
-internal class Get : ElsaEndpoint<Request, Response, WorkflowInstanceMapper>
+internal class Get : ElsaEndpoint<Request, WorkflowInstanceModel, WorkflowInstanceMapper>
 {
     private readonly IWorkflowInstanceStore _store;
 

@@ -2,6 +2,20 @@ using FastEndpoints;
 
 namespace Elsa.Abstractions;
 
+/// <summary>
+/// An endpoint that maps a request to a response.
+/// </summary>
+public abstract class ElsaEndpointWithMapper<TRequest, TMapper> : EndpointWithMapper<TRequest, TMapper> where TMapper : notnull, IRequestMapper where TRequest : notnull
+{
+    protected void ConfigurePermissions(params string[] permissions)
+    {
+        if (!EndpointSecurityOptions.SecurityIsEnabled)
+            AllowAnonymous();
+        else
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
+    }
+}
+
 public abstract class ElsaEndpointWithoutRequest : EndpointWithoutRequest
 {
     protected void ConfigurePermissions(params string[] permissions)

@@ -64,7 +64,7 @@ internal class Export : ElsaEndpoint<Request>
             await SendNoContentAsync(cancellationToken);
             return;
         }
-        
+
         var zipStream = new MemoryStream();
         using (var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Create, true))
         {
@@ -107,11 +107,7 @@ internal class Export : ElsaEndpoint<Request>
     {
         var hasWorkflowName = !string.IsNullOrWhiteSpace(definition.Name);
         var workflowName = hasWorkflowName ? definition.Name!.Trim() : definition.DefinitionId;
-
-        var fileName = hasWorkflowName
-            ? $"{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json"
-            : $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
-
+        var fileName = $"workflow-definition-{workflowName.Underscore().Dasherize().ToLowerInvariant()}.json";
         return fileName;
     }
 
