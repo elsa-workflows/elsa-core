@@ -1,5 +1,4 @@
-﻿using System.Text.Json.Serialization;
-using Elsa.Common.Entities;
+﻿using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
@@ -163,6 +162,13 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
         }, cancellationToken);
 
         return !exists;
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
+    {
+        var definition = await FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
+        return definition?.TenantId;
     }
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)

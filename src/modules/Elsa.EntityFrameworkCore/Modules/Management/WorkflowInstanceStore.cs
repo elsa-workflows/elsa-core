@@ -55,7 +55,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
         await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
-    
+
     /// <inheritdoc />
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
@@ -92,7 +92,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
@@ -119,11 +119,17 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var data = entity.WorkflowState;
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
-        if (!string.IsNullOrWhiteSpace(json)) 
+        if (!string.IsNullOrWhiteSpace(json))
             data = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
 
         entity.WorkflowState = data;
     }
 
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        return await _store.GetTenantIdAsync<WorkflowInstance>(x => x.Id == instanceId, cancellationToken);
+    }
 }

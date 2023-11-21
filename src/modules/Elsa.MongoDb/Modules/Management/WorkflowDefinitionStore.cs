@@ -136,6 +136,13 @@ public class MongoWorkflowDefinitionStore : IWorkflowDefinitionStore
         return !exists;
     }
 
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
+    {
+        var definition = await FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
+        return definition?.TenantId;
+    }
+
     private IMongoQueryable<WorkflowDefinition> Filter(IMongoQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
         (filter.Apply(queryable) as IMongoQueryable<WorkflowDefinition>)!;
 

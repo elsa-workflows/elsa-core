@@ -49,8 +49,6 @@ builder.Services.AddElsa(elsa =>
         .UseRealTimeWorkflows()
         .UseJavaScript()
         .UseLiquid();
-
-    elsa.AddWorkflowsFrom<Program>();
 });
 
 builder.Services
@@ -109,11 +107,13 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+app.UseRouting();
 app.UseAuthorization();
 app.MapControllers();
 app.UseCors();
 app.UseWorkflows();
 app.UseWorkflowsApi("api");
+app.UseWorkflowsSignalRHubs();
 
 if (!app.Environment.IsProduction())
 {

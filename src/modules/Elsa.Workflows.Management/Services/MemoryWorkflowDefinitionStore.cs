@@ -146,6 +146,13 @@ public class MemoryWorkflowDefinitionStore : IWorkflowDefinitionStore
         return Task.FromResult(!exists);
     }
 
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
+    {
+        var definition = await FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
+        return definition?.TenantId;
+    }
+
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);
 
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;

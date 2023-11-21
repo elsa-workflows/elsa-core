@@ -1,4 +1,3 @@
-using System.Reflection;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -19,6 +18,7 @@ using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
@@ -87,6 +87,12 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
+
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="ICommandHandler"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowRequestHandler>();
 
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
@@ -195,7 +201,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
             // Domain handlers.
-            .AddCommandHandler<DispatchWorkflowRequestHandler>()
+            .AddScoped(DispatchWorkflowCommandHandler)
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()
