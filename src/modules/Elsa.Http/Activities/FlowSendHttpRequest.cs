@@ -35,9 +35,16 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
         var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
         var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
-        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : "Done";
+        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : default;
+        var outcomes = new List<string>();
 
-        await context.CompleteActivityWithOutcomesAsync(outcome);
+        if (outcome != null)
+            outcomes.Add(outcome);
+
+        outcomes.Add("Done");
+
+        context.JournalData["StatusCode"] = statusCode;
+        await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
     }
 
     /// <inheritdoc />
