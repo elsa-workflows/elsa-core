@@ -210,7 +210,7 @@ public class TriggerIndexer : ITriggerIndexer
         return triggers.ToList();
     }
 
-    private async Task<ICollection<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
+    private async Task<List<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
     {
         try
         {
@@ -221,6 +221,6 @@ public class TriggerIndexer : ITriggerIndexer
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return Array.Empty<object>();
+        return new List<object>(0);
     }
 }

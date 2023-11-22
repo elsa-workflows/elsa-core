@@ -19,5 +19,5 @@ internal class Request
     /// <summary>
     /// A list of workflow definition version IDs.
     /// </summary>
-    public ICollection<string> Ids { get; set; } = default!;
+    public ICollection<string>? Ids { get; set; } = default!;
 }
