@@ -17,16 +17,14 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> _store;
-    private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISafeSerializer _safeSerializer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreWorkflowExecutionLogStore"/> class.
     /// </summary>
-    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, IPayloadSerializer payloadPayloadSerializer, ISafeSerializer safeSerializer)
+    public EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord> store, ISafeSerializer safeSerializer)
     {
         _store = store;
-        _payloadSerializer = payloadPayloadSerializer;
         _safeSerializer = safeSerializer;
     }
 
@@ -75,7 +73,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ?await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await _safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
     }
 

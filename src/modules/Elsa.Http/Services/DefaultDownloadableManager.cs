@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;

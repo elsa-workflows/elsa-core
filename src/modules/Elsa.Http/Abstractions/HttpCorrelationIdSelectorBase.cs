@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Http.Contracts;
 using Microsoft.AspNetCore.Http;
 

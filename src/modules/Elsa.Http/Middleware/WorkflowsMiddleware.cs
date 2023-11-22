@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
@@ -13,8 +10,6 @@ using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Workflows.Core;

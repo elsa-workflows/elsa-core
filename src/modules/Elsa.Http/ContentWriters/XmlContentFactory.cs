@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Net.Mime;
 using System.Text;
 using System.Xml.Serialization;

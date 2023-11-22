@@ -17,7 +17,6 @@ using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
-using Elsa.JavaScript.Features;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;

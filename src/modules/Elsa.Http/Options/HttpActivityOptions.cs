@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Options;

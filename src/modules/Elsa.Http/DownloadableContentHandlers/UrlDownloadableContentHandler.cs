@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;

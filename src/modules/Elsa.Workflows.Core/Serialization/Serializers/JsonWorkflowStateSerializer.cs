@@ -8,6 +8,7 @@ using Elsa.Workflows.Core.Notifications;
 using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
 using Elsa.Workflows.Core.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Serialization.Serializers;
 
@@ -18,14 +19,16 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
     private readonly INotificationSender _notificationSender;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
     /// </summary>
-    public JsonWorkflowStateSerializer(IWellKnownTypeRegistry wellKnownTypeRegistry, INotificationSender notificationSender)
+    public JsonWorkflowStateSerializer(IWellKnownTypeRegistry wellKnownTypeRegistry, INotificationSender notificationSender, ILoggerFactory loggerFactory)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
         _notificationSender = notificationSender;
+        _loggerFactory = loggerFactory;
     }
 
     /// <inheritdoc />
@@ -36,6 +39,26 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
         
         return JsonSerializer.Serialize(workflowState, options);
+    }
+
+    /// <inheritdoc />
+    public async Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetSerializerOptions();
+        var serializingWorkflowState = new SerializingWorkflowState(options);
+        await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
+        
+        return JsonSerializer.SerializeToUtf8Bytes(workflowState, options);
+    }
+
+    /// <inheritdoc />
+    public async Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetSerializerOptions();
+        var serializingWorkflowState = new SerializingWorkflowState(options);
+        await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
+        
+        return JsonSerializer.SerializeToElement(workflowState, options);
     }
 
     /// <inheritdoc />
@@ -51,6 +74,14 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
     {
         var options = GetSerializerOptions();
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
+        return Task.FromResult(workflowState);
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default)
+    {
+        var options = GetSerializerOptions();
+        var workflowState = serializedState.Deserialize<WorkflowState>(options)!;
         return Task.FromResult(workflowState);
     }
 
@@ -78,6 +109,8 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
+        options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));
         
         return options;
     }

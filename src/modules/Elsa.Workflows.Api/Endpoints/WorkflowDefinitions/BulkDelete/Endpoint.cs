@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
-[PublicAPI]
+[UsedImplicitly]
 internal class BulkDelete : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;

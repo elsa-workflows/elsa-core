@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using JetBrains.Annotations;

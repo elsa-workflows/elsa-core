@@ -1,5 +1,3 @@
-using System;
-
 namespace Elsa.Http.Exceptions;
 
 /// <summary>
