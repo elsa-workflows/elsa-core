@@ -22,7 +22,7 @@ public class WriteHttpResponse : Activity
     public WriteHttpResponse([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The status code to return.
     /// </summary>
@@ -113,9 +113,19 @@ public class WriteHttpResponse : Activity
 
             // Write content.
             if (statusCode != HttpStatusCode.NoContent)
-                await httpContent.CopyToAsync(response.Body);
+            {
+                try
+                {
+                    await httpContent.CopyToAsync(response.Body);
+                }
+                catch (NotSupportedException)
+                {
+                    // This can happen the Content property is a type that cannot be serialized or contains a type that cannot be serialized. 
+                    await response.WriteAsync("The response includes a type that cannot be serialized.");
+                }
+            }
         }
-        
+
         // Complete activity.
         await context.CompleteActivityAsync();
     }
