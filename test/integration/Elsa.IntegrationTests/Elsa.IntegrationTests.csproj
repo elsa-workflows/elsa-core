@@ -150,6 +150,9 @@
       <None Update="Scenarios\ParentChildOutputMapping\Workflows\consumer.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\JsonObjectSerialization\Workflows\instance-serialization.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
 
 
 
