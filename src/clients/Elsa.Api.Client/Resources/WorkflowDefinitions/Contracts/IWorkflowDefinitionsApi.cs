@@ -174,7 +174,7 @@ public interface IWorkflowDefinitionsApi
     /// </summary>
     /// <param name="files">The files to import.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    [Post("/workflow-definitions/import")]
+    [Post("/workflow-definitions/import-files")]
     [Multipart]
     Task<ImportFilesResponse> ImportFilesAsync([AliasAs("files")] List<StreamPart> files, CancellationToken cancellationToken = default);
 
