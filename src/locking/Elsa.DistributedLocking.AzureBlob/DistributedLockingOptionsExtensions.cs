@@ -21,6 +21,12 @@ namespace Elsa
             return options;
         }
 
+        public static DistributedLockingOptionsBuilder UseAzureBlobLockProvider(this DistributedLockingOptionsBuilder options, string connectionString, string blobContainerName, BlobClientOptions? blobClientOptions = null)
+        {
+            options.UseProviderFactory(sp => CreateAzureDistributedLockFactory(sp, connectionString, blobContainerName, blobClientOptions));
+            return options;
+        }
+
         private static Func<string, IDistributedLock> CreateAzureDistributedLockFactory(IServiceProvider services, Uri blobContainerUrl)
         {
             var container = new BlobContainerClient(blobContainerUrl);
@@ -30,6 +36,12 @@ namespace Elsa
         private static Func<string, IDistributedLock> CreateAzureDistributedLockFactory(IServiceProvider services, Uri blobContainerUrl, TokenCredential tokenCredential, BlobClientOptions? blobClientOptions)
         {
             var container = new BlobContainerClient(blobContainerUrl, tokenCredential, blobClientOptions);
+            return name => new AzureBlobLeaseDistributedLock(container, name);
+        }
+
+        private static Func<string, IDistributedLock> CreateAzureDistributedLockFactory(IServiceProvider services, string connectionString, string blobContainerName, BlobClientOptions? blobClientOptions)
+        {
+            var container = new BlobContainerClient(connectionString, blobContainerName, blobClientOptions);
             return name => new AzureBlobLeaseDistributedLock(container, name);
         }
     }
