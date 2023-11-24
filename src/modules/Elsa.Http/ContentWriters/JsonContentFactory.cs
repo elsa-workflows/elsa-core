@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 
 namespace Elsa.Http.ContentWriters;
 
@@ -16,10 +17,11 @@ public class JsonContentFactory : IHttpContentFactory
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string contentType)
     {
-        if (content is string s)
-            return new StringContent(s, Encoding.UTF8, contentType);
+        var text = content as string ?? JsonSerializer.Serialize(content);
 
-        var mediaType = MediaTypeHeaderValue.Parse(contentType);
-        return JsonContent.Create(content, mediaType);
+        if (string.IsNullOrWhiteSpace(contentType))
+            contentType = MediaTypeNames.Application.Json;
+
+        return new StringContent(text, Encoding.UTF8, contentType);
     }
 }
