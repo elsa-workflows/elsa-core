@@ -1,3 +1,4 @@
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 using Elsa.Api.Client.Shared.Models;
@@ -60,4 +61,29 @@ public interface IWorkflowInstancesApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/bulk-actions/delete/workflow-instances/by-id")]
     Task BulkDeleteAsync(BulkDeleteWorkflowInstancesRequest request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Exports a workflow instance.
+    /// </summary>
+    /// <param name="id">The ID of the workflow instance to export.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Get("/workflow-instances/{id}/export")]
+    Task<IApiResponse<Stream>> ExportAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Exports a set of workflow instances.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow instances to export.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/export/workflow-instances")]
+    Task<IApiResponse<Stream>> BulkExportAsync(BulkExportWorkflowInstancesRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Imports a set of workflow instances.
+    /// </summary>
+    /// <param name="files">The files to import.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/import/workflow-instances")]
+    [Multipart]
+    Task<ImportFilesResponse> BulkImportAsync([AliasAs("files")] List<StreamPart> files, CancellationToken cancellationToken = default);
 }
