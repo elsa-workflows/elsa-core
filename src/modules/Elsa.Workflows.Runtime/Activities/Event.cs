@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Wait for an event to be triggered.
 /// </summary>
 [Activity("Elsa", "Primitives", "Wait for an event to be published.")]
-[PublicAPI]
+[UsedImplicitly]
 public class Event : Trigger<object?>
 {
     /// <inheritdoc />
