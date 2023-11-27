@@ -66,7 +66,7 @@ public class BulkDispatchWorkflow : Activity
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
-    [Input(Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Done outcome will be triggered instead of Finished.")]
+    [Input(Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.")]
     public Input<bool> WaitForCompletion { get; set; } = default!;
 
     /// <summary>
@@ -118,12 +118,6 @@ public class BulkDispatchWorkflow : Activity
         }
     }
 
-    /// <summary>
-    /// Invoked when the created bookmark was persisted, which means it's safe to actually dispatch the child workflow for execution.
-    /// This prevents a potential race condition where the child workflow finishes before our current workflow execution pipeline had a chance to persist its bookmarks. 
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="item"></param>
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
@@ -169,6 +163,6 @@ public class BulkDispatchWorkflow : Activity
         context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
-            await context.CompleteActivityAsync("Finished");
+            await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
     }
 }
