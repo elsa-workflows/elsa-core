@@ -11,9 +11,6 @@ internal class Request
     public string? CorrelationId { get; set; }
     public string? TriggerActivityId { get; set; }
 
-    [Obsolete("Use VersionOptions instead.")]
-    public int? Version { get; set; }
-
     public VersionOptions? VersionOptions { get; set; }
 
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]

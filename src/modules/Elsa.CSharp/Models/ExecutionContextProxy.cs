@@ -33,4 +33,9 @@ public partial class ExecutionContextProxy
     /// Sets the value of the specified variable.
     /// </summary>
     public void SetVariable(string name, object? value) => ExpressionExecutionContext.SetVariable(name, value);
+
+    /// <summary>
+    /// Gets the value of the specified variable.
+    /// </summary>
+    public T? GetInput<T>(string name) => ExpressionExecutionContext.GetInput<T>(name);
 }

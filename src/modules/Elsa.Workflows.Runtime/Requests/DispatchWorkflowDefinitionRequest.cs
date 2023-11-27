@@ -43,6 +43,11 @@ public class DispatchWorkflowDefinitionRequest
     public IDictionary<string, object>? Input { get; set; }
     
     /// <summary>
+    /// Any properties to attach to the workflow.
+    /// </summary>
+    public IDictionary<string, object>? Properties { get; set; }
+    
+    /// <summary>
     /// The correlation ID to use when dispatching the workflow.
     /// </summary>
     public string? CorrelationId { get; set; }

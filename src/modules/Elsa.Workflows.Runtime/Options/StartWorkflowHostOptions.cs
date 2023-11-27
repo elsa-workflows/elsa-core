@@ -5,14 +5,23 @@ namespace Elsa.Workflows.Runtime.Options;
 /// <summary>
 /// Represents options for starting a workflow host.
 /// </summary>
-/// <param name="InstanceId">An optional workflow instance ID. If not specified, a new ID will be generated.</param>
-/// <param name="CorrelationId">An optional correlation ID.</param>
-/// <param name="Input">Optional input to pass to the workflow instance.</param>
-/// <param name="TriggerActivityId">The ID of the activity that triggered the workflow instance.</param>
-/// <param name="CancellationTokens">Cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</param>
-public record StartWorkflowHostOptions(
-    string? InstanceId = default,
-    string? CorrelationId = default,
-    IDictionary<string, object>? Input = default,
-    string? TriggerActivityId = default,
-    CancellationTokens CancellationTokens = default);
+public class StartWorkflowHostOptions
+{
+    /// <summary>An optional workflow instance ID. If not specified, a new ID will be generated.</summary>
+    public string? InstanceId { get; set; }
+
+    /// <summary>An optional correlation ID.</summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>Optional input to pass to the workflow instance.</summary>
+    public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>Any properties to attach to the workflow instance.</summary>
+    public IDictionary<string, object>? Properties { get; set; }
+
+    /// <summary>The ID of the activity that triggered the workflow instance.</summary>
+    public string? TriggerActivityId { get; set; }
+
+    /// <summary>Cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</summary>
+    public CancellationTokens CancellationTokens { get; set; }
+}

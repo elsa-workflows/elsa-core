@@ -91,7 +91,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     public async ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
         var triggeredWorkflows = await TriggerWorkflowsAsync(message, cancellationToken);
-        
+
         return new DeliverWorkflowInboxMessageResult(triggeredWorkflows);
     }
 
@@ -103,7 +103,14 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        var options = new TriggerWorkflowsOptions
+        {
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId,
+            Input = input,
+            CancellationTokens = cancellationToken
+        };
 
         if (workflowInstanceId != null)
             return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options);
@@ -120,7 +127,13 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        var options = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        var options = new TriggerWorkflowsOptions
+        {
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId,
+            Input = input, CancellationTokens = cancellationToken
+        };
 
         return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, options);
     }

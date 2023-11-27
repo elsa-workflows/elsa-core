@@ -3,12 +3,16 @@ using Elsa.Workflows.Core.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 
-public record DispatchResumeWorkflows(
-    string ActivityTypeName,
-    [property: JsonConverter(typeof(PolymorphicObjectConverterFactory))]
-    object BookmarkPayload,
-    string? CorrelationId,
-    string? WorkflowInstanceId,
-    string? ActivityInstanceId,
-    IDictionary<string, object>? Input
-);
+public class DispatchResumeWorkflows(string activityTypeName, object bookmarkPayload)
+{
+    public string ActivityTypeName { get; init; } = activityTypeName;
+
+    [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
+    public object BookmarkPayload { get; init; } = bookmarkPayload;
+
+    public string? CorrelationId { get; set; }
+    public string? WorkflowInstanceId { get; set; }
+    public string? ActivityInstanceId { get; set; }
+    public IDictionary<string, object>? Input { get; set; }
+    public IDictionary<string, object>? Properties { get; set; }
+}

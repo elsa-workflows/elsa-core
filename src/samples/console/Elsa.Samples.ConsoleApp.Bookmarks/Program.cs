@@ -38,5 +38,4 @@ var result = await workflowRunner.RunAsync(workflow);
 // Resume the workflow using te created bookmark.
 var bookmark = result.WorkflowState.Bookmarks.Single();
 var workflowState = result.WorkflowState;
-await workflowRunner.RunAsync(workflow, workflowState, new RunWorkflowOptions(bookmarkId: bookmark.Id));
-
+await workflowRunner.RunAsync(workflow, workflowState, new RunWorkflowOptions { BookmarkId = bookmark.Id });

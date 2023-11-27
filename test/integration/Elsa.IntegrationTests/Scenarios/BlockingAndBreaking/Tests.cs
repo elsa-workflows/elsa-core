@@ -37,12 +37,12 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // Resume the second branch.
         bookmark = result2.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 2");
-        runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result3 = await _workflowRunner.RunAsync(workflow, result2.WorkflowState, runOptions);
 
         // Verify expected output.
@@ -61,14 +61,14 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "Branch 1", "Branch 2", "Branch 1 - Resumed", "End" }, lines);
     }
-    
+
     [Fact(DisplayName = "Break breaks out of While loop.")]
     public async Task Test3()
     {
@@ -80,7 +80,7 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // There should be no bookmarks left, since the while loop was broken out of.

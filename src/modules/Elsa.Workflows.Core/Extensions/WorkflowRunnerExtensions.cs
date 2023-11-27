@@ -17,7 +17,7 @@ public static class WorkflowRunnerExtensions
     /// Runs a workflow until its end, automatically resuming any bookmark it encounters.
     /// </summary>
     public static async Task<WorkflowState> RunUntilEndAsync(
-        this IWorkflowRunner workflowRunner, 
+        this IWorkflowRunner workflowRunner,
         IActivity activity,
         Func<WorkflowState, Bookmark, RunWorkflowOptions, bool>? processBookmark = default,
         CancellationToken cancellationToken = default)
@@ -30,12 +30,12 @@ public static class WorkflowRunnerExtensions
         // Continue resuming the workflow for as long as there are bookmarks to resume.
         while (bookmarks.TryPop(out var bookmark))
         {
-            var options = new RunWorkflowOptions(bookmarkId: bookmark.Id);
-            
+            var options = new RunWorkflowOptions { BookmarkId = bookmark.Id };
+
             // Give caller a chance to determine whether or not to resume the bookmark, as well as configure any input to provide.
             if (processBookmark != null && !processBookmark(workflowState, bookmark, options))
                 continue;
-            
+
             result = await workflowRunner.RunAsync(workflow, workflowState, options, cancellationToken: cancellationToken);
             workflowState = result.WorkflowState;
 

@@ -66,8 +66,10 @@ public class BulkDispatchWorkflow : Activity
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
-    [Input(Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.")]
-    public Input<bool> WaitForCompletion { get; set; } = default!;
+    [Input(
+        Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.",
+        DefaultValue = true)]
+    public Input<bool> WaitForCompletion { get; set; } = new(true);
 
     /// <summary>
     /// An activity to execute when the child workflow finishes.
@@ -103,10 +105,11 @@ public class BulkDispatchWorkflow : Activity
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
+            var workflowInstanceId = context.Id;
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new BulkDispatchWorkflowBookmark(dispatchedInstancesCount),
+                Payload = new BulkDispatchWorkflowBookmark(workflowInstanceId, dispatchedInstancesCount),
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(bookmarkOptions);

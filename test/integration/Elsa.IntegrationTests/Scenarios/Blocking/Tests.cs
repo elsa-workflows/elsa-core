@@ -33,21 +33,21 @@ public class Tests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1" }, lines);
     }
-    
+
     [Fact(DisplayName = "Subsequent activities are scheduled when resuming workflow using bookmark")]
     public async Task Test2()
     {
         await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BlockingSequentialWorkflow>();
-        
+
         // Start workflow.
         var result = await _workflowRunner.RunAsync(workflow);
         var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Resume");
 
         // Resume workflow.
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         await _workflowRunner.RunAsync(workflow, result.WorkflowState, runOptions);
-        
+
         // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Line 1", "Line 2", "Line 3" }, lines);

@@ -44,7 +44,6 @@ public class ServiceBusTest : IDisposable
                     .AddSingleton<IServiceBusProcessorManager, ServiceBusProcessorManager>()
                     .AddSingleton<IWorkerManager, WorkerManager>()
                     .AddSingleton(_resetEventManager)
-
                     .AddSingleton(sp =>
                     {
                         var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
@@ -82,7 +81,10 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        {
+            VersionOptions = Common.Models.VersionOptions.Published
+        };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -147,7 +149,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -218,7 +220,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(SendOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -254,7 +256,7 @@ public class ServiceBusTest : IDisposable
     {
         var correlationId = "EEE3D9CC-2279-4CE5-8F4F-FC6C65BF8814";
         _sbProcessorManager.Init("topicName", "subscriptionName");
-            
+
         //Init waitEvent :
         _resetEventManager.Init("receive1");
 
@@ -283,7 +285,7 @@ public class ServiceBusTest : IDisposable
 
         //Start Workflow
         var workflowDefinitionId = nameof(SendOneMessageWithCorrelationIdWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -299,7 +301,7 @@ public class ServiceBusTest : IDisposable
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
-        await Task.Delay(500); //Todo find how to remove delay
+        await Task.Delay(500); // Todo find how to remove delay
         var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
         /*
          * We sent 1 message so Workflow must be
@@ -319,7 +321,7 @@ public class ServiceBusTest : IDisposable
     public async Task Receive_1_Message_Should_Not_Trigger()
     {
         _sbProcessorManager.Init("topicName1", "subscriptionName1");
-            
+
         // Init waitEvent:
         _resetEventManager.Init("receive1");
         _resetEventManager.Init("receive2");
@@ -329,7 +331,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         var workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, new Dictionary<string, object>(), Common.Models.VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 

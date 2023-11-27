@@ -16,7 +16,8 @@ message StartWorkflowRequest {
   string VersionOptions = 3;
   optional string CorrelationId = 4;
   optional Input input = 5;
-  optional string TriggerActivityId = 6;
+  optional Properties properties = 6;
+  optional string TriggerActivityId = 7;
 }
 
 message WorkflowExecutionResponse {
@@ -65,7 +66,8 @@ message ResumeWorkflowRequest {
   optional string ActivityNodeId = 5;
   optional string ActivityInstanceId = 6;
   optional string ActivityHash = 7;
-  optional Input input = 8;
+  optional Input Input = 8;
+  optional Properties Properties = 9;
 }
 
 message ExportWorkflowStateRequest {}
