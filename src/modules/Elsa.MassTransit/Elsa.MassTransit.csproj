@@ -2,9 +2,9 @@
 
     <Import Project="..\..\..\common.props"/>
     <Import Project="..\..\..\configureawait.props"/>
-
+    
+    <Import Project="..\..\..\frameworks.props"/>
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
         </Description>

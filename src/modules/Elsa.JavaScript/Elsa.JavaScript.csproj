@@ -2,9 +2,9 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\frameworks.props"/>
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides a JavaScript expression provider.
         </Description>
@@ -18,9 +18,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FastEndpoints" Version="5.13.0" />
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="Jint" Version="3.0.0-beta-2053" />
+        <PackageReference Include="Jint" Version="3.0.0-beta-2056" />
     </ItemGroup>
 
 </Project>

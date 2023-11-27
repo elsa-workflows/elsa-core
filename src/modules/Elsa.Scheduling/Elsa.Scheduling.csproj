@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\frameworks.props"/>
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides scheduling activities such as Timer, Delay and StartAt.
         </Description>
@@ -12,13 +12,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
-      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Cronos" Version="0.7.1" />
+        <PackageReference Include="Cronos" Version="0.7.1"/>
     </ItemGroup>
-
-
+    
 </Project>

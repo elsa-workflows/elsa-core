@@ -48,18 +48,13 @@ builder.Services.AddElsa(elsa =>
 
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-// Add Razor pages.
-builder.Services.AddRazorPages();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.UseCors();
-app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi();
 app.UseWorkflows();
-app.MapRazorPages();
 app.Run();
