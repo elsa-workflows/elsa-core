@@ -40,7 +40,7 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         }
 
         sb.AppendLine("}");
-        sb.AppendLine("var Variable = new WorkflowVariablesProxy(ExecutionContext);");
+        sb.AppendLine("var Variables = new WorkflowVariablesProxy(ExecutionContext);");
         notification.AppendScript(sb.ToString());
         return Task.CompletedTask;
     }
