@@ -25,10 +25,10 @@ RUN dotnet restore "./src/bundles/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj"
 # build and publish (UseAppHost=false creates platform independent binaries)
 WORKDIR /source/src/bundles/Elsa.AllInOne.Web
 RUN dotnet build "Elsa.AllInOne.Web.csproj" -c Release -o /app/build
-RUN dotnet publish "Elsa.AllInOne.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net7.0
+RUN dotnet publish "Elsa.AllInOne.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
 
 # move binaries into smaller base image
-FROM mcr.microsoft.com/dotnet/aspnet:7.0-bullseye-slim AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
