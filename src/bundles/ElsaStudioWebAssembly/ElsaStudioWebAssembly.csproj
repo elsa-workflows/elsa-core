@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.140" />
-        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.140" />
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.140" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.9"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.9" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.148" />
+        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.148" />
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.148" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
     </ItemGroup>
 
     <ItemGroup>

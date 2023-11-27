@@ -1,30 +1,43 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\common.props"/>
+    <Import Project="..\..\..\configureawait.props"/>
+    <Import Project="..\..\..\frameworks.props"/>
 
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides EF Core migrations for Quartz.NET.
         </Description>
         <PackageTags>elsa module scheduling quartz ef core migrations</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.4.1-ef7" />
-        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.4.1-ef7" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13">
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.14"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.14">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Quartz.Serialization.Json" Version="3.7.0" />
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.4.1-ef7"/>
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.4.1-ef7"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.4.1-ef8"/>
+        <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.4.1-ef8"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
-        <ProjectReference Include="..\Elsa.Quartz\Elsa.Quartz.csproj" />
+        <PackageReference Include="Quartz.Serialization.Json" Version="3.7.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj"/>
+        <ProjectReference Include="..\Elsa.Quartz\Elsa.Quartz.csproj"/>
     </ItemGroup>
 
 </Project>

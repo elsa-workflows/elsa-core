@@ -3,9 +3,9 @@
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\packages.props" />
     <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\frameworks.props"/>
     
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides activities to save and load files to and from a confogurable storage provider. 
         </Description>

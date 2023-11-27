@@ -1,4 +1,5 @@
-﻿using Elsa.Features.Services;
+﻿#if NET6_0 || NET7_0
+using Elsa.Features.Services;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Builder;
 using System;
@@ -55,3 +56,4 @@ namespace Elsa.Extensions
 
     }
 }
+#endif

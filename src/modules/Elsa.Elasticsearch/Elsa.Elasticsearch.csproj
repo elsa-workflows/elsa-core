@@ -2,9 +2,9 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
-
+    <Import Project="..\..\..\frameworks.props" />
+    
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides Elasticsearch implementation for workflow state persistence.
         </Description>
@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.0.5" />
+      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.11.0" />
     </ItemGroup>
 
 </Project>

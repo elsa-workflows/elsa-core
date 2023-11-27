@@ -2,9 +2,9 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
-
+    <Import Project="..\..\..\frameworks.props" />
+    
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides common utilities that are helpful when writing tests against Elsa Workflows functionality.
         </Description>
@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="xunit.abstractions" Version="2.0.3" />
-        <PackageReference Include="xunit.extensibility.core" Version="2.4.2" />
+        <PackageReference Include="xunit.extensibility.core" Version="2.6.2" />
     </ItemGroup>
 
     <ItemGroup>

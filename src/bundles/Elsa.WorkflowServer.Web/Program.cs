@@ -206,7 +206,10 @@ services
         });
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
+
+#if NET6_0 || NET7_0
         elsa.AddSwagger();
+#endif
     });
 
 services.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();
@@ -247,7 +250,11 @@ app.UseWorkflows();
 
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())
+{
+#if NET6_0 || NET7_0
     app.UseSwaggerUI();
+#endif
+}
 
 // SignalR.
 app.UseWorkflowsSignalRHubs();

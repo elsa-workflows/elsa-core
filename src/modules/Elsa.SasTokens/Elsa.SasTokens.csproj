@@ -2,16 +2,16 @@
 
     <Import Project="..\..\..\common.props"/>
     <Import Project="..\..\..\configureawait.props"/>
-
+    <Import Project="..\..\..\frameworks.props"/>
+    
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
-            Provides services to geenrate SAS tokens.
+            Provides services to generate SAS tokens.
         </Description>
         <PackageTags>elsa module security sas tokens</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0'">
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0' Or '$(TargetFramework)' == 'net8.0'">
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
     
