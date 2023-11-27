@@ -16,7 +16,7 @@ public class InputJsonConverterFactory : JsonConverterFactory
     public InputJsonConverterFactory(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
     /// <inheritdoc />
-    public override bool CanConvert(Type typeToConvert) => typeof(Input).IsAssignableFrom(typeToConvert);
+    public override bool CanConvert(Type typeToConvert) => typeof(Input).IsAssignableFrom(typeToConvert) && typeToConvert.IsGenericType;
 
     /// <inheritdoc />
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
