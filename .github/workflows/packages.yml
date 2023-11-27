@@ -33,11 +33,6 @@ jobs:
           else
             echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
           fi
-      - name: Build designer package
-        working-directory: ./src/modules/Elsa.Workflows.Designer
-        run: |
-          npm install --force
-          npm run build
       - name: Build
         run: dotnet build --configuration Release /p:Version=${VERSION}
       - name: Test
