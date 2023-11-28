@@ -63,7 +63,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
                 using var scope = _scopeFactory.CreateScope();
                 var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
 
-                await notificationSender.SendAsync(notification, NotificationStrategy.FireAndForget, cancellationToken);
+                await notificationSender.SendAsync(notification, NotificationStrategy.Background, cancellationToken);
             }
             catch (Exception e)
             {
