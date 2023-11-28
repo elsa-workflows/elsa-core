@@ -20,13 +20,13 @@ namespace Elsa.Workflows.Runtime.Activities;
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.")]
 [FlowNode("Finished", "Canceled", "Done")]
 [UsedImplicitly]
-public class BulkDispatchWorkflow : Activity
+public class BulkDispatchWorkflows : Activity
 {
     private const string DispatchedInstancesCountKey = nameof(DispatchedInstancesCountKey);
     private const string FinishedInstancesCountKey = nameof(FinishedInstancesCountKey);
 
     /// <inheritdoc />
-    public BulkDispatchWorkflow([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    public BulkDispatchWorkflows([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
@@ -74,12 +74,12 @@ public class BulkDispatchWorkflow : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    public IActivity ChildFinished { get; set; } = default!;
+    public IActivity? ChildFinished { get; set; } = default!;
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    public IActivity ChildFaulted { get; set; } = default!;
+    public IActivity? ChildFaulted { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -105,11 +105,14 @@ public class BulkDispatchWorkflow : Activity
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
-            var workflowInstanceId = context.Id;
+            var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new BulkDispatchWorkflowBookmark(workflowInstanceId, dispatchedInstancesCount),
+                Payload = new BulkDispatchWorkflowsBookmark(workflowInstanceId)
+                {
+                    ScheduledInstanceIdsCount = dispatchedInstancesCount
+                },
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(bookmarkOptions);
@@ -124,9 +127,14 @@ public class BulkDispatchWorkflow : Activity
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
+        var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var properties = new Dictionary<string, object>
+        {
+            ["ParentInstanceId"] = parentInstanceId
+        };
 
-        input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
+        input["ParentInstanceId"] = parentInstanceId;
         input["Item"] = item;
 
         var correlationId = CorrelationId.GetOrDefault(context);
@@ -138,6 +146,7 @@ public class BulkDispatchWorkflow : Activity
             DefinitionId = workflowDefinitionId,
             VersionOptions = VersionOptions.Published,
             Input = input,
+            Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId
         };
@@ -157,14 +166,30 @@ public class BulkDispatchWorkflow : Activity
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
-        var options = new ScheduleWorkOptions { Input = input };
-        await context.ScheduleActivityAsync(ChildFinished, options);
-
-        var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey) + 1;
+        var options = new ScheduleWorkOptions { Input = input, CompletionCallback = OnChildFinishedCompletedAsync};
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
-
+        
         context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
+        
+        if(ChildFinished is not null)
+        {
+            await context.ScheduleActivityAsync(ChildFinished, options);
+            return;
+        }
+        
+        await CheckIfFinishedAsync(context);
+    }
 
+    private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
+    {
+        await CheckIfFinishedAsync(context.TargetContext);
+    }
+
+    private async ValueTask CheckIfFinishedAsync(ActivityExecutionContext context)
+    {
+        var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
+        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
+        
         if (finishedInstancesCount >= dispatchedInstancesCount)
             await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
     }

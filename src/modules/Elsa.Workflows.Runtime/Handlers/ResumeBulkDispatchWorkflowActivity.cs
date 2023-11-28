@@ -11,7 +11,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Runtime.Handlers;
 
 /// <summary>
-/// Resumes any blocking <see cref="BulkDispatchWorkflow"/> activities when its child workflows complete.
+/// Resumes any blocking <see cref="BulkDispatchWorkflows"/> activities when its child workflows complete.
 /// </summary>
 [PublicAPI]
 internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : INotificationHandler<WorkflowExecuted>
@@ -23,8 +23,13 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
-        var bookmark = new DispatchWorkflowBookmark(notification.WorkflowState.Id);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflow>();
+        var parentInstanceId = workflowState.Properties.TryGetValue("ParentInstanceId", out var parentInstanceIdValue) ? parentInstanceIdValue.ToString() : default;
+
+        if (string.IsNullOrWhiteSpace(parentInstanceId))
+            return;
+
+        var bookmark = new BulkDispatchWorkflowsBookmark(parentInstanceId);
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
         var input = workflowState.Output;
         var message = new NewWorkflowInboxMessage
         {
