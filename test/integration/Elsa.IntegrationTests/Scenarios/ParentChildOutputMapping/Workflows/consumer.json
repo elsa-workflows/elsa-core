@@ -80,7 +80,7 @@
           "typeName": "String",
           "expression": {
             "type": "CSharp",
-            "value": "return Variable.Variable1.ToString();"
+            "value": "return Variables.Variable1.ToString();"
           },
           "memoryReference": {
             "id": "b3b9071594676f52:input-0"
