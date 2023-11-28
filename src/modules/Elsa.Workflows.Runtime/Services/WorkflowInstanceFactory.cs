@@ -41,7 +41,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
     /// <inheritdoc />
     public async Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { DefinitionId = workflowDefinitionId, VersionOptions = versionOptions};
+        var filter = new WorkflowDefinitionFilter { DefinitionId = workflowDefinitionId, VersionOptions = versionOptions };
         var workflow = (await _workflowDefinitionStore.FindAsync(filter, cancellationToken))!;
         return await CreateAsync(workflow, correlationId, cancellationToken);
     }
@@ -58,6 +58,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
             DefinitionId = workflow.Identity.DefinitionId,
             DefinitionVersionId = workflow.Identity.Id,
             CorrelationId = correlationId,
+            TenantId = workflow.WorkflowMetadata.TenantId,
             CreatedAt = _systemClock.UtcNow,
             Status = WorkflowStatus.Running,
             SubStatus = WorkflowSubStatus.Executing,
@@ -72,7 +73,7 @@ public class WorkflowInstanceFactory : IWorkflowInstanceFactory
 
         return workflowInstance;
     }
-    
+
     private async Task<WorkflowInstance> CreateAsync(WorkflowDefinition definition, string? correlationId, CancellationToken cancellationToken = default)
     {
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);

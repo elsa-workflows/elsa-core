@@ -32,7 +32,7 @@ public static class EfCoreDbContextBuilder
         return (dbContext, options, serviceProvider) =>
         {
             var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
-            dbContext.TenantId = tenantAccessor?.GetCurrentTenantIdAsync()?.Result;
+            dbContext.TenantId = tenantAccessor?.GetCurrentTenantId();
         };
     }
 
@@ -63,7 +63,7 @@ public static class EfCoreDbContextBuilder
                 {
                     ParameterExpression parameter = Expression.Parameter(entityType.ClrType);
 
-                    Expression<Func<Entity, bool>> filterExpr = entity => entity.TenantId == dbContext.TenantId;
+                    Expression<Func<Entity, bool>> filterExpr = entity => dbContext.TenantId == null || dbContext.TenantId == entity.TenantId;
                     Expression body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
                     LambdaExpression lambdaExpression = Expression.Lambda(body, parameter);
 

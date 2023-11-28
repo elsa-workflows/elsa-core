@@ -38,7 +38,7 @@ public class WorkflowDefinitionMapper
         return new(
             new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion, source.TenantId),
             source.Options,
             root,
             source.Variables,
@@ -61,7 +61,7 @@ public class WorkflowDefinitionMapper
         var options = source.Options ?? new WorkflowOptions();
 
         // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
-        
+
 #pragma warning disable CS0618
         options.UsableAsActivity ??= source.UsableAsActivity ?? false;
 #pragma warning restore CS0618
@@ -86,7 +86,7 @@ public class WorkflowDefinitionMapper
     /// <param name="source">The source <see cref="WorkflowDefinition"/>s.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The mapped <see cref="WorkflowDefinitionModel"/>s.</returns>
-    public async Task<IEnumerable<WorkflowDefinitionModel>> MapAsync(IEnumerable<WorkflowDefinition> source, CancellationToken cancellationToken = default) => 
+    public async Task<IEnumerable<WorkflowDefinitionModel>> MapAsync(IEnumerable<WorkflowDefinition> source, CancellationToken cancellationToken = default) =>
         await Task.WhenAll(source.Select(async x => await MapAsync(x, cancellationToken)));
 
     /// <summary>

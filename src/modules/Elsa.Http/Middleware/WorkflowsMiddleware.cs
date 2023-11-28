@@ -1,3 +1,7 @@
+using System.Net;
+using System.Net.Mime;
+using System.Text.Json;
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
@@ -17,9 +21,6 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Net.Mime;
-using System.Text.Json;
 
 namespace Elsa.Http.Middleware;
 
@@ -100,6 +101,9 @@ public class WorkflowsMiddleware
 
         if (await AuthorizeAsync(serviceProvider, httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
             return;
+
+        var tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
+        tenantAccessor.SetCurrentTenantId(matchedWorkflow?.WorkflowInstance?.TenantId);
 
         // Get settings from the bookmark payload.
         var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;

@@ -1,3 +1,6 @@
+using System.Reflection;
+using Elsa.Common.Accessors;
+using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -19,7 +22,6 @@ using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
 
 namespace Elsa.Workflows.Runtime.Features;
 
@@ -175,8 +177,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<DispatchWorkflowRequestHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
+            .AddScoped<ITenantAccessor, TenantAccessor>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)

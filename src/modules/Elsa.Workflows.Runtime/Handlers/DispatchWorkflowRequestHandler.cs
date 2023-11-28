@@ -7,13 +7,13 @@ using Elsa.Workflows.Runtime.Options;
 namespace Elsa.Workflows.Runtime.Handlers;
 
 // ReSharper disable once UnusedType.Global
-internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) :
+public class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) :
     ICommandHandler<DispatchTriggerWorkflowsCommand>,
     ICommandHandler<DispatchWorkflowDefinitionCommand>,
     ICommandHandler<DispatchWorkflowInstanceCommand>,
     ICommandHandler<DispatchResumeWorkflowsCommand>
 {
-    public async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var options = new TriggerWorkflowsOptions
         {
@@ -29,7 +29,7 @@ internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
         var options = new StartWorkflowRuntimeOptions
         {
@@ -47,7 +47,7 @@ internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
         var options = new ResumeWorkflowRuntimeOptions
         {
@@ -67,7 +67,7 @@ internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var options = new TriggerWorkflowsOptions
         {

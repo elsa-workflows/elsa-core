@@ -2,7 +2,7 @@
 
     <Import Project="..\..\..\common.props" />
     <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
+    <Import Project="..\..\..\frameworks.props" />
 
     <PropertyGroup>
         <Description>
