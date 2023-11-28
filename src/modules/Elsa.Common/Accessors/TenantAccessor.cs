@@ -1,6 +1,6 @@
 ﻿using Elsa.Common.Contracts;
 
-namespace Elsa.Tenants.Accessors;
+namespace Elsa.Common.Accessors;
 
 public class TenantAccessor : ITenantAccessor
 {

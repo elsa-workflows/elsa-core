@@ -1,6 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.Tenants.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -19,14 +20,18 @@ public class MustHaveTenantIdBeforeSavingStrategy : IBeforeSavingDbContextStrate
     {
         var states = new List<EntityState>() { EntityState.Added };
 
-        return await _tenantAccessor.GetCurrentTenantIdAsync() != null &&
-            entityEntry?.Entity is Entity &&
+        return entityEntry?.Entity is Entity &&
             states.Contains(entityEntry.State);
     }
 
     public async Task Execute(EntityEntry entityEntry)
     {
+        string? tenantId = _tenantAccessor.GetCurrentTenantId();
+
+        if (tenantId is null)
+            throw new MustHaveTenantException($"Entity of type '{entityEntry.Entity.GetType()}' must have a TenantId to be created");
+
         var entity = (Entity)entityEntry.Entity;
-        entity.TenantId = await _tenantAccessor.GetCurrentTenantIdAsync();
+        entity.TenantId = tenantId;
     }
 }

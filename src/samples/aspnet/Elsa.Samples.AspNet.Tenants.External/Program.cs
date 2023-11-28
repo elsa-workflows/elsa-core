@@ -109,6 +109,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
+app.UseHttpExternalTenantMiddleware();
 app.MapControllers();
 app.UseCors();
 app.UseWorkflows();

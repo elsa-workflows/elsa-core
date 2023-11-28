@@ -1,7 +1,6 @@
 ﻿namespace Elsa.Common.Contracts;
 public interface ITenantAccessor
 {
-
     /// <summary>
     /// Set the current Tenant Id. Used mostly by WorkflowRunner for background execution
     /// </summary>
@@ -12,5 +11,5 @@ public interface ITenantAccessor
     /// Get the current TenantId
     /// </summary>
     /// <returns>Current TenantId or null</returns>
-    Task<string?> GetCurrentTenantIdAsync();
+    string? GetCurrentTenantId();
 }

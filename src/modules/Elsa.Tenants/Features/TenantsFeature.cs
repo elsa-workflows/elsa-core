@@ -1,13 +1,11 @@
-using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Tenants.Accessors;
 using Elsa.Tenants.Handlers;
+using Elsa.Tenants.Middlewares;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Services;
 using Elsa.Tenants.Strategies;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,18 +33,11 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, ITenantProvider> TenantProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
 
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="ITenantAccessor"/>.
-    /// </summary>
-    public Func<IServiceProvider, ITenantAccessor> TenantAccessor { get; set; } = sp => sp.GetRequiredService<TenantAccessor>();
-
     /// <inheritdoc />
     public override void Configure()
     {
-
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
-            feature.WorkflowDispatcher = sp => sp.GetRequiredService<BackgroundTenantWorkflowDispatcher>();
             feature.DispatchWorkflowCommandHandler = sp => sp.GetRequiredService<DispatchTenantWorkflowRequestHandler>();
         });
     }
@@ -57,10 +48,13 @@ public class TenantsFeature : FeatureBase
         Services.Configure(TenantsOptions);
 
         Services
-            .AddScoped<BackgroundTenantWorkflowDispatcher>()
-            .AddScoped<DispatchTenantWorkflowRequestHandler>()
-            .AddScoped(TenantAccessor)
+            .AddScoped<ConfigurationTenantProvider>()
             .AddScoped(TenantProvider)
+
+            .AddScoped<HttpTenantMiddleware>()
+            .AddScoped<HttpExternalTenantMiddleware>()
+
+            .AddScoped<DispatchTenantWorkflowRequestHandler>()
         ;
     }
 
@@ -69,13 +63,6 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public TenantsFeature UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
     {
-        Services
-            .AddScoped<TenantAccessor>()
-            .AddScoped<ConfigurationTenantProvider>();
-
-        TenantAccessor = sp => sp.GetRequiredService<TenantAccessor>();
-        TenantProvider = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
-
         if (configure != null)
             TenantsOptions += configure;
 
@@ -88,9 +75,7 @@ public class TenantsFeature : FeatureBase
     public TenantsFeature UseExternalTenantProvider(Action<TenantsOptions>? configure = default)
     {
         Services
-            .AddScoped<ExternalTenantAccessor>();
-
-        TenantAccessor = sp => sp.GetRequiredService<ExternalTenantAccessor>();
+            .AddScoped<HttpExternalTenantMiddleware>();
 
         if (configure != null)
             TenantsOptions += configure;
