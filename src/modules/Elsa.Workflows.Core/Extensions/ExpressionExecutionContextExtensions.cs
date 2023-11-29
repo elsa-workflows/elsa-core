@@ -28,10 +28,13 @@ public static class ExpressionExecutionContextExtensions
     public static readonly object ActivityExecutionContextKey = new();
 
     /// <summary>
-    /// The
+    /// The key used to store the input in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
     /// </summary>
     public static readonly object InputKey = new();
 
+    /// <summary>
+    /// The key used to store the workflow in the <see cref="ExpressionExecutionContext.TransientProperties"/> dictionary.
+    /// </summary>
     public static readonly object WorkflowKey = new();
 
     /// <summary>
@@ -323,7 +326,7 @@ public static class ExpressionExecutionContextExtensions
     public static T? GetInput<T>(this ExpressionExecutionContext expressionExecutionContext, string name)
     {
         var value = expressionExecutionContext.GetInput(name);
-        return value != null ? (T)value : default;
+        return value.ConvertTo<T>();
     }
 
     /// <summary>
