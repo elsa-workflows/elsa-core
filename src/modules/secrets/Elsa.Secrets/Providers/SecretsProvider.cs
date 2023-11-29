@@ -81,7 +81,6 @@ namespace Elsa.Secrets.Providers
         public async Task<bool> IsSecretValueSensitiveData(string type, string name)
         {
             var secrets = await _secretsManager.GetSecrets(type, false);
-            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
             var secret = secrets.Where(x => x.Name?.Equals(name, StringComparison.InvariantCultureIgnoreCase) == true && x.Type?.Equals(type, StringComparison.InvariantCultureIgnoreCase) == true)
                 ?.FirstOrDefault();
             if (secret == null)
@@ -89,6 +88,7 @@ namespace Elsa.Secrets.Providers
                 return false;
             }
 
+            var formatter = _valueFormatters.FirstOrDefault(x => x.Type == type);
             return formatter?.IsSecretValueSensitiveData(secret) ?? false;
         }
         

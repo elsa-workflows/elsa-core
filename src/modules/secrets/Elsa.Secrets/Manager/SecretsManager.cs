@@ -1,4 +1,3 @@
-using System;
 using Elsa.Persistence.Specifications;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence;
@@ -9,57 +8,51 @@ using System.Threading.Tasks;
 using Elsa.Secrets.Persistence.Specifications;
 using System.Linq;
 using Elsa.Secrets.Encryption;
-using Elsa.Secrets.Options;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Manager
 {
     public class SecretsManager : ISecretsManager
     {
+        private static readonly string HidedValue = new string('*', 8);
         private readonly ISecretsStore _secretsStore;
-        private readonly bool _encryptionEnabled;
-        private readonly string _encryptionKey;
-        private readonly string[] _encryptedProperties;
+        private readonly ISecretEncryptor _encryptor;
 
-        public SecretsManager(ISecretsStore secretsStore, IOptions<SecretsConfigOptions> options)
+        public SecretsManager(ISecretsStore secretsStore, ISecretEncryptor encryptor)
         {
             _secretsStore = secretsStore;
-            
-            _encryptionEnabled = options.Value.Enabled ?? false;
-            _encryptionKey = options.Value.EncryptionKey;
-            _encryptedProperties = options.Value.EncryptedProperties;
+            _encryptor = encryptor;
         }
 
-        public async Task<Secret?> GetSecretById(string id, CancellationToken cancellationToken = default) {
+        public virtual async Task<Secret?> GetSecretById(string id, CancellationToken cancellationToken = default) {
             var specification = new SecretsIdSpecification(id);
             var secret = await _secretsStore.FindAsync(specification, cancellationToken: cancellationToken);
-            DecryptProperties(secret);
+            await _encryptor.DecryptPropertiesAsync(secret, cancellationToken);
 
             return secret;
         }
 
-        public async Task<Secret?> GetSecretByName(string name, CancellationToken cancellationToken = default) {
+        public virtual async Task<Secret?> GetSecretByName(string name, CancellationToken cancellationToken = default) {
             var specification = new SecretsNameSpecification(name);
             var secrets = await _secretsStore.FindManyAsync(specification, OrderBySpecification.OrderBy<Secret>(s => s.Type), cancellationToken: cancellationToken);
             var secret = secrets.FirstOrDefault();
-            DecryptProperties(secret);
+            await _encryptor.DecryptPropertiesAsync(secret, cancellationToken);
             
             return secret;
         }
 
-        public async Task<IEnumerable<Secret>> GetSecrets(CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<Secret>> GetSecrets(CancellationToken cancellationToken = default)
         {
             var specification = Specification<Secret>.Identity;
             var secrets = await _secretsStore.FindManyAsync(specification, cancellationToken: cancellationToken);
             foreach (var secret in secrets)
             {
-                DecryptProperties(secret);
+                await _encryptor.DecryptPropertiesAsync(secret, cancellationToken);
             }
 
             return secrets;
         }
         
-        public async Task<IEnumerable<Secret>> GetSecretViewModels(CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<Secret>> GetSecretViewModels(CancellationToken cancellationToken = default)
         {
             var specification = Specification<Secret>.Identity;
             var secrets = await _secretsStore.FindManyAsync(specification, cancellationToken: cancellationToken);
@@ -71,7 +64,7 @@ namespace Elsa.Secrets.Manager
             return secrets;
         }
 
-        public async Task<IEnumerable<Secret>> GetSecrets(string type, bool decrypt = true, CancellationToken cancellationToken = default)
+        public virtual async Task<IEnumerable<Secret>> GetSecrets(string type, bool decrypt = true, CancellationToken cancellationToken = default)
         {
             var specification = new SecretTypeSpecification(type);
             var secrets = await _secretsStore.FindManyAsync(specification, cancellationToken: cancellationToken);
@@ -80,15 +73,14 @@ namespace Elsa.Secrets.Manager
             {
                 foreach (var secret in secrets)
                 {
-                    DecryptProperties(secret);
+                    await _encryptor.DecryptPropertiesAsync(secret, cancellationToken);
                 }
             }
             
-
             return secrets;
         }
 
-        public async Task<Secret> AddOrUpdateSecret(Secret secret, bool restoreHiddenProperties, CancellationToken cancellationToken = default)
+        public virtual async Task<Secret> AddOrUpdateSecret(Secret secret, bool restoreHiddenProperties, CancellationToken cancellationToken = default)
         {
             var clone = secret.Clone() as Secret;
 
@@ -96,16 +88,17 @@ namespace Elsa.Secrets.Manager
             {
                 await RestoreHiddenProperties(clone, cancellationToken);
             }
-            EncryptProperties(clone);
+            
+            await _encryptor.EncryptProperties(clone, cancellationToken);
             
             if (clone.Id == null)
-                await _secretsStore.AddAsync(clone);
+                await _secretsStore.AddAsync(clone, cancellationToken);
             else
-                await _secretsStore.UpdateAsync(clone);
+                await _secretsStore.UpdateAsync(clone, cancellationToken);
             return clone;
         }
         
-        private async Task RestoreHiddenProperties(Secret secret, CancellationToken cancellationToken)
+        protected virtual async Task RestoreHiddenProperties(Secret secret, CancellationToken cancellationToken)
         {
             var specification = new SecretsIdSpecification(secret.Id);
             var existingSecret = await _secretsStore.FindAsync(specification, cancellationToken: cancellationToken);
@@ -120,63 +113,16 @@ namespace Elsa.Secrets.Manager
                 }
             }
         }
-        
-        private void HideEncryptedProperties(Secret secret)
+
+        protected virtual void HideEncryptedProperties(Secret secret)
         {
             foreach (var secretProperty in secret.Properties)
             {
                 if (!secretProperty.IsEncrypted) continue;
                 foreach (var key in secretProperty.Expressions.Keys)
                 {
-                    secretProperty.Expressions[key] = new string('*', 8);
+                    secretProperty.Expressions[key] = HidedValue;
                 }
-            }
-        }
-        
-        private void EncryptProperties(Secret secret)
-        {
-            if (!_encryptionEnabled)
-            {
-                return;
-            }
-            foreach (var property in secret.Properties)
-            {
-                var encrypt = _encryptedProperties.Contains(property.Name, StringComparer.OrdinalIgnoreCase);
-                if (!encrypt || property.IsEncrypted)
-                {
-                    continue;
-                }
-
-                foreach (var key in property.Expressions.Keys)
-                {
-                    var value = property.Expressions[key];
-                    property.Expressions[key] = AesEncryption.Encrypt(_encryptionKey, value);
-                }
-
-                property.IsEncrypted = true;
-            }
-        }
-    
-        private void DecryptProperties(Secret secret)
-        {
-            if (!_encryptionEnabled)
-            {
-                return;
-            }
-            foreach (var property in secret.Properties)
-            {
-                if (!property.IsEncrypted)
-                {
-                    continue;
-                }
-
-                foreach (var key in property.Expressions.Keys)
-                {
-                    var value = property.Expressions[key];
-                    property.Expressions[key] = AesEncryption.Decrypt(_encryptionKey, value);
-                }
-
-                property.IsEncrypted = false;
             }
         }
     }
