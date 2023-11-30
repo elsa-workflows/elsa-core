@@ -31,12 +31,10 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
         var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
-        var startId = doc.RootElement.TryGetProperty("start", out var startElement) ? startElement.GetString() : default;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
         var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
-        var start = activities.FirstOrDefault(x => x.Id == startId);
         var activityDictionary = activities.ToDictionary(x => x.Id);
         var connections = DeserializeConnections(connectionsElement, activityDictionary, options);
         var notFoundConnections = GetNotFoundConnections(doc.RootElement, activityDictionary, connections, options);
@@ -50,7 +48,6 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             NodeId = nodeId!,
             Name = name,
             Metadata = metadata,
-            Start = start,
             Activities = activities,
             Connections = connectionsWithRestoredOnes,
             CustomProperties =
@@ -74,7 +71,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
         var customProperties = new Dictionary<string, object>(value.CustomProperties);
-        var allActivities = customProperties.TryGetValue(AllActivitiesKey, out var a) ? a : activities;
+        var allActivities = customProperties.GetValueOrDefault(AllActivitiesKey, activities);
         var allConnections = (ICollection<Connection>)(customProperties.TryGetValue(AllConnectionsKey, out var c) ? c : value.Connections);
 
         customProperties.Remove(AllActivitiesKey);
@@ -88,7 +85,6 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             value.NodeId,
             value.Metadata,
             CustomProperties = customProperties,
-            Start = value.Start?.Id,
             Activities = allActivities,
             Connections = allConnections
         };
