@@ -35,7 +35,7 @@ public class OnboardingWorkflow : WorkflowBase
                 // First thing we need to do is get an email account setup.
                 new RunTask("Create Email Account")
                 {
-                    Payload = new(context => new Dictionary<string, object>()
+                    Payload = new(context => new Dictionary<string, object>
                     {
                         ["Employee"] = employee.Get(context)!,
                         ["Description"] = "Create an email account for the new employee."
@@ -48,7 +48,7 @@ public class OnboardingWorkflow : WorkflowBase
                     {
                         new RunTask("Create Slack Account")
                         {
-                            Payload = new(context => new Dictionary<string, object>()
+                            Payload = new(context => new Dictionary<string, object>
                             {
                                 ["Employee"] = employee.Get(context)!,
                                 ["Description"] = "Create a Slack account for the new employee."
@@ -56,7 +56,7 @@ public class OnboardingWorkflow : WorkflowBase
                         },
                         new RunTask("Create GitHub Account")
                         {
-                            Payload = new(context => new Dictionary<string, object>()
+                            Payload = new(context => new Dictionary<string, object>
                             {
                                 ["Employee"] = employee.Get(context)!,
                                 ["Description"] = "Create a GitHub account for the new employee."
@@ -64,7 +64,7 @@ public class OnboardingWorkflow : WorkflowBase
                         },
                         new RunTask("Add to HR System")
                         {
-                            Payload = new(context => new Dictionary<string, object>()
+                            Payload = new(context => new Dictionary<string, object>
                             {
                                 ["Employee"] = employee.Get(context)!,
                                 ["Description"] = "Add the new employee to the HR system."
@@ -72,7 +72,7 @@ public class OnboardingWorkflow : WorkflowBase
                         },
                         new RunTask("Add to Payroll System")
                         {
-                            Payload = new(context => new Dictionary<string, object>()
+                            Payload = new(context => new Dictionary<string, object>
                             {
                                 ["Employee"] = employee.Get(context)!,
                                 ["Description"] = "Add the new employee to the payroll system."
