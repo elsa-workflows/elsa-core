@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using MQTTnet;
-using MQTTnet.Client;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -8,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
 {
-    public class BusClientFactory : IMessageReceiverClientFactory, IMessageSenderClientFactory
+    public sealed class BusClientFactory : IMessageReceiverClientFactory, IMessageSenderClientFactory
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly IDictionary<int, IMqttClientWrapper> _senders = new Dictionary<int, IMqttClientWrapper>();
@@ -53,13 +52,13 @@ namespace Elsa.Activities.Mqtt.Services
                 {
                     return messageReceiverDateTime;
                 }
-                    
+
 
                 var mqttFactory = new MqttFactory();
                 var newClient = mqttFactory.CreateMqttClient();
                 var newMessageReceiver = ActivatorUtilities.CreateInstance<MqttClientWrapper>(_serviceProvider, newClient, options);
 
-                _receivers.Add(options.GetHashCode(), newMessageReceiver );
+                _receivers.Add(options.GetHashCode(), newMessageReceiver);
                 return newMessageReceiver;
             }
             finally
