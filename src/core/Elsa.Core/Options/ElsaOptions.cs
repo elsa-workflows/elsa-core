@@ -60,6 +60,11 @@ namespace Elsa.Options
         /// The amount of time to wait before giving up on trying to acquire a lock.
         /// </summary>
         public Duration DistributedLockTimeout { get; set; } = Duration.FromHours(1);
+        
+        /// <summary>
+        /// The amount of time to wait to acquire the DistributedLock before skipping resuming a running or idle Workflows at startup
+        /// </summary>
+        public Duration ContinueWorkflowsOnStartupTimeout { get; set; } = Duration.FromHours(1);
 
         public Type DefaultWorkflowStorageProviderType { get; set; }
         public WorkflowChannelOptions WorkflowChannelOptions { get; set; } = new();
