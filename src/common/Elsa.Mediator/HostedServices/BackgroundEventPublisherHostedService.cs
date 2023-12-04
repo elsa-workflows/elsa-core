@@ -1,8 +1,8 @@
+using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Threading.Channels;
 
 namespace Elsa.Mediator.HostedServices;
 
@@ -32,11 +32,14 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     {
         var index = 0;
 
+        using var scope = _scopeFactory.CreateScope();
+        var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+
         for (var i = 0; i < _workerCount; i++)
         {
             var output = Channel.CreateUnbounded<INotification>();
             _outputs.Add(output);
-            _ = ReadOutputAsync(output, cancellationToken);
+            _ = ReadOutputAsync(output, notificationSender, cancellationToken);
         }
 
         var channelReader = _notificationsChannel.Reader;
@@ -54,15 +57,12 @@ public class BackgroundEventPublisherHostedService : BackgroundService
         }
     }
 
-    private async Task ReadOutputAsync(Channel<INotification> output, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<INotification> output, INotificationSender notificationSender, CancellationToken cancellationToken)
     {
         await foreach (var notification in output.Reader.ReadAllAsync(cancellationToken))
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
-
                 await notificationSender.SendAsync(notification, NotificationStrategy.Background, cancellationToken);
             }
             catch (Exception e)

@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Threading.Channels;
 using Elsa.Mediator.Channels;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
@@ -13,8 +15,6 @@ using Elsa.Mediator.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Reflection;
-using System.Threading.Channels;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Contracts;
@@ -6,8 +8,6 @@ using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System.ComponentModel;
-using System.Reflection;
 
 namespace Elsa.Features.Implementations;
 
