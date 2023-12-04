@@ -1,14 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Elsa.Persistence.EntityFramework.Core;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
     public partial class Update21 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Update21(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "text",
                 nullable: false,
@@ -19,14 +26,14 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 
             migrationBuilder.AddColumn<string>(
                 name: "LastExecutedActivityId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "OutputStorageProviderName",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 type: "text",
                 nullable: true);
@@ -36,17 +43,17 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "LastExecutedActivityId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "OutputStorageProviderName",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions");
 
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "text",
                 nullable: true,

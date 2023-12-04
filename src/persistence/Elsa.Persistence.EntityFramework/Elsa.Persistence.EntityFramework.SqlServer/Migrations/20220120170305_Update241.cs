@@ -1,14 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Elsa.Persistence.EntityFramework.Core;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 {
     public partial class Update241 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Update241(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
                 name: "DefinitionVersionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "nvarchar(450)",
                 nullable: false,
@@ -17,7 +24,7 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_DefinitionVersionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "DefinitionVersionId");
         }
@@ -26,12 +33,12 @@ namespace Elsa.Persistence.EntityFramework.SqlServer.Migrations
         {
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowInstance_DefinitionVersionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.AlterColumn<string>(
                 name: "DefinitionVersionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "nvarchar(max)",
                 nullable: false,

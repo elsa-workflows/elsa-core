@@ -8,9 +8,11 @@ namespace Elsa.Persistence.EntityFramework.Oracle
         /// <summary>
         /// Configures the context to use Oracle.
         /// </summary>
-        public static DbContextOptionsBuilder UseOracle(this DbContextOptionsBuilder builder, string connectionString) =>
-            builder.UseOracle(connectionString, db => db
-                .MigrationsAssembly(typeof(OracleElsaContextFactory).Assembly.GetName().Name)
-                .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable, ElsaContext.ElsaSchema));
+        public static DbContextOptionsBuilder UseOracle(this DbContextOptionsBuilder builder, string connectionString, ElsaDbContextOptions? options = default) =>
+            builder
+                .UseElsaDbContextOptions(options)
+                .UseOracle(connectionString, db => db
+                .MigrationsAssembly(options.GetMigrationsAssemblyName(typeof(OracleElsaContextFactory).Assembly))
+                .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName()));
     }
 }

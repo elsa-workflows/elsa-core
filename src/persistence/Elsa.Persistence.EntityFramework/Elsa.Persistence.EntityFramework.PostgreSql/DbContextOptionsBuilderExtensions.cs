@@ -8,9 +8,11 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql
         /// <summary>
         /// Configures the context to use PostgreSql.
         /// </summary>
-        public static DbContextOptionsBuilder UsePostgreSql(this DbContextOptionsBuilder builder, string connectionString) => 
-            builder.UseNpgsql(connectionString, db => db
-                .MigrationsAssembly(typeof(PostgreSqlElsaContextFactory).Assembly.GetName().Name)
-                .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable, ElsaContext.ElsaSchema));
+        public static DbContextOptionsBuilder UsePostgreSql(this DbContextOptionsBuilder builder, string connectionString, ElsaDbContextOptions? options = default) => 
+            builder
+                .UseElsaDbContextOptions(options)
+                .UseNpgsql(connectionString, db => db
+                .MigrationsAssembly(options.GetMigrationsAssemblyName(typeof(PostgreSqlElsaContextFactory).Assembly))
+                .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName()));
     }
 }
