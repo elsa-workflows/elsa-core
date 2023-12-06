@@ -23,7 +23,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchWorkflowDefinition(
+        await _bus.Publish(new DispatchWorkflowDefinition(
             request.DefinitionId,
             request.VersionOptions,
             request.Input,
@@ -38,7 +38,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchWorkflowInstance(request.InstanceId)
+        await _bus.Publish(new DispatchWorkflowInstance(request.InstanceId)
         {
             BookmarkId = request.BookmarkId,
             ActivityId = request.ActivityId,
@@ -54,7 +54,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchTriggerWorkflows(request.ActivityTypeName, request.BookmarkPayload)
+        await _bus.Publish(new DispatchTriggerWorkflows(request.ActivityTypeName, request.BookmarkPayload)
         {
             CorrelationId = request.CorrelationId,
             WorkflowInstanceId = request.WorkflowInstanceId,
@@ -67,7 +67,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchResumeWorkflows(request.ActivityTypeName, request.BookmarkPayload)
+        await _bus.Publish(new DispatchResumeWorkflows(request.ActivityTypeName, request.BookmarkPayload)
         {
             CorrelationId = request.CorrelationId,
             WorkflowInstanceId = request.WorkflowInstanceId,

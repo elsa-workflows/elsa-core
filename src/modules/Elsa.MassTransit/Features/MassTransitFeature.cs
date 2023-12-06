@@ -37,7 +37,10 @@ public class MassTransitFeature : FeatureBase
     {
         BusConfigurator ??= configure =>
         {
-            configure.UsingInMemory((context, configurator) => { configurator.ConfigureEndpoints(context); });
+            configure.UsingInMemory((context, configurator) =>
+            {
+                configurator.ConfigureEndpoints(context);
+            });
         };
         
     }

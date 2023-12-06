@@ -28,7 +28,7 @@ const bool useDapper = false;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
-const bool useMassTransitAzureServiceBus = true;
+const bool useMassTransitAzureServiceBus = false;
 const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
