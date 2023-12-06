@@ -156,7 +156,7 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activityDescriptor = context.ActivityDescriptor;
-        var inputDescriptors = activityDescriptor.Inputs;
+        var inputDescriptors = activityDescriptor.Inputs.Where(x => x.AutoEvaluate).ToList();
 
         // Evaluate inputs.
         foreach (var inputDescriptor in inputDescriptors)
@@ -190,7 +190,11 @@ public static class ActivityExecutionContextExtensions
 
         return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
-    
+
+    /// <summary>
+    /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
+    /// </summary>
+    /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
     public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
@@ -227,7 +231,7 @@ public static class ActivityExecutionContextExtensions
         foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
     }
-    
+
     /// <summary>
     /// Returns the activity with the specified ID or name.
     /// </summary>
@@ -250,10 +254,6 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var defaultValue = inputDescriptor.DefaultValue;
-        
-        if(inputDescriptor.AutoEvaluate == false)
-            return defaultValue;
-        
         var value = defaultValue;
         var input = inputDescriptor.ValueGetter(activity);
 
