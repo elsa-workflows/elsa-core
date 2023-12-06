@@ -88,6 +88,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.EmptyIfNull(),
             Input = input?.SerializeInput(),
+            Properties = options.Properties?.SerializeProperties(),
             TriggerActivityId = options.TriggerActivityId.EmptyIfNull(),
         };
 
@@ -124,6 +125,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             VersionOptions = versionOptions.ToString(),
             CorrelationId = correlationId.WithDefault(""),
             Input = input?.SerializeInput(),
+            Properties = options.Properties?.SerializeProperties(),
             TriggerActivityId = options.TriggerActivityId.WithDefault("")
         };
 
@@ -150,6 +152,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             {
                 CorrelationId = options.CorrelationId,
                 Input = options.Input,
+                Properties = options.Properties,
                 VersionOptions = VersionOptions.Published,
                 TriggerActivityId = trigger.ActivityId,
                 InstanceId = options.WorkflowInstanceId,
@@ -178,7 +181,8 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             CorrelationId = options.CorrelationId.EmptyIfNull(),
             BookmarkId = options.BookmarkId.EmptyIfNull(),
             ActivityId = options.ActivityId.EmptyIfNull(),
-            Input = options.Input?.SerializeInput()
+            Input = options.Input?.SerializeInput(),
+            Properties = options.Properties?.SerializeProperties(),
         };
 
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
