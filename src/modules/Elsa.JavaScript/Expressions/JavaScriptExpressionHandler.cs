@@ -1,7 +1,9 @@
+using System.Dynamic;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Contracts;
+using Humanizer;
 using Jint;
 
 namespace Elsa.JavaScript.Expressions;
@@ -30,7 +32,11 @@ public class JavaScriptExpressionHandler : IExpressionHandler
 
     private void ConfigureEngine(Engine engine, ExpressionEvaluatorOptions options)
     {
-        foreach (var (name, value) in options.Arguments) 
-            engine.SetValue(name, value);
+        var args = new ExpandoObject() as IDictionary<string, object>;
+
+        foreach (var (name, value) in options.Arguments)
+            args[name.Camelize()] = value;
+
+        engine.SetValue("args", args);
     }
 }

@@ -59,7 +59,7 @@ public class BulkDispatchWorkflows : Activity
     /// </summary>
     [Input(
         DisplayName = "Correlation ID Function",
-        Description = "A function to compute the correlation ID to associate a dispatched workflow with. Receives the current item as its argument.",
+        Description = "A function to compute the correlation ID to associate a dispatched workflow with. Receives the current item as an argument called Item.",
         AutoEvaluate = false)]
     public Input<string?>? CorrelationIdFunction { get; set; }
 
