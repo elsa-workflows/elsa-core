@@ -38,5 +38,6 @@ public class DispatchWorkflowInstanceRequest
     public string? ActivityInstanceId { get; init; }
     public string? ActivityHash { get; init; }
     public IDictionary<string, object>? Input { get; init; }
+    public IDictionary<string, object>? Properties { get; init; }
     public string? CorrelationId { get; init; }
 }

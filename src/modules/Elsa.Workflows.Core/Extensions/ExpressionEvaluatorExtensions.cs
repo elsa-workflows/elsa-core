@@ -5,8 +5,24 @@ using Elsa.Workflows.Core.Models;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
+/// <summary>
+/// Contains extension methods for <see cref="IExpressionEvaluator"/>.
+/// </summary>
 public static class ExpressionEvaluatorExtensions
 {
-    public static ValueTask<T?> EvaluateAsync<T>(this IExpressionEvaluator evaluator, Input<T> input, ExpressionExecutionContext context) => evaluator.EvaluateAsync<T>(input.Expression, context);
-    public static ValueTask<object?> EvaluateAsync(this IExpressionEvaluator evaluator, Input input, ExpressionExecutionContext context) => evaluator.EvaluateAsync(input.Expression, input.Type, context);
+    /// <summary>
+    /// Evaluates the specified expression and returns the result.
+    /// </summary>
+    public static ValueTask<T?> EvaluateAsync<T>(this IExpressionEvaluator evaluator, Input<T> input, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options = default)
+    {
+        return evaluator.EvaluateAsync<T>(input.Expression!, context, options);
+    }
+
+    /// <summary>
+    /// Evaluates the specified expression and returns the result.
+    /// </summary>
+    public static ValueTask<object?> EvaluateAsync(this IExpressionEvaluator evaluator, Input input, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options = default)
+    {
+        return evaluator.EvaluateAsync(input.Expression!, input.Type, context, options);
+    }
 }

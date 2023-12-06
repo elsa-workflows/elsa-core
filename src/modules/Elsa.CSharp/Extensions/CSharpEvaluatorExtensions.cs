@@ -15,14 +15,16 @@ public static class CSharpEvaluatorExtensions
     /// <param name="expression">The expression to evaluate.</param>
     /// <param name="returnType">The type of the return value.</param>
     /// <param name="context">The context in which the expression is evaluated.</param>
+    /// <param name="options">An set of options.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The result of the evaluation.</returns>
     public static async Task<object?> EvaluateAsync(this ICSharpEvaluator evaluator,
         string expression,
         Type returnType,
         ExpressionExecutionContext context,
+        ExpressionEvaluatorOptions options,
         CancellationToken cancellationToken = default)
     {
-        return await evaluator.EvaluateAsync(expression, returnType, context, null, null, cancellationToken);
+        return await evaluator.EvaluateAsync(expression, returnType, context, options, null, null, cancellationToken);
     }
 }

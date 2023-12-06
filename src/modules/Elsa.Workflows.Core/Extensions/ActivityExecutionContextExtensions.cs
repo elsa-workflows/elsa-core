@@ -156,7 +156,7 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activityDescriptor = context.ActivityDescriptor;
-        var inputDescriptors = activityDescriptor.Inputs;
+        var inputDescriptors = activityDescriptor.Inputs.Where(x => x.AutoEvaluate).ToList();
 
         // Evaluate inputs.
         foreach (var inputDescriptor in inputDescriptors)
@@ -178,7 +178,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
@@ -188,9 +188,13 @@ public static class ActivityExecutionContextExtensions
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
-    
+
+    /// <summary>
+    /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
+    /// </summary>
+    /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
     public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
@@ -227,7 +231,7 @@ public static class ActivityExecutionContextExtensions
         foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
     }
-    
+
     /// <summary>
     /// Returns the activity with the specified ID or name.
     /// </summary>

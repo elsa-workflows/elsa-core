@@ -32,28 +32,28 @@ public class ForkTests
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BasicForkWorkflow>();
         await _workflowRunner.RunAsync(workflow);
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]{ "Branch 1", "Branch 2", "Branch 3" }, lines);
+        Assert.Equal(new[] { "Branch 1", "Branch 2", "Branch 3" }, lines);
     }
-    
+
     [Fact(DisplayName = "Wait AnyAsync causes workflow to continue")]
     public async Task Test2()
     {
         await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<JoinAnyForkWorkflow>();
-        
+
         // First run.
         var result = await _workflowRunner.RunAsync(workflow);
-        
+
         // Collect one of the bookmarks to resume the workflow.
         var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
         Assert.NotNull(bookmark);
-        
+
         // Resume the workflow.
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark.Id };
         await _workflowRunner.RunAsync(workflow, result.WorkflowState, runOptions);
-        
+
         // Verify output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[]{ "Start", "Branch 2", "End" }, lines);
+        Assert.Equal(new[] { "Start", "Branch 2", "End" }, lines);
     }
 }

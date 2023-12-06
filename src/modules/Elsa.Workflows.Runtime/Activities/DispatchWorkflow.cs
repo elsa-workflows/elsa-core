@@ -16,7 +16,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
 /// </summary>
 [Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
-[PublicAPI]
+[UsedImplicitly]
 public class DispatchWorkflow : Activity<object>
 {
     /// <inheritdoc />
@@ -55,12 +55,9 @@ public class DispatchWorkflow : Activity<object>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
-        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var instanceId = identityGenerator.GenerateId();
-        context.TransientProperties["ChildInstanceId"] = instanceId;
 
         // Dispatch the child workflow.
-        await DispatchChildWorkflowAsync(context);
+        var instanceId = await DispatchChildWorkflowAsync(context);
 
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
@@ -80,12 +77,7 @@ public class DispatchWorkflow : Activity<object>
         }
     }
 
-    /// <summary>
-    /// Invoked when the created bookmark was persisted, which means it's safe to actually dispatch the child workflow for execution.
-    /// This prevents a potential race condition where the child workflow finishes before our current workflow execution pipeline had a chance to persist its bookmarks. 
-    /// </summary>
-    /// <param name="context"></param>
-    private async ValueTask DispatchChildWorkflowAsync(ActivityExecutionContext context)
+    private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context)
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
@@ -94,7 +86,8 @@ public class DispatchWorkflow : Activity<object>
 
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
-        var instanceId = (string)context.TransientProperties["ChildInstanceId"];
+        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var instanceId = identityGenerator.GenerateId();
         var request = new DispatchWorkflowDefinitionRequest
         {
             DefinitionId = workflowDefinitionId,
@@ -106,6 +99,8 @@ public class DispatchWorkflow : Activity<object>
 
         // Dispatch the child workflow.
         await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+
+        return instanceId;
     }
 
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)

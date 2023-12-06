@@ -7,21 +7,16 @@ namespace Elsa.Workflows.Runtime.Commands;
 /// <summary>
 /// A command to dispatch a workflow instance.
 /// </summary>
-/// <param name="InstanceId"></param>
-/// <param name="BookmarkId"></param>
-/// <param name="ActivityId"></param>
-/// <param name="ActivityNodeId"></param>
-/// <param name="ActivityInstanceId"></param>
-/// <param name="ActivityHash"></param>
-/// <param name="Input"></param>
-/// <param name="CorrelationId"></param>
 [PublicAPI]
-public record DispatchWorkflowInstanceCommand(
-    string InstanceId, 
-    string? BookmarkId = default,
-    string? ActivityId = default,
-    string? ActivityNodeId = default,
-    string? ActivityInstanceId = default,
-    string? ActivityHash = default,
-    IDictionary<string, object>? Input = default, 
-    string? CorrelationId = default) : ICommand<Unit>;
+public class DispatchWorkflowInstanceCommand(string instanceId) : ICommand<Unit>
+{
+    public string InstanceId { get; init; } = instanceId;
+    public string? BookmarkId { get; set; }
+    public string? ActivityId { get; set; }
+    public string? ActivityNodeId { get; set; }
+    public string? ActivityInstanceId { get; set; }
+    public string? ActivityHash { get; set; }
+    public IDictionary<string, object>? Input { get; set; }
+    public IDictionary<string, object>? Properties { get; set; }
+    public string? CorrelationId { get; set; }
+}

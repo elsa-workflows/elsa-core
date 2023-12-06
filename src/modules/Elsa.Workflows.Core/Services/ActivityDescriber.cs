@@ -99,10 +99,10 @@ public class ActivityDescriber : IActivityDescriber
                 return activity;
             }
         };
-        
+
         // If the activity has a default output, set its IsSerializable property to the value of the OutputAttribute.IsSerializable property.
         var defaultOutputDescriptor = descriptor.Outputs.FirstOrDefault(x => x.Name == ActivityOutputRegister.DefaultOutputName);
-        
+
         if (defaultOutputDescriptor != null)
         {
             var isResultSerializable = outputAttribute?.IsSerializable;
@@ -149,6 +149,7 @@ public class ActivityDescriber : IActivityDescriber
         var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
         var propertyType = propertyInfo.PropertyType;
         var isWrappedProperty = typeof(Input).IsAssignableFrom(propertyType);
+        var autoEvaluate = inputAttribute?.AutoEvaluate ?? true;
         var wrappedPropertyType = !isWrappedProperty ? propertyType : propertyInfo.PropertyType.GenericTypeArguments[0];
 
         if (wrappedPropertyType.IsNullableType())
@@ -175,6 +176,7 @@ public class ActivityDescriber : IActivityDescriber
             inputAttribute?.IsBrowsable ?? true,
             inputAttribute?.IsSerializable ?? true,
             false,
+            autoEvaluate,
             default,
             propertyInfo
         );

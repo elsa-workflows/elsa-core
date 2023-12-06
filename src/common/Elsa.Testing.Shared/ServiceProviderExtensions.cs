@@ -62,7 +62,11 @@ public static class ServiceProviderExtensions
     /// <returns>The workflow state.</returns>
     public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, string workflowDefinitionId, IDictionary<string, object>? input = default)
     {
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, input, VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        {
+            Input = input,
+            VersionOptions = VersionOptions.Published
+        };
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
         var bookmarks = new Stack<Bookmark>(result.Bookmarks);
@@ -70,7 +74,7 @@ public static class ServiceProviderExtensions
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
         while (result.Status != WorkflowStatus.Finished && bookmarks.TryPop(out var bookmark))
         {
-            var resumeOptions = new ResumeWorkflowRuntimeOptions(BookmarkId: bookmark.Id);
+            var resumeOptions = new ResumeWorkflowRuntimeOptions { BookmarkId = bookmark.Id };
             var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
 
             foreach (var newBookmark in resumeResult!.Bookmarks)

@@ -14,15 +14,8 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Resumes any blocking <see cref="DispatchWorkflow"/> activities when its child workflow completes.
 /// </summary>
 [PublicAPI]
-internal class ResumeDispatchWorkflowActivity : INotificationHandler<WorkflowExecuted>
+internal class ResumeDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : INotificationHandler<WorkflowExecuted>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-
-    public ResumeDispatchWorkflowActivity(IWorkflowInbox workflowInbox)
-    {
-        _workflowInbox = workflowInbox;
-    }
-
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
         var workflowState = notification.WorkflowState;
@@ -40,6 +33,6 @@ internal class ResumeDispatchWorkflowActivity : INotificationHandler<WorkflowExe
             BookmarkPayload = bookmark,
         };
 
-        await _workflowInbox.SubmitAsync(message, cancellationToken);
+        await workflowInbox.SubmitAsync(message, cancellationToken);
     }
 }

@@ -91,9 +91,19 @@ public class WorkflowRunner : IWorkflowRunner
         // Setup a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
+        var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(scope.ServiceProvider, workflow, instanceId, correlationId, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            scope.ServiceProvider,
+            workflow,
+            instanceId,
+            correlationId,
+            input,
+            properties,
+            default,
+            triggerActivityId,
+            options?.CancellationTokens ?? cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -109,9 +119,19 @@ public class WorkflowRunner : IWorkflowRunner
 
         // Create workflow execution context.
         var input = options?.Input;
+        var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(scope.ServiceProvider, workflow, workflowState, correlationId, input, default, triggerActivityId, options?.CancellationTokens ?? cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            scope.ServiceProvider,
+            workflow,
+            workflowState,
+            correlationId,
+            input, properties,
+            default,
+            triggerActivityId,
+            options?.CancellationTokens ?? cancellationToken);
+
         var bookmarkId = options?.BookmarkId;
         var activityNodeId = options?.ActivityNodeId;
         var activityId = options?.ActivityId;
@@ -173,17 +193,17 @@ public class WorkflowRunner : IWorkflowRunner
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
             await _notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), applicationCancellationToken);
         }
-        
+
         await _pipeline.ExecuteAsync(workflowExecutionContext);
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
         workflowState.UpdatedAt = _systemClock.UtcNow;
-        
+
         if (workflowState.Status == WorkflowStatus.Finished)
         {
             workflowState.FinishedAt = workflowState.UpdatedAt;
             await _notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), applicationCancellationToken);
         }
-        
+
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await _notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), systemCancellationToken);
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);

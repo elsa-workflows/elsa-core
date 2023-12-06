@@ -6,15 +6,19 @@ namespace Elsa.Workflows.Runtime.Options;
 /// <summary>
 /// Represents options for starting a workflow.
 /// </summary>
-/// <param name="CorrelationId"></param>
-/// <param name="Input"></param>
-/// <param name="VersionOptions"></param>
-/// <param name="TriggerActivityId"></param>
-/// <param name="InstanceId"></param>
-public record StartWorkflowRuntimeOptions(
-    string? CorrelationId = default, 
-    IDictionary<string, object>? Input = default, 
-    VersionOptions VersionOptions = default, 
-    string? TriggerActivityId = default, 
-    string? InstanceId = default,
-    CancellationTokens CancellationTokens = default);
+public class StartWorkflowRuntimeOptions
+{
+    public string? CorrelationId { get; set; }
+
+    public IDictionary<string, object>? Input { get; set; }
+
+    public IDictionary<string, object>? Properties { get; set; }
+
+    public VersionOptions VersionOptions { get; set; }
+
+    public string? TriggerActivityId { get; set; }
+
+    public string? InstanceId { get; set; }
+
+    public CancellationTokens CancellationTokens { get; set; }
+}

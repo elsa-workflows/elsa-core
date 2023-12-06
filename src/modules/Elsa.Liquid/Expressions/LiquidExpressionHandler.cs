@@ -21,7 +21,7 @@ public class LiquidExpressionHandler : IExpressionHandler
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var liquidExpression = expression.Value.ConvertTo<string>() ?? "";
         var renderedString = await _liquidTemplateManager.RenderAsync(liquidExpression, context);

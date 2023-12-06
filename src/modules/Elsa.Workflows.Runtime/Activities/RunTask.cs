@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// When the application fulfilled the task, it is expected to report back to the workflow engine in order to resume the workflow. 
 /// </summary>
 [Activity("Elsa", "Primitives", "Requests a given task to be run. ", Kind = ActivityKind.Action)]
-[PublicAPI]
+[UsedImplicitly]
 public class RunTask : Activity<object>
 {
     private static readonly object BookmarkPropertyKey = new();

@@ -45,6 +45,7 @@ public class WorkflowExecutionContext : IExecutionContext
         string id,
         string? correlationId,
         IDictionary<string, object>? input,
+        IDictionary<string, object>? properties,
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
@@ -62,6 +63,7 @@ public class WorkflowExecutionContext : IExecutionContext
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
         IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
         Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Properties = properties != null ? new Dictionary<string, object>(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
@@ -78,6 +80,7 @@ public class WorkflowExecutionContext : IExecutionContext
         string id,
         string? correlationId,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -92,6 +95,7 @@ public class WorkflowExecutionContext : IExecutionContext
             systemClock.UtcNow,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             cancellationTokens
@@ -107,6 +111,7 @@ public class WorkflowExecutionContext : IExecutionContext
         WorkflowState workflowState,
         string? correlationId = default,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -119,6 +124,7 @@ public class WorkflowExecutionContext : IExecutionContext
             workflowState.CreatedAt,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             cancellationTokens);
@@ -140,6 +146,7 @@ public class WorkflowExecutionContext : IExecutionContext
         DateTimeOffset createdAt,
         string? correlationId = default,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -150,13 +157,16 @@ public class WorkflowExecutionContext : IExecutionContext
             id,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             incidents,
             createdAt,
-            cancellationTokens);
+            cancellationTokens)
+        {
+            MemoryRegister = workflow.CreateRegister()
+        };
 
-        workflowExecutionContext.MemoryRegister = workflow.CreateRegister();
         workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
 
         await workflowExecutionContext.SetWorkflowAsync(workflow);
@@ -281,7 +291,7 @@ public class WorkflowExecutionContext : IExecutionContext
     /// The <see cref="IActivityScheduler"/> for the execution context.
     /// </summary>
     public IActivityScheduler Scheduler { get; }
-    
+
     /// <summary>
     /// Gets the <see cref="IIdentityGenerator"/>.
     /// </summary>
@@ -303,7 +313,7 @@ public class WorkflowExecutionContext : IExecutionContext
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <inheritdoc />
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; set; }
 
     /// <summary>
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable.

@@ -7,10 +7,13 @@ namespace Elsa.Workflows.Runtime.Commands;
 /// <summary>
 /// Dispatches a workflow definition.
 /// </summary>
-public record DispatchWorkflowDefinitionCommand(
-    string DefinitionId, 
-    VersionOptions VersionOptions, 
-    IDictionary<string, object>? Input = default, 
-    string? CorrelationId = default,
-    string? InstanceId = default,
-    string? TriggerActivityId = default) : ICommand<Unit>;
+public class DispatchWorkflowDefinitionCommand(string definitionId, VersionOptions versionOptions) : ICommand<Unit>
+{
+    public string DefinitionId { get; init; } = definitionId;
+    public VersionOptions VersionOptions { get; init; } = versionOptions;
+    public IDictionary<string, object>? Input { get; set; }
+    public IDictionary<string, object>? Properties { get; set; }
+    public string? CorrelationId { get; set; }
+    public string? InstanceId { get; set; }
+    public string? TriggerActivityId { get; set; }
+}

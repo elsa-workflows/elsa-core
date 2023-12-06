@@ -27,7 +27,7 @@ var input = new Dictionary<string, object>
 };
 
 // Run the workflow and provide the input.
-await workflowRunner.RunAsync(workflow, new RunWorkflowOptions(input: input));
+await workflowRunner.RunAsync(workflow, new RunWorkflowOptions { Input = input });
 
 // Create a workflow that returns some output.
 var workflow2 = new Inline(context => context.WorkflowExecutionContext.Output["Message"] = "Hello from workflow!");

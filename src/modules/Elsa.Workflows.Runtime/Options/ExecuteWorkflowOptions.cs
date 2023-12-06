@@ -3,13 +3,10 @@ using Elsa.Workflows.Core.Models;
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
-/// Options for triggering workflows.
+/// Options for executing workflows.
 /// </summary>
-public class TriggerWorkflowsOptions
+public class ExecuteWorkflowOptions
 {
-    public string? CorrelationId { get; set; }
-    public string? WorkflowInstanceId { get; set; }
-    public string? ActivityInstanceId { get; set; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
     public CancellationTokens CancellationTokens { get; set; }

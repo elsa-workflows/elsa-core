@@ -18,7 +18,7 @@ public class LiteralExpressionHandler : IExpressionHandler
     }
     
     /// <inheritdoc />
-    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
+    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var value = expression.Value.ConvertTo(returnType, new ObjectConverterOptions(WellKnownTypeRegistry: _wellKnownTypeRegistry));
         return ValueTask.FromResult(value);

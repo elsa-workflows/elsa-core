@@ -17,16 +17,9 @@ namespace Elsa.Telnyx.Handlers;
 /// Triggers all workflows starting with or blocked on a <see cref="CallAnswered"/> activity.
 /// </summary>
 [PublicAPI]
-internal class TriggerCallAnsweredActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerCallAnsweredActivities(IWorkflowInbox workflowInbox, ILogger<TriggerCallAnsweredActivities> logger) : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly ILogger _logger;
-
-    public TriggerCallAnsweredActivities(IWorkflowInbox workflowInbox, ILogger<TriggerCallAnsweredActivities> logger)
-    {
-        _workflowInbox = workflowInbox;
-        _logger = logger;
-    }
+    private readonly ILogger _logger = logger;
 
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
@@ -42,7 +35,7 @@ internal class TriggerCallAnsweredActivities : INotificationHandler<TelnyxWebhoo
         var input = new Dictionary<string, object>().AddInput(callAnsweredPayload);
         var callControlId = callAnsweredPayload.CallControlId;
         
-        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        await workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<CallAnswered>(),
             BookmarkPayload = new CallAnsweredBookmarkPayload(callControlId),

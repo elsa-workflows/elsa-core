@@ -14,7 +14,6 @@ using Proto.Cluster;
 using Proto.Persistence;
 using Exception = System.Exception;
 using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
-using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -38,6 +37,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private string _instanceId = default!;
     private int _version;
     private IDictionary<string, object>? _input;
+    private IDictionary<string, object>? _properties;
     private IWorkflowHost _workflowHost = default!;
     private WorkflowState _workflowState = default!;
 
@@ -105,9 +105,17 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
+        var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
+        var startWorkflowOptions = new StartWorkflowHostOptions
+        {
+            InstanceId = instanceId,
+            CorrelationId = correlationId,
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = request.TriggerActivityId
+        };
 
         _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
         _version = _workflowHost.Workflow.Identity.Version;
@@ -130,6 +138,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
+        var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
 
@@ -143,7 +152,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _input = input;
         }
 
-        var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
+        var startWorkflowOptions = new StartWorkflowHostOptions
+        {
+            InstanceId = instanceId,
+            CorrelationId = correlationId,
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = request.TriggerActivityId
+        };
         await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
         var workflowState = _workflowHost.WorkflowState;
         var result = workflowState.Status == WorkflowStatus.Finished ? ProtoBuf.RunWorkflowResult.Finished : ProtoBuf.RunWorkflowResult.Suspended;
@@ -179,6 +195,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     public override async Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request)
     {
         _input = request.Input?.Deserialize();
+        _properties = request.Properties?.Deserialize();
         var correlationId = request.CorrelationId;
         var bookmarkId = request.BookmarkId.NullIfEmpty();
         var activityId = request.ActivityId.NullIfEmpty();
@@ -187,14 +204,17 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var activityHash = request.ActivityHash.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
 
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(
-            correlationId,
-            bookmarkId,
-            activityId,
-            activityNodeId,
-            activityInstanceId,
-            activityHash,
-            _input);
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions
+        {
+            CorrelationId = correlationId,
+            BookmarkId = bookmarkId,
+            ActivityId = activityId,
+            ActivityNodeId = activityNodeId,
+            ActivityInstanceId = activityInstanceId,
+            ActivityHash = activityHash,
+            Input = _input,
+            Properties = _properties
+        };
 
         var definitionId = _definitionId;
         var versionOptions = VersionOptions.SpecificVersion(_version);
@@ -295,7 +315,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
-    
+
     /// <summary>
     /// Asynchronously persists the workflow instance.
     /// </summary>

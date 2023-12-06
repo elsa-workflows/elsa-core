@@ -58,9 +58,8 @@ public interface IWorkflowRuntime
     /// Executes a pending workflow.
     /// </summary>
     /// <param name="match">A workflow match to execute.</param>
-    /// <param name="input">Optional input to pass to the workflow.</param>
-    /// <param name="cancellationTokens">An optional set of cancellation tokens to control workflow cancellation without cancelling system-level operations.</param>
-    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationTokens cancellationTokens = default);
+    /// <param name="options">Options for executing the workflow.</param>
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowOptions? options = default);
 
     /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.

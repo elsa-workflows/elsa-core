@@ -188,10 +188,15 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="completionCallback">An optional callback to invoke when the activity completes.</param>
     /// <param name="tag">An optional tag to associate with the activity execution.</param>
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
+    public ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
-        await ScheduleActivityAsync(activity, options);
+        var options = new  ScheduleWorkOptions
+        {
+            CompletionCallback = completionCallback,
+            Tag = tag,
+            Variables = variables?.ToList()
+        };
+        return ScheduleActivityAsync(activity, options);
     }
 
     /// <summary>
@@ -257,10 +262,15 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="completionCallback">The callback to invoke when the activities complete.</param>
     /// <param name="tag">An optional tag to associate with the activity execution.</param>
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
-    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
+    public ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
-        await ScheduleActivities(activities, options);
+        var options = new ScheduleWorkOptions
+        {
+            CompletionCallback = completionCallback,
+            Tag = tag,
+            Variables = variables?.ToList()
+        };
+        return ScheduleActivities(activities, options);
     }
 
     /// <summary>

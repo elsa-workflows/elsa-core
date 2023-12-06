@@ -28,6 +28,7 @@ public class CSharpEvaluator : ICSharpEvaluator
         string expression,
         Type returnType,
         ExpressionExecutionContext context,
+        ExpressionEvaluatorOptions options,
         Func<ScriptOptions, ScriptOptions>? configureScriptOptions = default,
         Func<Script<object>, Script<object>>? configureScript = default,
         CancellationToken cancellationToken = default)
@@ -37,13 +38,13 @@ public class CSharpEvaluator : ICSharpEvaluator
         if (configureScriptOptions != null)
             scriptOptions = configureScriptOptions(scriptOptions);
         
-        var globals = new Globals(context);
+        var globals = new Globals(context, options.Arguments);
         var script = CSharpScript.Create("", scriptOptions, typeof(Globals));
         
         if (configureScript != null)
             script = configureScript(script);
 
-        var notification = new EvaluatingCSharp(script, scriptOptions, context);
+        var notification = new EvaluatingCSharp(options, script, scriptOptions, context);
         await _notificationSender.SendAsync(notification, cancellationToken);
         scriptOptions = notification.ScriptOptions;
         script = notification.Script.ContinueWith(expression, scriptOptions);

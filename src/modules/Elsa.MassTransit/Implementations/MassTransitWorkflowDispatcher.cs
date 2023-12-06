@@ -23,10 +23,11 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchWorkflowDefinition(
+        await _bus.Publish(new DispatchWorkflowDefinition(
             request.DefinitionId,
             request.VersionOptions,
             request.Input,
+            request.Properties,
             request.CorrelationId,
             request.InstanceId,
             request.TriggerActivityId
@@ -37,44 +38,42 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchWorkflowInstance(
-            request.InstanceId,
-            request.BookmarkId,
-            request.ActivityId,
-            request.ActivityNodeId,
-            request.ActivityInstanceId,
-            request.ActivityHash,
-            request.Input,
-            request.CorrelationId
-        ), cancellationToken);
+        await _bus.Publish(new DispatchWorkflowInstance(request.InstanceId)
+        {
+            BookmarkId = request.BookmarkId,
+            ActivityId = request.ActivityId,
+            ActivityNodeId = request.ActivityNodeId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            ActivityHash = request.ActivityHash,
+            Input = request.Input,
+            CorrelationId = request.CorrelationId
+        }, cancellationToken);
         return new();
     }
 
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchTriggerWorkflows(
-            request.ActivityTypeName,
-            request.BookmarkPayload,
-            request.CorrelationId,
-            request.WorkflowInstanceId,
-            request.ActivityInstanceId,
-            request.Input
-        ), cancellationToken);
+        await _bus.Publish(new DispatchTriggerWorkflows(request.ActivityTypeName, request.BookmarkPayload)
+        {
+            CorrelationId = request.CorrelationId,
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            Input = request.Input
+        }, cancellationToken);
         return new();
     }
 
     /// <inheritdoc />
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        await _bus.Send(new DispatchResumeWorkflows(
-            request.ActivityTypeName,
-            request.BookmarkPayload,
-            request.CorrelationId,
-            request.WorkflowInstanceId,
-            request.ActivityInstanceId,
-            request.Input
-        ), cancellationToken);
+        await _bus.Publish(new DispatchResumeWorkflows(request.ActivityTypeName, request.BookmarkPayload)
+        {
+            CorrelationId = request.CorrelationId,
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            Input = request.Input
+        }, cancellationToken);
         return new();
     }
 }

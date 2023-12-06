@@ -114,7 +114,12 @@ public class WorkflowsMiddleware
         var correlationId = await GetCorrelationIdAsync(httpContext, httpContext.RequestAborted);
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(httpContext, httpContext.RequestAborted);
         var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
-        var triggerOptions = new TriggerWorkflowsOptions(correlationId, workflowInstanceId, default, input);
+        var triggerOptions = new TriggerWorkflowsOptions
+        {
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            Input = input
+        };
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
         var workflowMatches = (await _workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
 
@@ -131,7 +136,7 @@ public class WorkflowsMiddleware
 
         // Get settings from the bookmark payload.
         var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;
-        
+
         // Get the configured request timeout, if any.
         var requestTimeout = foundBookmarkPayload?.RequestTimeout;
 
@@ -167,7 +172,12 @@ public class WorkflowsMiddleware
         CancellationTokens cancellationTokens)
     {
         var systemCancellationToken = cancellationTokens.SystemCancellationToken;
-        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(matchedWorkflow, input, cancellationTokens);
+        var executionOptions = new ExecuteWorkflowOptions
+        {
+            Input = input,
+            CancellationTokens = cancellationTokens
+        };
+        var executionResult = await _workflowRuntime.ExecuteWorkflowAsync(matchedWorkflow, executionOptions);
 
         if (await HandleWorkflowFaultAsync(httpContext, executionResult, systemCancellationToken))
             return;
