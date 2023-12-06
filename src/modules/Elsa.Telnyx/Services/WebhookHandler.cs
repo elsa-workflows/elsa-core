@@ -11,21 +11,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Services;
 
-internal class WebhookHandler : IWebhookHandler
+internal class WebhookHandler(INotificationSender notificationSender, ILogger<WebhookHandler> logger) : IWebhookHandler
 {
     private static readonly JsonSerializerOptions SerializerSettings;
-    private readonly INotificationSender _notificationSender;
-    private readonly ILogger<WebhookHandler> _logger;
 
     static WebhookHandler()
     {
         SerializerSettings = CreateSerializerSettings();
-    }
-
-    public WebhookHandler(INotificationSender notificationSender, ILogger<WebhookHandler> logger)
-    {
-        _notificationSender = notificationSender;
-        _logger = logger;
     }
 
     public async Task HandleAsync(HttpContext httpContext)
@@ -34,8 +26,8 @@ internal class WebhookHandler : IWebhookHandler
         var json = await ReadRequestBodyAsync(httpContext);
         var webhook = JsonSerializer.Deserialize<TelnyxWebhook>(json, SerializerSettings)!;
         
-        _logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
-        await _notificationSender.SendAsync(new TelnyxWebhookReceived(webhook), NotificationStrategy.Background, cancellationToken);
+        logger.LogDebug("Telnyx webhook payload received: {@Webhook}", webhook);
+        await notificationSender.SendAsync(new TelnyxWebhookReceived(webhook), NotificationStrategy.Background, cancellationToken);
     }
 
     private static async Task<string> ReadRequestBodyAsync(HttpContext httpContext)
