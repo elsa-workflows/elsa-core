@@ -24,7 +24,7 @@ builder.Services.AddElsa(elsa =>
     {
         identity.TokenOptions = options =>
         {
-            options.SigningKey = "secret-token-signing-key";
+            options.SigningKey = "c7dc81876a782d502084763fa322429fca015941eac90ce8ca7ad95fc8752035";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
         
@@ -36,6 +36,8 @@ builder.Services.AddElsa(elsa =>
 
     // Use default authentication (JWT + ApiKey).
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
+
+    elsa.UseJavaScript();
 
     // Enable SignalR for sending events to Elsa Studio for real-time updates.
     elsa.UseRealTimeWorkflows();

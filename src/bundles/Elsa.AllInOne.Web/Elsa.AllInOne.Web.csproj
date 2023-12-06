@@ -36,4 +36,8 @@
         <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.148"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
+
 </Project>
