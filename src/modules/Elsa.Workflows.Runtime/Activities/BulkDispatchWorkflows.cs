@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
@@ -187,8 +188,9 @@ public class BulkDispatchWorkflows : Activity
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
-        var workflowInstanceId = (string)input["WorkflowInstanceId"];
-        var workflowOutput = (IDictionary<string, object>)input["WorkflowOutput"];
+        var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
+        var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
+        var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
 
         context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
@@ -210,13 +212,18 @@ public class BulkDispatchWorkflows : Activity
             CompletionCallback = OnChildFinishedCompletedAsync
         };
 
-        if (ChildFinished is not null)
+        switch (workflowSubStatus)
         {
-            await context.ScheduleActivityAsync(ChildFinished, options);
-            return;
+            case WorkflowSubStatus.Faulted when ChildFaulted is not null:
+                await context.ScheduleActivityAsync(ChildFaulted, options);
+                return;
+            case WorkflowSubStatus.Finished when ChildFinished is not null:
+                await context.ScheduleActivityAsync(ChildFinished, options);
+                return;
+            default:
+                await CheckIfFinishedAsync(context);
+                break;
         }
-
-        await CheckIfFinishedAsync(context);
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)

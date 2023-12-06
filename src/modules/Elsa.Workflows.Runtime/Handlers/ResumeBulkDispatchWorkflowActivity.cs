@@ -33,7 +33,9 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
         var input = new Dictionary<string, object>
         {
             ["WorkflowOutput"] = workflowState.Output,
-            ["WorkflowInstanceId"] = workflowState.Id
+            ["WorkflowInstanceId"] = workflowState.Id,
+            ["WorkflowStatus"] = workflowState.Status,
+            ["WorkflowSubStatus"] = workflowState.SubStatus,
         };
         var message = new NewWorkflowInboxMessage
         {
