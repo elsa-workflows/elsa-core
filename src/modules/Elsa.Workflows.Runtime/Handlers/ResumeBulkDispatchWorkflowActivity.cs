@@ -30,7 +30,11 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
 
         var bookmark = new BulkDispatchWorkflowsBookmark(parentInstanceId);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
-        var input = workflowState.Output;
+        var input = new Dictionary<string, object>
+        {
+            ["WorkflowOutput"] = workflowState.Output,
+            ["WorkflowInstanceId"] = workflowState.Id
+        };
         var message = new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityTypeName,

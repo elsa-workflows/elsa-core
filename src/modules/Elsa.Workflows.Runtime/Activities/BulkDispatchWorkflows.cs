@@ -8,8 +8,10 @@ using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Memory;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Core.Services;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
@@ -80,12 +82,14 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    public IActivity? ChildFinished { get; set; } = default!;
+    [Port]
+    public IActivity? ChildFinished { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    public IActivity? ChildFaulted { get; set; } = default!;
+    [Port]
+    public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -108,6 +112,8 @@ public class BulkDispatchWorkflows : Activity
             return;
         }
 
+        context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
+
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
@@ -119,7 +125,8 @@ public class BulkDispatchWorkflows : Activity
                 {
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
-                IncludeActivityInstanceId = false
+                IncludeActivityInstanceId = false,
+                AutoBurn = false
             };
             context.CreateBookmark(bookmarkOptions);
         }
@@ -180,10 +187,28 @@ public class BulkDispatchWorkflows : Activity
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
-        var options = new ScheduleWorkOptions { Input = input, CompletionCallback = OnChildFinishedCompletedAsync };
+        var workflowInstanceId = (string)input["WorkflowInstanceId"];
+        var workflowOutput = (IDictionary<string, object>)input["WorkflowOutput"];
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
 
         context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
+
+        var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
+        {
+            StorageDriverType = typeof(WorkflowStorageDriver)
+        };
+
+        var variables = new List<Variable>
+        {
+            childInstanceId
+        };
+
+        var options = new ScheduleWorkOptions
+        {
+            Input = input,
+            Variables = variables,
+            CompletionCallback = OnChildFinishedCompletedAsync
+        };
 
         if (ChildFinished is not null)
         {

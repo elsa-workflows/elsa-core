@@ -15,4 +15,5 @@ public class BulkDispatchWorkflowsBookmark(string parentInstanceId)
 
     /// <summary>The number of child workflows that were created by the <see cref="BulkDispatchWorkflows"/> activity.</summary>
     [ExcludeFromHash] public long ScheduledInstanceIdsCount { get; set; }
+    
 }
