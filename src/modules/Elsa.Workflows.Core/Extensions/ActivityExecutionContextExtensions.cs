@@ -178,7 +178,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
@@ -188,7 +188,7 @@ public static class ActivityExecutionContextExtensions
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
     
     public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
@@ -250,6 +250,10 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var defaultValue = inputDescriptor.DefaultValue;
+        
+        if(inputDescriptor.AutoEvaluate == false)
+            return defaultValue;
+        
         var value = defaultValue;
         var input = inputDescriptor.ValueGetter(activity);
 

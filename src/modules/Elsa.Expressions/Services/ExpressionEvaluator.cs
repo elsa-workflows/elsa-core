@@ -19,10 +19,13 @@ public class ExpressionEvaluator : IExpressionEvaluator
     }
 
     /// <inheritdoc />
-    public async ValueTask<T?> EvaluateAsync<T>(Expression expression, ExpressionExecutionContext context) => (T?)await EvaluateAsync(expression, typeof(T), context);
+    public async ValueTask<T?> EvaluateAsync<T>(Expression expression, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options = default)
+    {
+        return (T?)await EvaluateAsync(expression, typeof(T), context, options);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options = default)
     {
         var expressionType = expression.Type;
         var expressionDescriptor = _registry.Find(expressionType);
@@ -31,6 +34,7 @@ public class ExpressionEvaluator : IExpressionEvaluator
             throw new Exception($"Could not find an descriptor for expression type \"{expressionType}\".");
 
         var handler = expressionDescriptor.HandlerFactory(_serviceProvider);
-        return await handler.EvaluateAsync(expression, returnType, context);
+        options ??= new ExpressionEvaluatorOptions();
+        return await handler.EvaluateAsync(expression, returnType, context, options);
     }
 }

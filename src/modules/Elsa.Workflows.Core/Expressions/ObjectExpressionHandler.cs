@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Core.Expressions;
 public class ObjectExpressionHandler : IExpressionHandler
 {
     /// <inheritdoc />
-    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
+    public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var value = expression.Value.ConvertTo<string>() ?? "";
 

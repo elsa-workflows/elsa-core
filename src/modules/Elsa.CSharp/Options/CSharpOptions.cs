@@ -27,7 +27,8 @@ public class CSharpOptions
     public ISet<Assembly> Assemblies { get; } = new HashSet<Assembly>(new[]
     {
         typeof(Globals).Assembly, // Elsa.CSharp
-        typeof(Enumerable).Assembly // System.Linq
+        typeof(Enumerable).Assembly, // System.Linq,
+        typeof(IDictionary<string, object>).Assembly, // System.Collections
     });
 
     /// <summary>
@@ -36,7 +37,8 @@ public class CSharpOptions
     public ISet<string> Namespaces { get; } = new HashSet<string>(new[]
     {
         typeof(Globals).Namespace!, // Elsa.CSharp
-        typeof(Enumerable).Namespace! // System.Linq
+        typeof(Enumerable).Namespace!, // System.Linq
+        typeof(IDictionary<string, object>).Namespace!, // System.Collections.Generic
     });
 
     /// <summary>

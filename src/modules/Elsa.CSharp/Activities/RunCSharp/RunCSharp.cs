@@ -2,6 +2,7 @@
 using Elsa.CSharp.Contracts;
 using Elsa.CSharp.Extensions;
 using Elsa.CSharp.Models;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
@@ -56,7 +57,8 @@ public class RunCSharp : CodeActivity<object?>
         var evaluator = context.GetRequiredService<ICSharpEvaluator>();
 
         // Run the script.
-        var result = await evaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, context.CancellationToken);
+        var options = new ExpressionEvaluatorOptions();
+        var result = await evaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, options, context.CancellationToken);
 
         // Set the result as output, if any.
         if (result is not null)

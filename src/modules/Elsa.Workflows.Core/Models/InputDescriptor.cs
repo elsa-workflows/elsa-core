@@ -32,6 +32,7 @@ public class InputDescriptor : PropertyDescriptor
         bool isBrowsable = true,
         bool isSerializable = true,
         bool isSynthetic = false,
+        bool autoEvaluate = true,
         Type? storageDriverType = default,
         PropertyInfo? propertyInfo = default)
     {
@@ -49,6 +50,7 @@ public class InputDescriptor : PropertyDescriptor
         DefaultValue = defaultValue;
         DefaultSyntax = defaultSyntax;
         IsReadOnly = isReadOnly;
+        AutoEvaluate = autoEvaluate;
         StorageDriverType = storageDriverType;
         IsSynthetic = isSynthetic;
         IsBrowsable = isBrowsable;
@@ -96,4 +98,9 @@ public class InputDescriptor : PropertyDescriptor
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
     public Type? StorageDriverType { get; set; }
+
+    /// <summary>
+    /// True if the expression should be evaluated automatically, false otherwise. Defaults to true.
+    /// </summary>
+    public bool AutoEvaluate { get; set; } = true;
 }

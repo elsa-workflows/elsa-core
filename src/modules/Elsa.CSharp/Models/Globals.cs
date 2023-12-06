@@ -11,9 +11,10 @@ public partial class Globals
     /// <summary>
     /// Initializes a new instance of the <see cref="Globals"/> class.
     /// </summary>
-    public Globals(ExpressionExecutionContext expressionExecutionContext)
+    public Globals(ExpressionExecutionContext expressionExecutionContext, IDictionary<string, object> arguments)
     {
         ExpressionExecutionContext = expressionExecutionContext;
+        Arguments = arguments;
         ExecutionContext = new ExecutionContextProxy(expressionExecutionContext);
         Input = new InputProxy(expressionExecutionContext);
         Output = new OutputProxy(expressionExecutionContext);
@@ -53,6 +54,11 @@ public partial class Globals
         get => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId;
         set => ExpressionExecutionContext.GetWorkflowExecutionContext().CorrelationId = value;
     }
+    
+    /// <summary>
+    /// Gets additional arguments provided by the caller of the evaluator.
+    /// </summary>
+    public IDictionary<string, object> Arguments { get; }
     
     private ExpressionExecutionContext ExpressionExecutionContext { get; }
 }

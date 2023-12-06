@@ -1,5 +1,8 @@
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
+using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Models;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
@@ -54,8 +57,11 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// The correlation ID to associate the workflow with. 
     /// </summary>
-    [Input(Description = "The correlation ID to associate the workflows with.")]
-    public Input<string?> CorrelationId { get; set; } = default!;
+    [Input(
+        DisplayName = "Correlation ID Function",
+        Description = "A function to compute the correlation ID to associate a dispatched workflow with. Receives the current item as its argument.",
+        AutoEvaluate = false)]
+    public Input<string?>? CorrelationIdFunction { get; set; }
 
     /// <summary>
     /// The input to send to the workflows.
@@ -133,14 +139,22 @@ public class BulkDispatchWorkflows : Activity
         {
             ["ParentInstanceId"] = parentInstanceId
         };
+        var evaluatorOptions = new ExpressionEvaluatorOptions
+        {
+            Arguments = new Dictionary<string, object>
+            {
+                ["Item"] = item
+            }
+        };
 
         input["ParentInstanceId"] = parentInstanceId;
         input["Item"] = item;
 
-        var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var instanceId = identityGenerator.GenerateId();
+        var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
         var request = new DispatchWorkflowDefinitionRequest
         {
             DefinitionId = workflowDefinitionId,
@@ -166,17 +180,17 @@ public class BulkDispatchWorkflows : Activity
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
-        var options = new ScheduleWorkOptions { Input = input, CompletionCallback = OnChildFinishedCompletedAsync};
+        var options = new ScheduleWorkOptions { Input = input, CompletionCallback = OnChildFinishedCompletedAsync };
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
-        
+
         context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
-        
-        if(ChildFinished is not null)
+
+        if (ChildFinished is not null)
         {
             await context.ScheduleActivityAsync(ChildFinished, options);
             return;
         }
-        
+
         await CheckIfFinishedAsync(context);
     }
 
@@ -189,7 +203,7 @@ public class BulkDispatchWorkflows : Activity
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
-        
+
         if (finishedInstancesCount >= dispatchedInstancesCount)
             await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
     }

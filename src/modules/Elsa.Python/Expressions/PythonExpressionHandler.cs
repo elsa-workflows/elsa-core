@@ -21,7 +21,7 @@ public class PythonExpressionHandler : IExpressionHandler
     }
 
     /// <inheritdoc />
-    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context)
+    public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var pythonExpression = expression.Value.ConvertTo<string>() ?? "";
         return await _evaluator.EvaluateAsync(pythonExpression, returnType, context);
