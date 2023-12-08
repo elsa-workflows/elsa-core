@@ -82,6 +82,8 @@ public class WorkflowBuilder : IWorkflowBuilder
     public Variable<T> WithVariable<T>(string name, T value)
     {
         var variable = WithVariable<T>();
+        variable.Name = name;
+        variable.Value = value;
         return variable;
     }
 
@@ -146,7 +148,7 @@ public class WorkflowBuilder : IWorkflowBuilder
             workflow.ResultVariable = Result;
             workflow.Result = new Output<object>(Result);
         }
-        
+
         var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
 
