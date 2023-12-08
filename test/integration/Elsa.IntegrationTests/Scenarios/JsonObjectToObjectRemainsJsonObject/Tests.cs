@@ -1,14 +1,14 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Elsa.IntegrationTests.Scenarios.JsonObjectJint.Workflows;
+using Elsa.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.IntegrationTests.Scenarios.JsonObjectJint;
+namespace Elsa.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject;
 
 public class JsonObjectJintTests
 {
@@ -23,7 +23,7 @@ public class JsonObjectJintTests
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Jint handles JsonObject as native JavaScript object")]
+    [Fact(DisplayName = "The produced JsonObject remains JsonObject and does not become JsonElement (which does not support index notation)")]
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();

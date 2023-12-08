@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.Workflows.Core;
 
-namespace Elsa.IntegrationTests.Scenarios.JsonObjectJint.Activities;
+namespace Elsa.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Activities;
 
 public class JsonObjectProducer : CodeActivity<JsonObject>
 {

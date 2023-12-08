@@ -84,9 +84,12 @@ public static class ObjectConverter
 
         if (value is JsonObject jsonObject)
         {
-            return underlyingTargetType == typeof(string)
-                ? jsonObject.ToString()
-                : jsonObject.Deserialize(targetType, options);
+            return underlyingTargetType switch
+            {
+                { } t when t == typeof(string) => jsonObject.ToString(),
+                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, options),
+                _ => jsonObject,
+            };
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
