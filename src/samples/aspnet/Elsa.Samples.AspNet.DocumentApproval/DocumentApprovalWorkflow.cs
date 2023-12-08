@@ -1,4 +1,4 @@
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.Net;
 using System.Net.Mime;
 using Elsa.Expressions.Models;
@@ -39,7 +39,7 @@ namespace Elsa.Samples.AspNet.DocumentApproval
                         Content = new("<h1>Request for Approval Sent</h1><p>Your document has been received and will be reviewed shortly.</p>"),
                         ContentType = new(MediaTypeNames.Text.Html),
                         StatusCode = new(HttpStatusCode.OK),
-                        ResponseHeaders = new(new HttpResponseHeaders { ["X-Powered-By"] = new[] { "Elsa 3.0" } })
+                        ResponseHeaders = new(new HttpHeaders { ["X-Powered-By"] = new[] { "Elsa 3.0" } })
                     },
                     new Fork
                     {

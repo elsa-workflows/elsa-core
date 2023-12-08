@@ -49,7 +49,7 @@ public class WriteHttpResponse : Activity
     /// The headers to return along with the response.
     /// </summary>
     [Input(Description = "The headers to send along with the response.", Category = "Advanced")]
-    public Input<HttpResponseHeaders?> ResponseHeaders { get; set; } = new(new HttpResponseHeaders());
+    public Input<HttpHeaders?> ResponseHeaders { get; set; } = new(new HttpHeaders());
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

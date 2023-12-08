@@ -114,7 +114,7 @@ public class HttpFeature : FeatureBase
                 typeof(HttpRequest),
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
-                typeof(HttpRequestHeaders),
+                typeof(HttpHeaders),
                 typeof(IFormFile)
             }, "HTTP");
 

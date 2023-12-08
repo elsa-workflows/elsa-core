@@ -4,18 +4,16 @@ using Elsa.Http.Models;
 
 namespace Elsa.Http.Serialization;
 
-/// <summary>
-/// A custom JSON converter for <see cref="HttpRequestHeaders"/> that supports both single and multiple values.
-/// </summary>
-public class HttpRequestHeadersConverter : JsonConverter<HttpRequestHeaders>
+/// A custom JSON converter for HttpHeaders that supports both single and multiple values.
+public class HttpHeadersConverter : JsonConverter<HttpHeaders>
 {
     /// <inheritdoc />
-    public override HttpRequestHeaders Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override HttpHeaders Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
             throw new JsonException("Expected StartObject token");
 
-        var headers = new HttpRequestHeaders();
+        var headers = new HttpHeaders();
 
         while (reader.Read())
         {
@@ -53,7 +51,7 @@ public class HttpRequestHeadersConverter : JsonConverter<HttpRequestHeaders>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, HttpRequestHeaders value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, HttpHeaders value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
 
