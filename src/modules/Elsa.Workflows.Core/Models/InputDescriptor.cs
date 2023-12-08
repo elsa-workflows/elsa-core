@@ -34,7 +34,9 @@ public class InputDescriptor : PropertyDescriptor
         bool isSynthetic = false,
         bool autoEvaluate = true,
         Type? storageDriverType = default,
-        PropertyInfo? propertyInfo = default)
+        PropertyInfo? propertyInfo = default,
+        IDictionary<string, object>? uISpecifications = default
+        )
     {
         Name = name;
         Type = type;
@@ -56,6 +58,7 @@ public class InputDescriptor : PropertyDescriptor
         IsBrowsable = isBrowsable;
         IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
+        UISpecifications = uISpecifications;
     }
 
     /// <summary>
@@ -103,4 +106,9 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the expression should be evaluated automatically, false otherwise. Defaults to true.
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
+
+    /// <summary>
+    /// A dictionary of UI Specification to allow UI Customization
+    /// </summary>
+    public IDictionary<string, object>? UISpecifications { get; set; }
 }

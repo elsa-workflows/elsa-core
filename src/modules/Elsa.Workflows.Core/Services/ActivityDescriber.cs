@@ -19,15 +19,16 @@ public class ActivityDescriber : IActivityDescriber
     private readonly IPropertyOptionsResolver _optionsResolver;
     private readonly IPropertyDefaultValueResolver _defaultValueResolver;
     private readonly IActivityFactory _activityFactory;
-
+    private readonly IPropertyUIHandlerResolver _propertyUIHandlerResolver;
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityDescriber(IPropertyOptionsResolver optionsResolver, IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory)
+    public ActivityDescriber(IPropertyOptionsResolver optionsResolver, IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver)
     {
         _optionsResolver = optionsResolver;
         _defaultValueResolver = defaultValueResolver;
         _activityFactory = activityFactory;
+        _propertyUIHandlerResolver = propertyUIHandlerResolver;
     }
 
     /// <inheritdoc />
@@ -157,6 +158,8 @@ public class ActivityDescriber : IActivityDescriber
 
         var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
 
+        var uiSpecification = await _propertyUIHandlerResolver.GetUIProperties(propertyInfo, null, cancellationToken);
+
         return new InputDescriptor
         (
             inputAttribute?.Name ?? propertyInfo.Name,
@@ -178,7 +181,8 @@ public class ActivityDescriber : IActivityDescriber
             false,
             autoEvaluate,
             default,
-            propertyInfo
+            propertyInfo,
+            uiSpecification
         );
     }
 

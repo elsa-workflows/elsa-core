@@ -94,4 +94,7 @@ public class InputAttribute : Attribute
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;
+
+    public Type[]? UIHandler { get; set; }
+
 }
