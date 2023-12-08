@@ -28,6 +28,7 @@ const bool useDapper = false;
 const bool useProtoActor = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
+const bool useMassTransit = true;
 const bool useMassTransitAzureServiceBus = false;
 const bool useMassTransitRabbitMq = false;
 
@@ -197,13 +198,16 @@ services
             elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
         }
 
-        elsa.UseMassTransit(massTransit =>
+        if (useMassTransit)
         {
-            if (useMassTransitAzureServiceBus)
-                massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
-            else if (useMassTransitRabbitMq)
-                massTransit.UseRabbitMq(rabbitMqConnectionString);
-        });
+            elsa.UseMassTransit(massTransit =>
+            {
+                if (useMassTransitAzureServiceBus)
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                if (useMassTransitRabbitMq)
+                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+            });
+        }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
 
