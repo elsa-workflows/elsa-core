@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
-using Elsa.Api.Client.HttpMessageHandlers;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
@@ -21,6 +20,7 @@ using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Polly;
 using Refit;
 
 namespace Elsa.Api.Client.Extensions;
@@ -38,11 +38,9 @@ public static class DependencyInjectionExtensions
     {
         var builderOptions = new ElsaClientBuilderOptions();
         configureBuilderOptions?.Invoke(builderOptions);
-        
-        services.Configure(configureOptions ?? (_ => { }));
-        services.AddScoped<ApiHttpMessageHandler>();
-        services.AddScoped<IElsaClient, ElsaClient>();
 
+        services.Configure(configureOptions ?? (_ => { }));
+        services.AddScoped<IElsaClient, ElsaClient>();
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
         services.AddApi<IActivityDescriptorsApi>(builderOptions);
@@ -68,18 +66,22 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The type representing the API.</typeparam>
     public static void AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
-        var builder = services.AddRefitClient<T>(CreateRefitSettings).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder?.Invoke(builder);
+        builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
     }
-    
+
     /// <summary>
     /// Creates an API client for the specified API type.
     /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, Uri baseAddress) where T : class
     {
-        return RestService.For<T>(baseAddress.ToString(), CreateRefitSettings(serviceProvider));
+        var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient(typeof(T).Name);
+        httpClient.BaseAddress = baseAddress;
+        return CreateApi<T>(serviceProvider, httpClient);
     }
-    
+
     /// <summary>
     /// Creates an API client for the specified API type.
     /// </summary>
@@ -105,18 +107,14 @@ public static class DependencyInjectionExtensions
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        var elsaClientOptions = serviceProvider.GetRequiredService<IOptions<ElsaClientOptions>>().Value;
-        
         serializerOptions.Converters.Add(new JsonStringEnumConverter());
         serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
 
         var settings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
-            HttpMessageHandlerFactory = () => elsaClientOptions.HttpMessageHandlerFactory(serviceProvider)
-        };    
-            
+        };
+
         return settings;
     }
-
 }
