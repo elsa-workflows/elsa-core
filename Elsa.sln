@@ -22,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\pr-body-generator.yml = .github\workflows\pr-body-generator.yml
 		README.md = README.md
 		update-migrations.sh = update-migrations.sh
 		frameworks.props = frameworks.props
