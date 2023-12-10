@@ -92,7 +92,7 @@ Open Program.cs and replace its contents with the following code:
 ```csharp
 using Elsa.Extensions;
 using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 // Set up the service container.

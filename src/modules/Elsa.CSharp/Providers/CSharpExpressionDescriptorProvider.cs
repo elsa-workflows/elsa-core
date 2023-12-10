@@ -10,18 +10,14 @@ internal class CSharpExpressionDescriptorProvider : IExpressionDescriptorProvide
 {
     private const string TypeName = "CSharp";
 
-    public ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public IEnumerable<ExpressionDescriptor> GetDescriptors()
     {
-        var descriptor = CreateCSharpDescriptor();
-
-        return ValueTask.FromResult<IEnumerable<ExpressionDescriptor>>(new[] { descriptor });
+        yield return new()
+        {
+            Type = TypeName,
+            DisplayName = "C#",
+            Properties = new { MonacoLanguage = "csharp" }.ToDictionary(),
+            HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<CSharpExpressionHandler>
+        };
     }
-
-    private static ExpressionDescriptor CreateCSharpDescriptor() => new()
-    {
-        Type = TypeName,
-        DisplayName = "C#",
-        Properties = new { MonacoLanguage = "csharp" }.ToDictionary(),
-        HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<CSharpExpressionHandler>
-    };
 }
