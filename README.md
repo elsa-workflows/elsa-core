@@ -1,58 +1,62 @@
 # Elsa Workflows
 
-<a href="https://v3.elsaworkflows.io/">
-  <p align="center">
-    <img src="./design/artwork/android-elsa-portrait.png" alt="Elsa">
-  </p>
-</a>
+![Elsa Logo](./design/artwork/android-elsa-portrait.png)
 
-[![Nuget](https://img.shields.io/nuget/v/elsa)](https://www.nuget.org/packages/Elsa/)
-[![Build status](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml/badge.svg?branch=v3)](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml)
-[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
-[![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
-[![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
+[Elsa](https://v3.elsaworkflows.io/) is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
-Elsa is a workflows library that enables workflow execution in any .NET application. Workflows can be defined in a variety of ways:
+- Writing C# code
+- Using a visual designer
+- Specifying workflows in JSON
 
-- Using C# code
-- Using a designer
-- Using JSON
+## Table of Contents
+
+- [Documentation](#documentation)
+- [Known Issues and Limitations](#known-issues-and-limitations)
+- [Features](#features)
+- [Roadmap](#roadmap)
+- [Use Cases](#use-cases)
+- [Console Example](#console-example)
+- [ASP.NET Example](#aspnet-example)
+- [Elsa Server + Elsa Studio](#elsa-server--elsa-studio)
 
 ## Documentation
-Please checkout the [documentation website](https://v3.elsaworkflows.io/) to get started.
+
+For comprehensive documentation and to get started with Elsa, please visit the [Elsa Documentation Website](https://v3.elsaworkflows.io/).
 
 ## Known Issues and Limitations
 
-- Documentation is still a work in progress
-- The designer is not yet fully embeddable in other applications. This is planned for a future release
-- C# and Python expressions are not yet fully tested
-- Bulk Dispatch Workflows is a new activity and not yet fully tested
-- Input / Output is not yet implemented in the Workflow Instance Viewer
-- Starting workflows from the designer is only supported for workflows that do not require input and do not start with a trigger. This is planned for a future release.
-- The designer currently only supports Flowchart activities. Support for Sequence and StateMachine activities is planned for a future release. 
+Elsa is continually evolving, and while it offers powerful capabilities, there are some known limitations and ongoing work:
+
+- Documentation is still a work in progress.
+- The designer is not yet fully embeddable in other applications; this feature is planned for a future release.
+- C# and Python expressions are not yet fully tested.
+- Bulk Dispatch Workflows is a new activity and not yet fully tested.
+- Input/Output is not yet implemented in the Workflow Instance Viewer.
+- Starting workflows from the designer is currently supported only for workflows that do not require input and do not start with a trigger; this is planned for a future release.
+- The designer currently only supports Flowchart activities. Support for Sequence and StateMachine activities is planned for a future release.
+- UI input validation is not yet implemented.
 
 ## Features
 
-Here are some of the more important features offered by Elsa:
+Elsa offers a wide range of features for building and executing workflows, including:
 
-- Execute workflows in any .NET app with support as of .NET 6 and beyond.
-- Supports both short-running and long-running workflows.
-- Programming model loosely inspired on Windows Workflow Foundation.
-- Advanced web-based drag & drop designer with support for custom activities.
-- Activity model natively supports composition. Examples are activities such as `Sequence`, `Flowchart` and `ForEach`.
+- Execution of workflows in any .NET application with support for .NET 6 and beyond.
+- Support for both short-running and long-running workflows.
+- A programming model loosely inspired by Windows Workflow Foundation.
+- A web-based drag & drop designer with support for custom activities.
+- Native support for activity composition, including activities like `Sequence`, `Flowchart`, and `ForEach`.
 - Parallel execution of activities.
-- Built-in activities for common scenarios such as sending emails, making HTTP calls, scheduling tasks, sending and receiving messages, etc.
-- Workflow versioning.
-- Workflow migration via API.
-- Easy integration with external applications via HTTP, message queues, etc.
+- Built-in activities for common scenarios, such as sending emails, making HTTP calls, scheduling tasks, sending and receiving messages, and more.
+- Workflow versioning and migration via API.
+- Easy integration with external applications via HTTP, message queues, and more.
 - Actor model for increased workflow throughput.
-- Dynamic expressions with support for C#, JavaScript, Python and Liquid.
-- Persistence agnostic. Supports Entity Framework Core, MongoDB and Dapper out of the box.
-- [Elsa Studio](https://github.com/elsa-workflows/elsa-studio), a modular Blazor dashboard app to managed & design workflows.
+- Dynamic expressions with support for C#, JavaScript, Python, and Liquid.
+- Persistence agnostic, with support for Entity Framework Core, MongoDB, and Dapper out of the box.
+- [Elsa Studio](https://github.com/elsa-workflows/elsa-studio): a modular Blazor dashboard app for managing and designing workflows.
 
 ## Roadmap
 
-The following features are planned for future releases:
+The following features are planned for future releases of Elsa:
 
 - [ ] Multi-tenancy
 - [ ] State Machine activity
@@ -62,22 +66,28 @@ The following features are planned for future releases:
 - [ ] Workflow migration to new versions via UI
 - [ ] Capsules ("hot" deployable workflow packages)
 
-## Use cases
+## Use Cases
 
-Elsa can be used in a variety of scenarios. Here are some examples:
+Elsa can be used in a variety of scenarios, including:
 
-- Long-running workflows such as order fulfillment, product approval, etc.
-- Short-running workflows such as sending emails, generating PDFs, etc.
-- Scheduled workflows such as sending a daily report, etc.
-- Event-driven workflows such as sending a welcome email when a user signs up, etc.
+- Long-running workflows such as order fulfillment and product approval.
+- Short-running workflows such as sending emails and generating PDFs.
+- Scheduled workflows such as sending daily reports.
+- Event-driven workflows such as sending welcome emails when a user signs up.
 
 ## Console Example
 
-Let's take a look at a simple example that demonstrates how to create a workflow and run it. The following example is a console application that creates a workflow that writes "Hello World!" to the console.
+Let's explore a simple example demonstrating how to create and run a workflow in a console application. In this example, we'll create a workflow that writes "Hello World!" to the console.
 
-### Hello World
+First, create a new console application and add the following NuGet packages:
 
-The following is a simple Hello World workflow created as a console application. 
+```shell
+dotnet new console -n "ElsaConsole" -f net8.0
+cd ElsaConsole
+dotnet add package Elsa
+```
+
+Open Program.cs and replace its contents with the following code:
 
 ```csharp
 using Elsa.Extensions;
@@ -85,13 +95,13 @@ using Elsa.Workflows.Core.Activities;
 using Elsa.Workflows.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-// Setup service container.
+// Set up the service container.
 var services = new ServiceCollection();
 
 // Add Elsa services.
 services.AddElsa();
 
-// Build service container.
+// Build the service container.
 var serviceProvider = services.BuildServiceProvider();
 
 // Create a workflow.
@@ -104,75 +114,15 @@ var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 await workflowRunner.RunAsync(workflow);
 ```
 
-Outputs:
+This code will output:
 
 ```shell
 Hello World!
 ```
 
-Notice that in the above example, we executed the `WriteLine` activity directly.
+You can also create more complex workflows, as shown in the examples, by combining different activities.
 
-### Sequential workflows
-
-To build workflows that execute more than one step, choose an activity that can do so. For example, the `Sequence` activity lets us add multiple activities to execute in sequence (plumbing code left out for brevity):
-
-```csharp
-// Create a workflow.
-var workflow = new Sequence
-{
-    Activities =
-    {
-        new WriteLine("Hello World!"), 
-        new WriteLine("Goodbye cruel world...")
-    }
-};
-```
-
-Outputs:
-
-```shell
-Hello World!
-Goodbye cruel world...
-```
-
-### Conditions
-
-The following demonstrates a workflow where it asks the user to enter their age, and based on this, offers a beer or a soda:
-
-```csharp
-// Declare a workflow variable for use in the workflow.
-var ageVariable = new Variable<string>();
-
-// Declare a workflow.
-var workflow = new Sequence
-{
-    // Register the variable.
-    Variables = { ageVariable }, 
-    
-    // Setup the sequence of activities to run.
-    Activities =
-    {
-        new WriteLine("Please tell me your age:"), 
-        new ReadLine(ageVariable), // Stores user input into the provided variable.,
-        new If
-        {
-            // If aged 18 or up, beer is provided, soda otherwise.
-            Condition = new Input<bool>(context => ageVariable.Get<int>(context) < 18),
-            Then = new WriteLine("Enjoy your soda!"),
-            Else = new WriteLine("Enjoy your beer!")
-        },
-        new WriteLine("Come again!")
-    }
-};
-```
-
-Notice that:
-
-- To capture activity output, a workflow variable (ageVariable) is used.
-- Depending on the result of the condition of the `If` activity, either the `Then` or the `Else` activity is executed.
-- After the If activity completes, the final WriteLine activity is executed.
-
-## ASP.NET Example
+# ASP.NET Example
 
 When working with workflows that involve timers, messages and other events, running a simple Console application is not enough.
 In this case, we need a proper host that can run the workflows in the background and handle events.
@@ -284,13 +234,11 @@ The above example demonstrates how to:
 
 ## Elsa Server + Elsa Studio
 
-So far, we have seen a simple Console and ASP.NET Core application that runs workflows. However, these applications do not provide a way to design workflows.
-For this, we need the following:
+While we've explored how to run workflows using simple Console and ASP.NET Core applications, these applications don't provide a way to design workflows. To bridge this gap, we introduce:
 
-- Elsa Server: The ASP.NET Core application needs to expose API endpoints that can be used to design workflows.
-- Elsa Studio: A Blazor application that can be used to design workflows.
-
-To setup a simple Elsa Server application, follow these steps:
+Elsa Server: An ASP.NET Core application that exposes API endpoints for designing workflows.
+Elsa Studio: A Blazor application tailored for designing workflows with ease.
+To set up a simple Elsa Server application, follow these step-by-step instructions:
 
 1. Create a new ASP.NET Core application.
 2. Add the necessary packages
