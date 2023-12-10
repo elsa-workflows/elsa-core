@@ -1,6 +1,6 @@
 # Elsa Workflows
 
-[Elsa](https://v3.elsaworkflows.io/) is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
+Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
 - Writing C# code
 - Using a visual designer
@@ -18,6 +18,7 @@
 - [Console Example](#console-example)
 - [ASP.NET Example](#aspnet-example)
 - [Elsa Server + Elsa Studio](#elsa-server--elsa-studio)
+- [Building from Source](#building-from-source)
 
 ## Documentation
 
@@ -553,4 +554,28 @@ Your application should now be accessible at https://localhost:5001. The port nu
 ```
 Username: admin
 Password: password
+```
+
+## Building from Source
+
+To build Elsa from source, you'll need:
+
+- .NET 6 SDK or later
+
+To build the solution, run the following command:
+
+```shell
+dotnet build Elsa.sln
+```
+
+To run the tests, run the following command:
+
+```shell
+dotnet test Elsa.sln
+```
+
+To run the Elsa.AllInOne.Web project, run the following command:
+
+```shell
+dotnet run --project src/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj
 ```
