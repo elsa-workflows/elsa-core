@@ -269,9 +269,23 @@ First, add the following package:
 dotnet add package Elsa.Scheduling --prerelease
 ```
 
+Then update the `Program.cs` file as follows by adding the `UseScheduling()` method inside the `AddElsa()` method:
+
+```csharp
+// Enable timer based activities.
+.UseScheduling()
+```
+
 Next, create a new file called `HeartbeatWorkflow.cs` and add the following code:
 
 ```csharp
+using Elsa.Common.Contracts;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
+
+namespace ElsaWeb;
+
 public class HeartbeatWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
@@ -280,7 +294,7 @@ public class HeartbeatWorkflow : WorkflowBase
         {
             Activities =
             {
-                new Timer(TimeSpan.FromSeconds(5))
+                new Elsa.Scheduling.Activities.Timer(TimeSpan.FromSeconds(5))
                 {
                     CanStartWorkflow = true
                 },
