@@ -64,7 +64,7 @@ The following features are planned for future releases of Elsa:
 - [ ] BPMN 2.0 support
 - [ ] DMN support
 - [ ] Workflow migration to new versions via UI
-- [ ] Capsules ("hot" deployable workflow packages)
+- [ ] Capsules ("hot" deployable workflow packages containing activities and configuration)
 
 ## Use Cases
 
