@@ -1,12 +1,14 @@
 # Elsa Workflows
 
+![Meet Elsa](./design/artwork/android-elsa-portrait.png)
+
 Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
 - Writing C# code
 - Using a visual designer
 - Specifying workflows in JSON
 
-![Elsa Logo](./design/artwork/android-elsa-portrait.png)
+![Elsa ships with a powerful visual designer](./design/screenshots/http-hello-world-workflow-designer.png)
 
 ## Table of Contents
 
