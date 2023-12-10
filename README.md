@@ -2,6 +2,21 @@
 
 ![Meet Elsa](./design/artwork/android-elsa-portrait.png)
 
+### Packages
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
+[![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
+
+### Continuous Delivery
+[![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-v3?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-v3)
+
+### Discussion
+[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
+[![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
+[![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
+
+
 Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
 - Writing C# code
