@@ -114,13 +114,37 @@ var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 await workflowRunner.RunAsync(workflow);
 ```
 
-This code will output:
+Run the application using the following command:
+
+```shell
+dotnet run
+```
+
+The application should output the following text:
 
 ```shell
 Hello World!
 ```
 
-You can also create more complex workflows, as shown in the examples, by combining different activities.
+You can also create more complex workflows. For example, the following demonstrates how to create a workflow that writes two messages to the console:
+
+```csharp
+var workflow = new Sequence
+{
+    Activities =
+    {
+        new WriteLine("Hello World!"), 
+        new WriteLine("Goodbye cruel world...")
+    }
+};
+```
+
+Which will output the following text:
+
+```shell
+Hello World!
+Goodbye cruel world...
+```
 
 # ASP.NET Example
 
@@ -128,6 +152,15 @@ When working with workflows that involve timers, messages and other events, runn
 In this case, we need a proper host that can run the workflows in the background and handle events.
 
 ASP.NET Core is a great host for this purpose. The following example demonstrates how to create a simple ASP.NET Core application that acts as a workflow server.
+
+First, create a new ASP.NET Core application and add the following NuGet packages:
+
+```shell
+dotnet new web -n "ElsaWeb" -f net8.0
+cd ElsaWeb
+dotnet add package Elsa --prerelease
+dotnet add package Elsa.Http --prerelease
+```
 
 ```csharp
 using Elsa.Extensions;
@@ -163,11 +196,21 @@ The above example demonstrates how to:
 - Add workflows from the current program.
 - Enable the HTTP module to handle HTTP related activities.
 
-### HTTP Endpoint
+Next, let's define a workflow that handles HTTP requests.
 
-The following example demonstrates how to create a workflow that handles HTTP requests:
+### HTTP Workflow
+
+Create a new file called `HelloWorldHttpWorkflow.cs` and add the following code:
 
 ```csharp
+using System.Net;
+using Elsa.Http;
+using Elsa.Workflows.Core;
+using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Core.Contracts;
+
+namespace ElsaWeb;
+
 public class HelloWorldHttpWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
@@ -195,14 +238,38 @@ public class HelloWorldHttpWorkflow : WorkflowBase
 
 The above example demonstrates how to:
 
-- Create an HTTP endpoint that listens for GET requests on the `/hello-world` path.
+- Create an HTTP endpoint that listens for GET requests on the `/workflows/hello-world` path.
 - Respond to the request with a `200 OK` status code and a `Hello world!` message.
 - The `CanStartWorkflow` property is set to `true` to indicate that this endpoint can start a workflow.
 - The `HttpEndpoint` activity is followed by a `WriteHttpResponse` activity that writes the response to the client.
 
+Run the application using the following command:
+
+```shell
+dotnet run
+```
+
+The application should now be accessible at https://localhost:5001/workflows/hello-world. The port number might vary based on your configuration.
+The response should look like this:
+
+```shell
+Hello world!
+```
+
+> The prefix `/workflows` is added by the Elsa HTTP module. This prefix can be configured via the `ElsaOptions.Http` property. For example:
+> `elsa.UseHttp(http => http.ConfigureHttpOptions = options => options.BasePath = "/my-workflows");`
+
 ### Timer
 
-The following example demonstrates how to create a workflow that executes every 5 seconds:
+Let's take a look at another workflow that automatically executes every 5 seconds.
+
+First, add the following package:
+
+```shell
+dotnet add package Elsa.Scheduling --prerelease
+```
+
+Next, create a new file called `HeartbeatWorkflow.cs` and add the following code:
 
 ```csharp
 public class HeartbeatWorkflow : WorkflowBase
@@ -223,6 +290,21 @@ public class HeartbeatWorkflow : WorkflowBase
     }
 }
 ```
+
+Run the application using the following command:
+
+```shell
+dotnet run
+```
+
+You should see the output similar to the following:
+
+```shell
+Heartbeat at 2021-10-10 12:00:00Z
+Heartbeat at 2021-10-10 12:00:05Z
+Heartbeat at 2021-10-10 12:00:10Z
+...
+``` 
 
 The above example demonstrates how to:
 
