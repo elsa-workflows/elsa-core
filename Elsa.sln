@@ -18,7 +18,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		configureawait.props = configureawait.props
 		docker-compose.yml = docker-compose.yml
 		icon.png = icon.png
-		.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
 		.github\workflows\packages.yml = .github\workflows\packages.yml
