@@ -25,6 +25,11 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     public MassTransitWorkflowDispatcherFeature(IModule module) : base(module)
     {
     }
+    
+    /// <summary>
+    /// Configures the MassTransit workflow dispatcher.
+    /// </summary>
+    public Action<MassTransitWorkflowDispatcherOptions>? ConfigureDispatcherOptions { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -36,7 +41,10 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddOptions<MassTransitWorkflowDispatcherOptions>();
+        var options = Services.AddOptions<MassTransitWorkflowDispatcherOptions>();
+        
+        if (ConfigureDispatcherOptions != null)
+            options.Configure(ConfigureDispatcherOptions);
         
         var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
         var queueAddress = new Uri($"queue:elsa-{queueName}");
