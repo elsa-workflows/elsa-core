@@ -24,4 +24,17 @@ public static class ModuleExtensions
         module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>());
         return module;
     }
+    
+    /// <summary>
+    /// Registers the specified consumer and consumer definition with MassTransit.
+    /// </summary>
+    public static IModule AddMassTransitConsumer<T, TDefinition>(this IModule module) 
+        where T : IConsumer 
+        where TDefinition : IConsumerDefinition
+    {
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T, TDefinition>());
+        return module;
+    }
+    
+    
 }

@@ -28,7 +28,7 @@ const bool useProtoActor = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useMassTransitAzureServiceBus = false;
+const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -202,9 +202,14 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 if (useMassTransitAzureServiceBus)
-                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                {
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, asb => asb.ConfigureServiceBus = bus => { bus.PrefetchCount = 4; });
+                }
+
                 if (useMassTransitRabbitMq)
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                {
+                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus => { bus.PrefetchCount = 4; });
+                }
             });
         }
 

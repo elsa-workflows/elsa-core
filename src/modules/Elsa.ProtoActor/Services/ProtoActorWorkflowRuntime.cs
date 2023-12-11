@@ -132,7 +132,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Start(request, options.CancellationTokens.SystemCancellationToken);
 
-        return _workflowExecutionResultMapper.Map(response!);
+         return _workflowExecutionResultMapper.Map(response!);
     }
 
     /// <inheritdoc />
