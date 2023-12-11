@@ -369,14 +369,21 @@ dotnet new web -n "ElsaServer" -f net8.0
 cd ElsaServer
 dotnet add package Elsa --prerelease
 dotnet add package Elsa.EntityFrameworkCore --prerelease
+dotnet add package Elsa.EntityFrameworkCore.Sqlite --prerelease
 dotnet add package Elsa.Identity --prerelease
 dotnet add package Elsa.Scheduling --prerelease
 dotnet add package Elsa.Workflows.Api --prerelease
+dotnet add package Elsa.CSharp --prerelease
 ```
 
 Next, open Program.cs file and replace its contents with the following code:
 
 ```csharp
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.Extensions;
+
+var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddElsa(elsa =>
 {
     // Configure Management layer to use EF Core.
@@ -388,7 +395,7 @@ builder.Services.AddElsa(elsa =>
     // Default Identity features for authentication/authorization.
     elsa.UseIdentity(identity =>
     {
-        identity.TokenOptions = options => options.SigningKey = "secret signing key for tokens";
+        identity.TokenOptions = options => options.SigningKey = "sufficiently-large-secret-signing-key"; //This key needs to be at least 256 bits long.
         identity.UseAdminUserProvider();
     });
     
@@ -399,7 +406,7 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowsApi();
     
     // Setup a SignalR hub for real-time updates from the server.
-    els.UseRealTimeWorkflows();
+    elsa.UseRealTimeWorkflows();
     
     // Enable C# workflow expressions
     elsa.UseCSharp();
@@ -428,8 +435,12 @@ builder.Services.AddCors(cors => cors
 // Add Health Checks.
 builder.Services.AddHealthChecks();
 
-// Configure ASP.NET's middleware pipeline.
+// Build the web application.
+var app = builder.Build();
+
+// Configure web application's middleware pipeline.
 app.UseCors();
+app.UseRouting(); // Required for SignalR.
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseWorkflowsApi(); // Use Elsa API endpoints.
@@ -438,6 +449,34 @@ app.UseWorkflowsSignalRHubs(); // Optional SignalR integration. Elsa Studio uses
 
 app.Run();
 ```
+
+To run the application on port 5001, execute the following command:
+
+```shell
+dotnet run --urls "https://localhost:5001"
+```
+
+The above example demonstrates how to:
+
+- Configure Elsa to use Entity Framework Core for persistence.
+- Configure Elsa to use ASP.NET Core Identity for authentication/authorization.
+- Configure Elsa to use ASP.NET Core authentication/authorization.
+- Expose Elsa API endpoints.
+- Setup a SignalR hub for real-time updates from the server.
+- Enable C# workflow expressions.
+- Enable HTTP activities.
+- Enable timer activities.
+- Register custom activities from the application, if any.
+- Register custom workflows from the application, if any.
+- Configure CORS to allow designer app hosted on a different origin to invoke the APIs.
+- Add Health Checks.
+- Configure ASP.NET's middleware pipeline.
+- Use Elsa API endpoints.
+- Use Elsa middleware to handle HTTP requests mapped to HTTP Endpoint activities.
+- Use SignalR integration. Elsa Studio uses SignalR to receive real-time updates from the server.
+- Run the application on port 5001.
+
+Now that we have an Elsa Server running, let's create an Elsa Studio application.
 
 ### Create Elsa Studio
 
@@ -454,21 +493,21 @@ dotnet add package Elsa.Studio.Login.BlazorWasm --prerelease
 Next, open Program.cs file and replace its contents with the following code:
 
 ```csharp
-using Elsa.Studio.Backend.Extensions;
 using Elsa.Studio.Dashboard.Extensions;
 using Elsa.Studio.Shell;
 using Elsa.Studio.Shell.Extensions;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Core.BlazorWasm.Extensions;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Login.BlazorWasm.Extensions;
+using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Workflows.Designer.Extensions;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
 // Build the host.
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
-var configuration = builder.Configuration;
 
 // Register root components.
 builder.RootComponents.Add<App>("#app");
@@ -478,7 +517,9 @@ builder.RootComponents.RegisterCustomElsaStudioElements();
 // Register shell services and modules.
 builder.Services.AddCore();
 builder.Services.AddShell();
-builder.Services.AddRemoteBackend(configureElsaClientBuilderOptions: elsaClient => elsaClient.ConfigureHttpClientBuilder = httpClientBuilder => httpClientBuilder.AddHttpMessageHandler<AuthenticatingApiHttpMessageHandler>());
+builder.Services.AddRemoteBackend(
+    options => configuration.GetSection("Backend").Bind(options),
+    configureElsaClientBuilderOptions: elsaClient => elsaClient.ConfigureHttpClientBuilder = httpClientBuilder => httpClientBuilder.AddHttpMessageHandler<AuthenticatingApiHttpMessageHandler>());
 builder.Services.AddLoginModule();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();
@@ -494,9 +535,12 @@ await startupTaskRunner.RunStartupTasksAsync();
 await app.RunAsync();
 ```
 
-For a cleaner project structure, eliminate the following directories and files:
+For a cleaner project structure, delete the following directories and files:
 
 - wwwroot/css
+- Pages
+- App.razor
+- MainLayout.razor
 
 Within the wwwroot directory, create a new appsettings.json file and populate it with the subsequent content:
 
@@ -560,18 +604,32 @@ Finally, open the wwwroot/index.html file and replace its content with the code 
 </html>
 ```
 
-To see your application in action, execute the following command:
+Run the following command to start the application on port 6001:
 
 ```shell
-dotnet run
+dotnet run --urls "https://localhost:6001"
 ```
 
-Your application should now be accessible at https://localhost:5001. The port number might vary based on your configuration. By default, you can log in using:
+Your application should now be accessible at https://localhost:6001.
+
+![Elsa Studio Login](./design/screenshots/elsa-studio-login.png)
+
+By default, you can log in using:
 
 ```
 Username: admin
 Password: password
 ```
+
+In the above example, we have:
+
+- Created and configured an Elsa Studio Blazor WebAssembly application.
+- Configured the backend URL to point to the Elsa Server application.
+- Configured the application to use the `AuthenticatingApiHttpMessageHandler` to authenticate requests to the backend.
+- Configured the application to use the `Elsa.Studio.Login.BlazorWasm` module for authentication.
+- Configured the application to use the `Elsa.Studio.Dashboard` module for the dashboard.
+- Configured the application to use the `Elsa.Studio.Workflows` module for workflows.
+- Run the application on port 6001.
 
 ## Building from Source
 
@@ -596,3 +654,5 @@ To run the Elsa.AllInOne.Web project, run the following command:
 ```shell
 dotnet run --project src/Elsa.AllInOne.Web/Elsa.AllInOne.Web.csproj
 ```
+
+The AllInOne project is a sample application that demonstrates how to use Elsa Server + Elsa Studio in a single application.
