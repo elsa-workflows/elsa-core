@@ -29,9 +29,7 @@ To give the Elsa Studio + Elsa Server a quick spin, you can run the following co
 docker pull elsaworkflows/elsa-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -p 13000:8080 elsaworkflows/elsa-v3:latest
 ```
-> This image is a reference ASP.NET application that hosts both the workflow server and designer
->
-> It is not intended for production use.
+> This Docker image is based on a reference ASP.NET application that hosts both the workflow server and designer and is not intended for production use.
 
 ## Table of Contents
 
