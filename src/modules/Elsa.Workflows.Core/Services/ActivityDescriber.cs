@@ -157,7 +157,6 @@ public class ActivityDescriber : IActivityDescriber
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
 
         var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
-
         var uiSpecification = await _propertyUIHandlerResolver.GetUIProperties(propertyInfo, null, cancellationToken);
 
         return new InputDescriptor

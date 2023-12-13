@@ -95,6 +95,9 @@ public class InputAttribute : Attribute
     /// </summary>
     public bool IsSerializable { get; set; } = true;
 
+    /// <summary>
+    /// A <see cref="IPropertyUIHandler"/> type that can be used to customize the UI for this property.
+    /// </summary>
     public Type[]? UIHandler { get; set; }
 
 }

@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Contracts;
 
 namespace Elsa.Workflows.Core.PortResolvers;
