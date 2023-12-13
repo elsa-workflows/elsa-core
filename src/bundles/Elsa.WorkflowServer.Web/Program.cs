@@ -16,6 +16,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using MassTransit;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -28,7 +29,7 @@ const bool useProtoActor = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useMassTransitAzureServiceBus = false;
+const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -202,9 +203,28 @@ services
             elsa.UseMassTransit(massTransit =>
             {
                 if (useMassTransitAzureServiceBus)
-                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                {
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    {
+                        bus.PrefetchCount = 4;
+                        bus.LockDuration = TimeSpan.FromMinutes(5);
+                        bus.MaxConcurrentCalls = 32;
+                        bus.MaxDeliveryCount = 8;
+                        // etc.
+                    });
+                }
+
                 if (useMassTransitRabbitMq)
-                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                {
+                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                    {
+                        bus.PrefetchCount = 4;
+                        bus.Durable = true;
+                        bus.AutoDelete = false;
+                        bus.ConcurrentMessageLimit = 32;
+                        // etc.
+                    });
+                }
             });
         }
 

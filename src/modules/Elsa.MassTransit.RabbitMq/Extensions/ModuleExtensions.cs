@@ -1,8 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Options;
 using Elsa.MassTransit.RabbitMq.Features;
-using Elsa.MassTransit.RabbitMq.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -15,30 +13,36 @@ public static class ModuleExtensions
     /// <summary>
     /// Enable and configure the RabbitMQ transport for MassTransit.
     /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString) => feature.UseRabbitMq(new Uri(connectionString), null);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ transport for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri connectionString) => feature.UseRabbitMq(connectionString, null);
-    
-    /// <summary>
-    /// Enable and configure the RabbitMQ transport for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, RabbitMqOptions options) => feature.UseRabbitMq(null, options);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ transport for MassTransit.
-    /// </summary>
-    private static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri? connectionString, RabbitMqOptions? options)
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString)
     {
-        feature.Module.Configure((Action<RabbitMqServiceBusFeature>) Configure);
+        feature.Module.Configure((Action<RabbitMqServiceBusFeature>)Configure);
         return feature;
 
         void Configure(RabbitMqServiceBusFeature bus)
         {
             bus.ConnectionString = connectionString;
-            bus.Options = options;
         }
+    }
+
+    /// <summary>
+    /// Enable and configure the RabbitMQ transport for MassTransit.
+    /// </summary>
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Action<RabbitMqServiceBusFeature> configure)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+
+    /// <summary>
+    /// Enable and configure the RabbitMQ transport for MassTransit.
+    /// </summary>
+    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString, Action<RabbitMqServiceBusFeature> configure)
+    {
+        feature.Module.Configure<RabbitMqServiceBusFeature>(rabbitMqFeature =>
+        {
+            rabbitMqFeature.ConnectionString = connectionString;
+            configure(rabbitMqFeature);
+        });
+        return feature;
     }
 }

@@ -150,4 +150,11 @@ public static class ActivityExtensions
     /// Gets the root activity in the specified activity.
     /// </summary>
     public static string? GetWorkflowDefinitionId(this JsonObject activity) => activity.GetProperty<string?>("workflowDefinitionId");
+
+    /// <summary>
+    /// Determines whether the given activity is a workflow definition activity.
+    /// </summary>
+    /// <param name="activity">The JsonObject representing the activity.</param>
+    /// <returns>Returns true if the activity is a workflow definition activity; otherwise, false.</returns>
+    public static bool GetIsWorkflowDefinitionActivity(this JsonObject activity) => activity.ContainsKey("workflowDefinitionId") && activity.ContainsKey("workflowDefinitionVersionId");
 }

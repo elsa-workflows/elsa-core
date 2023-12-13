@@ -9,19 +9,15 @@ namespace Elsa.Python.Providers;
 internal class PythonExpressionDescriptorProvider : IExpressionDescriptorProvider
 {
     private const string TypeName = "Python";
-    
-    public ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
-    {
-        var javaScript = CreatePythonDescriptor();
 
-        return ValueTask.FromResult<IEnumerable<ExpressionDescriptor>>(new[] { javaScript });
+    public IEnumerable<ExpressionDescriptor> GetDescriptors()
+    {
+        yield return new()
+        {
+            Type = TypeName,
+            DisplayName = "Python",
+            Properties = new { MonacoLanguage = "python" }.ToDictionary(),
+            HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<PythonExpressionHandler>
+        };
     }
-
-    private ExpressionDescriptor CreatePythonDescriptor() => new()
-    {
-        Type = TypeName,
-        DisplayName = "Python",
-        Properties = new { MonacoLanguage = "python" }.ToDictionary(),
-        HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<PythonExpressionHandler>
-    };
 }

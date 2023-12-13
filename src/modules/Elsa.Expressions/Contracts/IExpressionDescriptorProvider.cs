@@ -10,5 +10,5 @@ public interface IExpressionDescriptorProvider
     /// <summary>
     /// Gets the descriptors for the expression syntaxes supported by this provider.
     /// </summary>
-    ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default);
+    IEnumerable<ExpressionDescriptor> GetDescriptors();
 }

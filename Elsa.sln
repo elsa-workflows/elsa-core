@@ -18,11 +18,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		configureawait.props = configureawait.props
 		docker-compose.yml = docker-compose.yml
 		icon.png = icon.png
-		.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\pr-body-generator.yml = .github\workflows\pr-body-generator.yml
 		README.md = README.md
 		update-migrations.sh = update-migrations.sh
 		frameworks.props = frameworks.props
@@ -285,6 +283,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.RabbitMq", "src\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj", "{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{26888832-DBEA-4B23-8DC2-84478A702CC4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -716,6 +716,10 @@ Global
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -847,6 +851,7 @@ Global
 		{790E94F2-5393-47DF-AC52-D9247F5B243A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
+		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

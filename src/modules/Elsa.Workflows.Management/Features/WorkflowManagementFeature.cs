@@ -166,7 +166,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
-            .AddSingleton<IExpressionDescriptorRegistryPopulator, ExpressionDescriptorRegistryPopulator>()
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
