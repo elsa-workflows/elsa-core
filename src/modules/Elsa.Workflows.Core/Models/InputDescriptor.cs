@@ -35,7 +35,7 @@ public class InputDescriptor : PropertyDescriptor
         bool autoEvaluate = true,
         Type? storageDriverType = default,
         PropertyInfo? propertyInfo = default,
-        IDictionary<string, object>? uISpecifications = default
+        IDictionary<string, object>? uiSpecifications = default
         )
     {
         Name = name;
@@ -58,7 +58,7 @@ public class InputDescriptor : PropertyDescriptor
         IsBrowsable = isBrowsable;
         IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
-        UISpecifications = uISpecifications;
+        UISpecifications = uiSpecifications;
     }
 
     /// <summary>
@@ -108,7 +108,7 @@ public class InputDescriptor : PropertyDescriptor
     public bool AutoEvaluate { get; set; } = true;
 
     /// <summary>
-    /// A dictionary of UI Specification to allow UI Customization
+    /// A dictionary of UI specifications to be used by the UI.
     /// </summary>
     public IDictionary<string, object>? UISpecifications { get; set; }
 }
