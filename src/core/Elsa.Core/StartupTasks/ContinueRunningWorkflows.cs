@@ -67,7 +67,7 @@ namespace Elsa.StartupTasks
 
             foreach (var instance in instances)
             {
-                await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(instance.CorrelationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
+                await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(instance.CorrelationId, _elsaOptions.ContinueWorkflowsOnStartupTimeout, cancellationToken);
 
                 if (correlationLockHandle == null)
                 {
@@ -106,7 +106,7 @@ namespace Elsa.StartupTasks
 
             foreach (var instance in instances)
             {
-                await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(instance.CorrelationId, _elsaOptions.DistributedLockTimeout, cancellationToken);
+                await using var correlationLockHandle = await _distributedLockProvider.AcquireLockAsync(instance.CorrelationId, _elsaOptions.ContinueWorkflowsOnStartupTimeout, cancellationToken);
 
                 if (correlationLockHandle == null)
                 {
