@@ -2,21 +2,17 @@
 
 ![Meet Elsa](./design/artwork/android-elsa-portrait.png)
 
-### Packages
-[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
-[![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
-
-### Continuous Delivery
 [![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
 [![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json)
+[![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2F%2540elsa-workflows%252Felsa-studio-wasm%2Flatest&label=npm%20preview)](https://f.feedz.io/elsa-workflows/elsa-3/packages/%40elsa-workflows%2Felsa-studio-wasm/latest/download)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-v3?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-v3)
-
-### Discussion
-[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
+[![Discord](https://img.shields.io/discord/814605913783795763?label=discord&logo=discord)](https://discord.gg/hhChk5H472)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
 
-
+## Introduction
 Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
 - Writing C# code
@@ -24,6 +20,18 @@ Elsa is a powerful workflow library that enables workflow execution within any .
 - Specifying workflows in JSON
 
 ![Elsa ships with a powerful visual designer](./design/screenshots/http-hello-world-workflow-designer.png)
+
+### Try with Docker
+
+To give the Elsa Studio + Elsa Server a quick spin, you can run the following command to start the Elsa Docker container:
+
+```shell
+docker pull elsaworkflows/elsa-v3:latest
+docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -p 13000:8080 elsaworkflows/elsa-v3:latest
+```
+> This image is a reference ASP.NET application that hosts both the workflow server and designer
+>
+> It is not intended for production use.
 
 ## Table of Contents
 
