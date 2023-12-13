@@ -7,15 +7,28 @@ using NodaTime;
 
 namespace Elsa.Persistence.EntityFramework.Core
 {
-    public class ElsaContext : DbContext
+    public class ElsaContext : DbContext, IElsaDbContextSchema
     {
-        public const string ElsaSchema = "Elsa";
-        public const string MigrationsHistoryTable = "__EFMigrationsHistory";
+        /// <summary>
+        /// The default schema used by Elsa.
+        /// </summary>
+        public static string ElsaSchema { get; set;  } = "Elsa";
+        private readonly string _schema;
+        /// <summary>
+        /// The table used to store the migrations history.
+        /// </summary>
+        public static string MigrationsHistoryTable { get; set; } = "__EFMigrationsHistory";
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
+        /// </summary>
         public ElsaContext(DbContextOptions options) : base(options)
         {
-        }
+            var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
+            // ReSharper disable once VirtualMemberCallInConstructor
+            _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        }
         private bool IsSqlite
 #if NET7_0_OR_GREATER
         => Database.ProviderName is "Microsoft.EntityFrameworkCore.Sqlite";
@@ -32,7 +45,7 @@ namespace Elsa.Persistence.EntityFramework.Core
                 if (Database.IsMySql()) // MySql does not support the EF Core concept of schema (Pomelo Doc)
                     return default;
 
-                return ElsaSchema;
+                return _schema;
             }
         }
         public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;

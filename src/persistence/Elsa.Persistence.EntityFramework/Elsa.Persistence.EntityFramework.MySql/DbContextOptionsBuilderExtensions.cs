@@ -9,10 +9,10 @@ namespace Elsa.Persistence.EntityFramework.MySql
         /// <summary>
         /// Configures the context to use MySql 
         /// </summary>
-        public static DbContextOptionsBuilder UseMySql(this DbContextOptionsBuilder builder, string connectionString) => 
+        public static DbContextOptionsBuilder UseMySql(this DbContextOptionsBuilder builder, string connectionString, ElsaDbContextOptions? options = default) => 
             builder.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), db => db
-                .MigrationsAssembly(typeof(MySqlElsaContextFactory).Assembly.GetName().Name)
-                .MigrationsHistoryTable(ElsaContext.MigrationsHistoryTable, ElsaContext.ElsaSchema)
+                .MigrationsAssembly(options.GetMigrationsAssemblyName(typeof(MySqlElsaContextFactory).Assembly))
+                .MigrationsHistoryTable(options.GetMigrationsHistoryTableName(), options.GetSchemaName())
                 .SchemaBehavior(MySqlSchemaBehavior.Ignore));
     }
 }

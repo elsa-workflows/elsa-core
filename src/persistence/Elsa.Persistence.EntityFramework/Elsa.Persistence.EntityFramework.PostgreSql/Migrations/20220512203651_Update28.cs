@@ -1,15 +1,21 @@
 ﻿using System;
+using Elsa.Persistence.EntityFramework.Core;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
 {
     public partial class Update28 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Update28(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<DateTimeOffset>(
                 name: "CreatedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 type: "timestamp with time zone",
                 nullable: false,
@@ -20,7 +26,7 @@ namespace Elsa.Persistence.EntityFramework.PostgreSql.Migrations
         {
             migrationBuilder.DropColumn(
                 name: "CreatedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions");
         }
     }

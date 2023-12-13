@@ -1,14 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Elsa.Persistence.EntityFramework.Core;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 {
     public partial class Update25 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Update25(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
                 name: "Triggers",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
@@ -27,43 +34,43 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_ActivityId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 column: "ActivityId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_ActivityType",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 column: "ActivityType");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_ActivityType_TenantId_Hash",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 columns: new[] { "ActivityType", "TenantId", "Hash" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_Hash",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 column: "Hash");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_Hash_TenantId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 columns: new[] { "Hash", "TenantId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_TenantId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Trigger_WorkflowDefinitionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Triggers",
                 column: "WorkflowDefinitionId");
         }
@@ -72,7 +79,7 @@ namespace Elsa.Persistence.EntityFramework.Oracle.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Triggers",
-                schema: "Elsa");
+                schema: _schema.Schema);
         }
     }
 }
