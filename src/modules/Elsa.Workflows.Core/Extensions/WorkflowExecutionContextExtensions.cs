@@ -98,7 +98,8 @@ public static class WorkflowExecutionContextExtensions
 
         if (options?.PreventDuplicateScheduling == true)
         {
-            var existingWorkItem = scheduler.Find(x => x.Activity.NodeId == activityNode.NodeId);
+            // Check if the activity is already scheduled for the specified owner.
+            var existingWorkItem = scheduler.Find(x => x.Activity.NodeId == activityNode.NodeId && x.Owner == owner);
 
             if (existingWorkItem != null)
                 return existingWorkItem;
