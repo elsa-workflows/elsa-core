@@ -27,7 +27,7 @@ public class JavaScriptExpressionHandler : IExpressionHandler
     public async ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
     {
         var javaScriptExpression = expression.Value.ConvertTo<string>() ?? "";
-        return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression, returnType, context, engine => ConfigureEngine(engine, options), context.CancellationToken);
+        return await _javaScriptEvaluator.EvaluateAsync(javaScriptExpression, returnType, context, options, engine => ConfigureEngine(engine, options), context.CancellationToken);
     }
 
     private void ConfigureEngine(Engine engine, ExpressionEvaluatorOptions options)

@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.Workflows.Core;
@@ -35,7 +36,7 @@ public class RunJavaScript : CodeActivity<object?>
         OptionsProvider = typeof(RunJavaScriptOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
-    
+
     /// <summary>
     /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
     /// </summary>
@@ -55,7 +56,13 @@ public class RunJavaScript : CodeActivity<object?>
         var javaScriptEvaluator = context.GetRequiredService<IJavaScriptEvaluator>();
 
         // Run the script.
-        var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(object), context.ExpressionExecutionContext, engine => ConfigureEngine(engine, context), context.CancellationToken);
+        var result = await javaScriptEvaluator.EvaluateAsync(
+            script,
+            typeof(object),
+            context.ExpressionExecutionContext,
+            ExpressionEvaluatorOptions.Empty,
+            engine => ConfigureEngine(engine, context),
+            context.CancellationToken);
 
         // Set the result as output, if any.
         if (result is not null)
