@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - 2.x
   #release:
   #  types: [published]
 
