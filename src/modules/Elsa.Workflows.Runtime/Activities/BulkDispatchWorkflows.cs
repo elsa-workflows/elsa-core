@@ -23,7 +23,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// <summary>
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// </summary>
-[Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.")]
+[Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
 [FlowNode("Finished", "Canceled", "Done")]
 [UsedImplicitly]
 public class BulkDispatchWorkflows : Activity
@@ -98,19 +98,24 @@ public class BulkDispatchWorkflows : Activity
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
         var items = GetItemsAsync(context).WithCancellation(context.CancellationToken);
         var dispatchedInstancesCount = 0L;
+        var batchSize = 1000;
+        var batch = new List<object>();
 
-        try
+        await foreach (var item in items)
         {
-            await foreach (var item in items)
-            {
-                await DispatchChildWorkflowAsync(context, item);
-                dispatchedInstancesCount++;
-            }
+            batch.Add(item);
+            
+            if (batch.Count < batchSize) 
+                continue;
+            
+            await ProcessBatch(context, batch);
+            batch.Clear();
         }
-        catch (TaskCanceledException)
+        
+        // Process the last batch if it has any items.
+        if (batch.Count > 0)
         {
-            await context.CompleteActivityWithOutcomesAsync("Canceled");
-            return;
+            await ProcessBatch(context, batch);
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -136,6 +141,31 @@ public class BulkDispatchWorkflows : Activity
             // Otherwise, we can complete immediately.
             await context.CompleteActivityAsync();
         }
+        
+        // Cancelling children
+        
+        
+    }
+    
+    private async Task ProcessBatch(ActivityExecutionContext context, List<object> items)
+    {
+        var tasks = items.Select(async item =>
+        {
+            try
+            {
+                await DispatchChildWorkflowAsync(context, item);
+            }
+            catch (TaskCanceledException)
+            {
+                await context.CompleteActivityWithOutcomesAsync("Canceled");
+            }
+            catch (Exception ex)
+            {
+                context.JournalData.Add("Error", ex.Message);
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
