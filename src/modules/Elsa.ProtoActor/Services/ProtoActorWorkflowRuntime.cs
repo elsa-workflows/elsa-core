@@ -4,7 +4,6 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -18,12 +17,6 @@ using Elsa.Workflows.Runtime.Results;
 using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
 using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
-using ProtoWorkflowStatus = Elsa.ProtoActor.ProtoBuf.WorkflowStatus;
-using ProtoWorkflowSubStatus = Elsa.ProtoActor.ProtoBuf.WorkflowSubStatus;
-using ProtoActivityIncident = Elsa.ProtoActor.ProtoBuf.ActivityIncident;
-using ProtoException = Elsa.ProtoActor.ProtoBuf.ExceptionState;
-using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.ProtoBuf.WorkflowExecutionResponse;
-using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Services;
 
@@ -132,7 +125,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var response = await client.Start(request, options.CancellationTokens.SystemCancellationToken);
 
-         return _workflowExecutionResultMapper.Map(response!);
+        return _workflowExecutionResultMapper.Map(response!);
     }
 
     /// <inheritdoc />
@@ -385,7 +378,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
             var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);
 
-            if (canStartResult.CanStart) 
+            if (canStartResult.CanStart)
                 results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance, workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId, trigger.Payload));
         }
 
