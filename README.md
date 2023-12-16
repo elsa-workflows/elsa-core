@@ -12,6 +12,8 @@
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
 
+### [For Elsa 2 Click Here](https://github.com/elsa-workflows/elsa-core/tree/2.x)
+
 ## Introduction
 Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
 
@@ -29,7 +31,15 @@ To give the Elsa Studio + Elsa Server a quick spin, you can run the following co
 docker pull elsaworkflows/elsa-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -p 13000:8080 elsaworkflows/elsa-v3:latest
 ```
+
 > This Docker image is based on a reference ASP.NET application that hosts both the workflow server and designer and is not intended for production use.
+
+By default, you can access http://localhost:13000 and log in with:
+
+```
+  Username: admin
+  Password: password
+```
 
 ## Table of Contents
 
