@@ -4,14 +4,16 @@ using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
 /// <summary>
-/// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// The actual scheduling of the activity happens in <see cref="ScheduleBackgroundActivitiesMiddleware"/>.
 /// </summary>
-public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
+public class BackgroundActivityCollectorMiddleware : DefaultActivityInvokerMiddleware
 {
     /// <summary>
     /// A key into the activity execution context's transient properties that indicates whether the current activity is being executed in the background.
@@ -23,7 +25,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
-    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next) : base(next)
+    public BackgroundActivityCollectorMiddleware(ActivityMiddlewareDelegate next) : base(next)
     {
     }
 

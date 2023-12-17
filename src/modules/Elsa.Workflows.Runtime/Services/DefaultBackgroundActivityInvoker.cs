@@ -70,7 +70,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
 
         // Mark the activity as being invoked from a background worker.
-        activityExecutionContext.TransientProperties[BackgroundActivityInvokerMiddleware.IsBackgroundExecution] = true;
+        activityExecutionContext.TransientProperties[BackgroundActivityCollectorMiddleware.IsBackgroundExecution] = true;
 
         // Invoke the activity.
         await _activityInvoker.InvokeAsync(activityExecutionContext);
@@ -110,7 +110,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         // Resume the workflow, passing along the activity output.
         // TODO: This approach will fail if the output is non-serializable. We need to find a way to pass the output to the workflow without serializing it.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;
-        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
+        var inputKey = BackgroundActivityCollectorMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
         {

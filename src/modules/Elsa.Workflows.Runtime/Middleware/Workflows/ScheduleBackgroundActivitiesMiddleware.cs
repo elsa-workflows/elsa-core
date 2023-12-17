@@ -1,54 +1,50 @@
 using Elsa.Extensions;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Notifications;
-using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.Handlers;
+namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
-/// A handler that schedules background activities.
+/// Schedule background activities.
 /// </summary>
-[PublicAPI]
-internal class ScheduleBackgroundActivities : INotificationHandler<WorkflowBookmarksIndexed>
+public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IBackgroundActivityScheduler _backgroundActivityScheduler;
-    private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
     private readonly IBookmarkHasher _bookmarkHasher;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private IWorkflowStateExtractor _workflowStateExtractor;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ScheduledBackgroundActivity"/> class.
-    /// </summary>
-    public ScheduleBackgroundActivities(
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
+    
+    /// <inheritdoc />
+    public ScheduleBackgroundActivitiesMiddleware(
+        WorkflowMiddlewareDelegate next,
         IBackgroundActivityScheduler backgroundActivityScheduler,
-        IBookmarkPayloadSerializer bookmarkPayloadSerializer,
         IBookmarkHasher bookmarkHasher,
         IWorkflowRuntime workflowRuntime, 
-        IWorkflowStateExtractor workflowStateExtractor)
+        IWorkflowStateExtractor workflowStateExtractor) : base(next)
     {
         _backgroundActivityScheduler = backgroundActivityScheduler;
-        _bookmarkPayloadSerializer = bookmarkPayloadSerializer;
         _bookmarkHasher = bookmarkHasher;
         _workflowRuntime = workflowRuntime;
         _workflowStateExtractor = workflowStateExtractor;
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
+    public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        var workflowExecutionContext = notification.WorkflowExecutionContext;
+        await Next(context);
+        
+        var workflowExecutionContext = context;
+        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
 
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
-            .GetOrAdd(BackgroundActivityInvokerMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
+            .GetOrAdd(BackgroundActivityCollectorMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
   
         if (scheduledBackgroundActivities.Any())
         {
