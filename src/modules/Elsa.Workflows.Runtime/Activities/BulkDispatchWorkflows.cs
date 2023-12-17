@@ -68,7 +68,7 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// The input to send to the workflows.
     /// </summary>
-    [Input(Description = "The input to send to the workflows.")]
+    [Input(Description = """Additional input to send to the workflows being dispatched. The "Item" key is reserved and should not be used.""")]
     public Input<IDictionary<string, object>?> Input { get; set; } = default!;
 
     /// <summary>
@@ -103,18 +103,20 @@ public class BulkDispatchWorkflows : Activity
         await foreach (var item in items)
         {
             batch.Add(item);
-            
-            if (batch.Count < batchSize) 
+
+            if (batch.Count < batchSize)
                 continue;
-            
+
             await ProcessBatch(context, batch);
+            dispatchedInstancesCount += batch.Count;
             batch.Clear();
         }
-        
+
         // Process the last batch if it has any items.
         if (batch.Count > 0)
         {
             await ProcessBatch(context, batch);
+            dispatchedInstancesCount += batch.Count;
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -140,12 +142,10 @@ public class BulkDispatchWorkflows : Activity
             // Otherwise, we can complete immediately.
             await context.CompleteActivityAsync();
         }
-        
+
         // Cancelling children
-        
-        
     }
-    
+
     private async Task ProcessBatch(ActivityExecutionContext context, List<object> items)
     {
         var tasks = items.Select(async item =>
