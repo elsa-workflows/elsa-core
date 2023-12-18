@@ -167,6 +167,9 @@ public static class ObjectConverter
 
             if (underlyingSourceType == typeof(double))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+            
+            if (underlyingSourceType == typeof(long))
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
 
         if (value is string s)
