@@ -282,15 +282,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         await client.ImportState(request, cancellationToken);
     }
-
-    /// <inheritdoc />
-    public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
-    {
-        var instanceId = request.WorkflowExecutionContext.Id;
-        await RemoveBookmarksAsync(instanceId, request.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(instanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
-    }
-
+    
     /// <inheritdoc />
     public async Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {

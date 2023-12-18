@@ -30,10 +30,11 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
 
         var bookmark = new BulkDispatchWorkflowsBookmark(parentInstanceId);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
+        var workflowInstanceId = workflowState.Id;
         var input = new Dictionary<string, object>
         {
             ["WorkflowOutput"] = workflowState.Output,
-            ["WorkflowInstanceId"] = workflowState.Id,
+            ["WorkflowInstanceId"] = workflowInstanceId,
             ["WorkflowStatus"] = workflowState.Status,
             ["WorkflowSubStatus"] = workflowState.SubStatus,
         };
@@ -42,6 +43,7 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
             ActivityTypeName = activityTypeName,
             Input = input,
             BookmarkPayload = bookmark,
+            WorkflowInstanceId = parentInstanceId,
         };
 
         await workflowInbox.SubmitAsync(message, cancellationToken);
