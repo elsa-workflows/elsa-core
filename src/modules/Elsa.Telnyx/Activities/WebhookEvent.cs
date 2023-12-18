@@ -20,18 +20,18 @@ namespace Elsa.Telnyx.Activities;
 public class WebhookEvent : Activity<Payload>
 {
     /// <inheritdoc />
-    public WebhookEvent([CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) : base(source, line)
+    public WebhookEvent([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <inheritdoc />
-    public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result, int version = 1, [CallerFilePath]string? source = default, [CallerLineNumber]int? line = default) 
+    public WebhookEvent(string eventType, string activityTypeName, Variable<Payload> result, int version = 1, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : base(activityTypeName, version, source, line)
     {
         EventType = eventType;
         Result = new(result);
     }
-    
+
     /// <summary>
     /// The Telnyx webhook event type to listen for.
     /// </summary>
@@ -47,8 +47,13 @@ public class WebhookEvent : Activity<Payload>
         {
             var eventType = EventType;
             var payload = new WebhookEventBookmarkPayload(eventType);
-            
-            context.CreateBookmark(new CreateBookmarkArgs(payload, Resume, Type, false));
+
+            context.CreateBookmark(new CreateBookmarkArgs
+            {
+                Payload = payload,
+                Callback = Resume,
+                BookmarkName = Type
+            });
         }
     }
 
