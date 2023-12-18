@@ -504,6 +504,7 @@ public static class ActivityExecutionContextExtensions
 
         // Clear bookmarks.
         context.ClearBookmarks();
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
 
         // Remove completion callbacks.
         context.ClearCompletionCallbacks();
