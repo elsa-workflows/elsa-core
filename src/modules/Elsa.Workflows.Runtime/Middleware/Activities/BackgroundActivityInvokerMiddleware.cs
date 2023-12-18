@@ -19,7 +19,7 @@ public class BackgroundActivityCollectorMiddleware : DefaultActivityInvokerMiddl
     /// A key into the activity execution context's transient properties that indicates whether the current activity is being executed in the background.
     /// </summary>
     public static readonly object IsBackgroundExecution = new();
-    
+
     internal static string GetBackgroundActivityOutputKey(string activityId) => $"__BackgroundActivityOutput:{activityId}";
     internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
@@ -66,7 +66,7 @@ public class BackgroundActivityCollectorMiddleware : DefaultActivityInvokerMiddl
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
         var bookmarkPayload = new BackgroundActivityBookmark();
-        var bookmarkOptions = new CreateBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload };
+        var bookmarkOptions = new CreateBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload, AutoComplete = false };
         var bookmark = context.CreateBookmark(bookmarkOptions);
         scheduledBackgroundActivities.Add(new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmark.Id));
     }

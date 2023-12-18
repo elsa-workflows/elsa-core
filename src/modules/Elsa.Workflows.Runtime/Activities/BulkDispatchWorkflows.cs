@@ -133,7 +133,7 @@ public class BulkDispatchWorkflows : Activity
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
                 IncludeActivityInstanceId = false,
-                AutoBurn = false
+                AutoBurn = false,
             };
             context.CreateBookmark(bookmarkOptions);
         }

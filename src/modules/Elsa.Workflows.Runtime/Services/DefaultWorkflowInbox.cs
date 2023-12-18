@@ -104,17 +104,20 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         var activityInstanceId = message.ActivityInstanceId;
         var bookmarkPayload = message.BookmarkPayload;
         var input = message.Input;
-        
+
         if (workflowInstanceId != null)
         {
-            await _workflowDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(activityTypeName, bookmarkPayload)
-            {
-                CorrelationId = correlationId,
-                WorkflowInstanceId = workflowInstanceId,
-                ActivityInstanceId = activityInstanceId,
-                Input = input
-            }, cancellationToken);
+            await ResumeWorkflowsAsync(message, cancellationToken);
+            return;
         }
+
+        await _workflowDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(activityTypeName, bookmarkPayload)
+        {
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId,
+            Input = input
+        }, cancellationToken);
     }
 
     private async Task ResumeWorkflowsAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)

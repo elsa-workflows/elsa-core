@@ -27,6 +27,7 @@ public record Bookmark(
     DateTimeOffset CreatedAt,
     bool AutoBurn = true,
     string? CallbackMethodName = default,
+    bool AutoComplete = true,
     IDictionary<string, string>? Metadata = default)
 {
     /// <inheritdoc />
