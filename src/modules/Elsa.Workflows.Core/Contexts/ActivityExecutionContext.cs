@@ -190,7 +190,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
     public ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new  ScheduleWorkOptions
+        var options = new ScheduleWorkOptions
         {
             CompletionCallback = completionCallback,
             Tag = tag,
@@ -293,7 +293,12 @@ public class ActivityExecutionContext : IExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
+            CreateBookmark(new CreateBookmarkArgs
+            {
+                Payload = payload,
+                Callback = callback,
+                IncludeActivityInstanceId = includeActivityInstanceId
+            });
     }
 
     /// <summary>
@@ -316,7 +321,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(default, callback, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Callback = callback,
+            Metadata = metadata
+        });
     }
 
     /// <summary>
@@ -329,7 +338,13 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId, Metadata: customProperties));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Payload = payload,
+            Callback = callback,
+            IncludeActivityInstanceId = includeActivityInstanceId,
+            Metadata = customProperties
+        });
     }
 
     /// <summary>
@@ -340,7 +355,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(payload, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Payload = payload,
+            Metadata = metadata
+        });
     }
 
     /// <summary>
@@ -368,6 +387,7 @@ public class ActivityExecutionContext : IExecutionContext
             _systemClock.UtcNow,
             options?.AutoBurn ?? true,
             callback?.Method.Name,
+            options?.AutoComplete ?? true,
             options?.Metadata);
 
         AddBookmark(bookmark);
