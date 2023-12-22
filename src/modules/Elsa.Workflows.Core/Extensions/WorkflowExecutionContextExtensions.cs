@@ -76,8 +76,13 @@ public static class WorkflowExecutionContextExtensions
         };
         workflowExecutionContext.Scheduler.Schedule(workItem);
 
-        // If no resumption point was specified, use "Complete" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
-        workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName) : WorkflowExecutionContext.Complete;
+        // If no resumption point was specified, use a "noop" to prevent the regular "ExecuteAsync" method to be invoked and instead complete the activity.
+        // Unless the bookmark is configured to auto-complete, in which case we'll just complete the activity.
+        workflowExecutionContext.ExecuteDelegate = bookmark.CallbackMethodName != null
+            ? bookmarkedActivity.GetResumeActivityDelegate(bookmark.CallbackMethodName)
+            : bookmark.AutoComplete
+                ? WorkflowExecutionContext.Complete
+                : WorkflowExecutionContext.Noop;
 
         // Store the bookmark to resume in the context.
         workflowExecutionContext.ResumedBookmarkContext = new ResumedBookmarkContext(bookmark);
@@ -98,7 +103,8 @@ public static class WorkflowExecutionContextExtensions
 
         if (options?.PreventDuplicateScheduling == true)
         {
-            var existingWorkItem = scheduler.Find(x => x.Activity.Id == activityNode.NodeId);
+            // Check if the activity is already scheduled for the specified owner.
+            var existingWorkItem = scheduler.Find(x => x.Activity.NodeId == activityNode.NodeId && x.Owner == owner);
 
             if (existingWorkItem != null)
                 return existingWorkItem;

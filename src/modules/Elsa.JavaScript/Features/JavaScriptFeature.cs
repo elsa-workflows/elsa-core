@@ -5,15 +5,18 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Expressions;
 using Elsa.JavaScript.Extensions;
+using Elsa.JavaScript.HostedServices;
 using Elsa.JavaScript.Options;
 using Elsa.JavaScript.Providers;
 using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
+using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -34,7 +37,19 @@ public class JavaScriptFeature : FeatureBase
     /// Configures the Jint options.
     /// </summary>
     public Action<JintOptions> JintOptions { get; set; } = _ => { };
-    
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        ConfigureHostedService<RegisterVariableTypesWithJavaScriptHostedService>();
+    }
+
+    /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<JavaScriptFeature>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
@@ -42,10 +57,9 @@ public class JavaScriptFeature : FeatureBase
         
         // JavaScript services.
         Services
-            .AddSingleton<IExpressionSyntaxProvider, JavaScriptExpressionSyntaxProvider>()
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
             .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
-            .AddExpressionHandler<JavaScriptExpressionHandler, JavaScriptExpression>()
+            .AddExpressionDescriptorProvider<JavaScriptExpressionDescriptorProvider>()
             ;
 
         // Type definition services.
@@ -62,5 +76,11 @@ public class JavaScriptFeature : FeatureBase
         
         // Handlers.
         Services.AddNotificationHandlersFrom<JavaScriptFeature>();
+        
+        // Activities.
+        Module.UseWorkflowManagement(management => management.AddActivity<RunJavaScript>());
+        
+            Services.AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
+            .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
     }
 }

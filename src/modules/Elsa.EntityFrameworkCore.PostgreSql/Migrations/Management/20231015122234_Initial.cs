@@ -1,4 +1,5 @@
 ﻿using System;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,15 +9,20 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
     /// <inheritdoc />
     public partial class Initial : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public Initial(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Elsa");
+                name: _schema.Schema);
 
             migrationBuilder.CreateTable(
                 name: "WorkflowDefinitions",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
@@ -44,7 +50,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
             migrationBuilder.CreateTable(
                 name: "WorkflowInstances",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
@@ -68,110 +74,110 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_DefinitionId_Version",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 columns: new[] { "DefinitionId", "Version" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_IsLatest",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "IsLatest");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_IsPublished",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "IsPublished");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_Name",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_UsableAsActivity",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "UsableAsActivity");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_Version",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "Version");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_CorrelationId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_CreatedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_DefinitionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "DefinitionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_FinishedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "FinishedAt");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Name",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_DefinitionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 columns: new[] { "Status", "DefinitionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 columns: new[] { "Status", "SubStatus" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 columns: new[] { "Status", "SubStatus", "DefinitionId", "Version" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_SubStatus",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "SubStatus");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_SubStatus_DefinitionId",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 columns: new[] { "SubStatus", "DefinitionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_UpdatedAt",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "UpdatedAt");
         }
@@ -181,11 +187,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
         {
             migrationBuilder.DropTable(
                 name: "WorkflowDefinitions",
-                schema: "Elsa");
+                schema: _schema.Schema);
 
             migrationBuilder.DropTable(
                 name: "WorkflowInstances",
-                schema: "Elsa");
+                schema: _schema.Schema);
         }
     }
 }

@@ -14,8 +14,8 @@ public class ListActivityExecutionsRequest
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <summary>
-    /// The ID of the activity to get the execution record for.
+    /// The node ID of the activity to get the execution record for.
     /// </summary>
     [Query]
-    public string ActivityId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = default!;
 }

@@ -24,16 +24,10 @@ public class ObjectLiteral : MemoryBlockReference
     /// The literal JSON string value.
     /// </summary>
     public string? Value { get; }
-    
-    /// <inheritdoc />
-    public override MemoryBlock Declare() => new();
 
     /// <summary>
     /// Serializes the value into a JSON string in the form of a <see cref="ObjectLiteral{T}"/>
     /// </summary>
-    /// <param name="value"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
     public static ObjectLiteral From<T>(T value) => new ObjectLiteral<T>(value);
 }
 

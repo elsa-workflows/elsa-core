@@ -1,0 +1,194 @@
+{
+  "id": "34991d27edc12ae5",
+  "definitionId": "89d6fe82a11fbed6",
+  "name": "Mainworkflow test",
+  "createdAt": "2023-11-10T21:01:49.123204+00:00",
+  "version": 2,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "f9071ee83c88d765",
+    "nodeId": "Workflow1:f9071ee83c88d765",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:47",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Success"
+          },
+          "memoryReference": {
+            "id": "77069142b8b9da15:input-0"
+          }
+        },
+        "id": "77069142b8b9da15",
+        "nodeId": "Workflow1:f9071ee83c88d765:77069142b8b9da15",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 231.8203125,
+              "y": 200
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Failure"
+          },
+          "memoryReference": {
+            "id": "34e3dcda423f3c1c:input-0"
+          }
+        },
+        "id": "34e3dcda423f3c1c",
+        "nodeId": "Workflow1:f9071ee83c88d765:34e3dcda423f3c1c",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 231.8203125,
+              "y": 393
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Start"
+          },
+          "memoryReference": {
+            "id": "8b7bf9cd03c066fa:input-0"
+          }
+        },
+        "id": "8b7bf9cd03c066fa",
+        "nodeId": "Workflow1:f9071ee83c88d765:8b7bf9cd03c066fa",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -340,
+              "y": 309
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "b8b45fd4dbffad5d",
+        "workflowDefinitionVersionId": "24dd11bc73a881d5",
+        "latestAvailablePublishedVersion": 7,
+        "latestAvailablePublishedVersionId": "24dd11bc73a881d5",
+        "id": "abcd6d3d391bfe10",
+        "nodeId": "Workflow1:f9071ee83c88d765:abcd6d3d391bfe10",
+        "name": "SubworkflowTest1",
+        "type": "SubworkflowTest",
+        "version": 7,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -54,
+              "y": 309
+            },
+            "size": {
+              "width": 157.09375,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "8b7bf9cd03c066fa",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "abcd6d3d391bfe10",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "abcd6d3d391bfe10",
+          "port": "Success"
+        },
+        "target": {
+          "activity": "77069142b8b9da15",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "abcd6d3d391bfe10",
+          "port": "Failure"
+        },
+        "target": {
+          "activity": "34e3dcda423f3c1c",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

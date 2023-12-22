@@ -79,8 +79,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
     private async Task<Variable?> FindVariable(AlterationContext context, ModifyVariable alteration, Workflow workflow, CancellationToken cancellationToken)
     {
         var activityVisitor = context.ServiceProvider.GetRequiredService<IActivityVisitor>();
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var graph = await activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
+        var graph = await activityVisitor.VisitAsync(workflow, cancellationToken);
         var flattenedList = graph.Flatten().ToList();
 
         return flattenedList

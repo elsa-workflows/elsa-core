@@ -6,16 +6,30 @@ namespace Elsa.Workflows.Runtime.Commands;
 /// <summary>
 /// Represents a command that dispatches a workflow instance.
 /// </summary>
-/// <param name="ActivityTypeName">The name of the activity type to dispatch.</param>
-/// <param name="BookmarkPayload">The payload to match the bookmark.</param>
-/// <param name="CorrelationId">The correlation ID of the workflow instance to dispatch.</param>
-/// <param name="WorkflowInstanceId">The ID of the workflow instance to dispatch.</param>
-/// <param name="ActivityInstanceId">The ID of the activity instance to dispatch.</param>
-/// <param name="Input">The input to pass to the activity.</param>
-public record DispatchResumeWorkflowsCommand(
-    string ActivityTypeName, 
-    object BookmarkPayload, 
-    string? CorrelationId = default, 
-    string? WorkflowInstanceId = default,
-    string? ActivityInstanceId = default,
-    IDictionary<string, object>? Input = default) : ICommand<Unit>;
+/// <param name="activityTypeName">The name of the activity type to dispatch.</param>
+/// <param name="bookmarkPayload">The payload to match the bookmark.</param>
+public class DispatchResumeWorkflowsCommand(string activityTypeName, object bookmarkPayload) : ICommand<Unit>
+{
+    /// <summary>The name of the activity type to dispatch.</summary>
+    public string ActivityTypeName { get; init; } = activityTypeName;
+
+    /// <summary>The payload to match the bookmark.</summary>
+    public object BookmarkPayload { get; init; } = bookmarkPayload;
+
+    /// <summary>The correlation ID of the workflow instance to dispatch.</summary>
+    public string? CorrelationId { get; set; }
+
+    /// <summary>The ID of the workflow instance to dispatch.</summary>
+    public string? WorkflowInstanceId { get; set; }
+
+    /// <summary>The ID of the activity instance to dispatch.</summary>
+    public string? ActivityInstanceId { get; set; }
+
+    /// <summary>The input to pass to the activity.</summary>
+    public IDictionary<string, object>? Input { get; set; }
+    
+    /// <summary>
+    /// Any properties to attach to the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Properties { get; set; }
+}

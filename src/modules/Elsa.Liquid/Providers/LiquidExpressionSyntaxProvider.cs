@@ -1,41 +1,30 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using Elsa.Liquid.Expressions;
-using Elsa.Workflows.Core.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Providers;
 
-public class LiquidExpressionSyntaxProvider : IExpressionSyntaxProvider
+/// <summary>
+/// Provides Liquid expression descriptors.
+/// </summary>
+public class LiquidExpressionDescriptorProvider : IExpressionDescriptorProvider
 {
-    public const string SyntaxName = "Liquid";
-    private readonly IIdentityGenerator _identityGenerator;
-    public LiquidExpressionSyntaxProvider(IIdentityGenerator identityGenerator) => _identityGenerator = identityGenerator;
+    /// <summary>
+    /// Gets the name of the expression type.
+    /// </summary>
+    public const string TypeName = "Liquid";
 
-    public ValueTask<IEnumerable<ExpressionSyntaxDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public IEnumerable<ExpressionDescriptor> GetDescriptors()
     {
-        var liquidDescriptor = CreateLiquidDescriptor();
-
-        return ValueTask.FromResult<IEnumerable<ExpressionSyntaxDescriptor>>(new[] { liquidDescriptor });
-    }
-
-    private ExpressionSyntaxDescriptor CreateLiquidDescriptor() => new()
-    {
-        Syntax = SyntaxName,
-        Type = typeof(LiquidExpression),
-        CreateExpression = CreateLiquidExpression,
-        CreateBlockReference = context => new LiquidExpressionBlockReference(context.GetExpression<LiquidExpression>()),
-        CreateSerializableObject = context => new
+        yield return new()
         {
-            Type = SyntaxName,
-            context.GetExpression<LiquidExpression>().Value
-        }
-    };
-
-    private IExpression CreateLiquidExpression(ExpressionConstructorContext context)
-    {
-        var code = context.Element.TryGetProperty("value", out var p) ? p.ToString() : "";
-        return new LiquidExpression(code);
+            Type = TypeName,
+            DisplayName = "Liquid",
+            Properties = new { MonacoLanguage = "liquid" }.ToDictionary(),
+            HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<LiquidExpressionHandler> 
+        };
     }
-
-    private string GenerateId() => _identityGenerator.GenerateId();
 }

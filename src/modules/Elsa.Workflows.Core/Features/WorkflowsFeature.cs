@@ -1,6 +1,5 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
-using Elsa.Expressions;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -9,7 +8,6 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Core.ActivationValidators;
 using Elsa.Workflows.Core.Builders;
 using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Expressions;
 using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 using Elsa.Workflows.Core.Pipelines.ActivityExecution;
@@ -49,7 +47,7 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
     /// </summary>
-    public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new ShortGuidIdentityGenerator();
+    public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
 
     /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
@@ -114,7 +112,6 @@ public class WorkflowsFeature : FeatureBase
     public override void Apply()
     {
         AddElsaCore(Services);
-        AddExpressions(Services);
     }
 
     private void AddElsaCore(IServiceCollection services)
@@ -181,16 +178,5 @@ public class WorkflowsFeature : FeatureBase
 
             // Logging
             .AddLogging();
-    }
-
-    private void AddExpressions(IServiceCollection services)
-    {
-        services
-            .AddExpressionHandler<LiteralExpressionHandler, LiteralExpression>()
-            .AddExpressionHandler<DelegateExpressionHandler, DelegateExpression>()
-            .AddExpressionHandler<VariableExpressionHandler, VariableExpression>()
-            .AddExpressionHandler<ObjectExpressionHandler, ObjectExpression>()
-            .AddExpressionHandler<OutputExpressionHandler, OutputExpression>()
-            .AddExpressionHandler<ElsaExpressionHandler, ElsaExpression>();
     }
 }

@@ -6,6 +6,7 @@ using Elsa.Samples.AspNet.WorkflowContexts.Contracts;
 using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Samples.AspNet.WorkflowContexts.Services;
 using Elsa.Samples.AspNet.WorkflowContexts.Workflows;
+using Elsa.Workflows.Core.Middleware.Activities;
 using Elsa.Workflows.Core.Middleware.Workflows;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,13 +38,18 @@ services
                 .UsePersistentVariables()
                 .UseBookmarkPersistence()
                 .UseWorkflowExecutionLogPersistence()
+                .UseWorkflowExecutionLogPersistence()
+                .UseActivityExecutionLogPersistence()
                 .UseWorkflowContexts()
+                .UseExceptionHandling()
                 .UseDefaultActivityScheduler()
             );
             
             // Configure activity execution pipeline to handle workflow contexts.
             workflows.WithActivityExecutionPipeline(pipeline => pipeline
                 .Reset()
+                .UseExceptionHandling()
+                .UseExecutionLogging()
                 .UseWorkflowContexts()
                 .UseBackgroundActivityInvoker()
             );

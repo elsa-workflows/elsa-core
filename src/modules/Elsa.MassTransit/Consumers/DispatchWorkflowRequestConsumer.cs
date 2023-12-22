@@ -29,7 +29,16 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        var options = new StartWorkflowRuntimeOptions(message.CorrelationId, message.Input, message.VersionOptions, message.TriggerActivityId, message.InstanceId, cancellationToken);
+        var options = new StartWorkflowRuntimeOptions
+        {
+            CorrelationId = message.CorrelationId,
+            Input = message.Input,
+            Properties = message.Properties,
+            VersionOptions = message.VersionOptions,
+            TriggerActivityId = message.TriggerActivityId,
+            InstanceId = message.InstanceId,
+            CancellationTokens = cancellationToken
+        };
 
         await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
     }
@@ -40,15 +49,18 @@ public class DispatchWorkflowRequestConsumer :
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
 
-        var options = new ResumeWorkflowRuntimeOptions(
-            message.CorrelationId,
-            message.BookmarkId,
-            message.ActivityId,
-            message.ActivityNodeId,
-            message.ActivityInstanceId,
-            message.ActivityHash,
-            message.Input,
-            cancellationToken);
+        var options = new ResumeWorkflowRuntimeOptions
+        {
+            CorrelationId = message.CorrelationId,
+            BookmarkId = message.BookmarkId,
+            ActivityId = message.ActivityId,
+            ActivityNodeId = message.ActivityNodeId,
+            ActivityInstanceId = message.ActivityInstanceId,
+            ActivityHash = message.ActivityHash,
+            Input = message.Input,
+            Properties = message.Properties,
+            CancellationTokens = cancellationToken
+        };
 
         await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
     }
@@ -58,7 +70,15 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        var options = new TriggerWorkflowsOptions(message.CorrelationId, message.WorkflowInstanceId, message.ActivityInstanceId, message.Input, cancellationToken);
+        var options = new TriggerWorkflowsOptions
+        {
+            CorrelationId = message.CorrelationId,
+            WorkflowInstanceId = message.WorkflowInstanceId,
+            ActivityInstanceId = message.ActivityInstanceId,
+            Input = message.Input,
+            Properties = message.Properties,
+            CancellationTokens = cancellationToken
+        };
         await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
 
@@ -68,11 +88,14 @@ public class DispatchWorkflowRequestConsumer :
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
 
-        var options = new TriggerWorkflowsOptions(
-            correlationId: message.CorrelationId,
-            workflowInstanceId: message.WorkflowInstanceId,
-            input: message.Input,
-            cancellationTokens: cancellationToken);
+        var options = new TriggerWorkflowsOptions
+        {
+            CorrelationId = message.CorrelationId,
+            WorkflowInstanceId = message.WorkflowInstanceId,
+            Input = message.Input,
+            Properties = message.Properties,
+            CancellationTokens = cancellationToken
+        };
 
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }

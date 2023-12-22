@@ -33,6 +33,7 @@ public class WorkflowExecutionContext : IExecutionContext
     private static readonly object ActivityOutputRegistryKey = new();
     private static readonly object LastActivityResultKey = new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
+    internal static ValueTask Noop(ActivityExecutionContext context) => default;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
@@ -45,6 +46,7 @@ public class WorkflowExecutionContext : IExecutionContext
         string id,
         string? correlationId,
         IDictionary<string, object>? input,
+        IDictionary<string, object>? properties,
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
@@ -55,12 +57,14 @@ public class WorkflowExecutionContext : IExecutionContext
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
-        SubStatus = WorkflowSubStatus.Executing;
+        SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
+        IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
         Input = input != null ? new Dictionary<string, object>(input, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        Properties = properties != null ? new Dictionary<string, object>(properties, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
@@ -77,6 +81,7 @@ public class WorkflowExecutionContext : IExecutionContext
         string id,
         string? correlationId,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -91,6 +96,7 @@ public class WorkflowExecutionContext : IExecutionContext
             systemClock.UtcNow,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             cancellationTokens
@@ -106,6 +112,7 @@ public class WorkflowExecutionContext : IExecutionContext
         WorkflowState workflowState,
         string? correlationId = default,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -118,6 +125,7 @@ public class WorkflowExecutionContext : IExecutionContext
             workflowState.CreatedAt,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             cancellationTokens);
@@ -139,6 +147,7 @@ public class WorkflowExecutionContext : IExecutionContext
         DateTimeOffset createdAt,
         string? correlationId = default,
         IDictionary<string, object>? input = default,
+        IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         CancellationTokens cancellationTokens = default)
@@ -149,13 +158,16 @@ public class WorkflowExecutionContext : IExecutionContext
             id,
             correlationId,
             input,
+            properties,
             executeDelegate,
             triggerActivityId,
             incidents,
             createdAt,
-            cancellationTokens);
+            cancellationTokens)
+        {
+            MemoryRegister = workflow.CreateRegister()
+        };
 
-        workflowExecutionContext.MemoryRegister = workflow.CreateRegister();
         workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
 
         await workflowExecutionContext.SetWorkflowAsync(workflow);
@@ -168,10 +180,9 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <param name="workflow">The workflow to assign.</param>
     public async Task SetWorkflowAsync(Workflow workflow)
     {
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
         var activityVisitor = GetRequiredService<IActivityVisitor>();
         var root = workflow;
-        var graph = await activityVisitor.VisitAsync(root, useActivityIdAsNodeId, CancellationTokens.ApplicationCancellationToken);
+        var graph = await activityVisitor.VisitAsync(root, CancellationTokens.ApplicationCancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register activity types.
@@ -191,10 +202,7 @@ public class WorkflowExecutionContext : IExecutionContext
         Nodes = nodes;
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
-
-        // Only new tooling uses unique activity IDs. For older tooling, we will rely on a linear search.
-        if (workflow.CreatedWithModernTooling())
-            NodeActivityIdLookup = nodes.ToDictionary(x => x.Activity.Id);
+        NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
     }
 
     /// <summary>
@@ -278,12 +286,17 @@ public class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<string, ActivityNode>? NodeActivityIdLookup { get; private set; } = default!;
+    public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; private set; } = default!;
 
     /// <summary>
     /// The <see cref="IActivityScheduler"/> for the execution context.
     /// </summary>
     public IActivityScheduler Scheduler { get; }
+
+    /// <summary>
+    /// Gets the <see cref="IIdentityGenerator"/>.
+    /// </summary>
+    public IIdentityGenerator IdentityGenerator { get; }
 
     /// <summary>
     /// A collection of collected bookmarks during workflow execution. 
@@ -301,7 +314,7 @@ public class WorkflowExecutionContext : IExecutionContext
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();
 
     /// <inheritdoc />
-    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; set; }
 
     /// <summary>
     /// A dictionary that can be used by application code and middleware to store information and even services. Values do not need to be serializable.
@@ -442,20 +455,20 @@ public class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="ActivityNode"/> with the specified hash of the activity node ID.</returns>
-    public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup[hash];
+    public ActivityNode? FindNodeByHash(string hash) => NodeHashLookup.TryGetValue(hash, out var node) ? node : default;
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> containing the specified activity from the workflow graph.
     /// </summary>
     public ActivityNode? FindNodeByActivity(IActivity activity)
     {
-        return NodeActivityIdLookup?[activity.Id] ?? Nodes.FirstOrDefault(x => x.Activity == activity);
+        return NodeActivityLookup.TryGetValue(activity, out var node) ? node : default;
     }
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> associated with the specified activity ID.
     /// </summary>
-    public ActivityNode? FindNodeByActivityId(string activityId) => NodeActivityIdLookup?[activityId] ?? Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
+    public ActivityNode? FindNodeByActivityId(string activityId) => Nodes.FirstOrDefault(x => x.Activity.Id == activityId);
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
@@ -523,7 +536,8 @@ public class WorkflowExecutionContext : IExecutionContext
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
         var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationTokens.ApplicationCancellationToken);
-        var activityExecutionContext = new ActivityExecutionContext(this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
+        var id = IdentityGenerator.GenerateId();
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
@@ -591,6 +605,7 @@ public class WorkflowExecutionContext : IExecutionContext
     private WorkflowStatus GetMainStatus(WorkflowSubStatus subStatus) =>
         subStatus switch
         {
+            WorkflowSubStatus.Pending => WorkflowStatus.Running,
             WorkflowSubStatus.Cancelled => WorkflowStatus.Finished,
             WorkflowSubStatus.Executing => WorkflowStatus.Running,
             WorkflowSubStatus.Faulted => WorkflowStatus.Finished,

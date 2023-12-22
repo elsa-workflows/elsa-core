@@ -24,7 +24,7 @@ public class HangfireBackgroundActivitySchedulerFeature : FeatureBase
     {
         Module.Configure<WorkflowRuntimeFeature>(workflowRuntimeFeature =>
         {
-            workflowRuntimeFeature.BackgroundActivityInvoker = sp => sp.GetRequiredService<HangfireBackgroundActivityScheduler>();
+            workflowRuntimeFeature.BackgroundActivityScheduler = sp => sp.GetRequiredService<HangfireBackgroundActivityScheduler>();
         });
     }
 

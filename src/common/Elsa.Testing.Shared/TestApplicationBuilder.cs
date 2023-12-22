@@ -37,6 +37,7 @@ public class TestApplicationBuilder
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
             .UseScheduling()
+            .UseCSharp()
             .UseJavaScript()
             .UseLiquid()
             .UseDsl()
@@ -119,10 +120,5 @@ public class TestApplicationBuilder
         var workflowsDirectory = directory.Prepend(assemblyDirectory).ToArray();
         _configureElsa += elsa => elsa.UseFluentStorageProvider(storage => storage.BlobStorage = sp => StorageFactory.Blobs.DirectoryFiles(Path.Combine(workflowsDirectory)));
         return this;
-    }
-
-    private static string GetWorkflowsDirectory()
-    {
-        return Path.Combine("Scenarios", "DependencyWorkflows", "Workflows");
     }
 }

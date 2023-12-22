@@ -1,132 +1,144 @@
-# Elsa Workflows
+# ELSA 3.0
 
-<a href="https://v3.elsaworkflows.io/">
-  <p align="center">
-    <img src="./design/artwork/android-elsa-portrait.png" alt="Elsa">
-  </p>
-</a>
+![Meet Elsa](./design/artwork/android-elsa-portrait.png)
 
-[![Nuget](https://img.shields.io/nuget/v/elsa)](https://www.nuget.org/packages/Elsa/)
-[![Build status](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml/badge.svg?branch=v3)](https://github.com/elsa-workflows/elsa-core/actions/workflows/ci.yml)
-[![Discord](https://img.shields.io/discord/814605913783795763?label=chat&logo=discord)](https://discord.gg/hhChk5H472)
+[![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json)
+[![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
+[![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2F%2540elsa-workflows%252Felsa-studio-wasm%2Flatest&label=npm%20preview)](https://f.feedz.io/elsa-workflows/elsa-3/packages/%40elsa-workflows%2Felsa-studio-wasm/latest/download)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/elsaworkflows/elsa-v3?label=docker&logo=docker)](https://hub.docker.com/repository/docker/elsaworkflows/elsa-v3)
+[![Discord](https://img.shields.io/discord/814605913783795763?label=discord&logo=discord)](https://discord.gg/hhChk5H472)
 [![Stack Overflow questions](https://img.shields.io/badge/stackoverflow-elsa_workflows-orange.svg)]( http://stackoverflow.com/questions/tagged/elsa-workflows )
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/elsaworkflows?style=social)](https://www.reddit.com/r/elsaworkflows/)
 
-Elsa is a workflows library that enables workflow execution in any .NET application. Workflows can be defined in a variety of ways:
+### [For Elsa 2 Click Here](https://github.com/elsa-workflows/elsa-core/tree/2.x)
 
-- Using C# code
-- Using a designer
-- Using JSON
-- Using a custom DSL
+## Introduction
+Elsa is a powerful workflow library that enables workflow execution within any .NET application. Elsa allows you to define workflows in various ways, including:
+
+- Writing C# code
+- Using a visual designer
+- Specifying workflows in JSON
+
+![Elsa ships with a powerful visual designer](./design/screenshots/http-hello-world-workflow-designer.png)
+
+### Try with Docker
+
+To give the Elsa Studio + Elsa Server a quick spin, you can run the following command to start the Elsa Docker container:
+
+```shell
+docker pull elsaworkflows/elsa-v3:latest
+docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -p 13000:8080 elsaworkflows/elsa-v3:latest
+```
+
+> This Docker image is based on a reference ASP.NET application that hosts both the workflow server and designer and is not intended for production use.
+
+By default, you can access http://localhost:13000 and log in with:
+
+```
+  Username: admin
+  Password: password
+```
+
+## Table of Contents
+
+- [Documentation](#documentation)
+- [Known Issues and Limitations](#known-issues-and-limitations)
+- [Features](#features)
+- [Roadmap](#roadmap)
+- [Use Cases](#use-cases)
 
 ## Documentation
-Please checkout the [documentation website](https://v3.elsaworkflows.io/) to get started.
+
+For comprehensive documentation and to get started with Elsa, please visit the [Elsa Documentation Website](https://v3.elsaworkflows.io/).
+
+## Known Issues and Limitations
+
+Elsa is continually evolving, and while it offers powerful capabilities, there are some known limitations and ongoing work:
+
+- Documentation is still a work in progress.
+- The designer is not yet fully embeddable in other applications; this feature is planned for a future release.
+- C# and Python expressions are not yet fully tested.
+- Bulk Dispatch Workflows is a new activity and not yet fully tested.
+- Input/Output is not yet implemented in the Workflow Instance Viewer.
+- Starting workflows from the designer is currently supported only for workflows that do not require input and do not start with a trigger; this is planned for a future release.
+- The designer currently only supports Flowchart activities. Support for Sequence and StateMachine activities is planned for a future release.
+- UI input validation is not yet implemented.
 
 ## Features
 
-Here are some of the more important features offered by Elsa:
+Elsa offers a wide range of features for building and executing workflows, including:
 
-- Execute workflows in any .NET app.
-- Supports both short-running and long-running workflows.
-- Programming model loosely inspired on WF4 (composable activities).
-- Support for complex activities such as Sequence, Flowchart and custom composite activities (which are like mini-workflows that can be used as activities).
-- Ships with a workflows designer web component (currently supports Flowchart diagrams only).
+- Execution of workflows in any .NET application with support for .NET 6 and beyond.
+- Support for both short-running and long-running workflows.
+- A programming model loosely inspired by Windows Workflow Foundation.
+- A web-based drag & drop designer with support for custom activities.
+- Native support for activity composition, including activities like `Sequence`, `Flowchart`, and `ForEach`.
+- Parallel execution of activities.
+- Built-in activities for common scenarios, such as sending emails, making HTTP calls, scheduling tasks, sending and receiving messages, and more.
+- Workflow versioning and migration via API.
+- Easy integration with external applications via HTTP, message queues, and more.
+- Actor model for increased workflow throughput.
+- Dynamic expressions with support for C#, JavaScript, Python, and Liquid.
+- Persistence agnostic, with support for Entity Framework Core, MongoDB, and Dapper out of the box.
+- [Elsa Studio](https://github.com/elsa-workflows/elsa-studio): a modular Blazor dashboard app for managing and designing workflows.
 
-## Console Examples
+## Roadmap
 
-### Hello World
+The following features are planned for future releases of Elsa:
 
-The following is a simple Hello World workflow created as a console application. The workflow is created using C#.
+- [ ] Multi-tenancy
+- [ ] State Machine activity
+- [ ] Designer support for Sequence activity & StateMachine activity
+- [ ] BPMN 2.0 support
+- [ ] DMN support
+- [ ] Workflow migration to new versions via UI
+- [ ] Capsules ("hot" deployable workflow packages containing activities and configuration)
 
-```csharp
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Services;
-using Microsoft.Extensions.DependencyInjection;
+## Use Cases
 
-// Setup service container.
-var services = new ServiceCollection();
+Elsa can be used in a variety of scenarios, including:
 
-// Add Elsa services.
-services.AddElsa();
+- Long-running workflows such as order fulfillment and product approval.
+- Short-running workflows such as sending emails and generating PDFs.
+- Scheduled workflows such as sending daily reports.
+- Event-driven workflows such as sending welcome emails when a user signs up.
 
-// Build service container.
-var serviceProvider = services.BuildServiceProvider();
+## Programmatic Workflows
 
-// Create a workflow.
-var workflow = new WriteLine("Hello World!");
-
-// Resolve a workflow runner to run the workflow.
-var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-
-// Run the workflow.
-await workflowRunner.RunAsync(workflow);
-```
-
-Outputs:
-
-```shell
-Hello World!
-```
-
-### Sequential workflows
-
-To build workflows that execute more than one step, choose an activity that can do so. For example, the `Sequence` activity lets us add multiple activities to execute in sequence (plumbing code left out for brevity):
+Elsa allows you to define workflows in code using C#. The following example shows how to receive HTTP requests and send an email in response:
 
 ```csharp
-// Create a workflow.
-var workflow = new Sequence
+public class SendEmailWorkflow : WorkflowBase
 {
-    Activities =
+    protected override void Build(IWorkflowBuilder builder)
     {
-        new WriteLine("Hello World!"), 
-        new WriteLine("Goodbye cruel world...")
-    }
-};
-```
-
-Outputs:
-
-```shell
-Hello World!
-Goodbye cruel world...
-```
-
-### Conditions
-
-The following demonstrates a workflow where it asks the user to enter their age, and based on this, offers a beer or a soda:
-
-```csharp
-// Declare a workflow variable for use in the workflow.
-var ageVariable = new Variable<string>();
-
-// Declare a workflow.
-var workflow = new Sequence
-{
-    // Register the variable.
-    Variables = { ageVariable }, 
-    
-    // Setup the sequence of activities to run.
-    Activities =
-    {
-        new WriteLine("Please tell me your age:"), 
-        new ReadLine(ageVariable), // Stores user input into the provided variable.,
-        new If
+        builder.Root = new Sequence
         {
-            // If aged 18 or up, beer is provided, soda otherwise.
-            Condition = new Input<bool>(context => ageVariable.Get<int>(context) < 18),
-            Then = new WriteLine("Enjoy your soda!"),
-            Else = new WriteLine("Enjoy your beer!")
-        },
-        new WriteLine("Come again!")
+            Activities =
+            {
+                new HttpEndpoint
+                {
+                    Path = new("/send-email"),
+                    SupportedMethods = new(new[] { HttpMethods.Post }),
+                    CanStartWorkflow = true
+                },
+                new SendEmail
+                {
+                    From = new("alic@acme.com"),
+                    To = new(new[]{ "bob@acme.com" }),
+                    Subject = new("Your workflow has been triggered!"),
+                    Body = new("Hello!")
+                }
+            }
+        };
     }
-};
+}
 ```
 
-Notice that:
+## Designed Workflows
 
-- To capture activity output, a workflow variable (ageVariable) is used.
-- Depending on the result of the condition of the `If` activity, either the `Then` or the `Else` activity is executed.
-- After the If activity completes, the final WriteLine activity is executed.
+Elsa allows you to define workflows using a visual designer. The following example shows how to receive HTTP requests and send an email in response:
 
- ## ASP.NET Examples
+![Elsa ships with a powerful visual designer](./design/screenshots/http-send-email-workflow-designer.png)

@@ -29,6 +29,12 @@ public interface IAlterationJobStore
     Task<IEnumerable<AlterationJob>> FindManyAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Finds the IDs of all alteration jobs matching the specified filter.
+    /// </summary>
+    /// <returns></returns>
+    Task<IEnumerable<string>> FindManyIdsAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Returns the number of alteration jobs matching the specified filter.
     /// </summary>
     Task<long> CountAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default);

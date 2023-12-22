@@ -34,6 +34,7 @@ internal class BookmarkMapper
                 ActivityInstanceId = bookmark.ActivityInstanceId,
                 AutoBurn = bookmark.AutoBurn,
                 CallbackMethodName = bookmark.CallbackMethodName.EmptyIfNull(),
+                AutoComplete = bookmark.AutoComplete,
                 CreatedAt = bookmark.CreatedAt.ToString("O"),
                 Metadata = { bookmark.Metadata ?? new Dictionary<string, string>() }
             });
@@ -51,5 +52,6 @@ internal class BookmarkMapper
                 DateTimeOffset.Parse(bookmark.CreatedAt),
                 bookmark.AutoBurn,
                 bookmark.CallbackMethodName.NullIfEmpty(),
+                bookmark.AutoComplete,
                 bookmark.Metadata.ToDictionary(x => x.Key, x => x.Value)));
 }

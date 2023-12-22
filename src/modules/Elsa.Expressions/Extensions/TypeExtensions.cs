@@ -1,5 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using Elsa.Expressions.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -18,7 +20,7 @@ public static class TypeExtensions
     public static string GetSimpleAssemblyQualifiedName(this Type type)
     {
         if (type is null) throw new ArgumentNullException(nameof(type));
-        return SimpleAssemblyQualifiedTypeNameCache.GetOrAdd(type, BuildSimplifiedName);
+        return SimpleAssemblyQualifiedTypeNameCache.GetOrAdd(type, GetSimplifiedName);
     }
 
     /// <summary>
@@ -77,8 +79,33 @@ public static class TypeExtensions
         
         return null;
     }
+    
+    /// <summary>
+    /// Gets a friendly type name for the specified type.
+    /// </summary>
+    public static string GetFriendlyTypeName(this Type type, Brackets brackets)
+    {
+        if (!type.IsGenericType)
+            return type.FullName!;
 
-    private static string BuildSimplifiedName(Type type)
+        var sb = new StringBuilder();
+        sb.Append(type.Namespace);
+        sb.Append('.');
+        sb.Append(type.Name[..type.Name.IndexOf('`')]);
+        sb.Append(brackets.Open);
+        var genericArgs = type.GetGenericArguments();
+        for (var i = 0; i < genericArgs.Length; i++)
+        {
+            if (i > 0)
+                sb.Append(", ");
+            sb.Append(GetFriendlyTypeName(genericArgs[i], brackets));
+        }
+
+        sb.Append(brackets.Close);
+        return sb.ToString();
+    }
+
+    private static string GetSimplifiedName(Type type)
     {
         var assemblyName = type.Assembly.GetName().Name;
 
@@ -90,7 +117,7 @@ public static class TypeExtensions
             var arity = genericTypeName[backtickIndex..];
 
             var genericArguments = type.GetGenericArguments();
-            var simplifiedGenericArguments = genericArguments.Select(BuildSimplifiedName);
+            var simplifiedGenericArguments = genericArguments.Select(GetSimplifiedName);
 
             return $"{typeNameWithoutArity}{arity}[[{string.Join("],[", simplifiedGenericArguments)}]], {assemblyName}";
         }

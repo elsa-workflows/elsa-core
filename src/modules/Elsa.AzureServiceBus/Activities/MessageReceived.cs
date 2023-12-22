@@ -88,16 +88,15 @@ public class MessageReceived : Trigger
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         // If we did not receive external input, it means we are just now encountering this activity.
-        if (!context.TryGetWorkflowInput<ReceivedServiceBusMessageModel>(InputKey, out var receivedMessage))
+        if (context.IsTriggerOfWorkflow())
+        {
+            await Resume(context);
+        }
+        else
         {
             // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), Resume);
-            return;
+            context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), Resume,false);
         }
-
-        // Provide the received message as output.
-        await SetResultAsync(receivedMessage, context);
-        await context.CompleteActivityAsync();
     }
 
     private async ValueTask Resume(ActivityExecutionContext context)

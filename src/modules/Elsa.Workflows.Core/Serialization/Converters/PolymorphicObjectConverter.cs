@@ -58,7 +58,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (isNewtonsoftObject)
         {
-            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var parsedModel = JsonElement.ParseValue(ref reader);
             var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JObject.Parse(newtonsoftJson) : new JObject();
         }
@@ -68,7 +68,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (isNewtonsoftArray)
         {
-            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var parsedModel = JsonElement.ParseValue(ref reader);
             var newtonsoftJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(newtonsoftJson) ? JArray.Parse(newtonsoftJson) : new JArray();
         }
@@ -78,7 +78,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (isJsonObject)
         {
-            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonObject.Parse(systemTextJson) : new JsonObject();
         }
@@ -87,7 +87,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         if (isJsonArray)
         {
-            var parsedModel = JsonElement.ParseValue(ref reader)!;
+            var parsedModel = JsonElement.ParseValue(ref reader);
             var systemTextJson = parsedModel.GetProperty(IslandPropertyName).GetString();
             return !string.IsNullOrWhiteSpace(systemTextJson) ? JsonArray.Parse(systemTextJson) : new JsonArray();
         }
@@ -327,7 +327,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
-                var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
+                var referenceResolver = (CustomPreserveReferenceResolver)(options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver()!;
                 while (reader.Read())
                 {
                     switch (reader.TokenType)
@@ -344,13 +344,15 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                             if (key == RefPropertyName)
                             {
                                 var referenceId = reader.GetString();
-                                var reference = referenceResolver!.ResolveReference(referenceId!);
+                                var reference = referenceResolver.ResolveReference(referenceId!);
                                 dict.Add(key, reference);
                             }
                             else if (key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
-                                referenceResolver!.AddReference(referenceId, dict);
+                                
+                                // Attempt to add the reference; if not found, we can ignore it and assume that the user is using the $id property for something else, such as in JSON $schema. 
+                                referenceResolver.TryAddReference(referenceId, dict);
                             }
                             else
                             {

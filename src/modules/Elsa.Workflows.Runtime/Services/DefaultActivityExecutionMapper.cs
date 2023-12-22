@@ -46,6 +46,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         {
             Id = source.Id,
             ActivityId = source.Activity.Id,
+            ActivityNodeId = source.NodeId,
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
             ActivityType = source.Activity.Type,
             ActivityName = source.Activity.Name,

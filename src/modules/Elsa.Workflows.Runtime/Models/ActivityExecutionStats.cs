@@ -11,6 +11,11 @@ public class ActivityExecutionStats
     public string ActivityId { get; set; } = default!;
     
     /// <summary>
+    /// Gets or sets the node ID of the activity.
+    /// </summary>
+    public string ActivityNodeId { get; set; } = default!;
+    
+    /// <summary>
     /// Gets or sets the number of uncompleted executions.
     /// </summary>
     public long StartedCount { get; set; }

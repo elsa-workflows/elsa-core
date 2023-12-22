@@ -12,11 +12,21 @@ public static class ActivityExtensions
     /// Gets the type name of the specified activity.
     /// </summary>
     public static string GetTypeName(this JsonObject activity) => activity.GetProperty<string>("type")!;
-    
+
+    /// <summary>
+    /// Gets the type name of the specified activity.
+    /// </summary>
+    public static void SetTypeName(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "type");
+
     /// <summary>
     /// Gets the version of the specified activity.
     /// </summary>
     public static int GetVersion(this JsonObject activity) => activity.GetProperty<int>("version");
+
+    /// <summary>
+    /// Gets the version of the specified activity.
+    /// </summary>
+    public static void SetVersion(this JsonObject activity, int value) => activity.SetProperty(JsonValue.Create(value), "version");
 
     /// <summary>
     /// Gets the ID of the specified activity.
@@ -27,7 +37,17 @@ public static class ActivityExtensions
     /// Sets the ID of the specified activity.
     /// </summary>
     public static void SetId(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "id");
-    
+
+    /// <summary>
+    /// Gets the node ID of the specified activity.
+    /// </summary>
+    public static string GetNodeId(this JsonObject activity) => activity.GetProperty<string>("nodeId")!;
+
+    /// <summary>
+    /// Sets the node ID of the specified activity.
+    /// </summary>
+    public static void SetNodeId(this JsonObject activity, string value) => activity.SetProperty(JsonValue.Create(value), "nodeId");
+
     /// <summary>
     /// Gets the name of the specified activity.
     /// </summary>
@@ -115,9 +135,36 @@ public static class ActivityExtensions
     /// Sets the connections in the specified flowchart.
     /// </summary>
     public static void SetConnections(this JsonObject flowchart, IEnumerable<Connection> connections) => flowchart.SetProperty(JsonValue.Create(connections), "connections");
-    
+
     /// <summary>
     /// Gets the root activity in the specified activity.
     /// </summary>
     public static JsonObject? GetRoot(this JsonObject activity) => activity.GetProperty("root") as JsonObject;
+
+    /// <summary>
+    /// Sets the root activity in the specified activity.
+    /// </summary>
+    public static void SetRoot(this JsonObject container, JsonObject root) => container.SetProperty(root, "root");
+    
+    /// <summary>
+    /// Gets the root activity in the specified activity.
+    /// </summary>
+    public static string? GetWorkflowDefinitionId(this JsonObject activity) => activity.GetProperty<string?>("workflowDefinitionId");
+
+    /// <summary>
+    /// Determines whether the given activity is a workflow definition activity.
+    /// </summary>
+    /// <param name="activity">The JsonObject representing the activity.</param>
+    /// <returns>Returns true if the activity is a workflow definition activity; otherwise, false.</returns>
+    public static bool GetIsWorkflowDefinitionActivity(this JsonObject activity) => activity.ContainsKey("workflowDefinitionId") && activity.ContainsKey("workflowDefinitionVersionId");
+    
+    /// <summary>
+    /// Gets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static bool? GetRunAsynchronously(this JsonObject activity) => activity.GetProperty<bool>("customProperties", "runAsynchronously");
+
+    /// <summary>
+    /// Sets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static void SetRunAsynchronously(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "runAsynchronously");
 }

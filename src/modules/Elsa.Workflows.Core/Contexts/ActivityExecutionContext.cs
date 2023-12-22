@@ -25,6 +25,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// Initializes a new instance of the <see cref="ActivityExecutionContext"/> class.
     /// </summary>
     public ActivityExecutionContext(
+        string id,
         WorkflowExecutionContext workflowExecutionContext,
         ActivityExecutionContext? parentActivityExecutionContext,
         ExpressionExecutionContext expressionExecutionContext,
@@ -45,7 +46,7 @@ public class ActivityExecutionContext : IExecutionContext
         Status = ActivityStatus.Pending;
         Tag = tag;
         CancellationToken = cancellationToken;
-        Id = Guid.NewGuid().ToString();
+        Id = id;
     }
 
     /// <summary>
@@ -147,7 +148,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// Returns the global node ID for the current activity within the graph.
     /// </summary>
     /// <remarks>As of tool version 3.0, all activity Ids are already unique, so there's no need to construct a hierarchical ID</remarks>
-    public string NodeId => WorkflowExecutionContext.Workflow.WorkflowMetadata.ToolVersion >= new Version(3, 0) ? Activity.Id : ActivityNode.NodeId;
+    public string NodeId => ActivityNode.NodeId;
 
     /// <summary>
     /// A list of bookmarks created by the current activity.
@@ -187,10 +188,15 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="completionCallback">An optional callback to invoke when the activity completes.</param>
     /// <param name="tag">An optional tag to associate with the activity execution.</param>
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
-    public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
+    public ValueTask ScheduleActivityAsync(IActivity? activity, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
-        await ScheduleActivityAsync(activity, options);
+        var options = new ScheduleWorkOptions
+        {
+            CompletionCallback = completionCallback,
+            Tag = tag,
+            Variables = variables?.ToList()
+        };
+        return ScheduleActivityAsync(activity, options);
     }
 
     /// <summary>
@@ -256,10 +262,15 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="completionCallback">The callback to invoke when the activities complete.</param>
     /// <param name="tag">An optional tag to associate with the activity execution.</param>
     /// <param name="variables">An optional list of variables to declare with the activity execution.</param>
-    public async ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
+    public ValueTask ScheduleActivities(IEnumerable<IActivity?> activities, ActivityCompletionCallback? completionCallback, object? tag = default, IEnumerable<Variable>? variables = default)
     {
-        var options = new ScheduleWorkOptions(completionCallback, tag, variables?.ToList());
-        await ScheduleActivities(activities, options);
+        var options = new ScheduleWorkOptions
+        {
+            CompletionCallback = completionCallback,
+            Tag = tag,
+            Variables = variables?.ToList()
+        };
+        return ScheduleActivities(activities, options);
     }
 
     /// <summary>
@@ -282,7 +293,12 @@ public class ActivityExecutionContext : IExecutionContext
     public void CreateBookmarks(IEnumerable<object> payloads, ExecuteActivityDelegate? callback = default, bool includeActivityInstanceId = true)
     {
         foreach (var payload in payloads)
-            CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId));
+            CreateBookmark(new CreateBookmarkArgs
+            {
+                Payload = payload,
+                Callback = callback,
+                IncludeActivityInstanceId = includeActivityInstanceId
+            });
     }
 
     /// <summary>
@@ -305,7 +321,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(ExecuteActivityDelegate callback, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(default, callback, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Callback = callback,
+            Metadata = metadata
+        });
     }
 
     /// <summary>
@@ -318,7 +338,13 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(payload, callback, IncludeActivityInstanceId: includeActivityInstanceId, Metadata: customProperties));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Payload = payload,
+            Callback = callback,
+            IncludeActivityInstanceId = includeActivityInstanceId,
+            Metadata = customProperties
+        });
     }
 
     /// <summary>
@@ -329,7 +355,11 @@ public class ActivityExecutionContext : IExecutionContext
     /// <returns>The created bookmark.</returns>
     public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
     {
-        return CreateBookmark(new CreateBookmarkArgs(payload, Metadata: metadata));
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Payload = payload,
+            Metadata = metadata
+        });
     }
 
     /// <summary>
@@ -357,6 +387,7 @@ public class ActivityExecutionContext : IExecutionContext
             _systemClock.UtcNow,
             options?.AutoBurn ?? true,
             callback?.Method.Name,
+            options?.AutoComplete ?? true,
             options?.Metadata);
 
         AddBookmark(bookmark);

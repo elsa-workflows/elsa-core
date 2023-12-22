@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using Elsa.Alterations.Extensions;
+using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -15,6 +16,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using MassTransit;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -23,8 +25,12 @@ using Proto.Persistence.SqlServer;
 const bool useMongoDb = false;
 const bool useSqlServer = false;
 const bool useDapper = false;
-const bool useProtoActor = false;
+const bool useProtoActor = true;
 const bool useHangfire = false;
+const bool useQuartz = true;
+const bool useMassTransit = true;
+const bool useMassTransitAzureServiceBus = false;
+const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -34,6 +40,8 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
+var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
+var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 
 // Add Elsa services.
 services
@@ -62,6 +70,8 @@ services
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
+            .UseFileStorage()
+            // .UseFileStorage(sp => StorageFactory.Blobs.AzureBlobStorageWithSas(configuration.GetConnectionString("AzureStorageSasUrl")))
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
@@ -133,12 +143,34 @@ services
             {
                 if (useHangfire)
                     scheduling.UseHangfireScheduler();
+
+                if (useQuartz)
+                    scheduling.UseQuartzScheduler();
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
             .UseRealTimeWorkflows()
-            .UseJavaScript(js =>
+            .UseCSharp(options =>
             {
-                js.JintOptions = options => options.AllowClrAccess = true;
+                options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
+                options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
+            })
+            .UseJavaScript(options =>
+            {
+                options.AllowClrAccess = true;
+                options.ConfigureEngine(engine =>
+                {
+                    engine.Execute("function greet(name) { return `Hello ${name}!`; }");
+                    engine.Execute("function sayHelloWorld() { return greet('World'); }");
+                });
+            })
+            .UsePython(python =>
+            {
+                python.PythonOptions += options =>
+                {
+                    // Make sure to configure the path to the python DLL. E.g. /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
+                    // alternatively, you can set the PYTHONNET_PYDLL environment variable.
+                    configuration.GetSection("Scripting:Python").Bind(options);
+                };
             })
             .UseLiquid(liquid => liquid.FluidOptions = options => options.Encoder = HtmlEncoder.Default)
             .UseHttp(http =>
@@ -156,12 +188,51 @@ services
                     else
                         ef.UseSqlite(sqliteConnectionString);
                 });
-            });
 
-        // Initialize drop-ins.
+                alterations.UseMassTransitDispatcher();
+            })
+            .UseWorkflowContexts();
+
+        if (useQuartz)
+        {
+            elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
+        }
+
+        if (useMassTransit)
+        {
+            elsa.UseMassTransit(massTransit =>
+            {
+                if (useMassTransitAzureServiceBus)
+                {
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    {
+                        bus.PrefetchCount = 4;
+                        bus.LockDuration = TimeSpan.FromMinutes(5);
+                        bus.MaxConcurrentCalls = 32;
+                        bus.MaxDeliveryCount = 8;
+                        // etc.
+                    });
+                }
+
+                if (useMassTransitRabbitMq)
+                {
+                    massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                    {
+                        bus.PrefetchCount = 4;
+                        bus.Durable = true;
+                        bus.AutoDelete = false;
+                        bus.ConcurrentMessageLimit = 32;
+                        // etc.
+                    });
+                }
+            });
+        }
+
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
 
+#if NET6_0 || NET7_0
         elsa.AddSwagger();
+#endif
     });
 
 services.AddHealthChecks();
@@ -195,12 +266,16 @@ app.UseWorkflowsApi(routePrefix);
 // Captures unhandled exceptions and returns a JSON response.
 app.UseJsonSerializationErrorHandler();
 
-// Elsa HTTP Endpoint activities
+// Elsa HTTP Endpoint activities.
 app.UseWorkflows();
 
-// Swagger API documentation
+// Swagger API documentation.
 if (app.Environment.IsDevelopment())
+{
+#if NET6_0 || NET7_0
     app.UseSwaggerUI();
+#endif
+}
 
 // SignalR.
 app.UseWorkflowsSignalRHubs();

@@ -140,8 +140,7 @@ public class TriggerIndexer : ITriggerIndexer
     private async IAsyncEnumerable<StoredTrigger> GetTriggersInternalAsync(Workflow workflow, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var context = new WorkflowIndexingContext(workflow, cancellationToken);
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var nodes = await _activityVisitor.VisitAsync(workflow.Root, useActivityIdAsNodeId, cancellationToken);
+        var nodes = await _activityVisitor.VisitAsync(workflow.Root, cancellationToken);
 
         // Get a list of activities that are configured as "startable".
         var startableNodes = nodes
@@ -211,7 +210,7 @@ public class TriggerIndexer : ITriggerIndexer
         return triggers.ToList();
     }
 
-    private async Task<ICollection<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
+    private async Task<List<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
     {
         try
         {
@@ -222,6 +221,6 @@ public class TriggerIndexer : ITriggerIndexer
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return Array.Empty<object>();
+        return new List<object>(0);
     }
 }

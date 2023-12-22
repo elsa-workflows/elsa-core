@@ -15,6 +15,7 @@ public static class ModuleExtensions
     public static IModule UseHttp(this IModule module, Action<HttpFeature>? configure = default)
     {
         module.Configure(configure);
+        module.Use<HttpJavaScriptFeature>();
         return module;
     }
 }

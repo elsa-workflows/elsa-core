@@ -17,6 +17,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
+            .UseBackgroundActivities()
             .UsePersistentVariables()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
@@ -24,6 +25,11 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .UseExceptionHandling()
             .UseDefaultActivityScheduler();
 
+    /// <summary>
+    /// Installs middleware that persists the workflow instance before and after workflow execution.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder UseBackgroundActivities(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ScheduleBackgroundActivitiesMiddleware>();
+    
     /// <summary>
     /// Installs middleware that persists the workflow instance before and after workflow execution.
     /// </summary>

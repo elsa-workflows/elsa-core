@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Core.Options;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -23,10 +24,10 @@ public static class ServiceProviderExtensions
     /// Updates the registries.
     /// </summary>
     /// <param name="services">The services.</param>
-    public static async Task PopulateRegistriesAsync(this IServiceProvider services)
+    public static Task PopulateRegistriesAsync(this IServiceProvider services)
     {
         var registriesPopulator = services.GetRequiredService<IRegistriesPopulator>();
-        await registriesPopulator.PopulateAsync();
+        return registriesPopulator.PopulateAsync();
     }
 
     /// <summary>
@@ -61,7 +62,11 @@ public static class ServiceProviderExtensions
     /// <returns>The workflow state.</returns>
     public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, string workflowDefinitionId, IDictionary<string, object>? input = default)
     {
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(null, input, VersionOptions.Published);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        {
+            Input = input,
+            VersionOptions = VersionOptions.Published
+        };
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
         var bookmarks = new Stack<Bookmark>(result.Bookmarks);
@@ -69,7 +74,7 @@ public static class ServiceProviderExtensions
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
         while (result.Status != WorkflowStatus.Finished && bookmarks.TryPop(out var bookmark))
         {
-            var resumeOptions = new ResumeWorkflowRuntimeOptions(BookmarkId: bookmark.Id);
+            var resumeOptions = new ResumeWorkflowRuntimeOptions { BookmarkId = bookmark.Id };
             var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
 
             foreach (var newBookmark in resumeResult!.Bookmarks)
@@ -87,5 +92,35 @@ public static class ServiceProviderExtensions
     {
         var workflowDefinitionId = typeof(TWorkflow).Name;
         return await services.RunWorkflowUntilEndAsync(workflowDefinitionId, input);
+    }
+
+    /// <summary>
+    /// Runs the specified activity.
+    /// </summary>
+    /// <param name="services">The service provider.</param>
+    /// <param name="activity">The activity to run.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The result of running the activity.</returns>
+    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, CancellationToken cancellationToken = default)
+    {
+        await services.PopulateRegistriesAsync();
+        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        var result = await workflowRunner.RunAsync(activity, cancellationToken: cancellationToken);
+        return result;
+    }
+
+    /// <summary>
+    /// Runs the specified activity.
+    /// </summary>
+    /// <param name="services">The service provider.</param>
+    /// <param name="activity">The activity to run.</param>
+    /// <param name="options">An set of options.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The result of running the activity.</returns>
+    public static async Task<RunWorkflowResult> RunActivityAsync(this IServiceProvider services, IActivity activity, RunWorkflowOptions options, CancellationToken cancellationToken = default)
+    {
+        var workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
+        return result;
     }
 }

@@ -1,6 +1,7 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
+using MassTransit;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -16,32 +17,24 @@ public static class ModuleExtensions
     public static IModule UseMassTransit(this IModule module, Action<MassTransitFeature>? configure = default) => module.Use(configure);
 
     /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
+    /// Registers the specified consumer with MassTransit.
     /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, string connectionString) => feature.UseRabbitMq(new Uri(connectionString), null);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri connectionString) => feature.UseRabbitMq(connectionString, null);
+    public static IModule AddMassTransitConsumer<T>(this IModule module) where T : IConsumer
+    {
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>());
+        return module;
+    }
     
     /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
+    /// Registers the specified consumer and consumer definition with MassTransit.
     /// </summary>
-    public static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, RabbitMqOptions options) => feature.UseRabbitMq(null, options);
-
-    /// <summary>
-    /// Enable and configure the RabbitMQ broker for MassTransit.
-    /// </summary>
-    private static MassTransitFeature UseRabbitMq(this MassTransitFeature feature, Uri? connectionString, RabbitMqOptions? options)
+    public static IModule AddMassTransitConsumer<T, TDefinition>(this IModule module) 
+        where T : IConsumer 
+        where TDefinition : IConsumerDefinition
     {
-        void Configure(RabbitMqServiceBusFeature bus)
-        {
-            bus.ConnectionString = connectionString;
-            bus.Options = options;
-        }
-
-        feature.Module.Configure((Action<RabbitMqServiceBusFeature>) Configure);
-        return feature;
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T, TDefinition>());
+        return module;
     }
+    
+    
 }

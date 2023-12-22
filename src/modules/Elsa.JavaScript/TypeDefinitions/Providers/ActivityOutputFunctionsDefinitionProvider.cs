@@ -27,8 +27,7 @@ internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionPro
     {
         // Output getters.
         var workflow = context.Workflow;
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var nodes = (await _activityVisitor.VisitAsync(workflow.Root, useActivityIdAsNodeId, context.CancellationToken)).Flatten().Distinct().ToList();
+        var nodes = (await _activityVisitor.VisitAsync(workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
         
         // Ensure identities.
         _identityGraphService.AssignIdentities(nodes);

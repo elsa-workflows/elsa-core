@@ -30,11 +30,17 @@ public class CallHangup : Activity<CallHangupPayload>
     protected override void Execute(ActivityExecutionContext context)
     {
         var callControlIds = CallControlIds.Get(context);
-        
+
         foreach (var callControlId in callControlIds)
         {
             var payload = new CallHangupBookmarkPayload(callControlId);
-            context.CreateBookmark(new CreateBookmarkArgs(payload, Resume, Type, IncludeActivityInstanceId: false));
+            context.CreateBookmark(new CreateBookmarkArgs
+            {
+                Payload = payload,
+                Callback = Resume,
+                BookmarkName = Type,
+                IncludeActivityInstanceId = false
+            });
         }
     }
 

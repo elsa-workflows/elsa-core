@@ -22,7 +22,7 @@ public class WriteHttpResponse : Activity
     public WriteHttpResponse([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The status code to return.
     /// </summary>
@@ -49,7 +49,7 @@ public class WriteHttpResponse : Activity
     /// The headers to return along with the response.
     /// </summary>
     [Input(Description = "The headers to send along with the response.", Category = "Advanced")]
-    public Input<HttpResponseHeaders?> ResponseHeaders { get; set; } = new(new HttpResponseHeaders());
+    public Input<HttpHeaders?> ResponseHeaders { get; set; } = new(new HttpHeaders());
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -97,25 +97,35 @@ public class WriteHttpResponse : Activity
         // Get content and content type.
         var content = context.Get(Content);
 
-        if (content == null)
-            return;
+        if (content != null)
+        {
+            var contentType = ContentType.GetOrDefault(context);
 
-        var contentType = ContentType.GetOrDefault(context);
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = DetermineContentType(content);
 
-        if (string.IsNullOrWhiteSpace(contentType))
-            contentType = DetermineContentType(content);
+            var factories = context.GetServices<IHttpContentFactory>();
+            var factory = factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == contentType)) ?? new TextContentFactory();
+            var httpContent = factory.CreateHttpContent(content, contentType);
 
-        var factories = context.GetServices<IHttpContentFactory>();
-        var factory = factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == contentType)) ?? new TextContentFactory();
-        var httpContent = factory.CreateHttpContent(content, contentType);
+            // Set content type.
+            response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
 
-        // Set content type.
-        response.ContentType = httpContent.Headers.ContentType?.ToString() ?? contentType;
+            // Write content.
+            if (statusCode != HttpStatusCode.NoContent)
+            {
+                try
+                {
+                    await httpContent.CopyToAsync(response.Body);
+                }
+                catch (NotSupportedException)
+                {
+                    // This can happen the Content property is a type that cannot be serialized or contains a type that cannot be serialized. 
+                    await response.WriteAsync("The response includes a type that cannot be serialized.");
+                }
+            }
+        }
 
-        // Write content.
-        if(statusCode != HttpStatusCode.NoContent)
-            await httpContent.CopyToAsync(response.Body);
-        
         // Complete activity.
         await context.CompleteActivityAsync();
     }

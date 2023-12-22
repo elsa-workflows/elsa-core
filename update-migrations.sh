@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 
 # Define the modules to update
-# mods=("Runtime")
-mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
+mods=("Runtime")
+# mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
 
 # Define the list of providers
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")

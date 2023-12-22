@@ -19,6 +19,11 @@ public class ActivityExecutionRecordRecord
     /// Gets or sets the activity ID.
     /// </summary>
     public string ActivityId { get; set; } = default!;
+    
+    /// <summary>
+    /// Gets or sets the activity node ID.
+    /// </summary>
+    public string ActivityNodeId { get; set; } = default!;
 
     /// <summary>
     /// The type of the activity.

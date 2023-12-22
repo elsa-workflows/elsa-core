@@ -2,9 +2,9 @@
 
     <Import Project="..\..\..\common.props"/>
     <Import Project="..\..\..\configureawait.props"/>
-
+    <Import Project="..\..\..\frameworks.props" />
+    
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
         <Description>
             Provides alterations for workflow instances.
         </Description>
@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
-        <ProjectReference Include="..\Elsa.Alterations.BackgroundRunner\Elsa.Alterations.BackgroundRunner.csproj"/>
         <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj"/>
         
     </ItemGroup>

@@ -72,13 +72,17 @@ public class WorkflowHost : IWorkflowHost
         var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
         var input = options?.Input;
+        var properties = options?.Properties;
 
-        var runOptions = new RunWorkflowOptions(
-            instanceId,
-            correlationId,
-            input: input,
-            triggerActivityId: options?.TriggerActivityId,
-            cancellationTokens: options?.CancellationTokens ?? cancellationToken);
+        var runOptions = new RunWorkflowOptions
+        {
+            WorkflowInstanceId = instanceId,
+            CorrelationId = correlationId,
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = options?.TriggerActivityId,
+            CancellationTokens = options?.CancellationTokens ?? cancellationToken
+        };
 
         var workflowResult = await _workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
@@ -106,18 +110,19 @@ public class WorkflowHost : IWorkflowHost
         var instanceId = WorkflowState.Id;
         var input = options?.Input;
 
-        var runOptions = new RunWorkflowOptions(
-            instanceId,
-            options?.CorrelationId,
-            options?.BookmarkId,
-            options?.ActivityId,
-            options?.ActivityNodeId,
-            options?.ActivityInstanceId,
-            options?.ActivityHash,
-            input,
-            default,
-            options?.CancellationTokens ?? cancellationToken
-        );
+        var runOptions = new RunWorkflowOptions
+        {
+            WorkflowInstanceId = instanceId,
+            CorrelationId = options?.CorrelationId,
+            BookmarkId = options?.BookmarkId,
+            ActivityId = options?.ActivityId,
+            ActivityNodeId = options?.ActivityNodeId,
+            ActivityInstanceId = options?.ActivityInstanceId,
+            ActivityHash = options?.ActivityHash,
+            Input = input,
+            Properties = options?.Properties,
+            CancellationTokens = options?.CancellationTokens ?? cancellationToken
+        };
 
         var workflowResult = await _workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 

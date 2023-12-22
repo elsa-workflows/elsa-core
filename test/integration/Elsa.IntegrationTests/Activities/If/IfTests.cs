@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
@@ -12,11 +13,12 @@ public class IfTests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public IfTests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Theory(DisplayName = "The correct branch executes when condition is true")]
@@ -24,6 +26,7 @@ public class IfTests
     [InlineData(false, "False!")]
     public async Task Test1(bool conditionResult, string expectedLine)
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync(new IfThenWorkflow(() => conditionResult));
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { expectedLine }, lines);
@@ -34,6 +37,7 @@ public class IfTests
     [InlineData(false, new[] { "Start", "Executing", "False!", "End" })]
     public async Task Test2(bool conditionResult, string[] expectedLines)
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync(new ComplexIfWorkflow(() => conditionResult));
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(expectedLines, lines);

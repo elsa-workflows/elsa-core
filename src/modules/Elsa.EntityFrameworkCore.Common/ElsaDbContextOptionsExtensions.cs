@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -17,6 +18,7 @@ public static class ElsaDbContextOptionsExtensions
     public static DbContextOptionsBuilder UseElsaDbContextOptions(this DbContextOptionsBuilder optionsBuilder, ElsaDbContextOptions? options)
     {
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(new ElsaDbContextOptionsExtension(options));
+        optionsBuilder.ReplaceService<IMigrationsAssembly, DbSchemaAwareMigrationAssembly>();
         return optionsBuilder;
     }
 

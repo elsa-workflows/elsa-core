@@ -236,7 +236,9 @@ public class WriteFileHttpResponse : Activity
 
     private async Task SendFileStream(ActivityExecutionContext context, HttpContext httpContext, Stream source, string contentType, string filename, EntityTagHeaderValue? eTag)
     {
-        source.Seek(0, SeekOrigin.Begin);
+        if(source.CanSeek)
+            source.Seek(0, SeekOrigin.Begin);
+        
         var enableResumableDownloads = EnableResumableDownloads.GetOrDefault(context, () => false);
 
         var result = new FileStreamResult(source, contentType)

@@ -34,6 +34,11 @@ public interface IModule
     IModule ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService;
 
     /// <summary>
+    /// Configures a <see cref="IHostedService"/> using an optional priority to control in which order it will be registered with the service container.
+    /// </summary>
+    IModule ConfigureHostedService(Type hostedServiceType, int priority = 0);
+
+    /// <summary>
     /// Will apply all configured features, causing the <see cref="Services"/> collection to be populated. 
     /// </summary>
     void Apply();

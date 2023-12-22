@@ -22,11 +22,12 @@ public record Bookmark(
     string Hash,
     object? Payload,
     string ActivityId,
-    [property: Obsolete("Deprecated for workflows created with tooling >= 3")]string ActivityNodeId,
+    string ActivityNodeId,
     string ActivityInstanceId,
     DateTimeOffset CreatedAt,
     bool AutoBurn = true,
     string? CallbackMethodName = default,
+    bool AutoComplete = true,
     IDictionary<string, string>? Metadata = default)
 {
     /// <inheritdoc />

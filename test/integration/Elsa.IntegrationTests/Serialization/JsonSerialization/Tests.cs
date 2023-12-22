@@ -12,14 +12,9 @@ using Xunit.Abstractions;
 
 namespace Elsa.IntegrationTests.Serialization.JsonSerialization;
 
-public class SerializationTests
+public class SerializationTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IServiceProvider _services;
-
-    public SerializationTests(ITestOutputHelper testOutputHelper)
-    {
-        _services = new TestApplicationBuilder(testOutputHelper).Build();
-    }
+    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper).Build();
 
     [Theory(DisplayName = "write")]
     [InlineData(typeof(JsonObject), "JsonObjectIsland")]
@@ -32,7 +27,7 @@ public class SerializationTests
 
         var result = SerializeUsingPayloadSerializer(dict);
 
-        var expected = File.ReadAllText($@"Serialization/JsonSerialization/{fileName}.json");
+        var expected = File.ReadAllText($"Serialization/JsonSerialization/{fileName}.json");
 
         CompareJsonsObjects(expected, result);
     }
@@ -47,7 +42,7 @@ public class SerializationTests
         var dict = GetContent(type);
         var jsonSerialized = SerializeUsingPayloadSerializer(dict);
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
-        var result = transformationModel["Content"].ToString();
+        var result = transformationModel["Content"].ToString()!;
         var expected = GetExpected(type);
 
         CompareJsonsObjects(expected, result);
@@ -64,14 +59,14 @@ public class SerializationTests
 
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonContent);
 
-        var result = "";
+        string result;
         if (type == typeof(JObject) || type == typeof(JArray))
         {
             result = Newtonsoft.Json.JsonConvert.SerializeObject(transformationModel);
         }
         else
         {
-            result = type == typeof(JsonObject) ? JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel)).ToString() : JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Content"])).ToString();
+            result = type == typeof(JsonObject) ? JsonObject.Create(JsonSerializer.SerializeToElement(transformationModel))!.ToString() : JsonArray.Create(JsonSerializer.SerializeToElement(transformationModel["Content"]))!.ToString();
         }
 
         var expected = File.ReadAllText(@$"Serialization/JsonSerialization/{compareFileName}.json");

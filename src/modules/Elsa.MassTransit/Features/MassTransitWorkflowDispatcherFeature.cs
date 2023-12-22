@@ -2,10 +2,14 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.ConsumerDefinitions;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Messages;
+using Elsa.MassTransit.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;
@@ -21,17 +25,34 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     public MassTransitWorkflowDispatcherFeature(IModule module) : base(module)
     {
     }
+    
+    /// <summary>
+    /// Configures the MassTransit workflow dispatcher.
+    /// </summary>
+    public Action<MassTransitWorkflowDispatcherOptions>? ConfigureDispatcherOptions { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<DispatchWorkflowRequestConsumer>());
+        Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
         Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
+        var options = Services.AddOptions<MassTransitWorkflowDispatcherOptions>();
+        
+        if (ConfigureDispatcherOptions != null)
+            options.Configure(ConfigureDispatcherOptions);
+        
+        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
+        var queueAddress = new Uri($"queue:elsa-{queueName}");
+        EndpointConvention.Map<DispatchWorkflowDefinition>(queueAddress);
+        EndpointConvention.Map<DispatchWorkflowInstance>(queueAddress);
+        EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
+        EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
+        
         Services.AddSingleton<MassTransitWorkflowDispatcher>();
     }
 }

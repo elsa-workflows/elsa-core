@@ -11,11 +11,9 @@ public class ActivityNode
     /// Initializes a new instance of the <see cref="ActivityNode"/> class.
     /// </summary>
     /// <param name="activity">The activity.</param>
-    /// <param name="useActivityIdAsNodeId">Whether to use the activity ID as the node ID.</param>
-    public ActivityNode(IActivity activity, bool useActivityIdAsNodeId)
+    public ActivityNode(IActivity activity)
     {
         Activity = activity;
-        UseActivityIdAsNodeId = useActivityIdAsNodeId;
     }
 
     /// <summary>
@@ -25,9 +23,6 @@ public class ActivityNode
     {
         get
         {
-            if (UseActivityIdAsNodeId)
-                return Activity.Id;
-            
             var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.Id).ToList();
             return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.Id}" : Activity.Id;
         }
@@ -37,11 +32,6 @@ public class ActivityNode
     /// Gets the activity.
     /// </summary>
     public IActivity Activity { get; }
-    
-    /// <summary>
-    /// Gets a value indicating whether to use the activity ID as the node ID.
-    /// </summary>
-    public bool UseActivityIdAsNodeId { get; }
     
     /// <summary>
     /// Gets the parents of this node.

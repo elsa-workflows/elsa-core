@@ -20,7 +20,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 {
     private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
-    private readonly IExpressionSyntaxRegistry _expressionSyntaxRegistry;
+    private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ActivityJsonConverter> _logger;
 
@@ -28,13 +28,13 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     public ActivityJsonConverter(
         IActivityRegistry activityRegistry,
         IActivityFactory activityFactory,
-        IExpressionSyntaxRegistry expressionSyntaxRegistry,
+        IExpressionDescriptorRegistry expressionDescriptorRegistry,
         IServiceProvider serviceProvider,
         ILogger<ActivityJsonConverter> logger)
     {
         _activityRegistry = activityRegistry;
         _activityFactory = activityFactory;
-        _expressionSyntaxRegistry = expressionSyntaxRegistry;
+        _expressionDescriptorRegistry = expressionDescriptorRegistry;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
@@ -72,6 +72,8 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             notFoundActivity.MissingTypeName = activityTypeName;
             notFoundActivity.MissingTypeVersion = activityTypeVersion;
             notFoundActivity.OriginalActivityJson = activityRoot.ToString();
+            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
+            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
             return notFoundActivity;
         }
 
@@ -124,18 +126,18 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             }
 
             var expression = input.Expression;
-            var expressionType = expression!.GetType();
+            var expressionType = expression?.Type;
             var inputType = input.Type;
             var memoryReferenceId = input.MemoryBlockReference().Id;
-            var expressionSyntaxDescriptor = _expressionSyntaxRegistry.Find(x => x.Type == expressionType);
+            var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
 
-            if (expressionSyntaxDescriptor == null)
+            if (expressionDescriptor == null)
                 throw new Exception($"Syntax descriptor with expression type {expressionType} not found in registry");
 
             var inputModel = new
             {
                 TypeName = inputType,
-                Expression = expressionSyntaxDescriptor.CreateSerializableObject(new SerializableObjectConstructorContext(expression)),
+                Expression = expression,
                 MemoryReference = new
                 {
                     Id = memoryReferenceId

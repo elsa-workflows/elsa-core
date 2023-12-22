@@ -11,6 +11,5 @@ public interface IBlobStorageProvider
     /// <summary>
     /// Gets the <see cref="IBlobStorage"/>.
     /// </summary>
-    /// <returns>The <see cref="IBlobStorage"/>.</returns>
     IBlobStorage GetBlobStorage();
 }

@@ -10,5 +10,5 @@ public interface IElsaClientFactory
     /// <summary>
     /// Creates a new <see cref="IElsaClient"/> instance.
     /// </summary>
-    IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions);
+    IElsaClient CreateClient(Action<ElsaClientOptions> configureOptions, Action<ElsaClientBuilderOptions>? configureHttpClientBuilder = default);
 }

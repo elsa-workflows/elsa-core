@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
@@ -12,16 +13,18 @@ public class Tests
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly IServiceProvider _services;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Activity outputs can be accessed from other activities.")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<SumWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[]

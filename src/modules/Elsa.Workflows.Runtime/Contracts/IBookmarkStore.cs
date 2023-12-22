@@ -12,6 +12,11 @@ public interface IBookmarkStore
     /// Adds or updates the specified bookmark. 
     /// </summary>
     ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Adds or updates the specified bookmarks.
+    /// </summary>
+    ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken);
 
     /// <summary>
     /// Returns a set of bookmarks matching the specified filter.

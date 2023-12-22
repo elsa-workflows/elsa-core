@@ -11,9 +11,9 @@ internal class Request
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <summary>
-    /// The ID of the activity to get the execution record for.
+    /// The node ID of the activity to get the execution record for.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = default!;
     
     /// <summary>
     /// Whether to include completed activity execution records. If not specified, all activity execution records will be included.

@@ -151,6 +151,14 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/{definitionId}/export?versionOptions={versionOptions}")]
     Task<IApiResponse<Stream>> ExportAsync(string definitionId, VersionOptions? versionOptions = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Exports a set of workflow definitions.
+    /// </summary>
+    /// <param name="request">The request containing the IDs of the workflow definitions to export.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/export/workflow-definitions")]
+    Task<IApiResponse<Stream>> BulkExportAsync(BulkExportWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Imports a workflow definition.
@@ -160,6 +168,15 @@ public interface IWorkflowDefinitionsApi
     /// <returns>The imported workflow definition.</returns>
     [Post("/workflow-definitions/import")]
     Task<WorkflowDefinition> ImportAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Imports a workflow definition.
+    /// </summary>
+    /// <param name="files">The files to import.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/workflow-definitions/import-files")]
+    [Multipart]
+    Task<ImportFilesResponse> ImportFilesAsync([AliasAs("files")] List<StreamPart> files, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the references of consuming workflow definitions to point to the latest version of the specified definition.

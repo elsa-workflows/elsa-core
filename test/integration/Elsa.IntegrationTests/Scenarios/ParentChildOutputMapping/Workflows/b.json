@@ -1,0 +1,86 @@
+{
+  "id": "d5221501eeb78037",
+  "definitionId": "8c751e0c53821439",
+  "name": "B",
+  "createdAt": "2023-11-15T13:59:18.773434+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output 1",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "49a24a01a4c318de",
+    "nodeId": "Workflow1:49a24a01a4c318de",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:47",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "script": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "return \u0022Bar\u0022;"
+          },
+          "memoryReference": {
+            "id": "247da1e267d76f80:input-0"
+          }
+        },
+        "possibleOutcomes": null,
+        "result": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "Output1"
+          }
+        },
+        "id": "247da1e267d76f80",
+        "nodeId": "Workflow1:49a24a01a4c318de:247da1e267d76f80",
+        "name": "RunCSharp1",
+        "type": "Elsa.RunCSharp",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -200,
+              "y": -140
+            },
+            "size": {
+              "width": 83.640625,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

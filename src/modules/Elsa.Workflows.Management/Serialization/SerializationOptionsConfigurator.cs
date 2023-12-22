@@ -24,7 +24,6 @@ public class SerializationOptionsConfigurator : SerializationOptionsConfigurator
     public override void Configure(JsonSerializerOptions options)
     {
         options.Converters.Add(Create<ActivityJsonConverterFactory>());
-        options.Converters.Add(Create<ExpressionJsonConverterFactory>());
     }
 
     private T Create<T>() => ActivatorUtilities.CreateInstance<T>(_serviceProvider);

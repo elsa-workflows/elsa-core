@@ -156,7 +156,7 @@ public static class ActivityExecutionContextExtensions
     public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
     {
         var activityDescriptor = context.ActivityDescriptor;
-        var inputDescriptors = activityDescriptor.Inputs;
+        var inputDescriptors = activityDescriptor.Inputs.Where(x => x.AutoEvaluate).ToList();
 
         // Evaluate inputs.
         foreach (var inputDescriptor in inputDescriptors)
@@ -178,7 +178,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
         var activityRegistry = context.GetRequiredService<IActivityRegistry>();
@@ -188,7 +188,66 @@ public static class ActivityExecutionContextExtensions
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+    }
+
+    /// <summary>
+    /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
+    /// </summary>
+    /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
+    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
+    {
+        // Get current container.
+        var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
+
+        if (currentContainerNode == null)
+            yield break;
+
+        // Get all nodes in the current container
+        var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+        var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
+
+        // Select activities with outputs.
+        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistry>();
+        var activitiesWithOutputs = containedNodes.GetActivitiesWithOutputs(activityRegistry);
+
+        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+            yield return (activity, activityDescriptor);
+    }
+
+    /// <summary>
+    /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
+    /// </summary>
+    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistry activityRegistry)
+    {
+        // Select activities with outputs.
+        var activitiesWithOutputs =
+            from node in nodes
+            let activity = node.Activity
+            let activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)
+            where activityDescriptor.Outputs.Any()
+            select (activity, activityDescriptor);
+
+        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+            yield return (activity, activityDescriptor);
+    }
+
+    /// <summary>
+    /// Returns the activity with the specified ID or name.
+    /// </summary>
+    public static IActivity? FindActivityByIdOrName(this ActivityExecutionContext activityExecutionContext, string idOrName)
+    {
+        // Get current container.
+        var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
+
+        if (currentContainerNode == null)
+            return null;
+
+        // Get all nodes in the current container
+        var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+        var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
+        var node = containedNodes.FirstOrDefault(x => x.Activity.Name == idOrName || x.Activity.Id == idOrName);
+        return node?.Activity;
     }
 
     private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
@@ -445,6 +504,7 @@ public static class ActivityExecutionContextExtensions
 
         // Clear bookmarks.
         context.ClearBookmarks();
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
 
         // Remove completion callbacks.
         context.ClearCompletionCallbacks();
@@ -525,14 +585,10 @@ public static class ActivityExecutionContextExtensions
             await CancelActivityAsync(childContext);
 
         var publisher = context.GetRequiredService<INotificationSender>();
-        var workflow = context.WorkflowExecutionContext.Workflow;
         context.Status = ActivityStatus.Canceled;
         context.ClearBookmarks();
         context.ClearCompletionCallbacks();
-
-        workflow.WhenCreatedWithModernTooling(
-            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityId == context.Activity.Id),
-            () => context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId));
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
 
         // Add an execution log entry.
         context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);

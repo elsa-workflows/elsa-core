@@ -48,6 +48,12 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<string>> FindManyIdsAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(filter.Apply, x => x.Id, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<long> CountAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);

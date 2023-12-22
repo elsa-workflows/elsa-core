@@ -1,15 +1,16 @@
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management.Entities;
 using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 
 /// <summary>
-/// Maps a <see cref="WorkflowInstance"/> to <see cref="Response"/>.
+/// Maps a <see cref="WorkflowInstance"/> to <see cref="WorkflowInstanceModel"/>.
 /// </summary>
-internal class WorkflowInstanceMapper : ResponseMapper<Response, WorkflowInstance>
+internal class WorkflowInstanceMapper : ResponseMapper<WorkflowInstanceModel, WorkflowInstance>, IRequestMapper
 {
     /// <inheritdoc />
-    public override Response FromEntity(WorkflowInstance e) => new()
+    public override WorkflowInstanceModel FromEntity(WorkflowInstance e) => new()
     {
         Id = e.Id,
         DefinitionId = e.DefinitionId,

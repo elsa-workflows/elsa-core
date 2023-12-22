@@ -16,29 +16,33 @@ public class HomeController : Controller
         _dbContext = dbContext;
         _elsaClient = elsaClient;
     }
-    
+
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         var tasks = await _dbContext.Tasks.Where(x => !x.IsCompleted).ToListAsync(cancellationToken: cancellationToken);
         var model = new IndexViewModel(tasks);
         return View(model);
     }
-    
+
     public async Task<IActionResult> CompleteTask(int taskId, CancellationToken cancellationToken)
     {
         var task = _dbContext.Tasks.FirstOrDefault(x => x.Id == taskId);
-        
+
         if (task == null)
             return NotFound();
-        
-        await _elsaClient.ReportTaskCompletedAsync(task.ExternalId, cancellationToken: cancellationToken);
-        
+
+        var result = new
+        {
+            Magic = Random.Shared.NextDouble()
+        };
+        await _elsaClient.ReportTaskCompletedAsync(task.ExternalId, result, cancellationToken);
+
         task.IsCompleted = true;
         task.CompletedAt = DateTimeOffset.Now;
-        
+
         _dbContext.Tasks.Update(task);
         await _dbContext.SaveChangesAsync(cancellationToken);
-        
+
         return RedirectToAction("Index");
     }
 }

@@ -15,9 +15,8 @@ namespace Elsa.WorkflowContexts.Features;
 /// <summary>
 /// A feature that adds support for workflow context providers.
 /// </summary>
-[PublicAPI]
+[UsedImplicitly]
 [DependsOn(typeof(WorkflowManagementFeature))]
-[DependsOn(typeof(JavaScriptFeature))]
 public class WorkflowContextsFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -30,14 +29,5 @@ public class WorkflowContextsFeature : FeatureBase
     {
         Module.AddActivitiesFrom<WorkflowContextsFeature>();
         Module.AddFastEndpointsAssembly(GetType());
-    }
-
-    /// <inheritdoc />
-    public override void Apply()
-    {
-        Services.AddSingleton<ConfigureJavaScriptEngine>();
-        Services.AddNotificationHandler<ConfigureJavaScriptEngine, EvaluatingJavaScript>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
-        Services.AddTypeDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
-        Services.AddFunctionDefinitionProvider<ConfigureJavaScriptEngine>(sp => sp.GetRequiredService<ConfigureJavaScriptEngine>());
     }
 }

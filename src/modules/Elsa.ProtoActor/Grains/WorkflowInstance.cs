@@ -14,7 +14,6 @@ using Proto.Cluster;
 using Proto.Persistence;
 using Exception = System.Exception;
 using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
-using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -38,6 +37,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private string _instanceId = default!;
     private int _version;
     private IDictionary<string, object>? _input;
+    private IDictionary<string, object>? _properties;
     private IWorkflowHost _workflowHost = default!;
     private WorkflowState _workflowState = default!;
 
@@ -99,15 +99,26 @@ internal class WorkflowInstance : WorkflowInstanceBase
     }
 
     /// <inheritdoc />
-    public override async Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request)
+    public override Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request) => Task.FromResult(new CanStartWorkflowResponse());
+
+    /// <inheritdoc />
+    public override async Task CanStart(StartWorkflowRequest request, Action<CanStartWorkflowResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
+        var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
+        var startWorkflowOptions = new StartWorkflowHostOptions
+        {
+            InstanceId = instanceId,
+            CorrelationId = correlationId,
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = request.TriggerActivityId
+        };
 
         _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
         _version = _workflowHost.Workflow.Identity.Version;
@@ -115,21 +126,28 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _instanceId = instanceId;
         _input = input;
 
-        var canStart = await _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        var task = _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
-        return new CanStartWorkflowResponse
+        Context.ReenterAfter(task, async canStart =>
         {
-            CanStart = canStart
-        };
+            respond(new CanStartWorkflowResponse
+            {
+                CanStart = await canStart
+            });
+        });
     }
 
     /// <inheritdoc />
-    public override async Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request)
+    public override Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
+
+    /// <inheritdoc />
+    public override async Task Start(StartWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
+        var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
 
@@ -143,26 +161,38 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _input = input;
         }
 
-        var startWorkflowOptions = new StartWorkflowHostOptions(instanceId, correlationId, input, request.TriggerActivityId);
-        await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
-        var workflowState = _workflowHost.WorkflowState;
-        var result = workflowState.Status == WorkflowStatus.Finished ? ProtoBuf.RunWorkflowResult.Finished : ProtoBuf.RunWorkflowResult.Suspended;
-
-        _workflowState = workflowState;
-
-        await SaveSnapshotAsync();
-        SaveWorkflowInstance(workflowState);
-
-        return new WorkflowExecutionResponse
+        var startWorkflowOptions = new StartWorkflowHostOptions
         {
-            Result = result,
-            Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
-            Status = _workflowStatusMapper.Map(workflowState.Status),
-            SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
-            //Fault = workflowState.Fault != null ? _workflowFaultStateMapper.Map(workflowState.Fault) : default,
-            TriggeredActivityId = string.Empty,
-            WorkflowInstanceId = instanceId
+            InstanceId = instanceId,
+            CorrelationId = correlationId,
+            Input = input,
+            Properties = properties,
+            TriggerActivityId = request.TriggerActivityId
         };
+
+        var task = _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
+
+        Context.ReenterAfter(task, async startWorkflowResultTask =>
+        {
+            var startWorkflowResult = await startWorkflowResultTask;
+            var workflowState = _workflowHost.WorkflowState;
+            var result = workflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
+
+            _workflowState = workflowState;
+
+            await SaveSnapshotAsync();
+            SaveWorkflowInstance(workflowState);
+
+            respond(new WorkflowExecutionResponse
+            {
+                Result = result,
+                Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
+                Status = _workflowStatusMapper.Map(workflowState.Status),
+                SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
+                TriggeredActivityId = string.Empty,
+                WorkflowInstanceId = instanceId
+            }); 
+        });
     }
 
     /// <inheritdoc />
@@ -175,10 +205,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
         return Task.CompletedTask;
     }
 
-    /// <inheritdoc />
-    public override async Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request)
+    public override async Task Resume(ResumeWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
     {
         _input = request.Input?.Deserialize();
+        _properties = request.Properties?.Deserialize();
         var correlationId = request.CorrelationId;
         var bookmarkId = request.BookmarkId.NullIfEmpty();
         var activityId = request.ActivityId.NullIfEmpty();
@@ -187,14 +217,17 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var activityHash = request.ActivityHash.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
 
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions(
-            correlationId,
-            bookmarkId,
-            activityId,
-            activityNodeId,
-            activityInstanceId,
-            activityHash,
-            _input);
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions
+        {
+            CorrelationId = correlationId,
+            BookmarkId = bookmarkId,
+            ActivityId = activityId,
+            ActivityNodeId = activityNodeId,
+            ActivityInstanceId = activityInstanceId,
+            ActivityHash = activityHash,
+            Input = _input,
+            Properties = _properties
+        };
 
         var definitionId = _definitionId;
         var versionOptions = VersionOptions.SpecificVersion(_version);
@@ -206,25 +239,33 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _version = _workflowHost.Workflow.Identity.Version;
         }
 
-        await _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
-        var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
-
-        _workflowState = _workflowHost.WorkflowState;
-
-        await SaveSnapshotAsync();
-        SaveWorkflowInstance(_workflowState);
-
-        return new WorkflowExecutionResponse
+        var task = _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
+        
+        Context.ReenterAfter(task, async () =>
         {
-            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
-            Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
-            //Fault = _workflowState.Fault != null ? _workflowFaultStateMapper.Map(_workflowState.Fault) : default,
-            TriggeredActivityId = string.Empty,
-            WorkflowInstanceId = _workflowState.Id,
-            Status = _workflowStatusMapper.Map(_workflowState.Status),
-            SubStatus = _workflowSubStatusMapper.Map(_workflowState.SubStatus)
-        };
+            var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
+
+            _workflowState = _workflowHost.WorkflowState;
+
+            await SaveSnapshotAsync();
+            SaveWorkflowInstance(_workflowState);
+
+            var response = new WorkflowExecutionResponse
+            {
+                Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+                Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
+                TriggeredActivityId = string.Empty,
+                WorkflowInstanceId = _workflowState.Id,
+                Status = _workflowStatusMapper.Map(_workflowState.Status),
+                SubStatus = _workflowSubStatusMapper.Map(_workflowState.SubStatus)
+            };    
+            
+            respond(response);
+        });
     }
+
+    /// <inheritdoc />
+    public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
 
     /// <inheritdoc />
     public override async Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
@@ -295,7 +336,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
-    
+
     /// <summary>
     /// Asynchronously persists the workflow instance.
     /// </summary>
@@ -305,9 +346,9 @@ internal class WorkflowInstance : WorkflowInstanceBase
         Context.ReenterAfter(saveInstanceTask, () => { });
     }
 
-    private async Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
+    private Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceManager.SaveAsync(workflowInstance);
+        return _workflowInstanceManager.SaveAsync(workflowInstance);
     }
 }

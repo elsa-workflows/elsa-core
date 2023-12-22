@@ -19,8 +19,13 @@ public static class QueryableExtensions
     {
         var set = dbContext.Set<TEntity>();
         var compiledKeySelector = keySelector.Compile();
-        var containsLambda = keySelector.BuildContainsExpression(entities);
-        var existingEntities = await set.AsNoTracking().Where(containsLambda).ToListAsync(cancellationToken);
+        var containsLambda = entities.Any() ? keySelector.BuildContainsExpression(entities) : default;
+        var existingEntitiesQuery = set.AsNoTracking();
+
+        if (containsLambda != null)
+            existingEntitiesQuery = existingEntitiesQuery.Where(containsLambda);
+
+        var existingEntities = await existingEntitiesQuery.ToListAsync(cancellationToken);
         var entitiesToUpdate = entities.IntersectBy(existingEntities.Select(compiledKeySelector), compiledKeySelector).ToList();
         var entitiesToInsert = entities.Except(entitiesToUpdate).ToList();
 

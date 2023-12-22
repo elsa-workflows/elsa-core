@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
@@ -208,7 +209,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
         context.Set(Headers, headersDictionary);
-        
+
         // Validate request size.
         if (!ValidateRequestSize(context, httpContext))
         {
@@ -249,8 +250,16 @@ public class HttpEndpoint : Trigger<HttpRequest>
         }
 
         // Read content, if any.
-        var content = await ParseContentAsync(context, request);
-        ParsedContent.Set(context, content);
+        try
+        {
+            var content = await ParseContentAsync(context, request);
+            ParsedContent.Set(context, content);
+        }
+        catch (JsonException e)
+        {
+            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+            throw;
+        }
 
         // Complete.
         await context.CompleteActivityAsync();
@@ -271,7 +280,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var requestSize = httpContext.Request.ContentLength ?? 0;
         return requestSize <= requestSizeLimit;
     }
-    
+
     private async Task HandleRequestTooLargeAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
         var exposeRequestTooLargeOutcome = ExposeRequestTooLargeOutcome;
@@ -291,7 +300,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             await response.Body.FlushAsync();
         }
     }
-    
+
     private bool ValidateFileSizes(ActivityExecutionContext context, HttpContext httpContext, IFormFileCollection files)
     {
         var fileSizeLimit = FileSizeLimit.GetOrDefault(context);
@@ -376,7 +385,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
             await context.CompleteActivityWithOutcomesAsync("Invalid file extension");
             return;
         }
-        
+
         var blockedFileExtensions = BlockedFileExtensions.GetOrDefault(context)!;
         var response = httpContext.Response;
         response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
@@ -402,18 +411,31 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
     private async Task HandleInvalidFileMimeTypesAsync(ActivityExecutionContext context, HttpContext httpContext)
     {
-        if(ExposeInvalidFileMimeTypeOutcome)
+        if (ExposeInvalidFileMimeTypeOutcome)
         {
             await context.CompleteActivityWithOutcomesAsync("Invalid file MIME type");
             return;
         }
-        
+
         var allowedMimeTypes = AllowedMimeTypes.GetOrDefault(context)!;
         var response = httpContext.Response;
         response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
         await response.WriteAsJsonAsync(new
         {
             Message = $"Only the following MIME types are allowed: {string.Join(", ", allowedMimeTypes)}"
+        });
+        await response.Body.FlushAsync();
+    }
+
+    private async Task HandleInvalidJsonPayloadAsync(ActivityExecutionContext context, HttpContext httpContext, JsonException exception)
+    {
+        var response = httpContext.Response;
+        response.StatusCode = StatusCodes.Status400BadRequest;
+        await response.WriteAsJsonAsync(new
+        {
+            exception.Message,
+            exception.Path,
+            exception.LineNumber,
         });
         await response.Body.FlushAsync();
     }
@@ -436,7 +458,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
     private IEnumerable<object> GetBookmarkPayloads(ExpressionExecutionContext context)
     {
         // Generate bookmark data for path and selected methods.
-        var path = context.Get(Path);
+        var normalizedRoute = context.Get(Path)!.NormalizeRoute();
         var methods = SupportedMethods.GetOrDefault(context) ?? new List<string> { HttpMethods.Get };
         var authorize = Authorize.GetOrDefault(context);
         var policy = Policy.GetOrDefault(context);
@@ -444,7 +466,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
         return methods
-            .Select(x => new HttpEndpointBookmarkPayload(path!, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
+            .Select(x => new HttpEndpointBookmarkPayload(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
             .Cast<object>()
             .ToArray();
     }

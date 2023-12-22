@@ -5,7 +5,7 @@ using Elsa.Http.ContentWriters;
 using Elsa.Workflows.Core;
 using Elsa.Workflows.Core.Attributes;
 using Elsa.Workflows.Core.Models;
-using HttpRequestHeaders = Elsa.Http.Models.HttpRequestHeaders;
+using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
 
@@ -67,7 +67,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// The headers to send along with the request.
     /// </summary>
     [Input(Description = "The headers to send along with the request.", Category = "Advanced")]
-    public Input<HttpRequestHeaders?> RequestHeaders { get; set; } = new(new HttpRequestHeaders());
+    public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
     /// The parsed content, if any.

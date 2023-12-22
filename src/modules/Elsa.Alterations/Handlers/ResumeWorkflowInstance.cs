@@ -3,12 +3,14 @@ using Elsa.Alterations.Core.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Handlers;
 
 /// <summary>
 /// Resumes a workflow instance when an alteration job has been completed and the workflow contains scheduled work.
 /// </summary>
+[UsedImplicitly]
 public class ResumeWorkflowInstance : INotificationHandler<AlterationJobCompleted>
 {
     private readonly IWorkflowDispatcher _workflowDispatcher;

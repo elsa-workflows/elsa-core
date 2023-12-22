@@ -24,13 +24,14 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchWorkflowDefinitionCommand(
-            request.DefinitionId,
-            request.VersionOptions,
-            request.Input,
-            request.CorrelationId,
-            request.InstanceId,
-            request.TriggerActivityId);
+        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionId, request.VersionOptions)
+        {
+            Input = request.Input,
+            Properties = request.Properties,
+            CorrelationId = request.CorrelationId,
+            InstanceId = request.InstanceId,
+            TriggerActivityId = request.TriggerActivityId
+        };
 
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowDefinitionResponse();
@@ -39,16 +40,16 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchWorkflowInstanceCommand(
-            request.InstanceId, 
-            request.BookmarkId, 
-            request.ActivityId,
-            request.ActivityNodeId,
-            request.ActivityInstanceId,
-            request.ActivityHash,
-            request.Input, 
-            request.CorrelationId);
-        
+        var command = new DispatchWorkflowInstanceCommand(request.InstanceId){
+            BookmarkId = request.BookmarkId,
+            ActivityId = request.ActivityId,
+            ActivityNodeId = request.ActivityNodeId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            ActivityHash = request.ActivityHash,
+            Input = request.Input,
+            Properties = request.Properties,
+            CorrelationId = request.CorrelationId};
+
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchWorkflowInstanceResponse();
     }
@@ -56,7 +57,14 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.ActivityInstanceId, request.Input);
+        var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
+        {
+            CorrelationId = request.CorrelationId,
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            Input = request.Input,
+            Properties = request.Properties
+        };
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchTriggerWorkflowsResponse();
     }
@@ -64,7 +72,13 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload, request.CorrelationId, request.WorkflowInstanceId, request.ActivityInstanceId, request.Input);
+        var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
+        {
+            CorrelationId = request.CorrelationId,
+            WorkflowInstanceId = request.WorkflowInstanceId,
+            ActivityInstanceId = request.ActivityInstanceId,
+            Input = request.Input
+        };
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
         return new DispatchResumeWorkflowsResponse();
     }

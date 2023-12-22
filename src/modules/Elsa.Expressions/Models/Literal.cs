@@ -21,9 +21,6 @@ public class Literal : MemoryBlockReference
     /// </summary>
     public object? Value { get; }
 
-    /// <inheritdoc />
-    public override MemoryBlock Declare() => new();
-
     /// <summary>
     /// Creates a literal expression from a value.
     /// </summary>

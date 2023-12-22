@@ -54,13 +54,6 @@ internal class Execute : ElsaEndpoint<Request, Response>
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-
-        // Obsolete. Remove in 3.0 release.
-        if (request.Version.HasValue)
-        {
-            versionOptions = VersionOptions.SpecificVersion(request.Version.Value);
-        }
-
         var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions }, cancellationToken);
 
         if (!exists)
@@ -72,10 +65,18 @@ internal class Execute : ElsaEndpoint<Request, Response>
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
         var instanceId = _identityGenerator.GenerateId();
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions(correlationId, input, versionOptions, request.TriggerActivityId, instanceId, cancellationToken);
+        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        {
+            CorrelationId = correlationId,
+            Input = input,
+            VersionOptions = versionOptions,
+            TriggerActivityId = request.TriggerActivityId,
+            InstanceId = instanceId,
+            CancellationTokens = cancellationToken
+        };
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
-        HttpContext.Response.Headers.Add("x-elsa-workflow-instance-id", instanceId);
+        HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
 
         // Start the workflow.
         var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions);
@@ -102,7 +103,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
             if (!HttpContext.Response.HasStarted)
             {
                 // Write a response header to indicate that the response is a workflow state response.
-                HttpContext.Response.Headers.Add("x-elsa-response", "true");
+                HttpContext.Response.Headers.Append("x-elsa-response", "true");
 
                 // Only write a response if the status code wasn't changed by the workflow.
                 if (HttpContext.Response.StatusCode == StatusCodes.Status200OK)

@@ -19,6 +19,14 @@ public class CustomPreserveReferenceResolver : ReferenceResolver
         if (!_referenceIdToObjectMap.TryAdd(referenceId, value))
             throw new JsonException();
     }
+    
+    /// <summary>
+    /// Tries to add a reference.
+    /// </summary>
+    public bool TryAddReference(string referenceId, object value)
+    {
+        return _referenceIdToObjectMap.TryAdd(referenceId, value);
+    }
 
     /// <inheritdoc />
     public override string GetReference(object value, out bool alreadyExists)

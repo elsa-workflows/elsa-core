@@ -24,7 +24,16 @@ public class EFCoreBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, s => s.BookmarkId, OnSaveAsync, cancellationToken);
+    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(record, s => s.BookmarkId, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
+    {
+        await _store.SaveManyAsync(records, s => s.BookmarkId, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);

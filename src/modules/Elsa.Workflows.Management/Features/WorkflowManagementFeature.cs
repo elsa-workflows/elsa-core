@@ -58,9 +58,7 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
-        new(typeof(int), PrimitivesCategory, "A 32 bit integer."),
         new(typeof(long), PrimitivesCategory, "A 64 bit integer."),
-        new(typeof(float), PrimitivesCategory, "A real number."),
         new(typeof(double), PrimitivesCategory, "A real number with double precision."),
         new(typeof(decimal), PrimitivesCategory, "A decimal number."),
         new(typeof(Guid), PrimitivesCategory, "Represents a Globally Unique Identifier."),
@@ -159,15 +157,15 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
             .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
+            .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
             .AddSingleton<IWorkflowValidator, WorkflowValidator>()
             .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
             .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
             .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddSingleton<IWorkflowInstanceManager, WorkflowInstanceManager>()
             .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
-            .AddSingleton<IExpressionSyntaxRegistry, ExpressionSyntaxRegistry>()
-            .AddSingleton<IExpressionSyntaxProvider, DefaultExpressionSyntaxProvider>()
-            .AddSingleton<IExpressionSyntaxRegistryPopulator, ExpressionSyntaxRegistryPopulator>()
+            .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
+            .AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
             .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()

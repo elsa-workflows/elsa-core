@@ -1,6 +1,7 @@
 using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Core.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Core.Services;
 
@@ -9,6 +10,7 @@ public class ActivityRegistry : IActivityRegistry
 {
     private readonly IActivityDescriber _activityDescriber;
     private readonly IEnumerable<IActivityDescriptorModifier> _modifiers;
+    private readonly ILogger _logger;
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
     private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
     private readonly IDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new Dictionary<(string Type, int Version), ActivityDescriptor>();
@@ -16,10 +18,11 @@ public class ActivityRegistry : IActivityRegistry
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityRegistry"/> class.
     /// </summary>
-    public ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers)
+    public ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ILogger<ActivityRegistry> logger)
     {
         _activityDescriber = activityDescriber;
         _modifiers = modifiers;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -98,10 +101,20 @@ public class ActivityRegistry : IActivityRegistry
 
     private void Add(ActivityDescriptor descriptor, ICollection<ActivityDescriptor> target)
     {
-        foreach (var modifier in _modifiers) 
+        foreach (var modifier in _modifiers)
             modifier.Modify(descriptor);
-        
-        _activityDescriptors.Add((descriptor.TypeName, descriptor.Version), descriptor);
+
+        // If the descriptor already exists, replace it. But log a warning.
+        if (_activityDescriptors.TryGetValue((descriptor.TypeName, descriptor.Version), out var existingDescriptor))
+        {
+            // Remove the existing descriptor from the target collection.
+            target.Remove(existingDescriptor);
+
+            // Log a warning.
+            _logger.LogWarning("Activity descriptor {ActivityType} v{ActivityVersion} was already registered. Replacing with new descriptor", descriptor.TypeName, descriptor.Version);
+        }
+
+        _activityDescriptors[(descriptor.TypeName, descriptor.Version)] = descriptor;
         target.Add(descriptor);
     }
 

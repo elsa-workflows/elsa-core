@@ -64,7 +64,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         {
             Name = nameof(WorkflowDefinitionActivity.Root),
             DisplayName = "Root",
-            IsBrowsable = true,
+            IsBrowsable = false,
             Type = PortType.Embedded
         };
 
@@ -114,14 +114,16 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         var inputs = definition.Inputs.Select(inputDefinition =>
         {
             var nakedType = inputDefinition.Type;
+            var inputName = inputDefinition.Name;
+            var safeInputName = PropertyNameHelper.GetSafePropertyName(typeof(WorkflowDefinitionActivity), inputName);
 
             return new InputDescriptor
             {
                 Type = nakedType,
                 IsWrapped = true,
-                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(inputDefinition.Name),
-                ValueSetter = (activity, value) => activity.SyntheticProperties[inputDefinition.Name] = value!,
-                Name = inputDefinition.Name,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(safeInputName),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[safeInputName] = value!,
+                Name = safeInputName,
                 DisplayName = inputDefinition.DisplayName,
                 Description = inputDefinition.Description,
                 Category = inputDefinition.Category,
@@ -135,20 +137,24 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             yield return input;
     }
 
-    private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition) =>
-        definition.Outputs.Select(outputDefinition =>
+    private static IEnumerable<OutputDescriptor> DescribeOutputs(WorkflowDefinition definition)
+    {
+        return definition.Outputs.Select(outputDefinition =>
         {
             var nakedType = outputDefinition.Type;
+            var outputName = outputDefinition.Name;
+            var safeOutputName = PropertyNameHelper.GetSafePropertyName(typeof(WorkflowDefinitionActivity), outputName);
 
             return new OutputDescriptor
             {
                 Type = nakedType,
-                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(outputDefinition.Name),
-                ValueSetter = (activity, value) => activity.SyntheticProperties[outputDefinition.Name] = value!,
-                Name = outputDefinition.Name,
+                ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(safeOutputName),
+                ValueSetter = (activity, value) => activity.SyntheticProperties[safeOutputName] = value!,
+                Name = safeOutputName,
                 DisplayName = outputDefinition.DisplayName,
                 Description = outputDefinition.Description,
                 IsSynthetic = true
             };
         });
+    }
 }

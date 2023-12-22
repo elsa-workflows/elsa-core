@@ -40,7 +40,7 @@ public class SetOutput : CodeActivity
     {
         var outputName = OutputName.Get(context);
         var outputValue = OutputValue.GetOrDefault(context);
-        var ancestorContext = context.GetAncestors().FirstOrDefault(x => x.ActivityDescriptor.Outputs.Any(y => y.Name == outputName));
+        var ancestorContext = context.ParentActivityExecutionContext?.GetAncestors().FirstOrDefault(x => x.ActivityDescriptor.Outputs.Any(y => y.Name == outputName));
 
         if (ancestorContext != null)
             SetAncestorActivityOutput(context, ancestorContext, outputValue);
@@ -59,7 +59,7 @@ public class SetOutput : CodeActivity
             return;
         
         var ancestorOutput = (Output)ancestorOutputDescriptor.ValueGetter(ancestorActivity)!;
-        ancestorContext.Set(ancestorOutput, outputValue);
+        ancestorContext.Set(ancestorOutput, outputValue, outputName);
 
         // If the ancestor activity is the root workflow, we need to update the workflow execution context's output collection as well.
         if (ancestorContext.ParentActivityExecutionContext == null)
@@ -73,7 +73,7 @@ public class SetOutput : CodeActivity
                 context.Set(variable, outputValue);
 
             // Also set the output on the composite activity's output property.
-            var compositeActivityContext = ancestorContext.ParentActivityExecutionContext;
+            var compositeActivityContext = ancestorContext;
             var compositeActivity = compositeActivityContext.Activity;
             var compositeActivityDescriptor = compositeActivityContext.ActivityDescriptor;
             var compositeOutputDescriptor = compositeActivityDescriptor.Outputs.FirstOrDefault(x => x.Name == outputName);

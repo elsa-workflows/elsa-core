@@ -1,4 +1,3 @@
-using Elsa.Workflows.Core.Models;
 using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -58,9 +57,8 @@ public interface IWorkflowRuntime
     /// Executes a pending workflow.
     /// </summary>
     /// <param name="match">A workflow match to execute.</param>
-    /// <param name="input">Optional input to pass to the workflow.</param>
-    /// <param name="cancellationTokens">An optional set of cancellation tokens to control workflow cancellation without cancelling system-level operations.</param>
-    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, IDictionary<string, object>? input = default, CancellationTokens cancellationTokens = default);
+    /// <param name="options">Options for executing the workflow.</param>
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowOptions? options = default);
 
     /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
@@ -78,11 +76,6 @@ public interface IWorkflowRuntime
     /// Imports the specified <see cref="WorkflowState"/>.
     /// </summary>
     Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Adds and removes bookmarks based on the provided bookmarks diff.
-    /// </summary>
-    Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the specified bookmark.

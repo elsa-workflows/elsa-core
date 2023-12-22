@@ -37,6 +37,13 @@ public class DapperBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
+    public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
+    {
+        var mappedRecords = Map(records);
+        await _store.SaveManyAsync(mappedRecords, PrimaryKeyName, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
@@ -64,6 +71,7 @@ public class DapperBookmarkStore : IBookmarkStore
     }
 
     private IEnumerable<StoredBookmark> Map(IEnumerable<StoredBookmarkRecord> source) => source.Select(Map);
+    private IEnumerable<StoredBookmarkRecord> Map(IEnumerable<StoredBookmark> source) => source.Select(Map);
 
     private StoredBookmarkRecord Map(StoredBookmark source)
     {

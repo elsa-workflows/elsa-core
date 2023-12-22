@@ -57,11 +57,12 @@ public class MongoDbStore<TDocument> where TDocument : class
     {
         return await _collection.FindOneAndReplaceAsync(document.BuildIdFilter(), document, new FindOneAndReplaceOptions<TDocument>{ ReturnDocument = ReturnDocument.After, IsUpsert = true }, cancellationToken);
     }
-    
+
     /// <summary>
     /// Saves the document.
     /// </summary>
     /// <param name="document">The document to save.</param>
+    /// <param name="selector">The selector to use.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<TDocument> SaveAsync<TResult>(TDocument document, Expression<Func<TDocument, TResult>> selector, CancellationToken cancellationToken = default)
     {
@@ -80,6 +81,25 @@ public class MongoDbStore<TDocument> where TDocument : class
         foreach (var document in documents)
         {
             var replacement = new ReplaceOneModel<TDocument>(document.BuildIdFilter(), document) { IsUpsert = true };
+            writes.Add(replacement);
+        }
+
+        await _collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
+    }
+
+    /// <summary>
+    /// Saves the specified documents.
+    /// </summary>
+    /// <param name="documents">The documents to save.</param>
+    /// <param name="primaryKey">The primary key to use.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task SaveManyAsync(IEnumerable<TDocument> documents, string primaryKey = "Id", CancellationToken cancellationToken = default)
+    {
+        var writes = new List<WriteModel<TDocument>>();
+
+        foreach (var document in documents)
+        {
+            var replacement = new ReplaceOneModel<TDocument>(document.BuildFilter(primaryKey), document) { IsUpsert = true };
             writes.Add(replacement);
         }
 

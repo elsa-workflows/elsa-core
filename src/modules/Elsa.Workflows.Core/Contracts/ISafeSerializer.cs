@@ -21,4 +21,9 @@ public interface ISafeSerializer
     /// Deserializes the specified state.
     /// </summary>
     ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Deserializes the specified state.
+    /// </summary>
+    ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default);
 }

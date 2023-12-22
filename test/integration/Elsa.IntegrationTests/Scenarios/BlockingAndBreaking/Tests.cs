@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Extensions;
@@ -16,17 +17,19 @@ public class Tests
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
+    private readonly IServiceProvider _services;
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
-        _workflowBuilderFactory = services.GetRequiredService<IWorkflowBuilderFactory>();
-        _workflowRunner = services.GetRequiredService<IWorkflowRunner>();
+        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _workflowBuilderFactory = _services.GetRequiredService<IWorkflowBuilderFactory>();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
     [Fact(DisplayName = "Fork completes after all branches complete.")]
     public async Task Test1()
     {
+        await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<WaitAllForkWorkflow>();
 
         // Start workflow.
@@ -34,12 +37,12 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // Resume the second branch.
         bookmark = result2.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 2");
-        runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result3 = await _workflowRunner.RunAsync(workflow, result2.WorkflowState, runOptions);
 
         // Verify expected output.
@@ -50,6 +53,7 @@ public class Tests
     [Fact(DisplayName = "Fork completes after any branch completes.")]
     public async Task Test2()
     {
+        await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<WaitAnyForkWorkflow>();
 
         // Start workflow.
@@ -57,17 +61,18 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // Verify expected output.
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "Branch 1", "Branch 2", "Branch 1 - Resumed", "End" }, lines);
     }
-    
+
     [Fact(DisplayName = "Break breaks out of While loop.")]
     public async Task Test3()
     {
+        await _services.PopulateRegistriesAsync();
         var workflow = await _workflowBuilderFactory.CreateBuilder().BuildWorkflowAsync<BreakWhileFromForkWorkflow>();
 
         // Start workflow.
@@ -75,7 +80,7 @@ public class Tests
 
         // Resume the first branch.
         var bookmark = result1.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Branch 1");
-        var runOptions = new RunWorkflowOptions(bookmarkId: bookmark!.Id);
+        var runOptions = new RunWorkflowOptions { BookmarkId = bookmark!.Id };
         var result2 = await _workflowRunner.RunAsync(workflow, result1.WorkflowState, runOptions);
 
         // There should be no bookmarks left, since the while loop was broken out of.

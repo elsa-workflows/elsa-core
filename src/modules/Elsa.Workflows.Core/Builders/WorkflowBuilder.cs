@@ -82,6 +82,8 @@ public class WorkflowBuilder : IWorkflowBuilder
     public Variable<T> WithVariable<T>(string name, T value)
     {
         var variable = WithVariable<T>();
+        variable.Name = name;
+        variable.Value = value;
         return variable;
     }
 
@@ -147,8 +149,7 @@ public class WorkflowBuilder : IWorkflowBuilder
             workflow.Result = new Output<object>(Result);
         }
 
-        var useActivityIdAsNodeId = workflow.CreatedWithModernTooling();
-        var graph = await _activityVisitor.VisitAsync(workflow, useActivityIdAsNodeId, cancellationToken);
+        var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register all activity types first. The identity graph service will need to know about all activity types.

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\..\..\common.props" />
+    <Import Project="..\..\..\configureawait.props" />
+    <Import Project="..\..\..\frameworks.props"/>
+    
+    <PropertyGroup>
+        <Description>
+            Provides integration of Azure Service Bus with MassTransit's integration of Elsa.
+        </Description>
+        <PackageTags>elsa module service-bus masstransit azure-service-bus</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="8.1.2" />
+    </ItemGroup>
+
+</Project>

@@ -43,6 +43,12 @@ public class ParallelForEach<T> : Activity
         var tags = new List<Guid>();
         var currentIndex = 0;
 
+        if (items.Count == 0)
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
         foreach (var item in items)
         {
             // For each item, declare a new variable for the work to be scheduled.

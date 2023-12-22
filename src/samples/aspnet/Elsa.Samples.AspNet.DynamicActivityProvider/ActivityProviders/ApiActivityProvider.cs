@@ -129,8 +129,8 @@ public class ApiActivityProvider : IActivityProvider
                 activity.Type = fullTypeName;
                 
                 // Configure the activity's URL and method properties.
-                activity.Url = new Input<Uri?>(new ReadReference(urlInputReferenceId));
-                activity.Method = new(new ReadReference(methodInputReferenceId));
+                activity.Url = new Input<Uri?>(new MemoryBlockReference(urlInputReferenceId));
+                activity.Method = new(new MemoryBlockReference(methodInputReferenceId));
 
                 return activity;
             }

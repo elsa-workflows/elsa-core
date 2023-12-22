@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Exceptions;
@@ -70,15 +71,25 @@ public static class ObjectConverter
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
         var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
-        if (value is JsonElement jsonNumber && jsonNumber.ValueKind == JsonValueKind.Number && underlyingTargetType == typeof(string))
+        if (value is JsonElement { ValueKind: JsonValueKind.Number } jsonNumber && underlyingTargetType == typeof(string))
             return jsonNumber.ToString().ConvertTo(underlyingTargetType);
 
-        if (value is JsonElement jsonObject)
+        if (value is JsonElement jsonElement)
         {
-            if (jsonObject.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
-                return jsonObject.GetString().ConvertTo(underlyingTargetType);
+            if (jsonElement.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
+                return jsonElement.GetString().ConvertTo(underlyingTargetType);
 
-            return jsonObject.Deserialize(targetType, options);
+            return jsonElement.Deserialize(targetType, options);
+        }
+
+        if (value is JsonObject jsonObject)
+        {
+            return underlyingTargetType switch
+            {
+                { } t when t == typeof(string) => jsonObject.ToString(),
+                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, options),
+                _ => jsonObject,
+            };
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
@@ -155,6 +166,9 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, value);
 
             if (underlyingSourceType == typeof(double))
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+            
+            if (underlyingSourceType == typeof(long))
                 return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
         }
 
