@@ -64,6 +64,14 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     public Input<string?> Authorization { get; set; } = default!;
 
     /// <summary>
+    /// A boolean that allow to add Authorization Header without validation.
+    /// </summary>
+    [Input(
+        Description = "A boolean that allow to add Authorization Header without validation. This is usefull for header that are not in the Standard HTTP. ",
+        Category = "Security")]
+    public Input<bool> AddAuthorizatonHeaderWithoutValidation { get; set; } = default!;
+
+    /// <summary>
     /// The headers to send along with the request.
     /// </summary>
     [Input(Description = "The headers to send along with the request.", Category = "Advanced")]
@@ -154,9 +162,13 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         var headers = context.GetHeaders(RequestHeaders);
         var authorization = Authorization.GetOrDefault(context);
+        var addAuthorizationWithoutValidation = AddAuthorizatonHeaderWithoutValidation.GetOrDefault(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
-            request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
+            if(addAuthorizationWithoutValidation)
+                request.Headers.TryAddWithoutValidation("Authorization", authorization);
+            else
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
 
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
