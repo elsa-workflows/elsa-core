@@ -1,6 +1,6 @@
 # ELSA 3.0
 
-![Meet Elsa](./design/artwork/android-elsa-portrait.png)
+![Elsa Workflows](./design/artwork/elsa-logo-art.png)
 
 [![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
