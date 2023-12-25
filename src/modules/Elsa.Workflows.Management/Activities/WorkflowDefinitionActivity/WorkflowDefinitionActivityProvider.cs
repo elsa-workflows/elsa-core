@@ -35,10 +35,24 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
+        
+        var allDescriptors = new List<ActivityDescriptor>();
+        var currentPage = 0;
+        const int pageSize = 100;
 
-        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-        var descriptors = CreateDescriptors(definitions);
-        return descriptors;
+        while (true)
+        {
+            var pageArgs = PageArgs.FromPage(currentPage++, pageSize);
+            var pageOfDefinitions = await _store.FindManyAsync(filter, pageArgs, cancellationToken);
+            var descriptors = CreateDescriptors(pageOfDefinitions.Items).ToList();
+            
+            allDescriptors.AddRange(descriptors);
+            
+            if(allDescriptors.Count >= pageOfDefinitions.TotalCount)
+                break;
+        }
+        
+        return allDescriptors;
     }
 
     private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions) =>
