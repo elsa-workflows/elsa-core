@@ -14,7 +14,7 @@ public class HungryWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var deliveredFood = new Variable<string>();
+        var deliveredFood = builder.WithVariable<string>();
 
         builder.Root = new Sequence
         {
@@ -29,7 +29,7 @@ public class HungryWorkflow : WorkflowBase
                 new WriteLine("Hunger detected!"),
                 new RunTask("OrderFood")
                 {
-                    Payload = new(new Dictionary<string, object>() { ["Food"] = "Pizza" }),
+                    Payload = new(new Dictionary<string, object> { ["Food"] = "Pizza" }),
                     Result = new Output<object>(deliveredFood)
                 },
                 new WriteLine(context => $"Eating the {deliveredFood.Get(context)}"),
