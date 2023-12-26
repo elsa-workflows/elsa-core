@@ -6,13 +6,13 @@ namespace Elsa.Workflows.UIHints;
 /// </summary>
 public static class InputUIHints
 {
-    public const string SingleLine = "single-line";
-    public const string MultiLine = "multi-line";
+    public const string SingleLine = "singleline";
+    public const string MultiLine = "multiline";
     public const string Checkbox = "checkbox";
-    public const string CheckList = "check-list";
-    public const string RadioList = "radio-list";
+    public const string CheckList = "checklist";
+    public const string RadioList = "radiolist";
     public const string DropDown = "dropdown";
-    public const string MultiText = "multi-text";
+    public const string MultiText = "multitext";
     public const string CodeEditor = "code-editor";
     public const string VariablePicker = "variable-picker";
     public const string TypePicker = "type-picker";
