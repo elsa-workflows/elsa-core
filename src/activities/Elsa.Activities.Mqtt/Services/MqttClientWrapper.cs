@@ -1,3 +1,4 @@
+using Elsa.Activities.Mqtt.Activities;
 using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
@@ -10,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace Elsa.Activities.Mqtt.Services
 {
-    public class MqttClientWrapper : IMqttClientWrapper
+    public sealed class MqttClientWrapper : IMqttClientWrapper
     {
         private readonly ILogger _logger;
-        private Func<MqttApplicationMessage, Task>? _messageHandler;
+        private Func<MqttMessage, Task>? _messageHandler;
         private readonly SemaphoreSlim _semaphore = new(1);
         public IMqttClient Client { get; }
         public Options.MqttClientOptions Options { get; }
@@ -25,8 +26,8 @@ namespace Elsa.Activities.Mqtt.Services
             _logger = logger;
         }
 
-        
-        private async Task SubscribeAsync(string topic, Func<MqttApplicationMessage, Task> handler)
+
+        private async Task SubscribeAsync(string topic, Func<MqttMessage, Task> handler)
         {
             if (!Client.IsConnected)
             {
@@ -39,7 +40,13 @@ namespace Elsa.Activities.Mqtt.Services
                 Client.ApplicationMessageReceivedAsync += async e =>
                 {
                     if (_messageHandler != null)
-                        await _messageHandler(e.ApplicationMessage);
+                    {
+                        var appmsg = e.ApplicationMessage;
+                        var msg = new MqttMessage(
+                            appmsg.Topic,
+                            appmsg.Payload == null ? null : System.Text.Encoding.UTF8.GetString(appmsg.Payload));
+                        await _messageHandler(msg);
+                    }
                     else
                         _logger.LogWarning("Attempted to subscribe to topic {Topic}, but no message handler was set.", Options.Topic);
                 };
@@ -57,7 +64,7 @@ namespace Elsa.Activities.Mqtt.Services
             await DisconnectAsync();
         }
 
-        public async Task SetMessageHandlerAsync(Func<MqttApplicationMessage, Task> handler)
+        public async Task SetMessageHandlerAsync(Func<MqttMessage, Task> handler)
         {
             await SubscribeAsync(Options.Topic, handler);
         }

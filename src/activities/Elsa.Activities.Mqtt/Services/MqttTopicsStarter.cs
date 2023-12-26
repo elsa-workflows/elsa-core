@@ -1,4 +1,6 @@
+using Elsa.Activities.Mqtt.Bookmarks;
 using Elsa.Activities.Mqtt.Options;
+using Elsa.Models;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,14 +10,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Elsa.Activities.Mqtt.Bookmarks;
-using Elsa.Models;
-using Elsa.Services.Models;
-using Elsa.Services.WorkflowStorage;
 
 namespace Elsa.Activities.Mqtt.Services
 {
-    public class MqttTopicsStarter : IMqttTopicsStarter
+    public sealed class MqttTopicsStarter : IMqttTopicsStarter
     {
         private readonly SemaphoreSlim _semaphore = new(1);
         private readonly IMessageReceiverClientFactory _receiverFactory;
@@ -23,7 +21,7 @@ namespace Elsa.Activities.Mqtt.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<MqttTopicsStarter> _logger;
-        private readonly IDictionary<int,Worker> _workers;
+        private readonly IDictionary<int, Worker> _workers;
 
         public MqttTopicsStarter(
             IMessageReceiverClientFactory receiverFactory,
@@ -127,7 +125,7 @@ namespace Elsa.Activities.Mqtt.Services
 
         private MqttClientOptions CreateConfigurationFromBookmark(MessageReceivedBookmark bookmark, string activityId)
         {
-            return new MqttClientOptions(bookmark.Topic,bookmark.Host,bookmark.Port,bookmark.Username,bookmark.Password,bookmark.Qos);
+            return new MqttClientOptions(bookmark.Topic, bookmark.Host, bookmark.Port, bookmark.Username, bookmark.Password, bookmark.Qos);
         }
 
         private async Task DisposeExistingWorkersAsync()
@@ -141,6 +139,6 @@ namespace Elsa.Activities.Mqtt.Services
 
         private async Task DisposeReceiverAsync(IMqttClientWrapper messageReceiver) => await _receiverFactory.DisposeReceiverAsync(messageReceiver);
 
-        
+
     }
 }

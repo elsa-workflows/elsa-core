@@ -4,7 +4,7 @@ using System;
 
 namespace Elsa.Activities.Mqtt.Options
 {
-    public class MqttClientOptions
+    public sealed class MqttClientOptions
     {
         public string Topic { get; }
         public string Host { get; }
