@@ -44,9 +44,10 @@
 
     <ItemGroup>
         <PackageReference Include="Azure.Identity" Version="1.10.4"/>
+        <PackageReference Include="Bogus" Version="35.0.1" />
         <PackageReference Include="FluentStorage.Azure.Blobs" Version="5.2.2"/>
-        <PackageReference Include="Proto.Persistence.Sqlite" Version="1.4.0"/>
-        <PackageReference Include="Proto.Persistence.SqlServer" Version="1.4.0"/>
+        <PackageReference Include="Proto.Persistence.Sqlite" Version="1.5.0"/>
+        <PackageReference Include="Proto.Persistence.SqlServer" Version="1.5.0"/>
     </ItemGroup>
 
     <ItemGroup>

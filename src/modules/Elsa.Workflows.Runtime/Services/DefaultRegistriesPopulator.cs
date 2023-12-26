@@ -1,4 +1,3 @@
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.HostedServices;

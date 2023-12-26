@@ -33,6 +33,7 @@ public class WorkflowExecutionContext : IExecutionContext
     private static readonly object ActivityOutputRegistryKey = new();
     private static readonly object LastActivityResultKey = new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
+    internal static ValueTask Noop(ActivityExecutionContext context) => default;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;

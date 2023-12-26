@@ -57,11 +57,14 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// The Authorization header value to send with the request.
     /// </summary>
     /// <example>Bearer {some-access-token}</example>
-    [Input(
-        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
-        Category = "Security"
-    )]
+    [Input(Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}", Category = "Security")]
     public Input<string?> Authorization { get; set; } = default!;
+
+    /// <summary>
+    /// A value that allows to add the Authorization header without validation.
+    /// </summary>
+    [Input(Description = "A value that allows to add the Authorization header without validation.", Category = "Security")]
+    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
 
     /// <summary>
     /// The headers to send along with the request.
@@ -154,9 +157,13 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         var headers = context.GetHeaders(RequestHeaders);
         var authorization = Authorization.GetOrDefault(context);
+        var addAuthorizationWithoutValidation = DisableAuthorizationHeaderValidation.GetOrDefault(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
-            request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
+            if(addAuthorizationWithoutValidation)
+                request.Headers.TryAddWithoutValidation("Authorization", authorization);
+            else
+                request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);
 
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());

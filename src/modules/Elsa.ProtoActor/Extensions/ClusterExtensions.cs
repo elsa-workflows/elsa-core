@@ -7,5 +7,8 @@ namespace Elsa.Extensions;
 
 internal static class ClusterExtensions
 {
-    public static WorkflowInstanceClient GetNamedWorkflowGrain(this Cluster cluster, string workflowInstanceId) => cluster.GetWorkflowInstance($"{nameof(WorkflowInstance)}-{workflowInstanceId}");
+    public static WorkflowInstanceClient GetNamedWorkflowGrain(this Cluster cluster, string workflowInstanceId)
+    {
+        return cluster.GetWorkflowInstance($"{nameof(WorkflowInstance)}-{workflowInstanceId}");
+    }
 }

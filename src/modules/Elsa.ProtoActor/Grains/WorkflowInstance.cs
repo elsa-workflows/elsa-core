@@ -99,7 +99,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
     }
 
     /// <inheritdoc />
-    public override async Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request)
+    public override Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request) => Task.FromResult(new CanStartWorkflowResponse());
+
+    /// <inheritdoc />
+    public override async Task CanStart(StartWorkflowRequest request, Action<CanStartWorkflowResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
@@ -123,16 +126,22 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _instanceId = instanceId;
         _input = input;
 
-        var canStart = await _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        var task = _workflowHost.CanStartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
-        return new CanStartWorkflowResponse
+        Context.ReenterAfter(task, async canStart =>
         {
-            CanStart = canStart
-        };
+            respond(new CanStartWorkflowResponse
+            {
+                CanStart = await canStart
+            });
+        });
     }
 
     /// <inheritdoc />
-    public override async Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request)
+    public override Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
+
+    /// <inheritdoc />
+    public override async Task Start(StartWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
@@ -160,25 +169,30 @@ internal class WorkflowInstance : WorkflowInstanceBase
             Properties = properties,
             TriggerActivityId = request.TriggerActivityId
         };
-        await _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
-        var workflowState = _workflowHost.WorkflowState;
-        var result = workflowState.Status == WorkflowStatus.Finished ? ProtoBuf.RunWorkflowResult.Finished : ProtoBuf.RunWorkflowResult.Suspended;
 
-        _workflowState = workflowState;
+        var task = _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
 
-        await SaveSnapshotAsync();
-        SaveWorkflowInstance(workflowState);
-
-        return new WorkflowExecutionResponse
+        Context.ReenterAfter(task, async startWorkflowResultTask =>
         {
-            Result = result,
-            Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
-            Status = _workflowStatusMapper.Map(workflowState.Status),
-            SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
-            //Fault = workflowState.Fault != null ? _workflowFaultStateMapper.Map(workflowState.Fault) : default,
-            TriggeredActivityId = string.Empty,
-            WorkflowInstanceId = instanceId
-        };
+            var startWorkflowResult = await startWorkflowResultTask;
+            var workflowState = _workflowHost.WorkflowState;
+            var result = workflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
+
+            _workflowState = workflowState;
+
+            await SaveSnapshotAsync();
+            SaveWorkflowInstance(workflowState);
+
+            respond(new WorkflowExecutionResponse
+            {
+                Result = result,
+                Bookmarks = { _bookmarkMapper.Map(workflowState.Bookmarks).ToList() },
+                Status = _workflowStatusMapper.Map(workflowState.Status),
+                SubStatus = _workflowSubStatusMapper.Map(workflowState.SubStatus),
+                TriggeredActivityId = string.Empty,
+                WorkflowInstanceId = instanceId
+            }); 
+        });
     }
 
     /// <inheritdoc />
@@ -191,8 +205,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         return Task.CompletedTask;
     }
 
-    /// <inheritdoc />
-    public override async Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request)
+    public override async Task Resume(ResumeWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
     {
         _input = request.Input?.Deserialize();
         _properties = request.Properties?.Deserialize();
@@ -226,25 +239,33 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _version = _workflowHost.Workflow.Identity.Version;
         }
 
-        await _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
-        var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
-
-        _workflowState = _workflowHost.WorkflowState;
-
-        await SaveSnapshotAsync();
-        SaveWorkflowInstance(_workflowState);
-
-        return new WorkflowExecutionResponse
+        var task = _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
+        
+        Context.ReenterAfter(task, async () =>
         {
-            Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
-            Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
-            //Fault = _workflowState.Fault != null ? _workflowFaultStateMapper.Map(_workflowState.Fault) : default,
-            TriggeredActivityId = string.Empty,
-            WorkflowInstanceId = _workflowState.Id,
-            Status = _workflowStatusMapper.Map(_workflowState.Status),
-            SubStatus = _workflowSubStatusMapper.Map(_workflowState.SubStatus)
-        };
+            var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
+
+            _workflowState = _workflowHost.WorkflowState;
+
+            await SaveSnapshotAsync();
+            SaveWorkflowInstance(_workflowState);
+
+            var response = new WorkflowExecutionResponse
+            {
+                Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+                Bookmarks = { _bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList() },
+                TriggeredActivityId = string.Empty,
+                WorkflowInstanceId = _workflowState.Id,
+                Status = _workflowStatusMapper.Map(_workflowState.Status),
+                SubStatus = _workflowSubStatusMapper.Map(_workflowState.SubStatus)
+            };    
+            
+            respond(response);
+        });
     }
+
+    /// <inheritdoc />
+    public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
 
     /// <inheritdoc />
     public override async Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
@@ -325,9 +346,9 @@ internal class WorkflowInstance : WorkflowInstanceBase
         Context.ReenterAfter(saveInstanceTask, () => { });
     }
 
-    private async Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
+    private Task SaveWorkflowInstanceCoreAsync(WorkflowState workflowState)
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceManager.SaveAsync(workflowInstance);
+        return _workflowInstanceManager.SaveAsync(workflowInstance);
     }
 }

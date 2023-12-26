@@ -96,7 +96,6 @@ public class MessageReceived : Trigger
         {
             // Create bookmarks for when we receive the expected HTTP request.
             context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), Resume,false);
-            return;
         }
     }
 

@@ -22,7 +22,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
     private readonly WorkflowStateMapper _workflowStateMapper;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="HttpBookmarkProcessor"/> class.
     /// </summary>
     public HttpBookmarkProcessor(
         IWorkflowRuntime workflowRuntime,
