@@ -7,7 +7,7 @@ on:
     tags:
       - hotfix-* # e.g. 3.0.0-hotfix-1
   release:
-    types: [ prereleased, released ]
+    types: [ prereleased, published ]
 env:
   feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
@@ -62,11 +62,26 @@ jobs:
         run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
 
   publish_preview_nuget:
-    name: Publish to nuget.org
+    name: Publish preview to nuget.org
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event_name == 'release' || github.event_name == 'prereleased' }}
+    if: ${{ github.event_name == 'prereleased' && github.event.action == 'published' }}
+    steps:
+      - name: Download Packages
+        uses: actions/download-artifact@v3
+        with:
+          name: elsa-nuget-packages
+
+      - name: Publish to nuget.org
+        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+
+  publish_nuget:
+    name: Publish release to nuget.org
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v3
