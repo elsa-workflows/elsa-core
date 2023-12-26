@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing said type.

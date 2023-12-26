@@ -1,6 +1,6 @@
 using Elsa.Mediator.Contracts;
 
-namespace Elsa.Workflows.Core.Notifications;
+namespace Elsa.Workflows.Notifications;
 
 /// <summary>
 /// A notification that is sent when an activity is about to execute.

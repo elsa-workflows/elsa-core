@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;

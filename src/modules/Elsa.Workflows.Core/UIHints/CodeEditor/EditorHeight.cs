@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.ActivityInputOptions;
+namespace Elsa.Workflows.UIHints.CodeEditor;
 
 /// <summary>
 /// Height options for the code editor component.

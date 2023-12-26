@@ -1,16 +1,16 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
-using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows.Activities.Flowchart.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// A flowchart consists of a collection of activities and connections between them.

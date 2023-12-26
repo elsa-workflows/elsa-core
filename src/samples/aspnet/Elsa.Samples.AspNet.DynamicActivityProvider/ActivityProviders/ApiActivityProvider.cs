@@ -4,10 +4,11 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Samples.AspNet.DynamicActivityProvider.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using Humanizer;
 
 namespace Elsa.Samples.AspNet.DynamicActivityProvider.ActivityProviders;

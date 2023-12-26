@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 

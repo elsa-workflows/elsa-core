@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 
 namespace Elsa.Samples.ConsoleApp.Bookmarks.Activities;
 

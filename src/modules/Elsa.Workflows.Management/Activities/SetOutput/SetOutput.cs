@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Activities.SetOutput;

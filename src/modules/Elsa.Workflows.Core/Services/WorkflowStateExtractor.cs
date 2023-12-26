@@ -1,9 +1,9 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class WorkflowStateExtractor : IWorkflowStateExtractor

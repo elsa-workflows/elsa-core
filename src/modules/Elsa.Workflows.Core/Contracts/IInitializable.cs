@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// When implemented by an activity, it is invoked when the graph is built.

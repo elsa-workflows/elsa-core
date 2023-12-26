@@ -1,15 +1,15 @@
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class WorkflowRunner : IWorkflowRunner

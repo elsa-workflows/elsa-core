@@ -3,9 +3,9 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 
 namespace Elsa.AzureServiceBus.Activities;
 

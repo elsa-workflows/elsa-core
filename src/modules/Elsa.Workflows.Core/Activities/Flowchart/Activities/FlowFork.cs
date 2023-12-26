@@ -1,10 +1,11 @@
-﻿using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+﻿using System.Runtime.CompilerServices;
+using Elsa.Extensions;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
-using System.Runtime.CompilerServices;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Branch execution into multiple branches that will be executed in parallel.

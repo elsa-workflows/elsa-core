@@ -1,11 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Produces <see cref="VariableConverter"/> instances for <see cref="Variable"/> and <see cref="Variable{T}"/>.

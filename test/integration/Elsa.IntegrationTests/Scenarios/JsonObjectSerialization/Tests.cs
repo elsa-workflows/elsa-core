@@ -1,20 +1,9 @@
 ﻿using System;
-using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
-using Elsa.Expressions.Contracts;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
-using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A bookmark represents a location in a workflow where the workflow can be resumed at a later time.

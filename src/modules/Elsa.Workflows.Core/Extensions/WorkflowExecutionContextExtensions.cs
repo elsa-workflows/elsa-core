@@ -1,8 +1,8 @@
 using Elsa.Common.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

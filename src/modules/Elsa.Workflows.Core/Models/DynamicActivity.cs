@@ -1,7 +1,7 @@
 using System.ComponentModel;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A dynamically provided activity with custom properties. This is experimental and may be removed.

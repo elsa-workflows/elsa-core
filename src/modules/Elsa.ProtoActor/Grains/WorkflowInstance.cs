@@ -3,17 +3,15 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.State;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
-using Exception = System.Exception;
-using WorkflowStatus = Elsa.Workflows.Core.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -176,7 +174,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         {
             var startWorkflowResult = await startWorkflowResultTask;
             var workflowState = _workflowHost.WorkflowState;
-            var result = workflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
+            var result = workflowState.Status == Workflows.WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
 
             _workflowState = workflowState;
 
@@ -243,7 +241,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         
         Context.ReenterAfter(task, async () =>
         {
-            var finished = _workflowHost.WorkflowState.Status == WorkflowStatus.Finished;
+            var finished = _workflowHost.WorkflowState.Status == Workflows.WorkflowStatus.Finished;
 
             _workflowState = _workflowHost.WorkflowState;
 
@@ -303,7 +301,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     private async Task SaveSnapshotAsync()
     {
-        if (_workflowState.Status == WorkflowStatus.Finished)
+        if (_workflowState.Status == Workflows.WorkflowStatus.Finished)
             // If the workflow has finished, delete all snapshots.
             await _persistence.DeleteSnapshotsAsync(_persistence.Index);
         else

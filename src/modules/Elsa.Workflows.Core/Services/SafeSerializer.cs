@@ -2,11 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Services;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class SafeSerializer : ISafeSerializer

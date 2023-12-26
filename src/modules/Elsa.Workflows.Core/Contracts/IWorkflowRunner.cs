@@ -1,9 +1,9 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Runs a given workflow by scheduling its root activity.

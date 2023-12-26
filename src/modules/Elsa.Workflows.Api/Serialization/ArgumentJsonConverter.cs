@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Api.Serialization;
 

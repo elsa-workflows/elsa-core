@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Provides context information when an activity has completed.

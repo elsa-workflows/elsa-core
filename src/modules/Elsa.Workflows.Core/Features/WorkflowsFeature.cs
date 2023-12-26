@@ -5,21 +5,23 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.ActivationValidators;
-using Elsa.Workflows.Core.Builders;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Middleware.Workflows;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Core.PortResolvers;
-using Elsa.Workflows.Core.Serialization.Configurators;
-using Elsa.Workflows.Core.Serialization.Serializers;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.ActivationValidators;
+using Elsa.Workflows.Builders;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Middleware.Workflows;
+using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.PortResolvers;
+using Elsa.Workflows.Serialization.Configurators;
+using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Workflows.Services;
+using Elsa.Workflows.UIHints.CheckList;
+using Elsa.Workflows.UIHints.Dropdown;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Features;
+namespace Elsa.Workflows.Features;
 
 /// <summary>
 /// Adds workflow services to the system.
@@ -132,7 +134,7 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
-            .AddSingleton<IPropertyOptionsResolver, PropertyOptionsResolver>()
+            .AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>()
             .AddSingleton<IActivityFactory, ActivityFactory>()
             .AddTransient<WorkflowBuilder>()
             .AddSingleton(typeof(Func<IWorkflowBuilder>), sp => () => sp.GetRequiredService<WorkflowBuilder>())
@@ -175,6 +177,10 @@ public class WorkflowsFeature : FeatureBase
 
             // Instantiation strategies.
             .AddSingleton<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
+            
+            // UI hints.
+            .AddSingleton<IUIHintHandler, DropDownUIHintHandler>()
+            .AddSingleton<IUIHintHandler, CheckListUIHintHandler>()
 
             // Logging
             .AddLogging();

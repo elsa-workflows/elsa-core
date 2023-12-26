@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using Xunit;

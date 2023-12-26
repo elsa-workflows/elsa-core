@@ -1,9 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A descriptor of an activity type. It also provides a constructor to create instances of this type.

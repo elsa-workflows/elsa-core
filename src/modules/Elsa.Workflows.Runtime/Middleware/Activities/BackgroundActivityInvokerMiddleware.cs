@@ -1,8 +1,7 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;

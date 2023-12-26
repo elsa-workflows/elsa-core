@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Attributes;
+namespace Elsa.Workflows.Attributes;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class StateAttribute : Attribute

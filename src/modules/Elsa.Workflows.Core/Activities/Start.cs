@@ -1,8 +1,8 @@
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Marks the start of a flowchart.

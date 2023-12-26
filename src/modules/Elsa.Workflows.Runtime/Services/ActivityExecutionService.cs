@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;

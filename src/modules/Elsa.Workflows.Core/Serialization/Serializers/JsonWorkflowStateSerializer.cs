@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Expressions.Contracts;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.ReferenceHandlers;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Serialization.Serializers;
+namespace Elsa.Workflows.Serialization.Serializers;
 
 /// <summary>
 /// Serializes and deserializes workflow states from and to JSON.

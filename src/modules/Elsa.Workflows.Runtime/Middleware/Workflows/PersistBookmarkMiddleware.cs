@@ -1,6 +1,5 @@
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;

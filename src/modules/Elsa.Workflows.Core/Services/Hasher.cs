@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class Hasher : IHasher

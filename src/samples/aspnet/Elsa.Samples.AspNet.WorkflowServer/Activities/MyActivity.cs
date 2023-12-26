@@ -1,7 +1,8 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 
 namespace Elsa.Samples.AspNet.WorkflowServer.Activities;
 
@@ -15,7 +16,7 @@ public class MyActivity : CodeActivity
 
     [Input(DefaultValue = true)] public Input<bool> Toggle { get; set; } = default!;
 
-    [Input(DefaultValue = "B", Options = new[] { "A", "B", "C" }, UIHint = InputUIHints.Dropdown)]
+    [Input(DefaultValue = "B", Options = new[] { "A", "B", "C" }, UIHint = InputUIHints.DropDown)]
     public Input<string> SelectedOption { get; set; } = default!;
 
     [Input(DefaultValue = new[] { "C#", "Programming" }, UIHint = InputUIHints.MultiText)]

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Computes a hash for a given activity type name and bookmark payload.

@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using Xunit;
 using Xunit.Abstractions;
 

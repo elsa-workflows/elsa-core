@@ -1,12 +1,12 @@
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Services;

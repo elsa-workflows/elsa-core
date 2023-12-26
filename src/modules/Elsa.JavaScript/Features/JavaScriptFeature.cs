@@ -1,5 +1,4 @@
 using Elsa.Common.Features;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -7,7 +6,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Contracts;
-using Elsa.JavaScript.Expressions;
 using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.HostedServices;
 using Elsa.JavaScript.Options;
@@ -16,7 +14,7 @@ using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -32,7 +30,7 @@ public class JavaScriptFeature : FeatureBase
     public JavaScriptFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <summary>
     /// Configures the Jint options.
     /// </summary>
@@ -54,7 +52,7 @@ public class JavaScriptFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(JintOptions);
-        
+
         // JavaScript services.
         Services
             .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
@@ -73,14 +71,15 @@ public class JavaScriptFeature : FeatureBase
             .AddTypeDefinitionProvider<CommonTypeDefinitionProvider>()
             .AddTypeDefinitionProvider<VariableTypeDefinitionProvider>()
             ;
-        
+
         // Handlers.
         Services.AddNotificationHandlersFrom<JavaScriptFeature>();
-        
+
         // Activities.
         Module.UseWorkflowManagement(management => management.AddActivity<RunJavaScript>());
-        
-            Services.AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
+
+        Services
+            .AddSingleton<IPropertyUIHandler, RunJavaScriptOptionsProvider>()
             .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
     }
 }

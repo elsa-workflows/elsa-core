@@ -1,11 +1,10 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;

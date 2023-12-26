@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;

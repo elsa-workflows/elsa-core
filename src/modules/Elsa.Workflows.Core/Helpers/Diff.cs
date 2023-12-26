@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Helpers;
+namespace Elsa.Workflows.Helpers;
 
 /// <summary>
 /// A utility that compares two collections and returns a set of added, removed and unchanged items.

@@ -8,12 +8,11 @@ using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Implementations;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Serialization.Converters;
 using MassTransit;
-using MassTransit.Configuration;
 using MassTransit.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 

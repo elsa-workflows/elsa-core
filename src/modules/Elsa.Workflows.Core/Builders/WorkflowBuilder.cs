@@ -1,10 +1,10 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Builders;
+namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
 public class WorkflowBuilder : IWorkflowBuilder

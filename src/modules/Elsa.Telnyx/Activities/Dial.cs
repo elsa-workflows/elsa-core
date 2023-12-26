@@ -5,9 +5,10 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Exceptions;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Telnyx.Activities;
@@ -47,7 +48,7 @@ public class Dial : CodeActivity<DialResponse>
     /// </summary>
     [Input(
         Description = "Enables answering machine detection.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
@@ -63,7 +64,7 @@ public class Dial : CodeActivity<DialResponse>
     /// </summary>
     [Input(
         Description = "Defines the format of the recording ('wav' or 'mp3') when `record` is specified.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "wav", "mp3" },
         DefaultValue = "mp3"
     )]

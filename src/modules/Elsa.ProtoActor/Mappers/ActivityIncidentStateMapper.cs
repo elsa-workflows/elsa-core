@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 using ProtoActivityIncident = Elsa.ProtoActor.ProtoBuf.ActivityIncident;
 
 namespace Elsa.ProtoActor.Mappers;

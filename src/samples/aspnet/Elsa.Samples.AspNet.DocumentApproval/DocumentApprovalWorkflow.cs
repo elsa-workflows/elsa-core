@@ -5,9 +5,9 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Samples.AspNet.DocumentApproval

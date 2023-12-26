@@ -4,13 +4,13 @@ using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents the context of an activity execution.

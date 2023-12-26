@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Represents a workflow execution log entry.

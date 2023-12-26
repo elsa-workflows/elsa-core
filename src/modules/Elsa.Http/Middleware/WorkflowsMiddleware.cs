@@ -1,8 +1,6 @@
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -12,13 +10,15 @@ using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 
 namespace Elsa.Http.Middleware;
 

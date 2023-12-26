@@ -1,6 +1,4 @@
-using Elsa.Common.Entities;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Api.Models;
 

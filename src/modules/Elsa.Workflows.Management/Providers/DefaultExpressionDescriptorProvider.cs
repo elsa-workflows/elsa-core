@@ -2,8 +2,8 @@ using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Expressions;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Expressions;
+using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Providers;

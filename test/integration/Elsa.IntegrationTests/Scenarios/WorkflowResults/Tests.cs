@@ -1,9 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;

@@ -1,10 +1,10 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Ignores properties with the <see cref="JsonIgnoreCompositeRootAttribute"/> attribute.

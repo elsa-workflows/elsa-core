@@ -2,12 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 
