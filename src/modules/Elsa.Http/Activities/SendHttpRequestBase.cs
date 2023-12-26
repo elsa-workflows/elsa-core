@@ -57,19 +57,14 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// The Authorization header value to send with the request.
     /// </summary>
     /// <example>Bearer {some-access-token}</example>
-    [Input(
-        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
-        Category = "Security"
-    )]
+    [Input(Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}", Category = "Security")]
     public Input<string?> Authorization { get; set; } = default!;
 
     /// <summary>
-    /// A boolean that allow to add Authorization Header without validation.
+    /// A value that allows to add the Authorization header without validation.
     /// </summary>
-    [Input(
-        Description = "A boolean that allow to add Authorization Header without validation. This is usefull for header that are not in the Standard HTTP. ",
-        Category = "Security")]
-    public Input<bool> AddAuthorizatonHeaderWithoutValidation { get; set; } = default!;
+    [Input(Description = "A value that allows to add the Authorization header without validation.", Category = "Security")]
+    public Input<bool> DisableAuthorizationHeaderValidation { get; set; } = default!;
 
     /// <summary>
     /// The headers to send along with the request.
@@ -162,7 +157,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var request = new HttpRequestMessage(new HttpMethod(method), url);
         var headers = context.GetHeaders(RequestHeaders);
         var authorization = Authorization.GetOrDefault(context);
-        var addAuthorizationWithoutValidation = AddAuthorizatonHeaderWithoutValidation.GetOrDefault(context);
+        var addAuthorizationWithoutValidation = DisableAuthorizationHeaderValidation.GetOrDefault(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
             if(addAuthorizationWithoutValidation)
