@@ -1,10 +1,10 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 
-namespace Elsa.Workflows.Core.Middleware.Workflows;
+namespace Elsa.Workflows.Middleware.Workflows;
 
 /// <summary>
 /// Installs middleware that executes scheduled work items.

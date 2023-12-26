@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 

@@ -3,12 +3,12 @@ using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <summary>
 /// Maps variables to and from <see cref="VariableModel"/> instances.

@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 

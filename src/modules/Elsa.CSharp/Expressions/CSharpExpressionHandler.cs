@@ -2,7 +2,6 @@ using Elsa.CSharp.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Microsoft.CodeAnalysis.Scripting;
 
 namespace Elsa.CSharp.Expressions;
 

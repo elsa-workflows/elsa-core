@@ -5,10 +5,10 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Abstractions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Telnyx.Activities;
 

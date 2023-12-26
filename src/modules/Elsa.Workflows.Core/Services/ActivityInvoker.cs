@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Options;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class ActivityInvoker : IActivityInvoker

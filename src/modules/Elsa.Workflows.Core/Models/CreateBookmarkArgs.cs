@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Provides bookmark creation options.

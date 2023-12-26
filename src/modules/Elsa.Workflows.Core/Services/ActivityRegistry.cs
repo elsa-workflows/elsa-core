@@ -1,9 +1,9 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class ActivityRegistry : IActivityRegistry

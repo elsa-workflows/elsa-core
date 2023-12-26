@@ -2,9 +2,9 @@ using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Expressions;
+namespace Elsa.Workflows.Expressions;
 
 /// <summary>
 /// Evaluates an object expression.

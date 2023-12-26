@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.ActivityInputOptions;
+namespace Elsa.Workflows.UIHints.CodeEditor;
 
 /// <summary>
 /// Options for the multi-line editor component.

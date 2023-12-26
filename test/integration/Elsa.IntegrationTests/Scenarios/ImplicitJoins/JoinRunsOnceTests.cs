@@ -1,15 +1,11 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Elsa.Common.Models;
-using Elsa.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using Open.Linq.AsyncExtensions;
 using Xunit;
 using Xunit.Abstractions;
 

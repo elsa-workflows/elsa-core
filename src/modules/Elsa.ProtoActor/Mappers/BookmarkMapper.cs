@@ -1,6 +1,6 @@
 using Elsa.ProtoActor.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Mappers;

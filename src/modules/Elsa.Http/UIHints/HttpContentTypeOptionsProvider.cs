@@ -1,13 +1,13 @@
 using System.Reflection;
 using Elsa.Http.ContentWriters;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.UIHints.Dropdown;
 
-namespace Elsa.Http.ActivityOptionProviders;
+namespace Elsa.Http.UIHints;
 
 /// <summary>
 /// Provides options for the <see cref="SendHttpRequest"/> activity's <see cref="SendHttpRequest.ContentType"/> property.
 /// </summary>
-public class HttpContentTypeOptionsProvider : IActivityPropertyOptionsProvider
+public class HttpContentTypeOptionsProvider : DropDownOptionsProviderBase
 {
     private readonly IEnumerable<IHttpContentFactory> _httpContentFactories;
 
@@ -20,15 +20,13 @@ public class HttpContentTypeOptionsProvider : IActivityPropertyOptionsProvider
     }
 
     /// <inheritdoc />
-    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property,object? context, CancellationToken cancellationToken = default)
+    protected override ValueTask<ICollection<SelectListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken)
     {
         var contentTypes = _httpContentFactories.SelectMany(x => x.SupportedContentTypes).Distinct().OrderBy(x => x).ToArray();
+        var selectListItems = new List<SelectListItem> { new("", "") };
 
-        var options = new Dictionary<string, object>
-        {
-            ["items"] = new[] { "" }.Concat(contentTypes)
-        };
+        selectListItems.AddRange(contentTypes.Select(x => new SelectListItem(x, x)));
 
-        return new(options);
+        return new(selectListItems);
     }
 }

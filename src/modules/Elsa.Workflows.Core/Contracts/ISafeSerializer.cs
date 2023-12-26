@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Serializes and deserializes activity state. Only primitive and serializable values are supported.

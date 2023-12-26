@@ -1,10 +1,11 @@
 using System.Net.Http.Headers;
 using Elsa.Extensions;
-using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Http.UIHints;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
@@ -33,7 +34,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         Description = "The HTTP method to use when sending the request.",
         Options = new[] { "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD" },
         DefaultValue = "GET",
-        UIHint = InputUIHints.Dropdown
+        UIHint = InputUIHints.DropDown
     )]
     public Input<string> Method { get; set; } = new("GET");
 
@@ -48,8 +49,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// </summary>
     [Input(
         Description = "The content type to use when sending the request.",
-        OptionsProvider = typeof(HttpContentTypeOptionsProvider),
-        UIHint = InputUIHints.Dropdown
+        UIHandler = typeof(HttpContentTypeOptionsProvider),
+        UIHint = InputUIHints.DropDown
     )]
     public Input<string?> ContentType { get; set; } = default!;
 

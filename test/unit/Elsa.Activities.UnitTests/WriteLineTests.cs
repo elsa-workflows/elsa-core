@@ -1,5 +1,5 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.UnitTests;

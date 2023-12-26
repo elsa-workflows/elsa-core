@@ -1,10 +1,10 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Options;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class DefaultIncidentStrategyResolver : IIncidentStrategyResolver

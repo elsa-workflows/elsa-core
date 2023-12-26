@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Elsa.Expressions.Helpers;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

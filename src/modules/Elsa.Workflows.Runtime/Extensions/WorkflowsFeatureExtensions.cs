@@ -1,7 +1,11 @@
-using Elsa.Workflows.Core.Features;
-using Elsa.Workflows.Core.Middleware.Activities;
 
+
+
+
+using Elsa.Workflows.Middleware.Activities;
 // ReSharper disable once CheckNamespace
+using Elsa.Workflows.Features;
+
 namespace Elsa.Extensions;
 
 /// <summary>

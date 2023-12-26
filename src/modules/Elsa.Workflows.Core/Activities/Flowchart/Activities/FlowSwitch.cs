@@ -1,14 +1,14 @@
+using System.Runtime.CompilerServices;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
-using System.Runtime.CompilerServices;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Evaluates the specified case conditions and schedules the one that evaluates to <code>true</code>.

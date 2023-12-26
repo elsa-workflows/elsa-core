@@ -1,6 +1,6 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Entities;
 

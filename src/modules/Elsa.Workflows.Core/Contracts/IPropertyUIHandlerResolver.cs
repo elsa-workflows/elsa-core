@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Resolves UI options for a property
@@ -14,5 +14,5 @@ public interface IPropertyUIHandlerResolver
     /// <param name="context">The context to render the property for</param>
     /// <param name="cancellationToken">An optional cancellation token</param>
     /// <returns>A dictionary of properties that will be used to render the UI for the property</returns>
-    ValueTask<IDictionary<string, object?>> GetUIProperties(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default);
+    ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default);
 }

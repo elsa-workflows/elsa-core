@@ -1,8 +1,8 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Expressions;
+namespace Elsa.Workflows.Expressions;
 
 /// <summary>
 /// Handles Variable expressions.

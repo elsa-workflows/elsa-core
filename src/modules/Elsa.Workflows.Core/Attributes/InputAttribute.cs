@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Attributes;
+namespace Elsa.Workflows.Attributes;
 
 /// <summary>
 /// Specifies various metadata about an activity's input property.
@@ -39,15 +39,15 @@ public class InputAttribute : Attribute
     /// </summary>
     public object? Options { get; set; }
 
-    /// <summary>
-    /// The type that provides options. If specified, this overrules any value specified via <see cref="Options"/>.
-    /// </summary>
-    public Type? OptionsProvider { get; set; }
+    // /// <summary>
+    // /// The type that provides options. If specified, this overrules any value specified via <see cref="Options"/>.
+    // /// </summary>
+    //public Type? OptionsProvider { get; set; }
 
-    /// <summary>
-    /// The method name on the activity to invoke to get options. If specified, this overrules any value specified via <see cref="Options"/> and <see cref="OptionsProvider"/>.
-    /// </summary>
-    public string? OptionsMethod { get; set; }
+    // /// <summary>
+    // /// The method name on the activity to invoke to get options. If specified, this overrules any value specified via <see cref="Options"/> and <see cref="OptionsProvider"/>.
+    // /// </summary>
+    // public string? OptionsMethod { get; set; }
 
     /// <summary>
     /// A value to order this property by. Properties are displayed in ascending order (lower appears before higher).
@@ -89,7 +89,7 @@ public class InputAttribute : Attribute
     /// When set to false, it is up to the activity itself to evaluate its input before using it. 
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
-    
+
     /// <summary>
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
@@ -98,6 +98,10 @@ public class InputAttribute : Attribute
     /// <summary>
     /// A <see cref="IPropertyUIHandler"/> type that can be used to customize the UI for this property.
     /// </summary>
-    public Type[]? UIHandler { get; set; }
-
+    public Type? UIHandler { get; set; }
+    
+    /// <summary>
+    /// A set of <see cref="IPropertyUIHandler"/> types that can be used to customize the UI for this property.
+    /// </summary>
+    public Type[]? UIHandlers { get; set; }
 }

@@ -1,8 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
@@ -13,6 +11,7 @@ using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 using Medallion.Threading;
 
 namespace Elsa.Workflows.Runtime.Services;

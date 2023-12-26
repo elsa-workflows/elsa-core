@@ -6,7 +6,7 @@ using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;

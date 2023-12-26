@@ -2,13 +2,12 @@ using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 

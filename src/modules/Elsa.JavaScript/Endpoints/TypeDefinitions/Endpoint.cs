@@ -3,7 +3,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 

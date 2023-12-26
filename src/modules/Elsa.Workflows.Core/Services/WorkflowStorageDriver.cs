@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <summary>
 /// A storage driver that stores objects in the workflow state itself.

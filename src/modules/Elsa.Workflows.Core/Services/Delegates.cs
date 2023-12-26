@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <summary>
 /// A delegate that executes an activity.

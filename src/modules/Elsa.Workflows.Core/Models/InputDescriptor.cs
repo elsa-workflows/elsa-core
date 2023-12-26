@@ -1,7 +1,7 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A descriptor of an activity's input property.
@@ -23,7 +23,6 @@ public class InputDescriptor : PropertyDescriptor
         string uiHint,
         string displayName,
         string? description = default,
-        IDictionary<string, object>? options = default,
         string? category = default,
         float order = 0,
         object? defaultValue = default,
@@ -46,7 +45,6 @@ public class InputDescriptor : PropertyDescriptor
         UIHint = uiHint;
         DisplayName = displayName;
         Description = description;
-        Options = options;
         Category = category;
         Order = order;
         DefaultValue = defaultValue;
@@ -70,11 +68,6 @@ public class InputDescriptor : PropertyDescriptor
     /// A string value that hints at what UI control might be used to render in a UI tool.  
     /// </summary>
     public string UIHint { get; set; } = default!;
-    
-    /// <summary>
-    /// An arbitrary options object that can be used by some UI tool.
-    /// </summary>
-    public object? Options { get; set; }
     
     /// <summary>
     /// The category to whcih this input belongs. Can be used by UI to e.g. render different inputs in different tabs.

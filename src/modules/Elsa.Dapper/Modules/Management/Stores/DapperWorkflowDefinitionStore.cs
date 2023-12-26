@@ -7,13 +7,13 @@ using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Dapper.Modules.Management.Stores;
 

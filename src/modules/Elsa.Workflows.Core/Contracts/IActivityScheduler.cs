@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// The scheduler contains work items to execute.

@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 
 namespace Elsa.Http.Bookmarks;
 
