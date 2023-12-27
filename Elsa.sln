@@ -292,6 +292,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 		.github\workflows\packages.yml = .github\workflows\packages.yml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{D5C149EE-276C-4C59-98F9-37F0EA2A7866}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -726,6 +728,10 @@ Global
 		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -858,6 +864,7 @@ Global
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866} = {F06B9573-DF68-4606-866C-A7546A10A05A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
