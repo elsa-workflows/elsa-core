@@ -22,12 +22,13 @@ COPY --from=build /app/publish ./
 # Install Python 3.11
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11 \
+    python3.11-dev \
+    libpython3.11 \
     python3-pip && \
-    rm -rf /var/lib/apt/lists/* && \
-    ln -s /usr/bin/python3.11 /usr/bin/python 
+    rm -rf /var/lib/apt/lists/*
 
 # Set PYTHONNET_PYDLL environment variable
-ENV PYTHONNET_PYDLL /usr/bin/python3.11
+ENV PYTHONNET_PYDLL /usr/lib/aarch64-linux-gnu/libpython3.11.so
 
 EXPOSE 80/tcp
 EXPOSE 443/tcp
