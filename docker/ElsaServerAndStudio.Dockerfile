@@ -11,7 +11,7 @@ RUN dotnet restore "./src/bundles/ElsaStudioWebAssembly/ElsaStudioWebAssembly.cs
 RUN dotnet restore "./src/bundles/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).
-WORKDIR /source/src/bundles/Elsa.AllInOne.Web
+WORKDIR /source/src/bundles/Elsa.ServerAndStudio.Web
 RUN dotnet build "Elsa.ServerAndStudio.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.ServerAndStudio.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
 

@@ -10,7 +10,7 @@ COPY *.props ./
 RUN dotnet restore "./src/bundles/Elsa.Server.Web/Elsa.Server.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).
-WORKDIR /source/src/bundles/Elsa.AllInOne.Web
+WORKDIR /source/src/bundles/Elsa.Server.Web
 RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
 
@@ -18,6 +18,16 @@ RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseApp
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
+
+# Install Python 3.11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3-pip && \
+    rm -rf /var/lib/apt/lists/* && \
+    ln -s /usr/bin/python3.11 /usr/bin/python 
+
+# Set PYTHONNET_PYDLL environment variable
+ENV PYTHONNET_PYDLL /usr/bin/python3.11
 
 EXPOSE 80/tcp
 EXPOSE 443/tcp
