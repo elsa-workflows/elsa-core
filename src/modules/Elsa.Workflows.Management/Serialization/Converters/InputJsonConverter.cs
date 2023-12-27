@@ -39,23 +39,11 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             var expressionTypeNameElement = expressionElement.ValueKind != JsonValueKind.Undefined ? expressionElement.TryGetProperty("type", out var expressionTypeNameElementValue) ? expressionTypeNameElementValue : default : default;
             var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : default;
             var expressionDescriptor = expressionTypeName != null ? _expressionDescriptorRegistry.Find(expressionTypeName) : default;
-
-            doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement);
-
-            var memoryReferenceId = memoryReferenceElement.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null
-                ? default
-                : memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement)
-                    ? memoryReferenceIdElement.GetString()
-                    : default;
-
             var expression = expressionElement.ValueKind == JsonValueKind.Object ? expressionElement.Deserialize<Expression>(options) : new Expression(expressionTypeName!, null);
             var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
 
             if (memoryBlockReference == null)
                 return default!;
-
-            if (memoryBlockReference.Id == null!)
-                memoryBlockReference.Id = memoryReferenceId!;
 
             return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
         }
@@ -75,17 +63,12 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             throw new JsonException($"Could not find an expression descriptor for expression type '{expressionType}'.");
         
         var targetType = value.Type;
-        var memoryReferenceId = value.MemoryBlockReference().Id;
         var expressionValue = expressionDescriptor.IsSerializable ? expression : null;
 
         var model = new
         {
             TypeName = targetType,
-            Expression = expressionValue!,
-            MemoryReference = new
-            {
-                Id = memoryReferenceId
-            }
+            Expression = expressionValue!
         };
 
         JsonSerializer.Serialize(writer, model, options);
