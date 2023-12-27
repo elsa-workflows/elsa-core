@@ -4,7 +4,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 
-namespace Elsa.WorkflowServer.Web;
+namespace Elsa.Server.Web;
 
 [Activity("Demo", "Data Source", "Generates a collection of random strings.")]
 public class DataSourceActivity : CodeActivity<ICollection<string>>

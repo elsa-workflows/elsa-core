@@ -1,4 +1,4 @@
-using Elsa.AllInOne.Web.Extensions;
+using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;

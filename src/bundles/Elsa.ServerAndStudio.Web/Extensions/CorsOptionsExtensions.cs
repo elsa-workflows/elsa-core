@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Cors.Infrastructure;
 
-namespace Elsa.AllInOne.Web.Extensions;
+namespace Elsa.ServerAndStudio.Web.Extensions;
 
 public static class CorsOptionsExtensions
 {
