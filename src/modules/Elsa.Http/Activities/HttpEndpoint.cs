@@ -4,6 +4,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
+using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
@@ -34,7 +35,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The path to associate with the workflow.
     /// </summary>
-    [Input(Description = "The path to associate with the workflow.")]
+    [Input(
+        Description = "The path to associate with the workflow.",
+        UIHint = InputUIHints.SingleLine,
+        UIHandler = typeof(HttpEndpointPathUIHandler)
+    )]
     public Input<string> Path { get; set; } = default!;
 
     /// <summary>
