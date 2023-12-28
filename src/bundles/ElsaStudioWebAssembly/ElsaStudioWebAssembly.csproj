@@ -19,9 +19,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.172"/>
-        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.172"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.172"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.174"/>
+        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.174"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.174"/>
     </ItemGroup>
 
     <ItemGroup>
