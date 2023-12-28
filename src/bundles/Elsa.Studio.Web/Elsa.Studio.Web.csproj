@@ -21,8 +21,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.170"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.170"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.171"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.171"/>
     </ItemGroup>
 
     <ItemGroup>
