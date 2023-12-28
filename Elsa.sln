@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
@@ -295,6 +294,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{D5C149EE-276C-4C59-98F9-37F0EA2A7866}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -734,6 +735,10 @@ Global
 		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.Build.0 = Release|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -867,6 +872,7 @@ Global
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{D5C149EE-276C-4C59-98F9-37F0EA2A7866} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
