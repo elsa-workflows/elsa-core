@@ -23,10 +23,10 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
             var wrappedPropertyType = propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Input<>)
                 ? propertyInfo.PropertyType.GetGenericArguments()[0]
                 : propertyInfo.PropertyType;
-            
-            if (!wrappedPropertyType.IsEnum) 
+
+            if (!wrappedPropertyType.IsEnum)
                 return new(dictionary);
-            
+
             var enumValues = Enum.GetValues(wrappedPropertyType).Cast<object>().ToList();
             var enumSelectListItems = enumValues.Select(x => new SelectListItem(x.ToString()!, x.ToString()!)).ToList();
             var enumProps = new DropDownProps
@@ -36,7 +36,6 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
 
             dictionary[InputUIHints.DropDown] = enumProps;
             return new(dictionary);
-
         }
 
         var selectListItems = (inputOptions as ICollection<string>)?.Select(x => new SelectListItem(x, x)).ToList();

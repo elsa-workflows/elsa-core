@@ -70,7 +70,11 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// <summary>
     /// The headers to send along with the request.
     /// </summary>
-    [Input(Description = "The headers to send along with the request.", Category = "Advanced")]
+    [Input(
+        Description = "The headers to send along with the request.",
+        UIHint = InputUIHints.JsonEditor,
+        Category = "Advanced"
+    )]
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
@@ -161,7 +165,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var addAuthorizationWithoutValidation = DisableAuthorizationHeaderValidation.GetOrDefault(context);
 
         if (!string.IsNullOrWhiteSpace(authorization))
-            if(addAuthorizationWithoutValidation)
+            if (addAuthorizationWithoutValidation)
                 request.Headers.TryAddWithoutValidation("Authorization", authorization);
             else
                 request.Headers.Authorization = AuthenticationHeaderValue.Parse(authorization);

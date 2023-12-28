@@ -19,6 +19,7 @@ using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
+using Elsa.Workflows.UIHints.JsonEditor;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Features;
@@ -181,6 +182,7 @@ public class WorkflowsFeature : FeatureBase
             // UI hints.
             .AddSingleton<IUIHintHandler, DropDownUIHintHandler>()
             .AddSingleton<IUIHintHandler, CheckListUIHintHandler>()
+            .AddSingleton<IUIHintHandler, JsonEditorUIHintHandler>()
 
             // Logging
             .AddLogging();
