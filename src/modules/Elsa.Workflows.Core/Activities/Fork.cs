@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Signals;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;
@@ -27,7 +28,10 @@ public class Fork : Activity
     /// <summary>
     /// Controls when this activity yields control back to its parent activity.
     /// </summary>
-    [Input(Description = "Controls when this activity yields control back to its parent activity.")]
+    [Input(
+        Description = "Controls when this activity yields control back to its parent activity.",
+        UIHint = InputUIHints.DropDown
+    )]
     public ForkJoinMode JoinMode { get; set; } = ForkJoinMode.WaitAll;
 
     /// <summary>

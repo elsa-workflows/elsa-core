@@ -1,6 +1,7 @@
 using System.Reflection;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.UIHints.Dropdown;
 
@@ -17,7 +18,26 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
         var dictionary = new Dictionary<string, object>();
 
         if (inputOptions == null)
+        {
+            // Is the property an enum?
+            var wrappedPropertyType = propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Input<>)
+                ? propertyInfo.PropertyType.GetGenericArguments()[0]
+                : propertyInfo.PropertyType;
+            
+            if (!wrappedPropertyType.IsEnum) 
+                return new(dictionary);
+            
+            var enumValues = Enum.GetValues(wrappedPropertyType).Cast<object>().ToList();
+            var enumSelectListItems = enumValues.Select(x => new SelectListItem(x.ToString()!, x.ToString()!)).ToList();
+            var enumProps = new DropDownProps
+            {
+                SelectList = new SelectList(enumSelectListItems)
+            };
+
+            dictionary[InputUIHints.DropDown] = enumProps;
             return new(dictionary);
+
+        }
 
         var selectListItems = (inputOptions as ICollection<string>)?.Select(x => new SelectListItem(x, x)).ToList();
 

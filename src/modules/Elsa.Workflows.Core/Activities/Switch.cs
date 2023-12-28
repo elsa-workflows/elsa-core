@@ -6,6 +6,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;
@@ -40,7 +41,10 @@ public class Switch : Activity
     /// <summary>
     /// The switch mode determines whether the first match should be scheduled, or all matches.
     /// </summary>
-    [Input(Description = "The switch mode determines whether the first match should be scheduled, or all matches.")]
+    [Input(
+        Description = "The switch mode determines whether the first match should be scheduled, or all matches.",
+        UIHint = InputUIHints.DropDown
+    )]
     public Input<SwitchMode> Mode { get; set; } = new(SwitchMode.MatchFirst);
 
     /// <summary>

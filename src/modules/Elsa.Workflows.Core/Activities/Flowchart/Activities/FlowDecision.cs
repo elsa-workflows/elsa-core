@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -36,7 +37,7 @@ public class FlowDecision : Activity
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input(UIHint = "single-line")]
+    [Input(UIHint = InputUIHints.SingleLine)]
     public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
 
     /// <inheritdoc />

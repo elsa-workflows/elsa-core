@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;
@@ -41,7 +42,7 @@ public class If : Activity<bool>
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input(UIHint = "single-line")]
+    [Input(UIHint = InputUIHints.SingleLine)]
     public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
 
     /// <summary>

@@ -27,7 +27,11 @@ public class WriteHttpResponse : Activity
     /// <summary>
     /// The status code to return.
     /// </summary>
-    [Input(DefaultValue = HttpStatusCode.OK, Description = "The status code to return.")]
+    [Input(
+        DefaultValue = HttpStatusCode.OK,
+        Description = "The status code to return.",
+        UIHint = InputUIHints.DropDown
+    )]
     public Input<HttpStatusCode> StatusCode { get; set; } = new(HttpStatusCode.OK);
 
     /// <summary>
