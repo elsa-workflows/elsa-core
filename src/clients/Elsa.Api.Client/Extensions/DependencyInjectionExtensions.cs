@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
+using Elsa.Api.Client.HttpMessageHandlers;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
@@ -31,6 +32,31 @@ namespace Elsa.Api.Client.Extensions;
 [PublicAPI]
 public static class DependencyInjectionExtensions
 {
+    /// <summary>
+    /// Adds the Elsa client to the service collection.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="baseAddress">The base address of the Elsa API.</param>
+    /// <param name="apiKey">The API key to use for authentication.</param>
+    /// <param name="configureOptions">An optional delegate that can be used to configure the client options.</param>
+    /// <param name="configureBuilderOptions">An optional delegate that can be used to configure the client builder options.</param>
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Uri baseAddress, string apiKey, Action<ElsaClientOptions>? configureOptions = default, Action<ElsaClientBuilderOptions>? configureBuilderOptions = default)
+    {
+        services.AddScoped<ApiKeyHttpMessageHandler>();
+        return services.AddElsaClient(
+            options =>
+            {
+                options.BaseAddress = baseAddress;
+                options.ApiKey = apiKey;
+                configureOptions?.Invoke(options);
+            },
+            configureBuilderOptions: options =>
+            {
+                options.ConfigureHttpClientBuilder = builder => builder.AddHttpMessageHandler<ApiKeyHttpMessageHandler>();
+                configureBuilderOptions?.Invoke(options);
+            });
+    }
+    
     /// <summary>
     /// Adds the Elsa client to the service collection.
     /// </summary>
