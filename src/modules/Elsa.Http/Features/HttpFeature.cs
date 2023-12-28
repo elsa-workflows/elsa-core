@@ -53,7 +53,7 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
 
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 

@@ -175,7 +175,6 @@ services
             .UseHttp(http =>
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
-                http.HttpEndpointAuthorizationHandler = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
