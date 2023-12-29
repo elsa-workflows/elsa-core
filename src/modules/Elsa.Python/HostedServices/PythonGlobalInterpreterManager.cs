@@ -44,13 +44,5 @@ public class PythonGlobalInterpreterManager : IHostedService
     }
 
     /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        if(_mainThreadState != IntPtr.Zero)
-        {
-            PythonEngine.EndAllowThreads(_mainThreadState);
-            PythonEngine.Shutdown();
-        }
-        return Task.CompletedTask;
-    }
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
