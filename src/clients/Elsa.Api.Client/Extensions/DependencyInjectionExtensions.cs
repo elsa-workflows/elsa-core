@@ -38,9 +38,9 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="baseAddress">The base address of the Elsa API.</param>
     /// <param name="apiKey">The API key to use for authentication.</param>
-    /// <param name="configureOptions">An optional delegate that can be used to configure the client options.</param>
+    /// <param name="configureHttpClient">An optional delegate that can be used to configure the HTTP client.</param>
     /// <param name="configureBuilderOptions">An optional delegate that can be used to configure the client builder options.</param>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Uri baseAddress, string apiKey, Action<ElsaClientOptions>? configureOptions = default, Action<ElsaClientBuilderOptions>? configureBuilderOptions = default)
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Uri baseAddress, string apiKey, Action<IServiceProvider, HttpClient>? configureHttpClient = default, Action<ElsaClientBuilderOptions>? configureBuilderOptions = default)
     {
         services.AddScoped<ApiKeyHttpMessageHandler>();
         return services.AddElsaClient(
@@ -48,7 +48,7 @@ public static class DependencyInjectionExtensions
             {
                 options.BaseAddress = baseAddress;
                 options.ApiKey = apiKey;
-                configureOptions?.Invoke(options);
+                options.ConfigureHttpClient = configureHttpClient;
             },
             configureBuilderOptions: options =>
             {
