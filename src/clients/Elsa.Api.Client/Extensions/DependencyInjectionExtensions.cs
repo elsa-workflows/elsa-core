@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.HttpMessageHandlers;
 using Elsa.Api.Client.Options;
@@ -17,7 +16,6 @@ using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
-using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -66,7 +64,6 @@ public static class DependencyInjectionExtensions
         configureBuilderOptions?.Invoke(builderOptions);
 
         services.Configure(configureOptions ?? (_ => { }));
-        services.AddScoped<IElsaClient, ElsaClient>();
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
         services.AddApi<IActivityDescriptorsApi>(builderOptions);
