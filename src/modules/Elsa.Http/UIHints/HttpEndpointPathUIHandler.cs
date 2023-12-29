@@ -16,8 +16,8 @@ public class HttpEndpointPathUIHandler(IOptions<HttpActivityOptions> options) : 
     public ValueTask<IDictionary<string, object>> GetUIPropertiesAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken = default)
     {
         var baseUrl = options.Value.BaseUrl;
-        var apiRoutePrefix = options.Value.ApiRoutePrefix;
-        var completeBaseUrl = new Uri(baseUrl, apiRoutePrefix);
+        var basePath = options.Value.BasePath;
+        var completeBaseUrl = new Uri(baseUrl, basePath);
 
         return new(new Dictionary<string, object>
         {

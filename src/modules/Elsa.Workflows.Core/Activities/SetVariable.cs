@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;
@@ -100,7 +101,10 @@ public class SetVariable : CodeActivity
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
+        // Always refer to the variable by ID to ensure that the variable is resolved from the correct scope.
+        var variableId = Variable.Id; 
+        var variable = context.ExpressionExecutionContext.EnumerateVariablesInScope().FirstOrDefault(x => x.Id == variableId);
         var value = context.Get(Value);
-        context.SetVariable(Variable.Name, value);
+        variable?.Set(context, value);
     }
 }

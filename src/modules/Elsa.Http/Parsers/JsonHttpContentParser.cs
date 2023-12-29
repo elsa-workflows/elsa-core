@@ -30,6 +30,9 @@ public class JsonHttpContentParser : IHttpContentParser
 
         using var reader = new StreamReader(content, leaveOpen: true);
         var json = await reader.ReadToEndAsync();
+        
+        if(returnType == typeof(string))
+            return json;
 
         if (returnType == null || returnType.IsPrimitive)
             return json.ConvertTo(returnType ?? typeof(string))!;
