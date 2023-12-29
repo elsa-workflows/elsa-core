@@ -314,6 +314,12 @@ public static class ExpressionExecutionContextExtensions
 
             currentScope = currentScope.ParentContext;
         }
+
+        if (context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+        {
+            if (workflowExecutionContext.Workflow.ResultVariable != null)
+                yield return workflowExecutionContext.Workflow.ResultVariable;
+        }
     }
 
     /// <summary>
