@@ -162,6 +162,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentParser, StringHttpContentParser>()
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, FormHttpContentParser>()
 
             // HTTP content factories.
             .AddSingleton<IHttpContentFactory, TextContentFactory>()

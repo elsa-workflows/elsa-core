@@ -225,6 +225,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
             return;
         }
 
+        // Read content, if any.
+        try
+        {
+            var content = await ParseContentAsync(context, request);
+            ParsedContent.Set(context, content);
+        }
+        catch (JsonException e)
+        {
+            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+            throw;
+        }
+
         // Read files, if any.
         var files = ReadFilesAsync(context, request);
 
@@ -255,18 +267,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
             }
 
             Files.Set(context, files.ToArray());
-        }
-
-        // Read content, if any.
-        try
-        {
-            var content = await ParseContentAsync(context, request);
-            ParsedContent.Set(context, content);
-        }
-        catch (JsonException e)
-        {
-            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-            throw;
         }
 
         // Complete.
