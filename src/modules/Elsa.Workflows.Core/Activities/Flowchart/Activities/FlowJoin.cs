@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities.Flowchart.Activities;
@@ -26,7 +27,8 @@ public class FlowJoin : Activity, IJoinNode
     /// </summary>
     [Input(
         Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
-        DefaultValue = FlowJoinMode.WaitAny
+        DefaultValue = FlowJoinMode.WaitAny,
+        UIHint = InputUIHints.DropDown
     )]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
