@@ -1,4 +1,7 @@
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Elsa.CSharp.Contexts;
 using Elsa.CSharp.Models;
 using Elsa.Expressions.Models;
@@ -29,6 +32,7 @@ public class CSharpOptions
         typeof(Globals).Assembly, // Elsa.CSharp
         typeof(Enumerable).Assembly, // System.Linq
         typeof(Guid).Assembly, // System.Runtime
+        typeof(JsonSerializer).Assembly, // System.Text.Json
         typeof(IDictionary<string, object>).Assembly, // System.Collections
     });
 
@@ -40,6 +44,9 @@ public class CSharpOptions
         typeof(Globals).Namespace!, // Elsa.CSharp
         typeof(Enumerable).Namespace!, // System.Linq
         typeof(Guid).Namespace!, // System
+        typeof(JsonSerializer).Namespace!, // System.Text.Json
+        typeof(JsonConverter).Namespace!, // System.Text.Json.Serialization
+        typeof(JsonNode).Namespace!, // System.Text.Json.Nodes
         typeof(IDictionary<string, object>).Namespace!, // System.Collections.Generic
     });
 
