@@ -1,11 +1,10 @@
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
@@ -77,11 +76,6 @@ public interface IWorkflowRuntime
     /// Imports the specified <see cref="WorkflowState"/>.
     /// </summary>
     Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Adds and removes bookmarks based on the provided bookmarks diff.
-    /// </summary>
-    Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates the specified bookmark.

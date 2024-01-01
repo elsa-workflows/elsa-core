@@ -5,7 +5,7 @@ namespace Elsa.Expressions.Models;
 /// <summary>
 /// Represents an expression.
 /// </summary>
-public class Expression
+public partial class Expression
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Expression"/> class.

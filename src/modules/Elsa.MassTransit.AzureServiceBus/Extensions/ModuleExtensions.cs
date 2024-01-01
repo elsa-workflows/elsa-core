@@ -1,8 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.AzureServiceBus.Features;
-using Elsa.MassTransit.AzureServiceBus.Options;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Options;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -17,7 +15,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Enable and configure the Azure Service Bus transport for MassTransit.
     /// </summary>
-    public static MassTransitFeature UseAzureServiceBus(this MassTransitFeature feature, string? connectionString)
+    public static MassTransitFeature UseAzureServiceBus(this MassTransitFeature feature, string? connectionString, Action<AzureServiceBusFeature>? configure = default)
     {
         feature.Module.Configure((Action<AzureServiceBusFeature>)Configure);
         return feature;
@@ -25,6 +23,7 @@ public static class ModuleExtensions
         void Configure(AzureServiceBusFeature bus)
         {
             bus.ConnectionString = connectionString;
+            configure?.Invoke(bus);
         }
     }
 }

@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using ProtoWorkflowSubStatus = Elsa.ProtoActor.ProtoBuf.WorkflowSubStatus;
 
 namespace Elsa.ProtoActor.Mappers;

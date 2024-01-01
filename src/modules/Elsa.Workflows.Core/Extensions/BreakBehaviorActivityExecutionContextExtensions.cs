@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Provides extension methods for <see cref="ActivityExecutionContext"/>. 

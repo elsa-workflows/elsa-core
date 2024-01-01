@@ -1,16 +1,15 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Services;
+using Elsa.Testing.Shared;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
 using Elsa.ServiceBus.IntegrationTests.Contracts;
 using Elsa.ServiceBus.IntegrationTests.Helpers;
 using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
-using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Workflows;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit.Abstractions;
@@ -97,21 +96,21 @@ public class ServiceBusTest : IDisposable
         Assert.Equal(WorkflowStatus.Running, workflowState.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
 
-        //Start Worker to send Message on topicName/subscriptionName
+        // Start Worker to send Message on topicName/subscriptionName
         await _worker.StartWorkerAsync("topicName", "subscriptionName");
         await _sbProcessorManager
             .Get("topicName", "subscriptionName")
             .SendMessage<dynamic>(new { hello = "world" }, null!);
 
-        //Wait for receiving first message
+        // Wait for receiving first message
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
-        //Wait for receiving second message
+        // Wait for receiving second message
         var wait2 = _resetEventManager.Get("receive2").WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait2 : {wait2}");
 
-        await Task.Delay(500); //Todo find how to remove delay
+        await Task.Delay(500); // Todo find how to remove delay
         var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
         /*
          * We don't send 2 messages so Workflow must be

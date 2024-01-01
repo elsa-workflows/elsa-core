@@ -2,7 +2,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

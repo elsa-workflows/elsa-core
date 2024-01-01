@@ -1,8 +1,7 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.PortResolvers;
+namespace Elsa.Workflows.PortResolvers;
 
 /// <summary>
 /// Returns a list of outbound activities for a given activity by reflecting over its public properties matching <see cref="IActivity"/> and <c>ICollection{IActivity}</c>.

@@ -3,9 +3,7 @@ using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
@@ -13,17 +11,11 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 using Proto.Cluster;
-using Bookmark = Elsa.Workflows.Core.Models.Bookmark;
+using Bookmark = Elsa.Workflows.Models.Bookmark;
 using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
-using ProtoWorkflowStatus = Elsa.ProtoActor.ProtoBuf.WorkflowStatus;
-using ProtoWorkflowSubStatus = Elsa.ProtoActor.ProtoBuf.WorkflowSubStatus;
-using ProtoActivityIncident = Elsa.ProtoActor.ProtoBuf.ActivityIncident;
-using ProtoException = Elsa.ProtoActor.ProtoBuf.ExceptionState;
-using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.ProtoBuf.WorkflowExecutionResponse;
-using ProtoBookmark = Elsa.ProtoActor.ProtoBuf.Bookmark;
 
 namespace Elsa.ProtoActor.Services;
 
@@ -289,15 +281,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         await client.ImportState(request, cancellationToken);
     }
-
-    /// <inheritdoc />
-    public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
-    {
-        var instanceId = request.WorkflowExecutionContext.Id;
-        await RemoveBookmarksAsync(instanceId, request.Diff.Removed, cancellationToken);
-        await StoreBookmarksAsync(instanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
-    }
-
+    
     /// <inheritdoc />
     public async Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {
@@ -312,7 +296,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             DefinitionId = request.DefinitionId,
             Version = request.Version,
             CorrelationId = request.CorrelationId,
-            WorkflowStatus = Workflows.Core.WorkflowStatus.Running
+            WorkflowStatus = Workflows.WorkflowStatus.Running
         };
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
@@ -385,7 +369,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
             var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);
 
-            if (canStartResult.CanStart) 
+            if (canStartResult.CanStart)
                 results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance, workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId, trigger.Payload));
         }
 

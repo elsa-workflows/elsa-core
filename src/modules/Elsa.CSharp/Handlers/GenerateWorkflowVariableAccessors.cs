@@ -25,6 +25,7 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         sb.AppendLine("\tpublic ExecutionContextProxy ExecutionContext { get; }");
         sb.AppendLine();
         sb.AppendLine("\tpublic T? Get<T>(string name) => ExecutionContext.GetVariable<T>(name);");
+        sb.AppendLine("\tpublic object? Get(string name) => ExecutionContext.GetVariable(name);");
         sb.AppendLine("\tpublic void Set(string name, object? value) => ExecutionContext.SetVariable(name, value);");
         sb.AppendLine();
         foreach (var variable in variables)

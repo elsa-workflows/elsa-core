@@ -1,5 +1,3 @@
-using Refit;
-
 namespace Elsa.Api.Client.Resources.ActivityDescriptorOptions.Requests;
 
 /// <summary>

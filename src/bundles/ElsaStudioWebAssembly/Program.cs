@@ -7,6 +7,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Core.BlazorWasm.Extensions;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Login.BlazorWasm.Extensions;
+using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Options;
 using Elsa.Studio.Workflows.Designer.Extensions;
 using Microsoft.AspNetCore.Components.Web;
@@ -25,7 +26,7 @@ builder.RootComponents.RegisterCustomElsaStudioElements();
 // Register shell services and modules.
 builder.Services.AddCore();
 builder.Services.AddShell();
-builder.Services.AddRemoteBackend();
+builder.Services.AddRemoteBackend(elsaClient => elsaClient.AuthenticationHandler = typeof(AuthenticatingApiHttpMessageHandler));
 builder.Services.AddLoginModule();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();

@@ -4,9 +4,11 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Http.UIHints;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
@@ -33,7 +35,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The path to associate with the workflow.
     /// </summary>
-    [Input(Description = "The path to associate with the workflow.")]
+    [Input(
+        Description = "The path to associate with the workflow.",
+        UIHint = InputUIHints.SingleLine,
+        UIHandler = typeof(HttpEndpointPathUIHandler)
+    )]
     public Input<string> Path { get; set; } = default!;
 
     /// <summary>
@@ -160,7 +166,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false);
+            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false, callback: OnResumeAsync);
             return;
         }
 
@@ -185,8 +191,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         if (httpContext == null)
         {
-            // We're not in an HTTP context, so let's fail.
-            throw new Exception("Cannot execute in a non-HTTP context");
+            // We're executing in a non-HTTP context (e.g. in a virtual actor).
+            // Create a bookmark to allow the invoker to export the state and resume execution from there.
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
+            return;
         }
 
         await HandleRequestAsync(context, httpContext);
@@ -215,6 +223,18 @@ public class HttpEndpoint : Trigger<HttpRequest>
         {
             await HandleRequestTooLargeAsync(context, httpContext);
             return;
+        }
+
+        // Read content, if any.
+        try
+        {
+            var content = await ParseContentAsync(context, request);
+            ParsedContent.Set(context, content);
+        }
+        catch (JsonException e)
+        {
+            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+            throw;
         }
 
         // Read files, if any.
@@ -247,18 +267,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
             }
 
             Files.Set(context, files.ToArray());
-        }
-
-        // Read content, if any.
-        try
-        {
-            var content = await ParseContentAsync(context, request);
-            ParsedContent.Set(context, content);
-        }
-        catch (JsonException e)
-        {
-            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-            throw;
         }
 
         // Complete.

@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 public record WorkflowIdentity(string DefinitionId, int Version, string Id)
 {

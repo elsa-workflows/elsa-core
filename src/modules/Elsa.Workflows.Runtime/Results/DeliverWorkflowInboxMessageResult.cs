@@ -1,3 +1,6 @@
 namespace Elsa.Workflows.Runtime.Results;
 
-public record DeliverWorkflowInboxMessageResult(ICollection<WorkflowExecutionResult> WorkflowExecutionResults);
+/// <summary>
+/// Result of delivering a workflow inbox message.
+/// </summary>
+public record DeliverWorkflowInboxMessageResult;

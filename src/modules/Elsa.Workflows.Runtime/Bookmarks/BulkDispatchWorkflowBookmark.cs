@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.Runtime.Bookmarks;

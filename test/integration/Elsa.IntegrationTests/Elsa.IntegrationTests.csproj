@@ -153,5 +153,11 @@
         <None Update="Scenarios\JsonObjectSerialization\Workflows\instance-serialization.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\ImplicitJoins\Workflows\join.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\ImplicitJoins\Workflows\parallel-join.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

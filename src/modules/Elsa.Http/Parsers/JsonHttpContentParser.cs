@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Http.Parsers;
 
@@ -30,6 +30,9 @@ public class JsonHttpContentParser : IHttpContentParser
 
         using var reader = new StreamReader(content, leaveOpen: true);
         var json = await reader.ReadToEndAsync();
+        
+        if(returnType == typeof(string))
+            return json;
 
         if (returnType == null || returnType.IsPrimitive)
             return json.ConvertTo(returnType ?? typeof(string))!;

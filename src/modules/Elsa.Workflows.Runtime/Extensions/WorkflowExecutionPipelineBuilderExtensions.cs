@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Middleware.Workflows;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Middleware.Workflows;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
 
 // ReSharper disable once CheckNamespace
@@ -17,6 +17,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
+            .UseBackgroundActivities()
             .UsePersistentVariables()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
@@ -24,6 +25,11 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .UseExceptionHandling()
             .UseDefaultActivityScheduler();
 
+    /// <summary>
+    /// Installs middleware that persists the workflow instance before and after workflow execution.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder UseBackgroundActivities(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ScheduleBackgroundActivitiesMiddleware>();
+    
     /// <summary>
     /// Installs middleware that persists the workflow instance before and after workflow execution.
     /// </summary>

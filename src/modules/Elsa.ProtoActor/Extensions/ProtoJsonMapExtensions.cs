@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 using Google.Protobuf.Collections;
 
 namespace Elsa.ProtoActor.Extensions;

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Represents a data source for an activity.

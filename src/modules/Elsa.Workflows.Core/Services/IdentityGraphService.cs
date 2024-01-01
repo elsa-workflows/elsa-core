@@ -1,9 +1,10 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Humanizer;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class IdentityGraphService : IIdentityGraphService
@@ -56,32 +57,30 @@ public class IdentityGraphService : IIdentityGraphService
     public void AssignInputOutputs(IActivity activity)
     {
         var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
-        var inputs = activityDescriptor.GetWrappedInputProperties(activity).Values.Cast<Input>().ToList();
-        var seed = 0;
+        var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
-        foreach (var input in inputs)
+        foreach (var (inputName, input) in inputDictionary)
         {
             var blockReference = input?.MemoryBlockReference();
 
-            if (blockReference != null!)
-                if (string.IsNullOrEmpty(blockReference.Id))
-                    blockReference.Id = $"{activity.Id}:input-{seed}";
-
-            seed++;
+            if (blockReference == null!) 
+                continue;
+            
+            if (string.IsNullOrEmpty(blockReference.Id))
+                blockReference.Id = $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}";
         }
-
-        seed = 0;
+        
         var outputs = activity.GetOutputs();
 
         foreach (var output in outputs)
         {
             var blockReference = output.Value.MemoryBlockReference();
 
-            if (blockReference != null!)
-                if (string.IsNullOrEmpty(blockReference.Id))
-                    blockReference.Id = $"{activity.Id}:output-{seed}";
-
-            seed++;
+            if (blockReference == null!) 
+                continue;
+            
+            if (string.IsNullOrEmpty(blockReference.Id))
+                blockReference.Id = $"{activity.Id}:output-{output.Name.Humanize().Kebaberize()}";
         }
     }
 

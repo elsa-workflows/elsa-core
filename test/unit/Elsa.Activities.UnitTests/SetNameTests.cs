@@ -1,6 +1,6 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.UnitTests;

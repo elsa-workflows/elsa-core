@@ -1,11 +1,11 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Exceptions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Faults the workflow.

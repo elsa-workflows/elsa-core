@@ -1,6 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.Core.UnitTests;
 

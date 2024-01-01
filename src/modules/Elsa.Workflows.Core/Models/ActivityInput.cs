@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Represents an activity input name and value.

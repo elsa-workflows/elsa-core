@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides a way to modify activity descriptors as they are registered.

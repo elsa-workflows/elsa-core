@@ -1,37 +1,36 @@
 ﻿using Elsa.ServiceBus.IntegrationTests.Contracts;
 
-namespace Elsa.ServiceBus.IntegrationTests.Helpers
+namespace Elsa.ServiceBus.IntegrationTests.Helpers;
+
+public class TestResetEventManager : ITestResetEventManager
 {
-    public class TestResetEventManager : ITestResetEventManager
+    public AutoResetEvent WaitHandleTest { get; } = new(false);
+    private readonly Dictionary<string, AutoResetEvent> _events = new();
+
+    public AutoResetEvent Get()
     {
-        public AutoResetEvent WaitHandleTest { get; } = new AutoResetEvent(false);
-        private IDictionary<string, AutoResetEvent> _events = new Dictionary<string, AutoResetEvent>();
-        public AutoResetEvent Get()
-        {
-            return WaitHandleTest;
-        }
+        return WaitHandleTest;
+    }
 
-        public AutoResetEvent Get(string resetEvent)
-        {
-            _events.TryGetValue(resetEvent, out var result);
-            return result;
-        }
+    public AutoResetEvent? Get(string resetEvent)
+    {
+        _events.TryGetValue(resetEvent, out var result);
+        return result;
+    }
 
-        public AutoResetEvent Init(string resetEvent)
-        {
-            var rEvent = Get(resetEvent);
-            if (rEvent == null)
-            {
-                var newEvent = new AutoResetEvent(false);
-                _events.Add(resetEvent, newEvent);
-                return newEvent;
-            }
-            return rEvent;
-        }
+    public AutoResetEvent Init(string resetEvent)
+    {
+        var autoResetEvent = Get(resetEvent);
+        if (autoResetEvent != null) 
+            return autoResetEvent;
+            
+        var newEvent = new AutoResetEvent(false);
+        _events.Add(resetEvent, newEvent);
+        return newEvent;
+    }
 
-        public void Set(string resetEvent)
-        {
-            Get(resetEvent)?.Set();
-        }
+    public void Set(string resetEvent)
+    {
+        Get(resetEvent)?.Set();
     }
 }

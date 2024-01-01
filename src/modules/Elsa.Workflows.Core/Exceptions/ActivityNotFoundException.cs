@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Exceptions;
+namespace Elsa.Workflows.Exceptions;
 
 /// <summary>
 /// Thrown when a NotFoundActivity is executed.

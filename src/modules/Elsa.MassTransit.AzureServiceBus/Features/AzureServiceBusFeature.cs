@@ -1,19 +1,13 @@
-using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Messages;
-using Elsa.MassTransit.Options;
-using Elsa.Workflows.Runtime.Activities;
 using MassTransit;
-using MassTransit.Configuration;
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
-/// <summary>
 /// Configures MassTransit to use the Azure Service Bus transport.
-/// </summary>
+/// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
 [DependsOn(typeof(MassTransitFeature))]
 public class AzureServiceBusFeature : FeatureBase
 {
@@ -21,11 +15,14 @@ public class AzureServiceBusFeature : FeatureBase
     public AzureServiceBusFeature(IModule module) : base(module)
     {
     }
+    
+    /// An Azure Service Bus connection string.
+    public string? ConnectionString { get; set; }
 
     /// <summary>
-    /// An Azure Service Bus connection string.
+    /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
-    public string? ConnectionString { get; set; }
+    public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
@@ -42,6 +39,7 @@ public class AzureServiceBusFeature : FeatureBase
                         serviceBus.Host(ConnectionString);
                     
                     serviceBus.UseServiceBusMessageScheduler();
+                    ConfigureServiceBus?.Invoke(serviceBus);
                     serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };

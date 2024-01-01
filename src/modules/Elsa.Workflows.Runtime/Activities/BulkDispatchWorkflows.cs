@@ -3,19 +3,18 @@ using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -23,7 +22,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// <summary>
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// </summary>
-[Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.")]
+[Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
 [FlowNode("Finished", "Canceled", "Done")]
 [UsedImplicitly]
 public class BulkDispatchWorkflows : Activity
@@ -69,7 +68,7 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// The input to send to the workflows.
     /// </summary>
-    [Input(Description = "The input to send to the workflows.")]
+    [Input(Description = """Additional input to send to the workflows being dispatched. The "Item" key is reserved and should not be used.""")]
     public Input<IDictionary<string, object>?> Input { get; set; } = default!;
 
     /// <summary>
@@ -98,19 +97,26 @@ public class BulkDispatchWorkflows : Activity
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
         var items = GetItemsAsync(context).WithCancellation(context.CancellationToken);
         var dispatchedInstancesCount = 0L;
+        var batchSize = 1000;
+        var batch = new List<object>();
 
-        try
+        await foreach (var item in items)
         {
-            await foreach (var item in items)
-            {
-                await DispatchChildWorkflowAsync(context, item);
-                dispatchedInstancesCount++;
-            }
+            batch.Add(item);
+
+            if (batch.Count < batchSize)
+                continue;
+
+            await ProcessBatch(context, batch);
+            dispatchedInstancesCount += batch.Count;
+            batch.Clear();
         }
-        catch (TaskCanceledException)
+
+        // Process the last batch if it has any items.
+        if (batch.Count > 0)
         {
-            await context.CompleteActivityWithOutcomesAsync("Canceled");
-            return;
+            await ProcessBatch(context, batch);
+            dispatchedInstancesCount += batch.Count;
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -127,7 +133,7 @@ public class BulkDispatchWorkflows : Activity
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
                 IncludeActivityInstanceId = false,
-                AutoBurn = false
+                AutoBurn = false,
             };
             context.CreateBookmark(bookmarkOptions);
         }
@@ -136,6 +142,29 @@ public class BulkDispatchWorkflows : Activity
             // Otherwise, we can complete immediately.
             await context.CompleteActivityAsync();
         }
+
+        // Cancelling children
+    }
+
+    private async Task ProcessBatch(ActivityExecutionContext context, List<object> items)
+    {
+        var tasks = items.Select(async item =>
+        {
+            try
+            {
+                await DispatchChildWorkflowAsync(context, item);
+            }
+            catch (TaskCanceledException)
+            {
+                await context.CompleteActivityWithOutcomesAsync("Canceled");
+            }
+            catch (Exception ex)
+            {
+                context.JournalData.Add("Error", ex.Message);
+            }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)

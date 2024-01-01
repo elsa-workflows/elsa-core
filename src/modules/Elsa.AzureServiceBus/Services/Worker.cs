@@ -1,10 +1,9 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;
@@ -15,10 +14,7 @@ namespace Elsa.AzureServiceBus.Services;
 /// </summary>
 public class Worker : IAsyncDisposable
 {
-    private static readonly string BookmarkName = TypeNameHelper.GenerateTypeName<MessageReceived>();
     private readonly ServiceBusProcessor _processor;
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-    private readonly IHasher _hasher;
     private readonly IWorkflowInbox _workflowInbox;
     private readonly ILogger _logger;
     private int _refCount = 1;
@@ -26,12 +22,10 @@ public class Worker : IAsyncDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, IWorkflowDispatcher workflowDispatcher, ServiceBusClient client, IHasher hasher, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
-        _workflowDispatcher = workflowDispatcher;
-        _hasher = hasher;
         _workflowInbox = workflowInbox;
         _logger = logger;
 
@@ -47,7 +41,7 @@ public class Worker : IAsyncDisposable
     /// The name of the queue or topic that this worker is processing.
     /// </summary>
     public string QueueOrTopic { get; }
-    
+
     /// <summary>
     /// The name of the subscription that this worker is processing. Only valid if the worker is processing a topic.
     /// </summary>
@@ -73,22 +67,22 @@ public class Worker : IAsyncDisposable
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken = default) => await _processor.StartProcessingAsync(cancellationToken);
-    
+
     /// <summary>
     /// Increments the ref count.
     /// </summary>
     public void IncrementRefCount() => RefCount++;
-    
+
     /// <summary>
     /// Decrements the ref count.
     /// </summary>
     public void DecrementRefCount() => RefCount--;
-    
+
     /// <summary>
     /// Disposes the worker.
     /// </summary>
     public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
-    
+
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 
     private Task OnErrorAsync(ProcessErrorEventArgs args)
@@ -105,19 +99,20 @@ public class Worker : IAsyncDisposable
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
 
-        var results = await _workflowInbox.SubmitAsync(new Workflows.Runtime.Models.NewWorkflowInboxMessage()
+        var results = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = payload,
             Input = input,
             CorrelationId = correlationId
-        });
+        }, cancellationToken);
 
-        _logger.LogInformation($"{results.WorkflowExecutionResults.Count()} workflow triggered by the service bus message");
+        _logger.LogDebug("{Count} workflow triggered by the service bus message", results.WorkflowExecutionResults.Count);
     }
 
-    private ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message) =>
-        new(
+    private static ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message)
+    {
+        return new(
             message.Body.ToArray(),
             message.Subject,
             message.ContentType,
@@ -142,4 +137,5 @@ public class Worker : IAsyncDisposable
             message.DeadLetterSource,
             message.DeadLetterErrorDescription,
             message.ApplicationProperties);
+    }
 }

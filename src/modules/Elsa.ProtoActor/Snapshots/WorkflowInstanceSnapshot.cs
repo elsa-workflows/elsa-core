@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
 namespace Elsa.ProtoActor.Snapshots;
 

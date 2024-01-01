@@ -1,9 +1,7 @@
 using System.Linq.Expressions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 

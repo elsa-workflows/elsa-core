@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
@@ -13,17 +12,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
-		.github\workflows\all-in-one-web.yml = .github\workflows\all-in-one-web.yml
 		build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 		common.props = common.props
 		configureawait.props = configureawait.props
 		docker-compose.yml = docker-compose.yml
 		icon.png = icon.png
-		.github\workflows\npm-packages.yml = .github\workflows\npm-packages.yml
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
-		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\pr-body-generator.yml = .github\workflows\pr-body-generator.yml
 		README.md = README.md
 		update-migrations.sh = update-migrations.sh
 		frameworks.props = frameworks.props
@@ -67,9 +62,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoActor", "src\modu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dsl", "src\modules\Elsa.Dsl\Elsa.Dsl.csproj", "{78DAB791-8595-4612-8E9E-2248AF5B1862}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.AllInOne.Web", "src\bundles\Elsa.AllInOne.Web\Elsa.AllInOne.Web.csproj", "{E31F8955-B221-48AA-B301-6EE317D6F5B1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ServerAndStudio.Web", "src\bundles\Elsa.ServerAndStudio.Web\Elsa.ServerAndStudio.Web.csproj", "{E31F8955-B221-48AA-B301-6EE317D6F5B1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowServer.Web", "src\bundles\Elsa.WorkflowServer.Web\Elsa.WorkflowServer.Web.csproj", "{3C2752A7-EEBC-4ED4-B1BF-0FCF6E071BC2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Server.Web", "src\bundles\Elsa.Server.Web\Elsa.Server.Web.csproj", "{3C2752A7-EEBC-4ED4-B1BF-0FCF6E071BC2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Api", "src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj", "{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31}"
 EndProject
@@ -123,8 +118,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Workflo
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
-		docker\Dockerfile = docker\Dockerfile
 		docker\.dockerignore = docker\.dockerignore
+		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
+		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
+		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.RunTaskIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.RunTaskIntegration\Elsa.Samples.AspNet.RunTaskIntegration.csproj", "{51050209-EC2F-4DC7-8F46-07E22B7811CD}"
@@ -286,6 +283,20 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.RabbitMq", "src\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj", "{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{26888832-DBEA-4B23-8DC2-84478A702CC4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\elsa-server-and-studio.yml = .github\workflows\elsa-server-and-studio.yml
+		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
+		.github\workflows\packages.yml = .github\workflows\packages.yml
+		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{D5C149EE-276C-4C59-98F9-37F0EA2A7866}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -717,6 +728,18 @@ Global
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.Build.0 = Release|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -848,6 +871,9 @@ Global
 		{790E94F2-5393-47DF-AC52-D9247F5B243A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
+		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{D5C149EE-276C-4C59-98F9-37F0EA2A7866} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

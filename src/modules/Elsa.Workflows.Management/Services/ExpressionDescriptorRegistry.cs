@@ -7,6 +7,16 @@ namespace Elsa.Workflows.Management.Services;
 public class ExpressionDescriptorRegistry : IExpressionDescriptorRegistry
 {
     private readonly IDictionary<string, ExpressionDescriptor> _expressionSyntaxDescriptors = new Dictionary<string, ExpressionDescriptor>();
+    
+    /// Represents a registry of expression descriptors.
+    public ExpressionDescriptorRegistry(IEnumerable<IExpressionDescriptorProvider> providers)
+    {
+        foreach (var provider in providers)
+        {
+            var descriptors = provider.GetDescriptors();
+            AddRange(descriptors);
+        }
+    }
 
     /// <inheritdoc />
     public void Add(ExpressionDescriptor descriptor) => _expressionSyntaxDescriptors[descriptor.Type] = descriptor;

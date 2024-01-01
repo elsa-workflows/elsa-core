@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Holds information about an activity incident.

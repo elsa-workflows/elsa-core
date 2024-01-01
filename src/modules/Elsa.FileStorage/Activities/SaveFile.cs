@@ -2,9 +2,9 @@
 using System.IO.Compression;
 using System.Text;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.FileStorage.Activities;

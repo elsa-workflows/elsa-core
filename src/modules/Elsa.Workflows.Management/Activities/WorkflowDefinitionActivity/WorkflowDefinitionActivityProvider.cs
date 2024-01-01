@@ -1,11 +1,10 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -35,10 +34,24 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
+        
+        var allDescriptors = new List<ActivityDescriptor>();
+        var currentPage = 0;
+        const int pageSize = 100;
 
-        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-        var descriptors = CreateDescriptors(definitions);
-        return descriptors;
+        while (true)
+        {
+            var pageArgs = PageArgs.FromPage(currentPage++, pageSize);
+            var pageOfDefinitions = await _store.FindManyAsync(filter, pageArgs, cancellationToken);
+            var descriptors = CreateDescriptors(pageOfDefinitions.Items).ToList();
+            
+            allDescriptors.AddRange(descriptors);
+            
+            if(allDescriptors.Count >= pageOfDefinitions.TotalCount)
+                break;
+        }
+        
+        return allDescriptors;
     }
 
     private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions) =>

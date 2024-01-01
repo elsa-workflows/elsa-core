@@ -1,5 +1,5 @@
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

@@ -1,7 +1,7 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management.Mappers;
 

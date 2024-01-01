@@ -6,14 +6,14 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Signals;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -504,6 +504,7 @@ public static class ActivityExecutionContextExtensions
 
         // Clear bookmarks.
         context.ClearBookmarks();
+        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
 
         // Remove completion callbacks.
         context.ClearCompletionCallbacks();

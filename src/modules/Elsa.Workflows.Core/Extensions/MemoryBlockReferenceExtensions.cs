@@ -1,6 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

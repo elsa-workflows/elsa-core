@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Activities.Flowchart.Attributes;
+namespace Elsa.Workflows.Activities.Flowchart.Attributes;
 
 /// <summary>
 /// Defines the outcomes of a flow node.

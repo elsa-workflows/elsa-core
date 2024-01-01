@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Options;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Alterations.Core.Serialization;
