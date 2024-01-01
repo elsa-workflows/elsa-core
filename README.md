@@ -6,19 +6,19 @@
 
 ## Elsa Workflows
 
-[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
+[![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa.Core)](https://www.nuget.org/packages/Elsa.Core/)
 [![npm](https://img.shields.io/npm/v/@elsa-workflows/elsa-workflows-studio)](https://www.npmjs.com/package/@elsa-workflows/elsa-workflows-studio)
 
 ### Elsa 2
-[![Nuget](https://img.shields.io/nuget/v/Elsa)](https://www.nuget.org/packages/Elsa/)
+[![Nuget](https://img.shields.io/nuget/v/Elsa.Core)](https://www.nuget.org/packages/Elsa.Core/)
 [![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json)
 [![feedz.io npm](https://img.shields.io/badge/dynamic/json?color=0790b2&label=feedz.io%20%28npm%29&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-2%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-studio)](https://f.feedz.io/elsa-workflows/elsa-2/npm/@elsa-workflows/elsa-workflows-studio) 
 [![Build Elsa](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml/badge.svg?branch=2.x)](https://github.com/elsa-workflows/elsa-core/actions/workflows/publish-latest-elsa.yml)
 
 
 ### Elsa 3
+[![Nuget](https://img.shields.io/nuget/v/Elsa)](https://www.nuget.org/packages/Elsa/)
 [![feedz.io](https://img.shields.io/badge/endpoint.svg?url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fshield%2FElsa%2Flatest)](https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json)
-[![feedz.io npm](https://img.shields.io/badge/dynamic/json?color=0790b2&label=feedz.io%20%28npm%29&query=%24%5B%27dist-tags%27%5D.latest&url=https%3A%2F%2Ff.feedz.io%2Felsa-workflows%2Felsa-3%2Fnpm%2F%40elsa-workflows%2Felsa-workflows-designer)](https://f.feedz.io/elsa-workflows/elsa-3/npm/@elsa-workflows/elsa-workflows-designer)
 [![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
 
 
