@@ -10,6 +10,8 @@ using Elsa.ServiceBus.IntegrationTests.Contracts;
 using Elsa.ServiceBus.IntegrationTests.Helpers;
 using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
 using Elsa.Workflows;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Xunit.Abstractions;
@@ -22,8 +24,8 @@ public class ServiceBusTest : IDisposable
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly ServiceBusClient _serviceBusClient = Substitute.For<ServiceBusClient>();
     private readonly IWorkerManager _worker;
-    private readonly BackgroundCommandSenderHostedService _hosted;
-    private readonly BackgroundEventPublisherHostedService _backgroundEventService;
+    private readonly BackgroundCommandSenderHostedService _backgroundCommandSenderHostedService;
+    private readonly BackgroundEventPublisherHostedService _backgroundEventPublisherHostedService;
     private readonly ITestResetEventManager _resetEventManager = new TestResetEventManager();
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly IServiceBusProcessorManager _sbProcessorManager;
@@ -59,8 +61,8 @@ public class ServiceBusTest : IDisposable
             .Build();
 
         _worker = _services.GetRequiredService<IWorkerManager>();
-        _hosted = _services.GetRequiredService<BackgroundCommandSenderHostedService>();
-        _backgroundEventService = _services.GetRequiredService<BackgroundEventPublisherHostedService>();
+        _backgroundCommandSenderHostedService = _services.GetRequiredService<BackgroundCommandSenderHostedService>();
+        _backgroundEventPublisherHostedService = _services.GetRequiredService<BackgroundEventPublisherHostedService>();
         _sbProcessorManager = _services.GetRequiredService<IServiceBusProcessorManager>();
 
         _testOutputHelper = testOutputHelper;
@@ -132,8 +134,8 @@ public class ServiceBusTest : IDisposable
         await _services.PopulateRegistriesAsync();
 
         // Start background services for CommandHandler
-        await _hosted.StartAsync(CancellationToken.None);
-        await _backgroundEventService.StartAsync(CancellationToken.None);
+        await _backgroundCommandSenderHostedService.StartAsync(CancellationToken.None);
+        await _backgroundEventPublisherHostedService.StartAsync(CancellationToken.None);
     }
 
     [Fact(DisplayName = "1 Receive - Sending 1 message - Should Finished")]
@@ -369,6 +371,6 @@ public class ServiceBusTest : IDisposable
 
     void IDisposable.Dispose()
     {
-        _hosted.StopAsync(new CancellationToken()).GetAwaiter().GetResult();
+        _backgroundCommandSenderHostedService.StopAsync(new CancellationToken()).GetAwaiter().GetResult();
     }
 }
