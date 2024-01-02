@@ -31,7 +31,7 @@ public static class ModuleExtensions
     /// <param name="services">The services.</param>
     public static IServiceCollection AddExpressionDescriptorProvider<T>(this IServiceCollection services) where T: class, IExpressionDescriptorProvider
     {
-        return services.AddScoped<IExpressionDescriptorProvider, T>();
+        return services.AddSingleton<IExpressionDescriptorProvider, T>();
     }
     
     /// <summary>

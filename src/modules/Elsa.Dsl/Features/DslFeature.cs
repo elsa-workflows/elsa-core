@@ -8,18 +8,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dsl.Features;
 
+/// <inheritdoc />
 [DependsOn(typeof(ExpressionsFeature))]
-public class DslFeature : FeatureBase
+public class DslFeature(IModule module) : FeatureBase(module)
 {
-    public DslFeature(IModule module) : base(module)
-    {
-    }
-
+    /// <inheritdoc />
     public override void Configure()
     {
         Services
             .AddScoped<IDslEngine, DslEngine>()
-            .AddSingleton<ITypeSystem, TypeSystem>()
-            .AddSingleton<IFunctionActivityRegistry, FunctionActivityRegistry>();
+            .AddScoped<ITypeSystem, TypeSystem>()
+            .AddScoped<IFunctionActivityRegistry, FunctionActivityRegistry>();
     }
 }

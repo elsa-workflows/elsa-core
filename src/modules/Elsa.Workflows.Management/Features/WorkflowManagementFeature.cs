@@ -164,7 +164,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
             .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
             .AddScoped<IActivityRegistryPopulator, ActivityRegistryPopulator>()
-            .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
+            .AddScoped<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddScoped<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
             .AddScoped<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
@@ -172,8 +172,8 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddScoped<WorkflowDefinitionMapper>()
-            .AddScoped<VariableDefinitionMapper>()
-            .AddScoped<WorkflowStateMapper>()
+            .AddSingleton<VariableDefinitionMapper>()
+            .AddSingleton<WorkflowStateMapper>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());
