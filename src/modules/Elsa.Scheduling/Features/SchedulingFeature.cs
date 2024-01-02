@@ -42,13 +42,13 @@ public class SchedulingFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<ITriggerScheduler, DefaultTriggerScheduler>()
-            .AddSingleton<IBookmarkScheduler, DefaultBookmarkScheduler>()
-            .AddSingleton<IScheduler, LocalScheduler>()
-            .AddSingleton<DefaultWorkflowScheduler>()
-            .AddSingleton<CronosCronParser>()
-            .AddSingleton(CronParser)
-            .AddSingleton(WorkflowScheduler)
+            .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
+            .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
+            .AddScoped<IScheduler, LocalScheduler>()
+            .AddScoped<DefaultWorkflowScheduler>()
+            .AddScoped<CronosCronParser>()
+            .AddScoped(CronParser)
+            .AddScoped(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

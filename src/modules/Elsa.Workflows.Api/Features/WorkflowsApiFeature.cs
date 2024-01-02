@@ -36,7 +36,7 @@ public class WorkflowsApiFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ISerializationOptionsConfigurator, SerializationConfigurator>();
+        Services.AddScoped<ISerializationOptionsConfigurator, SerializationConfigurator>();
         Module.AddFastEndpointsFromModule();
     }
 }

@@ -14,7 +14,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <typeparam name="T">The type of the function definition provider.</typeparam>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddFunctionDefinitionProvider<T>(this IServiceCollection services) where T: class, IFunctionDefinitionProvider => services.AddSingleton<IFunctionDefinitionProvider, T>();
+    public static IServiceCollection AddFunctionDefinitionProvider<T>(this IServiceCollection services) where T: class, IFunctionDefinitionProvider => services.AddScoped<IFunctionDefinitionProvider, T>();
 
     /// <summary>
     /// Adds a <see cref="IFunctionDefinitionProvider"/> to the service collection.
@@ -24,7 +24,7 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The type of the function definition provider.</typeparam>
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddFunctionDefinitionProvider<T>(this IServiceCollection services, Func<IServiceProvider, T> factory) where T: class, IFunctionDefinitionProvider => 
-        services.AddSingleton<IFunctionDefinitionProvider, T>(factory);
+        services.AddScoped<IFunctionDefinitionProvider, T>(factory);
     
     /// <summary>
     /// Adds a <see cref="ITypeDefinitionProvider"/> to the service collection.
@@ -32,7 +32,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services">The service collection.</param>
     /// <typeparam name="T">The type of the type definition provider.</typeparam>
     /// <returns>The service collection.</returns>
-    public static IServiceCollection AddTypeDefinitionProvider<T>(this IServiceCollection services) where T: class, ITypeDefinitionProvider => services.AddSingleton<ITypeDefinitionProvider, T>();
+    public static IServiceCollection AddTypeDefinitionProvider<T>(this IServiceCollection services) where T: class, ITypeDefinitionProvider => services.AddScoped<ITypeDefinitionProvider, T>();
 
     /// <summary>
     /// Adds a <see cref="ITypeDefinitionProvider"/> to the service collection.
@@ -42,5 +42,5 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The type of the type definition provider.</typeparam>
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddTypeDefinitionProvider<T>(this IServiceCollection services, Func<IServiceProvider, T> factory) where T: class, ITypeDefinitionProvider => 
-        services.AddSingleton<ITypeDefinitionProvider, T>();
+        services.AddScoped<ITypeDefinitionProvider, T>();
 }

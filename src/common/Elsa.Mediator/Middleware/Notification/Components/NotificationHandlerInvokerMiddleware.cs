@@ -9,19 +9,23 @@ namespace Elsa.Mediator.Middleware.Notification.Components;
 public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
 {
     private readonly NotificationMiddlewareDelegate _next;
-    private readonly IEnumerable<INotificationHandler> _notificationHandlers;
     private readonly ILogger<NotificationHandlerInvokerMiddleware> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IEnumerable<INotificationHandler> _notificationHandlers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationHandlerInvokerMiddleware"/> class.
     /// </summary>
-    public NotificationHandlerInvokerMiddleware(NotificationMiddlewareDelegate next, IEnumerable<INotificationHandler> notificationHandlers, ILogger<NotificationHandlerInvokerMiddleware> logger, IServiceProvider serviceProvider)
+    public NotificationHandlerInvokerMiddleware(
+        NotificationMiddlewareDelegate next,
+        ILogger<NotificationHandlerInvokerMiddleware> logger,
+        IServiceProvider serviceProvider,
+        IEnumerable<INotificationHandler> notificationHandlers)
     {
         _next = next;
-        _notificationHandlers = notificationHandlers;
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _notificationHandlers = notificationHandlers;
     }
 
     /// <inheritdoc />

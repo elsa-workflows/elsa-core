@@ -19,6 +19,6 @@ public class SystemClockFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ISystemClock, SystemClock>();
+        Services.AddScoped<ISystemClock, SystemClock>();
     }
 }

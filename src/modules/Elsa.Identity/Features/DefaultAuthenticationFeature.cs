@@ -69,10 +69,10 @@ public class DefaultAuthenticationFeature : FeatureBase
 
         _configureApiKeyAuthorization(authBuilder);
 
-        Services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
-        Services.AddSingleton<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
-        Services.AddSingleton(ApiKeyProviderType);
-        Services.AddSingleton<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
+        Services.AddScoped<IAuthorizationHandler, LocalHostRequirementHandler>();
+        Services.AddScoped<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
+        Services.AddScoped(ApiKeyProviderType);
+        Services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
         Services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement())));
     }
 }
