@@ -18,7 +18,7 @@ public class DslFeature : FeatureBase
     public override void Configure()
     {
         Services
-            .AddSingleton<IDslEngine, DslEngine>()
+            .AddScoped<IDslEngine, DslEngine>()
             .AddSingleton<ITypeSystem, TypeSystem>()
             .AddSingleton<IFunctionActivityRegistry, FunctionActivityRegistry>();
     }

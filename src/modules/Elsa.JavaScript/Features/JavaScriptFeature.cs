@@ -55,16 +55,16 @@ public class JavaScriptFeature : FeatureBase
 
         // JavaScript services.
         Services
-            .AddSingleton<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
-            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
+            .AddScoped<IJavaScriptEvaluator, JintJavaScriptEvaluator>()
+            .AddScoped<ITypeDefinitionService, TypeDefinitionService>()
             .AddExpressionDescriptorProvider<JavaScriptExpressionDescriptorProvider>()
             ;
 
         // Type definition services.
         Services
-            .AddSingleton<ITypeDefinitionService, TypeDefinitionService>()
-            .AddSingleton<ITypeDescriber, TypeDescriber>()
-            .AddSingleton<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
+            .AddScoped<ITypeDefinitionService, TypeDefinitionService>()
+            .AddScoped<ITypeDescriber, TypeDescriber>()
+            .AddScoped<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
             .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
             .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
@@ -79,7 +79,7 @@ public class JavaScriptFeature : FeatureBase
         Module.UseWorkflowManagement(management => management.AddActivity<RunJavaScript>());
 
         Services
-            .AddSingleton<IPropertyUIHandler, RunJavaScriptOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, RunJavaScriptOptionsProvider>()
             .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
     }
 }

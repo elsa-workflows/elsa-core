@@ -24,7 +24,7 @@ public static class ServiceCollectionExtensions
         services.Configure(configureOptions);
         services.ConfigureOptions<ResourceTagsMemberStoreOptionsValidator>();
 
-        services.AddSingleton<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
+        services.AddScoped<IClusterMemberStore, ResourceTagsClusterMemberStore>(sp =>
         {
             var clientProvider = sp.GetRequiredService<IArmClientProvider>();
             var logger = sp.GetRequiredService<ILogger<ResourceTagsClusterMemberStore>>();

@@ -23,26 +23,26 @@ public class CSharpFeature : FeatureBase
     public CSharpFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <summary>
     /// Configures the <see cref="CSharpOptions"/>.
     /// </summary>
     public Action<CSharpOptions> CSharpOptions { get; set; } = _ => { };
-    
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(CSharpOptions);
-        
+
         // C# services.
         Services
             .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
-            .AddSingleton<ICSharpEvaluator, CSharpEvaluator>()
+            .AddScoped<ICSharpEvaluator, CSharpEvaluator>()
             ;
 
         // Handlers.
         Services.AddNotificationHandlersFrom<CSharpFeature>();
-        
+
         // Activities.
         Module.AddActivitiesFrom<CSharpFeature>();
     }

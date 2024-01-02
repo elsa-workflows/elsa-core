@@ -20,7 +20,7 @@ public class ExpressionsFeature : FeatureBase
     public override void Configure()
     {
         Services
-            .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
+            .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
     }
 }

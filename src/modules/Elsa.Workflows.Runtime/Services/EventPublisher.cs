@@ -43,7 +43,7 @@ public class EventPublisher : IEventPublisher
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.FireAndForget, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, NotificationStrategy.Background, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> PublishInternalAsync(

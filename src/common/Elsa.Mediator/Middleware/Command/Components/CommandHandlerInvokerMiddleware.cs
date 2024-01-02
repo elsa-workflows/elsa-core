@@ -44,7 +44,7 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
         var strategy = context.CommandStrategy;
         var executeMethod = strategy.GetType().GetMethod(nameof(ICommandStrategy.ExecuteAsync))!;
         var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
-        
+
         // Execute command.
         var task = executeMethodWithReturnType.Invoke(strategy, new object[] { strategyContext });
 
