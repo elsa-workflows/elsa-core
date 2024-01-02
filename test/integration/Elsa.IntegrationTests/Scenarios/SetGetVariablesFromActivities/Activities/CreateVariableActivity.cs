@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 
 namespace Elsa.IntegrationTests.Scenarios.SetGetVariablesFromActivities.Activities;
 

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Notifications;
+using Elsa.Workflows.Notifications;
 
 namespace Elsa.IntegrationTests.Scenarios.ActivityNotificationsMiddleware;
 

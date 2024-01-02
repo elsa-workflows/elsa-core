@@ -2,9 +2,8 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Options;
-using Elsa.MassTransit.RabbitMq.Options;
 using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.RabbitMq.Features;
 
@@ -19,38 +18,37 @@ public class RabbitMqServiceBusFeature : FeatureBase
     {
     }
 
-    /// <summary>
     /// A RabbitMQ connection string.
-    /// </summary>
-    public Uri? ConnectionString { get; set; }
+    public string? ConnectionString { get; set; }
 
+    /// Configures the RabbitMQ transport options.
+    public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
+    
     /// <summary>
-    /// RabbitMQ options.
+    /// Configures the RabbitMQ bus.
     /// </summary>
-    public RabbitMqOptions? Options { get; set; }
+    public Action<IRabbitMqBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
 
     /// <inheritdoc />
     public override void Configure()
     {
         Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
         {
-            configure.UsingRabbitMq((context, configurator) =>
+            configure.UsingRabbitMq((context, serviceBus) =>
             {
-                if (ConnectionString != null)
-                {
-                    configurator.Host(ConnectionString);
-                }
-                else if (Options != null)
-                {
-                    configurator.Host(Options.Host, h =>
-                    {
-                        h.Username(Options.Username);
-                        h.Password(Options.Password);
-                    });
-                }
+                if (!string.IsNullOrEmpty(ConnectionString))
+                    serviceBus.Host(ConnectionString);
 
-                configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                ConfigureServiceBus?.Invoke(serviceBus);
+
+                serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
             });
         };
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        if (TransportOptions != null) Services.Configure(TransportOptions);
     }
 }

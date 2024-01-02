@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// An activity resolver inspects a given activity and returns its contained activities.

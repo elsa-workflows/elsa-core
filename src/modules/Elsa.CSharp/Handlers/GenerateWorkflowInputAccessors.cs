@@ -3,7 +3,6 @@ using Elsa.CSharp.Notifications;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.CSharp.Handlers;

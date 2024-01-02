@@ -1,4 +1,3 @@
-using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;

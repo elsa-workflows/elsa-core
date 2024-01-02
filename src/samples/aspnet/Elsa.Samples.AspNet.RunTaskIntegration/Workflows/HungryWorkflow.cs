@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using Elsa.Http;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Activities;
 using Microsoft.AspNetCore.Http;
 
@@ -14,7 +13,7 @@ public class HungryWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var deliveredFood = new Variable<string>();
+        var deliveredFood = builder.WithVariable<string>();
 
         builder.Root = new Sequence
         {
@@ -29,7 +28,7 @@ public class HungryWorkflow : WorkflowBase
                 new WriteLine("Hunger detected!"),
                 new RunTask("OrderFood")
                 {
-                    Payload = new(new Dictionary<string, object>() { ["Food"] = "Pizza" }),
+                    Payload = new(new Dictionary<string, object> { ["Food"] = "Pizza" }),
                     Result = new Output<object>(deliveredFood)
                 },
                 new WriteLine(context => $"Eating the {deliveredFood.Get(context)}"),

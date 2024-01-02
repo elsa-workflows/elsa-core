@@ -6,7 +6,7 @@ using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
@@ -97,6 +97,7 @@ public class ProtoActorFeature : FeatureBase
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
                     .WithActorRequestTimeout(TimeSpan.FromHours(1))
+                    .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)

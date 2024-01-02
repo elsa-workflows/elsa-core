@@ -1,7 +1,7 @@
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides a common interface to access the current execution context.

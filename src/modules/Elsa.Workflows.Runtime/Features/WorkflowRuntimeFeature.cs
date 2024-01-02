@@ -1,13 +1,11 @@
 using System.Reflection;
-using Elsa.Common.Accessors;
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Runtime.ActivationValidators;
@@ -89,7 +87,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
-    public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityInvoker { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
+    public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
 
     /// <summary>
@@ -167,7 +165,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(ActivityExecutionLogStore)
             .AddScoped(WorkflowInboxStore)
             .AddScoped(RunTaskDispatcher)
-            .AddScoped(BackgroundActivityInvoker)
+            .AddScoped(BackgroundActivityScheduler)
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -180,7 +178,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<DispatchWorkflowRequestHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
-            .AddScoped<ITenantAccessor, TenantAccessor>()
+            .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
+            .AddScoped<IBookmarksPersister, BookmarksPersister>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
@@ -208,7 +207,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()
-            .AddNotificationHandler<ScheduleBackgroundActivities>()
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()

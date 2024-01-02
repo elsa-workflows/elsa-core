@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;

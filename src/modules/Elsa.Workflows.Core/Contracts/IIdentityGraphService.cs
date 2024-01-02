@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides utilities that assigns unique identities to activity graph nodes. 

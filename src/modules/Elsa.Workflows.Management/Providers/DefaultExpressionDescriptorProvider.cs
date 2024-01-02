@@ -2,8 +2,8 @@ using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Expressions;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Expressions;
+using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Providers;
@@ -12,15 +12,13 @@ namespace Elsa.Workflows.Management.Providers;
 public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
 {
     /// <inheritdoc />
-    public ValueTask<IEnumerable<ExpressionDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public IEnumerable<ExpressionDescriptor> GetDescriptors()
     {
-        var literal = CreateLiteralDescriptor();
-        var @object = CreateObjectDescriptor();
-        var json = CreateJsonDescriptor();
-        var @delegate = CreateDelegateDescriptor();
-        var variable = CreateVariableDescriptor();
-
-        return ValueTask.FromResult<IEnumerable<ExpressionDescriptor>>(new[] { literal, @object, json, @delegate, variable });
+        yield return CreateLiteralDescriptor();
+        yield return CreateObjectDescriptor();
+        yield return CreateJsonDescriptor();
+        yield return CreateDelegateDescriptor();
+        yield return CreateVariableDescriptor();
     }
 
     private ExpressionDescriptor CreateLiteralDescriptor() => CreateDescriptor<LiteralExpressionHandler>("Literal", "Literal", isBrowsable: false);

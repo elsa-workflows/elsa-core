@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
+namespace Elsa.Workflows.Activities.Flowchart.Models;
 
 /// <summary>
 /// Represents a list of outcomes that can be send when completing an activity. This information is used by <see cref="Activities.Flowchart"/>.

@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

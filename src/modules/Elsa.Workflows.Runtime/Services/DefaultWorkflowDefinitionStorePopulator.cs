@@ -1,7 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;

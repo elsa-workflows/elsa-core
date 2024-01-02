@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;

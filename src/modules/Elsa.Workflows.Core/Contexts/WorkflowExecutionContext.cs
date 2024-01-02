@@ -1,19 +1,19 @@
+using System.Collections.ObjectModel;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Services;
-using Microsoft.Extensions.DependencyInjection;
-using System.Collections.ObjectModel;
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Services;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A delegate entry that is used by activities to be notified when the activities they scheduled are completed.
@@ -33,6 +33,7 @@ public class WorkflowExecutionContext : IExecutionContext
     private static readonly object ActivityOutputRegistryKey = new();
     private static readonly object LastActivityResultKey = new();
     internal static ValueTask Complete(ActivityExecutionContext context) => context.CompleteActivityAsync();
+    internal static ValueTask Noop(ActivityExecutionContext context) => default;
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;

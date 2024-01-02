@@ -2,14 +2,15 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Signals;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Signals the current composite activity to complete itself as a whole.

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Options;
+namespace Elsa.Workflows.Options;
 
 /// <summary>
 /// Options for configuring how incidents are handled.

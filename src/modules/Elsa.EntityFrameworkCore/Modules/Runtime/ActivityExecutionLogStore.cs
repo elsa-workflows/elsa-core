@@ -1,12 +1,12 @@
 using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
+using Elsa.Workflows.State;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;

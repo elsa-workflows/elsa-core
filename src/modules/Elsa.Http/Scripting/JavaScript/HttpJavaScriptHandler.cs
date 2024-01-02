@@ -29,7 +29,7 @@ public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScript>,
     Task INotificationHandler<EvaluatingJavaScript>.HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
-        engine.RegisterType<HttpRequestHeaders>();
+        engine.RegisterType<HttpHeaders>();
         engine.RegisterType<Downloadable>();
 
         var activityExecutionContext = notification.Context;
@@ -62,7 +62,7 @@ public class HttpJavaScriptHandler : INotificationHandler<EvaluatingJavaScript>,
     
     private IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
-        yield return _typeDescriber.DescribeType(typeof(HttpRequestHeaders));
+        yield return _typeDescriber.DescribeType(typeof(HttpHeaders));
         yield return _typeDescriber.DescribeType(typeof(Downloadable));
     }
 

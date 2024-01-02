@@ -150,4 +150,21 @@ public static class ActivityExtensions
     /// Gets the root activity in the specified activity.
     /// </summary>
     public static string? GetWorkflowDefinitionId(this JsonObject activity) => activity.GetProperty<string?>("workflowDefinitionId");
+
+    /// <summary>
+    /// Determines whether the given activity is a workflow definition activity.
+    /// </summary>
+    /// <param name="activity">The JsonObject representing the activity.</param>
+    /// <returns>Returns true if the activity is a workflow definition activity; otherwise, false.</returns>
+    public static bool GetIsWorkflowDefinitionActivity(this JsonObject activity) => activity.ContainsKey("workflowDefinitionId") && activity.ContainsKey("workflowDefinitionVersionId");
+    
+    /// <summary>
+    /// Gets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static bool? GetRunAsynchronously(this JsonObject activity) => activity.GetProperty<bool>("customProperties", "runAsynchronously");
+
+    /// <summary>
+    /// Sets a value indicating whether the specified activity can trigger the workflow.
+    /// </summary>
+    public static void SetRunAsynchronously(this JsonObject activity, bool value) => activity.SetProperty(JsonValue.Create(value), "customProperties", "runAsynchronously");
 }

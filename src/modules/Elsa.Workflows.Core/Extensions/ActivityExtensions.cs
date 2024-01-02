@@ -2,10 +2,10 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace

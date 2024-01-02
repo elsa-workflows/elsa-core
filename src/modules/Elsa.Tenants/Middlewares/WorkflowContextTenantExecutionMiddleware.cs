@@ -1,7 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -27,7 +27,7 @@ public class WorkflowContextTenantExecutionMiddleware : WorkflowExecutionMiddlew
         using (var scope = _serviceScopeFactory.CreateScope())
         {
             // Check if this is a background execution.
-            var isBackgroundExecution = context.TransientProperties.GetValueOrDefault<object, bool>(BackgroundActivityInvokerMiddleware.IsBackgroundExecution);
+            var isBackgroundExecution = context.TransientProperties.GetValueOrDefault<object, bool>(BackgroundActivityCollectorMiddleware.IsBackgroundExecution);
 
             if (!isBackgroundExecution)
             {

@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization;
-using Elsa.Expressions;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A base type for the <see cref="Input{T}"/> type.
@@ -15,7 +14,7 @@ public abstract class Input : Argument
     {
         Type = type;
     }
-    
+
     /// <inheritdoc />
     protected Input(Expression? expression, MemoryBlockReference memoryBlockReference, Type type) : base(memoryBlockReference)
     {
@@ -31,7 +30,8 @@ public abstract class Input : Argument
     /// <summary>
     /// Gets the type of the input.
     /// </summary>
-    [JsonPropertyName("typeName")] public Type Type { get; set; }
+    [JsonPropertyName("typeName")]
+    public Type Type { get; set; }
 }
 
 /// <summary>
@@ -43,7 +43,7 @@ public class Input<T> : Input
     public Input(MemoryBlockReference memoryBlockReference) : base(memoryBlockReference, typeof(T))
     {
     }
-    
+
     /// <inheritdoc />
     public Input(T literal, string? id = default) : this(new Literal<T>(literal, id))
     {
@@ -88,7 +88,7 @@ public class Input<T> : Input
     public Input(Literal literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
     }
-    
+
     /// <inheritdoc />
     public Input(ObjectLiteral<T> literal) : base(Expression.LiteralExpression(literal.Value), literal, typeof(T))
     {
@@ -101,6 +101,11 @@ public class Input<T> : Input
 
     /// <inheritdoc />
     public Input(Expression expression, MemoryBlockReference memoryBlockReference) : base(expression, memoryBlockReference, typeof(T))
+    {
+    }
+
+    /// <inheritdoc />
+    public Input(Expression expression) : this(expression, new MemoryBlockReference())
     {
     }
 }

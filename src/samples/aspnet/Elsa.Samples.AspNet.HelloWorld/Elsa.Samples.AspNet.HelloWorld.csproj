@@ -9,15 +9,6 @@
     <ItemGroup>
         <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.Telnyx\Elsa.Telnyx.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj"/>
-        <ProjectReference Include="..\..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
     </ItemGroup>
 
 </Project>

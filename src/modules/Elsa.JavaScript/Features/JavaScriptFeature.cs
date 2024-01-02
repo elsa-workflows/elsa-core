@@ -14,7 +14,7 @@ using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -78,7 +78,8 @@ public class JavaScriptFeature : FeatureBase
         // Activities.
         Module.UseWorkflowManagement(management => management.AddActivity<RunJavaScript>());
 
-        Services.AddSingleton<IActivityPropertyOptionsProvider, RunJavaScriptOptionsProvider>()
-        .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
+        Services
+            .AddScoped<IPropertyUIHandler, RunJavaScriptOptionsProvider>()
+            .AddFunctionDefinitionProvider<InputFunctionsDefinitionProvider>();
     }
 }

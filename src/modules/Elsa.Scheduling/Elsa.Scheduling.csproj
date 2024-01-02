@@ -12,7 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 

@@ -2,9 +2,10 @@
 using Elsa.Extensions;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Telnyx.Activities;
 

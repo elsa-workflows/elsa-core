@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Dynamic;
-using Elsa.Expressions.Models;
 using Elsa.Extensions;
 
 namespace Elsa.Expressions.Options;

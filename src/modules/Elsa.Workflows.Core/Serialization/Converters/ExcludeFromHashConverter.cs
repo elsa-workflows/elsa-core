@@ -2,9 +2,9 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes an object to JSON, excluding properties marked with <see cref="ExcludeFromHashAttribute"/>.

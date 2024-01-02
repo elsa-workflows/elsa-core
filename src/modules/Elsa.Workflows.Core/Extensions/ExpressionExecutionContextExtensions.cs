@@ -1,12 +1,12 @@
 using System.Collections;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 using Humanizer;
 
 // ReSharper disable once CheckNamespace
@@ -314,42 +314,50 @@ public static class ExpressionExecutionContextExtensions
 
             currentScope = currentScope.ParentContext;
         }
+
+        if (context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+        {
+            if (workflowExecutionContext.Workflow.ResultVariable != null)
+                yield return workflowExecutionContext.Workflow.ResultVariable;
+        }
     }
 
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
-    /// <param name="expressionExecutionContext"></param>
+    /// <param name="context"></param>
     /// <param name="name">The name of the input.</param>
     /// <typeparam name="T">The type of the input.</typeparam>
     /// <returns>The value of the specified input.</returns>
-    public static T? GetInput<T>(this ExpressionExecutionContext expressionExecutionContext, string name)
+    public static T? GetInput<T>(this ExpressionExecutionContext context, string name)
     {
-        var value = expressionExecutionContext.GetInput(name);
+        var value = context.GetInput(name);
         return value.ConvertTo<T>();
     }
 
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
-    /// <param name="expressionExecutionContext"></param>
+    /// <param name="context"></param>
     /// <param name="name">The name of the input.</param>
     /// <returns>The value of the specified input.</returns>
-    public static object? GetInput(this ExpressionExecutionContext expressionExecutionContext, string name)
+    public static object? GetInput(this ExpressionExecutionContext context, string name)
     {
-        // If there's a variable in the current scope with the specified name, return that.
-        var variable = expressionExecutionContext.GetVariable(name);
+        if (context.IsInsideCompositeActivity())
+        {
+            // If there's a variable in the current scope with the specified name, return that.
+            var variable = context.GetVariable(name);
 
-        if (variable != null)
-            return variable.Get(expressionExecutionContext);
+            if (variable != null)
+                return variable.Get(context);
+        }
 
         // Otherwise, return the input.
-        var workflowExecutionContext = expressionExecutionContext.GetWorkflowExecutionContext();
+        var workflowExecutionContext = context.GetWorkflowExecutionContext();
         var input = workflowExecutionContext.Input;
         return input.TryGetValue(name, out var value) ? value : default;
     }
-
-
+    
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>

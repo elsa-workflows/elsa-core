@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
+namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// Converts <see cref="ObsoleteConnection"/> to and from JSON.

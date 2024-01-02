@@ -1,8 +1,8 @@
 using System.Net;
 using Elsa.Http;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.HelloWorld;
 

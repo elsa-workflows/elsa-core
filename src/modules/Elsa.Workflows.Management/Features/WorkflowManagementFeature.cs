@@ -8,8 +8,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -166,7 +166,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddScoped<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
-            .AddScoped<IExpressionDescriptorRegistryPopulator, ExpressionDescriptorRegistryPopulator>()
             .AddScoped<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()

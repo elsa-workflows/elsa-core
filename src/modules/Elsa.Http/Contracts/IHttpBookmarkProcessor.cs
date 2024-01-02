@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 
 namespace Elsa.Http.Contracts;
 

@@ -1,14 +1,14 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -23,6 +23,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IVariablePersistenceManager _variablePersistenceManager;
     private readonly IActivityInvoker _activityInvoker;
+    private readonly IBookmarksPersister _bookmarksPersister;
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
 
@@ -35,6 +37,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         IWorkflowDefinitionService workflowDefinitionService,
         IVariablePersistenceManager variablePersistenceManager,
         IActivityInvoker activityInvoker,
+        IBookmarksPersister bookmarksPersister,
+        IWorkflowStateExtractor workflowStateExtractor,
         IServiceProvider serviceProvider,
         ILogger<DefaultBackgroundActivityInvoker> logger)
     {
@@ -43,6 +47,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         _workflowDefinitionService = workflowDefinitionService;
         _variablePersistenceManager = variablePersistenceManager;
         _activityInvoker = activityInvoker;
+        _bookmarksPersister = bookmarksPersister;
+        _workflowStateExtractor = workflowStateExtractor;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
@@ -63,6 +69,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+        var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
@@ -70,7 +77,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
 
         // Mark the activity as being invoked from a background worker.
-        activityExecutionContext.TransientProperties[BackgroundActivityInvokerMiddleware.IsBackgroundExecution] = true;
+        activityExecutionContext.TransientProperties[BackgroundActivityCollectorMiddleware.IsBackgroundExecution] = true;
 
         // Invoke the activity.
         await _activityInvoker.InvokeAsync(activityExecutionContext);
@@ -82,35 +89,46 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         foreach (var outputDescriptor in outputDescriptors)
         {
             var output = (Output?)outputDescriptor.ValueGetter(activityExecutionContext.Activity);
-            
-            if(output == null)
+
+            if (output == null)
                 continue;
 
             var memoryBlockReference = output.MemoryBlockReference();
-            
-            if(!activityExecutionContext.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
+
+            if (!activityExecutionContext.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
                 continue;
-            
+
             var variableMetadata = memoryBlock.Metadata as VariableBlockMetadata;
             var driver = variableMetadata?.StorageDriverType;
-            
+
             // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
-            if(driver != typeof(WorkflowStorageDriver))
+            if (driver != typeof(WorkflowStorageDriver))
                 continue;
-            
+
             var outputValue = activityExecutionContext.Get(memoryBlockReference);
 
             if (outputValue != null)
                 outputValues[outputDescriptor.Name] = outputValue;
         }
 
-        // Persist any variables that were written to by the activity.
+        // TODO: Instead of importing the entire workflow state, we should only import the following:
+        // - Variables
+        // - Activity state
+        // - Activity output
+        // - Bookmarks
+        workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
         await _variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
-        
+        await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken); 
+
+        // Process bookmarks.
+        var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
+        var diff = Diff.For(originalBookmarks, newBookmarks);
+        await _bookmarksPersister.PersistBookmarksAsync(workflowExecutionContext, diff);
+
         // Resume the workflow, passing along the activity output.
         // TODO: This approach will fail if the output is non-serializable. We need to find a way to pass the output to the workflow without serializing it.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;
-        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
+        var inputKey = BackgroundActivityCollectorMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
         {
@@ -122,12 +140,12 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             }
         };
 
-        if(cancellationToken.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested)
         {
             _logger.LogInformation("Background execution for activity {ActivityNodeId} was canceled", activityNodeId);
             return;
         }
-        
+
         await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
     }
 }

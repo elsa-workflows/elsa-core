@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;
@@ -17,7 +16,8 @@ using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Http.UIHints;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using FluentStorage;
@@ -53,7 +53,7 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
 
     /// <summary>
     /// A delegate that is invoked when an HTTP workflow faults. 
@@ -114,7 +114,7 @@ public class HttpFeature : FeatureBase
                 typeof(HttpRequest),
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
-                typeof(HttpRequestHeaders),
+                typeof(HttpHeaders),
                 typeof(IFormFile)
             }, "HTTP");
 
@@ -162,6 +162,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IHttpContentParser, StringHttpContentParser>()
             .AddScoped<IHttpContentParser, JsonHttpContentParser>()
             .AddScoped<IHttpContentParser, XmlHttpContentParser>()
+            .AddScoped<IHttpContentParser, FormHttpContentParser>()
 
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
@@ -170,7 +171,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
 
             // Activity property options providers.
-            .AddScoped<IActivityPropertyOptionsProvider, HttpContentTypeOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
 
             // Port resolvers.
             .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()

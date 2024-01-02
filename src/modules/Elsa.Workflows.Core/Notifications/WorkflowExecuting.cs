@@ -1,7 +1,7 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.Core.Notifications;
+namespace Elsa.Workflows.Notifications;
 
 /// <summary>
 /// A domain event that is published before a burst of execution begins.  

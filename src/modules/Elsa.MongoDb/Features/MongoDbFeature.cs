@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

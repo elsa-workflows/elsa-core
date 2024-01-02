@@ -3,8 +3,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Runtime.Features;
 

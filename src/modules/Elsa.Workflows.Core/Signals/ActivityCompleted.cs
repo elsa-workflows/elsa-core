@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Signals;
+namespace Elsa.Workflows.Signals;
 
 /// <summary>
 /// Signaled when an activity has completed.

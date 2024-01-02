@@ -1,7 +1,7 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;

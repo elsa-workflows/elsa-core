@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Exceptions;
+namespace Elsa.Workflows.Exceptions;
 
 /// <summary>
 /// Represents an exception that occurred during workflow execution.

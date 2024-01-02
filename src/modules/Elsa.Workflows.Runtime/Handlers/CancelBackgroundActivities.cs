@@ -1,6 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
@@ -31,7 +31,7 @@ public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarks
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
-        var removedBookmarks = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Where(x => x.Name == BackgroundActivityInvokerMiddleware.BackgroundActivityBookmarkName);
+        var removedBookmarks = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Where(x => x.Name == BackgroundActivityCollectorMiddleware.BackgroundActivityBookmarkName);
 
         foreach (var removedBookmark in removedBookmarks)
         {

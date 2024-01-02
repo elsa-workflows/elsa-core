@@ -43,7 +43,7 @@ builder.Services.AddElsa(elsa =>
 });
 
 // Configure CORS to allow designer app hosted on a different origin to invoke the APIs.
-builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("*")));
 
 var app = builder.Build();
 

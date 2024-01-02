@@ -1,11 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 

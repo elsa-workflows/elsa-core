@@ -1,6 +1,3 @@
-using Elsa.Api.Client.HttpMessageHandlers;
-using Microsoft.Extensions.DependencyInjection;
-
 namespace Elsa.Api.Client.Options;
 
 /// <summary>
@@ -12,19 +9,14 @@ public class ElsaClientOptions
     /// Gets or sets the base address of the Elsa server.
     /// </summary>
     public Uri BaseAddress { get; set; } = default!;
-    
+
     /// <summary>
-    /// Gets or sets the API key to use when authenticating with the Elsa server.
+    /// Gets or sets the API key function to use when authenticating with the Elsa server.
     /// </summary>
-    public string ApiKey { get; set; } = default!;
+    public string? ApiKey { get; set; }
     
     /// <summary>
     /// Gets or sets a delegate that can be used to configure the HTTP client.
     /// </summary>
     public Action<IServiceProvider, HttpClient>? ConfigureHttpClient { get; set; }
-
-    /// <summary>
-    /// Gets or sets a delegate that can be used to configure the HTTP client message handler.
-    /// </summary>
-    public Func<IServiceProvider, HttpMessageHandler> HttpMessageHandlerFactory { get; set; } = sp => sp.GetRequiredService<ApiHttpMessageHandler>();
 }

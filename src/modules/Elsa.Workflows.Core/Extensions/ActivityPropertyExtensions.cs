@@ -1,5 +1,5 @@
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

@@ -5,7 +5,7 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Alterations.Core.Services;
 

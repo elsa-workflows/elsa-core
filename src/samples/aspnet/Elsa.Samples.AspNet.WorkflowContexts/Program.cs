@@ -6,8 +6,8 @@ using Elsa.Samples.AspNet.WorkflowContexts.Contracts;
 using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Samples.AspNet.WorkflowContexts.Services;
 using Elsa.Samples.AspNet.WorkflowContexts.Workflows;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Middleware.Workflows;
+using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Middleware.Workflows;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

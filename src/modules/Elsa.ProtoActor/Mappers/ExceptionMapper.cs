@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 using ProtoException = Elsa.ProtoActor.ProtoBuf.ExceptionState;
 
 namespace Elsa.ProtoActor.Mappers;

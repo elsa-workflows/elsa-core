@@ -2,9 +2,9 @@
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Scheduling.Activities;
 
