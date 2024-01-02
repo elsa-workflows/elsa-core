@@ -211,8 +211,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var routeData = GetRouteData(httpContext, path);
 
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
-        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value.ToArray());
-        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
+        var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
+        var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);

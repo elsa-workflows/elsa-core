@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Elsa.Workflows.Serialization.Converters
 {
     /// <summary>
-    /// Serializes <see cref="StringValues"/> using the converter for <scc cref="string" /> arrays.
+    /// Serializes <see cref="StringValues"/> using the converter for <scc cref="T:string[]" /> arrays.
     /// </summary>
     public class StringValuesConverter : JsonConverter<StringValues>
     {
