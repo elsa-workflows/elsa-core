@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.State;
+namespace Elsa.Workflows.State;
 
 /// <summary>
 /// Represents the current state of a workflow. 

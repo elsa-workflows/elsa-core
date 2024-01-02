@@ -26,7 +26,7 @@ builder.RootComponents.RegisterCustomElsaStudioElements();
 // Register shell services and modules.
 builder.Services.AddCore();
 builder.Services.AddShell();
-builder.Services.AddRemoteBackend(configureElsaClientBuilderOptions: elsaClient => elsaClient.ConfigureHttpClientBuilder = httpClientBuilder => httpClientBuilder.AddHttpMessageHandler<AuthenticatingApiHttpMessageHandler>());
+builder.Services.AddRemoteBackend(elsaClient => elsaClient.AuthenticationHandler = typeof(AuthenticatingApiHttpMessageHandler));
 builder.Services.AddLoginModule();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();

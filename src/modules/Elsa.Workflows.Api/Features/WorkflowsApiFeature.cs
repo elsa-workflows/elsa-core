@@ -4,10 +4,11 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.Features;
-using Elsa.JavaScript.Features;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Serialization;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Features;
@@ -35,7 +36,7 @@ public class WorkflowsApiFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ISerializationOptionsConfigurator, SerializationConfigurator>();
+        Services.AddScoped<ISerializationOptionsConfigurator, SerializationConfigurator>();
         Module.AddFastEndpointsFromModule();
     }
 }

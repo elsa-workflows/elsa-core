@@ -1,8 +1,7 @@
 using Elsa.Extensions;
-using Elsa.JavaScript.Extensions;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Humanizer;
 
 namespace Elsa.JavaScript.TypeDefinitions.Providers;

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Elsa.Workflows.Core.Serialization.ReferenceHandlers;
+namespace Elsa.Workflows.Serialization.ReferenceHandlers;
 
 /// <summary>
 /// A custom reference resolver that uses a <see cref="ReferenceEqualityComparer"/> to compare objects.

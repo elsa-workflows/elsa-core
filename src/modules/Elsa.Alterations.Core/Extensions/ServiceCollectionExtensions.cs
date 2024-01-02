@@ -18,12 +18,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAlterationsCore(this IServiceCollection services)
     {
         services.Configure<AlterationOptions>(_ => { }); // Ensure that the options are configured even if the application doesn't do so.
-        services.AddSingleton<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
-        services.AddSingleton<IAlterationJobRunner, DefaultAlterationJobRunner>();
-        services.AddSingleton<IAlterationRunner, DefaultAlterationRunner>();
-        services.AddSingleton<IAlteredWorkflowDispatcher, DefaultAlteredWorkflowDispatcher>();
-        services.AddSingleton<IAlterationSerializer, AlterationSerializer>();
-        services.AddSingleton<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
+        services.AddScoped<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
+        services.AddScoped<IAlterationJobRunner, DefaultAlterationJobRunner>();
+        services.AddScoped<IAlterationRunner, DefaultAlterationRunner>();
+        services.AddScoped<IAlteredWorkflowDispatcher, DefaultAlteredWorkflowDispatcher>();
+        services.AddScoped<IAlterationSerializer, AlterationSerializer>();
+        services.AddScoped<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();
         return services;
     }
 
@@ -33,7 +33,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAlteration<T, THandler>(this IServiceCollection services) where T : IAlteration where THandler : class, IAlterationHandler
     {
         services.Configure<AlterationOptions>(options => options.AlterationTypes.Add(typeof(T)));
-        services.AddSingleton<IAlterationHandler, THandler>();
+        services.AddScoped<IAlterationHandler, THandler>();
         return services;
     }
 }

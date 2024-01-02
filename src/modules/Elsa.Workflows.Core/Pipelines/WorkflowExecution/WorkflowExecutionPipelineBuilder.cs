@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
 /// <inheritdoc />
 public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilder

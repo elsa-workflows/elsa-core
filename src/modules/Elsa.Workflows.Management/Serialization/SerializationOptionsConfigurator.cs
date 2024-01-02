@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 

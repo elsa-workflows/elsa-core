@@ -1,7 +1,7 @@
 using Elsa.Http.Serialization;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 
 namespace Elsa.Http.Handlers;

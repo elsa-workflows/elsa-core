@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
@@ -21,8 +22,8 @@ public class OrderFoodTaskHandler : INotificationHandler<RunTaskRequest>
         if (notification.TaskName != "OrderFood")
             return;
 
-        var args = (dynamic)notification.TaskPayload!;
-        var foodName = args.Food;
+        var args = notification.TaskPayload!;
+        var foodName = args.GetValue<string>("Food");
         
         Console.WriteLine("Preparing {0}...", foodName);
         await Task.Delay(1000, cancellationToken);

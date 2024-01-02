@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Serializes and deserializes workflow states.

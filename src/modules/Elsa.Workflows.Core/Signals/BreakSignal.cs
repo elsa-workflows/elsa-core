@@ -1,3 +1,3 @@
-namespace Elsa.Workflows.Core.Signals;
+namespace Elsa.Workflows.Signals;
 
 public record BreakSignal;

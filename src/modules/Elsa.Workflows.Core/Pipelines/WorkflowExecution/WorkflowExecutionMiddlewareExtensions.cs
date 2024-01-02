@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
 /// <summary>
 /// Provides extensions to <see cref="IWorkflowExecutionPipelineBuilder"/> that adds support for installing <see cref="IWorkflowExecutionMiddleware"/> components.

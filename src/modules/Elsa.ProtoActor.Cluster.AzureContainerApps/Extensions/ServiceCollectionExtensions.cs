@@ -32,9 +32,9 @@ public static class ServiceCollectionExtensions
         var configureOptions = configure ?? (_ => { });
         services.Configure(configureOptions);
         services.ConfigureOptions<AzureContainerAppsProviderOptionsValidator>();
-        services.AddSingleton<AzureContainerAppsProvider>();
-        services.AddSingleton<ISystemClock, DefaultSystemClock>();
-        services.AddSingleton<IContainerAppMetadataAccessor, EnvironmentContainerAppMetadataAccessor>();
+        services.AddScoped<AzureContainerAppsProvider>();
+        services.AddScoped<ISystemClock, DefaultSystemClock>();
+        services.AddScoped<IContainerAppMetadataAccessor, EnvironmentContainerAppMetadataAccessor>();
         services.AddTransient<AzureContainerAppsClusterMonitor>();
 
         if (armClientProvider != null)

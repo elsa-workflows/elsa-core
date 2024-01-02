@@ -1,7 +1,7 @@
 using Elsa.DropIns.Core;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using SampleDropIn.Activities;

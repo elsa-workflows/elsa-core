@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -40,7 +40,7 @@ public class MongoDbFeature : FeatureBase
     {
         Services.Configure(Options);
 
-        Services.AddSingleton(sp => CreateDatabase(sp, ConnectionString));
+        Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
 
         RegisterSerializers();
         RegisterClassMaps();

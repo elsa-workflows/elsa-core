@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
-using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities.Flowchart.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Merge multiple branches into a single branch of execution.
@@ -26,17 +27,18 @@ public class FlowJoin : Activity, IJoinNode
     /// </summary>
     [Input(
         Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
-        DefaultValue = FlowJoinMode.WaitAny
+        DefaultValue = FlowJoinMode.WaitAny,
+        UIHint = InputUIHints.DropDown
     )]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var flowchartExecutionContext = context.ParentActivityExecutionContext!;
-        var flowchart = (Flowchart)flowchartExecutionContext.Activity;
+        var flowchartContext = context.ParentActivityExecutionContext!;
+        var flowchart = (Flowchart)flowchartContext.Activity;
         var inboundActivities = flowchart.Connections.LeftInboundActivities(this).ToList();
-        var flowScope = flowchartExecutionContext.GetProperty<FlowScope>(Flowchart.ScopeProperty)!;
+        var flowScope = flowchartContext.GetProperty<FlowScope>(Flowchart.ScopeProperty)!;
         var executionCount = flowScope.GetExecutionCount(this);
         var mode = context.Get(Mode);
 
@@ -49,7 +51,7 @@ public class FlowJoin : Activity, IJoinNode
 
                 if (haveAllInboundActivitiesExecuted)
                 {
-                    await ClearBookmarksAsync(flowchart, context);
+                    await CancelActivitiesInInboundPathAsync(flowchart, flowchartContext, context);
                     await context.CompleteActivityAsync();
                 }
 
@@ -57,20 +59,20 @@ public class FlowJoin : Activity, IJoinNode
             }
             case FlowJoinMode.WaitAny:
             {
-                await ClearBookmarksAsync(flowchart, context);
+                await CancelActivitiesInInboundPathAsync(flowchart, flowchartContext, context);
                 await context.CompleteActivityAsync();
                 break;
             }
         }
     }
 
-    private async Task ClearBookmarksAsync(Flowchart flowchart, ActivityExecutionContext context)
+    private async Task CancelActivitiesInInboundPathAsync(Flowchart flowchart, ActivityExecutionContext flowchartContext, ActivityExecutionContext joinContext)
     {
         // Cancel all activities between this join activity and its most recent fork.
         var connections = flowchart.Connections;
-        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var workflowExecutionContext = joinContext.WorkflowExecutionContext;
         var inboundActivities = connections.LeftAncestorActivities(this).Select(x => workflowExecutionContext.FindNodeByActivity(x)).Select(x => x!.Activity).ToList();
-        var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity)).ToList();
+        var inboundActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => inboundActivities.Contains(x.Activity) && x.ParentActivityExecutionContext == flowchartContext).ToList();
 
         // Cancel each inbound activity.
         foreach (var activityExecutionContext in inboundActivityExecutionContexts)

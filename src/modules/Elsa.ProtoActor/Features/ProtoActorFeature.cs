@@ -6,7 +6,7 @@ using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,7 +83,7 @@ public class ProtoActorFeature : FeatureBase
         var services = Services;
 
         // Register ActorSystem.
-        services.AddSingleton(sp =>
+        services.AddScoped(sp =>
         {
             var systemConfig = Proto.ActorSystemConfig
                 .Setup()
@@ -97,6 +97,7 @@ public class ProtoActorFeature : FeatureBase
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
                     .WithActorRequestTimeout(TimeSpan.FromHours(1))
+                    .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
@@ -118,22 +119,22 @@ public class ProtoActorFeature : FeatureBase
         Log.SetLoggerFactory(LoggerFactory.Create(l => l.AddConsole().SetMinimumLevel(LogLevel.Warning)));
 
         // Persistence.
-        services.AddSingleton(PersistenceProvider);
+        services.AddScoped(PersistenceProvider);
 
         // Mappers.
         services
-            .AddSingleton<BookmarkMapper>()
-            .AddSingleton<ExceptionMapper>()
-            .AddSingleton<WorkflowExecutionResultMapper>()
-            .AddSingleton<ActivityIncidentStateMapper>()
-            .AddSingleton<WorkflowStatusMapper>()
-            .AddSingleton<WorkflowSubStatusMapper>();
+            .AddScoped<BookmarkMapper>()
+            .AddScoped<ExceptionMapper>()
+            .AddScoped<WorkflowExecutionResultMapper>()
+            .AddScoped<ActivityIncidentStateMapper>()
+            .AddScoped<WorkflowStatusMapper>()
+            .AddScoped<WorkflowSubStatusMapper>();
 
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();
 
         // Cluster.
-        services.AddSingleton(sp => sp.GetRequiredService<ActorSystem>().Cluster());
+        services.AddScoped(sp => sp.GetRequiredService<ActorSystem>().Cluster());
 
         // Actors.
         services

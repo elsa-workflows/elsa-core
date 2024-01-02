@@ -1,4 +1,4 @@
-﻿namespace Elsa.Workflows.Core;
+﻿namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents the switch mode.

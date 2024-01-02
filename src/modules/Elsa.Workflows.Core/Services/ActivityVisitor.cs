@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
-using ActivityNode = Elsa.Workflows.Core.Models.ActivityNode;
+using Elsa.Workflows.Contracts;
+using ActivityNode = Elsa.Workflows.Models.ActivityNode;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class ActivityVisitor : IActivityVisitor

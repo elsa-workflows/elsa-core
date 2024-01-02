@@ -2,9 +2,9 @@ using System.Net.Mime;
 using Elsa.Http;
 using Elsa.Samples.AspNet.HttpEndpoints.Activities;
 using Elsa.Samples.AspNet.HttpEndpoints.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.HttpEndpoints.Workflows;
 

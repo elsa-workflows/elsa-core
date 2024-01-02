@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.State;
+namespace Elsa.Workflows.State;
 
 /// <summary>
 /// A serializable shape of <see cref="ActivityExecutionContext"/>.

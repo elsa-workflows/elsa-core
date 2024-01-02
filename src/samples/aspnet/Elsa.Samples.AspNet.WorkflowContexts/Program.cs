@@ -6,8 +6,8 @@ using Elsa.Samples.AspNet.WorkflowContexts.Contracts;
 using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Samples.AspNet.WorkflowContexts.Services;
 using Elsa.Samples.AspNet.WorkflowContexts.Workflows;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Middleware.Workflows;
+using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Middleware.Workflows;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -81,7 +81,7 @@ services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
 // Add domain services.
-services.AddSingleton<ICustomerStore, MemoryCustomerStore>();
+services.AddScoped<ICustomerStore, MemoryCustomerStore>();
 
 // Add workflow context providers.
 services.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();

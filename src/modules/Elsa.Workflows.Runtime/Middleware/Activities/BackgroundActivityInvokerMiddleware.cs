@@ -1,29 +1,30 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Middleware.Activities;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Bookmarks;
+using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
 /// <summary>
-/// Executes the current activity from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
+/// The actual scheduling of the activity happens in <see cref="ScheduleBackgroundActivitiesMiddleware"/>.
 /// </summary>
-public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
+public class BackgroundActivityCollectorMiddleware : DefaultActivityInvokerMiddleware
 {
     /// <summary>
     /// A key into the activity execution context's transient properties that indicates whether the current activity is being executed in the background.
     /// </summary>
     public static readonly object IsBackgroundExecution = new();
-    
+
     internal static string GetBackgroundActivityOutputKey(string activityId) => $"__BackgroundActivityOutput:{activityId}";
     internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
-    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next) : base(next)
+    public BackgroundActivityCollectorMiddleware(ActivityMiddlewareDelegate next) : base(next)
     {
     }
 
@@ -64,7 +65,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
         var bookmarkPayload = new BackgroundActivityBookmark();
-        var bookmarkOptions = new CreateBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload };
+        var bookmarkOptions = new CreateBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload, AutoComplete = false };
         var bookmark = context.CreateBookmark(bookmarkOptions);
         scheduledBackgroundActivities.Add(new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmark.Id));
     }

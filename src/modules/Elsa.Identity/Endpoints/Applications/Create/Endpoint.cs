@@ -1,7 +1,7 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Applications.Create;

@@ -1,13 +1,13 @@
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Serialization.ReferenceHandlers;
-using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Extensions;
+using Elsa.Workflows.Serialization.ReferenceHandlers;
+using Newtonsoft.Json.Linq;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Reads objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.

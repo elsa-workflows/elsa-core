@@ -1,9 +1,9 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class VariablePersistenceManager : IVariablePersistenceManager

@@ -1,6 +1,7 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Models;
 using MassTransit;
 
 // ReSharper disable once CheckNamespace
@@ -18,14 +19,26 @@ public static class MassTransitFeatureExtensions
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
     public static MassTransitFeature AddConsumer<T>(this MassTransitFeature feature) where T : IConsumer => feature.AddConsumer(typeof(T));
-    
+
     /// <summary>
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
-    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type)
+    /// <typeparam name="T">The consumer type.</typeparam>
+    /// <typeparam name="TDefinition">The consumer definition type.</typeparam>
+    public static MassTransitFeature AddConsumer<T, TDefinition>(this MassTransitFeature feature) 
+        where T : IConsumer 
+        where TDefinition : IConsumerDefinition
     {
-        var types = feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<Type>());
-        types.Add(type);
+        return feature.AddConsumer(typeof(T), typeof(TDefinition));
+    }
+
+    /// <summary>
+    /// Registers the specified type for MassTransit service bus consumer discovery.
+    /// </summary>
+    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type, Type? consumerDefinitionType = default)
+    {
+        var types = feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
+        types.Add(new ConsumerTypeDefinition(type, consumerDefinitionType));
         return feature;
     }
 
@@ -33,7 +46,7 @@ public static class MassTransitFeatureExtensions
     /// Registers a message type which is to be used by the <see cref="MassTransitActivityTypeProvider"/> to dynamically provide activities to send and receive these messages.
     /// </summary>
     public static MassTransitFeature AddMessageType<T>(this MassTransitFeature feature) where T : class => feature.AddMessageType(typeof(T));
-    
+
     /// <summary>
     /// Registers a message type which is to be used by the <see cref="MassTransitActivityTypeProvider"/> to dynamically provide activities to send and receive these messages.
     /// </summary>
@@ -43,12 +56,12 @@ public static class MassTransitFeatureExtensions
         types.Add(type);
         return feature;
     }
-    
+
     /// <summary>
     /// Returns all collected consumer types.
     /// </summary>
-    internal static IEnumerable<Type> GetConsumers(this MassTransitFeature feature) => feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<Type>());
-    
+    internal static IEnumerable<ConsumerTypeDefinition> GetConsumers(this MassTransitFeature feature) => feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
+
     /// <summary>
     /// Returns all collected message types.
     /// </summary>

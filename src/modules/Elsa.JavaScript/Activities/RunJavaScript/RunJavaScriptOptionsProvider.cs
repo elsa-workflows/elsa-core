@@ -1,22 +1,10 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Management.ActivityInputOptions;
+using Elsa.Workflows.UIHints.CodeEditor;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.JavaScript.Activities;
 
-internal class RunJavaScriptOptionsProvider : IActivityPropertyOptionsProvider
+internal class RunJavaScriptOptionsProvider : CodeEditorOptionsProviderBase
 {
-    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property, object? context, CancellationToken cancellationToken = default)
-    {
-        var options = new Dictionary<string, object>
-        {
-            ["CodeEditorOptions"] = new CodeEditorOptions
-            {
-                Language = "javascript"
-            }
-        };
-
-        return new(options);
-    }
+    protected override string GetLanguage(PropertyInfo propertyInfo, object? context) => "javascript";
 }

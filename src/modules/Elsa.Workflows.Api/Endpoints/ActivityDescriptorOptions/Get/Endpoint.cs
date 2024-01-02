@@ -1,7 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;
@@ -11,10 +9,10 @@ internal class Get : ElsaEndpoint<Request, Response>
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IActivityRegistry _registry;
-    private readonly IPropertyOptionsResolver _optionsResolver;
+    private readonly IPropertyUIHandlerResolver _optionsResolver;
 
     /// <inheritdoc />
-    public Get(IServiceProvider serviceProvider, IActivityRegistry registry, IPropertyOptionsResolver optionsResolver)
+    public Get(IServiceProvider serviceProvider, IActivityRegistry registry, IPropertyUIHandlerResolver optionsResolver)
     {
         _serviceProvider = serviceProvider;
         _registry = registry;
@@ -38,11 +36,12 @@ internal class Get : ElsaEndpoint<Request, Response>
         var propertyDescriptor =  descriptor!.Inputs.FirstOrDefault(x => x.Name == request.PropertyName);
 
         if(propertyDescriptor == null)
+        {
             await SendNotFoundAsync(cancellationToken);
-
-        var optionsResolver = new PropertyOptionsResolver(_serviceProvider);
-
-        var inputOptions = await optionsResolver.GetOptionsAsync(propertyDescriptor!.PropertyInfo, request.Context, cancellationToken);
+            return;
+        }
+        
+        var inputOptions = await _optionsResolver.GetUIPropertiesAsync(propertyDescriptor.PropertyInfo!, request.Context, cancellationToken);
 
         await SendOkAsync(new Response(inputOptions), cancellationToken);
     }

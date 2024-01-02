@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Builders;
+namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
 public class WorkflowBuilderFactory : IWorkflowBuilderFactory

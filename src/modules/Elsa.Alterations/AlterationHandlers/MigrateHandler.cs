@@ -2,10 +2,6 @@ using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Common.Models;
-using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 

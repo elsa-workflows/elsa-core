@@ -1,12 +1,12 @@
 using Elsa.Email.Activities;
 using Elsa.Extensions;
-using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Samples.AspNet.WorkflowContexts.Extensions;
+using Elsa.Samples.AspNet.WorkflowContexts.Providers;
 using Elsa.Scheduling.Activities;
 using Elsa.WorkflowContexts.Activities;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Workflows;
 

@@ -1,10 +1,10 @@
 using Elsa.Common.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Activities.Flowchart.Serialization;
+using Elsa.Workflows.Activities.Flowchart.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Features;
+namespace Elsa.Workflows.Features;
 
 /// <summary>
 /// Adds support for the Flowchart activity.
@@ -19,6 +19,6 @@ public class FlowchartFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>();
+        Services.AddScoped<ISerializationOptionsConfigurator, FlowchartSerializationOptionConfigurator>();
     }
 }

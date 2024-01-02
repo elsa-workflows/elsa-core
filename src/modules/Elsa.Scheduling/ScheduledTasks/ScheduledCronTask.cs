@@ -2,6 +2,7 @@ using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Elsa.Scheduling.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;
@@ -16,18 +17,18 @@ public class ScheduledCronTask : IScheduledTask
     private readonly ITask _task;
     private readonly string _cronExpression;
     private readonly ICronParser _cronParser;
-    private readonly ICommandSender _commandSender;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
     /// </summary>
-    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, ICommandSender commandSender, ISystemClock systemClock)
+    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, IServiceScopeFactory scopeFactory, ISystemClock systemClock)
     {
         _task = task;
         _cronExpression = cronExpression;
         _cronParser = cronParser;
-        _commandSender = commandSender;
+        _scopeFactory = scopeFactory;
         _systemClock = systemClock;
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -71,8 +72,11 @@ public class ScheduledCronTask : IScheduledTask
             _timer.Dispose();
             _timer = null;
 
+            using var scope = _scopeFactory.CreateScope();
+            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
             var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested) await _commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+            if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
             if (!cancellationToken.IsCancellationRequested) Schedule();
         };
     } 

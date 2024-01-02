@@ -1,9 +1,9 @@
 ﻿using Elsa.Testing.Shared;
-using Elsa.Workflows.Core.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using Elsa.Workflows.Contracts;
 using Xunit;
 using Xunit.Abstractions;
 

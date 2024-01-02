@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.Core.Options;
+namespace Elsa.Workflows.Options;
 
 /// <summary>
 /// Represents options for scheduling a work item.

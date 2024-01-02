@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.Incidents.Statics;
 using Elsa.IntegrationTests.Scenarios.Incidents.Workflows;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using Elsa.Workflows.IncidentStrategies;
 using Xunit;
 using Xunit.Abstractions;

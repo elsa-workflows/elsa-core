@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.IntegrationTests.Scenarios.BlockingAndBreaking.Workflows;

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Elsa.Workflows.Core.State;
+namespace Elsa.Workflows.State;
 
 public class PersistentVariableState
 {

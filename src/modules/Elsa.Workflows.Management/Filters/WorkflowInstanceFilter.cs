@@ -1,4 +1,3 @@
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Management.Filters;

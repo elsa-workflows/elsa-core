@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Api.Client.Contracts;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
@@ -16,7 +15,6 @@ using Elsa.Api.Client.Resources.WorkflowActivationStrategies.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
-using Elsa.Api.Client.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -32,15 +30,39 @@ namespace Elsa.Api.Client.Extensions;
 public static class DependencyInjectionExtensions
 {
     /// <summary>
+    /// Adds the Elsa API client configured to use an API key to the service collection.
+    /// </summary>
+    public static IServiceCollection AddElsaApiKeyClient(this IServiceCollection services, Action<ElsaClientOptions> configureOptions)
+    {
+        var options = new ElsaClientOptions();
+        configureOptions(options);
+
+        return services.AddElsaClient(client =>
+        {
+            client.BaseAddress = options.BaseAddress;
+            client.ApiKey = options.ApiKey;
+            client.ConfigureHttpClient = options.ConfigureHttpClient;
+        });
+    }
+
+    /// <summary>
     /// Adds the Elsa client to the service collection.
     /// </summary>
-    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientOptions>? configureOptions = default, Action<ElsaClientBuilderOptions>? configureBuilderOptions = default)
+    public static IServiceCollection AddElsaClient(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient)
     {
         var builderOptions = new ElsaClientBuilderOptions();
-        configureBuilderOptions?.Invoke(builderOptions);
+        configureClient.Invoke(builderOptions);
+        
+        builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
 
-        services.Configure(configureOptions ?? (_ => { }));
-        services.AddScoped<IElsaClient, ElsaClient>();
+        services.AddScoped(builderOptions.AuthenticationHandler);
+
+        services.Configure<ElsaClientOptions>(options =>
+        {
+            options.BaseAddress = builderOptions.BaseAddress;
+            options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
+            options.ApiKey = builderOptions.ApiKey;
+        });
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
         services.AddApi<IActivityDescriptorsApi>(builderOptions);

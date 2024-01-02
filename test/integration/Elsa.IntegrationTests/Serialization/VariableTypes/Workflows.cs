@@ -1,5 +1,5 @@
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.IntegrationTests.Serialization.VariableTypes;
 

@@ -1,13 +1,14 @@
 using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Exceptions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Http.UIHints;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http;
@@ -26,7 +27,11 @@ public class WriteHttpResponse : Activity
     /// <summary>
     /// The status code to return.
     /// </summary>
-    [Input(DefaultValue = HttpStatusCode.OK, Description = "The status code to return.")]
+    [Input(
+        DefaultValue = HttpStatusCode.OK,
+        Description = "The status code to return.",
+        UIHint = InputUIHints.DropDown
+    )]
     public Input<HttpStatusCode> StatusCode { get; set; } = new(HttpStatusCode.OK);
 
     /// <summary>
@@ -40,15 +45,19 @@ public class WriteHttpResponse : Activity
     /// </summary>
     [Input(
         Description = "The content type to write when sending the response.",
-        OptionsProvider = typeof(HttpContentTypeOptionsProvider),
-        UIHint = InputUIHints.Dropdown
+        UIHandler = typeof(HttpContentTypeOptionsProvider),
+        UIHint = InputUIHints.DropDown
     )]
     public Input<string?> ContentType { get; set; } = default!;
 
     /// <summary>
     /// The headers to return along with the response.
     /// </summary>
-    [Input(Description = "The headers to send along with the response.", Category = "Advanced")]
+    [Input(
+        Description = "The headers to send along with the response.",
+        UIHint = InputUIHints.JsonEditor,
+        Category = "Advanced"
+    )]
     public Input<HttpHeaders?> ResponseHeaders { get; set; } = new(new HttpHeaders());
 
     /// <inheritdoc />

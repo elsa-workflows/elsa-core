@@ -5,8 +5,8 @@ using Elsa.JavaScript.Activities;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Requirements;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -74,7 +74,7 @@ services
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, identityTokenOptions.ConfigureJwtBearerOptions);
 
 services.AddHttpContextAccessor();
-services.AddSingleton<IAuthorizationHandler, LocalHostRequirementHandler>();
+services.AddScoped<IAuthorizationHandler, LocalHostRequirementHandler>();
 
 // Grant localhost requests security root privileges.
 services.AddAuthorization(options => options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostRequirement())));

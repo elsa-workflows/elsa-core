@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Signals;
+namespace Elsa.Workflows.Signals;
 
 /// <summary>
 /// Signaled when the scheduling of a child activity was requested.

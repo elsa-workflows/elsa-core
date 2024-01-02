@@ -1,5 +1,5 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Options;
 

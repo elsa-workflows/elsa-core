@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -16,6 +16,6 @@ public static class ModuleExtensions
 
     public static IServiceCollection AddStorageDriver<T>(this IServiceCollection services) where T : class, IStorageDriver
     {
-        return services.AddSingleton<IStorageDriver, T>();
+        return services.AddScoped<IStorageDriver, T>();
     }
 }

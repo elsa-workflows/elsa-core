@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides serializer options and services for model serialization suitable for APIs.

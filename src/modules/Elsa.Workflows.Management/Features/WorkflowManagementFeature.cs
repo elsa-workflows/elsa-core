@@ -8,8 +8,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Features;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -156,24 +156,24 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
-            .AddSingleton<IWorkflowDefinitionService, WorkflowDefinitionService>()
-            .AddSingleton<IWorkflowSerializer, WorkflowSerializer>()
-            .AddSingleton<IWorkflowValidator, WorkflowValidator>()
-            .AddSingleton<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
-            .AddSingleton<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
-            .AddSingleton<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
-            .AddSingleton<IWorkflowInstanceManager, WorkflowInstanceManager>()
-            .AddSingleton<IActivityRegistryPopulator, ActivityRegistryPopulator>()
+            .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
+            .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
+            .AddScoped<IWorkflowValidator, WorkflowValidator>()
+            .AddScoped<IWorkflowDefinitionPublisher, WorkflowDefinitionPublisher>()
+            .AddScoped<IWorkflowDefinitionImporter, WorkflowDefinitionImporter>()
+            .AddScoped<IWorkflowDefinitionManager, WorkflowDefinitionManager>()
+            .AddScoped<IWorkflowInstanceManager, WorkflowInstanceManager>()
+            .AddScoped<IActivityRegistryPopulator, ActivityRegistryPopulator>()
             .AddSingleton<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
-            .AddSingleton<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
-            .AddSingleton<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
-            .AddSingleton<IWorkflowMaterializer, ClrWorkflowMaterializer>()
-            .AddSingleton<IWorkflowMaterializer, JsonWorkflowMaterializer>()
-            .AddSingleton<IActivityResolver, WorkflowDefinitionActivityResolver>()
+            .AddScoped<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
+            .AddScoped<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
+            .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
+            .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()
+            .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
-            .AddSingleton<WorkflowDefinitionMapper>()
-            .AddSingleton<VariableDefinitionMapper>()
-            .AddSingleton<WorkflowStateMapper>()
+            .AddScoped<WorkflowDefinitionMapper>()
+            .AddScoped<VariableDefinitionMapper>()
+            .AddScoped<WorkflowStateMapper>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

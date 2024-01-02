@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Options;
+namespace Elsa.Workflows.Options;
 
 /// <summary>
 /// Provides options for running a workflow.

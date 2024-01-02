@@ -1,5 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Workflows.Runtime.HostedServices;
@@ -9,18 +10,23 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 /// </summary>
 public class PopulateRegistriesHostedService : IHostedService
 {
-    private readonly IRegistriesPopulator _registriesPopulator;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PopulateRegistriesHostedService"/> class.
     /// </summary>
-    public PopulateRegistriesHostedService(IRegistriesPopulator registriesPopulator)
+    public PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory)
     {
-        _registriesPopulator = registriesPopulator;
+        _scopeFactory = scopeFactory;
     }
 
     /// <inheritdoc />
-    public async Task StartAsync(CancellationToken cancellationToken) => await _registriesPopulator.PopulateAsync(cancellationToken);
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var registriesPopulator = scope.ServiceProvider.GetRequiredService<IRegistriesPopulator>();
+        await registriesPopulator.PopulateAsync(cancellationToken);
+    }
 
     /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

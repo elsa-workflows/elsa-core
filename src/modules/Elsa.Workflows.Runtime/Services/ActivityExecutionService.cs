@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
@@ -26,7 +25,7 @@ public class ActivityExecutionStatsService : IActivityExecutionStatsService
         var filter = new ActivityExecutionRecordFilter
         {
             WorkflowInstanceId = workflowInstanceId,
-            ActivityNodeIds = activityNodeIds.ToList()
+            ActivityNodeIds = activityNodeIds?.ToList()
         };
         var order = new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending);
         var records = (await _store.FindManyAsync(filter, order, cancellationToken)).ToList();

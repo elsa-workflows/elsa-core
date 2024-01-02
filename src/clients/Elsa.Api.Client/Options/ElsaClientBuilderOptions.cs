@@ -1,3 +1,4 @@
+using Elsa.Api.Client.HttpMessageHandlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Api.Client.Options;
@@ -8,9 +9,28 @@ namespace Elsa.Api.Client.Options;
 public class ElsaClientBuilderOptions
 {
     /// <summary>
+    /// Gets or sets the base address of the Elsa server.
+    /// </summary>
+    public Uri BaseAddress { get; set; } = default!;
+
+    /// <summary>
+    /// Gets or sets the API key function to use when authenticating with the Elsa server.
+    /// </summary>
+    public string? ApiKey { get; set; }
+
+    /// <summary>
+    /// A <see cref="DelegatingHandler"/> type that can be used to authenticate with the Elsa server.
+    /// Defaults to <see cref="ApiKeyHttpMessageHandler"/>.
+    /// </summary>
+    public Type AuthenticationHandler { get; set; } = typeof(ApiKeyHttpMessageHandler);
+
+    /// <summary>
+    /// Gets or sets a delegate that can be used to configure the HTTP client.
+    /// </summary>
+    public Action<IServiceProvider, HttpClient>? ConfigureHttpClient { get; set; }
+
+    /// <summary>
     /// Gets or sets a delegate that can be used to configure the HTTP client builder.
     /// </summary>
-    public Action<IHttpClientBuilder>? ConfigureHttpClientBuilder { get; set; }
-    
-    
+    public Action<IHttpClientBuilder> ConfigureHttpClientBuilder { get; set; } = _ => { };
 }

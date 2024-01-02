@@ -37,16 +37,17 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
+        ExpressionEvaluatorOptions options,
         Action<Engine>? configureEngine = default,
         CancellationToken cancellationToken = default)
     {
-        var engine = await GetConfiguredEngine(configureEngine, context, cancellationToken);
+        var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
 
         return result.ConvertTo(returnType);
     }
 
-    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, CancellationToken cancellationToken)
+    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions options, CancellationToken cancellationToken)
     {
         var engine = new Engine(opts =>
         {
@@ -75,7 +76,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create output getters for each activity.
         CreateActivityOutputAccessors(engine, context);
-
+        
+        // Create argument getters for each argument.
+        foreach (var argument in options.Arguments)
+            engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
+        
+        // Add common functions.
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
         engine.SetValue("toJson", (Func<object, string>)(value => Serialize(value)));
@@ -137,7 +143,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
 
-    private static object ExecuteExpressionAndGetResult(Engine engine, string expression)
+    private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
         var result = engine.Evaluate(expression);
         return result.ToObject();

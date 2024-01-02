@@ -1,6 +1,4 @@
-using System.Dynamic;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Options;
 using Microsoft.Extensions.Options;
 
