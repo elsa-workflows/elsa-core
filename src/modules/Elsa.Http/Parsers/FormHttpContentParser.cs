@@ -23,6 +23,6 @@ public class FormHttpContentParser : IHttpContentParser
     {
         using var reader = new FormReader(content);
 
-        return (await reader.ReadFormAsync(cancellationToken)).ToDictionary<KeyValuePair<string, StringValues>, string, object>(formField => formField.Key, formField => formField.Value[0]!); ;
+        return await reader.ReadFormAsync(cancellationToken);
     }
 }
