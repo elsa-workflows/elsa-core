@@ -37,7 +37,7 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         var options = GetSerializerOptions();
         var serializingWorkflowState = new SerializingWorkflowState(options);
         await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
-        
+
         return JsonSerializer.Serialize(workflowState, options);
     }
 
@@ -47,7 +47,7 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         var options = GetSerializerOptions();
         var serializingWorkflowState = new SerializingWorkflowState(options);
         await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
-        
+
         return JsonSerializer.SerializeToUtf8Bytes(workflowState, options);
     }
 
@@ -57,7 +57,7 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         var options = GetSerializerOptions();
         var serializingWorkflowState = new SerializingWorkflowState(options);
         await _notificationSender.SendAsync(serializingWorkflowState, cancellationToken);
-        
+
         return JsonSerializer.SerializeToElement(workflowState, options);
     }
 
@@ -110,8 +110,8 @@ public class JsonWorkflowStateSerializer : IWorkflowStateSerializer
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new PolymorphicObjectConverterFactory());
         options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
-        options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));        
-        
+        options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));
+
         return options;
     }
 }
