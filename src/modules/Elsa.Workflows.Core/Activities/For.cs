@@ -88,7 +88,7 @@ public class For : Activity
         var inclusive = context.Get(OuterBoundInclusive);
         var increment = step >= 0;
 
-        currentValue = currentValue == null ? start : (currentValue + step);
+        currentValue = currentValue == null ? start : currentValue + step;
 
         var isBreaking = context.GetIsBreaking();
 
