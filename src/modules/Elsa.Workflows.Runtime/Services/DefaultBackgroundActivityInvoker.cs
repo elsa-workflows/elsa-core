@@ -57,6 +57,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
+        
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)
@@ -118,7 +119,8 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         // - Bookmarks
         workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
         await _variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
-        await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken); 
+        await _workflowRuntime.MergeWorkflowStateAsync(workflowState, cancellationToken);
+        //await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken); 
 
         // Process bookmarks.
         var newBookmarks = workflowExecutionContext.Bookmarks.ToList();

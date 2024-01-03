@@ -16,6 +16,8 @@ public static class ModuleExtensions
 
     public static IServiceCollection AddStorageDriver<T>(this IServiceCollection services) where T : class, IStorageDriver
     {
-        return services.AddSingleton<IStorageDriver, T>();
+        return services
+            .AddSingleton<T>()
+            .AddSingleton<IStorageDriver, T>();
     }
 }
