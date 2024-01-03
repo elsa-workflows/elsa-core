@@ -228,6 +228,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Handle Form Fields
         if (request.HasFormContentType)
         {
+
+            var formFields = request.Form.ToObjectDictionary();
+
+            ParsedContent.Set(context, formFields);
+
             // Read files, if any.
             var files = ReadFilesAsync(context, request);
 
@@ -259,10 +264,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
                 Files.Set(context, files.ToArray());
             }
-
-            var formFields = request.Form.ToObjectDictionary();
-
-            ParsedContent.Set(context, formFields);
         }
         else
         {
