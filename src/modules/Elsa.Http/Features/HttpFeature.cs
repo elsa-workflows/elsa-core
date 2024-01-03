@@ -158,12 +158,10 @@ public class HttpFeature : FeatureBase
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
 
-            // Content parsers.
-            .AddSingleton<IHttpContentParser, StringHttpContentParser>()
+            // Content parsers.            
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
-            .AddSingleton<IHttpContentParser, FormHttpContentParser>()
-
+            
             // HTTP content factories.
             .AddSingleton<IHttpContentFactory, TextContentFactory>()
             .AddSingleton<IHttpContentFactory, JsonContentFactory>()
