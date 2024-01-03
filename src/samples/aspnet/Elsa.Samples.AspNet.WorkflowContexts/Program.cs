@@ -81,7 +81,7 @@ services.AddHealthChecks();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
 // Add domain services.
-services.AddSingleton<ICustomerStore, MemoryCustomerStore>();
+services.AddScoped<ICustomerStore, MemoryCustomerStore>();
 
 // Add workflow context providers.
 services.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();

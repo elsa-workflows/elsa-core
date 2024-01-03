@@ -16,7 +16,7 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddMemoryStore<TEntity, TStore>(this IServiceCollection services) where TStore : class
     {
          services.TryAddSingleton<MemoryStore<TEntity>>();
-         services.TryAddSingleton<TStore>();
+         services.TryAddScoped<TStore>();
          return services;
     }
 }

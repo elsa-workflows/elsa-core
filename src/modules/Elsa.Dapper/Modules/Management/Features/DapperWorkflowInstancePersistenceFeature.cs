@@ -31,6 +31,6 @@ public class DapperWorkflowInstancePersistenceFeature : FeatureBase
     {
         base.Apply();
         
-        Services.AddSingleton<DapperWorkflowInstanceStore>();
+        Services.AddScoped<DapperWorkflowInstanceStore>();
     }
 }

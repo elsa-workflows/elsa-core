@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,17 +14,17 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 /// </summary>
 public class WorkflowInboxCleanupHostedService : BackgroundService
 {
-    private readonly IWorkflowInboxMessageStore _workflowInboxMessageStore;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly IOptions<WorkflowInboxCleanupOptions> _options;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
     public WorkflowInboxCleanupHostedService(
-        IWorkflowInboxMessageStore workflowInboxMessageStore,
+        IServiceScopeFactory scopeFactory,
         IOptions<WorkflowInboxCleanupOptions> options,
         ILogger<WorkflowInboxCleanupHostedService> logger)
     {
-        _workflowInboxMessageStore = workflowInboxMessageStore;
+        _scopeFactory = scopeFactory;
         _options = options;
         _logger = logger;
     }
@@ -52,13 +53,15 @@ public class WorkflowInboxCleanupHostedService : BackgroundService
 
     private async Task CleanupExpiredMessages(CancellationToken cancellationToken)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var workflowInboxMessageStore = scope.ServiceProvider.GetRequiredService<IWorkflowInboxMessageStore>();
         var filter = new WorkflowInboxMessageFilter
         {
             IsExpired = true
         };
-        
+
         var pageArgs = PageArgs.FromRange(0, _options.Value.BatchSize);
-        var deleteCount = await _workflowInboxMessageStore.DeleteManyAsync(filter, pageArgs, cancellationToken);
+        var deleteCount = await workflowInboxMessageStore.DeleteManyAsync(filter, pageArgs, cancellationToken);
         _logger.LogInformation("Cleaned up {DeleteCount} expired messages", deleteCount);
     }
 }

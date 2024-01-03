@@ -37,6 +37,6 @@ public class MassTransitAlterationsFeature : FeatureBase
         var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<RunAlterationJobConsumer>();
         var queueAddress = new Uri($"queue:elsa-{queueName}");
         EndpointConvention.Map<RunAlterationJob>(queueAddress);
-        Services.AddSingleton<MassTransitAlterationJobDispatcher>();
+        Services.AddScoped<MassTransitAlterationJobDispatcher>();
     }
 }

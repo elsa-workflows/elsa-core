@@ -40,7 +40,7 @@ public class MongoDbFeature : FeatureBase
     {
         Services.Configure(Options);
 
-        Services.AddSingleton(sp => CreateDatabase(sp, ConnectionString));
+        Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
 
         RegisterSerializers();
         RegisterClassMaps();
