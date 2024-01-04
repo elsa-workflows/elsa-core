@@ -167,6 +167,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IExpressionDescriptorRegistry, ExpressionDescriptorRegistry>()
             .AddScoped<IExpressionDescriptorProvider, DefaultExpressionDescriptorProvider>()
             .AddScoped<ISerializationOptionsConfigurator, SerializationOptionsConfigurator>()
+            .AddScoped<IWorkflowMaterializer, TypedWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
