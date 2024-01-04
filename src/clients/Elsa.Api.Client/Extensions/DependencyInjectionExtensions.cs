@@ -90,7 +90,12 @@ public static class DependencyInjectionExtensions
     {
         var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder?.Invoke(builder);
-        builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
+        var retryCount = httpClientBuilderOptions?.TransientHttpErrorRetryCount ?? 0;
+        if (retryCount > 0)
+        {
+            builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+        }
     }
 
     /// <summary>

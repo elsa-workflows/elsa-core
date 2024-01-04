@@ -33,4 +33,15 @@ public class ElsaClientBuilderOptions
     /// Gets or sets a delegate that can be used to configure the HTTP client builder.
     /// </summary>
     public Action<IHttpClientBuilder> ConfigureHttpClientBuilder { get; set; } = _ => { };
+
+    /// <summary>
+    /// Number of automatic retries for transient failures, including following categories:
+    /// <list type = "bullet" >
+    /// <item><description> Network failures(as <see cref = "HttpRequestException" />)</description></item>
+    /// <item><description>HTTP 5XX status codes(server errors)</description></item>
+    /// <item><description>HTTP 408 status code(request timeout)</description></item>
+    /// </list>
+    /// Set the value to 0 to disable automatic retry.
+    /// </summary>
+    public int TransientHttpErrorRetryCount { get; set; } = 3;
 }
