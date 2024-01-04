@@ -1,6 +1,4 @@
-using System.Net;
 using Elsa.Abstractions;
-using Elsa.Http;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
