@@ -232,10 +232,27 @@ public class ActivityExecutionContext : IExecutionContext
     {
         if (this.GetIsBackgroundExecution())
         {
-            // TODO: Capture the information in a serializable format and store it in the workflow execution context Properties dictionary.
-            // The information should be stored in a way that allows the workflow execution context to resume the activity execution context.
+            var scheduledActivity = new ScheduledActivity
+            {
+                ActivityNodeId = activityNode?.NodeId,
+                OwnerActivityInstanceId = owner?.Id,
+                Options = options != null ? new ScheduledActivityOptions
+                {
+                    CompletionCallback = options?.CompletionCallback?.Method.Name,
+                    Tag = options?.Tag,
+                    ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
+                    PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
+                    Variables = options?.Variables?.ToList(),
+                    Input = options?.Input
+                } : default
+            };
+
+            var scheduledActivities = this.GetBackgroundScheduledActivities().ToList();
+            scheduledActivities.Add(scheduledActivity);
+            this.SetBackgroundScheduledActivities(scheduledActivities);
+            return;
         }
-        
+
         var completionCallback = options?.CompletionCallback;
         owner ??= this;
 

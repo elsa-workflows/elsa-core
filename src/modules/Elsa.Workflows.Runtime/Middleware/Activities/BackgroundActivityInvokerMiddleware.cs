@@ -1,6 +1,8 @@
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
@@ -17,6 +19,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
+    internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
     internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
@@ -42,7 +45,8 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
             {
                 CaptureOutputIfAny(context);
                 CaptureJournalData(context);
-                await CompleteBackgroundActivityAsync(context);
+                await CompleteBackgroundActivityOutcomesAsync(context);
+                await CompleteBackgroundActivityScheduledActivitiesAsync(context);
             }
         }
     }
@@ -86,10 +90,10 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var activity = context.Activity;
         var inputKey = GetBackgroundActivityOutputKey(activity.NodeId);
         var capturedOutput = context.WorkflowExecutionContext.GetProperty<IDictionary<string, object>>(inputKey);
-        
-        if(capturedOutput == null)
+
+        if (capturedOutput == null)
             return;
-        
+
         foreach (var outputEntry in capturedOutput)
         {
             var outputDescriptor = context.ActivityDescriptor.Outputs.FirstOrDefault(x => x.Name == outputEntry.Key);
@@ -101,7 +105,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
             context.Set(output, outputEntry.Value);
         }
     }
-    
+
     private void CaptureJournalData(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -114,8 +118,8 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         foreach (var journalEntry in journalData)
             context.JournalData[journalEntry.Key] = journalEntry.Value;
     }
-    
-    private async Task CompleteBackgroundActivityAsync(ActivityExecutionContext context)
+
+    private async Task CompleteBackgroundActivityOutcomesAsync(ActivityExecutionContext context)
     {
         var outcomesKey = GetBackgroundActivityOutcomesKey(context.NodeId);
         var outcomes = context.WorkflowExecutionContext.GetProperty<ICollection<string>>(outcomesKey);
@@ -123,9 +127,40 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         if (outcomes != null)
         {
             await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
-                    
+
             // Remove the outcomes from the workflow execution context.
             context.WorkflowExecutionContext.Properties.Remove(outcomesKey);
+        }
+    }
+
+    private async Task CompleteBackgroundActivityScheduledActivitiesAsync(ActivityExecutionContext context)
+    {
+        var scheduledActivitiesKey = GetBackgroundActivityScheduledActivitiesKey(context.NodeId);
+        var scheduledActivitiesJson = context.WorkflowExecutionContext.GetProperty<string>(scheduledActivitiesKey);
+        var scheduledActivities = scheduledActivitiesJson != null ? JsonSerializer.Deserialize<ICollection<ScheduledActivity>>(scheduledActivitiesJson) : null;
+
+        if (scheduledActivities != null)
+        {
+            foreach (var scheduledActivity in scheduledActivities)
+            {
+                var activityNode = scheduledActivity.ActivityNodeId != null ? context.WorkflowExecutionContext.FindActivityByNodeId(scheduledActivity.ActivityNodeId) : null;
+                var owner = scheduledActivity.OwnerActivityInstanceId != null ? context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == scheduledActivity.OwnerActivityInstanceId) : null;
+                var options = scheduledActivity.Options != null
+                    ? new ScheduleWorkOptions
+                    {
+                        ExistingActivityExecutionContext = scheduledActivity.Options.ExistingActivityInstanceId != null ? context.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == scheduledActivity.Options.ExistingActivityInstanceId) : null,
+                        Variables = scheduledActivity.Options?.Variables,
+                        CompletionCallback = !string.IsNullOrEmpty(scheduledActivity.Options?.CompletionCallback) && owner != null ? owner.Activity.GetActivityCompletionCallback(scheduledActivity.Options.CompletionCallback) : default,
+                        PreventDuplicateScheduling = scheduledActivity.Options?.PreventDuplicateScheduling ?? false,
+                        Input = scheduledActivity.Options?.Input,
+                        Tag = scheduledActivity.Options?.Tag
+                    }
+                    : default;
+                await context.ScheduleActivityAsync(activityNode, owner, options);
+            }
+
+            // Remove the scheduled activities from the workflow execution context.
+            context.WorkflowExecutionContext.Properties.Remove(scheduledActivitiesKey);
         }
     }
 }

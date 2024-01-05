@@ -1,3 +1,5 @@
+using Elsa.Workflows.Models;
+
 namespace Elsa.Workflows;
 
 /// <summary>
@@ -41,5 +43,23 @@ public static class BackgroundActivityExecutionContextExtensions
     public static IEnumerable<string> GetBackgroundOutcomes(this ActivityExecutionContext activityExecutionContext)
     {
         return activityExecutionContext.GetProperty<IEnumerable<string>>("BackgroundOutcomes") ?? Enumerable.Empty<string>();
+    }
+    
+    /// <summary>
+    /// Sets the background scheduled activities.
+    /// </summary>
+    public static void SetBackgroundScheduledActivities(this ActivityExecutionContext activityExecutionContext, IEnumerable<ScheduledActivity> scheduledActivities)
+    {
+        var scheduledActivitiesList = scheduledActivities.ToList();
+        activityExecutionContext.SetProperty("BackgroundScheduledActivities", scheduledActivitiesList);
+    }
+    
+    /// <summary>
+    /// Gets the background scheduled activities.
+    /// </summary>
+    /// <param name="activityExecutionContext"></param>
+    public static IEnumerable<ScheduledActivity> GetBackgroundScheduledActivities(this ActivityExecutionContext activityExecutionContext)
+    {
+        return activityExecutionContext.GetProperty<IEnumerable<ScheduledActivity>>("BackgroundScheduledActivities") ?? Enumerable.Empty<ScheduledActivity>();
     }
 }

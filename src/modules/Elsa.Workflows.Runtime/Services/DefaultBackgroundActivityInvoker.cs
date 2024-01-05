@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
@@ -57,7 +58,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
-        
+
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)
@@ -85,7 +86,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         // Capture any activity output produced by the activity (but only if the associated memory block is stored in the workflow itself).
         var outputDescriptors = activityExecutionContext.ActivityDescriptor.Outputs;
         var outputValues = new Dictionary<string, object>();
-        var outcomes = activityExecutionContext.GetBackgroundOutcomes().ToList();
 
         foreach (var outputDescriptor in outputDescriptors)
         {
@@ -112,19 +112,23 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
                 outputValues[outputDescriptor.Name] = outputValue;
         }
 
-        // Resume the workflow, passing along the activity output.
+        // Resume the workflow, passing along activity output, outcomes and scheduled activities.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;
         var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
         var outcomesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutcomesKey(activityNodeId);
         var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
+        var scheduledActivitiesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityScheduledActivitiesKey(activityNodeId);
+        var outcomes = activityExecutionContext.GetBackgroundOutcomes().ToList();
+        var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
         {
-            InstanceId = workflowInstanceId, 
-            BookmarkId = bookmarkId, 
+            InstanceId = workflowInstanceId,
+            BookmarkId = bookmarkId,
             Properties = new Dictionary<string, object>
             {
                 [outcomesKey] = outcomes,
+                [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
                 [inputKey] = outputValues,
                 [journalDataKey] = activityExecutionContext.JournalData
             }
