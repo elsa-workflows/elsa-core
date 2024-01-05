@@ -18,4 +18,5 @@ public class RunWorkflowOptions
     public IDictionary<string, object>? Properties { get; set; }
     public string? TriggerActivityId { get; set; }
     public CancellationTokens CancellationTokens { get; set; }
+    public Action<WorkflowExecutionContext>? StatusUpdatedCallback { get; set; }
 }
