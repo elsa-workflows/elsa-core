@@ -228,6 +228,7 @@ services
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
+        elsa.AddFastEndpointsAssembly<Program>();
     });
 
 services.AddHealthChecks();
