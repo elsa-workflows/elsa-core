@@ -77,7 +77,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
 
         // Mark the activity as being invoked from a background worker.
-        activityExecutionContext.TransientProperties[BackgroundActivityInvokerMiddleware.IsBackgroundExecution] = true;
+        activityExecutionContext.SetIsBackgroundExecution();
 
         // Invoke the activity.
         await _activityInvoker.InvokeAsync(activityExecutionContext);

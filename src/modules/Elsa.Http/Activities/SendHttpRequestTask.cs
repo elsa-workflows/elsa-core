@@ -15,7 +15,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Sends HTTP requests from a background task.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request from a background task.", DisplayName = "HTTP Request Task", Kind = ActivityKind.Job)]
+[Activity("Elsa", "HTTP", "Send an HTTP request from a background task.", DisplayName = "HTTP Request Task", Kind = ActivityKind.Task)]
 public class SendHttpRequestTask : Activity<HttpStatusCode>
 {
     /// <inheritdoc />
@@ -115,23 +115,23 @@ public class SendHttpRequestTask : Activity<HttpStatusCode>
             context.SetResult(response.StatusCode);
             context.Set(ParsedContent, parsedContent);
 
-            HandleResponse(context, response);
+            await HandleResponseAsync(context, response);
         }
         catch (HttpRequestException e)
         {
             context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Error", e.Message);
-            HandleRequestException(context, e);
+            await HandleRequestExceptionAsync(context, e);
         }
         catch (TaskCanceledException e)
         {
             context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Cancelled", true);
-            HandleTaskCanceledException(context, e);
+            await HandleTaskCanceledExceptionAsync(context, e);
         }
     }
     
-    private void HandleResponse(ActivityExecutionContext context, HttpResponseMessage response)
+    private async Task HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
     {
         var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
         var statusCode = (int)response.StatusCode;
@@ -144,17 +144,17 @@ public class SendHttpRequestTask : Activity<HttpStatusCode>
 
         outcomes.Add("Done");
         context.JournalData["StatusCode"] = statusCode;
-        context.SetBackgroundOutcomes(outcomes);
+        await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
     }
 
-    private void HandleRequestException(ActivityExecutionContext context, HttpRequestException exception)
+    private async Task HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception)
     {
-        context.SetBackgroundOutcomes(new[] { "Failed to connect" });
+        await context.CompleteActivityWithOutcomesAsync("Failed to connect");
     }
 
-    private void HandleTaskCanceledException(ActivityExecutionContext context, TaskCanceledException exception)
+    private async Task HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception)
     {
-        context.SetBackgroundOutcomes(new[] { "Timeout" });
+        await context.CompleteActivityWithOutcomesAsync("Timeout");
     }
 
     private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpContent httpContent)

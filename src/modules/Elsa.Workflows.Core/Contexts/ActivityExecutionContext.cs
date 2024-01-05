@@ -230,6 +230,12 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext? owner = default, ScheduleWorkOptions? options = default)
     {
+        if (this.GetIsBackgroundExecution())
+        {
+            // TODO: Capture the information in a serializable format and store it in the workflow execution context Properties dictionary.
+            // The information should be stored in a way that allows the workflow execution context to resume the activity execution context.
+        }
+        
         var completionCallback = options?.CompletionCallback;
         owner ??= this;
 

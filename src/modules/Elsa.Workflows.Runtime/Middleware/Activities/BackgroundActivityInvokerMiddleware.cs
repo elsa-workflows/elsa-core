@@ -14,11 +14,6 @@ namespace Elsa.Workflows.Runtime.Middleware.Activities;
 /// </summary>
 public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
 {
-    /// <summary>
-    /// A key into the activity execution context's transient properties that indicates whether the current activity is being executed in the background.
-    /// </summary>
-    public static readonly object IsBackgroundExecution = new();
-
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
@@ -66,7 +61,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
                && (kind is ActivityKind.Job || (kind == ActivityKind.Task && activity.GetRunAsynchronously()));
     }
 
-    private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(IsBackgroundExecution);
+    private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
 
     /// <summary>
     /// Schedules the current activity for execution in the background.
