@@ -7,29 +7,20 @@ using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System.Net;
-using System.Net.Mime;
-using System.Text.Json;
-using Elsa.Extensions;
-using Elsa.Http.Bookmarks;
-using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Matches;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Results;
-using Elsa.Workflows.State;
 
 namespace Elsa.Http.Middleware;
 
@@ -98,6 +89,7 @@ public class WorkflowsMiddleware
             Input = input
         };
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
+
         var workflowMatches = (await workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
 
         if (await HandleNoWorkflowsFoundAsync(httpContext, workflowMatches, basePath))
@@ -108,11 +100,11 @@ public class WorkflowsMiddleware
 
         var matchedWorkflow = workflowMatches.Single();
 
-        if (await AuthorizeAsync(serviceProvider, httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
-            return;
-
         var tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
         tenantAccessor.SetCurrentTenantId(matchedWorkflow?.WorkflowInstance?.TenantId);
+
+        if (await AuthorizeAsync(serviceProvider, httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
+            return;
 
         // Get settings from the bookmark payload.
         var foundBookmarkPayload = matchedWorkflow.Payload as HttpEndpointBookmarkPayload;
@@ -271,7 +263,7 @@ public class WorkflowsMiddleware
             return true;
         }
 
-        // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares. 
+        // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares.
         await _next(httpContext);
 
         return true;

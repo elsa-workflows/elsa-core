@@ -14,37 +14,33 @@ public class WorkflowHostFactory : IWorkflowHostFactory
 {
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowHostFactory"/> class.
     /// </summary>
-    public WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory)
+    public WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider, IWorkflowDefinitionService workflowDefinitionService)
     {
         _identityGenerator = identityGenerator;
         _serviceProvider = serviceProvider;
-        _serviceScopeFactory = serviceScopeFactory;
+        _workflowDefinitionService = workflowDefinitionService;
     }
 
     /// <inheritdoc />
     public async Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
-        
-        if(workflowDefinition == null)
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+
+        if (workflowDefinition == null)
             return default;
-        
+
         return await CreateAsync(workflowDefinition, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IWorkflowHost> CreateAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await CreateAsync(workflow, cancellationToken);
     }
 

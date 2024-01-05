@@ -1,4 +1,5 @@
-﻿using Elsa.Common.Contracts;
+﻿using System.Linq.Expressions;
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
@@ -7,7 +8,6 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq.Expressions;
 
 namespace Elsa.Tenants.Helpers;
 public static class EfCoreDbContextBuilder
@@ -63,7 +63,7 @@ public static class EfCoreDbContextBuilder
                 {
                     ParameterExpression parameter = Expression.Parameter(entityType.ClrType);
 
-                    Expression<Func<Entity, bool>> filterExpr = entity => dbContext.TenantId == null || dbContext.TenantId == entity.TenantId;
+                    Expression<Func<Entity, bool>> filterExpr = entity => dbContext.TenantId == entity.TenantId;
                     Expression body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
                     LambdaExpression lambdaExpression = Expression.Lambda(body, parameter);
 

@@ -172,7 +172,20 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <returns>The entity if found, otherwise <c>null</c></returns>
     public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
     {
-        return await QueryAsync(query, onLoading, cancellationToken).FirstOrDefault();
+        return await FindAsync(query, onLoading, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Finds a single entity using a query
+    /// </summary>
+    /// <param name="query">The query to use</param>
+    /// <param name="onLoading">A callback to run after the entity is loaded</param>
+    /// <param name="tenantAgnostic">Define is the request should be tenant agnostic or not</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The entity if found, otherwise <c>null</c></returns>
+    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, onLoading, tenantAgnostic, cancellationToken).FirstOrDefault();
     }
 
     /// <summary>
@@ -183,7 +196,19 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <returns>The entity if found, otherwise <c>null</c></returns>
     public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
-        return await QueryAsync(query, cancellationToken).FirstOrDefault();
+        return await FindAsync(query, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Finds a single entity using a query
+    /// </summary>
+    /// <param name="query">The query to use</param>
+    /// <param name="tenantAgnostic">Define is the request should be tenant agnostic or not</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The entity if found, otherwise <c>null</c></returns>
+    public async Task<TEntity?> FindAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, tenantAgnostic, cancellationToken).FirstOrDefault();
     }
 
     /// <summary>
@@ -300,17 +325,33 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// <summary>
     /// Queries the database using a query.
     /// </summary>
-    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default) => await QueryAsync(query, default, cancellationToken);
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default) => await QueryAsync(query, default, false, cancellationToken);
+
+    /// <summary>
+    /// Queries the database using a query.
+    /// </summary>
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, bool tenantAgnostic, CancellationToken cancellationToken = default) => await QueryAsync(query, default, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
+        => await QueryAsync(query, default, false, cancellationToken);
+
+    /// <summary>
+    /// Queries the database using a query and a selector.
+    /// </summary>
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var asNoTracking = onLoading == null;
         var set = asNoTracking ? dbContext.Set<TEntity>().AsNoTracking() : dbContext.Set<TEntity>();
         var queryable = query(set.AsQueryable());
+
+        if (tenantAgnostic)
+        {
+            queryable = queryable.IgnoreQueryFilters<TEntity>();
+        }
 
         var entities = await queryable.ToListAsync(cancellationToken);
 

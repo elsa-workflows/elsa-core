@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Elsa;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Extensions;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NSwag;
 using NSwag.AspNetCore;
 using NSwag.Generation.Processors.Security;
-using System.Security.Claims;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -42,7 +42,14 @@ builder.Services.AddElsa(elsa =>
             .UseEfcoreStrategies());
 
     elsa
-        .UseHttp()
+        .UseHttp(options =>
+        {
+            options.ConfigureHttpOptions = httpOptions =>
+            {
+                httpOptions.BaseUrl = new Uri("https://localhost:8765");
+                httpOptions.BasePath = "/workflows-http-endpoints";
+            };
+        })
         .AddFastEndpointsAssembly<Program>()
         .UseWorkflowsApi()
         .UseScheduling()

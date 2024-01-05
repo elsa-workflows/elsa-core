@@ -11,7 +11,7 @@ using Elsa.Workflows.Runtime.Filters;
 namespace Elsa.Http.Handlers;
 
 /// <summary>
-/// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors. 
+/// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors.
 /// </summary>
 public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRequest, ValidateWorkflowResponse>
 {
@@ -32,7 +32,7 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
     {
         var workflow = request.Workflow;
         var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
-        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)) }, cancellationToken)).ToList();
+        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)), TenantAgnostic = true }, cancellationToken)).ToList();
         var validationErrors = new List<WorkflowValidationError>();
 
         foreach (var httpEndpointTrigger in httpEndpointTriggers)

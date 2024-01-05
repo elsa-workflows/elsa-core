@@ -286,14 +286,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.CSharp", "src\modules\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Python", "src\modules\Elsa.Python\Elsa.Python.csproj", "{790E94F2-5393-47DF-AC52-D9247F5B243A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\elsa-server-and-studio.yml = .github\workflows\elsa-server-and-studio.yml
-		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
-		.github\workflows\packages.yml = .github\workflows\packages.yml
-		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.RabbitMq", "src\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj", "{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}"

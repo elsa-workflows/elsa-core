@@ -24,7 +24,6 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private const int MaxSnapshotsToKeep = 5;
 
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
@@ -41,7 +40,6 @@ internal class WorkflowInstance : WorkflowInstanceBase
     /// <inheritdoc />
     public WorkflowInstance(
         IServiceScopeFactory scopeFactory,
-        IWorkflowHostFactory workflowHostFactory,
         IProvider provider,
         IContext context,
         WorkflowStateMapper workflowStateMapper,
@@ -50,7 +48,6 @@ internal class WorkflowInstance : WorkflowInstanceBase
     ) : base(context)
     {
         _scopeFactory = scopeFactory;
-        _workflowHostFactory = workflowHostFactory;
         _workflowStateMapper = workflowStateMapper;
         _workflowStatusMapper = workflowStatusMapper;
         _workflowSubStatusMapper = workflowSubStatusMapper;
@@ -173,8 +170,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
             using var scope = _scopeFactory.CreateScope();
             var bookmarkMapper = scope.ServiceProvider.GetRequiredService<BookmarkMapper>();
-            var mappedBookmarks = bookmarkMapper.Map(workflowState.Bookmarks).ToList(); 
-            
+            var mappedBookmarks = bookmarkMapper.Map(workflowState.Bookmarks).ToList();
+
             respond(new WorkflowExecutionResponse
             {
                 Result = result,
@@ -284,7 +281,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _instanceId = workflowState.Id;
         _version = workflowState.DefinitionVersion;
         _workflowHost = await CreateWorkflowHostAsync(workflowState, Context.CancellationToken);
-        
+
         await SaveWorkflowInstanceCoreAsync(scope.ServiceProvider, workflowState);
         return new ImportWorkflowStateResponse();
     }
@@ -323,13 +320,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var versionOptions = VersionOptions.SpecificVersion(workflowState.DefinitionVersion);
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowHostFactory = scope.ServiceProvider.GetRequiredService<IWorkflowHostFactory>();
         var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
         var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+        return await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
 
     /// <summary>

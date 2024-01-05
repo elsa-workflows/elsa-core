@@ -11,42 +11,42 @@ public class BookmarkFilter
     /// Gets or sets the ID of the bookmark.
     /// </summary>
     public string? BookmarkId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the bookmark.
     /// </summary>
     public ICollection<string>? BookmarkIds { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the workflow instance.
     /// </summary>
     public string? WorkflowInstanceId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the workflow instances.
     /// </summary>
     public ICollection<string>? WorkflowInstanceIds { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the hash of the bookmark to find.
     /// </summary>
     public string? Hash { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the hashes of the bookmarks to find.
     /// </summary>
     public ICollection<string>? Hashes { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the correlation ID of the bookmark to find.
     /// </summary>
     public string? CorrelationId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the activity type name of the bookmark to find.
     /// </summary>
     public string? ActivityTypeName { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the activity type names of the bookmarks to find.
     /// </summary>
@@ -56,6 +56,11 @@ public class BookmarkFilter
     /// Gets or sets the activity instance ID of the bookmark to find.
     /// </summary>
     public string? ActivityInstanceId { get; set; }
+
+    /// <summary>
+    /// Get or sets if the triggers to find is a tenant agnostic search
+    /// </summary>
+    public bool TenantAgnostic { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified query.

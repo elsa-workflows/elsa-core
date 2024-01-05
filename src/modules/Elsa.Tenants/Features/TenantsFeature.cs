@@ -8,7 +8,9 @@ using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Strategies;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Tenants.Features;
 
@@ -54,6 +56,7 @@ public class TenantsFeature : FeatureBase
             .AddScoped<HttpTenantMiddleware>()
             .AddScoped<HttpExternalTenantMiddleware>()
 
+            .RemoveAll<DispatchWorkflowRequestHandler>()
             .AddScoped<DispatchTenantWorkflowRequestHandler>()
         ;
     }

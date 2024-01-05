@@ -13,6 +13,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Newtonsoft.Json;
 
 namespace Elsa.Dapper.Modules.Management.Stores;
 
