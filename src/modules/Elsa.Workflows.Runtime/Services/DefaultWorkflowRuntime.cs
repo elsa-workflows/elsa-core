@@ -292,19 +292,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
 
-    public async Task MergeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
-    { 
-        var existingWorkflowInstance = (await _workflowInstanceStore.FindAsync(workflowState.Id, cancellationToken))!;
-        var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-
-        foreach (var bookmark in workflowState.Bookmarks)
-        {
-            existingWorkflowInstance.WorkflowState.Bookmarks.RemoveWhere(x => x.Id == bookmark.Id);
-            existingWorkflowInstance.WorkflowState.Bookmarks.Add(bookmark);
-        }
-        await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
-    }
-
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeOptions options)
     {
         var workflowInstanceId = string.IsNullOrEmpty(options.InstanceId) ? _identityGenerator.GenerateId() : options.InstanceId;

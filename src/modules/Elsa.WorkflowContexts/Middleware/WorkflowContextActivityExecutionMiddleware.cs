@@ -36,7 +36,7 @@ public class WorkflowContextActivityExecutionMiddleware : IActivityExecutionMidd
         }
 
         // Check if this is a background execution.
-        var isBackgroundExecution = context.TransientProperties.GetValueOrDefault<object, bool>(BackgroundActivityCollectorMiddleware.IsBackgroundExecution);
+        var isBackgroundExecution = context.TransientProperties.GetValueOrDefault<object, bool>(BackgroundActivityInvokerMiddleware.IsBackgroundExecution);
 
         // Is the activity configured to load the context?
         foreach (var providerType in providerTypes)

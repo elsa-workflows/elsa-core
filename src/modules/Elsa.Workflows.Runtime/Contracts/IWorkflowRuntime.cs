@@ -88,9 +88,4 @@ public interface IWorkflowRuntime
     /// Counts the number of workflow instances based on the provided query args.
     /// </summary>
     Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Merges the specified workflow state into the workflow runtime.
-    /// </summary>
-    Task MergeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
 }

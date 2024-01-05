@@ -10,7 +10,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Task)]
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request", Kind = ActivityKind.Action)]
 public class SendHttpRequest : SendHttpRequestBase
 {
     /// <inheritdoc />

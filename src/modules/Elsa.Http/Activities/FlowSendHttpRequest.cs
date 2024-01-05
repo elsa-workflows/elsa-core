@@ -12,7 +12,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request (flow)", Kind = ActivityKind.Task)]
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request (flow)", Kind = ActivityKind.Action)]
 public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
