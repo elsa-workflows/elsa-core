@@ -92,9 +92,10 @@ public static class DependencyInjectionExtensions
         httpClientBuilderOptions?.ConfigureHttpClientBuilder?.Invoke(builder);
 
         var retryCount = httpClientBuilderOptions?.TransientHttpErrorRetryCount ?? 0;
+        var sleepDurationProvider = httpClientBuilderOptions?.SleepDurationProvider ?? (retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         if (retryCount > 0)
         {
-            builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+            builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount, sleepDurationProvider));
         }
     }
 

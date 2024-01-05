@@ -41,7 +41,15 @@ public class ElsaClientBuilderOptions
     /// <item><description>HTTP 5XX status codes(server errors)</description></item>
     /// <item><description>HTTP 408 status code(request timeout)</description></item>
     /// </list>
+    /// Default value is 3.
     /// Set the value to 0 to disable automatic retry.
     /// </summary>
     public int TransientHttpErrorRetryCount { get; set; } = 3;
+
+    /// <summary>
+    /// The function that provides the duration to wait for for each transient failure retry attempt.
+    /// This option is useless if TransientHttpErrorRetryCount is set to 0.
+    /// Default strategy is exponential backoff: TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)).
+    /// </summary>
+    public Func<int, TimeSpan> SleepDurationProvider = retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
 }
