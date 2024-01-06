@@ -12,8 +12,7 @@ namespace Elsa.Http;
 /// <summary>
 /// Send an HTTP request.
 /// </summary>
-[Activity("Elsa", "HTTP", "Send an HTTP request. This activity yis deprecated in favor of the SendHttpRequestTask activity", DisplayName = "HTTP Request (flow) [Deprecated] ", Kind = ActivityKind.Task)]
-[Obsolete("Use SendHttpRequestTask instead.")]
+[Activity("Elsa", "HTTP", "Send an HTTP request.", DisplayName = "HTTP Request (flow)", Kind = ActivityKind.Task)]
 public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
@@ -44,8 +43,6 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
             outcomes.Add(outcome);
 
         outcomes.Add("Done");
-
-        context.JournalData["StatusCode"] = statusCode;
         await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
     }
 
