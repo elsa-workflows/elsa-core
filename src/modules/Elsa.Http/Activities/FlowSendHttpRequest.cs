@@ -43,8 +43,6 @@ public class FlowSendHttpRequest : SendHttpRequestBase, IActivityPropertyDefault
             outcomes.Add(outcome);
 
         outcomes.Add("Done");
-
-        context.JournalData["StatusCode"] = statusCode;
         await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
     }
 
