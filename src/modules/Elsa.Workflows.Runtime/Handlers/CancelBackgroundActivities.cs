@@ -31,7 +31,7 @@ public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarks
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
-        var removedBookmarks = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Where(x => x.Name == BackgroundActivityCollectorMiddleware.BackgroundActivityBookmarkName);
+        var removedBookmarks = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Where(x => x.Name == BackgroundActivityInvokerMiddleware.BackgroundActivityBookmarkName);
 
         foreach (var removedBookmark in removedBookmarks)
         {

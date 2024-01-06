@@ -31,7 +31,7 @@ public class EventPublisher : IEventPublisher
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        return await PublishInternalAsync(eventName, NotificationStrategy.Sequential, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        return await PublishInternalAsync(eventName, false, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -43,12 +43,12 @@ public class EventPublisher : IEventPublisher
         IDictionary<string, object>? input = default,
         CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, NotificationStrategy.Background, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, true, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> PublishInternalAsync(
         string eventName,
-        IEventPublishingStrategy publishingStrategy,
+        bool dispatchAsynchronously,
         string? correlationId = default,
         string? workflowInstanceId = default,
         string? activityInstanceId = default,
@@ -59,7 +59,7 @@ public class EventPublisher : IEventPublisher
         var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, input);
         var options = new WorkflowInboxMessageDeliveryOptions
         {
-            EventPublishingStrategy = publishingStrategy,
+            DispatchAsynchronously = dispatchAsynchronously
         };
 
         var result = await _workflowInbox.SubmitAsync(message, options, cancellationToken);
