@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -24,8 +23,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IVariablePersistenceManager _variablePersistenceManager;
     private readonly IActivityInvoker _activityInvoker;
-    private readonly IBookmarksPersister _bookmarksPersister;
-    private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
 
@@ -38,8 +35,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         IWorkflowDefinitionService workflowDefinitionService,
         IVariablePersistenceManager variablePersistenceManager,
         IActivityInvoker activityInvoker,
-        IBookmarksPersister bookmarksPersister,
-        IWorkflowStateExtractor workflowStateExtractor,
         IServiceProvider serviceProvider,
         ILogger<DefaultBackgroundActivityInvoker> logger)
     {
@@ -48,8 +43,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         _workflowDefinitionService = workflowDefinitionService;
         _variablePersistenceManager = variablePersistenceManager;
         _activityInvoker = activityInvoker;
-        _bookmarksPersister = bookmarksPersister;
-        _workflowStateExtractor = workflowStateExtractor;
         _serviceProvider = serviceProvider;
         _logger = logger;
     }
@@ -58,7 +51,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
-
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)
