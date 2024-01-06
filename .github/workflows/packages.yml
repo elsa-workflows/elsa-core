@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - 3.0.1
     tags:
       - hotfix-* # e.g. 3.0.0-hotfix-1
   release:
@@ -31,7 +31,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=3.0.0-preview.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=3.0.1-preview.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Build
         run: dotnet build --configuration Release /p:Version=${VERSION}
