@@ -78,10 +78,22 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
+    /// The HTTP response status code
+    /// </summary>
+    [Output(Description = "The HTTP response status code")]
+    public Output<int> StatusCode { get; set; } = default!;
+    
+    /// <summary>
     /// The parsed content, if any.
     /// </summary>
     [Output(Description = "The parsed content, if any.")]
     public Output<object?> ParsedContent { get; set; } = default!;
+
+    /// <summary>
+    /// The response headers that were received.
+    /// </summary>
+    [Output(Description = "The response headers that were received.")]
+    public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -115,8 +127,13 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         {
             var response = await httpClient.SendAsync(request, cancellationToken);
             var parsedContent = await ParseContentAsync(context, response.Content);
+            var statusCode = (int)response.StatusCode;
+            var responseHeaders = new HttpHeaders(response.Headers);
+            
             context.Set(Result, response);
             context.Set(ParsedContent, parsedContent);
+            context.Set(StatusCode, statusCode);
+            context.Set(ResponseHeaders, responseHeaders);
 
             await HandleResponseAsync(context, response);
         }

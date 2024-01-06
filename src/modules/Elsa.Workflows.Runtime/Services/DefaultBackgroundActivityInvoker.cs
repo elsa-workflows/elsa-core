@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
@@ -57,6 +58,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
+
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)
@@ -69,7 +71,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
 
         var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
-        var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 
@@ -77,7 +78,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         await _variablePersistenceManager.LoadVariablesAsync(workflowExecutionContext);
 
         // Mark the activity as being invoked from a background worker.
-        activityExecutionContext.TransientProperties[BackgroundActivityCollectorMiddleware.IsBackgroundExecution] = true;
+        activityExecutionContext.SetIsBackgroundExecution();
 
         // Invoke the activity.
         await _activityInvoker.InvokeAsync(activityExecutionContext);
@@ -111,32 +112,25 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
                 outputValues[outputDescriptor.Name] = outputValue;
         }
 
-        // TODO: Instead of importing the entire workflow state, we should only import the following:
-        // - Variables
-        // - Activity state
-        // - Activity output
-        // - Bookmarks
-        workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
-        await _variablePersistenceManager.SaveVariablesAsync(workflowExecutionContext);
-        await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken); 
-
-        // Process bookmarks.
-        var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
-        var diff = Diff.For(originalBookmarks, newBookmarks);
-        await _bookmarksPersister.PersistBookmarksAsync(workflowExecutionContext, diff);
-
-        // Resume the workflow, passing along the activity output.
-        // TODO: This approach will fail if the output is non-serializable. We need to find a way to pass the output to the workflow without serializing it.
+        // Resume the workflow, passing along activity output, outcomes and scheduled activities.
         var bookmarkId = scheduledBackgroundActivity.BookmarkId;
-        var inputKey = BackgroundActivityCollectorMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
+        var inputKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutputKey(activityNodeId);
+        var outcomesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutcomesKey(activityNodeId);
+        var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
+        var scheduledActivitiesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityScheduledActivitiesKey(activityNodeId);
+        var outcomes = activityExecutionContext.GetBackgroundOutcomes().ToList();
+        var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
         {
             InstanceId = workflowInstanceId,
             BookmarkId = bookmarkId,
-            Input = new Dictionary<string, object>
+            Properties = new Dictionary<string, object>
             {
-                [inputKey] = outputValues
+                [outcomesKey] = outcomes,
+                [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
+                [inputKey] = outputValues,
+                [journalDataKey] = activityExecutionContext.JournalData
             }
         };
 

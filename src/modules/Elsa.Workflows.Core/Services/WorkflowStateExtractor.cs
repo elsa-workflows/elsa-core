@@ -77,7 +77,9 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private void ApplyProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
-        workflowExecutionContext.Properties = state.Properties;
+        // Merge properties.
+        foreach (var property in state.Properties)
+            workflowExecutionContext.Properties[property.Key] = property.Value;
     }
 
     private static void ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
@@ -248,7 +250,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
         // // If there are any faulted contexts, keep everything so that the user can fix the issue and potentially reschedule existing instances.
         // if (contexts.Any(x => x.Status == ActivityStatus.Faulted))
-            return contexts;
+        return contexts;
 
         // return contexts
         //     .Where(x => !x.IsCompleted)
