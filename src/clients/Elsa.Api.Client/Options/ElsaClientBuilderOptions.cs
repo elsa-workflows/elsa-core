@@ -33,4 +33,23 @@ public class ElsaClientBuilderOptions
     /// Gets or sets a delegate that can be used to configure the HTTP client builder.
     /// </summary>
     public Action<IHttpClientBuilder> ConfigureHttpClientBuilder { get; set; } = _ => { };
+
+    /// <summary>
+    /// Number of automatic retries for transient failures, including following categories:
+    /// <list type = "bullet" >
+    /// <item><description> Network failures(as <see cref = "HttpRequestException" />)</description></item>
+    /// <item><description>HTTP 5XX status codes(server errors)</description></item>
+    /// <item><description>HTTP 408 status code(request timeout)</description></item>
+    /// </list>
+    /// Default value is 3.
+    /// Set the value to 0 to disable automatic retry.
+    /// </summary>
+    public int TransientHttpErrorRetryCount { get; set; } = 3;
+
+    /// <summary>
+    /// The function that provides the duration to wait for for each transient failure retry attempt.
+    /// This option is useless if TransientHttpErrorRetryCount is set to 0.
+    /// Default strategy is exponential backoff: TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)).
+    /// </summary>
+    public Func<int, TimeSpan> SleepDurationProvider = retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
 }
