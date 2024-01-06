@@ -15,8 +15,10 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
     /// Initializes a new instance of the <see cref="RequestHandlerInvokerMiddleware"/> class.
     /// </summary>
     /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="requestHandlers">The request handlers to invoke.</param>
-    public RequestHandlerInvokerMiddleware(RequestMiddlewareDelegate next, IEnumerable<IRequestHandler> requestHandlers)
+    /// <param name="requestHandlers"></param>
+    public RequestHandlerInvokerMiddleware(
+        RequestMiddlewareDelegate next,
+        IEnumerable<IRequestHandler> requestHandlers)
     {
         _next = next;
         _requestHandlers = requestHandlers;
@@ -25,13 +27,14 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(RequestContext context)
     {
+
         // Find all handlers for the specified request.
         var request = context.Request;
         var requestType = request.GetType();
         var responseType = context.ResponseType;
         var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
         var handlers = _requestHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
-        
+
         foreach (var handler in handlers)
         {
             var handleMethod = handlerType.GetMethod("HandleAsync")!;
@@ -44,7 +47,7 @@ public class RequestHandlerInvokerMiddleware : IRequestMiddleware
             var resultProperty = taskWithReturnType.GetProperty(nameof(Task<object>.Result))!;
             context.Responses.Add(resultProperty.GetValue(task)!);
         }
-        
+
         // Invoke next middleware.
         await _next(context);
     }

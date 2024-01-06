@@ -3,7 +3,7 @@ using Elsa.Abstractions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
 
-public class Endpoint : ElsaEndpoint<Request, Response>
+public class BulkCancel : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {

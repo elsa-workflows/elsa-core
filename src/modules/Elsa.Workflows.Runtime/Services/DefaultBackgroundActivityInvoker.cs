@@ -51,6 +51,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
     public async Task ExecuteAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {
         var workflowInstanceId = scheduledBackgroundActivity.WorkflowInstanceId;
+
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
         if (workflowState == null)

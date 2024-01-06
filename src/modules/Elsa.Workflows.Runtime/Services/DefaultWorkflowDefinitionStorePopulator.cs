@@ -53,11 +53,17 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
-                await AssignIdentities(result.Workflow, cancellationToken);
-                await AddOrUpdateAsync(result, cancellationToken);
-                await IndexTriggersAsync(result, cancellationToken);
+                await AddAsync(result, cancellationToken);
             }
         }
+    }
+    
+    /// <inheritdoc />
+    public async Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    {
+        await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
+        await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
+        await IndexTriggersAsync(materializedWorkflow, cancellationToken);
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)

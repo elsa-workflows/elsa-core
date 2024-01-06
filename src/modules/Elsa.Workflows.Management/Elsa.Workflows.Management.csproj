@@ -21,8 +21,4 @@
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="ActivityInputOptions\" />
-    </ItemGroup>
-
 </Project>

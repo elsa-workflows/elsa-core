@@ -1,4 +1,5 @@
 ﻿using Elsa.Http.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Http.HostedServices;
@@ -8,19 +9,21 @@ namespace Elsa.Http.HostedServices;
 /// </summary>
 public class UpdateRouteTableHostedService : BackgroundService
 {
-    private readonly IRouteTableUpdater _routeTableUpdater;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdateRouteTableHostedService"/> class.
     /// </summary>
-    public UpdateRouteTableHostedService(IRouteTableUpdater routeTableUpdater)
+    public UpdateRouteTableHostedService(IServiceScopeFactory scopeFactory)
     {
-        _routeTableUpdater = routeTableUpdater;
+        _scopeFactory = scopeFactory;
     }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await _routeTableUpdater.UpdateAsync(stoppingToken);
+        using var scope = _scopeFactory.CreateScope();
+        var routeTableUpdater = scope.ServiceProvider.GetRequiredService<IRouteTableUpdater>();
+        await routeTableUpdater.UpdateAsync(stoppingToken);
     }
 }
