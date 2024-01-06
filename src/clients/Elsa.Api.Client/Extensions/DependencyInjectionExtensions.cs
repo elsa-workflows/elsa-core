@@ -52,7 +52,6 @@ public static class DependencyInjectionExtensions
     {
         var builderOptions = new ElsaClientBuilderOptions();
         configureClient.Invoke(builderOptions);
-        
         builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
 
         services.AddScoped(builderOptions.AuthenticationHandler);
@@ -63,7 +62,19 @@ public static class DependencyInjectionExtensions
             options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
             options.ApiKey = builderOptions.ApiKey;
         });
+
+        var builderOptionsWithoutRetryPolicy = new ElsaClientBuilderOptions
+        {
+            ApiKey = builderOptions.ApiKey,
+            AuthenticationHandler = builderOptions.AuthenticationHandler,
+            BaseAddress = builderOptions.BaseAddress,
+            ConfigureHttpClient = builderOptions.ConfigureHttpClient,
+            ConfigureHttpClientBuilder = builderOptions.ConfigureHttpClientBuilder,
+            ConfigureRetryPolicy = null
+        };
+        
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
+        services.AddApi<IExecuteWorkflowApi>(builderOptionsWithoutRetryPolicy);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
         services.AddApi<IActivityDescriptorsApi>(builderOptions);
         services.AddApi<IActivityDescriptorOptionsApi>(builderOptions);
@@ -89,14 +100,20 @@ public static class DependencyInjectionExtensions
     public static void AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
         var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
-        httpClientBuilderOptions?.ConfigureHttpClientBuilder?.Invoke(builder);
-
-        var retryCount = httpClientBuilderOptions?.TransientHttpErrorRetryCount ?? 0;
-        var sleepDurationProvider = httpClientBuilderOptions?.SleepDurationProvider ?? (retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-        if (retryCount > 0)
-        {
-            builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(retryCount, sleepDurationProvider));
-        }
+        httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
+        httpClientBuilderOptions?.ConfigureRetryPolicy?.Invoke(builder);
+    }
+    
+    /// <summary>
+    /// Adds a refit client for the specified API type.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
+    /// <typeparam name="T">The type representing the API.</typeparam>
+    public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
+    {
+        var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
     }
 
     /// <summary>
