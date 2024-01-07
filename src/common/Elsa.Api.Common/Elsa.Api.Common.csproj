@@ -19,9 +19,9 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="FastEndpoints" Version="5.21.2"/>
-        <PackageReference Include="FastEndpoints.Security" Version="5.21.2"/>
-        <PackageReference Include="FastEndpoints.Swagger" Version="5.21.2"/> 
+        <PackageReference Include="FastEndpoints" Version="5.20.1.7-beta"/>
+        <PackageReference Include="FastEndpoints.Security" Version="5.20.1.7-beta"/>
+        <PackageReference Include="FastEndpoints.Swagger" Version="5.20.1.7-beta"/> 
     </ItemGroup>
 
     <ItemGroup>
