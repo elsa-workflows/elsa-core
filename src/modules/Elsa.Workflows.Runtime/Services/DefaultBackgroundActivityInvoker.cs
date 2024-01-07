@@ -111,7 +111,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         var outcomesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityOutcomesKey(activityNodeId);
         var journalDataKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityJournalDataKey(activityNodeId);
         var scheduledActivitiesKey = BackgroundActivityInvokerMiddleware.GetBackgroundActivityScheduledActivitiesKey(activityNodeId);
-        var outcomes = activityExecutionContext.GetBackgroundOutcomes().ToList();
+        var outcomes = activityExecutionContext.GetBackgroundOutcomes()?.ToList();
         var scheduledActivities = activityExecutionContext.GetBackgroundScheduledActivities().ToList();
 
         var dispatchRequest = new DispatchWorkflowInstanceRequest
@@ -120,12 +120,14 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             BookmarkId = bookmarkId,
             Properties = new Dictionary<string, object>
             {
-                [outcomesKey] = outcomes,
                 [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
                 [inputKey] = outputValues,
                 [journalDataKey] = activityExecutionContext.JournalData
             }
         };
+
+        if (outcomes != null)
+            dispatchRequest.Properties[outcomesKey] = outcomes;
 
         if (cancellationToken.IsCancellationRequested)
         {

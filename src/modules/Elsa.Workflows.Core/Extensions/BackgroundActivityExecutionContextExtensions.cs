@@ -40,9 +40,9 @@ public static class BackgroundActivityExecutionContextExtensions
     /// <summary>
     /// Gets the background outcomes.
     /// </summary>
-    public static IEnumerable<string> GetBackgroundOutcomes(this ActivityExecutionContext activityExecutionContext)
+    public static IEnumerable<string>? GetBackgroundOutcomes(this ActivityExecutionContext activityExecutionContext)
     {
-        return activityExecutionContext.GetProperty<IEnumerable<string>>("BackgroundOutcomes") ?? Enumerable.Empty<string>();
+        return activityExecutionContext.GetProperty<IEnumerable<string>>("BackgroundOutcomes");
     }
     
     /// <summary>
