@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -16,6 +17,7 @@ namespace Elsa.Workflows.Runtime.Services;
 public class DefaultWorkflowInbox : IWorkflowInbox
 {
     private readonly IWorkflowDispatcher _workflowDispatcher;
+    private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowInboxMessageStore _messageStore;
     private readonly INotificationSender _notificationSender;
     private readonly ISystemClock _systemClock;
@@ -27,6 +29,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// </summary>
     public DefaultWorkflowInbox(
         IWorkflowDispatcher workflowDispatcher,
+        IWorkflowRuntime workflowRuntime,
         IWorkflowInboxMessageStore messageStore,
         INotificationSender notificationSender,
         ISystemClock systemClock,
@@ -34,6 +37,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         IBookmarkHasher bookmarkHasher)
     {
         _workflowDispatcher = workflowDispatcher;
+        _workflowRuntime = workflowRuntime;
         _messageStore = messageStore;
         _notificationSender = notificationSender;
         _systemClock = systemClock;
@@ -72,10 +76,9 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         await _messageStore.SaveAsync(message, cancellationToken);
 
         // Send a notification.
-        var strategy = options.EventPublishingStrategy;
         var workflowExecutionResults = new List<WorkflowExecutionResult>();
-        var notification = new WorkflowInboxMessageReceived(message);
-        await _notificationSender.SendAsync(notification, strategy, cancellationToken);
+        var notification = new WorkflowInboxMessageReceived(message, options, workflowExecutionResults);
+        await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
 
         // Return the result.
         return new SubmitWorkflowInboxMessageResult(message, workflowExecutionResults);
@@ -84,19 +87,12 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// <inheritdoc />
     public async ValueTask<DeliverWorkflowInboxMessageResult> DeliverAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
-        await ResumeWorkflowsAsync(message, cancellationToken);
-        return new DeliverWorkflowInboxMessageResult();
+        await ResumeWorkflowsAsynchronouslyAsync(message, cancellationToken);
+        return new DeliverWorkflowInboxMessageResult(new List<WorkflowExecutionResult>());
     }
 
     /// <inheritdoc />
-    public async ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
-    {
-        await TriggerWorkflowsAsync(message, cancellationToken);
-
-        return new DeliverWorkflowInboxMessageResult();
-    }
-
-    private async Task TriggerWorkflowsAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    public async ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, BroadcastWorkflowInboxMessageOptions? options, CancellationToken cancellationToken = default)
     {
         var activityTypeName = message.ActivityTypeName;
         var correlationId = message.CorrelationId;
@@ -107,8 +103,28 @@ public class DefaultWorkflowInbox : IWorkflowInbox
 
         if (workflowInstanceId != null)
         {
-            await ResumeWorkflowsAsync(message, cancellationToken);
-            return;
+            if (options?.DispatchAsynchronously == true)
+            {
+                await ResumeWorkflowsAsynchronouslyAsync(message, cancellationToken);
+                return new DeliverWorkflowInboxMessageResult(new List<WorkflowExecutionResult>());
+            }
+
+            var results = await ResumeWorkflowsSynchronouslyAsync(message, cancellationToken);
+            return new DeliverWorkflowInboxMessageResult(results.ToList());
+        }
+
+        if (options?.DispatchAsynchronously == false)
+        {
+            var results = await _workflowRuntime.TriggerWorkflowsAsync(activityTypeName, bookmarkPayload, new TriggerWorkflowsOptions
+            {
+                CorrelationId = correlationId,
+                WorkflowInstanceId = workflowInstanceId,
+                ActivityInstanceId = activityInstanceId,
+                Input = input,
+                CancellationTokens = cancellationToken
+            });
+
+            return new DeliverWorkflowInboxMessageResult(results.TriggeredWorkflows);
         }
 
         await _workflowDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(activityTypeName, bookmarkPayload)
@@ -118,9 +134,11 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             ActivityInstanceId = activityInstanceId,
             Input = input
         }, cancellationToken);
+
+        return new DeliverWorkflowInboxMessageResult(new List<WorkflowExecutionResult>());
     }
 
-    private async Task ResumeWorkflowsAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    private async Task ResumeWorkflowsAsynchronouslyAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
         var activityTypeName = message.ActivityTypeName;
         var correlationId = message.CorrelationId;
@@ -136,6 +154,25 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             ActivityInstanceId = activityInstanceId,
             Input = input
         }, cancellationToken);
+    }
+
+    private async Task<IEnumerable<WorkflowExecutionResult>> ResumeWorkflowsSynchronouslyAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)
+    {
+        var activityTypeName = message.ActivityTypeName;
+        var correlationId = message.CorrelationId;
+        var workflowInstanceId = message.WorkflowInstanceId;
+        var activityInstanceId = message.ActivityInstanceId;
+        var bookmarkPayload = message.BookmarkPayload;
+        var input = message.Input;
+
+        return await _workflowRuntime.ResumeWorkflowsAsync(activityTypeName, bookmarkPayload, new TriggerWorkflowsOptions
+        {
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId,
+            Input = input,
+            CancellationTokens = cancellationToken
+        });
     }
 
     /// <inheritdoc />

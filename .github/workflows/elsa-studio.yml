@@ -1,4 +1,4 @@
-name: Build and deploy Elsa SStudio reference application as Docker image
+name: Build and deploy Elsa Studio reference application as Docker image
 on:
   workflow_dispatch:
   push:

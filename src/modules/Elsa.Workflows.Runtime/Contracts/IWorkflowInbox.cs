@@ -32,13 +32,14 @@ public interface IWorkflowInbox
     /// <param name="message">The message to deliver.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     ValueTask<DeliverWorkflowInboxMessageResult> DeliverAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Broadcasts the specified message, which may trigger new workflows and resume existing ones.
     /// </summary>
     /// <param name="message">The message to broadcast.</param>
+    /// <param name="options">An optional set of delivery options.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default);
+    ValueTask<DeliverWorkflowInboxMessageResult> BroadcastAsync(WorkflowInboxMessage message, BroadcastWorkflowInboxMessageOptions? options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds all messages matching the specified filter.

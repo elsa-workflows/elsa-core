@@ -204,10 +204,15 @@ public class Store<T> where T : notnull
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<T> records, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
+        var recordsList = records.ToList();
+
+        if (!recordsList.Any())
+            return;
+
         var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
         var currentIndex = 0;
 
-        foreach (var record in records)
+        foreach (var record in recordsList)
         {
             var index = currentIndex;
             query.Upsert(TableName, primaryKey, record, field => $"{field}_{index}");
@@ -217,7 +222,7 @@ public class Store<T> where T : notnull
         using var connection = _dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
-    
+
     /// <summary>
     /// Adds the specified record.
     /// </summary>
@@ -243,26 +248,27 @@ public class Store<T> where T : notnull
         using var connection = _dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
     }
-    
+
     /// <summary>
     /// Deletes all records matching the specified query.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="pageArgs">The page arguments.</param>
     /// <param name="orderFields">The fields by which to order the results.</param>
+    /// <param name="primaryKey">The primary key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of records deleted.</returns>
-    public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
-        var selectQuery =  _dbConnectionProvider.CreateQuery().From(TableName, "rowid");
+        var selectQuery = _dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
         filter(selectQuery);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
-        
+
         var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, selectQuery);
         using var connection = _dbConnectionProvider.GetConnection();
         return await deleteQuery.ExecuteAsync(connection);
     }
-    
+
     /// <summary>
     /// Returns <c>true</c> if any records match the specified query.
     /// </summary>
@@ -276,7 +282,7 @@ public class Store<T> where T : notnull
         using var connection = _dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
     }
-    
+
     /// <summary>
     /// Returns the number of records matching the specified query. 
     /// </summary>

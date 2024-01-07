@@ -11,7 +11,7 @@ namespace Elsa.Extensions;
 public static class ActivityExecutionPipelineBuilderExtensions
 {
     /// <summary>
-    /// Installs the <see cref="BackgroundActivityCollectorMiddleware"/>.
+    /// Installs the <see cref="BackgroundActivityInvokerMiddleware"/>.
     /// </summary>
-    public static IActivityExecutionPipelineBuilder UseBackgroundActivityInvoker(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<BackgroundActivityCollectorMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseBackgroundActivityInvoker(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<BackgroundActivityInvokerMiddleware>();
 }

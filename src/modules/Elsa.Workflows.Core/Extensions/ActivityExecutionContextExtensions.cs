@@ -456,6 +456,16 @@ public static class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
     {
+        var outcomes = result as Outcomes;
+
+        // If the activity is executing in the background, simply capture the result and return.
+        if (context.GetIsBackgroundExecution())
+        {
+            if (outcomes != null)
+                context.SetBackgroundOutcomes(outcomes.Names);
+            return;
+        }
+
         // If the activity is not running, do nothing.
         if (context.Status != ActivityStatus.Running)
             return;
@@ -470,7 +480,7 @@ public static class ActivityExecutionContextExtensions
         context.Status = ActivityStatus.Completed;
 
         // Record the outcomes, if any.
-        if (result is Outcomes outcomes)
+        if (outcomes != null)
             context.JournalData["Outcomes"] = outcomes.Names;
 
         // Record the output, if any.

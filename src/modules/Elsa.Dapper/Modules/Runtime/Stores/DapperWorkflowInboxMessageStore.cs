@@ -61,7 +61,7 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
         if (pageArgs == null)
             return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), pageArgs, new[] { new OrderField(nameof(WorkflowInboxMessage.CreatedAt), OrderDirection.Ascending) }, cancellationToken);
+        return await _store.DeleteAsync(q => ApplyFilter(q, filter), pageArgs, new[] { new OrderField(nameof(WorkflowInboxMessage.CreatedAt), OrderDirection.Ascending) }, cancellationToken: cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, params WorkflowInboxMessageFilter[] filters)

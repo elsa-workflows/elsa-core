@@ -43,7 +43,7 @@ public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddlewar
 
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
-            .GetOrAdd(BackgroundActivityCollectorMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
+            .GetOrAdd(BackgroundActivityInvokerMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
   
         if (scheduledBackgroundActivities.Any())
         {
