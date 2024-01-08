@@ -215,7 +215,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (options.IsLatest) sql.AppendLine("and IsLatest = 1");
         if (options.IsPublished) sql.AppendLine("and IsPublished = 1");
         if (options.IsLatestOrPublished) sql.AppendLine("and (IsLatest = 1 or IsPublished = 1)");
-        if (options.IsLatestAndPublished) sql.AppendLine("and IsLatest = 1 or IsPublished = 1");
+        if (options.IsLatestAndPublished) sql.AppendLine("and IsLatest = 1 and IsPublished = 1");
         if (options.Version > 0)
         {
             sql.AppendLine(query.Dialect.And("Version"));
