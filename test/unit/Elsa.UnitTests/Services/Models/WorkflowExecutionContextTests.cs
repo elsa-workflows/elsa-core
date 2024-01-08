@@ -24,5 +24,17 @@ namespace Elsa.Services.Models
 
             Assert.Empty(sut.WorkflowInstance.Variables.Data);
         }
+
+        [Theory(DisplayName = "Transient variables should be retrievable in merged variable collection"), AutoMoqData]
+        public void TransientVariableSetInExecutionContext_ShouldBeRetrievable([WithAutofixtureResolution, Frozen] IServiceProvider serviceProvider,
+        [OmitOnRecursion] WorkflowExecutionContext workflowExecutionContext,
+        IActivityBlueprint activityBlueprint,
+        CancellationToken cancellationToken)
+        {
+            var sut = new ActivityExecutionContext(serviceProvider, workflowExecutionContext, activityBlueprint, null, false, cancellationToken);
+            sut.SetTransientVariable("foo", "bar");
+
+            Assert.Equal("bar", sut.GetVariable("foo"));
+        }
     }
 }
