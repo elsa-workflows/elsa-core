@@ -157,7 +157,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
             .AddScoped(WorkflowInboxStore)
-            .AddSingleton(RunTaskDispatcher)
+            .AddScoped(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
