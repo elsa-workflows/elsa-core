@@ -24,4 +24,10 @@ public class StartWorkflowHostOptions
 
     /// <summary>Cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</summary>
     public CancellationTokens CancellationTokens { get; set; }
+
+    /// <summary>
+    /// The user/service who triggered this workflow.
+    /// When the workflow is triggered from the Studio, this value will be the user Identity name (who logged in).
+    /// </summary>
+    public string? Requester { get; set; }
 }

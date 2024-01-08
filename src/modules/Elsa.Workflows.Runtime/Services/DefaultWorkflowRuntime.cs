@@ -308,7 +308,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 Input = input,
                 Properties = options.Properties,
                 TriggerActivityId = options.TriggerActivityId,
-                CancellationTokens = cancellationTokens
+                CancellationTokens = cancellationTokens,
+                Requester = options.Requester
             };
             await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationTokens.ApplicationCancellationToken);
             var workflowState = workflowHost.WorkflowState;

@@ -80,7 +80,8 @@ public class WorkflowHost : IWorkflowHost
             Input = input,
             Properties = properties,
             TriggerActivityId = options?.TriggerActivityId,
-            CancellationTokens = options?.CancellationTokens ?? cancellationToken
+            CancellationTokens = options?.CancellationTokens ?? cancellationToken,
+            Requester = options?.Requester
         };
 
         using var scope = _serviceScopeFactory.CreateScope();

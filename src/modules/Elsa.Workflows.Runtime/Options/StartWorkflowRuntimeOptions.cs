@@ -21,4 +21,10 @@ public class StartWorkflowRuntimeOptions
     public string? InstanceId { get; set; }
 
     public CancellationTokens CancellationTokens { get; set; }
+
+    /// <summary>
+    /// The user/service who triggered this workflow.
+    /// When the workflow is triggered from the Studio, this value will be the user Identity name (who logged in).
+    /// </summary>
+    public string? Requester { get; set; }
 }

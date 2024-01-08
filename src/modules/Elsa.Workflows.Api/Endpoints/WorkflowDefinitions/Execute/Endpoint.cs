@@ -71,7 +71,8 @@ internal class Execute : ElsaEndpoint<Request, Response>
             VersionOptions = versionOptions,
             TriggerActivityId = request.TriggerActivityId,
             InstanceId = instanceId,
-            CancellationTokens = cancellationToken
+            CancellationTokens = cancellationToken,
+            Requester = HttpContext.User?.Identity?.Name,
         };
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 

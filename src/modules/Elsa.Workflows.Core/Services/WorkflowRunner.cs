@@ -103,7 +103,8 @@ public class WorkflowRunner : IWorkflowRunner
             properties,
             default,
             triggerActivityId,
-            options?.CancellationTokens ?? cancellationToken);
+            options?.CancellationTokens ?? cancellationToken,
+            options?.Requester);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();

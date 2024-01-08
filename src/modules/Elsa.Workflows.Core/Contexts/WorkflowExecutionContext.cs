@@ -51,7 +51,8 @@ public class WorkflowExecutionContext : IExecutionContext
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
-        CancellationTokens cancellationTokens)
+        CancellationTokens cancellationTokens,
+        string? requester = default)
     {
         ServiceProvider = serviceProvider;
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
@@ -69,6 +70,7 @@ public class WorkflowExecutionContext : IExecutionContext
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
         CancellationTokens = cancellationTokens;
+        Requester = requester;
         Incidents = incidents.ToList();
     }
 
@@ -84,7 +86,8 @@ public class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
-        CancellationTokens cancellationTokens = default)
+        CancellationTokens cancellationTokens = default,
+        string? requester = default)
     {
         var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
 
@@ -99,7 +102,8 @@ public class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
-            cancellationTokens
+            cancellationTokens,
+            requester
         );
     }
 
@@ -150,7 +154,8 @@ public class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
-        CancellationTokens cancellationTokens = default)
+        CancellationTokens cancellationTokens = default,
+        string? requester = default)
     {
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
@@ -163,7 +168,8 @@ public class WorkflowExecutionContext : IExecutionContext
             triggerActivityId,
             incidents,
             createdAt,
-            cancellationTokens)
+            cancellationTokens,
+            requester)
         {
             MemoryRegister = workflow.CreateRegister()
         };
@@ -346,6 +352,12 @@ public class WorkflowExecutionContext : IExecutionContext
     /// A set of cancellation tokens that can be used to cancel the workflow execution without cancelling system-level operations.
     /// </summary>
     public CancellationTokens CancellationTokens { get; }
+
+    /// <summary>
+    /// The user/service who triggered this workflow.
+    /// When the workflow is triggered from the Studio, this value will be the user Identity name (who logged in).
+    /// </summary>
+    public string? Requester { get; set; }
 
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
