@@ -1,3 +1,3 @@
-namespace Elsa.Workflows.Runtime.Requests;
+namespace Elsa.Workflows.Runtime.Responses;
 
 public record DispatchTriggerWorkflowsResponse;

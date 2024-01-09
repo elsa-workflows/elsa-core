@@ -1,4 +1,5 @@
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Responses;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 

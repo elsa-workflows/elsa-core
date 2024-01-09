@@ -47,6 +47,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+    
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -152,6 +157,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
+            .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(BookmarkStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
@@ -196,7 +202,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
 
             // Domain handlers.
-            .AddCommandHandler<DispatchWorkflowRequestHandler>()
+            .AddCommandHandler<DispatchWorkflowCommandHandler>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()

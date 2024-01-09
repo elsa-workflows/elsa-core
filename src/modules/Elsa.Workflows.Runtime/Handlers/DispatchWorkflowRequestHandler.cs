@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Options;
 namespace Elsa.Workflows.Runtime.Handlers;
 
 // ReSharper disable once UnusedType.Global
-internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) :
+internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) :
     ICommandHandler<DispatchTriggerWorkflowsCommand>,
     ICommandHandler<DispatchWorkflowDefinitionCommand>,
     ICommandHandler<DispatchWorkflowInstanceCommand>,
