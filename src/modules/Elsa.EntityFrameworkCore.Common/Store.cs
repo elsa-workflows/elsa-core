@@ -336,7 +336,7 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// Queries the database using a query and a selector.
     /// </summary>
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
-        => await QueryAsync(query, default, false, cancellationToken);
+        => await QueryAsync(query, onLoading, false, cancellationToken);
 
     /// <summary>
     /// Queries the database using a query and a selector.
