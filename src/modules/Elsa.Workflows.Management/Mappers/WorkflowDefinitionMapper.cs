@@ -120,4 +120,34 @@ public class WorkflowDefinitionMapper
             default,
             workflow.Root);
     }
+    
+    /// <summary>
+    /// Maps a <see cref="Workflow"/> to a <see cref="WorkflowDefinitionModel"/>.
+    /// </summary>
+    /// <param name="workflow">The source <see cref="WorkflowDefinition"/>.</param>
+    /// <returns>The mapped <see cref="WorkflowDefinitionModel"/>.</returns>
+    public WorkflowDefinitionModel Map(Workflow workflow)
+    {
+        var variables = _variableDefinitionMapper.Map(workflow.Variables).ToList();
+
+        return new(
+            workflow.Identity.Id,
+            workflow.Identity.DefinitionId,
+            workflow.WorkflowMetadata.Name,
+            workflow.WorkflowMetadata.Description,
+            workflow.WorkflowMetadata.CreatedAt,
+            workflow.Identity.Version,
+            workflow.WorkflowMetadata.ToolVersion,
+            variables,
+            workflow.Inputs,
+            workflow.Outputs,
+            workflow.Outcomes,
+            workflow.CustomProperties,
+            workflow.IsReadonly,
+            workflow.Publication.IsLatest,
+            workflow.Publication.IsPublished,
+            workflow.Options,
+            default,
+            workflow.Root);
+    }
 }

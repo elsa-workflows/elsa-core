@@ -46,6 +46,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             ActivityInstanceId = request.ActivityInstanceId,
             ActivityHash = request.ActivityHash,
             Input = request.Input,
+            Properties = request.Properties,
             CorrelationId = request.CorrelationId
         }, cancellationToken);
         return new();

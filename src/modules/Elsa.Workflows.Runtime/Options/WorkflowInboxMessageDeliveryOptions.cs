@@ -1,7 +1,3 @@
-using Elsa.Mediator;
-using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Notifications;
-
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
@@ -10,7 +6,7 @@ namespace Elsa.Workflows.Runtime.Options;
 public class WorkflowInboxMessageDeliveryOptions
 {
     /// <summary>
-    /// The strategy to use when publishing the <see cref="WorkflowInboxMessageReceived"/> notification.
+    /// Whether to dispatch the message to the workflow dispatcher or send immediately.
     /// </summary>
-    public IEventPublishingStrategy EventPublishingStrategy { get; set; } = NotificationStrategy.Background;
+    public bool DispatchAsynchronously { get; set; } = true;
 }

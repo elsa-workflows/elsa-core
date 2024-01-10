@@ -428,11 +428,5 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource, CancellationToken cancellationToken)
     {
         return await _distributedLockProvider.AcquireLockAsync(resource, TimeSpan.FromMinutes(2), cancellationToken);
-        // if (AcquiredLock.Value?.Key == resource)
-        //     return AcquiredLock.Value.Lock;
-        //
-        // var distributedLock = await _distributedLockProvider.AcquireLockAsync(resource, TimeSpan.FromMinutes(2), cancellationToken);
-        // AcquiredLock.Value = new AcquiredLock { Lock = distributedLock, Key = resource };
-        // return distributedLock;
     }
 }

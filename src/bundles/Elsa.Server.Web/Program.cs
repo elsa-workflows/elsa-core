@@ -24,7 +24,7 @@ using Proto.Persistence.SqlServer;
 const bool useMongoDb = false;
 const bool useSqlServer = false;
 const bool useDapper = false;
-const bool useProtoActor = true;
+const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -228,6 +228,7 @@ services
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
+        elsa.AddFastEndpointsAssembly<Program>();
     });
 
 services.AddHealthChecks();

@@ -1,5 +1,7 @@
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -19,11 +21,16 @@ public class ReadWorkflowInboxMessage : INotificationHandler<WorkflowInboxMessag
     {
         _workflowInbox = workflowInbox;
     }
-    
+
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowInboxMessageReceived notification, CancellationToken cancellationToken)
     {
         var message = notification.InboxMessage;
-        await _workflowInbox.BroadcastAsync(message, cancellationToken);
+        var options = new BroadcastWorkflowInboxMessageOptions
+        {
+            DispatchAsynchronously = notification.Options.DispatchAsynchronously
+        };
+        var result = await _workflowInbox.BroadcastAsync(message, options, cancellationToken);
+        notification.WorkflowExecutionResults.AddRange(result.WorkflowExecutionResults);
     }
 }

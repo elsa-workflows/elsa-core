@@ -3,30 +3,28 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Management.Services;
 
 /// <summary>
 /// A serializer that parses JSON.
 /// </summary>
-public class WorkflowSerializer : IWorkflowSerializer
+public class WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinitionMapper workflowDefinitionMapper) : IWorkflowSerializer
 {
-    private readonly IApiSerializer _apiSerializer;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowSerializer"/> class.
-    /// </summary>
-    public WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinitionMapper workflowDefinitionMapper)
+    /// <inheritdoc />
+    public string Serialize(Workflow workflow)
     {
-        _apiSerializer = apiSerializer;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
+        var model = workflowDefinitionMapper.Map(workflow);
+        var serializerOptions = apiSerializer.CreateOptions();
+        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        return apiSerializer.Serialize(model);
     }
-    
+
     /// <inheritdoc />
     public Workflow Deserialize(string serializedWorkflow)
     {
-        var model = _apiSerializer.Deserialize<WorkflowDefinitionModel>(serializedWorkflow);
-        return _workflowDefinitionMapper.Map(model);
+        var model = apiSerializer.Deserialize<WorkflowDefinitionModel>(serializedWorkflow);
+        return workflowDefinitionMapper.Map(model);
     }
 }
