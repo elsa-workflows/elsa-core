@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - v3.0.2
+      - v3.0.3
   release:
     types: [ prereleased, published ]
 env:
@@ -18,10 +18,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Verify commit exists in origin/v3.0.2
+      - name: Verify commit exists in origin/v3.0.3
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          git branch --remote --contains | grep origin/v3.0.2
+          git branch --remote --contains | grep origin/v3.0.3
       - name: Set VERSION variable
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
@@ -29,7 +29,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=3.0.2-preview.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=3.0.3-preview.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Build
         run: dotnet build --configuration Release /p:Version=${VERSION}
