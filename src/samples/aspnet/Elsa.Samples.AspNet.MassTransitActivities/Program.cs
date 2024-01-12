@@ -28,9 +28,23 @@ builder.Services.AddElsa(elsa =>
 
     // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
+
+    // Use C#.
+    elsa.UseCSharp(options =>
+    {
+        options.Assemblies.Add(typeof(OrderCreated).Assembly);
+        options.Namespaces.Add(typeof(OrderCreated).Namespace!);
+    });
     
-    // Use JavaScript and Liquid.
-    elsa.UseJavaScript();
+    // Use JavaScript.
+    elsa.UseJavaScript(options =>
+    {
+        options.AllowClrAccess = true;
+        options.RegisterType<OrderCreated>();
+        options.RegisterType<OrderCompleted>();
+    });
+    
+    // Use Liquid.
     elsa.UseLiquid();
     
     // Configure identity so that we can create a default admin user.
@@ -39,7 +53,7 @@ builder.Services.AddElsa(elsa =>
         identity.UseAdminUserProvider();
         identity.TokenOptions = options =>
         {
-            options.SigningKey = "secret-token-signing-key";
+            options.SigningKey = "super-secret-and-securely-stored-token-signing-key";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
     });
@@ -50,7 +64,7 @@ builder.Services.AddElsa(elsa =>
     // Configure MassTransit.
     elsa.UseMassTransit(massTransit =>
     {
-        massTransit.UseRabbitMq(rabbitMqConnectionString);
+        //massTransit.UseRabbitMq(rabbitMqConnectionString);
         massTransit.AddMessageType<OrderCompleted>();
         massTransit.AddMessageType<OrderCreated>();
     });
