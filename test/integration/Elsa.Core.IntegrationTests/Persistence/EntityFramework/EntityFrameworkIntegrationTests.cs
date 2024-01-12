@@ -51,24 +51,29 @@ namespace Elsa.Core.IntegrationTests.Persistence.EntityFramework
 
         class HostedWorkflowRunner : IHostedService
         {
-            readonly IBuildsAndStartsWorkflow _workflowRunner;
-            readonly IWorkflowInstanceStore _instanceStore;
+            private readonly IServiceScopeFactory _scopeFactory;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var runWorkflowResult = await _workflowRunner.BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
+                await using var serviceScope = _scopeFactory.CreateAsyncScope();
+                var runWorkflowResult = await serviceScope
+                    .ServiceProvider
+                    .GetRequiredService<IBuildsAndStartsWorkflow>()
+                    .BuildAndStartWorkflowAsync<PersistableWorkflow>(cancellationToken: cancellationToken);
                 var instance = runWorkflowResult.WorkflowInstance!;
-                var retrievedInstance = await _instanceStore.FindByIdAsync(instance.Id, cancellationToken);
+                var retrievedInstance = await serviceScope
+                    .ServiceProvider
+                    .GetRequiredService<IWorkflowInstanceStore>()
+                    .FindByIdAsync(instance.Id, cancellationToken);
 
                 Assert.NotNull(retrievedInstance);
             }
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            public HostedWorkflowRunner(IBuildsAndStartsWorkflow workflowRunner, IWorkflowInstanceStore instanceStore)
+            public HostedWorkflowRunner(IServiceScopeFactory scopeFactory)
             {
-                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
-                _instanceStore = instanceStore ?? throw new System.ArgumentNullException(nameof(instanceStore));
+                _scopeFactory = scopeFactory ?? throw new System.ArgumentNullException(nameof(scopeFactory));
             }
         }
     }

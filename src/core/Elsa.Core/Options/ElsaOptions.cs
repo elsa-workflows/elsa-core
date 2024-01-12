@@ -94,7 +94,7 @@ namespace Elsa.Options
 
             context.Configurer
                 .Subscriptions(s => s.StoreInMemory(store))
-                .Transport(t => t.UseInMemoryTransport(transport, queueName));
+                .Transport(t => t.UseInMemoryTransport(transport, queueName, registerSubscriptionStorage: false));
         }
     }
 }
