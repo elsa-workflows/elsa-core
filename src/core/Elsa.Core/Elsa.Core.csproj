@@ -37,10 +37,10 @@
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
         <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="4.0.0" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="8.4.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="10.0.0" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
-        <PackageReference Include="System.Threading.Channels" Version="6.0.0" />
+        <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
     </ItemGroup>
 
     <ItemGroup>
