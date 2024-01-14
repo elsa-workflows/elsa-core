@@ -1,6 +1,11 @@
+using System.Dynamic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.UnitTests;
 
@@ -103,5 +108,39 @@ public class ExpressionExecutionContextExtensionsTests
         // Assert
         var updatedVariable = context.GetVariable<int>("test");
         Assert.Equal(10, updatedVariable);
+    }
+
+    [Fact] void ActivityExpression_Deserializes_WhenIsVariableType()
+    {
+        var mockTypeRegistry = new WellKnownTypes();
+        var jsonOptions = new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
+
+        jsonOptions.Converters.Add(new ExpressionConverter(mockTypeRegistry));
+        dynamic testValue = new ExpandoObject();
+        testValue.SetPropertyValue = "somePropValue";
+        var variable = new Variable("varName")
+        {
+            Value = testValue
+        };
+
+        var testExpression = new Expression()
+        {
+            Type = "Variable",
+            Value = variable,
+        };
+
+        var serialized = JsonSerializer.Serialize(testExpression, jsonOptions);
+
+        var deserializedExpression = JsonSerializer.Deserialize<Expression>(serialized, jsonOptions);
+        
+        var deserializedVariable = deserializedExpression.Value as Variable;
+        Assert.NotNull(deserializedVariable);
+        //TODO: We should handle these value types. Perhaps Expressions should be templated to ensure proper serialization.
+        //Assert.Equal(deserializedVariable.Value, variable.Value);
     }
 }

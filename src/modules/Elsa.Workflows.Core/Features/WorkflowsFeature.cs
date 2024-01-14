@@ -1,6 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Expressions.Features;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -9,6 +10,7 @@ using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -21,7 +23,6 @@ using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Microsoft.Extensions.DependencyInjection;
-
 namespace Elsa.Workflows.Features;
 
 /// <summary>
@@ -176,6 +177,12 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IApiSerializer, ApiSerializer>()
             .AddScoped<ISafeSerializer, SafeSerializer>()
 
+            //Deserialize specialized Expression types
+            .Configure<ExpressionOptions>(options =>
+            {
+                options.AddTypeAlias<Variable>("Variable");
+            })
+
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
             
@@ -183,6 +190,8 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
+
+            
 
             // Logging
             .AddLogging();

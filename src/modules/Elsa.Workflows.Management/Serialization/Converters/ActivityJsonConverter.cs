@@ -7,6 +7,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 
@@ -56,8 +57,10 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         }
 
         var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
-        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.AddUniqueType(new InputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.AddUniqueType(new OutputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.AddUniqueType(new ExpressionConverterFactory(_serviceProvider));
+
 
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)

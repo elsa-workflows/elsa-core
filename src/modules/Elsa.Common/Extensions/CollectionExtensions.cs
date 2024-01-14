@@ -1,5 +1,20 @@
 // ReSharper disable once CheckNamespace
+using System.Diagnostics.CodeAnalysis;
+
 namespace Elsa.Extensions;
+
+class TypeComparer<T> : IEqualityComparer<T>
+{
+    public bool Equals(T x, T y)
+    {
+        return (x?.GetType() == y?.GetType());
+    }
+
+    public int GetHashCode([DisallowNull] T obj)
+    {
+        return obj.GetType().GetHashCode();
+    }
+}
 
 /// <summary>
 /// Provides extension methods for collections.
@@ -35,5 +50,22 @@ public static class CollectionExtensions
     {
         var itemsToRemove = collection.Where(predicate).ToList();
         foreach (var item in itemsToRemove) collection.Remove(item);
+    }
+
+    /// <summary>
+    /// Add a derived type to the collection if it does not already exist.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="collection">The collection.</param>
+    /// <param name="type">The unique type</param>
+    /// <returns></returns>
+    public static bool AddUniqueType<T>(this ICollection<T> collection, T type)
+    {
+        if (!collection.Contains(type, new TypeComparer<T>()))
+        {
+            collection.Add(type);
+            return true;
+        }
+        return false;
     }
 }
