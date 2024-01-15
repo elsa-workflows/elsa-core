@@ -28,7 +28,7 @@ const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useMassTransitAzureServiceBus = false;
-const bool useMassTransitRabbitMq = true;
+const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
