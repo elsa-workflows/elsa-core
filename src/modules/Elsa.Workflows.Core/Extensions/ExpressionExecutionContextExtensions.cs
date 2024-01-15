@@ -292,7 +292,13 @@ public static class ExpressionExecutionContextExtensions
             select v;
 
         var variable = q.FirstOrDefault();
-        variable?.Set(context, value);
+        
+        if(variable != null)
+            variable.Set(context, value);
+        
+        // Create the variable if it doesn't exist.
+        if (variable == null)
+            CreateVariable(context, variableName, value);
     }
 
     /// <summary>
