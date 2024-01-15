@@ -296,7 +296,6 @@ public static class ExpressionExecutionContextExtensions
         if(variable != null)
             variable.Set(context, value);
         
-        // Create the variable if it doesn't exist.
         if (variable == null)
             CreateVariable(context, variableName, value);
     }
