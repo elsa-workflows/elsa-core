@@ -166,13 +166,17 @@ namespace Elsa.Services.Models
         {
             var scopes = WorkflowInstance.Scopes.ToList();
 
-            var mergedVariables = scopes.Select(x => x.Variables).Aggregate(WorkflowInstance.Variables, (current, next) =>
-            {
-                var combined = current.Data.MergedWith(next.Data);
-                return new Variables(combined);
-            });
+            var mergedVariables = scopes.Select(x => x.Variables)
+                                        .Aggregate(WorkflowInstance.Variables, (current, next) =>
+                                        {
+                                            var combined = current.Data.MergedWith(next.Data);
+                                            return new Variables(combined);
+                                        });
 
-            return mergedVariables;
+            var finalCombined = TransientState?.Data != null
+                                ? mergedVariables.Data.MergedWith(TransientState.Data)
+                                : mergedVariables.Data;
+            return new Variables(finalCombined);
         }
 
         /// <summary>
