@@ -29,8 +29,25 @@ builder.Services.AddElsa(elsa =>
     // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
     
-    // Use JavaScript and Liquid.
-    elsa.UseJavaScript();
+    // Use JavaScript.
+    elsa.UseJavaScript(javaScript =>
+    {
+        javaScript.AllowClrAccess = true;
+        javaScript.ConfigureEngine(options =>
+        {
+            options.RegisterType<OrderCompleted>();
+            options.RegisterType<OrderCreated>();
+        });
+    });
+    
+    // Use C#.
+    elsa.UseCSharp(csharp =>
+    {
+        csharp.Assemblies.Add(typeof(OrderCreated).Assembly);
+        csharp.Namespaces.Add(typeof(OrderCreated).Namespace!);
+    });
+    
+    // Use Liquid.
     elsa.UseLiquid();
     
     // Configure identity so that we can create a default admin user.
