@@ -298,11 +298,16 @@ public class Flowchart : Container
             {
                 ExistingActivityExecutionContext = activityExecutionContext,
                 CompletionCallback = OnChildCompletedAsync,
+                Input = signal.Input
             });
         }
         else
         {
-            await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
+            await flowchartContext.ScheduleActivityAsync(activity, new ScheduleWorkOptions
+            {
+                CompletionCallback = OnChildCompletedAsync,
+                Input = signal.Input
+            });
         }
     }
 }

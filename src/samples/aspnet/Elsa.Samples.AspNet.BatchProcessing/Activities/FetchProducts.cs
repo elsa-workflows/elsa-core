@@ -5,6 +5,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Signals;
 
 namespace Elsa.Samples.AspNet.BatchProcessing.Activities;
 
@@ -33,24 +34,17 @@ public class FetchProducts : CodeActivity<ICollection<Product>>
         var currentBatch = context.ActivityInput.TryGetValue(CurrentBathKey, out var currentBatchValue) ? (int)currentBatchValue : 0;
         var orders = GenerateProducts(count).Skip(currentBatch * batchSize).Take(batchSize).ToList();
 
+        Result.Set(context, orders);
+        await context.CompleteActivityAsync();
+        
         if (orders.Any())
         {
             currentBatch++;
             context.SetProperty(CurrentBathKey, currentBatch);
-            Result.Set(context, orders);
             
             // Schedule the next batch.
-            await context.ScheduleActivityAsync(this, new ScheduleWorkOptions
-            {
-                Input = new Dictionary<string, object>
-                {
-                    [CurrentBathKey] = currentBatch
-                }
-            });
+            await context.SendSignalAsync(new ScheduleChildActivity(this, new Dictionary<string, object> { [CurrentBathKey] = currentBatch }));
         }
-        
-        // Complete the activity.
-        await context.CompleteActivityAsync();
     }
 
     private IEnumerable<Product> GenerateProducts(int count)
