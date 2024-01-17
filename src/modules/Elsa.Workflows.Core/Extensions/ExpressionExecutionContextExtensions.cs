@@ -476,6 +476,10 @@ public static class ExpressionExecutionContextExtensions
         if (obj is not IEnumerable enumerable || obj is string || obj is IDictionary)
             return obj;
 
+        // If this is an async enumerable, return as-is.
+        if (obj.GetType().Name == "AsyncIListEnumerableAdapter`1")
+            return obj;
+        
         // Use LINQ to convert the IEnumerable to an array.
         var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
 

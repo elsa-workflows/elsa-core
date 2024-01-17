@@ -116,10 +116,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         if (context.IsInsideCompositeActivity())
             return;
 
-        var inputs = context.GetWorkflowInputs();
+        var inputs = context.GetWorkflowInputs().ToDictionary(x => x.Name);
+        var inputDefinitions = context.GetWorkflowExecutionContext().Workflow.Inputs;
 
-        foreach (var input in inputs)
-            engine.SetValue($"get{input.Name}", (Func<object?>)(() => input.Value));
+        foreach (var inputDefinition in inputDefinitions)
+        {
+            var input = inputs.GetValueOrDefault(inputDefinition.Name);
+            engine.SetValue($"get{inputDefinition.Name}", (Func<object?>)(() => input?.Value));
+        }
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)

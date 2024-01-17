@@ -308,6 +308,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bund
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.BatchProcessing", "src\samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -750,6 +752,10 @@ Global
 		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -884,6 +890,7 @@ Global
 		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{D5C149EE-276C-4C59-98F9-37F0EA2A7866} = {F06B9573-DF68-4606-866C-A7546A10A05A}
 		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

@@ -47,7 +47,13 @@ public class ForEach<T> : Activity
     /// The set of values to iterate.
     /// </summary>
     [Input(Description = "The set of values to iterate.")]
-    public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
+    public Input<ICollection<T>>? Items { get; set; }
+    
+    /// <summary>
+    /// The source of values to iterate.
+    /// </summary>
+    [Input(Description = "The set of values to iterate.")]
+    public Input<IAsyncEnumerable<T>>? ItemSource { get; set; }
 
     /// <summary>
     /// The activity to execute for each iteration.
@@ -79,15 +85,16 @@ public class ForEach<T> : Activity
         }
         
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
-        var items = context.Get(Items)!.ToList();
+        var currentValueTuple = await GetCurrentValueAsync(context, currentIndex);
 
-        if (currentIndex >= items.Count)
+        if (!currentValueTuple.Exists)
         {
             await context.CompleteActivityAsync();
             return;
         }
-
-        var currentValue = items[currentIndex];
+        
+        var currentValue = currentValueTuple.Value;
+        
         context.Set(CurrentValue, currentValue);
 
         if (Body != null)
@@ -104,6 +111,36 @@ public class ForEach<T> : Activity
 
         // Increment index.
         context.UpdateProperty<int>(CurrentIndexProperty, x => x + 1);
+    }
+
+    private async Task<(T Value, bool Exists)> GetCurrentValueAsync(ActivityExecutionContext context, int currentIndex)
+    {
+        var items = context.Get(Items)?.ToList();
+
+        if (items != null)
+        {
+            return (currentIndex >= items.Count ? (default, false) : (items[currentIndex], true))!;
+        }
+        
+        var itemSource = context.Get(ItemSource);
+        
+        if(itemSource != null)
+        {
+            await using var enumerator = itemSource.GetAsyncEnumerator();
+            
+            // Move the cursor to the current index.
+            for (var i = 0; i < currentIndex; i++)
+                await enumerator.MoveNextAsync();
+            
+            var hasNext = await enumerator.MoveNextAsync();
+            
+            if(!hasNext)
+                return (default, false)!;
+
+            return (enumerator.Current, true);
+        }
+        
+        return (default, false)!;
     }
 
     private async ValueTask OnChildCompleted(ActivityCompletedContext context)
