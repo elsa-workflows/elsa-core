@@ -127,7 +127,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();
-            activityExecutionContext.Status = activityExecutionContextState.Status;
+            activityExecutionContext.TransitionTo(activityExecutionContextState.Status);
             activityExecutionContext.StartedAt = activityExecutionContextState.StartedAt;
             activityExecutionContext.CompletedAt = activityExecutionContextState.CompletedAt;
             activityExecutionContext.Tag = activityExecutionContextState.Tag;

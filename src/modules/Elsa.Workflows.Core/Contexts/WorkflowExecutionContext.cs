@@ -28,7 +28,7 @@ public record ActivityCompletionCallbackEntry(ActivityExecutionContext Owner, Ac
 /// Provides context to the currently executing workflow.
 /// </summary>
 [PublicAPI]
-public class WorkflowExecutionContext : IExecutionContext
+public partial class WorkflowExecutionContext : IExecutionContext
 {
     private static readonly object ActivityOutputRegistryKey = new();
     private static readonly object LastActivityResultKey = new();
@@ -70,6 +70,13 @@ public class WorkflowExecutionContext : IExecutionContext
         CreatedAt = createdAt;
         CancellationTokens = cancellationTokens;
         Incidents = incidents.ToList();
+
+        var appSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.ApplicationCancellationToken);
+        _cancellationTokenSources.Add(appSource);
+        var sysSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.SystemCancellationToken);
+        _cancellationTokenSources.Add(sysSource);
+        _cancellationRegistrations.Add(appSource.Token.Register(CancelWorkflow));
+        _cancellationRegistrations.Add(sysSource.Token.Register(CancelWorkflow));
     }
 
     /// <summary>
@@ -521,6 +528,14 @@ public class WorkflowExecutionContext : IExecutionContext
             throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
 
         SubStatus = subStatus;
+
+        if (Status == WorkflowStatus.Finished)
+        {
+            foreach (var registration in _cancellationRegistrations)
+            {
+                registration.Dispose();
+            }
+        }
     }
 
     /// <summary>

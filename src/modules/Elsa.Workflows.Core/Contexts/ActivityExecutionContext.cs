@@ -4,6 +4,7 @@ using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -15,7 +16,7 @@ namespace Elsa.Workflows;
 /// <summary>
 /// Represents the context of an activity execution.
 /// </summary>
-public class ActivityExecutionContext : IExecutionContext
+public partial class ActivityExecutionContext : IExecutionContext
 {
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = new();
@@ -47,6 +48,10 @@ public class ActivityExecutionContext : IExecutionContext
         Tag = tag;
         CancellationToken = cancellationToken;
         Id = id;
+        _publisher = GetRequiredService<INotificationSender>();
+
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationRegistration = _cancellationTokenSource.Token.Register(CancelActivity);
     }
 
     /// <summary>
@@ -123,8 +128,21 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// The current status of the activity.
     /// </summary>
-    public ActivityStatus Status { get; set; }
+    public ActivityStatus Status { get; private set; }
 
+    /// <summary>
+    /// Sets the current status of the activity.
+    /// </summary>
+    public void TransitionTo(ActivityStatus status)
+    {
+        Status = status;
+        
+        if (Status is ActivityStatus.Completed 
+            or ActivityStatus.Canceled
+            or ActivityStatus.Faulted)
+            _cancellationRegistration.Dispose();
+    }
+    
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution, if any.
     /// </summary>
