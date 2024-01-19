@@ -61,7 +61,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
 
         foreach (var context in contexts)
         {
-            var variables = GetLocalVariables(context);
+            var variables = GetLocalVariables(context).ToList();
             var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
             foreach (var variable in variables)
@@ -89,7 +89,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     public async Task DeleteVariablesAsync(ActivityExecutionContext context)
     {
         var register = context.ExpressionExecutionContext.Memory;
-        var variableList = GetLocalVariables(context);
+        var variableList = GetLocalVariables(context).ToList();
         var cancellationToken = context.CancellationToken;
         var storageDriverContext = new StorageDriverContext(context, cancellationToken);
 
