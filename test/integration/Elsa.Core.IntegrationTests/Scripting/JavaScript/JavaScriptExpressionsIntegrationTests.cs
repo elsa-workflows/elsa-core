@@ -139,16 +139,21 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
             }
         }
         
-        private class HostedWorkflowRunner : IHostedService
-        {
-            private readonly IStartsWorkflow _workflowRunner;
+        private class HostedWorkflowRunner : IHostedService {
+            private readonly IServiceScopeFactory _scopeFactory;
             private readonly IContentSerializer _serializer;
-            private readonly IWorkflowBlueprintMaterializer _materializer;
 
             public async Task StartAsync(CancellationToken cancellationToken)
             {
-                var workflow = await GetWorkflowBlueprintAsync(GetWorkflowDefinition());
-                var runWorkflowResult = await _workflowRunner.StartWorkflowAsync(workflow, cancellationToken: cancellationToken);
+                await using var serviceScope = _scopeFactory.CreateAsyncScope();
+                var workflow = await GetWorkflowBlueprintAsync(
+                    serviceScope.ServiceProvider.GetRequiredService<IWorkflowBlueprintMaterializer>(),
+                    GetWorkflowDefinition()
+                );
+                var runWorkflowResult = await serviceScope
+                    .ServiceProvider
+                    .GetRequiredService<IStartsWorkflow>()
+                    .StartWorkflowAsync(workflow, cancellationToken: cancellationToken);
                 var workflowInstance = runWorkflowResult.WorkflowInstance!;
 
                 Assert.NotNull(workflowInstance);
@@ -157,11 +162,11 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
 
             public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-            private async Task<IWorkflowBlueprint> GetWorkflowBlueprintAsync(WorkflowDefinition workflowDefinition)
+            private async Task<IWorkflowBlueprint> GetWorkflowBlueprintAsync(IWorkflowBlueprintMaterializer materializer, WorkflowDefinition workflowDefinition)
             {
                 var json = _serializer.Serialize(workflowDefinition);
                 var deserializedWorkflowDefinition = _serializer.Deserialize<WorkflowDefinition>(json);
-                return await _materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
+                return await materializer.CreateWorkflowBlueprintAsync(deserializedWorkflowDefinition);
             }
 
             private static WorkflowDefinition GetWorkflowDefinition()
@@ -204,11 +209,10 @@ namespace Elsa.Core.IntegrationTests.Scripting.JavaScript
                 };
             }
 
-            public HostedWorkflowRunner(IStartsWorkflow workflowRunner, IContentSerializer serializer, IWorkflowBlueprintMaterializer materializer)
+            public HostedWorkflowRunner(IServiceScopeFactory scopeFactory, IContentSerializer serializer)
             {
-                _workflowRunner = workflowRunner ?? throw new System.ArgumentNullException(nameof(workflowRunner));
+                _scopeFactory = scopeFactory ?? throw new System.ArgumentNullException(nameof(scopeFactory));
                 _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-                _materializer = materializer ?? throw new System.ArgumentNullException(nameof(materializer));
             }
         }
     }
