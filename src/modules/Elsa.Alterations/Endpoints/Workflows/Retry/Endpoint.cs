@@ -56,7 +56,7 @@ public class Retry : ElsaEndpoint<Request, Response>
             allResults.AddRange(results);
             
             // Schedule updated workflow.
-            await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(workflowInstance.Id), cancellationToken);
+            await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(workflowInstance.Id), cancellationToken: cancellationToken);
         }
         
         // Write response.

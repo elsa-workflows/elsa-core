@@ -98,7 +98,7 @@ public class DispatchWorkflow : Activity<object>
         };
 
         // Dispatch the child workflow.
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        await workflowDispatcher.DispatchAsync(request, null, context.CancellationToken);
 
         return instanceId;
     }

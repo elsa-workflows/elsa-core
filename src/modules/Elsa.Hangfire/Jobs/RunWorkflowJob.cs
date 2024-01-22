@@ -24,5 +24,5 @@ public class RunWorkflowJob
     /// <param name="name">The name of the job.</param>
     /// <param name="request">The workflow request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task ExecuteAsync(string name, DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken) => await _workflowDispatcher.DispatchAsync(request, cancellationToken);
+    public async Task ExecuteAsync(string name, DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken) => await _workflowDispatcher.DispatchAsync(request, cancellationToken: cancellationToken);
 }

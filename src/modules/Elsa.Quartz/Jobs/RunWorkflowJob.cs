@@ -44,6 +44,6 @@ public class RunWorkflowJob : IJob
             CorrelationId = (string?)map.Get(nameof(DispatchWorkflowDefinitionRequest.CorrelationId)),
             Input = map.GetDictionary(nameof(DispatchWorkflowDefinitionRequest.Input))
         };
-        await _workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        await _workflowDispatcher.DispatchAsync(request, cancellationToken: context.CancellationToken);
     }
 }

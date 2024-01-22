@@ -31,6 +31,6 @@ public class TaskReporter : ITaskReporter
         
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
         var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmarkPayload, Input: input);
-        await _workflowDispatcher.DispatchAsync(request, cancellationToken);
+        await _workflowDispatcher.DispatchAsync(request, cancellationToken: cancellationToken);
     }
 }

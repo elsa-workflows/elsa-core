@@ -2,8 +2,8 @@
 
     <Import Project="..\..\..\common.props"/>
     <Import Project="..\..\..\configureawait.props"/>
-    
     <Import Project="..\..\..\frameworks.props"/>
+    
     <PropertyGroup>
         <Description>
             Provides integration with MassTransit and comes with a MassTransit implementation of Elsa's IServiceBus abstraction.
@@ -15,9 +15,14 @@
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
     </ItemGroup>
 
-    <ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="MassTransit" Version="7.3.1"/>
+        <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1"/>
         <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
-        <PackageReference Include="MassTransit" Version="8.1.2"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="MassTransit" Version="8.1.3"/>
     </ItemGroup>
 
 </Project>

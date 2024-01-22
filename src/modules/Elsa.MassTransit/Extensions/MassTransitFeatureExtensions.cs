@@ -1,8 +1,12 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Implementations;
 using Elsa.MassTransit.Models;
+using Elsa.MassTransit.Services;
 using MassTransit;
+
+#if NET6_0 || NET7_0
+using MassTransit.Definition;
+#endif
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

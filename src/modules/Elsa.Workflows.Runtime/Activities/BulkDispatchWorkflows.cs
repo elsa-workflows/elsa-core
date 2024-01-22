@@ -202,7 +202,7 @@ public class BulkDispatchWorkflows : Activity
             InstanceId = instanceId
         };
 
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        await workflowDispatcher.DispatchAsync(request, cancellationToken: context.CancellationToken);
 
         return instanceId;
     }

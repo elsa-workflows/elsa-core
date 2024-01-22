@@ -5,9 +5,10 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
-using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Messages;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
+using Elsa.MassTransit.Services;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
@@ -49,20 +50,30 @@ public class MassTransitFeature : FeatureBase
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
 
-        var busConfigurator = BusConfigurator ??= configure =>
+        void Configurator(IBusRegistrationConfigurator configure)
         {
             configure.UsingInMemory((context, configurator) =>
             {
+                configurator.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-1", endpoint =>
+                {
+                    endpoint.ConfigureMessageTopology<DispatchWorkflowDefinition>();
+                });
+                configurator.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-2", endpoint =>
+                {
+                    endpoint.ConfigureMessageTopology<DispatchWorkflowDefinition>();
+                });
                 configurator.ConfigureEndpoints(context);
 
-                if (PrefetchCount != null)
-                    configurator.PrefetchCount = PrefetchCount.Value;
+                if (PrefetchCount != null) configurator.PrefetchCount = PrefetchCount.Value;
             });
-        };
+        }
+
+        var busConfigurator = BusConfigurator ??= Configurator;
         AddMassTransit(busConfigurator);
 
         // Add collected message types to options.
-        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        Services.Configure<MassTransitActivityOptions>(
+            options => options.MessageTypes = new HashSet<Type>(messageTypes));
 
         // Add collected message types as available variable types.
         Services.Configure<ManagementOptions>(options =>
@@ -79,7 +90,8 @@ public class MassTransitFeature : FeatureBase
         });
 
         // Configure message serializer.
-        SystemTextJsonMessageSerializer.Options.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
+        SystemTextJsonMessageSerializer.Options.Converters.Add(
+            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
     }
 
     /// <summary>
@@ -89,7 +101,8 @@ public class MassTransitFeature : FeatureBase
     {
         // For each message type, create a concrete WorkflowMessageConsumer<T>.
         var workflowMessageConsumerType = typeof(WorkflowMessageConsumer<>);
-        var workflowMessageConsumers = this.GetMessages().Select(x => new ConsumerTypeDefinition(workflowMessageConsumerType.MakeGenericType(x)));
+        var workflowMessageConsumers = this.GetMessages()
+            .Select(x => new ConsumerTypeDefinition(workflowMessageConsumerType.MakeGenericType(x)));
 
         // Concatenate the manually registered consumers with the workflow message consumers.
         var consumerTypeDefinitions = this.GetConsumers().Concat(workflowMessageConsumers).ToArray();
@@ -104,10 +117,16 @@ public class MassTransitFeature : FeatureBase
             busConfigurator(bus);
         });
 
+#if NET6_0 || NET7_0
+        Services.AddMassTransitHostedService(true);
+#endif
+
+#if NET8_0_OR_GREATER
         Services.AddOptions<MassTransitHostOptions>().Configure(options =>
         {
             // Wait until the bus is started before returning from IHostedService.StartAsync.
             options.WaitUntilStarted = true;
         });
+#endif
     }
 }

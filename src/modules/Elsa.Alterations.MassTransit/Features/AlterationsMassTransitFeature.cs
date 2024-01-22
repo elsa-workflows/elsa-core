@@ -10,6 +10,10 @@ using Elsa.MassTransit.Features;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
+#if NET6_0 || NET7_0
+using MassTransit.Definition;
+#endif
+
 namespace Elsa.Alterations.MassTransit.Features;
 
 /// <summary>

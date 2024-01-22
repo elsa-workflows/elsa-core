@@ -6,13 +6,13 @@ using Elsa.MassTransit.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using Humanizer;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.MassTransit.Implementations;
+namespace Elsa.MassTransit.Services;
 
 /// <summary>
 /// Provides activities to the system from the configured MassTransit message types.

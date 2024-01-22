@@ -27,6 +27,6 @@ public class DefaultAlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
     /// <inheritdoc />
     public async Task DispatchAsync(RunAlterationsResult result, CancellationToken cancellationToken = default)
     {
-        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(result.WorkflowInstanceId), cancellationToken);
+        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(result.WorkflowInstanceId), cancellationToken: cancellationToken);
     }
 }
