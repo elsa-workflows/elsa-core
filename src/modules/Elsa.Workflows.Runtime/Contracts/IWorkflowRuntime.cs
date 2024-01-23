@@ -61,6 +61,13 @@ public interface IWorkflowRuntime
     Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowOptions? options = default);
 
     /// <summary>
+    /// Cancels the execution of a workflow.
+    /// </summary>
+    /// <param name="workflowInstanceId">The ID of the workflow instance to cancel.</param>
+    /// <param name="cancellationToken"></param>
+    Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
     /// <param name="filter"></param>

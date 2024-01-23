@@ -22,7 +22,7 @@ internal class BulkDelete : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var count = await _workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(request!.DefinitionIds, cancellationToken);
+        var count = await _workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(request.DefinitionIds, cancellationToken);
         return new Response(count);
     }
 }
