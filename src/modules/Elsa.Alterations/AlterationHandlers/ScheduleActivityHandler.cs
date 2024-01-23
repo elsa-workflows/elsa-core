@@ -28,7 +28,7 @@ public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
         {
             // If the activity is in a faulted state, reset it to Running.
             if (existingActivityExecutionContext.Status == ActivityStatus.Faulted)
-                existingActivityExecutionContext.Status = ActivityStatus.Running;
+                existingActivityExecutionContext.TransitionTo(ActivityStatus.Running);
 
             // Schedule the activity execution context.
             var parentContext = existingActivityExecutionContext.ParentActivityExecutionContext;

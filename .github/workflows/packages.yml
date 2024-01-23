@@ -31,12 +31,8 @@ jobs:
           else
             echo "VERSION=3.1.0-preview.${{github.run_number}}" >> $GITHUB_ENV
           fi
-      - name: Build
-        run: dotnet build --configuration Release /p:Version=${VERSION}
-      - name: Test
-        run: dotnet test --configuration Release /p:Version=${VERSION} --no-build
-      - name: Pack
-        run: dotnet pack --configuration Release /p:Version=${VERSION} /p:PackageOutputPath=$(pwd)/packages
+      - name: Compile+Test+Pack
+        run: ./build.sh Compile+Test+Pack --version ${VERSION}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:

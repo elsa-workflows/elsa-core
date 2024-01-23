@@ -1,5 +1,4 @@
-using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Workflows.Runtime.Contracts;
 
@@ -11,5 +10,5 @@ public interface IBookmarksPersister
     /// <summary>
     /// Persists bookmarks and raises events.
     /// </summary>
-    Task PersistBookmarksAsync(WorkflowExecutionContext context, Diff<Bookmark> diff);
+    Task PersistBookmarksAsync(UpdateBookmarksRequest updateBookmarksRequest);
 }

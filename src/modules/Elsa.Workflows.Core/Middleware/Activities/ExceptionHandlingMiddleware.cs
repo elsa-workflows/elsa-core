@@ -50,7 +50,7 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
         {
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Exception = e;
-            context.Status = ActivityStatus.Faulted;
+            context.TransitionTo(ActivityStatus.Faulted);
 
             var activity = context.Activity;
             var exceptionState = ExceptionState.FromException(e);

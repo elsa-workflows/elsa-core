@@ -94,6 +94,7 @@ public class WorkflowRunner : IWorkflowRunner
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
@@ -103,6 +104,7 @@ public class WorkflowRunner : IWorkflowRunner
             properties,
             default,
             triggerActivityId,
+            statusUpdatedCallback,
             options?.CancellationTokens ?? cancellationToken);
 
         // Schedule the first activity.
@@ -122,6 +124,7 @@ public class WorkflowRunner : IWorkflowRunner
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
@@ -130,6 +133,7 @@ public class WorkflowRunner : IWorkflowRunner
             input, properties,
             default,
             triggerActivityId,
+            statusUpdatedCallback,
             options?.CancellationTokens ?? cancellationToken);
 
         var bookmarkId = options?.BookmarkId;

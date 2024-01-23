@@ -1,25 +1,30 @@
-using System.Text.Json.Serialization;
 using Elsa.Abstractions;
+using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
 
 public class BulkCancel : ElsaEndpoint<Request, Response>
 {
+    private readonly IWorkflowRuntime _workflowRuntime;
+
+    public BulkCancel(IWorkflowRuntime workflowRuntime)
+    {
+        _workflowRuntime = workflowRuntime;
+    }
+
     public override void Configure()
     {
         Post("/bulk-actions/cancel/workflow-instances/by-id");
         ConfigurePermissions("cancel:workflow-instances");
     }
-
+    
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        // TODO: Implement workflow cancellation.
-        var count = -1;
+        var tasks = request.Ids.Select(id => _workflowRuntime.CancelWorkflowAsync(id, cancellationToken)).ToList();
+        await Task.WhenAll(tasks);
+
+        var count = tasks.Count(t => t.IsCompletedSuccessfully);
 
         return new(count);
     }
-
-    public record BulkCancelWorkflowInstancesRequest(ICollection<string> Ids);
-
-    public record BulkCancelWorkflowInstancesResponse([property: JsonPropertyName("cancelled")] int CancelledCount);
 }
