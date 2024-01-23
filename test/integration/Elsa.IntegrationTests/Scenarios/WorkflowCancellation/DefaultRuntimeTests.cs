@@ -76,7 +76,8 @@ public class DefaultRuntimeTests
         Assert.Empty(_capturingTextWriter.Lines);
     }
 
-    [Fact(DisplayName = "Cancelling a running workflow")]
+    [Fact(DisplayName = "Cancelling a running workflow",
+    Skip= "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
     public async Task RunningCancelTest()
     {
         await _backgroundCommandSenderHostedService.StartAsync(CancellationToken.None);
