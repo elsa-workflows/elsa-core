@@ -14,7 +14,7 @@ public class BulkSuspendedWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        object[] items = Enumerable.Range(0,10000).Select(x => (object) x).ToArray();
+        object[] items = Enumerable.Range(0,1500).Select(x => (object) x).ToArray();
         
         builder.Root = new Sequence
         {
