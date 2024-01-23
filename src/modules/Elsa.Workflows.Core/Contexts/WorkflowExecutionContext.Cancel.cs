@@ -1,5 +1,3 @@
-using Elsa.Extensions;
-
 namespace Elsa.Workflows;
 
 /// <summary>
@@ -30,10 +28,6 @@ public partial class WorkflowExecutionContext
             return;
 
         AddExecutionLogEntry("Workflow cancelled");
-        // How to guarantee persistence of bookmarks??
-        // Whether manually or by aborting a process the runtime should make sure the bookmarks are persisted.
-        // This needs to be checked if this is the case for the activities as well.
-        // We need context to persist bookmarks, move persist logic here?
         
         TransitionTo(WorkflowSubStatus.Cancelled);
         

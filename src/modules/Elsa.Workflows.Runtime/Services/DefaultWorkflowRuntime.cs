@@ -107,7 +107,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
     {
-        //Should we add a cancellationtoken?
         var workflowExecutionContext = await _workflowExecutionContextStore.FindAsync(workflowInstanceId);
         
         if (workflowExecutionContext is null)
@@ -115,7 +114,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             // The execution context is not running on this instance.
             // It might not be running on any instance, so check the db and update the record.
             // Use lock to prevent race conditions and other instances from updating the workflow context
-            await using var cancelLock = await _distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel", cancellationToken: cancellationToken);
+            await using var cancelLock = await _distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel");
             if (cancelLock == null)
                 return;
             
@@ -137,16 +136,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
             workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
-
-            //Is this still necessary?
-            workflowExecutionContext = _workflowStateExtractor.Apply(workflowExecutionContext, workflowInstance.WorkflowState);
-
-            await CancelWorkflowExecutionContextAsync();
+            
+            if (!cancellationToken.IsCancellationRequested)
+                await CancelWorkflowExecutionContextAsync();
 
             return;
         }
         
-        await using var mainCancelLock = await _distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1), cancellationToken);
+        await using var mainCancelLock = await _distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1));
 
         await CancelWorkflowExecutionContextAsync();
         
@@ -163,8 +160,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 workflowExecutionContext.CorrelationId);
             await _bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
 
-            var instance = await _workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
-            await _workflowInstanceStore.SaveAsync(instance, cancellationToken);
+            var instance = await _workflowInstanceManager.SaveAsync(workflowExecutionContext);
+            await _workflowInstanceStore.SaveAsync(instance);
         }
     }
 
