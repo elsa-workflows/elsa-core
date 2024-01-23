@@ -35,6 +35,24 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
         return state;
     }
+
+    /// <inheritdoc />
+    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    {
+        workflowExecutionContext.Id = state.Id;
+        workflowExecutionContext.CorrelationId = state.CorrelationId;
+        workflowExecutionContext.SubStatus = state.SubStatus;
+        workflowExecutionContext.Bookmarks = state.Bookmarks;
+        workflowExecutionContext.Output = state.Output;
+        workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
+        workflowExecutionContext.CreatedAt = state.CreatedAt;
+        ApplyInput(state, workflowExecutionContext);
+        ApplyProperties(state, workflowExecutionContext);
+        ApplyActivityExecutionContexts(state, workflowExecutionContext);
+        ApplyCompletionCallbacks(state, workflowExecutionContext);
+        ApplyScheduledActivities(state, workflowExecutionContext);
+        return workflowExecutionContext;
+    }
     
     private void ApplyInput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
@@ -57,24 +75,6 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         }
 
         return filteredInput;
-    }
-
-    /// <inheritdoc />
-    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
-    {
-        workflowExecutionContext.Id = state.Id;
-        workflowExecutionContext.CorrelationId = state.CorrelationId;
-        workflowExecutionContext.SubStatus = state.SubStatus;
-        workflowExecutionContext.Bookmarks = state.Bookmarks;
-        workflowExecutionContext.Output = state.Output;
-        workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
-        workflowExecutionContext.CreatedAt = state.CreatedAt;
-        ApplyInput(state, workflowExecutionContext);
-        ApplyProperties(state, workflowExecutionContext);
-        ApplyActivityExecutionContexts(state, workflowExecutionContext);
-        ApplyCompletionCallbacks(state, workflowExecutionContext);
-        ApplyScheduledActivities(state, workflowExecutionContext);
-        return workflowExecutionContext;
     }
 
     private void ExtractProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
