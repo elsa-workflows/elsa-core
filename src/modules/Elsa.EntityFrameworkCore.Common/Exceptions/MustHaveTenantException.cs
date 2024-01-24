@@ -1,4 +1,5 @@
-﻿namespace Elsa.Tenants.Exceptions;
+﻿namespace Elsa.EntityFrameworkCore.Common.Exceptions;
+
 public class MustHaveTenantException : Exception
 {
     public MustHaveTenantException() : base()

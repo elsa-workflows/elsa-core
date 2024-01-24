@@ -2,6 +2,7 @@ using System.Reflection;
 using Elsa.Common.Accessors;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
+using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -90,7 +91,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
-
 
     /// <summary>
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
@@ -184,6 +184,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<ITenantAccessor, TenantAccessor>()
+            .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)

@@ -1,11 +1,11 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
-using Elsa.Tenants.Exceptions;
+using Elsa.EntityFrameworkCore.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Elsa.Tenants.Strategies;
+namespace Elsa.EntityFrameworkCore.Common.Strategies;
 
 public class MustHaveTenantIdBeforeSavingStrategy : IBeforeSavingDbContextStrategy
 {

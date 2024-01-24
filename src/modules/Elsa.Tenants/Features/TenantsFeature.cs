@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -6,7 +5,6 @@ using Elsa.Tenants.Handlers;
 using Elsa.Tenants.Middlewares;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Strategies;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,15 +80,6 @@ public class TenantsFeature : FeatureBase
 
         if (configure != null)
             TenantsOptions += configure;
-
-        return this;
-    }
-
-    public TenantsFeature UseEfcoreStrategies()
-    {
-        Services
-            .AddScoped<IDbContextStrategy, MustHaveTenantIdBeforeSavingStrategy>()
-        ;
 
         return this;
     }

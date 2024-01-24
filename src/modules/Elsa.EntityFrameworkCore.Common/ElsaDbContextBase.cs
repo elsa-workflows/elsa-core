@@ -1,13 +1,18 @@
-﻿using Elsa.Common.Entities;
+﻿using System.Linq.Expressions;
+using Elsa.Common.Contracts;
+using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
+
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
@@ -17,9 +22,12 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// The default schema used by Elsa.
     /// </summary>
     public static string ElsaSchema { get; set; } = "Elsa";
+
     private string _schema;
+
     /// <inheritdoc/>
     public string Schema => _schema;
+
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
@@ -35,8 +43,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// </summary>
     protected readonly IServiceProvider _serviceProvider;
 
-    private readonly Action<ElsaDbContextBase, ModelBuilder, IServiceProvider>? _additionnalEntityConfigurations;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
@@ -48,9 +54,9 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         // ReSharper disable once VirtualMemberCallInConstructor
         _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
-        _additionnalEntityConfigurations = elsaDbContextOptions?.AdditionnalEntityConfigurations;
 
-        elsaDbContextOptions?.AdditionnalDbContextConstructorAction?.Invoke(this, options, _serviceProvider);
+        ITenantAccessor? tenantAccessor = _serviceProvider.GetService<ITenantAccessor>();
+        TenantId = tenantAccessor?.GetCurrentTenantId();
     }
 
     /// <summary>
@@ -79,8 +85,32 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         if (Database.IsSqlite()) SetupForSqlite(modelBuilder);
         if (Database.IsOracle()) SetupForOracle(modelBuilder);
 
+        //Add global filter on DbContext to split data between tenants
+        IEnumerable<IDbContextStrategy>? dbContextStrategies = _serviceProvider.GetServices<IDbContextStrategy>();
 
-        _additionnalEntityConfigurations?.Invoke(this, modelBuilder, _serviceProvider);
+        foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (dbContextStrategies != null && dbContextStrategies.Any())
+            {
+                IEnumerable<IModelCreatingDbContextStrategy> modelCreatingDbContextStrategies = dbContextStrategies!
+                    .OfType<IModelCreatingDbContextStrategy>()
+                    .Where(strategy => strategy.CanExecute(modelBuilder, entityType));
+
+                foreach (IModelCreatingDbContextStrategy modelCreatingDbContextStrategy in modelCreatingDbContextStrategies)
+                    modelCreatingDbContextStrategy.Execute(modelBuilder, entityType);
+            }
+
+            if (entityType.ClrType.IsAssignableTo(typeof(Entity)))
+            {
+                ParameterExpression parameter = Expression.Parameter(entityType.ClrType);
+
+                Expression<Func<Entity, bool>> filterExpr = entity => TenantId == entity.TenantId;
+                Expression body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
+                LambdaExpression lambdaExpression = Expression.Lambda(body, parameter);
+
+                entityType.SetQueryFilter(lambdaExpression);
+            }
+        }
     }
 
     /// <summary>

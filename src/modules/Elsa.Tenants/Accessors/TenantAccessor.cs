@@ -4,23 +4,22 @@ namespace Elsa.Tenants.Accessors;
 
 public class TenantAccessor : ITenantAccessor
 {
-    private readonly AsyncLocal<string?> _currentBackgroundWorklowTenantId;
+    private readonly AsyncLocal<string?> _currentTenantId;
 
     public TenantAccessor()
     {
-        _currentBackgroundWorklowTenantId = new AsyncLocal<string?>();
+        _currentTenantId = new AsyncLocal<string?>();
     }
 
     /// <inheritdoc/>
     public string? GetCurrentTenantId()
     {
-        return _currentBackgroundWorklowTenantId.Value;
+        return _currentTenantId.Value;
     }
-
 
     /// <inheritdoc/>
     public void SetCurrentTenantId(string? tenantId)
     {
-        _currentBackgroundWorklowTenantId.Value = tenantId;
+        _currentTenantId.Value = tenantId;
     }
 }

@@ -1,10 +1,11 @@
 using Elsa;
+using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Tenants.Extensions;
-using Elsa.Tenants.Helpers;
 using FastEndpoints.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -17,8 +18,8 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 builder.Services.AddControllers();
 builder.Services.AddElsa(elsa =>
 {
-    var dbContextOptions = EfCoreDbContextBuilder.BuildDbContextTenantOption();
-    string postgresConnectionString = configuration.GetConnectionString("Postgres")!;
+    var dbContextOptions = new ElsaDbContextOptions();
+    string sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
     string schema = configuration.GetConnectionString("Schema")!;
 
     if (!string.IsNullOrEmpty(schema))
@@ -27,8 +28,8 @@ builder.Services.AddElsa(elsa =>
         dbContextOptions.MigrationsAssemblyName = typeof(Program).Assembly.GetName().Name;
     }
 
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
-    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
+    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
 
     elsa.UseSasTokens()
         .UseIdentity(identity =>
@@ -41,9 +42,8 @@ builder.Services.AddElsa(elsa =>
         })
         .UseDefaultAuthentication();
 
-    elsa.UseTenants(configuration => configuration
-        .UseConfigurationBasedTenantProvider(options => identitySection.Bind(options))
-        .UseEfcoreStrategies());
+    elsa.UseTenants(configuration => configuration.UseConfigurationBasedTenantProvider(options => identitySection.Bind(options)))
+        .UseTenantStrategies();
 
     elsa
         .UseHttp()
@@ -76,7 +76,7 @@ if (!app.Environment.IsProduction())
     EndpointSecurityOptions.SecurityIsEnabled = false;
 
     app.UseOpenApi();
-    app.UseSwaggerUi3();
+    app.UseSwaggerUi();
     app.UseReDoc();
 }
 

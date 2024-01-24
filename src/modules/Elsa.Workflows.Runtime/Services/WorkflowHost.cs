@@ -1,5 +1,4 @@
 using Elsa.Common.Contracts;
-using Elsa.Common.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
@@ -19,7 +18,7 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 public class WorkflowHost : IWorkflowHost
 {
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly ITenantServiceScopeFactory _tenantServiceScopeFactory;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<WorkflowHost> _logger;
     private readonly ITenantAccessor _tenantAccessor;
@@ -28,7 +27,7 @@ public class WorkflowHost : IWorkflowHost
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
     /// </summary>
     public WorkflowHost(
-        IServiceScopeFactory serviceScopeFactory,
+        ITenantServiceScopeFactory tenantServiceScopeFactory,
         Workflow workflow,
         WorkflowState workflowState,
         IIdentityGenerator identityGenerator,
@@ -37,7 +36,7 @@ public class WorkflowHost : IWorkflowHost
     {
         Workflow = workflow;
         WorkflowState = workflowState;
-        _serviceScopeFactory = serviceScopeFactory;
+        _tenantServiceScopeFactory = tenantServiceScopeFactory;
         _identityGenerator = identityGenerator;
         _logger = logger;
         _tenantAccessor = tenantAccessor;
@@ -57,7 +56,7 @@ public class WorkflowHost : IWorkflowHost
         if (strategyType == null)
             return true;
 
-        using var scope = _serviceScopeFactory.CreateScopeWithTenant(_tenantAccessor);
+        using var scope = _tenantServiceScopeFactory.CreateScopeWithTenant();
         var instantiationStrategies = scope.ServiceProvider.GetServices<IWorkflowActivationStrategy>();
         var strategy = instantiationStrategies.FirstOrDefault(x => x.GetType() == strategyType);
 
@@ -88,7 +87,7 @@ public class WorkflowHost : IWorkflowHost
             CancellationTokens = options?.CancellationTokens ?? cancellationToken
         };
 
-        using var scope = _serviceScopeFactory.CreateScopeWithTenant(_tenantAccessor);
+        using var scope = _tenantServiceScopeFactory.CreateScopeWithTenant();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
 
@@ -130,7 +129,7 @@ public class WorkflowHost : IWorkflowHost
             CancellationTokens = options?.CancellationTokens ?? cancellationToken
         };
 
-        using var scope = _serviceScopeFactory.CreateScopeWithTenant(_tenantAccessor);
+        using var scope = _tenantServiceScopeFactory.CreateScopeWithTenant();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 

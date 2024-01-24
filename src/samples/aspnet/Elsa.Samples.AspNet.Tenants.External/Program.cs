@@ -1,12 +1,12 @@
 using System.Security.Claims;
 using Elsa;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Tenants.Extensions;
-using Elsa.Tenants.Helpers;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NSwag;
@@ -22,8 +22,8 @@ var identitySection = configuration.GetSection("Identity");
 builder.Services.AddControllers();
 builder.Services.AddElsa(elsa =>
 {
-    ElsaDbContextOptions dbContextOptions = EfCoreDbContextBuilder.BuildDbContextTenantOption();
-    string postgresConnectionString = configuration.GetConnectionString("Postgres")!;
+    var dbContextOptions = new ElsaDbContextOptions();
+    string sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
     string schema = configuration.GetConnectionString("Schema")!;
 
     if (!string.IsNullOrEmpty(schema))
@@ -32,14 +32,13 @@ builder.Services.AddElsa(elsa =>
         dbContextOptions.MigrationsAssemblyName = typeof(Program).Assembly.GetName().Name;
     }
 
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
-    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(postgresConnectionString, dbContextOptions)));
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
+    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
 
     elsa.UseIdentity(options => identitySection.Bind(options));
 
-    elsa.UseTenants(configuration => configuration
-            .UseExternalTenantProvider(options => identitySection.Bind(options))
-            .UseEfcoreStrategies());
+    elsa.UseTenants(configuration => configuration.UseExternalTenantProvider(options => identitySection.Bind(options)))
+        .UseTenantStrategies();
 
     elsa
         .UseHttp(options =>
@@ -126,7 +125,7 @@ app.UseWorkflowsSignalRHubs();
 if (!app.Environment.IsProduction())
 {
     app.UseOpenApi(options => options.PostProcess = (document, _) => document.Servers.Clear());
-    app.UseSwaggerUi3(options =>
+    app.UseSwaggerUi(options =>
     {
         options.OAuth2Client = new OAuth2ClientSettings
         {

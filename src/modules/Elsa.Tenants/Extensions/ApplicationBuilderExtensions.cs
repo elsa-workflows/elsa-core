@@ -12,6 +12,7 @@ public static class ApplicationBuilderExtensions
     /// Installs the <see cref="HttpTenantMiddleware"/> component.
     /// </summary>
     public static IApplicationBuilder UseHttpTenantMiddleware(this IApplicationBuilder app) => app.UseMiddleware<HttpTenantMiddleware>();
+
     /// <summary>
     /// Installs the <see cref="HttpExternalTenantMiddleware"/> component.
     /// </summary>

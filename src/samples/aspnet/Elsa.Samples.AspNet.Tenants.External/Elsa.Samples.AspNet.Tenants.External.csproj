@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e6c3b68e-ae41-444f-9474-db5ee65b726f</UserSecretsId>
@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\bundles\Elsa\Elsa.csproj" />
-    <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj" />
+    <ProjectReference Include="..\..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.Http\Elsa.Http.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.SasTokens\Elsa.SasTokens.csproj" />
     <ProjectReference Include="..\..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />

@@ -23,14 +23,4 @@ public class ElsaDbContextOptions
     /// The assembly name containing the migrations.
     /// </summary>
     public string? MigrationsAssemblyName { get; set; }
-
-    /// <summary>
-    /// Gets or sets a delegate that can be used to add additionnal constructor action to Elsa's DbContext.
-    /// </summary>
-    public Action<ElsaDbContextBase, DbContextOptions, IServiceProvider>? AdditionnalDbContextConstructorAction { get; set; }
-
-    /// <summary>
-    /// Gets or sets a delegate that can be used to add additionnal entity configuration to Elsa's DbContext.
-    /// </summary>
-    public Action<ElsaDbContextBase, ModelBuilder, IServiceProvider>? AdditionnalEntityConfigurations { get; set; }
 }
