@@ -35,8 +35,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.1"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.1"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.4"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.4"/>
     </ItemGroup>
 
 </Project>
