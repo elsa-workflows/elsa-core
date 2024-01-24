@@ -36,6 +36,31 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         return state;
     }
 
+    /// <inheritdoc />
+    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    {
+        workflowExecutionContext.Id = state.Id;
+        workflowExecutionContext.CorrelationId = state.CorrelationId;
+        workflowExecutionContext.SubStatus = state.SubStatus;
+        workflowExecutionContext.Bookmarks = state.Bookmarks;
+        workflowExecutionContext.Output = state.Output;
+        workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
+        workflowExecutionContext.CreatedAt = state.CreatedAt;
+        ApplyInput(state, workflowExecutionContext);
+        ApplyProperties(state, workflowExecutionContext);
+        ApplyActivityExecutionContexts(state, workflowExecutionContext);
+        ApplyCompletionCallbacks(state, workflowExecutionContext);
+        ApplyScheduledActivities(state, workflowExecutionContext);
+        return workflowExecutionContext;
+    }
+    
+    private void ApplyInput(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    {
+        // Only add input from state if the input doesn't already exist on the workflow execution context.
+        foreach (var inputItem in state.Input)
+            if (!workflowExecutionContext.Input.ContainsKey(inputItem.Key)) workflowExecutionContext.Input.Add(inputItem.Key, inputItem.Value);
+    }
+
     private IDictionary<string, object> GetPersistableInput(WorkflowExecutionContext workflowExecutionContext)
     {
         // TODO: This is a temporary solution. We need to find a better way to handle this.
@@ -50,24 +75,6 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         }
 
         return filteredInput;
-    }
-
-    /// <inheritdoc />
-    public WorkflowExecutionContext Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
-    {
-        // Do not map input. We don't want to overwrite the input that was passed to the workflow.
-        workflowExecutionContext.Id = state.Id;
-        workflowExecutionContext.CorrelationId = state.CorrelationId;
-        workflowExecutionContext.SubStatus = state.SubStatus;
-        workflowExecutionContext.Bookmarks = state.Bookmarks;
-        workflowExecutionContext.Output = state.Output;
-        workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
-        workflowExecutionContext.CreatedAt = state.CreatedAt;
-        ApplyProperties(state, workflowExecutionContext);
-        ApplyActivityExecutionContexts(state, workflowExecutionContext);
-        ApplyCompletionCallbacks(state, workflowExecutionContext);
-        ApplyScheduledActivities(state, workflowExecutionContext);
-        return workflowExecutionContext;
     }
 
     private void ExtractProperties(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
