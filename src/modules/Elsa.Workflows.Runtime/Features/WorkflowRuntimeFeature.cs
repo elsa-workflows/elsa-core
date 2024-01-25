@@ -16,6 +16,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Services;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -99,6 +100,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IInstanceNameRetriever"/>.
+    /// </summary>
+    public Func<IServiceProvider, IInstanceNameRetriever> InstanceNameRetriever { get; set; } = sp => ActivatorUtilities.CreateInstance<RandomInstanceNameRetriever>(sp);
+
+    /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
     public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
@@ -171,6 +177,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionContextStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
+            .AddSingleton(InstanceNameRetriever)
+            .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()

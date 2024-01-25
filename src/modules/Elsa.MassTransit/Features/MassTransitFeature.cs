@@ -48,7 +48,7 @@ public class MassTransitFeature : FeatureBase
 
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
-
+        
         var busConfigurator = BusConfigurator ??= configure =>
         {
             configure.UsingInMemory((context, configurator) =>
@@ -92,7 +92,10 @@ public class MassTransitFeature : FeatureBase
         var workflowMessageConsumers = this.GetMessages().Select(x => new ConsumerTypeDefinition(workflowMessageConsumerType.MakeGenericType(x)));
 
         // Concatenate the manually registered consumers with the workflow message consumers.
-        var consumerTypeDefinitions = this.GetConsumers().Concat(workflowMessageConsumers).ToArray();
+        var consumerTypeDefinitions = this.GetConsumers()
+            //Temporary queues require implementation specific variables which will be handled in their respective projects
+            .Where(c => c.IsTemporary == false)
+            .Concat(workflowMessageConsumers).ToArray();
 
         Services.AddMassTransit(bus =>
         {

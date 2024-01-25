@@ -1,9 +1,14 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Options;
+using Elsa.Workflows.Contracts;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.RabbitMq.Features;
 
@@ -32,18 +37,40 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
+        Module.Configure<MassTransitFeature>(massTransitFeature =>
         {
-            configure.UsingRabbitMq((context, serviceBus) =>
+            massTransitFeature.BusConfigurator = configure =>
             {
-                if (!string.IsNullOrEmpty(ConnectionString))
-                    serviceBus.Host(ConnectionString);
+                var tempConsumers = massTransitFeature.GetConsumers()
+                    .Where(c => c.IsTemporary)
+                    .ToList();
+                
+                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
+                
+                configure.UsingRabbitMq((context, serviceBus) =>
+                {
+                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var instanceNameRetriever = context.GetRequiredService<IInstanceNameRetriever>();
+                    
+                    if (!string.IsNullOrEmpty(ConnectionString))
+                        serviceBus.Host(ConnectionString);
 
-                ConfigureServiceBus?.Invoke(serviceBus);
+                    ConfigureServiceBus?.Invoke(serviceBus);
+                    
+                    foreach (var consumer in tempConsumers)
+                    {
+                        serviceBus.ReceiveEndpoint($"{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
+                        {
+                            configurator.QueueExpiration = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
+                            configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                        });
+                    }
 
-                serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
-            });
-        };
+                    serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                });
+            };
+        });
     }
 
     /// <inheritdoc />

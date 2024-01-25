@@ -1,3 +1,3 @@
 namespace Elsa.MassTransit.Models;
 
-internal record ConsumerTypeDefinition(Type ConsumerType, Type? ConsumerDefinitionType = default);
+public record ConsumerTypeDefinition(Type ConsumerType, Type? ConsumerDefinitionType = default, string? Name = null, bool IsTemporary = false);

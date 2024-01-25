@@ -1,8 +1,14 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Options;
+using Elsa.Workflows.Contracts;
 using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
@@ -31,15 +37,34 @@ public class AzureServiceBusFeature : FeatureBase
         {
             massTransitFeature.BusConfigurator = configure =>
             {
+                var tempConsumers = massTransitFeature.GetConsumers()
+                    .Where(c => c.IsTemporary)
+                    .ToList();
+                
                 configure.AddServiceBusMessageScheduler();
+                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
                 
                 configure.UsingAzureServiceBus((context, serviceBus) =>
                 {
+                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var instanceNameRetriever = context.GetRequiredService<IInstanceNameRetriever>();
+
                     if (ConnectionString != null) 
                         serviceBus.Host(ConnectionString);
-                    
                     serviceBus.UseServiceBusMessageScheduler();
                     ConfigureServiceBus?.Invoke(serviceBus);
+
+                    foreach (var consumer in tempConsumers)
+                    {
+                        //Throw on no known name?
+                        serviceBus.ReceiveEndpoint($"{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
+                        {
+                            configurator.AutoDeleteOnIdle = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
+                            configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                        });
+                    }
+
                     serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };

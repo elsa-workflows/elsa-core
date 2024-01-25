@@ -18,27 +18,28 @@ public static class MassTransitFeatureExtensions
     /// <summary>
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
-    public static MassTransitFeature AddConsumer<T>(this MassTransitFeature feature) where T : IConsumer => feature.AddConsumer(typeof(T));
+    public static MassTransitFeature AddConsumer<T>(this MassTransitFeature feature, string? name, bool isTemporary) where T : IConsumer => feature.AddConsumer(typeof(T), name, isTemporary);
 
     /// <summary>
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
     /// <typeparam name="T">The consumer type.</typeparam>
     /// <typeparam name="TDefinition">The consumer definition type.</typeparam>
-    public static MassTransitFeature AddConsumer<T, TDefinition>(this MassTransitFeature feature) 
+    public static MassTransitFeature AddConsumer<T, TDefinition>(this MassTransitFeature feature, string? name, bool isTemporary) 
         where T : IConsumer 
         where TDefinition : IConsumerDefinition
     {
-        return feature.AddConsumer(typeof(T), typeof(TDefinition));
+        return feature.AddConsumer(typeof(T), name, isTemporary, typeof(TDefinition));
     }
 
     /// <summary>
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
-    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type, Type? consumerDefinitionType = default)
+    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type, string? name, bool isTemporary,
+        Type? consumerDefinitionType = default)
     {
         var types = feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
-        types.Add(new ConsumerTypeDefinition(type, consumerDefinitionType));
+        types.Add(new ConsumerTypeDefinition(type, consumerDefinitionType, name, isTemporary));
         return feature;
     }
 
@@ -60,7 +61,7 @@ public static class MassTransitFeatureExtensions
     /// <summary>
     /// Returns all collected consumer types.
     /// </summary>
-    internal static IEnumerable<ConsumerTypeDefinition> GetConsumers(this MassTransitFeature feature) => feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
+    public static IEnumerable<ConsumerTypeDefinition> GetConsumers(this MassTransitFeature feature) => feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
 
     /// <summary>
     /// Returns all collected message types.
