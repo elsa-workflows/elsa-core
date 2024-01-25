@@ -16,6 +16,7 @@ using Elsa.Workflows.State;
 using Proto.Cluster;
 using Bookmark = Elsa.Workflows.Models.Bookmark;
 using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
+using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Services;
 
@@ -247,6 +248,13 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    {
+        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        await client.Cancel(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default)
     {
         var startableWorkflows = await FindStartableWorkflowsAsync(filter, cancellationToken);
@@ -296,7 +304,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             DefinitionId = request.DefinitionId,
             Version = request.Version,
             CorrelationId = request.CorrelationId,
-            WorkflowStatus = Workflows.WorkflowStatus.Running
+            WorkflowStatus = WorkflowStatus.Running
         };
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }

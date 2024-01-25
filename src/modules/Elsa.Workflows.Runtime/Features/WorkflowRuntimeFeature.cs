@@ -78,6 +78,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowExecutionContextStore> WorkflowExecutionContextStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionContextStore>();
+
+    /// <summary>
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
@@ -166,6 +171,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
             .AddScoped(WorkflowInboxStore)
+            .AddScoped(WorkflowExecutionContextStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
@@ -200,6 +206,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
             .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxMessageStore>()
+            .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
             .AddScoped(DistributedLockProvider)
@@ -219,7 +226,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
-            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
+            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()            
+            .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 
             // Workflow activation strategies.
             .AddScoped<IWorkflowActivationStrategy, SingletonStrategy>()

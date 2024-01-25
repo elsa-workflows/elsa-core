@@ -28,16 +28,20 @@ builder.Services.AddElsa(elsa =>
 
     // Add services for HTTP activities and workflow middleware.
     elsa.UseHttp();
-    
-    // Use JavaScript.
-    elsa.UseJavaScript(javaScript =>
+
+    // Use C#.
+    elsa.UseCSharp(options =>
     {
-        javaScript.AllowClrAccess = true;
-        javaScript.ConfigureEngine(options =>
-        {
-            options.RegisterType<OrderCompleted>();
-            options.RegisterType<OrderCreated>();
-        });
+        options.Assemblies.Add(typeof(OrderCreated).Assembly);
+        options.Namespaces.Add(typeof(OrderCreated).Namespace!);
+    });
+    
+     // Use JavaScript.
+    elsa.UseJavaScript(options =>
+    {
+        options.AllowClrAccess = true;
+        options.RegisterType<OrderCreated>();
+        options.RegisterType<OrderCompleted>();
     });
     
     // Use C#.
@@ -56,7 +60,7 @@ builder.Services.AddElsa(elsa =>
         identity.UseAdminUserProvider();
         identity.TokenOptions = options =>
         {
-            options.SigningKey = "secret-token-signing-key";
+            options.SigningKey = "super-secret-and-securely-stored-token-signing-key";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
     });
@@ -67,7 +71,7 @@ builder.Services.AddElsa(elsa =>
     // Configure MassTransit.
     elsa.UseMassTransit(massTransit =>
     {
-        massTransit.UseRabbitMq(rabbitMqConnectionString);
+        //massTransit.UseRabbitMq(rabbitMqConnectionString);
         massTransit.AddMessageType<OrderCompleted>();
         massTransit.AddMessageType<OrderCreated>();
     });

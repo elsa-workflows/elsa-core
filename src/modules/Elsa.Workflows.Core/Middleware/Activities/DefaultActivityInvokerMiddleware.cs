@@ -41,16 +41,24 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Evaluate input properties.
         await EvaluateInputPropertiesAsync(context);
-
+        
+        // Prevent the activity from being started if cancellation is requested.
+        if (context.CancellationToken.IsCancellationRequested)
+        {
+            context.TransitionTo(ActivityStatus.Canceled);
+            context.AddExecutionLogEntry("Activity cancelled");
+            return;
+        }
+        
         // Check if the activity can be executed.
         if (!await context.Activity.CanExecuteAsync(context))
         {
-            context.Status = ActivityStatus.Pending;
+            context.TransitionTo(ActivityStatus.Pending);
             context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
 
-        context.Status = ActivityStatus.Running;
+        context.TransitionTo(ActivityStatus.Running);
 
         // Execute activity.
         await ExecuteActivityAsync(context);

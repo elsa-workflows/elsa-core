@@ -51,9 +51,6 @@ node_modules/
 .stylelintrc.yml
 .eslintrc.yml
 
-#github
-.github/
-
 #volatile
 App_Data/
 *.db
@@ -76,3 +73,6 @@ src/designer/elsa-workflows-designer/loader
 src/modules/Elsa.Workflows.Designer/package-lock.json
 
 unlist.sh
+
+# build artifacts
+/artifacts

@@ -102,6 +102,10 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
+            if (context.WorkflowExecutionContext.CancellationTokens.ApplicationCancellationToken
+                .IsCancellationRequested)
+                break;
+            
             batch.Add(item);
 
             if (batch.Count < batchSize)

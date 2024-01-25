@@ -3,16 +3,22 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
+using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
+using CancellationTokens = Elsa.Workflows.Models.CancellationTokens;
+using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
+using WorkflowSubStatus = Elsa.Workflows.WorkflowSubStatus;
 
 namespace Elsa.ProtoActor.Grains;
 
@@ -36,6 +42,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private IDictionary<string, object>? _properties;
     private IWorkflowHost _workflowHost = default!;
     private WorkflowState _workflowState = default!;
+
+    private readonly ICollection<CancellationTokenSource> _cancellationTokenSources = new List<CancellationTokenSource>();
 
     /// <inheritdoc />
     public WorkflowInstance(
@@ -136,6 +144,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
 
+        var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationTokenSources.Add(cancellationTokenSource);
+        cancellationToken = cancellationTokenSource.Token;
+
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
@@ -152,7 +164,9 @@ internal class WorkflowInstance : WorkflowInstanceBase
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
-            TriggerActivityId = request.TriggerActivityId
+            TriggerActivityId = request.TriggerActivityId,
+            StatusUpdatedCallback = StatusUpdated,
+            CancellationTokens = new CancellationTokens(cancellationToken)
         };
 
         var task = _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
@@ -184,6 +198,31 @@ internal class WorkflowInstance : WorkflowInstanceBase
         });
     }
 
+    private void StatusUpdated(WorkflowExecutionContext context)
+    {
+        _ = Task.Run(async () => await Update(context));
+    }
+
+    private async Task Update(WorkflowExecutionContext context)
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var extractor = scope.ServiceProvider.GetRequiredService<IWorkflowStateExtractor>();
+        var bookmarkPersistor = scope.ServiceProvider.GetRequiredService<IBookmarksPersister>();
+        var workflowState = extractor.Extract(context);
+        var originalBookmarks = _workflowHost.WorkflowState.Bookmarks;
+        
+        _workflowState = workflowState;
+
+        await SaveSnapshotAsync();
+        SaveWorkflowInstance(workflowState);
+        var newBookmarks = workflowState.Bookmarks;
+        
+        var diff = Diff.For(originalBookmarks, newBookmarks);
+
+        var bookmarkRequest = new UpdateBookmarksRequest(workflowState.DefinitionId, diff, workflowState.CorrelationId);
+        await bookmarkPersistor.PersistBookmarksAsync(bookmarkRequest);
+    }
+
     /// <inheritdoc />
     public override Task Stop()
     {
@@ -205,6 +244,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var activityInstanceId = request.ActivityInstanceId.NullIfEmpty();
         var activityHash = request.ActivityHash.NullIfEmpty();
         var cancellationToken = Context.CancellationToken;
+        
+        var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationTokenSources.Add(cancellationTokenSource);
+        cancellationToken = cancellationTokenSource.Token;
 
         var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions
         {
@@ -215,7 +258,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
             ActivityInstanceId = activityInstanceId,
             ActivityHash = activityHash,
             Input = _input,
-            Properties = _properties
+            Properties = _properties,
+            CancellationTokens = cancellationToken
         };
 
         var definitionId = _definitionId;
@@ -257,6 +301,18 @@ internal class WorkflowInstance : WorkflowInstanceBase
     /// <inheritdoc />
     public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
 
+    public override async Task Cancel()
+    {
+        if (_workflowState.Status != WorkflowStatus.Finished)
+        {
+            _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
+            _workflowState.Status = WorkflowStatus.Finished;
+        }
+
+        foreach(var source in _cancellationTokenSources)
+            source.Cancel();
+    }
+    
     /// <inheritdoc />
     public override async Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
     {

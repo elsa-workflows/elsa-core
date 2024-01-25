@@ -211,8 +211,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var routeData = GetRouteData(httpContext, path);
 
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
-        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
-        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
+        var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
+        var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
@@ -225,48 +225,60 @@ public class HttpEndpoint : Trigger<HttpRequest>
             return;
         }
 
-        // Read content, if any.
-        try
+        // Handle Form Fields
+        if (request.HasFormContentType)
         {
-            var content = await ParseContentAsync(context, request);
-            ParsedContent.Set(context, content);
+
+            var formFields = request.Form.ToObjectDictionary();
+
+            ParsedContent.Set(context, formFields);
+
+            // Read files, if any.
+            var files = ReadFilesAsync(context, request);
+
+            if (files.Any())
+            {
+                if (!ValidateFileSizes(context, httpContext, files))
+                {
+                    await HandleFileSizeTooLargeAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileExtensionWhitelist(context, httpContext, files))
+                {
+                    await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileExtensionBlacklist(context, httpContext, files))
+                {
+                    await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileMimeTypes(context, httpContext, files))
+                {
+                    await HandleInvalidFileMimeTypesAsync(context, httpContext);
+                    return;
+                }
+
+                Files.Set(context, files.ToArray());
+            }
         }
-        catch (JsonException e)
+        else
         {
-            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-            throw;
-        }
-
-        // Read files, if any.
-        var files = ReadFilesAsync(context, request);
-
-        if (files.Any())
-        {
-            if (!ValidateFileSizes(context, httpContext, files))
+            // Parse Non-Form content.
+            try
             {
-                await HandleFileSizeTooLargeAsync(context, httpContext);
-                return;
+                var content = await ParseContentAsync(context, request);
+                ParsedContent.Set(context, content);
+            }
+            catch (JsonException e)
+            {
+                await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+                throw;
             }
 
-            if (!ValidateFileExtensionWhitelist(context, httpContext, files))
-            {
-                await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
-                return;
-            }
-
-            if (!ValidateFileExtensionBlacklist(context, httpContext, files))
-            {
-                await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
-                return;
-            }
-
-            if (!ValidateFileMimeTypes(context, httpContext, files))
-            {
-                await HandleInvalidFileMimeTypesAsync(context, httpContext);
-                return;
-            }
-
-            Files.Set(context, files.ToArray());
         }
 
         // Complete.
