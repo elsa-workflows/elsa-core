@@ -10,7 +10,6 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.Http.Handlers;
 using Elsa.Http.Options;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;

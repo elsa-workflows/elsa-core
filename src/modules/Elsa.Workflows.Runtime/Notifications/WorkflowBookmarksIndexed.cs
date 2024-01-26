@@ -7,5 +7,5 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// </summary>
 /// <param name="WorkflowExecutionContext">The workflow execution context.</param>
 /// <param name="IndexedWorkflowBookmarks">The bookmarks that were added, removed, or unchanged.</param>
-public record WorkflowBookmarksIndexed(WorkflowExecutionContext WorkflowExecutionContext, IndexedWorkflowBookmarks IndexedWorkflowBookmarks) : INotification;
+public record WorkflowBookmarksIndexed(IndexedWorkflowBookmarks IndexedWorkflowBookmarks) : INotification;
 

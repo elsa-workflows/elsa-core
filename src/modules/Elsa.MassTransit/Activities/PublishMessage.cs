@@ -6,6 +6,7 @@ using Elsa.MassTransit.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using MassTransit;
 
 namespace Elsa.MassTransit.Activities;
@@ -29,7 +30,10 @@ public class PublishMessage : CodeActivity
     /// <summary>
     /// The message to send. Must be a concrete implementation of the configured <see cref="MessageType"/>.
     /// </summary>
-    [Input(Description = "The message to send. Must be a concrete implementation of the configured message type.")]
+    [Input(
+        Description = "The message to send. Must be a concrete implementation of the configured message type.",
+        UIHint = InputUIHints.MultiLine
+    )]
     public Input<object> Message { get; set; } = default!;
 
     /// <inheritdoc />

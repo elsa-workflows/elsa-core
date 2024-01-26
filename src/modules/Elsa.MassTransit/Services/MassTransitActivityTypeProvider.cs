@@ -7,6 +7,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Humanizer;
@@ -17,40 +18,31 @@ namespace Elsa.MassTransit.Services;
 /// <summary>
 /// Provides activities to the system from the configured MassTransit message types.
 /// </summary>
-public class MassTransitActivityTypeProvider : IActivityProvider
+public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, IOptions<MassTransitActivityOptions> options, IActivityDescriber activityDescriber) : IActivityProvider
 {
-    private readonly IActivityFactory _activityFactory;
-    private readonly MassTransitActivityOptions _options;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public MassTransitActivityTypeProvider(IActivityFactory activityFactory, IOptions<MassTransitActivityOptions> options)
-    {
-        _activityFactory = activityFactory;
-        _options = options.Value;
-    }
-
     /// <inheritdoc />
-    public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var messageTypes = _options.MessageTypes;
-        var descriptors = CreateDescriptors(messageTypes).ToList();
-        return new(descriptors);
+        var messageTypes = options.Value.MessageTypes;
+        var descriptors = await CreateDescriptorsAsync(messageTypes, cancellationToken);
+        return descriptors.ToList();
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(IEnumerable<Type> messageTypes)
+    private async Task<IEnumerable<ActivityDescriptor>> CreateDescriptorsAsync(IEnumerable<Type> messageTypes, CancellationToken cancellationToken = default)
     {
+        var descriptors = new List<ActivityDescriptor>();
         foreach (var messageType in messageTypes)
         {
-            yield return CreateMessageReceivedDescriptor(messageType);
+            descriptors.Add(await CreateMessageReceivedDescriptor(messageType, cancellationToken));
             
             if(messageType.IsClass)
-                yield return CreatePublishMessageDescriptor(messageType);
+                descriptors.Add(await CreatePublishMessageDescriptor(messageType, cancellationToken));
         }
+        
+        return descriptors;
     }
 
-    private ActivityDescriptor CreateMessageReceivedDescriptor(Type messageType)
+    private async Task<ActivityDescriptor> CreateMessageReceivedDescriptor(Type messageType, CancellationToken cancellationToken = default)
     {
         var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
         var typeName = activityAttr?.Type ?? messageType.Name;
@@ -61,6 +53,11 @@ public class MassTransitActivityTypeProvider : IActivityProvider
         var category = categoryAttr?.Category ?? activityAttr?.Category ?? "MassTransit";
         var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
+        
+        var outputDescriptor = await activityDescriber.DescribeOutputProperty<MessageReceived, object>(x => x.Result!, cancellationToken);
+        var openOutputType = typeof(Output<>);
+        var outputType = openOutputType.MakeGenericType(messageType);
+        outputDescriptor.Type = outputType;
 
         return new()
         {
@@ -73,17 +70,11 @@ public class MassTransitActivityTypeProvider : IActivityProvider
             IsBrowsable = true,
             Outputs =
             {
-                new OutputDescriptor
-                {
-                    Description = "The received message",
-                    DisplayName = "Received Message",
-                    Name = nameof(MessageReceived.Result),
-                    Type = typeof(object)
-                }
+                outputDescriptor
             },
             Constructor = context =>
             {
-                var activity = _activityFactory.Create<MessageReceived>(context);
+                var activity = activityFactory.Create<MessageReceived>(context);
                 activity.Type = fullTypeName;
                 activity.MessageType = messageType;
                 return activity;
@@ -91,7 +82,7 @@ public class MassTransitActivityTypeProvider : IActivityProvider
         };
     }
 
-    private ActivityDescriptor CreatePublishMessageDescriptor(Type messageType)
+    private async Task<ActivityDescriptor> CreatePublishMessageDescriptor(Type messageType, CancellationToken cancellationToken = default)
     {
         var activityAttr = messageType.GetCustomAttribute<ActivityAttribute>();
         var typeName = activityAttr?.Type ?? messageType.Name;
@@ -104,6 +95,11 @@ public class MassTransitActivityTypeProvider : IActivityProvider
         var descriptionAttr = messageType.GetCustomAttribute<DescriptionAttribute>();
         var description = descriptionAttr?.Description ?? activityAttr?.Description;
 
+        var messageInputDescriptor = await activityDescriber.DescribeInputPropertyAsync<PublishMessage, object>(x => x.Message, cancellationToken: cancellationToken);
+        var openInputType = typeof(Input<>);
+        var inputType = openInputType.MakeGenericType(messageType);
+        messageInputDescriptor.Type = inputType;
+
         return new()
         {
             TypeName = fullTypeName,
@@ -115,18 +111,11 @@ public class MassTransitActivityTypeProvider : IActivityProvider
             IsBrowsable = true,
             Inputs =
             {
-                new InputDescriptor
-                {
-                    Description = "The message to publish.",
-                    UIHint = InputUIHints.MultiLine,
-                    DisplayName = "Message",
-                    Type = typeof(Input<object>),
-                    Name = nameof(PublishMessage.Message)
-                }
+                messageInputDescriptor
             },
             Constructor = context =>
             {
-                var activity = _activityFactory.Create<PublishMessage>(context);
+                var activity = activityFactory.Create<PublishMessage>(context);
                 activity.Type = fullTypeName;
                 activity.MessageType = messageType;
                 return activity;
