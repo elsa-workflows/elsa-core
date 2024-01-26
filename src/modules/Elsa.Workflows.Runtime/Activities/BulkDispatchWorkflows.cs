@@ -100,8 +100,8 @@ public class BulkDispatchWorkflows : Activity
         
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
 
-        // If we need to wait for the child workflow to complete, create a bookmark.
-        if (waitForCompletion)
+        // If we need to wait for the child workflows to complete (if any), create a bookmark.
+        if (waitForCompletion && dispatchedInstancesCount > 0)
         {
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
