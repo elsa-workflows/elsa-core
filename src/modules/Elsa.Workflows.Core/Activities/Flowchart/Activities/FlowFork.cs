@@ -31,7 +31,7 @@ public class FlowFork : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var outcomes = Branches.GetOrDefault(context)?.ToArray() ?? new[] { "Done" };
+        var outcomes = Branches.GetOrDefault(context)?.ToArray() ?? ["Done"];
 
         await context.ScheduleOutcomesAsync(outcomes);
     }

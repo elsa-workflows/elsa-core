@@ -423,6 +423,8 @@ public static class ActivityExecutionContextExtensions
         {
             if (outcomes != null)
                 context.SetBackgroundOutcomes(outcomes.Names);
+            else
+                context.SetBackgroundCompletion();
             return;
         }
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Globalization;
 using System.Text.Json;
@@ -132,13 +133,9 @@ public static class ObjectConverter
             if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
                 return new Dictionary<string, object>((IDictionary<string, object>)value);
 
-            if (typeof(ExpandoObject) == underlyingSourceType)
-            {
-                // Parse ExpandoObject into target type.
-                var expandoObject = (IDictionary<string, object>)value;
-                var json = JsonSerializer.Serialize(expandoObject);
-                return ConvertTo(json, underlyingTargetType, converterOptions);
-            }
+            var sourceDictionary = (IDictionary<string, object>)value;
+            var json = JsonSerializer.Serialize(sourceDictionary);
+            return ConvertTo(json, underlyingTargetType, converterOptions);
         }
 
         if (typeof(IEnumerable<object>).IsAssignableFrom(underlyingSourceType))
