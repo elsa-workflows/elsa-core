@@ -2,7 +2,6 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.Onboarding.WorkflowServer.Workflows;
-using Elsa.Webhooks.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

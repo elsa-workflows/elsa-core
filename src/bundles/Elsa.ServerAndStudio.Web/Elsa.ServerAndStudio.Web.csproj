@@ -18,6 +18,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj"/>
@@ -34,8 +35,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.3"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.3"/>
+        <PackageReference Include="Elsa.Studio" Version="3.0.4"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.4"/>
     </ItemGroup>
 
 </Project>

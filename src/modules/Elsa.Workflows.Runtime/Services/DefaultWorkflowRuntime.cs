@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
@@ -32,6 +33,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IWorkflowExecutionContextStore _workflowExecutionContextStore;
+    private readonly IWorkflowStateExtractor _workflowStateExtractor;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IBookmarksPersister _bookmarksPersister;
 
     /// <summary>
     /// Constructor.
@@ -47,7 +52,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IDistributedLockProvider distributedLockProvider,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowStateMapper workflowStateMapper,
-        IIdentityGenerator identityGenerator)
+        IIdentityGenerator identityGenerator,
+        IWorkflowExecutionContextStore workflowExecutionContextStore,
+        IWorkflowStateExtractor workflowStateExtractor,
+        IServiceProvider serviceProvider,
+        IBookmarksPersister bookmarksPersister)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -60,6 +69,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowStateMapper = workflowStateMapper;
         _identityGenerator = identityGenerator;
+        _workflowExecutionContextStore = workflowExecutionContextStore;
+        _workflowStateExtractor = workflowStateExtractor;
+        _serviceProvider = serviceProvider;
+        _bookmarksPersister = bookmarksPersister;
     }
 
     /// <inheritdoc />
@@ -89,6 +102,67 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options)
     {
         return await StartWorkflowAsync(definitionId, options);
+    }
+    
+    /// <inheritdoc />
+    public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    {
+        var workflowExecutionContext = await _workflowExecutionContextStore.FindAsync(workflowInstanceId);
+        
+        if (workflowExecutionContext is null)
+        {
+            // The execution context is not running on this instance.
+            // It might not be running on any instance, so check the db and update the record.
+            // Use lock to prevent race conditions and other instances from updating the workflow context
+            await using var cancelLock = await _distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel");
+            if (cancelLock == null)
+                return;
+            
+            var workflowInstance = await _workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
+            if (workflowInstance is null
+                || workflowInstance.SubStatus == WorkflowSubStatus.Cancelled
+                || workflowInstance.SubStatus == WorkflowSubStatus.Faulted)
+                return;
+
+            var workflowState = await ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
+
+            if (workflowState == null)
+                throw new Exception("Workflow state not found");
+
+            var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+
+            if (workflowDefinition == null)
+                throw new Exception("Workflow definition not found");
+
+            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+            workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+            
+            if (!cancellationToken.IsCancellationRequested)
+                await CancelWorkflowExecutionContextAsync();
+
+            return;
+        }
+        
+        await using var mainCancelLock = await _distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1));
+
+        await CancelWorkflowExecutionContextAsync();
+        
+        async Task CancelWorkflowExecutionContextAsync()
+        {
+            var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
+        
+            workflowExecutionContext.Cancel();
+        
+            var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
+            var diff = Diff.For(originalBookmarks, newBookmarks);
+            var bookmarkRequest = new UpdateBookmarksRequest(workflowExecutionContext.Id,
+                diff,
+                workflowExecutionContext.CorrelationId);
+            await _bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
+
+            var instance = await _workflowInstanceManager.SaveAsync(workflowExecutionContext);
+            await _workflowInstanceStore.SaveAsync(instance);
+        }
     }
 
     /// <inheritdoc />

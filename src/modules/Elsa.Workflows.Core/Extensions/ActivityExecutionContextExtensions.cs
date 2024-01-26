@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -73,45 +72,6 @@ public static class ActivityExecutionContextExtensions
     /// Returns true if this activity is triggered for the first time and not being resumed.
     /// </summary>
     public static bool IsTriggerOfWorkflow(this ActivityExecutionContext context) => context.WorkflowExecutionContext.TriggerActivityId == context.Activity.Id;
-
-    /// <summary>
-    /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.
-    /// </summary>
-    /// <param name="context">The <see cref="ActivityExecutionContext"/></param> being extended.
-    /// <param name="eventName">The name of the event.</param>
-    /// <param name="message">The message of the event.</param>
-    /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
-    /// <param name="payload">Any contextual data related to this event.</param>
-    /// <param name="includeActivityState">True to include activity state with this event, false otherwise.</param>
-    /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
-    public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default, bool includeActivityState = false)
-    {
-        var activity = context.Activity;
-        var activityInstanceId = context.Id;
-        var parentActivityInstanceId = context.ParentActivityExecutionContext?.Id;
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var now = context.GetRequiredService<ISystemClock>().UtcNow;
-        var activityState = includeActivityState ? context.ActivityState : default;
-
-        var logEntry = new WorkflowExecutionLogEntry(
-            activityInstanceId,
-            parentActivityInstanceId,
-            activity.Id,
-            activity.Type,
-            activity.Version,
-            activity.Name,
-            context.NodeId,
-            activityState,
-            now,
-            workflowExecutionContext.ExecutionLogSequence++,
-            eventName,
-            message,
-            source ?? activity.GetSource(),
-            payload);
-
-        workflowExecutionContext.ExecutionLog.Add(logEntry);
-        return logEntry;
-    }
 
     /// <summary>
     /// Creates a workflow variable by name and optionally sets the value.
@@ -477,7 +437,7 @@ public static class ActivityExecutionContextExtensions
             await childContext.CancelActivityAsync();
 
         // Mark the activity as complete.
-        context.Status = ActivityStatus.Completed;
+        context.TransitionTo(ActivityStatus.Completed);
 
         // Record the outcomes, if any.
         if (outcomes != null)
@@ -595,7 +555,7 @@ public static class ActivityExecutionContextExtensions
             await CancelActivityAsync(childContext);
 
         var publisher = context.GetRequiredService<INotificationSender>();
-        context.Status = ActivityStatus.Canceled;
+        context.TransitionTo(ActivityStatus.Canceled);
         context.ClearBookmarks();
         context.ClearCompletionCallbacks();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);

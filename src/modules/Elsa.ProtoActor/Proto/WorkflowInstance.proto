@@ -12,6 +12,7 @@ service WorkflowInstance {
   rpc Start (StartWorkflowRequest) returns (WorkflowExecutionResponse);
   rpc Stop (Empty) returns (Empty);
   rpc Resume (ResumeWorkflowRequest) returns (WorkflowExecutionResponse);
+  rpc Cancel (Empty) returns (Empty);
   rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
   rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
 }

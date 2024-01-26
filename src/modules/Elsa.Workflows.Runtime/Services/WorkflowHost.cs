@@ -80,6 +80,7 @@ public class WorkflowHost : IWorkflowHost
             Input = input,
             Properties = properties,
             TriggerActivityId = options?.TriggerActivityId,
+            StatusUpdatedCallback = options?.StatusUpdatedCallback,
             CancellationTokens = options?.CancellationTokens ?? cancellationToken
         };
 
