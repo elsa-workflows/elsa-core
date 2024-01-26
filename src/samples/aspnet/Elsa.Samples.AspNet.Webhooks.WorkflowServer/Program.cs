@@ -1,7 +1,6 @@
 using System;
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.Webhooks.WorkflowServer.Workflows;
-using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
