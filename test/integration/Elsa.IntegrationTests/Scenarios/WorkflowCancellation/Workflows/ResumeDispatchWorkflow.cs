@@ -14,7 +14,10 @@ public class ResumeDispatchWorkflow : WorkflowBase
         {
             Activities =
             {
-                new PublishEvent { EventName = new Input<string>("ResumeBlockDispatch") }
+                new PublishEvent
+                {
+                    EventName = new Input<string>("ResumeBlockDispatch")
+                }
             }
         };
     }

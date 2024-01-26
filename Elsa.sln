@@ -283,10 +283,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Python", "src\modules\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MassTransit.RabbitMq", "src\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj", "{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{26888832-DBEA-4B23-8DC2-84478A702CC4}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{B789B743-0FBE-4BBC-9F45-84C20C8D4814}"
 	ProjectSection(SolutionItems) = preProject
 		.github\workflows\elsa-server-and-studio.yml = .github\workflows\elsa-server-and-studio.yml
@@ -296,21 +292,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{D5C149EE-276C-4C59-98F9-37F0EA2A7866}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{26888832-DBEA-4B23-8DC2-84478A702CC4}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{D5C149EE-276C-4C59-98F9-37F0EA2A7866}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.BatchProcessing", "src\samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{F0385327-CEDE-4CD4-88A5-B66E73E75B28}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{E4BF9791-4086-41EB-8EF0-02686A5F3F65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -738,26 +730,26 @@ Global
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{26888832-DBEA-4B23-8DC2-84478A702CC4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5C149EE-276C-4C59-98F9-37F0EA2A7866}.Release|Any CPU.Build.0 = Release|Any CPU
-		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F0385327-CEDE-4CD4-88A5-B66E73E75B28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F0385327-CEDE-4CD4-88A5-B66E73E75B28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F0385327-CEDE-4CD4-88A5-B66E73E75B28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F0385327-CEDE-4CD4-88A5-B66E73E75B28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4BF9791-4086-41EB-8EF0-02686A5F3F65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4BF9791-4086-41EB-8EF0-02686A5F3F65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4BF9791-4086-41EB-8EF0-02686A5F3F65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4BF9791-4086-41EB-8EF0-02686A5F3F65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73852FEC-9847-4C6C-B1F5-1BB014C50A79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73852FEC-9847-4C6C-B1F5-1BB014C50A79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73852FEC-9847-4C6C-B1F5-1BB014C50A79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73852FEC-9847-4C6C-B1F5-1BB014C50A79}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -888,11 +880,11 @@ Global
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{790E94F2-5393-47DF-AC52-D9247F5B243A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
-		{5B1AF00E-1030-4BBA-9C1A-1DC5AEFDD44A} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
-		{26888832-DBEA-4B23-8DC2-84478A702CC4} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
-		{D5C149EE-276C-4C59-98F9-37F0EA2A7866} = {F06B9573-DF68-4606-866C-A7546A10A05A}
-		{832D6FF5-16D3-41D1-8FDD-D9BEC26BDA6A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{F0385327-CEDE-4CD4-88A5-B66E73E75B28} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{E4BF9791-4086-41EB-8EF0-02686A5F3F65} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{73852FEC-9847-4C6C-B1F5-1BB014C50A79} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

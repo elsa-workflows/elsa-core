@@ -96,7 +96,7 @@ public class ProtoActorTests
     }
 
     [Fact(DisplayName = "Cancelling a running workflow",
-    Skip= "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
+        Skip = "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
     public async Task RunningCancelTest()
     {
         // Populate registries.
@@ -110,7 +110,10 @@ public class ProtoActorTests
             await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
 
         var bookmarks = new Stack<Bookmark>(workflowState.Bookmarks);
-        var resumeOptions = new ResumeWorkflowRuntimeOptions { BookmarkId = bookmarks.Pop().Id };
+        var resumeOptions = new ResumeWorkflowRuntimeOptions
+        {
+            BookmarkId = bookmarks.Pop().Id
+        };
         await _workflowRuntime.ResumeWorkflowAsync(workflowState.WorkflowInstanceId, resumeOptions);
 
         await _workflowRuntime.CancelWorkflowAsync(workflowState.WorkflowInstanceId);
