@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.7.34003.232
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{155227F0-A33B-40AA-A4B4-06F813EB921B}"
 EndProject
@@ -15,9 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		.gitignore = .gitignore
 		build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 		Directory.Build.props = Directory.Build.props
-		configureawait.props = configureawait.props
 		docker-compose.yml = docker-compose.yml
-		frameworks.props = frameworks.props
 		icon.png = icon.png
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
@@ -50,6 +51,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MassTransit", "src\modules\Elsa.MassTransit\Elsa.MassTransit.csproj", "{BB983D0B-A939-4008-B9E3-C7C172BCF83A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Build.props = test\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Labels", "src\modules\Elsa.Labels\Elsa.Labels.csproj", "{80FF5821-E831-450D-AA0C-C76D07D878F4}"
 EndProject

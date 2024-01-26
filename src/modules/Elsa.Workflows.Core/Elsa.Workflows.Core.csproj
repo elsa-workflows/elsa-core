@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <RootNamespace>Elsa.Workflows</RootNamespace>
     </PropertyGroup>

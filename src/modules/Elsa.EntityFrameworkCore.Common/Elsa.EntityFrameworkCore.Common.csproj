@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props" />
-    
     <PropertyGroup>
         <Description>
             Provides common Entity Framework Core types for implementing EF Core persistence of varipus ELsa modules.

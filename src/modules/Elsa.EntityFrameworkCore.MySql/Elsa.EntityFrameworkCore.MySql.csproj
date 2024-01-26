@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props" />
-    
     <PropertyGroup>
         <Description>
             Provides MySQL EF Core migrations for various modules.

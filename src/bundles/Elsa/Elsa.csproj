@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props" />
-
     <PropertyGroup>
         <Description>
             Bundles the most commonly-used packages when building an Elsa workflows application.
