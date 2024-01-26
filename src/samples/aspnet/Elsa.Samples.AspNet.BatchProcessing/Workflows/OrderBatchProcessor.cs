@@ -17,9 +17,9 @@ public class OrderBatchProcessor : WorkflowBase
             {
                 new WriteLine("Fetching orders..."),
                 new FetchOrders(),
-                new ForEach<Order>
+                new ParallelForEach<Order>
                 {
-                    ItemSource = new(orders) 
+                    Items = new(orders) 
                 },
                 new WriteLine("Done!")
             }
