@@ -1,7 +1,8 @@
 using Elsa.Features.Services;
 using Elsa.Webhooks.Features;
 
-namespace Elsa.Webhooks.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 /// <summary>
 /// Adds extensions to <see cref="IModule"/> that enables the <see cref="WebhooksFeature"/> feature.
