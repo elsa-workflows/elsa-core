@@ -11,6 +11,7 @@ using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
+using Jint.Runtime.Interop;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
@@ -56,6 +57,17 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         {
             if (_jintOptions.AllowClrAccess)
                 opts.AllowClr();
+
+            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
+            opts.SetWrapObjectHandler((engine, target, type) =>
+            {
+                var instance = new ObjectWrapper(engine, target);
+
+                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
+
+                return instance;
+            });
         });
 
         configureEngine?.Invoke(engine);
@@ -122,7 +134,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         var inputs = context.GetWorkflowInputs();
 
         foreach (var input in inputs)
-            engine.SetValue($"get{input.Name}", (Func<object?>)(() => StringObjectDictionaryConverter.ConvertListsToArray(input.Value)));
+            engine.SetValue($"get{input.Name}", (Func<object?>)(() => input.Value));
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
