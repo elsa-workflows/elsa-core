@@ -5,6 +5,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
@@ -61,10 +62,9 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             opts.SetWrapObjectHandler((engine, target, type) =>
             {
                 var instance = new ObjectWrapper(engine, target);
-                if (instance.IsArrayLike)
-                {
-                    instance.SetPrototypeOf(engine.Realm.Intrinsics.Array.PrototypeObject);
-                }
+
+                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
 
                 return instance;
             });

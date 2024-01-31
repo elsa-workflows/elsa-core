@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
+using Elsa.JavaScript.Helpers;
 using Jint;
 using Jint.Runtime.Interop;
 using Xunit;
@@ -19,10 +20,9 @@ public class Tests
             .SetWrapObjectHandler((engine, target, type) =>
             {
                 var instance = new ObjectWrapper(engine, target);
-                if (instance.IsArrayLike)
-                {
-                    instance.SetPrototypeOf(engine.Realm.Intrinsics.Array.PrototypeObject);
-                }
+                
+                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
 
                 return instance;
             })
