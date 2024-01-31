@@ -26,8 +26,8 @@ const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
-const bool useMassTransit = true;
-const bool useMassTransitAzureServiceBus = false;
+const bool useMassTransit = false;
+const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -133,7 +133,10 @@ services
                     });
                 }
 
-                runtime.UseMassTransitDispatcher();
+                if(useMassTransit)
+                {
+                    runtime.UseMassTransitDispatcher();
+                }
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
@@ -186,7 +189,11 @@ services
                         ef.UseSqlite(sqliteConnectionString);
                 });
 
-                alterations.UseMassTransitDispatcher();
+                if (useMassTransit)
+                {
+                    alterations.UseMassTransitDispatcher();
+                }
+                
             })
             .UseWorkflowContexts();
 

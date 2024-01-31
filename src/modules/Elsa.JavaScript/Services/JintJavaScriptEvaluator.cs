@@ -5,6 +5,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
@@ -37,7 +38,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
-        ExpressionEvaluatorOptions options,
+        ExpressionEvaluatorOptions? options = default,
         Action<Engine>? configureEngine = default,
         CancellationToken cancellationToken = default)
     {
@@ -47,8 +48,10 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return result.ConvertTo(returnType);
     }
 
-    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions options, CancellationToken cancellationToken)
+    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options, CancellationToken cancellationToken)
     {
+        options ??= new ExpressionEvaluatorOptions();
+
         var engine = new Engine(opts =>
         {
             if (_jintOptions.AllowClrAccess)
@@ -76,11 +79,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create output getters for each activity.
         CreateActivityOutputAccessors(engine, context);
-        
+
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
             engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
-        
+
         // Add common functions.
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -119,7 +122,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         var inputs = context.GetWorkflowInputs();
 
         foreach (var input in inputs)
-            engine.SetValue($"get{input.Name}", (Func<object?>)(() => input.Value));
+            engine.SetValue($"get{input.Name}", (Func<object?>)(() => StringObjectDictionaryConverter.ConvertListsToArray(input.Value)));
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
