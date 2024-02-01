@@ -292,10 +292,10 @@ public static class ExpressionExecutionContextExtensions
             select v;
 
         var variable = q.FirstOrDefault();
-        
-        if(variable != null)
+
+        if (variable != null)
             variable.Set(context, value);
-        
+
         if (variable == null)
             CreateVariable(context, variableName, value);
     }
@@ -362,7 +362,7 @@ public static class ExpressionExecutionContextExtensions
         var input = workflowExecutionContext.Input;
         return input.TryGetValue(name, out var value) ? value : default;
     }
-    
+
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
@@ -393,7 +393,9 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
     {
-        var activityExecutionContext = context.GetActivityExecutionContext();
+        if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+            yield break;
+
         var useActivityName = activityExecutionContext.WorkflowExecutionContext.Workflow.CreatedWithModernTooling();
         var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
 

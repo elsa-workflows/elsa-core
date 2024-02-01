@@ -19,7 +19,7 @@
 
     <ItemGroup>
         <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="Jint" Version="3.0.0-beta-2057" />
+        <PackageReference Include="Jint" Version="3.0.0" />
     </ItemGroup>
 
 </Project>
