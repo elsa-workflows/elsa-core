@@ -255,12 +255,12 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         var contexts = activityExecutionContexts.ToList();
 
-        // // If there are any faulted contexts, keep everything so that the user can fix the issue and potentially reschedule existing instances.
-        // if (contexts.Any(x => x.Status == ActivityStatus.Faulted))
+        // Remove all child contexts of completed contexts.
+        foreach (var context in contexts.ToList().Where(context => context.IsCompleted))
+        {
+            contexts.RemoveAll(x => x.ParentActivityExecutionContext == context);
+        }
+        
         return contexts;
-
-        // return contexts
-        //     .Where(x => !x.IsCompleted)
-        //     .ToList();
     }
 }
