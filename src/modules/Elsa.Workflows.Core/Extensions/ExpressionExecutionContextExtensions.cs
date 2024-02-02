@@ -310,12 +310,23 @@ public static class ExpressionExecutionContextExtensions
         while (currentScope != null)
         {
             if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
-                break;
+            {
+                var variables = currentScope.Memory.Blocks.Values
+                    .Where(x => x.Metadata is VariableBlockMetadata)
+                    .Select(x => x.Metadata as VariableBlockMetadata)
+                    .Select(x => x!.Variable)
+                    .ToList();
 
-            var variables = activityExecutionContext.Variables;
+                foreach (var variable in variables)
+                    yield return variable;
+            }
+            else
+            {
+                var variables = activityExecutionContext.Variables;
 
-            foreach (var variable in variables)
-                yield return variable;
+                foreach (var variable in variables)
+                    yield return variable;
+            }
 
             currentScope = currentScope.ParentContext;
         }
@@ -413,7 +424,10 @@ public static class ExpressionExecutionContextExtensions
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[] { outputPascalName });
+                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[]
+                {
+                    outputPascalName
+                });
             }
         }
     }
@@ -486,7 +500,7 @@ public static class ExpressionExecutionContextExtensions
         // If this is an async enumerable, return as-is.
         if (obj.GetType().Name == "AsyncIListEnumerableAdapter`1")
             return obj;
-        
+
         // Use LINQ to convert the IEnumerable to an array.
         var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
 
@@ -494,6 +508,9 @@ public static class ExpressionExecutionContextExtensions
             return obj;
 
         var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
-        return toArrayMethod.Invoke(null, new object[] { enumerable })!;
+        return toArrayMethod.Invoke(null, new object[]
+        {
+            enumerable
+        })!;
     }
 }
