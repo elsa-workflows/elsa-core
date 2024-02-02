@@ -253,14 +253,9 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private static IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
     {
-        var contexts = activityExecutionContexts.ToList();
-
-        // Remove all child contexts of completed contexts.
-        foreach (var context in contexts.ToList().Where(context => context.IsCompleted))
-        {
-            contexts.RemoveAll(x => x.ParentActivityExecutionContext == context);
-        }
-        
-        return contexts;
+        // Filter out completed activity execution contexts.
+        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
+        // We may ultimately restore direct output access, but in a different way.
+        return activityExecutionContexts.Where(x => !x.IsCompleted).ToList();
     }
 }
