@@ -18,7 +18,7 @@ public static class PostgreSqlQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the PostgreSQL job store.
     /// </summary>
-    public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
+    public static QuartzFeature UsePostgreSql(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
     {
         feature.Services.AddDbContextFactory<PostgreSqlQuartzDbContext>(options =>
         {
@@ -31,8 +31,13 @@ public static class PostgreSqlQuartzExtensions
             quartz.UsePersistentStore(store =>
             {
                 store.UseNewtonsoftJsonSerializer();
-                store.UsePostgres(connectionString);
-                
+                store.UsePostgres(options =>
+                {
+                    options.ConnectionString = connectionString;
+                    options.TablePrefix = "quartz.qrtz_";
+
+                });
+
                 if (useClustering)
                     store.UseClustering();
             });
