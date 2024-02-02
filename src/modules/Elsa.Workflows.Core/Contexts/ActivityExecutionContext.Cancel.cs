@@ -36,9 +36,10 @@ public partial class ActivityExecutionContext
         // Add an execution log entry.
         AddExecutionLogEntry("Canceled", payload: JournalData, includeActivityState: true);
         
-        _cancellationRegistration.Dispose();
-        
+        await _cancellationRegistration.DisposeAsync();
         await this.SendSignalAsync(new CancelSignal());
+        
+        // ReSharper disable once MethodSupportsCancellation
         await _publisher.SendAsync(new ActivityCancelled(this));
     }
 }
