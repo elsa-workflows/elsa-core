@@ -80,6 +80,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IKeyValueStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IKeyValueStore> KeyValueStore { get; set; } = sp => ActivatorUtilities.CreateInstance<MemoryKeyValueStore>(sp);
+    
+    /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowExecutionContextStore> WorkflowExecutionContextStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionContextStore>();
@@ -174,6 +179,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
             .AddScoped(WorkflowInboxStore)
+            .AddScoped(KeyValueStore)
             .AddScoped(WorkflowExecutionContextStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)

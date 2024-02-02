@@ -3,16 +3,19 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    partial class ManagementElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240202100045_AddKeyValueStore")]
+    partial class AddKeyValueStore
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.14");

@@ -38,6 +38,11 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The workflow inbox messages.
     /// </summary>
     public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = default!;
+    
+    /// <summary>
+    /// The generic key value pairs.
+    /// </summary>
+    public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = default!;
 
     /// <inheritdoc />
     protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
@@ -48,6 +53,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
+        modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
     }
 
         /// <inheritdoc />
@@ -71,5 +77,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
 
         modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedInput").HasColumnType("NCLOB");
         modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedBookmarkPayload").HasColumnType("NCLOB");
+
+        modelBuilder.Entity<SerializedKeyValuePair>().Property("Value").HasColumnType("NCLOB");
     }
 }

@@ -28,6 +28,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
             feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxMessageStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
+            feature.KeyValueStore = sp => sp.GetRequiredService<EFCoreKeyValueStore>();
         });
     }
 
@@ -41,5 +42,6 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxMessageStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
+        AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
     }
 }

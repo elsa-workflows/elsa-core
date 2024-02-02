@@ -12,7 +12,8 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
-    IEntityTypeConfiguration<WorkflowInboxMessage>
+    IEntityTypeConfiguration<WorkflowInboxMessage>,
+    IEntityTypeConfiguration<SerializedKeyValuePair>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<StoredTrigger> builder)
@@ -108,5 +109,11 @@ public class Configurations :
         builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
         builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
+    }
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
+    {
+        builder.HasKey(x => x.Key);
     }
 }

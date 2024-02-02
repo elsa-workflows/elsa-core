@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
@@ -23,7 +24,8 @@ internal class CreateIndices : IHostedService
             CreateActivityExecutionLogIndices(cancellationToken),
             CreateWorkflowBookmarkIndices(cancellationToken),
             CreateWorkflowTriggerIndices(cancellationToken),
-            CreateWorkflowInboxIndices(cancellationToken)
+            CreateWorkflowInboxIndices(cancellationToken),
+            CreateKeyValueIndices(cancellationToken)
         );
     }
 
@@ -178,6 +180,22 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.ExpiresAt)),
+                    },
+                    cancellationToken));
+    }
+
+    private Task CreateKeyValueIndices(CancellationToken cancellationToken)
+    {
+        var keyValuePairCollection = _serviceProvider.GetService<IMongoCollection<SerializedKeyValuePair>>();
+        if (keyValuePairCollection == null) return Task.CompletedTask;
+        
+        return IndexHelpers.CreateAsync(
+            keyValuePairCollection,
+            async (collection, indexBuilder) =>
+                await collection.Indexes.CreateManyAsync(
+                    new List<CreateIndexModel<SerializedKeyValuePair>>
+                    {
+                        new(indexBuilder.Ascending(x => x.Key))
                     },
                     cancellationToken));
     }
