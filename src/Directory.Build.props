@@ -2,12 +2,7 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-  <PropertyGroup>
-    <IsSampleProject Condition="$(MSBuildProjectName.Contains('.Samples.')) == true or $(MSBuildProjectName.Contains('SampleDropIn')) == true">true</IsSampleProject>
-    <IsPackable Condition="$(IsSampleProject) == 'true'">false</IsPackable>
-  </PropertyGroup>
-
-  <PropertyGroup Label="TargetFrameworks" Condition="$(IsSampleProject) != 'true'">
+  <PropertyGroup Label="TargetFrameworks">
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
@@ -15,7 +10,7 @@
     <None Include="..\..\..\icon.png" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
-  <ItemGroup Condition="$(IsSampleProject) != 'true'">
+  <ItemGroup>
     <PackageReference Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
     <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
     <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
