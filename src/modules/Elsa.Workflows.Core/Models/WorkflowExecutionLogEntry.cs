@@ -11,7 +11,7 @@ public record WorkflowExecutionLogEntry(
     int ActivityTypeVersion,
     string? ActivityName,
     string NodeId,
-    [property: Obsolete("USe ActivityInstanceId instead to locate activity state from ActivityExecutionLog")]IDictionary<string, object>? ActivityState,
+    [property: Obsolete("Use ActivityInstanceId instead to locate activity state from ActivityExecutionLog")]IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,
     long Sequence,
     string? EventName,
