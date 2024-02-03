@@ -87,7 +87,6 @@ services
 
                 identity.IdentityOptions = options => identitySection.Bind(options);
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
-                identity.UseStoreBasedApplicationProvider();
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
