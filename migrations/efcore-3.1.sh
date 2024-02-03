@@ -29,7 +29,12 @@ for module in "${mods[@]}"; do
         echo "Migrations path: $migrationsPath"
         echo "Connection string: ${connStrings[$provider]}"
     
-        # 1. Run the migrations command
-        dotnet ef migrations add 3_1 -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath" -- --connectionString "${connStrings[$provider]}"
+        # 1. Delete the existing migration
+        echo "Deleting existing migrations: ${providerPath:?}/${migrationsPath}/*V3_1.cs"
+        find "${providerPath:?}/${migrationsPath}/" -type f -name "*V3_1*" -exec rm -f {} \;
+        # rm -rf "${providerPath:?}/${migrationsPath}/*V3_1.cs"
+            
+        # 2. Run the migrations command
+        dotnet ef migrations add V3_1 -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath" -- --connectionString "${connStrings[$provider]}"
     done
 done
