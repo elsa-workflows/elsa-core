@@ -12,12 +12,9 @@ public partial class ActivityExecutionContext
     /// <param name="message">The message of the event.</param>
     /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
     /// <param name="payload">Any contextual data related to this event.</param>
-    /// <param name="includeActivityState">True to include activity state with this event, false otherwise.</param>
     /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
-    public WorkflowExecutionLogEntry AddExecutionLogEntry(string eventName, string? message = default, string? source = default, object? payload = default, bool includeActivityState = false)
+    public WorkflowExecutionLogEntry AddExecutionLogEntry(string eventName, string? message = default, string? source = default, object? payload = default)
     {
-        var activityState = includeActivityState ? ActivityState : default;
-
         var logEntry = new WorkflowExecutionLogEntry(
             Id,
             ParentActivityExecutionContext?.Id,
@@ -26,7 +23,7 @@ public partial class ActivityExecutionContext
             Activity.Version,
             Activity.Name,
             NodeId,
-            activityState,
+            null,
             _systemClock.UtcNow,
             WorkflowExecutionContext.ExecutionLogSequence++,
             eventName,

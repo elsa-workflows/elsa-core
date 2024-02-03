@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Middleware.Activities;
 
@@ -19,6 +20,7 @@ public static class ExecutionLogMiddlewareExtensions
 /// <summary>
 /// An activity execution middleware component that extracts execution details as <see cref="WorkflowExecutionLogEntry"/> objects.
 /// </summary>
+[UsedImplicitly]
 public class ExecutionLogMiddleware : IActivityExecutionMiddleware
 {
     private readonly ActivityMiddlewareDelegate _next;
@@ -34,7 +36,7 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        context.AddExecutionLogEntry(IsActivityBookmarked(context) ? "Resumed" : "Started", includeActivityState: true);
+        context.AddExecutionLogEntry(IsActivityBookmarked(context) ? "Resumed" : "Started");
 
         try
         {
@@ -43,13 +45,12 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
             if (context.Status == ActivityStatus.Running)
             {
                 if (IsActivityBookmarked(context))
-                    context.AddExecutionLogEntry("Suspended", payload: context.JournalData, includeActivityState: true);
+                    context.AddExecutionLogEntry("Suspended", payload: context.JournalData);
             }
         }
         catch (Exception exception)
         {
             context.AddExecutionLogEntry("Faulted",
-                includeActivityState: true,
                 message: exception.Message,
                 payload: new
                 {

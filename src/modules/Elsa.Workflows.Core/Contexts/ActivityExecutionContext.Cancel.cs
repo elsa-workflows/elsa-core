@@ -34,7 +34,7 @@ public partial class ActivityExecutionContext
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == NodeId);
 
         // Add an execution log entry.
-        AddExecutionLogEntry("Canceled", payload: JournalData, includeActivityState: true);
+        AddExecutionLogEntry("Canceled", payload: JournalData);
         
         await _cancellationRegistration.DisposeAsync();
         await this.SendSignalAsync(new CancelSignal());
