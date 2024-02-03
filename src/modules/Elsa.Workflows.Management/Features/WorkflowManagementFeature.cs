@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Dynamic;
+using System.IO.Compression;
 using System.Reflection;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
@@ -11,6 +12,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
@@ -175,6 +177,9 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
+            .AddSingleton<ICompressionStrategyResolver, CompressionStrategyResolver>()
+            .AddSingleton<ICompressionStrategy, None>()
+            .AddSingleton<ICompressionStrategy, GZip>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

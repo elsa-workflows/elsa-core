@@ -19,6 +19,8 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Ignore(x => x.CustomProperties);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");
+        builder.Property<string>("DataFormat");
+        builder.Property<string>("DataCompressionAlgorithm");
         builder.Property<bool?>("UsableAsActivity");
         builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
 

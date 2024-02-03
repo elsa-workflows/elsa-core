@@ -23,7 +23,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		NuGet.Config = NuGet.Config
 		packages.props = packages.props
 		README.md = README.md
-		update-migrations.sh = update-migrations.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
@@ -307,6 +306,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
+	ProjectSection(SolutionItems) = preProject
+		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
+		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
