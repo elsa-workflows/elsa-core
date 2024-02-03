@@ -42,6 +42,8 @@ public class WorkflowManagementFeature : FeatureBase
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
 
+    private string CompressionAlgorithm { get; set; } = nameof(None);
+
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -144,6 +146,15 @@ public class WorkflowManagementFeature : FeatureBase
         VariableDescriptors.AddRange(descriptors);
         return this;
     }
+    
+    /// <summary>
+    /// Sets the compression algorithm to use for compressing workflow state.
+    /// </summary>
+    public WorkflowManagementFeature SetCompressionAlgorithm(string algorithm)
+    {
+        CompressionAlgorithm = algorithm;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -189,7 +200,10 @@ public class WorkflowManagementFeature : FeatureBase
             foreach (var activityType in ActivityTypes)
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors) options.VariableDescriptors.Add(descriptor);
+            foreach (var descriptor in VariableDescriptors) 
+                options.VariableDescriptors.Add(descriptor);
+            
+            options.CompressionAlgorithm = CompressionAlgorithm;
         });
     }
 }

@@ -34,12 +34,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("DataCompressionAlgorithm")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("DataFormat")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -117,6 +111,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Data")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DataCompressionAlgorithm")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DataFormat")
                         .HasColumnType("longtext");
 
                     b.Property<string>("DefinitionId")

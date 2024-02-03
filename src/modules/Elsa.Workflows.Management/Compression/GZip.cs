@@ -16,6 +16,7 @@ public class GZip : ICompressionStrategy
         using var output = new MemoryStream();
         await using var compressionStream = new GZipStream(output, CompressionMode.Compress); 
         await compressionStream.WriteAsync(inputBytes, 0, inputBytes.Length, cancellationToken);
+        await compressionStream.FlushAsync(cancellationToken);
 
         return Convert.ToBase64String(output.ToArray());
     }
@@ -27,7 +28,6 @@ public class GZip : ICompressionStrategy
         using var inputMemoryStream = new MemoryStream(inputBytes);
         await using var decompressionStream = new GZipStream(inputMemoryStream, CompressionMode.Decompress);
         using var outputMemoryStream = new MemoryStream();
-
         await decompressionStream.CopyToAsync(outputMemoryStream, cancellationToken);
         var decompressedBytes = outputMemoryStream.ToArray();
 

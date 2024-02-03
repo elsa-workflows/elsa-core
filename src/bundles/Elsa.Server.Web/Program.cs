@@ -15,6 +15,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -29,6 +30,7 @@ const bool useQuartz = true;
 const bool useMassTransit = false;
 const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
+const bool useZipCompression = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -106,6 +108,9 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
+                
+                if(useZipCompression)
+                    management.SetCompressionAlgorithm(nameof(GZip));
             })
             .UseWorkflowRuntime(runtime =>
             {

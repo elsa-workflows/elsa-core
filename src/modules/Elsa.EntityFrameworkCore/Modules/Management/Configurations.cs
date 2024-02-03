@@ -19,8 +19,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Ignore(x => x.CustomProperties);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");
-        builder.Property<string>("DataFormat");
-        builder.Property<string>("DataCompressionAlgorithm");
         builder.Property<bool?>("UsableAsActivity");
         builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
 
@@ -36,6 +34,8 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
     {
         builder.Ignore(x => x.WorkflowState);
         builder.Property<string>("Data");
+        builder.Property<string>("DataFormat");
+        builder.Property<string>("DataCompressionAlgorithm");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.SubStatus).HasConversion<string>();
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");

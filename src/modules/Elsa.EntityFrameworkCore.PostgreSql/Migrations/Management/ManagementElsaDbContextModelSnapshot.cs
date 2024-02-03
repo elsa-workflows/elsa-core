@@ -37,12 +37,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("text");
 
-                    b.Property<string>("DataCompressionAlgorithm")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DataFormat")
-                        .HasColumnType("text");
-
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -120,6 +114,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Data")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DataCompressionAlgorithm")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DataFormat")
                         .HasColumnType("text");
 
                     b.Property<string>("DefinitionId")
