@@ -132,7 +132,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             return;
 
         var inputs = context.GetWorkflowInputs().ToDictionary(x => x.Name);
-        var inputDefinitions = context.GetWorkflowExecutionContext().Workflow.Inputs;
+
+        if (!context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+            return;
+
+        var inputDefinitions = workflowExecutionContext.Workflow.Inputs;
 
         foreach (var inputDefinition in inputDefinitions)
         {

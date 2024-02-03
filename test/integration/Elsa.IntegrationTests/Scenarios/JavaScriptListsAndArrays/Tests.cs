@@ -1,12 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.Dynamic;
-using System.Threading.Tasks;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.Testing.Shared;
-using Jint;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;

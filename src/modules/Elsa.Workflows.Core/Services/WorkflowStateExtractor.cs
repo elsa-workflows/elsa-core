@@ -253,14 +253,9 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private static IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
     {
-        var contexts = activityExecutionContexts.ToList();
-
-        // // If there are any faulted contexts, keep everything so that the user can fix the issue and potentially reschedule existing instances.
-        // if (contexts.Any(x => x.Status == ActivityStatus.Faulted))
-        return contexts;
-
-        // return contexts
-        //     .Where(x => !x.IsCompleted)
-        //     .ToList();
+        // Filter out completed activity execution contexts.
+        // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
+        // We may ultimately restore direct output access, but in a different way.
+        return activityExecutionContexts.Where(x => !x.IsCompleted).ToList();
     }
 }
