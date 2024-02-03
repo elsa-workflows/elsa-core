@@ -90,35 +90,35 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Common", "src\modules\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.EntityFrameworkCore", "src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj", "{7CC95512-7F44-45C3-A669-95B7048D4730}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.HelloWorld", "src\samples\console\Elsa.Samples.ConsoleApp.HelloWorld\Elsa.Samples.ConsoleApp.HelloWorld.csproj", "{D253AFC2-9496-4538-B424-47CC579B7A96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.HelloWorld", "samples\console\Elsa.Samples.ConsoleApp.HelloWorld\Elsa.Samples.ConsoleApp.HelloWorld.csproj", "{D253AFC2-9496-4538-B424-47CC579B7A96}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.SequentialWorkflows", "src\samples\console\Elsa.Samples.ConsoleApp.SequentialWorkflows\Elsa.Samples.ConsoleApp.SequentialWorkflows.csproj", "{74B9AFE0-EB4B-4AD2-BF25-90753203EFF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.SequentialWorkflows", "samples\console\Elsa.Samples.ConsoleApp.SequentialWorkflows\Elsa.Samples.ConsoleApp.SequentialWorkflows.csproj", "{74B9AFE0-EB4B-4AD2-BF25-90753203EFF8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.ConditionalWorkflows", "src\samples\console\Elsa.Samples.ConsoleApp.ConditionalWorkflows\Elsa.Samples.ConsoleApp.ConditionalWorkflows.csproj", "{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.ConditionalWorkflows", "samples\console\Elsa.Samples.ConsoleApp.ConditionalWorkflows\Elsa.Samples.ConsoleApp.ConditionalWorkflows.csproj", "{70D3ACE9-EB41-4B36-949C-08B8C22B99F7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.LoopingWorkflows", "src\samples\console\Elsa.Samples.ConsoleApp.LoopingWorkflows\Elsa.Samples.ConsoleApp.LoopingWorkflows.csproj", "{997F5709-61E0-4874-BFC3-07974685E02E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.LoopingWorkflows", "samples\console\Elsa.Samples.ConsoleApp.LoopingWorkflows\Elsa.Samples.ConsoleApp.LoopingWorkflows.csproj", "{997F5709-61E0-4874-BFC3-07974685E02E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Telnyx", "src\modules\Elsa.Telnyx\Elsa.Telnyx.csproj", "{F09B30F7-AF33-44D7-B835-099D1F72A37E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.TelnyxIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.TelnyxIntegration\Elsa.Samples.AspNet.TelnyxIntegration.csproj", "{55AAF940-12DC-4793-805C-992AEF2C1E8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.TelnyxIntegration", "samples\aspnet\Elsa.Samples.AspNet.TelnyxIntegration\Elsa.Samples.AspNet.TelnyxIntegration.csproj", "{55AAF940-12DC-4793-805C-992AEF2C1E8D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.Composition", "src\samples\console\Elsa.Samples.ConsoleApp.Composition\Elsa.Samples.ConsoleApp.Composition.csproj", "{1AA0AEFC-BD58-4284-A6C5-AD15C5C79782}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.Composition", "samples\console\Elsa.Samples.ConsoleApp.Composition\Elsa.Samples.ConsoleApp.Composition.csproj", "{1AA0AEFC-BD58-4284-A6C5-AD15C5C79782}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Email", "src\modules\Elsa.Email\Elsa.Email.csproj", "{1E5BD8D9-55BE-41E2-B389-6AB9F26C22AF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HelloWorld", "src\samples\aspnet\Elsa.Samples.AspNet.HelloWorld\Elsa.Samples.AspNet.HelloWorld.csproj", "{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HelloWorld", "samples\aspnet\Elsa.Samples.AspNet.HelloWorld\Elsa.Samples.AspNet.HelloWorld.csproj", "{DF8CCA17-6B00-42C6-B4EC-61B42AA91EE0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Testing.Shared", "src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj", "{AD8C4BB0-C78F-496C-B326-1D82C02C7568}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.WorkflowFunctions", "src\samples\console\Elsa.Samples.ConsoleApp.WorkflowFunctions\Elsa.Samples.ConsoleApp.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.WorkflowFunctions", "samples\console\Elsa.Samples.ConsoleApp.WorkflowFunctions\Elsa.Samples.ConsoleApp.WorkflowFunctions.csproj", "{4782CA82-83B0-437E-8C97-636BB8B402EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MyBackendApi", "src\samples\aspnet\Elsa.Samples.AspNet.MyBackendApi\Elsa.Samples.AspNet.MyBackendApi.csproj", "{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MyBackendApi", "samples\aspnet\Elsa.Samples.AspNet.MyBackendApi\Elsa.Samples.AspNet.MyBackendApi.csproj", "{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql", "src\samples\aspnet\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql.csproj", "{F363BE0D-7DD0-4613-BB90-3245E23F35F9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql", "samples\aspnet\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql.csproj", "{F363BE0D-7DD0-4613-BB90-3245E23F35F9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServer", "src\samples\aspnet\Elsa.Samples.AspNet.WorkflowServer\Elsa.Samples.AspNet.WorkflowServer.csproj", "{89157FB8-A25B-42EC-A91F-37DFEE274C8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServer", "samples\aspnet\Elsa.Samples.AspNet.WorkflowServer\Elsa.Samples.AspNet.WorkflowServer.csproj", "{89157FB8-A25B-42EC-A91F-37DFEE274C8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServerAndDesigner", "src\samples\aspnet\Elsa.Samples.AspNet.WorkflowServerAndDesigner\Elsa.Samples.AspNet.WorkflowServerAndDesigner.csproj", "{34FBB2D3-4E2B-4411-95F2-C6B56899826A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServerAndDesigner", "samples\aspnet\Elsa.Samples.AspNet.WorkflowServerAndDesigner\Elsa.Samples.AspNet.WorkflowServerAndDesigner.csproj", "{34FBB2D3-4E2B-4411-95F2-C6B56899826A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
@@ -128,25 +128,25 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.RunTaskIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.RunTaskIntegration\Elsa.Samples.AspNet.RunTaskIntegration.csproj", "{51050209-EC2F-4DC7-8F46-07E22B7811CD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.RunTaskIntegration", "samples\aspnet\Elsa.Samples.AspNet.RunTaskIntegration\Elsa.Samples.AspNet.RunTaskIntegration.csproj", "{51050209-EC2F-4DC7-8F46-07E22B7811CD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Webhooks", "src\modules\Elsa.Webhooks\Elsa.Webhooks.csproj", "{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Webhooks.WorkflowServer", "src\samples\aspnet\Elsa.Samples.AspNet.Webhooks.WorkflowServer\Elsa.Samples.AspNet.Webhooks.WorkflowServer.csproj", "{130A7A00-A9AF-4EA8-8107-BBEA07F166DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Webhooks.WorkflowServer", "samples\aspnet\Elsa.Samples.AspNet.Webhooks.WorkflowServer\Elsa.Samples.AspNet.Webhooks.WorkflowServer.csproj", "{130A7A00-A9AF-4EA8-8107-BBEA07F166DF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Webhooks.ExternalApp", "src\samples\aspnet\Elsa.Samples.AspNet.Webhooks.ExternalApp\Elsa.Samples.AspNet.Webhooks.ExternalApp.csproj", "{036D287A-33E1-4B28-BE13-14AEA16BC91F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Webhooks.ExternalApp", "samples\aspnet\Elsa.Samples.AspNet.Webhooks.ExternalApp\Elsa.Samples.AspNet.Webhooks.ExternalApp.csproj", "{036D287A-33E1-4B28-BE13-14AEA16BC91F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MassTransitActivities", "src\samples\aspnet\Elsa.Samples.AspNet.MassTransitActivities\Elsa.Samples.AspNet.MassTransitActivities.csproj", "{A1A8AD89-C9C4-41BF-BBCB-EF0544A28BFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MassTransitActivities", "samples\aspnet\Elsa.Samples.AspNet.MassTransitActivities\Elsa.Samples.AspNet.MassTransitActivities.csproj", "{A1A8AD89-C9C4-41BF-BBCB-EF0544A28BFB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoActor.Cluster.AzureContainerApps", "src\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj", "{9F79BBEC-02CE-4F76-AED4-BC191DA3054B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.AzureServiceBusActivities", "src\samples\aspnet\Elsa.Samples.AspNet.AzureServiceBusActivities\Elsa.Samples.AspNet.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.AzureServiceBusActivities", "samples\aspnet\Elsa.Samples.AspNet.AzureServiceBusActivities\Elsa.Samples.AspNet.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ElasticsearchStorage", "src\samples\aspnet\Elsa.Samples.AspNet.ElasticsearchStorage\Elsa.Samples.AspNet.ElasticsearchStorage.csproj", "{4A54379F-4775-41B6-9752-FF300288916A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ElasticsearchStorage", "samples\aspnet\Elsa.Samples.AspNet.ElasticsearchStorage\Elsa.Samples.AspNet.ElasticsearchStorage.csproj", "{4A54379F-4775-41B6-9752-FF300288916A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.OutboundHttpRequests", "src\samples\console\Elsa.Samples.ConsoleApp.OutboundHttpRequests\Elsa.Samples.ConsoleApp.OutboundHttpRequests.csproj", "{39AB433B-F7A6-4DD3-873A-9527946B7BD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.OutboundHttpRequests", "samples\console\Elsa.Samples.ConsoleApp.OutboundHttpRequests\Elsa.Samples.ConsoleApp.OutboundHttpRequests.csproj", "{39AB433B-F7A6-4DD3-873A-9527946B7BD8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
 EndProject
@@ -162,37 +162,37 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{8960
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.QuartzIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.QuartzIntegration\Elsa.Samples.AspNet.QuartzIntegration.csproj", "{B0312D9E-FA30-43E9-B666-40A8782D6E1C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.QuartzIntegration", "samples\aspnet\Elsa.Samples.AspNet.QuartzIntegration\Elsa.Samples.AspNet.QuartzIntegration.csproj", "{B0312D9E-FA30-43E9-B666-40A8782D6E1C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HangfireIntegration", "src\samples\aspnet\Elsa.Samples.AspNet.HangfireIntegration\Elsa.Samples.AspNet.HangfireIntegration.csproj", "{D2614FC7-102F-4F78-BB06-7C87304A10BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HangfireIntegration", "samples\aspnet\Elsa.Samples.AspNet.HangfireIntegration\Elsa.Samples.AspNet.HangfireIntegration.csproj", "{D2614FC7-102F-4F78-BB06-7C87304A10BA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ProtoActorRuntime", "src\samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime\Elsa.Samples.AspNet.ProtoActorRuntime.csproj", "{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ProtoActorRuntime", "samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime\Elsa.Samples.AspNet.ProtoActorRuntime.csproj", "{A41E24C6-B16D-4C6A-A9A9-2C5AF424F20F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowContexts", "src\samples\aspnet\Elsa.Samples.AspNet.WorkflowContexts\Elsa.Samples.AspNet.WorkflowContexts.csproj", "{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowContexts", "samples\aspnet\Elsa.Samples.AspNet.WorkflowContexts\Elsa.Samples.AspNet.WorkflowContexts.csproj", "{F88AB1C2-100E-459F-B2BE-5F2ACF050A0A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.Bookmarks", "src\samples\console\Elsa.Samples.ConsoleApp.Bookmarks\Elsa.Samples.ConsoleApp.Bookmarks.csproj", "{A527B8B0-7214-4C4F-B62F-8A244B8416C8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.Bookmarks", "samples\console\Elsa.Samples.ConsoleApp.Bookmarks\Elsa.Samples.ConsoleApp.Bookmarks.csproj", "{A527B8B0-7214-4C4F-B62F-8A244B8416C8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.CustomActivities", "src\samples\console\Elsa.Samples.ConsoleApp.CustomActivities\Elsa.Samples.ConsoleApp.CustomActivities.csproj", "{6DB4423B-0C99-46C9-8960-6BD54D42113A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.CustomActivities", "samples\console\Elsa.Samples.ConsoleApp.CustomActivities\Elsa.Samples.ConsoleApp.CustomActivities.csproj", "{6DB4423B-0C99-46C9-8960-6BD54D42113A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.FlowchartWorkflows", "src\samples\console\Elsa.Samples.ConsoleApp.FlowchartWorkflows\Elsa.Samples.ConsoleApp.FlowchartWorkflows.csproj", "{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.FlowchartWorkflows", "samples\console\Elsa.Samples.ConsoleApp.FlowchartWorkflows\Elsa.Samples.ConsoleApp.FlowchartWorkflows.csproj", "{A1A8A2C2-7F5C-4859-8F59-F60F867CE19C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.WorkflowInputOutput", "src\samples\console\Elsa.Samples.ConsoleApp.WorkflowInputOutput\Elsa.Samples.ConsoleApp.WorkflowInputOutput.csproj", "{FAF438E1-B771-418B-83DD-A0F959C82D97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.WorkflowInputOutput", "samples\console\Elsa.Samples.ConsoleApp.WorkflowInputOutput\Elsa.Samples.ConsoleApp.WorkflowInputOutput.csproj", "{FAF438E1-B771-418B-83DD-A0F959C82D97}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Onboarding.Web", "src\samples\aspnet\Elsa.Samples.AspNet.Onboarding.Web\Elsa.Samples.AspNet.Onboarding.Web.csproj", "{D64F1240-0110-42E1-AE59-E95AEC8A2900}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Onboarding.Web", "samples\aspnet\Elsa.Samples.AspNet.Onboarding.Web\Elsa.Samples.AspNet.Onboarding.Web.csproj", "{D64F1240-0110-42E1-AE59-E95AEC8A2900}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Onboarding.WorkflowServer", "src\samples\aspnet\Elsa.Samples.AspNet.Onboarding.WorkflowServer\Elsa.Samples.AspNet.Onboarding.WorkflowServer.csproj", "{199FC97A-682B-4C7B-A560-1032B16AEAC4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Onboarding.WorkflowServer", "samples\aspnet\Elsa.Samples.AspNet.Onboarding.WorkflowServer\Elsa.Samples.AspNet.Onboarding.WorkflowServer.csproj", "{199FC97A-682B-4C7B-A560-1032B16AEAC4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.JsonWorkflows", "src\samples\console\Elsa.Samples.ConsoleApp.JsonWorkflows\Elsa.Samples.ConsoleApp.JsonWorkflows.csproj", "{4FA6955C-6860-493F-ABD4-CE327A33EEA3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.JsonWorkflows", "samples\console\Elsa.Samples.ConsoleApp.JsonWorkflows\Elsa.Samples.ConsoleApp.JsonWorkflows.csproj", "{4FA6955C-6860-493F-ABD4-CE327A33EEA3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.JsonWorkflowProvider", "src\samples\aspnet\Elsa.Samples.AspNet.JsonWorkflowProvider\Elsa.Samples.AspNet.JsonWorkflowProvider.csproj", "{C5043453-5FB8-4796-9A80-C4C766F2CB62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.JsonWorkflowProvider", "samples\aspnet\Elsa.Samples.AspNet.JsonWorkflowProvider\Elsa.Samples.AspNet.JsonWorkflowProvider.csproj", "{C5043453-5FB8-4796-9A80-C4C766F2CB62}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps", "src\samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "{3212A999-4AC4-4911-9AA4-92AB906BCB5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps", "samples\aspnet\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps\Elsa.Samples.AspNet.ProtoActorRuntime.AzureContainerApps.csproj", "{3212A999-4AC4-4911-9AA4-92AB906BCB5E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HttpEndpoints", "src\samples\aspnet\Elsa.Samples.AspNet.HttpEndpoints\Elsa.Samples.AspNet.HttpEndpoints.csproj", "{165ACC9D-B67C-4B49-A818-ECFD247C899C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.HttpEndpoints", "samples\aspnet\Elsa.Samples.AspNet.HttpEndpoints\Elsa.Samples.AspNet.HttpEndpoints.csproj", "{165ACC9D-B67C-4B49-A818-ECFD247C899C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Environments", "src\modules\Elsa.Environments\Elsa.Environments.csproj", "{B5CDF747-8066-40D5-9BAE-CBE397BC9B51}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DslWorkflowProvider", "src\samples\aspnet\Elsa.Samples.AspNet.DslWorkflowProvider\Elsa.Samples.AspNet.DslWorkflowProvider.csproj", "{4BC5D3D2-9425-41D7-9804-D145B92520EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DslWorkflowProvider", "samples\aspnet\Elsa.Samples.AspNet.DslWorkflowProvider\Elsa.Samples.AspNet.DslWorkflowProvider.csproj", "{4BC5D3D2-9425-41D7-9804-D145B92520EE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "persistence", "persistence", "{9B4F139F-7D26-435C-A561-89E65A67A8E5}"
 EndProject
@@ -210,19 +210,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "runtimes", "runtimes", "{58
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dapper", "src\modules\Elsa.Dapper\Elsa.Dapper.csproj", "{4D8F3BB2-709D-481A-8FD3-0DA9762B366D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DapperPersistence", "src\samples\aspnet\Elsa.Samples.AspNet.DapperPersistence\Elsa.Samples.AspNet.DapperPersistence.csproj", "{D5905087-2E73-44AD-B3CC-70FE8AAA99A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DapperPersistence", "samples\aspnet\Elsa.Samples.AspNet.DapperPersistence\Elsa.Samples.AspNet.DapperPersistence.csproj", "{D5905087-2E73-44AD-B3CC-70FE8AAA99A1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Dapper.Migrations", "src\modules\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj", "{A86DF0F0-24E9-470E-984B-9E7332544972}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.WorkflowProviders.BlobStorage", "src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj", "{A702DD84-B55C-4807-9C28-D8F5AC3CCA78}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.ActivityOutput", "src\samples\console\Elsa.Samples.ConsoleApp.ActivityOutput\Elsa.Samples.ConsoleApp.ActivityOutput.csproj", "{9C9FEB8E-A253-4705-A344-49BFEFC9A516}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.ConsoleApp.ActivityOutput", "samples\console\Elsa.Samples.ConsoleApp.ActivityOutput\Elsa.Samples.ConsoleApp.ActivityOutput.csproj", "{9C9FEB8E-A253-4705-A344-49BFEFC9A516}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MongoDb", "src\modules\Elsa.MongoDb\Elsa.MongoDb.csproj", "{3A377A6A-F735-4010-9E00-72E8BEB8F1F2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MongoDbPersistence", "src\samples\aspnet\Elsa.Samples.AspNet.MongoDbPersistence\Elsa.Samples.AspNet.MongoDbPersistence.csproj", "{DAACE93A-866E-428E-B2A9-AFAC79F9C7A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MongoDbPersistence", "samples\aspnet\Elsa.Samples.AspNet.MongoDbPersistence\Elsa.Samples.AspNet.MongoDbPersistence.csproj", "{DAACE93A-866E-428E-B2A9-AFAC79F9C7A4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DynamicActivityProvider", "src\samples\aspnet\Elsa.Samples.AspNet.DynamicActivityProvider\Elsa.Samples.AspNet.DynamicActivityProvider.csproj", "{85E13383-7C39-4719-AAC0-0B357C3A97C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DynamicActivityProvider", "samples\aspnet\Elsa.Samples.AspNet.DynamicActivityProvider\Elsa.Samples.AspNet.DynamicActivityProvider.csproj", "{85E13383-7C39-4719-AAC0-0B357C3A97C7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator", "src\common\Elsa.Mediator\Elsa.Mediator.csproj", "{28818676-F6AF-4203-8B65-BD33A50CB9A2}"
 EndProject
@@ -230,9 +230,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTes
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoCluster.ComponentTests", "test\component\Elsa.ProtoCluster.ComponentTests\Elsa.ProtoCluster.ComponentTests.csproj", "{B99B23D4-6D36-4A31-BE92-DE2415514C79}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ChildWorkflows", "src\samples\aspnet\Elsa.Samples.AspNet.ChildWorkflows\Elsa.Samples.AspNet.ChildWorkflows.csproj", "{2EA47068-6079-4276-8776-F67DE99B568D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ChildWorkflows", "samples\aspnet\Elsa.Samples.AspNet.ChildWorkflows\Elsa.Samples.AspNet.ChildWorkflows.csproj", "{2EA47068-6079-4276-8776-F67DE99B568D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DocumentApproval", "src\samples\aspnet\Elsa.Samples.AspNet.DocumentApproval\Elsa.Samples.AspNet.DocumentApproval.csproj", "{CA9391E3-FA3F-4F96-B6DF-25309BFE7D05}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DocumentApproval", "samples\aspnet\Elsa.Samples.AspNet.DocumentApproval\Elsa.Samples.AspNet.DocumentApproval.csproj", "{CA9391E3-FA3F-4F96-B6DF-25309BFE7D05}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns.Core", "src\common\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj", "{1B794B9C-9B8A-4D5A-9848-B51274BD1FC5}"
 EndProject
@@ -240,7 +240,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.DropIns", "src\common\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "drop-ins", "drop-ins", "{6AB6F2F7-CAC1-45C8-9D87-EEE56BC68601}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleDropIn", "src\samples\drop-ins\SampleDropIn\SampleDropIn.csproj", "{E0567846-AC0E-4E09-96A1-EFED4B570A01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SampleDropIn", "samples\drop-ins\SampleDropIn\SampleDropIn.csproj", "{E0567846-AC0E-4E09-96A1-EFED4B570A01}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.SasTokens", "src\modules\Elsa.SasTokens\Elsa.SasTokens.csproj", "{3095C95A-F1F9-487A-A983-1B100A33E4C7}"
 EndProject
@@ -297,13 +297,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.BatchProcessing", "src\samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.BatchProcessing", "samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{F0385327-CEDE-4CD4-88A5-B66E73E75B28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.CustomUIHandler", "src\samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{E4BF9791-4086-41EB-8EF0-02686A5F3F65}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.CustomUIHandler", "samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{E4BF9791-4086-41EB-8EF0-02686A5F3F65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "src\samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
 EndProject
@@ -764,7 +764,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{155227F0-A33B-40AA-A4B4-06F813EB921B} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
 		{C6658DE0-2B2F-47F0-BB61-2CA66D435C09} = {61017E64-6D00-49CB-9E81-5002DC8F7D5F}
 		{873BFC3E-63C2-4495-A503-5EC05DCD84E4} = {155227F0-A33B-40AA-A4B4-06F813EB921B}
 		{56C2FFB8-EA54-45B5-A095-4A78142EB4B5} = {155227F0-A33B-40AA-A4B4-06F813EB921B}
