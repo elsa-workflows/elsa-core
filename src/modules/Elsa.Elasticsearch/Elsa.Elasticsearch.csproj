@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.11.0" />
+      <PackageReference Include="Elastic.Clients.Elasticsearch" />
     </ItemGroup>
 
 </Project>

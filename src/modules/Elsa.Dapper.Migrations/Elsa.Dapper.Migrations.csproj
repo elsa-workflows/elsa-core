@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="FluentMigrator" Version="3.3.2" />
+      <PackageReference Include="FluentMigrator" />
     </ItemGroup>
 
 </Project>

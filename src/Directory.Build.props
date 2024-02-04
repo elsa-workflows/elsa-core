@@ -7,14 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup Label="Files">
-    <None Include="..\..\..\icon.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\..\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
-    <PackageReference Include="Fody" Version="6.8.0" PrivateAssets="All" />
-    <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All" />
+    <PackageReference Include="Fody" PrivateAssets="All" />
+    <PackageReference Include="JetBrains.Annotations" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
