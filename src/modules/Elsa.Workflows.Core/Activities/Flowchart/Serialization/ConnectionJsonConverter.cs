@@ -31,7 +31,7 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         var targetElement = doc.RootElement.GetProperty("target");
         var sourceId = sourceElement.GetProperty("activity").GetString()!;
         var targetId = targetElement.TryGetProperty("activity", out var targetIdValue) ? targetIdValue.GetString() : default;
-        var sourcePort = sourceElement.GetProperty("port").GetString()!;
+        var sourcePort = sourceElement.TryGetProperty("port", out var sourcePortValue) ? sourcePortValue.GetString() : default;
         var targetPort = targetElement.TryGetProperty("port", out var targetPortValue) ? targetPortValue.GetString() : default;
 
         var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : default!;
