@@ -7,4 +7,12 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="GitHubActionsTestLogger" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>

@@ -8,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.abstractions" Version="2.0.3" />
-        <PackageReference Include="xunit.extensibility.core" Version="2.6.2" />
+        <PackageReference Include="xunit.abstractions" />
+        <PackageReference Include="xunit.extensibility.core" />
     </ItemGroup>
 
     <ItemGroup>

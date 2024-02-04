@@ -8,10 +8,10 @@
         <RootNamespace>Proto.Cluster.AzureContainerApps</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Azure.Identity" Version="1.10.4"/>
-        <PackageReference Include="Azure.ResourceManager.AppContainers" Version="1.1.0"/>
-        <PackageReference Include="Azure.ResourceManager.Resources" Version="1.7.0"/>
-        <PackageReference Include="Proto.Cluster" Version="1.5.0"/>
-        <PackageReference Include="StackExchange.Redis" Version="2.7.4"/>
+        <PackageReference Include="Azure.Identity" />
+        <PackageReference Include="Azure.ResourceManager.AppContainers" />
+        <PackageReference Include="Azure.ResourceManager.Resources" />
+        <PackageReference Include="Proto.Cluster" />
+        <PackageReference Include="StackExchange.Redis" />
     </ItemGroup>
 </Project>

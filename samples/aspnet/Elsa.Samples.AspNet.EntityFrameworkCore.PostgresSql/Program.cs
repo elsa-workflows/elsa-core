@@ -54,7 +54,7 @@ app.UseWorkflowsApi();
 if (!app.Environment.IsProduction())
 {
     app.UseOpenApi();
-    app.UseSwaggerUi3();
+    app.UseSwaggerUi();
     app.UseReDoc();
 }
 
