@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Workflows.Memory;
 
 namespace Elsa.IntegrationTests.Serialization.VariableTypes;

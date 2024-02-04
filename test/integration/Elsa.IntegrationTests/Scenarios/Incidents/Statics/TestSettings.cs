@@ -1,4 +1,3 @@
-using System;
 using Elsa.Workflows.IncidentStrategies;
 
 namespace Elsa.IntegrationTests.Scenarios.Incidents.Statics;

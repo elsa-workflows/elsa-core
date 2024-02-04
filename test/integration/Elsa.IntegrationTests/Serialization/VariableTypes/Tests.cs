@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Linq;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;

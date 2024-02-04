@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.WorkflowCancellation.Workflows;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
