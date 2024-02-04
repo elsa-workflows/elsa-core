@@ -37,10 +37,17 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
             var expressionElement = doc.RootElement.TryGetProperty("expression", out var expressionElementValue) ? expressionElementValue : default;
             var expressionTypeNameElement = expressionElement.ValueKind != JsonValueKind.Undefined ? expressionElement.TryGetProperty("type", out var expressionTypeNameElementValue) ? expressionTypeNameElementValue : default : default;
-            var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : default;
-            var expressionDescriptor = expressionTypeName != null ? _expressionDescriptorRegistry.Find(expressionTypeName) : default;
-            var expression = expressionElement.ValueKind == JsonValueKind.Object ? expressionElement.Deserialize<Expression>(options) : new Expression(expressionTypeName!, null);
+            var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : "Literal";
+            var expressionDescriptor = _expressionDescriptorRegistry.Find(expressionTypeName);
             var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
+            var memoryBlockReferenceType = memoryBlockReference?.GetType();
+            var expressionValueElement = expressionElement.TryGetProperty("value", out var expressionElementValueValue) ? expressionElementValueValue : default;
+            var expressionValue = expressionValueElement.ValueKind == JsonValueKind.String
+                ? expressionValueElement.GetString()
+                : expressionValueElement.ValueKind != JsonValueKind.Undefined && memoryBlockReferenceType != null
+                    ? expressionValueElement.Deserialize(memoryBlockReferenceType, options)!
+                    : default;
+            var expression = new Expression(expressionTypeName, expressionValue);
 
             if (memoryBlockReference == null)
                 return default!;
