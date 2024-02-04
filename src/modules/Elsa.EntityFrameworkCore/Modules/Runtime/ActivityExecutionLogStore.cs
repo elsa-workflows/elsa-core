@@ -25,7 +25,7 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     private readonly EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> _store;
     private readonly ISafeSerializer _safeSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
-    private readonly ICompressionStrategyResolver _compressionStrategyResolver;
+    private readonly ICompressionCodecResolver _compressionCodecResolver;
     private readonly IOptions<ManagementOptions> _options;
 
     /// <summary>
@@ -35,13 +35,13 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
         EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, 
         ISafeSerializer safeSerializer, 
         IPayloadSerializer payloadSerializer,
-        ICompressionStrategyResolver compressionStrategyResolver,
+        ICompressionCodecResolver compressionCodecResolver,
         IOptions<ManagementOptions> options)
     {
         _store = store;
         _safeSerializer = safeSerializer;
         _payloadSerializer = payloadSerializer;
-        _compressionStrategyResolver = compressionStrategyResolver;
+        _compressionCodecResolver = compressionCodecResolver;
         _options = options;
     }
 
@@ -75,7 +75,7 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     {
         var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
         var serializedActivityState = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
-        var compressedSerializedActivityState = serializedActivityState != null ? await _compressionStrategyResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;
+        var compressedSerializedActivityState = serializedActivityState != null ? await _compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;
         
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
         dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = compressionAlgorithm;
@@ -102,7 +102,7 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
         if (!string.IsNullOrWhiteSpace(json))
         {
             var compressionAlgorithm = (string?)dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue ?? nameof(None);
-            var compressionStrategy = _compressionStrategyResolver.Resolve(compressionAlgorithm);
+            var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
             json = await compressionStrategy.DecompressAsync(json, cancellationToken);
             var dictionary = JsonSerializer.Deserialize<IDictionary<string, object>>(json);
             return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);

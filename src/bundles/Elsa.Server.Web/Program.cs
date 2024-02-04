@@ -110,7 +110,7 @@ services
                     });
                 
                 if(useZipCompression)
-                    management.SetCompressionAlgorithm(nameof(GZip));
+                    management.SetCompressionAlgorithm(nameof(Zstd));
             })
             .UseWorkflowRuntime(runtime =>
             {

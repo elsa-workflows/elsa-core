@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Management.Compression;
 /// <summary>
 /// Represents a compression strategy that does not compress or decompress the input.
 /// </summary>
-public class None : ICompressionStrategy
+public class None : ICompressionCodec
 {
     /// <inheritdoc />
     public ValueTask<string> CompressAsync(string input, CancellationToken cancellationToken)

@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Management.Compression;
 /// <summary>
 /// Represents a GZip compression strategy.
 /// </summary>
-public class GZip : ICompressionStrategy
+public class GZip : ICompressionCodec
 {
     /// <inheritdoc />
     public async ValueTask<string> CompressAsync(string input, CancellationToken cancellationToken)

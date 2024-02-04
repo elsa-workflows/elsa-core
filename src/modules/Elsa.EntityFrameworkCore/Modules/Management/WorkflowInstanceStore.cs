@@ -23,7 +23,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly ICompressionStrategyResolver _compressionStrategyResolver;
+    private readonly ICompressionCodecResolver _compressionCodecResolver;
     private readonly IOptions<ManagementOptions> _options;
 
     /// <summary>
@@ -32,12 +32,12 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     public EFCoreWorkflowInstanceStore(
         EntityStore<ManagementElsaDbContext, WorkflowInstance> store, 
         IWorkflowStateSerializer workflowStateSerializer, 
-        ICompressionStrategyResolver compressionStrategyResolver,
+        ICompressionCodecResolver compressionCodecResolver,
         IOptions<ManagementOptions> options)
     {
         _store = store;
         _workflowStateSerializer = workflowStateSerializer;
-        _compressionStrategyResolver = compressionStrategyResolver;
+        _compressionCodecResolver = compressionCodecResolver;
         _options = options;
     }
 
@@ -137,8 +137,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var data = entity.WorkflowState;
         var json = await _workflowStateSerializer.SerializeAsync(data, cancellationToken);
         var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
-        var compressionStrategy = _compressionStrategyResolver.Resolve(compressionAlgorithm);
-        var compressedJson = await compressionStrategy.CompressAsync(json, cancellationToken);
+        var compressionCodec = _compressionCodecResolver.Resolve(compressionAlgorithm);
+        var compressedJson = await compressionCodec.CompressAsync(json, cancellationToken);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = compressedJson;
         managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue = compressionAlgorithm;
@@ -152,7 +152,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var data = entity.WorkflowState;
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
         var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
-        var compressionStrategy = _compressionStrategyResolver.Resolve(compressionAlgorithm);
+        var compressionStrategy = _compressionCodecResolver.Resolve(compressionAlgorithm);
 
         if (!string.IsNullOrWhiteSpace(json))
         {

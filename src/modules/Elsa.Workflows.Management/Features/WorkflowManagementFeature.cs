@@ -188,9 +188,10 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
-            .AddSingleton<ICompressionStrategyResolver, CompressionStrategyResolver>()
-            .AddSingleton<ICompressionStrategy, None>()
-            .AddSingleton<ICompressionStrategy, GZip>()
+            .AddSingleton<ICompressionCodecResolver, CompressionCodecResolver>()
+            .AddSingleton<ICompressionCodec, None>()
+            .AddSingleton<ICompressionCodec, GZip>()
+            .AddSingleton<ICompressionCodec, Zstd>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

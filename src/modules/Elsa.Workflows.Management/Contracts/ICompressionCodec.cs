@@ -3,7 +3,7 @@ namespace Elsa.Workflows.Management.Contracts;
 /// <summary>
 /// Represents a compression strategy.
 /// </summary>
-public interface ICompressionStrategy
+public interface ICompressionCodec
 {
     /// <summary>
     /// Compresses the input.
