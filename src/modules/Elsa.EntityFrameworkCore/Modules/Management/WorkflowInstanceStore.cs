@@ -141,7 +141,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         var compressedJson = await compressionStrategy.CompressAsync(json, cancellationToken);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = compressedJson;
-        managementElsaDbContext.Entry(entity).Property("DataFormat").CurrentValue = "Json";
         managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue = compressionAlgorithm;
     }
 
@@ -151,7 +150,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
             return;
 
         var data = entity.WorkflowState;
-        var dataFormat = (string?)managementElsaDbContext.Entry(entity).Property("DataFormat").CurrentValue ?? "Json";
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
         var compressionAlgorithm = (string?)managementElsaDbContext.Entry(entity).Property("DataCompressionAlgorithm").CurrentValue ?? nameof(None);
         var compressionStrategy = _compressionStrategyResolver.Resolve(compressionAlgorithm);

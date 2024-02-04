@@ -30,7 +30,7 @@ const bool useQuartz = true;
 const bool useMassTransit = false;
 const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
-const bool useZipCompression = false;
+const bool useZipCompression = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

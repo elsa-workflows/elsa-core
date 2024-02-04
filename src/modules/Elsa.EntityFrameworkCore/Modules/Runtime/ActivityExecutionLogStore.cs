@@ -2,11 +2,16 @@ using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management.Compression;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -14,20 +19,30 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// <summary>
 /// An EF Core implementation of <see cref="IActivityExecutionStore"/>.
 /// </summary>
+[UsedImplicitly]
 public class EFCoreActivityExecutionStore : IActivityExecutionStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> _store;
     private readonly ISafeSerializer _safeSerializer;
     private readonly IPayloadSerializer _payloadSerializer;
+    private readonly ICompressionStrategyResolver _compressionStrategyResolver;
+    private readonly IOptions<ManagementOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EFCoreActivityExecutionStore"/> class.
     /// </summary>
-    public EFCoreActivityExecutionStore(EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, ISafeSerializer safeSerializer, IPayloadSerializer payloadSerializer)
+    public EFCoreActivityExecutionStore(
+        EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, 
+        ISafeSerializer safeSerializer, 
+        IPayloadSerializer payloadSerializer,
+        ICompressionStrategyResolver compressionStrategyResolver,
+        IOptions<ManagementOptions> options)
     {
         _store = store;
         _safeSerializer = safeSerializer;
         _payloadSerializer = payloadSerializer;
+        _compressionStrategyResolver = compressionStrategyResolver;
+        _options = options;
     }
 
     /// <inheritdoc />
@@ -58,42 +73,56 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
+        var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
+        var serializedActivityState = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
+        var compressedSerializedActivityState = serializedActivityState != null ? await _compressionStrategyResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;
+        
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
+        dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = compressionAlgorithm;
         dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? await _safeSerializer.SerializeAsync(entity.Outputs, cancellationToken) : default;
         dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? _payloadSerializer.Serialize(entity.Exception) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _payloadSerializer.Serialize(entity.Payload) : default;
     }
 
-    private ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
+    private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord? entity, CancellationToken cancellationToken)
     {
         if (entity is null)
-            return ValueTask.CompletedTask;
+            return;
 
-        entity.ActivityState = DeserializeActivityState(dbContext, entity);
+        entity.ActivityState = await DeserializeActivityState(dbContext, entity, cancellationToken)!;
         entity.Outputs = Deserialize<IDictionary<string, object>>(dbContext, entity, "SerializedOutputs");
         entity.Exception = DeserializePayload<ExceptionState>(dbContext, entity, "SerializedException");
         entity.Payload = DeserializePayload<IDictionary<string, object>>(dbContext, entity, "SerializedPayload");
-        return ValueTask.CompletedTask;
     }
 
-    private IDictionary<string, object>? DeserializeActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity)
+    private async Task<IDictionary<string, object>>? DeserializeActivityState(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
-        var dictionary = Deserialize<Dictionary<string, JsonElement>>(dbContext, entity, "SerializedActivityState");
-        return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);
+        var json = dbContext.Entry(entity).Property<string>("SerializedActivityState").CurrentValue;
+
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            var compressionAlgorithm = (string?)dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue ?? nameof(None);
+            var compressionStrategy = _compressionStrategyResolver.Resolve(compressionAlgorithm);
+            json = await compressionStrategy.DecompressAsync(json, cancellationToken);
+            var dictionary = JsonSerializer.Deserialize<IDictionary<string, object>>(json);
+            return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);
+        }
+        
+        return default;
     }
     
-    private T? Deserialize<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
+    private T Deserialize<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
     {
         var json = dbContext.Entry(entity).Property<string>(propertyName).CurrentValue;
         var value = !string.IsNullOrEmpty(json) ? JsonSerializer.Deserialize<T>(json) : default;
-        return value;
+        return value!;
     }
 
-    private T? DeserializePayload<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
+    private T DeserializePayload<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
     {
         var json = dbContext.Entry(entity).Property<string>(propertyName).CurrentValue;
         var payload = !string.IsNullOrEmpty(json) ? _payloadSerializer.Deserialize<T>(json) : default;
-        return payload;
+        return payload!;
     }
 
     private static IQueryable<ActivityExecutionRecord> Filter(IQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) => filter.Apply(queryable);

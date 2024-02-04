@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 
 # Define the modules to update
-mods=("Management")
+mods=("Management" "Runtime")
 # mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
 
 # Define the list of providers

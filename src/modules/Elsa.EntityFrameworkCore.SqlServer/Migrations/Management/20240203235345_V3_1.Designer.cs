@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20240203224841_V3_1")]
+    [Migration("20240203235345_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -120,9 +120,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DataCompressionAlgorithm")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("DataFormat")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DefinitionId")

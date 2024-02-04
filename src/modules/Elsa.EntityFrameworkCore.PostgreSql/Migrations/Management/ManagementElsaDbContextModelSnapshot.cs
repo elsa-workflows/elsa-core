@@ -119,9 +119,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("DataCompressionAlgorithm")
                         .HasColumnType("text");
 
-                    b.Property<string>("DataFormat")
-                        .HasColumnType("text");
-
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("text");

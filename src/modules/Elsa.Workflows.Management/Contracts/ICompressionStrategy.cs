@@ -8,13 +8,10 @@ public interface ICompressionStrategy
     /// <summary>
     /// Compresses the input.
     /// </summary>
-    ValueTask<string> CompressAsync(string input, CancellationToken cancellationToken);
+    ValueTask<string> CompressAsync(string input, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Decompresses the input.
     /// </summary>
-    /// <param name="input"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    ValueTask<string> DecompressAsync(string input, CancellationToken cancellationToken);
+    ValueTask<string> DecompressAsync(string input, CancellationToken cancellationToken = default);
 }

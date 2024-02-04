@@ -17,14 +17,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                 type: "longtext",
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "DataFormat",
-                schema: "Elsa",
-                table: "WorkflowInstances",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
         }
 
         /// <inheritdoc />
@@ -32,11 +24,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
         {
             migrationBuilder.DropColumn(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
-                table: "WorkflowInstances");
-
-            migrationBuilder.DropColumn(
-                name: "DataFormat",
                 schema: "Elsa",
                 table: "WorkflowInstances");
         }

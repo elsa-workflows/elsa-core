@@ -16,13 +16,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                 table: "WorkflowInstances",
                 type: "nvarchar(max)",
                 nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "DataFormat",
-                schema: "Elsa",
-                table: "WorkflowInstances",
-                type: "nvarchar(max)",
-                nullable: true);
         }
 
         /// <inheritdoc />
@@ -30,11 +23,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
         {
             migrationBuilder.DropColumn(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
-                table: "WorkflowInstances");
-
-            migrationBuilder.DropColumn(
-                name: "DataFormat",
                 schema: "Elsa",
                 table: "WorkflowInstances");
         }

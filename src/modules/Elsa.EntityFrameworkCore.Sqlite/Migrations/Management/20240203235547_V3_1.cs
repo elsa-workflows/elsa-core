@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
@@ -12,16 +12,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
         {
             migrationBuilder.AddColumn<string>(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
                 table: "WorkflowInstances",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "DataFormat",
-                schema: "Elsa",
-                table: "WorkflowInstances",
-                type: "text",
+                type: "TEXT",
                 nullable: true);
         }
 
@@ -30,12 +22,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
         {
             migrationBuilder.DropColumn(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
-                table: "WorkflowInstances");
-
-            migrationBuilder.DropColumn(
-                name: "DataFormat",
-                schema: "Elsa",
                 table: "WorkflowInstances");
         }
     }

@@ -34,7 +34,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
     {
         builder.Ignore(x => x.WorkflowState);
         builder.Property<string>("Data");
-        builder.Property<string>("DataFormat");
         builder.Property<string>("DataCompressionAlgorithm");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.SubStatus).HasConversion<string>();
