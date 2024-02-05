@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.Incidents.Statics;
 using Elsa.IntegrationTests.Scenarios.Incidents.Workflows;
 using Elsa.Testing.Shared;

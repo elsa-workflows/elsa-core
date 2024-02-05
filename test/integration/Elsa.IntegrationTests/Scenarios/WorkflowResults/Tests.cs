@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;

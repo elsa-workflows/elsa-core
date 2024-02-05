@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Elsa.Extensions;
 
 namespace Elsa.IntegrationTests.Serialization.Polymorphism;

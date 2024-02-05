@@ -1,4 +1,3 @@
-using System;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;

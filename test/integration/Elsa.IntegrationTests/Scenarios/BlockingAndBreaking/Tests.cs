@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Elsa.Extensions;
 using Elsa.IntegrationTests.Scenarios.BlockingAndBreaking.Workflows;
 using Elsa.Testing.Shared;

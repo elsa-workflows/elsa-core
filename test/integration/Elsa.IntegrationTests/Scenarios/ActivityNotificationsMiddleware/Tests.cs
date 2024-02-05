@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Notifications;
