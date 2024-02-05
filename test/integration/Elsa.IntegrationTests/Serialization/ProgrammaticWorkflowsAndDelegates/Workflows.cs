@@ -14,7 +14,6 @@ public class GreeterWorkflow : WorkflowBase
         var messageInput = builder.WithInput<string>("Message", "The message to write to the console.");
         
         builder.Name = "Greeter Workflow";
-        builder.Inputs.Add(messageInput);
         builder.Root = new WriteLine(context => context.GetInput<string>(messageInput));
     }
 }
