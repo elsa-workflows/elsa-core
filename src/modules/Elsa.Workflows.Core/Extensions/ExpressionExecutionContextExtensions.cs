@@ -339,6 +339,18 @@ public static class ExpressionExecutionContextExtensions
     }
 
     /// <summary>
+    /// Returns the input value associated with the specified <see cref="InputDefinition"/> in the given <see cref="ExpressionExecutionContext"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the input value.</typeparam>
+    /// <param name="context">The <see cref="ExpressionExecutionContext"/> containing the input.</param>
+    /// <param name="inputDefinition">The <see cref="InputDefinition"/> specifying the input to retrieve.</param>
+    /// <returns>The input value associated with the specified <see cref="InputDefinition"/> in the <see cref="ExpressionExecutionContext"/>.</returns>
+    public static T? GetInput<T>(this ExpressionExecutionContext context, InputDefinition inputDefinition)
+    {
+        return context.GetInput<T>(inputDefinition.Name);
+    }
+
+    /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
     /// <param name="context"></param>
