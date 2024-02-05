@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// A JSON converter factory that creates <see cref="InputJsonConverter{T}"/> instances.

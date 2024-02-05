@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Creates instances of <see cref="ActivityJsonConverter"/>.

@@ -5,7 +5,7 @@ using Elsa.Expressions.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Management.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Input"/> objects.
