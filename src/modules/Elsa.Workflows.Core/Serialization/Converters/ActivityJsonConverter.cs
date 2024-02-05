@@ -10,7 +10,7 @@ using Elsa.Workflows.Models;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Management.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// (De)serializes objects of type <see cref="IActivity"/>.

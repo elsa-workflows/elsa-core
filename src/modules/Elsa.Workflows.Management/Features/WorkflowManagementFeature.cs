@@ -20,8 +20,8 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
-using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
