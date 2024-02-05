@@ -48,11 +48,11 @@ public class MongoDbFeature : FeatureBase
 
     private static void RegisterSerializers()
     {
-        BsonSerializer.RegisterSerializer(typeof(object), new PolymorphicSerializer());
-        BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
-        BsonSerializer.RegisterSerializer(typeof(Variable), new VariableSerializer());
-        BsonSerializer.RegisterSerializer(typeof(Version), new VersionSerializer());
-        BsonSerializer.RegisterSerializer(typeof(JsonElement), new JsonElementSerializer());
+        BsonSerializer.TryRegisterSerializer(typeof(object), new PolymorphicSerializer());
+        BsonSerializer.TryRegisterSerializer(typeof(Type), new TypeSerializer());
+        BsonSerializer.TryRegisterSerializer(typeof(Variable), new VariableSerializer());
+        BsonSerializer.TryRegisterSerializer(typeof(Version), new VersionSerializer());
+        BsonSerializer.TryRegisterSerializer(typeof(JsonElement), new JsonElementSerializer());
     }
 
     private static void RegisterClassMaps()
