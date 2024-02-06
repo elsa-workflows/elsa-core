@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -12,6 +13,22 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     /// <inheritdoc />
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
+        /*
+        * { 
+        *      "persistence": {
+        *          "default": "default",
+        *          "inputs": { k : v }, 
+        *          "outputs": { k: v }
+        *          }
+        *  }
+        */
+
+        var workflowPersistenceProperty = source.WorkflowExecutionContext.Workflow.CustomProperties
+                            .GetValueOrDefault<PersistenceStrategy>("persistence", () => PersistenceStrategy.Exclude);
+       
+        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
+        var activityPersistencePropertyDefault = activityPersistenceProperties.GetValueOrDefault("default",()=> workflowPersistenceProperty);
+ 
         // Get any outcomes that were added to the activity execution context.
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
         var payload = new Dictionary<string, object>();
@@ -41,6 +58,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return default;
         });
 
+        outputs = StorePropertyUsingStrategy(outputs, activityPersistenceProperties.GetValueOrDefault("outputs", () => new Dictionary<string, object>()), activityPersistencePropertyDefault);
+        var activityState = StorePropertyUsingStrategy(source.ActivityState, activityPersistenceProperties.GetValueOrDefault("inputs", () => new Dictionary<string, object>()), activityPersistencePropertyDefault );
+
         return new ActivityExecutionRecord
         {
             Id = source.Id,
@@ -49,7 +69,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
             ActivityType = source.Activity.Type,
             ActivityName = source.Activity.Name,
-            ActivityState = source.ActivityState,
+            ActivityState = activityState,
             Outputs = outputs,
             Payload = payload,
             Exception = ExceptionState.FromException(source.Exception),
@@ -59,6 +79,22 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             Status = GetAggregateStatus(source),
             CompletedAt = source.CompletedAt
         };
+    }
+
+    private static Dictionary<string,object?> StorePropertyUsingStrategy(IDictionary<string,object?> inputs
+        , IDictionary<string,object> strategies
+        , PersistenceStrategy defaultPersistenceStrategy = PersistenceStrategy.Exclude)
+    {
+        var result = new Dictionary<string, object?>();
+
+        foreach (var input in inputs)
+        {
+            var persistence = strategies.GetValueOrDefault(input.Key, () => defaultPersistenceStrategy);
+            if (persistence.Equals(PersistenceStrategy.Include))
+                result.Add(input.Key, input.Value);
+        }
+
+        return result;
     }
 
     private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
