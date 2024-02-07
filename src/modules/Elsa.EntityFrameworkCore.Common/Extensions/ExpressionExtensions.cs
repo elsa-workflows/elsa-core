@@ -19,7 +19,7 @@ public static class ExpressionExtensions
     public static Expression<Func<TEntity, bool>> BuildContainsExpression<TEntity>(this Expression<Func<TEntity, string>> keySelector, IEnumerable<TEntity> entities) where TEntity : class
     {
         var compiledKeySelector = keySelector.Compile();
-        var list = entities.Select(compiledKeySelector);
+        var list = entities.Select(compiledKeySelector).ToList();
         var property = keySelector.GetProperty()!;
         var param = Expression.Parameter(typeof(TEntity));
         
