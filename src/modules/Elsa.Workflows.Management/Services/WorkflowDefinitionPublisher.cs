@@ -31,7 +31,6 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     public WorkflowDefinitionPublisher(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionStore workflowDefinitionStore,
-        IWorkflowValidator workflowValidator,
         INotificationSender notificationSender,
         IIdentityGenerator identityGenerator,
         IActivitySerializer activitySerializer,
