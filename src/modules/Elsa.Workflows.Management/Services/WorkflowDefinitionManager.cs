@@ -126,12 +126,15 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
 
-        var publishedWorkflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        var workflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
         {
-            VersionOptions = VersionOptions.Published
+            VersionOptions = VersionOptions.LatestAndPublished
         }, cancellationToken)).ToList();
+        
+        // Remove the dependency from the list of workflow definitions to consider.
+        workflowDefinitions = workflowDefinitions.Where(x => x.DefinitionId != dependency.DefinitionId).ToList();
 
-        foreach (var definition in publishedWorkflowDefinitions)
+        foreach (var definition in workflowDefinitions)
         {
             var root = _activitySerializer.Deserialize(definition.StringData!);
             var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
