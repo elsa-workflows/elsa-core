@@ -123,4 +123,19 @@ public static class ServiceProviderExtensions
         var result = await workflowRunner.RunAsync(activity, options, cancellationToken);
         return result;
     }
+
+    /// <summary>
+    /// Retrieves a workflow definition by its ID.
+    /// </summary>
+    /// <param name="services">The service provider.</param>
+    /// <param name="workflowDefinitionId">The definition ID of the workflow definition.</param>
+    /// <param name="versionOptions">Options to specify the version of the workflow definition to retrieve.</param>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The retrieved workflow definition.</returns>
+    public static async Task<WorkflowDefinition> GetWorkflowDefinitionAsync(this IServiceProvider services, string workflowDefinitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowDefinition = await workflowDefinitionService.FindAsync(workflowDefinitionId, versionOptions);
+        return workflowDefinition!;
+    }
 }

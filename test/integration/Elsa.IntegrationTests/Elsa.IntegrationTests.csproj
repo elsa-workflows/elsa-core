@@ -21,5 +21,11 @@
     <ItemGroup>
         <None Update="Serialization\**\*.json" CopyToOutputDirectory="PreserveNewest" />
         <None Update="Scenarios\**\Workflows\*.json" CopyToOutputDirectory="PreserveNewest" />
+        <None Update="Scenarios\DependencyWorkflowsPublishing\Workflows\child.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\DependencyWorkflowsPublishing\Workflows\parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>
