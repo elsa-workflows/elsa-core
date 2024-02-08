@@ -48,16 +48,16 @@ public class MongoDbFeature : FeatureBase
 
     private static void RegisterSerializers()
     {
-        BsonSerializer.TryRegisterSerializer(typeof(object), new PolymorphicSerializer());
-        BsonSerializer.TryRegisterSerializer(typeof(Type), new TypeSerializer());
-        BsonSerializer.TryRegisterSerializer(typeof(Variable), new VariableSerializer());
-        BsonSerializer.TryRegisterSerializer(typeof(Version), new VersionSerializer());
-        BsonSerializer.TryRegisterSerializer(typeof(JsonElement), new JsonElementSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(object), new PolymorphicSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(Type), new TypeSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(Variable), new VariableSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
     }
 
     private static void RegisterClassMaps()
     {
-        BsonClassMap.RegisterClassMap<StoredBookmark>(cm =>
+        BsonClassMap.TryRegisterClassMap<StoredBookmark>(cm =>
         {
             cm.AutoMap(); // Automatically map other properties
             cm
@@ -66,6 +66,17 @@ public class MongoDbFeature : FeatureBase
         });
     }
 
+    private static void TryRegisterSerializerOrSkipWhenExist(Type type, IBsonSerializer serializer)
+    {
+       try
+       {
+           BsonSerializer.TryRegisterSerializer(type, serializer);
+       }
+       catch (BsonSerializationException ex)
+       {
+       }
+    }
+    
     private static IMongoDatabase CreateDatabase(IServiceProvider sp, string connectionString)
     {
         var options = sp.GetRequiredService<IOptions<MongoDbOptions>>().Value;
