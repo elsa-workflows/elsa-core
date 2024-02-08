@@ -10,6 +10,13 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
+    private PersistenceStrategy _serverPersistenceStrategyProvider;
+
+    public DefaultActivityExecutionMapper(IWorkflowActivityPersistenceStrategyProvider serverPersistenceStrategyProvider)
+    {
+        _serverPersistenceStrategyProvider =  serverPersistenceStrategyProvider.GetGlobalPersistenceStrategy();
+    }
+
     /// <inheritdoc />
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
@@ -26,8 +33,10 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var workflowPersistenceProperty = source.WorkflowExecutionContext.Workflow.CustomProperties
                             .GetValueOrDefault<PersistenceStrategy>("persistence", () => PersistenceStrategy.Exclude);
        
-        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
-        var activityPersistencePropertyDefault = activityPersistenceProperties.GetValueOrDefault("default",()=> workflowPersistenceProperty);
+        var activityPersistenceProperties = source.Activity.CustomProperties
+            .GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
+        var activityPersistencePropertyDefault = activityPersistenceProperties!
+            .GetValueOrDefault("default",()=> workflowPersistenceProperty);
  
         // Get any outcomes that were added to the activity execution context.
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;

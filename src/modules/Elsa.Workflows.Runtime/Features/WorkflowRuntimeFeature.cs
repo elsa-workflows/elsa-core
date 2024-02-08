@@ -169,6 +169,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
+            .AddSingleton<IWorkflowActivityPersistenceStrategyProvider, DefaultWorkflowActivityPersistenceStrategyProvider>()
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
