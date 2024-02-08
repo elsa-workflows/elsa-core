@@ -71,7 +71,6 @@ services
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
-            // .UseFileStorage(sp => StorageFactory.Blobs.AzureBlobStorageWithSas(configuration.GetConnectionString("AzureStorageSasUrl")))
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
