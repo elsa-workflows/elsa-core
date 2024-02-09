@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 namespace Elsa.Alterations.IntegrationTests;
 
 /// <summary>
-/// Represents a class that contains tests for migration.
+/// Contains tests for migration.
 /// </summary>
 public class MigrationTests
 {
