@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+<!--    <ItemGroup>-->
+<!--      <PackageReference Include="Elsa" Version="3.0.5" />-->
+<!--      <PackageReference Include="Elsa.Alterations" Version="3.0.5" />-->
+<!--      <PackageReference Include="Elsa.FileStorage" Version="3.0.5" />-->
+<!--      <PackageReference Include="Elsa.WorkflowProviders.BlobStorage" Version="3.0.5" />-->
+<!--    </ItemGroup>-->
+
+    <ItemGroup>
+      <None Update="Workflows\alteration-test.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Workflows\alteration-test.-v2.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\bundles\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.FileStorage\Elsa.FileStorage.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
+    </ItemGroup>
+
+</Project>
