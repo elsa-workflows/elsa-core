@@ -15,6 +15,8 @@ internal class Request
 
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
+
+    public string? Channel { get; set; }
 }
 
 internal record Response(string WorkflowInstanceId);

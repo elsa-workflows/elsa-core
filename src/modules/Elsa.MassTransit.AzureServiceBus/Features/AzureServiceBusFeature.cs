@@ -1,15 +1,11 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Activities;
 using MassTransit;
-
-#if  NET6_0 || NET7_0
-using MassTransit.Azure.ServiceBus.Core;
-using MassTransit.Definition;
-#endif
 
 namespace Elsa.MassTransit.AzureServiceBus.Features;
 
@@ -40,19 +36,15 @@ public class AzureServiceBusFeature : FeatureBase
             {
                 configure.AddServiceBusMessageScheduler();
                 
-                configure.UsingAzureServiceBus((context, serviceBus) =>
+                configure.UsingAzureServiceBus((context, configurator) =>
                 {
                     if (ConnectionString != null) 
-                        serviceBus.Host(ConnectionString);
+                        configurator.Host(ConnectionString);
                     
-                    serviceBus.UseServiceBusMessageScheduler();
-                    ConfigureServiceBus?.Invoke(serviceBus);
-                    serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
-                    serviceBus.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-1", endpoint =>
-                    {
-                        //endpoint.ConfigureMessageTopology<DispatchWorkflowDefinition>();
-                    });
-                    serviceBus.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-2", endpoint => { });
+                    configurator.UseServiceBusMessageScheduler();
+                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    ConfigureServiceBus?.Invoke(configurator);
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });

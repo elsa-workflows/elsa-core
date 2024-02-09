@@ -12,10 +12,6 @@ using Elsa.Workflows.Runtime.Features;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 
-#if NET6_0 || NET7_0
-using MassTransit.Definition;
-#endif
-
 namespace Elsa.MassTransit.Features;
 
 /// <summary>
@@ -50,12 +46,12 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         if (ConfigureDispatcherOptions != null)
             options.Configure(ConfigureDispatcherOptions);
         
-        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
-        var queueAddress = new Uri($"queue:elsa-{queueName}");
-        
-        EndpointConvention.Map<DispatchWorkflowInstance>(queueAddress);
-        EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
-        EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
+        // var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
+        // var queueAddress = new Uri($"queue:elsa-{queueName}");
+        //
+        // EndpointConvention.Map<DispatchWorkflowInstance>(queueAddress);
+        // EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
+        // EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
         
         Services.AddScoped<MassTransitWorkflowDispatcher>();
     }

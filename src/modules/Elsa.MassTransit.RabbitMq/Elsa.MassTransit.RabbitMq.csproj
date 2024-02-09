@@ -15,8 +15,4 @@
         <PackageReference Include="MassTransit.RabbitMQ" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.3" />
-    </ItemGroup>
-
 </Project>

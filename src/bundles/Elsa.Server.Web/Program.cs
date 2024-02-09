@@ -15,6 +15,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Server.Web;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -28,9 +29,8 @@ const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useMassTransitAzureServiceBus = true;
-const bool useMassTransitRabbitMq = false;
 const bool useZipCompression = true;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -142,6 +142,7 @@ services
                     runtime.UseMassTransitDispatcher();
                 }
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
+                runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
             .UseScheduling(scheduling =>
@@ -210,7 +211,7 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (useMassTransitAzureServiceBus)
+                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
@@ -222,7 +223,7 @@ services
                     });
                 }
 
-                if (useMassTransitRabbitMq)
+                if (useMassTransitBroker == MassTransitBroker.RabbitMq)
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {

@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Messages;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
@@ -54,14 +55,7 @@ public class MassTransitFeature : FeatureBase
         {
             configure.UsingInMemory((context, configurator) =>
             {
-                configurator.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-1", endpoint =>
-                {
-                    endpoint.ConfigureMessageTopology<DispatchWorkflowDefinition>();
-                });
-                configurator.ReceiveEndpoint("elsa-dispatch-workflow-request-channel-2", endpoint =>
-                {
-                    endpoint.ConfigureMessageTopology<DispatchWorkflowDefinition>();
-                });
+                configurator.SetupWorkflowDispatcherEndpoints(context);
                 configurator.ConfigureEndpoints(context);
 
                 if (PrefetchCount != null) configurator.PrefetchCount = PrefetchCount.Value;

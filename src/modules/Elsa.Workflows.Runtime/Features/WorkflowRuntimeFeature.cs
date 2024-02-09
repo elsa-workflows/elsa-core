@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -32,6 +33,8 @@ public class WorkflowRuntimeFeature : FeatureBase
     public WorkflowRuntimeFeature(IModule module) : base(module)
     {
     }
+
+    private IDictionary<string, WorkflowDispatcherChannelDescriptor> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, WorkflowDispatcherChannelDescriptor>();
 
     /// <summary>
     /// A list of workflow builders configured during application startup.
@@ -102,6 +105,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A delegate to configure the <see cref="WorkflowInboxCleanupOptions"/>.
     /// </summary>
     public Action<WorkflowInboxCleanupOptions> WorkflowInboxCleanupOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="WorkflowDispatcherOptions"/>.
+    /// </summary>
+    public Action<WorkflowDispatcherOptions> WorkflowDispatcherOptions { get; set; } = _ => { };
 
     /// <summary>
     /// Register the specified workflow type.
@@ -127,6 +135,26 @@ public class WorkflowRuntimeFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Adds a dispatcher channel.
+    /// </summary>
+    public WorkflowRuntimeFeature AddDispatcherChannel(string channel)
+    {
+        return AddDispatcherChannel(new WorkflowDispatcherChannelDescriptor
+        {
+            Name = channel
+        });
+    }
+
+    /// <summary>
+    /// Adds a dispatcher channel.
+    /// </summary>
+    public WorkflowRuntimeFeature AddDispatcherChannel(WorkflowDispatcherChannelDescriptor channelDescriptor)
+    {
+        WorkflowDispatcherChannels[channelDescriptor.Name] = channelDescriptor;
+        return this;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -146,8 +174,13 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Options.
         Services.Configure(DistributedLockingOptions);
-        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure(WorkflowInboxCleanupOptions);
+        Services.Configure(WorkflowDispatcherOptions);
+        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
+        Services.Configure<WorkflowDispatcherOptions>(options =>
+        {
+            options.Channels.AddRange(WorkflowDispatcherChannels.Values);
+        });
 
         Services
             // Core.
@@ -214,7 +247,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
-            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()            
+            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 
             // Workflow activation strategies.
