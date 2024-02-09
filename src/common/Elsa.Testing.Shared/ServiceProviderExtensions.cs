@@ -59,13 +59,17 @@ public static class ServiceProviderExtensions
     /// <param name="services">The services.</param>
     /// <param name="workflowDefinitionId">The ID of the workflow definition.</param>
     /// <param name="input">An optional dictionary of input values.</param>
+    /// <param name="versionOptions">An optional set of options to specify the version of the workflow definition to retrieve.</param>
     /// <returns>The workflow state.</returns>
-    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, string workflowDefinitionId, IDictionary<string, object>? input = default)
+    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, 
+        string workflowDefinitionId, 
+        IDictionary<string, object>? input = default, 
+        VersionOptions? versionOptions = default)
     {
         var startWorkflowOptions = new StartWorkflowRuntimeOptions
         {
             Input = input,
-            VersionOptions = VersionOptions.Published
+            VersionOptions = versionOptions ?? VersionOptions.Published
         };
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
