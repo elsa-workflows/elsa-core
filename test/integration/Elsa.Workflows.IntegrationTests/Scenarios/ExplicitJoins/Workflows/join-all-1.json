@@ -1,0 +1,248 @@
+{
+  "id": "9948e541b0e540c384c6eb9fdcf1d544",
+  "definitionId": "296428cc22bd4f309e858f4b461dbb3d",
+  "name": "Join 1",
+  "createdAt": "2023-09-12T18:12:54.370149+00:00",
+  "version": 2,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "sL581qWiIEOpRncv5Ez33A",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAll"
+          },
+          "memoryReference": {
+            "id": "aA4pfJOzyEqmLOY3U3vCoQ:input-0"
+          }
+        },
+        "id": "aA4pfJOzyEqmLOY3U3vCoQ",
+        "name": "FlowJoin1",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 198,
+              "y": -266
+            },
+            "size": {
+              "width": 136.859375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Start"
+          },
+          "memoryReference": {
+            "id": "FRXh0PlHekejZiWANAplUg:input-0"
+          }
+        },
+        "id": "FRXh0PlHekejZiWANAplUg",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -287,
+              "y": -266
+            },
+            "size": {
+              "width": 102.21875,
+              "height": 50
+            }
+          },
+          "displayText": "Start"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Line 1"
+          },
+          "memoryReference": {
+            "id": "GaVrCWqBDkS6YrvydxKvFA:input-0"
+          }
+        },
+        "id": "GaVrCWqBDkS6YrvydxKvFA",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -40,
+              "y": -316
+            },
+            "size": {
+              "width": 110.65625,
+              "height": 50
+            }
+          },
+          "displayText": "Line 1"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Line 2"
+          },
+          "memoryReference": {
+            "id": "9Z7bt98j00uRMt9TS2FD0g:input-0"
+          }
+        },
+        "id": "9Z7bt98j00uRMt9TS2FD0g",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -40,
+              "y": -207
+            },
+            "size": {
+              "width": 110.65625,
+              "height": 50
+            }
+          },
+          "displayText": "Line 2"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "End"
+          },
+          "memoryReference": {
+            "id": "MplDrS_bUE-8td-XBUvWmA:input-0"
+          }
+        },
+        "id": "MplDrS_bUE-8td-XBUvWmA",
+        "name": "WriteLine4",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 430,
+              "y": -266
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "FRXh0PlHekejZiWANAplUg",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "GaVrCWqBDkS6YrvydxKvFA",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "FRXh0PlHekejZiWANAplUg",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "9Z7bt98j00uRMt9TS2FD0g",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "9Z7bt98j00uRMt9TS2FD0g",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "aA4pfJOzyEqmLOY3U3vCoQ",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "GaVrCWqBDkS6YrvydxKvFA",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "aA4pfJOzyEqmLOY3U3vCoQ",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "aA4pfJOzyEqmLOY3U3vCoQ",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "MplDrS_bUE-8td-XBUvWmA",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

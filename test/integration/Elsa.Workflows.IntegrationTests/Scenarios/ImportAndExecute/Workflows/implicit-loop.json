@@ -1,0 +1,243 @@
+{
+  "id": "0975a7e7cff7421ea03d1cc0247db02b",
+  "definitionId": "68e6bca3d86c4a5a8dfb825f1d5c0875",
+  "name": "Looping construct",
+  "createdAt": "2023-04-18T19:04:50.945222+00:00",
+  "version": 1,
+  "variables": [
+    {
+      "id": "b1198ecccf3f435abe462dc37012cda9",
+      "name": "Counter",
+      "typeName": "Int32",
+      "isArray": false,
+      "value": "0",
+      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "metadata": {},
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": []
+    },
+    "start": "Start1",
+    "activities": [
+      {
+        "variable": {
+          "id": "b1198ecccf3f435abe462dc37012cda9",
+          "name": "Counter",
+          "typeName": "Int32",
+          "value": "0",
+          "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+        },
+        "value": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getCounter() \u002B 1"
+          },
+          "memoryReference": {
+            "id": "SetVariable1:input-1"
+          }
+        },
+        "id": "SetVariable1",
+        "type": "Elsa.SetVariable",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2620,
+              "y": 2280
+            }
+          },
+          "displayText": "Increment counter"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Done"
+          },
+          "memoryReference": {
+            "id": "WriteLine3:input-1"
+          }
+        },
+        "id": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 3220,
+              "y": 2400
+            }
+          },
+          "displayText": "Done"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Retry"
+          },
+          "memoryReference": {
+            "id": "WriteLine2:input-1"
+          }
+        },
+        "id": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2460,
+              "y": 2500
+            }
+          },
+          "displayText": "Retry"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Do something"
+          },
+          "memoryReference": {
+            "id": "WriteLine1:input-1"
+          }
+        },
+        "id": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2320,
+              "y": 2280
+            }
+          },
+          "displayText": "Do something"
+        }
+      },
+      {
+        "condition": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getCounter() \u003E 1"
+          },
+          "memoryReference": {
+            "id": "FlowDecision1:input-1"
+          }
+        },
+        "id": "FlowDecision1",
+        "type": "Elsa.FlowDecision",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2940,
+              "y": 2400
+            }
+          },
+          "displayText": "Counter \u003E 1"
+        }
+      },
+      {
+        "id": "Start1",
+        "type": "Elsa.Start",
+        "version": 1,
+        "canStartWorkflow": false,
+        "runAsynchronously": false,
+        "customProperties": {},
+        "source": null,
+        "line": null,
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2060,
+              "y": 2380
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": "WriteLine1",
+        "target": "SetVariable1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "FlowDecision1",
+        "target": "WriteLine3",
+        "sourcePort": "True",
+        "targetPort": "In"
+      },
+      {
+        "source": "FlowDecision1",
+        "target": "WriteLine2",
+        "sourcePort": "False",
+        "targetPort": "In"
+      },
+      {
+        "source": "Start1",
+        "target": "WriteLine1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "WriteLine2",
+        "target": "WriteLine1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "SetVariable1",
+        "target": "FlowDecision1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      }
+    ]
+  }
+}

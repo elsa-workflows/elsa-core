@@ -1,0 +1,287 @@
+{
+  "id": "14984c048db34cceaf5e15ece80f9703",
+  "definitionId": "64f8f2c852f04dc28f60707034d7a906",
+  "name": "Join 2",
+  "createdAt": "2023-09-12T18:12:43.392272+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "B2jpPDriPEe-zSOhVuAGeQ",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Start"
+          },
+          "memoryReference": {
+            "id": "2yPLgUudQEGPaschdLdkGg:input-0"
+          }
+        },
+        "id": "2yPLgUudQEGPaschdLdkGg",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -358.5,
+              "y": -229
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          },
+          "displayText": "Start"
+        }
+      },
+      {
+        "body": {
+          "type": "Elsa.Flowchart",
+          "version": 1,
+          "id": "zaAIlUtQDEaPqeITeRJ4_w",
+          "metadata": {},
+          "customProperties": {
+            "source": "FlowchartJsonConverter.cs:46",
+            "notFoundConnections": [],
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "activities": [
+            {
+              "text": {
+                "typeName": "String",
+                "expression": {
+                  "type": "Literal",
+                  "value": "Line 2"
+                },
+                "memoryReference": {
+                  "id": "g3jVTdvU3EK7V5JqRqfqjQ:input-0"
+                }
+              },
+              "id": "g3jVTdvU3EK7V5JqRqfqjQ",
+              "name": "WriteLine1",
+              "type": "Elsa.WriteLine",
+              "version": 1,
+              "customProperties": {
+                "canStartWorkflow": false,
+                "runAsynchronously": false
+              },
+              "metadata": {
+                "designer": {
+                  "position": {
+                    "x": -279.5,
+                    "y": -294
+                  },
+                  "size": {
+                    "width": 139.296875,
+                    "height": 50
+                  }
+                },
+                "displayText": "Line 2"
+              }
+            }
+          ],
+          "connections": []
+        },
+        "id": "eHAEEQ-Iu0GwM3mRxZin0Q",
+        "name": "FlowNode1",
+        "type": "Elsa.FlowNode",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -120,
+              "y": -179
+            },
+            "size": {
+              "width": 211.15625,
+              "height": 120
+            }
+          },
+          "displayText": "Line 2"
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Line 1"
+          },
+          "memoryReference": {
+            "id": "7RQ2sbVHo0SxsyK0dvTKEA:input-0"
+          }
+        },
+        "id": "7RQ2sbVHo0SxsyK0dvTKEA",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -120,
+              "y": -279
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          },
+          "displayText": "Line 1"
+        }
+      },
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAll"
+          },
+          "memoryReference": {
+            "id": "dVUuwMm5XUiYpiYoGo5JKA:input-0"
+          }
+        },
+        "id": "dVUuwMm5XUiYpiYoGo5JKA",
+        "name": "FlowJoin1",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 180.5,
+              "y": -229
+            },
+            "size": {
+              "width": 136.859375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "End"
+          },
+          "memoryReference": {
+            "id": "NpZ_yT_irUuE9ASEfYLxbw:input-0"
+          }
+        },
+        "id": "NpZ_yT_irUuE9ASEfYLxbw",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 400,
+              "y": -229
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          },
+          "displayText": "End"
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "2yPLgUudQEGPaschdLdkGg",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "7RQ2sbVHo0SxsyK0dvTKEA",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "2yPLgUudQEGPaschdLdkGg",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "eHAEEQ-Iu0GwM3mRxZin0Q",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "7RQ2sbVHo0SxsyK0dvTKEA",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "dVUuwMm5XUiYpiYoGo5JKA",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "eHAEEQ-Iu0GwM3mRxZin0Q",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "dVUuwMm5XUiYpiYoGo5JKA",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "dVUuwMm5XUiYpiYoGo5JKA",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "NpZ_yT_irUuE9ASEfYLxbw",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

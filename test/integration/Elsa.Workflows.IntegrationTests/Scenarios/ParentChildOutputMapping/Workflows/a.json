@@ -1,0 +1,89 @@
+{
+  "id": "5d8015cea7b44c96",
+  "definitionId": "7fe314161d2d2ac6",
+  "name": "A",
+  "createdAt": "2023-11-15T13:55:38.86581+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output 1",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "d84ccfca1b90bc0c",
+    "nodeId": "Workflow1:d84ccfca1b90bc0c",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:47",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output1"
+          },
+          "memoryReference": {
+            "id": "a6389a28e986c6ff:input-0"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Foo"
+          },
+          "memoryReference": {
+            "id": "a6389a28e986c6ff:input-1"
+          }
+        },
+        "id": "a6389a28e986c6ff",
+        "nodeId": "Workflow1:d84ccfca1b90bc0c:a6389a28e986c6ff",
+        "name": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -60,
+              "y": 240
+            },
+            "size": {
+              "width": 107.734375,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

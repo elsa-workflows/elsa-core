@@ -1,0 +1,8 @@
+{
+  "StatusCode": "Created",
+  "Content": {
+    "_island": "[\r\n  {\r\n    \u0022path\u0022: \u0022folder1\u0022,\r\n    \u0022command\u0022: \u0022add\u0022\r\n  }\r\n]",
+    "_type": "Newtonsoft.Json.Linq.JArray, Newtonsoft.Json"
+  },
+  "_type": "System.Collections.Generic.Dictionary\u00602[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
+}

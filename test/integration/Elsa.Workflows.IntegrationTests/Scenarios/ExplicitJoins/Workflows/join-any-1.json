@@ -1,0 +1,245 @@
+{
+  "id": "2484d1b14e2348f7a916ecef042536e6",
+  "definitionId": "7204b870946b4968aa786a2c91431242",
+  "name": "Flow Join Any",
+  "createdAt": "2023-09-08T19:07:08.435872+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": false,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "F44h770hvkSaOWI_jjbM_A",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "NotFoundConnectionsKey": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAny"
+          },
+          "memoryReference": {
+            "id": "ImdIbHXtHkiLlrExFlW51A:input-0"
+          }
+        },
+        "id": "ImdIbHXtHkiLlrExFlW51A",
+        "name": "FlowJoin1",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -180,
+              "y": -320
+            },
+            "size": {
+              "width": 136.859375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAny"
+          },
+          "memoryReference": {
+            "id": "cxnS1whoCESvwwPyBnno_Q:input-0"
+          }
+        },
+        "id": "cxnS1whoCESvwwPyBnno_Q",
+        "name": "FlowJoin2",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -180,
+              "y": -80
+            },
+            "size": {
+              "width": 136.859375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "mode": {
+          "typeName": "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core",
+          "expression": {
+            "type": "Literal",
+            "value": "WaitAny"
+          },
+          "memoryReference": {
+            "id": "H0apwXYdoESn2TJ5T_3xAg:input-0"
+          }
+        },
+        "id": "H0apwXYdoESn2TJ5T_3xAg",
+        "name": "FlowJoin3",
+        "type": "Elsa.FlowJoin",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 40,
+              "y": -194
+            },
+            "size": {
+              "width": 136.859375,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Start"
+          },
+          "memoryReference": {
+            "id": "Kn9d-EVn2EiaYJqHd8VcmQ:input-0"
+          }
+        },
+        "id": "Kn9d-EVn2EiaYJqHd8VcmQ",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -393.5,
+              "y": -194
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "End"
+          },
+          "memoryReference": {
+            "id": "haHoM3A5EU6aYu_8dCYaYg:input-0"
+          }
+        },
+        "id": "haHoM3A5EU6aYu_8dCYaYg",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 310.5,
+              "y": -194
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "Kn9d-EVn2EiaYJqHd8VcmQ",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "ImdIbHXtHkiLlrExFlW51A",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "Kn9d-EVn2EiaYJqHd8VcmQ",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "cxnS1whoCESvwwPyBnno_Q",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "ImdIbHXtHkiLlrExFlW51A",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "H0apwXYdoESn2TJ5T_3xAg",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "cxnS1whoCESvwwPyBnno_Q",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "H0apwXYdoESn2TJ5T_3xAg",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "H0apwXYdoESn2TJ5T_3xAg",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "haHoM3A5EU6aYu_8dCYaYg",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

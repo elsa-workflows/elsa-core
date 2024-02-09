@@ -1,0 +1,62 @@
+{
+  "id": "9b6b4d4a6a8741c58ccbe3911eed7821",
+  "definitionId": "bc7f148b2a5b4f55811537a0d762e137",
+  "name": "Consumer",
+  "createdAt": "2023-09-14T13:50:13.31251+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true,
+    "activityCategory": "Testing"
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "v-ii0Vp0yUCPWReLNUiosg",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "99c1c6cf2fec47b3b4916a01425ec989",
+        "workflowDefinitionVersionId": "3457460b3fd74daa8f898564cf96fe48",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "3457460b3fd74daa8f898564cf96fe48",
+        "id": "ctusr1Uv40uFqIws9Ymt9A",
+        "name": "Completor1",
+        "type": "Completor",
+        "version": 2,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 20,
+              "y": -260
+            },
+            "size": {
+              "width": 106.859375,
+              "height": 116.015625
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

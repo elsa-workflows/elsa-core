@@ -1,0 +1,10 @@
+{
+  "StatusCode": "Created",
+  "Content": [
+    {
+      "path": "folder1",
+      "command": "add"
+    }
+  ],
+  "_type": "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
+}

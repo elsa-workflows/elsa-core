@@ -1,0 +1,105 @@
+{
+  "id": "matter-workflow-v1",
+  "definitionId": "matter-workflow",
+  "name": "Matter Workflow",
+  "createdAt": "2023-06-01T14:06:25.895316+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "applicationProperties": {
+      "NotFoundConnectionsKey": [],
+      "CanStartWorkflow": false,
+      "RunAsynchronously": false
+    },
+    "start": "MoleculeActivity2",
+    "activities": [
+      {
+        "workflowDefinitionId": "86e355d944764f15872f8cfdcc1e9cec",
+        "workflowDefinitionVersionId": "fec9de7279a440f693a5901507140a77",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "fec9de7279a440f693a5901507140a77",
+        "id": "MoleculeActivity1",
+        "type": "MoleculeActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2347,
+              "y": 2407
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "86e355d944764f15872f8cfdcc1e9cec",
+        "workflowDefinitionVersionId": "fec9de7279a440f693a5901507140a77",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "fec9de7279a440f693a5901507140a77",
+        "id": "MoleculeActivity3",
+        "type": "MoleculeActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2560,
+              "y": 2560
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "86e355d944764f15872f8cfdcc1e9cec",
+        "workflowDefinitionVersionId": "fec9de7279a440f693a5901507140a77",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "fec9de7279a440f693a5901507140a77",
+        "id": "MoleculeActivity2",
+        "type": "MoleculeActivity",
+        "version": 1,
+        "customProperties": {
+          "CanStartWorkflow": false,
+          "RunAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 2140,
+              "y": 2560
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": "MoleculeActivity2",
+        "target": "MoleculeActivity1",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      },
+      {
+        "source": "MoleculeActivity1",
+        "target": "MoleculeActivity3",
+        "sourcePort": "Done",
+        "targetPort": "In"
+      }
+    ]
+  }
+}

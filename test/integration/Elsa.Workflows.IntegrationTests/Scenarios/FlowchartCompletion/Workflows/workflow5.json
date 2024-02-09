@@ -1,0 +1,207 @@
+{
+  "id": "3365d4c0198e459f834b799cbfe91154",
+  "definitionId": "4aa1e566da264ab6b5495bedb734096d",
+  "name": "Forking, Containment and Blocking",
+  "description": "A combination of a fork, a containment and a blocking activity.",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "uEnFWEdaWkadgIMHT2umLA",
+    "metadata": {},
+    "customProperties": {
+      "NotFoundConnectionsKey": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "id": "MLDV_altcUO5MwP7p5xJWw",
+        "name": "Start1",
+        "type": "Elsa.Start",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -480,
+              "y": -566.046875
+            },
+            "size": {
+              "width": 102.21875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Intermediary"
+          },
+          "memoryReference": {
+            "id": "EIh3Q0Um1U-QSCh1b3GBjQ:input-0"
+          }
+        },
+        "id": "EIh3Q0Um1U-QSCh1b3GBjQ",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -228.5,
+              "y": -476.046875
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": null,
+        "id": "0Z7Velr5CEW_r7YYoeEjBQ",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 69.34375,
+              "y": -476.046875
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "body": {
+          "type": "Elsa.Flowchart",
+          "version": 1,
+          "id": "NJ5fh2bUWU-TxWeXsbNaSg",
+          "metadata": {},
+          "customProperties": {
+            "NotFoundConnectionsKey": [],
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "activities": [
+            {
+              "eventName": {
+                "typeName": "String",
+                "expression": {
+                  "type": "Literal",
+                  "value": "Event4"
+                },
+                "memoryReference": {
+                  "id": "8KVHRw-WpUizyxOq0C6Nvg:input-0"
+                }
+              },
+              "result": null,
+              "id": "8KVHRw-WpUizyxOq0C6Nvg",
+              "name": "Event1",
+              "type": "Elsa.Event",
+              "version": 1,
+              "customProperties": {
+                "canStartWorkflow": false,
+                "runAsynchronously": false
+              },
+              "metadata": {
+                "designer": {
+                  "position": {
+                    "x": -840,
+                    "y": -500
+                  },
+                  "size": {
+                    "width": 106.828125,
+                    "height": 50
+                  }
+                }
+              }
+            }
+          ],
+          "connections": []
+        },
+        "id": "HG4wfBhvlEW_149HwNyzHw",
+        "name": "FlowNode1",
+        "type": "Elsa.FlowNode",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -228.5,
+              "y": -704.109375
+            },
+            "size": {
+              "width": 211.15625,
+              "height": 120
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "MLDV_altcUO5MwP7p5xJWw",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "HG4wfBhvlEW_149HwNyzHw",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "MLDV_altcUO5MwP7p5xJWw",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "EIh3Q0Um1U-QSCh1b3GBjQ",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "EIh3Q0Um1U-QSCh1b3GBjQ",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "0Z7Velr5CEW_r7YYoeEjBQ",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

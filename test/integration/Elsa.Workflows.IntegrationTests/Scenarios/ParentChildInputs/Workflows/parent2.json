@@ -1,0 +1,138 @@
+{
+  "id": "c5aa339e124f4486b14dbfdc133a45d1",
+  "definitionId": "8ad20b5ff9ee4ff59b8dfcfb6d4e29a0",
+  "name": "Parent2",
+  "createdAt": "2023-09-06T11:38:30.217265+00:00",
+  "version": 1,
+  "variables": [],
+  "inputs": [
+    {
+      "uiHint": "single-line",
+      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "type": "Object",
+      "name": "Input1",
+      "displayName": "Input1",
+      "description": "",
+      "category": "",
+      "isArray": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output1",
+      "description": "",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "Flowchart1",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "NotFoundConnectionsKey": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "start": "WriteLine1",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "\u0022Parent: \u0022 \u002B getInput1();"
+          },
+          "memoryReference": {
+            "id": "3070bee4-8309-44e3-a805-a9ec7fdd7ac2"
+          }
+        },
+        "id": "WriteLine1",
+        "name": null,
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 160,
+              "y": 280
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "25b097966de245818e9a5c0d04f3323e",
+        "workflowDefinitionVersionId": "228c0150ab7b4745b038b950be574935",
+        "latestAvailablePublishedVersion": 5,
+        "latestAvailablePublishedVersionId": "228c0150ab7b4745b038b950be574935",
+        "id": "22jW7xiYM0K30H99EDWztQ",
+        "name": "Child1",
+        "type": "Child",
+        "version": 5,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 405.3984375,
+              "y": 204.0078125
+            },
+            "size": {
+              "width": 135.390625,
+              "height": 120
+            }
+          }
+        },
+        "input1": {
+          "typeName": "Object",
+          "expression": {
+            "type": "JavaScript",
+            "value": "getInput1()"
+          },
+          "memoryReference": {
+            "id": "22jW7xiYM0K30H99EDWztQ:input-0"
+          }
+        },
+        "output1": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "Output1"
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "WriteLine1",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "22jW7xiYM0K30H99EDWztQ",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}
