@@ -218,6 +218,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
+        
+        foreach (var activityExecutionContext in ActivityExecutionContexts) 
+            activityExecutionContext.Activity = NodeIdLookup[activityExecutionContext.Activity.NodeId].Activity;
     }
 
     /// <summary>
