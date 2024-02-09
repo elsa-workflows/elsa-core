@@ -19,5 +19,4 @@ public record DispatchWorkflowDefinition(
     IDictionary<string, object>? Properties,
     string? CorrelationId,
     string? InstanceId,
-    string? TriggerActivityId,
-    string? __X_Channel = default);
+    string? TriggerActivityId);

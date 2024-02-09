@@ -30,7 +30,7 @@ const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

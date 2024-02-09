@@ -110,16 +110,10 @@ public class MassTransitFeature : FeatureBase
             busConfigurator(bus);
         });
 
-#if NET6_0 || NET7_0
-        Services.AddMassTransitHostedService(true);
-#endif
-
-#if NET8_0_OR_GREATER
         Services.AddOptions<MassTransitHostOptions>().Configure(options =>
         {
             // Wait until the bus is started before returning from IHostedService.StartAsync.
             options.WaitUntilStarted = true;
         });
-#endif
     }
 }
