@@ -5,6 +5,7 @@ using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Requests;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Scheduling.Services;
 
@@ -14,13 +15,15 @@ namespace Elsa.Scheduling.Services;
 public class DefaultTriggerScheduler : ITriggerScheduler
 {
     private readonly IWorkflowScheduler _workflowScheduler;
+    private readonly ILogger<DefaultTriggerScheduler> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class.
     /// </summary>
-    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler)
+    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ILogger<DefaultTriggerScheduler> logger)
     {
         _workflowScheduler = workflowScheduler;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -76,8 +79,14 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
-
-            await _workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
+            try
+            {
+                await _workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
+            }
+            catch (FormatException ex)
+            {
+                _logger.LogWarning($"Cron expression format error: {ex.Message}. CronExpression: {cronExpression}");
+            }
         }
     }
 
@@ -85,7 +94,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
-        
+
         // Select all Timer triggers.
         var timerTriggers = triggerList.Filter<Activities.Timer>();
 

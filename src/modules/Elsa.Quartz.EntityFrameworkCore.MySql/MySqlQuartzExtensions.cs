@@ -31,7 +31,7 @@ public static class MySqlQuartzExtensions
             quartz.UsePersistentStore(store =>
             {
                 store.UseNewtonsoftJsonSerializer();
-                store.UseMySql(connectionString);
+                store.UseMySqlConnector(options => options.ConnectionString = connectionString);
                 
                 if (useClustering)
                     store.UseClustering();
