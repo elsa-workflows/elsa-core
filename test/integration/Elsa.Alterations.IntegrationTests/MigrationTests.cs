@@ -23,7 +23,7 @@ public class MigrationTests
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
     /// <summary>
-    /// Represents a class that contains tests for migration.
+    /// Initializes a new instance of the <see cref="MigrationTests"/> class.
     /// </summary>
     public MigrationTests(ITestOutputHelper testOutputHelper)
     {
