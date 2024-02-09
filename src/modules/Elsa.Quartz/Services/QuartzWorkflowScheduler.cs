@@ -47,7 +47,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .WithIdentity(taskName)
             .StartAt(at)
             .Build();
-        await scheduler.ScheduleJob(trigger, cancellationToken);
+        
+        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -77,7 +79,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
-        await scheduler.ScheduleJob(trigger, cancellationToken);
+        
+        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -99,7 +103,9 @@ public class QuartzWorkflowScheduler : IWorkflowScheduler
             .UsingJobData(CreateJobDataMap(request))
             .WithIdentity(taskName)
             .WithCronSchedule(cronExpression).Build();
-        await scheduler.ScheduleJob(trigger, cancellationToken);
+        
+        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+            await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
     /// <inheritdoc />

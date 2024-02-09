@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Dynamic;
+using System.IO.Compression;
 using System.Reflection;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
@@ -11,6 +12,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
@@ -18,8 +20,8 @@ using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
-using Elsa.Workflows.Management.Serialization;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,6 +41,8 @@ public class WorkflowManagementFeature : FeatureBase
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
+
+    private string CompressionAlgorithm { get; set; } = nameof(None);
 
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
@@ -142,6 +146,15 @@ public class WorkflowManagementFeature : FeatureBase
         VariableDescriptors.AddRange(descriptors);
         return this;
     }
+    
+    /// <summary>
+    /// Sets the compression algorithm to use for compressing workflow state.
+    /// </summary>
+    public WorkflowManagementFeature SetCompressionAlgorithm(string algorithm)
+    {
+        CompressionAlgorithm = algorithm;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -175,6 +188,10 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
+            .AddSingleton<ICompressionCodecResolver, CompressionCodecResolver>()
+            .AddSingleton<ICompressionCodec, None>()
+            .AddSingleton<ICompressionCodec, GZip>()
+            .AddSingleton<ICompressionCodec, Zstd>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());
@@ -184,7 +201,10 @@ public class WorkflowManagementFeature : FeatureBase
             foreach (var activityType in ActivityTypes)
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors) options.VariableDescriptors.Add(descriptor);
+            foreach (var descriptor in VariableDescriptors) 
+                options.VariableDescriptors.Add(descriptor);
+            
+            options.CompressionAlgorithm = CompressionAlgorithm;
         });
     }
 }

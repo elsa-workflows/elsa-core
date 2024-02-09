@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -18,6 +19,7 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
     }
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public override void Write(Utf8JsonWriter writer, IActivity? value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
@@ -35,7 +37,15 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
 
             var propName = options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
             writer.WritePropertyName(propName);
-            JsonSerializer.Serialize(writer, property.GetValue(value), newOptions);
+            var input = property.GetValue(value);
+            
+            if (input == null)
+            {
+                writer.WriteNullValue();
+                continue;
+            }
+            
+            JsonSerializer.Serialize(writer, input, newOptions);
         }
 
         writer.WriteEndObject();

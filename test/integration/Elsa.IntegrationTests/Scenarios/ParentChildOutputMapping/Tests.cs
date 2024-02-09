@@ -1,7 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Elsa.Testing.Shared;
+﻿using Elsa.Testing.Shared;
 using Xunit;
 using Xunit.Abstractions;
 

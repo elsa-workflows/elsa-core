@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.WorkflowCancellation.Workflows;
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
@@ -21,7 +17,7 @@ public class DefaultRuntimeTests
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    
+
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly BackgroundCommandSenderHostedService _backgroundCommandSenderHostedService;
     private readonly BackgroundEventPublisherHostedService _backgroundEventPublisherHostedService;
@@ -61,23 +57,23 @@ public class DefaultRuntimeTests
     {
         // Populate registries.
         await _services.PopulateRegistriesAsync();
-        
+
         const string workflowDefinitionId = nameof(SimpleSuspendedWorkflow);
         var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
 
         Assert.Equal(WorkflowStatus.Running, workflowState.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
-        
+
         await _workflowRuntime.CancelWorkflowAsync(workflowState.WorkflowInstanceId);
         var lastWorkflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
-        
+
         Assert.Equal(WorkflowStatus.Finished, lastWorkflowState!.Status);
         Assert.Equal(WorkflowSubStatus.Cancelled, lastWorkflowState.SubStatus);
         Assert.Empty(_capturingTextWriter.Lines);
     }
 
     [Fact(DisplayName = "Cancelling a running workflow",
-    Skip= "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
+        Skip = "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
     public async Task RunningCancelTest()
     {
         await _backgroundCommandSenderHostedService.StartAsync(CancellationToken.None);
@@ -85,17 +81,20 @@ public class DefaultRuntimeTests
 
         // Populate registries.
         await _services.PopulateRegistriesAsync();
-        
+
         const string workflowDefinitionId = nameof(BulkSuspendedWorkflow);
         var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
-        
+
         var bookmarks = new Stack<Bookmark>(workflowState.Bookmarks);
-        var resumeOptions = new ResumeWorkflowRuntimeOptions { BookmarkId = bookmarks.Pop().Id };
-        var state = await _workflowRuntime.ResumeWorkflowAsync(workflowState.WorkflowInstanceId,resumeOptions);
-        
+        var resumeOptions = new ResumeWorkflowRuntimeOptions
+        {
+            BookmarkId = bookmarks.Pop().Id
+        };
+        var state = await _workflowRuntime.ResumeWorkflowAsync(workflowState.WorkflowInstanceId, resumeOptions);
+
         await _workflowRuntime.CancelWorkflowAsync(workflowState.WorkflowInstanceId);
         var lastWorkflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
-        
+
         Assert.Equal(WorkflowStatus.Finished, lastWorkflowState!.Status);
         Assert.Equal(WorkflowSubStatus.Cancelled, lastWorkflowState.SubStatus);
         Assert.NotEmpty(_capturingTextWriter.Lines);

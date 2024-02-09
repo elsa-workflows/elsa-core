@@ -28,6 +28,7 @@ public class DispatchWorkflow : Activity<object>
     /// The definition ID of the workflow to dispatch. 
     /// </summary>
     [Input(
+        DisplayName = "Workflow Definition",
         Description = "The definition ID of the workflow to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
@@ -36,7 +37,10 @@ public class DispatchWorkflow : Activity<object>
     /// <summary>
     /// The correlation ID to associate the workflow with. 
     /// </summary>
-    [Input(Description = "The correlation ID to associate the workflow with.")]
+    [Input(
+        DisplayName = "Correlation ID",
+        Description = "The correlation ID to associate the workflow with."
+    )]
     public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>

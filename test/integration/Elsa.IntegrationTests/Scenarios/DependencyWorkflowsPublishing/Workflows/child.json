@@ -1,0 +1,37 @@
+{
+  "id": "child-v1",
+  "definitionId": "child",
+  "name": "Child",
+  "createdAt": "2024-02-07T14:57:47.115341+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "c22918340b6cb7cd",
+    "nodeId": "Workflow1:c22918340b6cb7cd",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [],
+    "connections": []
+  }
+}

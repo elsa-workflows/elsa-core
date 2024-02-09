@@ -46,6 +46,22 @@ public static class BackgroundActivityExecutionContextExtensions
     }
     
     /// <summary>
+    /// Sets the background outcomes.
+    /// </summary>
+    public static void SetBackgroundCompletion(this ActivityExecutionContext activityExecutionContext)
+    {
+        activityExecutionContext.SetProperty("BackgroundCompletion", true);
+    }
+    
+    /// <summary>
+    /// Gets the background outcomes.
+    /// </summary>
+    public static bool? GetBackgroundCompleted(this ActivityExecutionContext activityExecutionContext)
+    {
+        return activityExecutionContext.GetProperty<bool>("BackgroundCompletion");
+    }
+    
+    /// <summary>
     /// Sets the background scheduled activities.
     /// </summary>
     public static void SetBackgroundScheduledActivities(this ActivityExecutionContext activityExecutionContext, IEnumerable<ScheduledActivity> scheduledActivities)

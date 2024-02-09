@@ -423,6 +423,8 @@ public static class ActivityExecutionContextExtensions
         {
             if (outcomes != null)
                 context.SetBackgroundOutcomes(outcomes.Names);
+            else
+                context.SetBackgroundCompletion();
             return;
         }
 
@@ -467,7 +469,7 @@ public static class ActivityExecutionContextExtensions
         }
 
         // Add an execution log entry.
-        context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
+        context.AddExecutionLogEntry("Completed", payload: context.JournalData);
 
         // Send a signal.
         await context.SendSignalAsync(new ActivityCompleted(result));
@@ -561,7 +563,7 @@ public static class ActivityExecutionContextExtensions
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
 
         // Add an execution log entry.
-        context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
+        context.AddExecutionLogEntry("Canceled", payload: context.JournalData);
 
         await context.SendSignalAsync(new CancelSignal());
         await publisher.SendAsync(new ActivityCancelled(context));

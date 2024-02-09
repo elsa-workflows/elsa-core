@@ -15,6 +15,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -27,8 +28,9 @@ const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useMassTransitAzureServiceBus = false;
-const bool useMassTransitRabbitMq = true;
+const bool useMassTransitAzureServiceBus = true;
+const bool useMassTransitRabbitMq = false;
+const bool useZipCompression = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -69,7 +71,6 @@ services
             .AddWorkflowsFrom<Program>()
             .UseFluentStorageProvider()
             .UseFileStorage()
-            // .UseFileStorage(sp => StorageFactory.Blobs.AzureBlobStorageWithSas(configuration.GetConnectionString("AzureStorageSasUrl")))
             .UseIdentity(identity =>
             {
                 if (useMongoDb)
@@ -106,6 +107,9 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
+                
+                if(useZipCompression)
+                    management.SetCompressionAlgorithm(nameof(Zstd));
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -133,7 +137,10 @@ services
                     });
                 }
 
-                runtime.UseMassTransitDispatcher();
+                if(useMassTransit)
+                {
+                    runtime.UseMassTransitDispatcher();
+                }
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
@@ -186,7 +193,11 @@ services
                         ef.UseSqlite(sqliteConnectionString);
                 });
 
-                alterations.UseMassTransitDispatcher();
+                if (useMassTransit)
+                {
+                    alterations.UseMassTransitDispatcher();
+                }
+                
             })
             .UseWorkflowContexts();
 

@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-    
     <PropertyGroup>
         <Description>
             Provides a CSharp expression provider.
@@ -18,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" />
     </ItemGroup>
 
 </Project>

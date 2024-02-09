@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Elsa.IntegrationTests.Scenarios.CanExecute.Activities;
 using Elsa.IntegrationTests.Scenarios.CanExecute.Workflows;
 using Elsa.Testing.Shared;

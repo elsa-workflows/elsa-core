@@ -48,13 +48,7 @@ public class BulkDispatchWorkflows : Activity
     /// The data source to use for dispatching the workflows.
     /// </summary>
     [Input(Description = "The data source to use for dispatching the workflows.")]
-    public Input<ICollection<object>>? Items { get; set; }
-
-    /// <summary>
-    /// The data source to use for dispatching the workflows.
-    /// </summary>
-    [Input(Description = "The data source to use for dispatching the workflows.")]
-    public IActivityDataSource? DataSource { get; set; }
+    public Input<object> Items { get; set; } = default!;
 
     /// <summary>
     /// The correlation ID to associate the workflow with. 
@@ -95,38 +89,19 @@ public class BulkDispatchWorkflows : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
-        var items = GetItemsAsync(context).WithCancellation(context.CancellationToken);
+        var items = context.GetItemSource<object>(Items);
         var dispatchedInstancesCount = 0L;
-        var batchSize = 1000;
-        var batch = new List<object>();
 
         await foreach (var item in items)
         {
-            if (context.WorkflowExecutionContext.CancellationTokens.ApplicationCancellationToken
-                .IsCancellationRequested)
-                break;
-            
-            batch.Add(item);
-
-            if (batch.Count < batchSize)
-                continue;
-
-            await ProcessBatch(context, batch);
-            dispatchedInstancesCount += batch.Count;
-            batch.Clear();
+            await ProcessItem(context, item);
+            dispatchedInstancesCount++;
         }
-
-        // Process the last batch if it has any items.
-        if (batch.Count > 0)
-        {
-            await ProcessBatch(context, batch);
-            dispatchedInstancesCount += batch.Count;
-        }
-
+        
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
 
-        // If we need to wait for the child workflow to complete, create a bookmark.
-        if (waitForCompletion)
+        // If we need to wait for the child workflows to complete (if any), create a bookmark.
+        if (waitForCompletion && dispatchedInstancesCount > 0)
         {
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
@@ -146,29 +121,22 @@ public class BulkDispatchWorkflows : Activity
             // Otherwise, we can complete immediately.
             await context.CompleteActivityAsync();
         }
-
-        // Cancelling children
     }
 
-    private async Task ProcessBatch(ActivityExecutionContext context, List<object> items)
+    private async Task ProcessItem(ActivityExecutionContext context, object item)
     {
-        var tasks = items.Select(async item =>
+        try
         {
-            try
-            {
-                await DispatchChildWorkflowAsync(context, item);
-            }
-            catch (TaskCanceledException)
-            {
-                await context.CompleteActivityWithOutcomesAsync("Canceled");
-            }
-            catch (Exception ex)
-            {
-                context.JournalData.Add("Error", ex.Message);
-            }
-        });
-
-        await Task.WhenAll(tasks);
+            await DispatchChildWorkflowAsync(context, item);
+        }
+        catch (TaskCanceledException)
+        {
+            await context.CompleteActivityWithOutcomesAsync("Canceled");
+        }
+        catch (Exception ex)
+        {
+            context.JournalData.Add("Error", ex.Message);
+        }
     }
 
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
@@ -210,14 +178,7 @@ public class BulkDispatchWorkflows : Activity
 
         return instanceId;
     }
-
-    private IAsyncEnumerable<object> GetItemsAsync(ActivityExecutionContext context)
-    {
-        var items = Items.Get(context);
-        var dataSource = DataSource != null ? DataSource.GetDataAsync(context) : items.ToAsyncEnumerable();
-        return dataSource;
-    }
-
+    
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;

@@ -1,11 +1,13 @@
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
 
 /// <summary>
 /// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
+[UsedImplicitly]
 public class ActivityExecutionRecord : Entity
 {
     /// <summary>

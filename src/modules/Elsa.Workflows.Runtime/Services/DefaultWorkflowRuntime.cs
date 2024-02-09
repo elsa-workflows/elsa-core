@@ -34,7 +34,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IWorkflowExecutionContextStore _workflowExecutionContextStore;
-    private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IServiceProvider _serviceProvider;
     private readonly IBookmarksPersister _bookmarksPersister;
 
@@ -54,7 +53,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         WorkflowStateMapper workflowStateMapper,
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextStore workflowExecutionContextStore,
-        IWorkflowStateExtractor workflowStateExtractor,
         IServiceProvider serviceProvider,
         IBookmarksPersister bookmarksPersister)
     {
@@ -70,36 +68,35 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _workflowStateMapper = workflowStateMapper;
         _identityGenerator = identityGenerator;
         _workflowExecutionContextStore = workflowExecutionContextStore;
-        _workflowStateExtractor = workflowStateExtractor;
         _serviceProvider = serviceProvider;
         _bookmarksPersister = bookmarksPersister;
     }
 
     /// <inheritdoc />
-    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options)
+    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
     {
-        var input = options.Input;
-        var correlationId = options.CorrelationId;
-        var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options.CancellationTokens.SystemCancellationToken);
+        var input = options?.Input;
+        var correlationId = options?.CorrelationId;
+        var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options?.CancellationTokens.SystemCancellationToken ?? default);
         var startWorkflowOptions = new StartWorkflowHostOptions
         {
             CorrelationId = correlationId,
             Input = input,
-            TriggerActivityId = options.TriggerActivityId
+            TriggerActivityId = options?.TriggerActivityId
         };
-        var canStart = await workflowHost.CanStartWorkflowAsync(startWorkflowOptions, options.CancellationTokens.SystemCancellationToken);
+        var canStart = await workflowHost.CanStartWorkflowAsync(startWorkflowOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
         return new CanStartWorkflowResult(null, canStart);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options)
+    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
     {
-        var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options.CancellationTokens.SystemCancellationToken);
+         var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options?.CancellationTokens.SystemCancellationToken ?? default);
         return await StartWorkflowAsync(workflowHost, options);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions options)
+    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
     {
         return await StartWorkflowAsync(definitionId, options);
     }
@@ -399,20 +396,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
     }
 
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeOptions options, CancellationToken cancellationToken)
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeOptions? options, CancellationToken cancellationToken)
     {
-        var versionOptions = options.VersionOptions;
-        var host = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+        var versionOptions = options?.VersionOptions;
+        var host = await _workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published, cancellationToken);
 
         if (host == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
         return host;
-    }
-
-    private Task<IWorkflowHost?> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
-    {
-        return _workflowHostFactory.CreateAsync(definitionId, versionOptions, cancellationToken);
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions)

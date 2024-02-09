@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("SerializedActivityState")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedException")

@@ -1,5 +1,3 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Notifications;
 

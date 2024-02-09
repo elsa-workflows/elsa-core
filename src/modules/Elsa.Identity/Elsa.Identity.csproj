@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-    
     <PropertyGroup>
         <Description>
             Provides a default identity solution.
@@ -11,12 +7,8 @@
         <PackageTags>elsa module identity security</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="AspNetCore.Authentication.ApiKey" Version="8.0.0" />
+    <ItemGroup>
+        <PackageReference Include="AspNetCore.Authentication.ApiKey" />
     </ItemGroup>
 
     <ItemGroup>
