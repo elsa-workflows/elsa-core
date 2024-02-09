@@ -8,9 +8,9 @@ namespace Elsa.MongoDb.Modules.Labels;
 
 internal class CreateIndices : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScope _serviceScope;
 
-    public CreateIndices(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+    public CreateIndices(IServiceProvider serviceProvider) => _serviceScope = serviceProvider.CreateScope();
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -24,7 +24,7 @@ internal class CreateIndices : IHostedService
 
     private Task CreateWorkflowDefinitionLabelIndices(CancellationToken cancellationToken)
     {
-        var workflowDefinitionLabelCollection = _serviceProvider.GetService<IMongoCollection<WorkflowDefinitionLabel>>();
+        var workflowDefinitionLabelCollection = _serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowDefinitionLabel>>();
         if (workflowDefinitionLabelCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(

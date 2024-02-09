@@ -8,9 +8,9 @@ namespace Elsa.MongoDb.Modules.Identity;
 
 internal class CreateIndices : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScope _serviceScope;
 
-    public CreateIndices(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
+    public CreateIndices(IServiceProvider serviceProvider) => _serviceScope = serviceProvider.CreateScope();
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
@@ -27,7 +27,7 @@ internal class CreateIndices : IHostedService
 
     private Task CreateApplicationIndices(CancellationToken cancellationToken)
     {
-        var applicationCollection = _serviceProvider.GetService<IMongoCollection<Application>>();
+        var applicationCollection = _serviceScope.ServiceProvider.GetService<IMongoCollection<Application>>();
         if (applicationCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(
@@ -46,7 +46,7 @@ internal class CreateIndices : IHostedService
     
     private Task CreateUserIndices(CancellationToken cancellationToken)
     {
-        var userCollection = _serviceProvider.GetService<IMongoCollection<User>>();
+        var userCollection = _serviceScope.ServiceProvider.GetService<IMongoCollection<User>>();
         if (userCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(
@@ -65,7 +65,7 @@ internal class CreateIndices : IHostedService
 
     private Task CreateRoleIndices(CancellationToken cancellationToken)
     {
-        var roleCollection = _serviceProvider.GetService<IMongoCollection<Role>>();
+        var roleCollection = _serviceScope.ServiceProvider.GetService<IMongoCollection<Role>>();
         if (roleCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
