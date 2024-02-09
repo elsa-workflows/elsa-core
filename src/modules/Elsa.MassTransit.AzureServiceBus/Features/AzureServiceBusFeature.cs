@@ -56,12 +56,11 @@ public class AzureServiceBusFeature : FeatureBase
 
                     foreach (var consumer in tempConsumers)
                     {
-                        //Throw on no known name?
                         serviceBus.ReceiveEndpoint($"{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
                         {
                             configurator.AutoDeleteOnIdle = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
                             configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                            configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                            configurator.ConfigureConsumer(context, consumer.ConsumerType);
                         });
                     }
 
