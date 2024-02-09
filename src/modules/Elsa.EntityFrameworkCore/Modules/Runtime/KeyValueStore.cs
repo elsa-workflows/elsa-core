@@ -1,6 +1,7 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
@@ -23,9 +24,15 @@ public class EFCoreKeyValueStore : IKeyValueStore
     }
     
     /// <inheritdoc />
-    public Task<SerializedKeyValuePair?> GetValue(string key, CancellationToken cancellationToken)
+    public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        return _store.FindAsync(x => x.Key == key, cancellationToken);
+        return _store.FindAsync(filter.Apply, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+    {
+        return _store.QueryAsync(filter.Apply, cancellationToken);
     }
 
     /// <inheritdoc />

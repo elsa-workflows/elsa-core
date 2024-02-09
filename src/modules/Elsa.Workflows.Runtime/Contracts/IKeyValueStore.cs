@@ -1,5 +1,7 @@
+using System.Linq.Expressions;
 using Elsa.Workflows.Runtime.Entities;
- 
+using Elsa.Workflows.Runtime.Models;
+
 namespace Elsa.Workflows.Runtime.Contracts;
 
 /// <summary>
@@ -16,7 +18,12 @@ public interface IKeyValueStore
     /// Retrieves the key value pair from the store.
     /// </summary>
     /// <returns><see cref="SerializedKeyValuePair"/> if the key is found, otherwise null.</returns>
-    Task<SerializedKeyValuePair?> GetValue(string key, CancellationToken cancellationToken);
+    Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Retrieves all key value pairs which match the predicate.
+    /// </summary>
+    Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken);
     
     /// <summary>
     /// If the key is found it deletes the record from the store. 

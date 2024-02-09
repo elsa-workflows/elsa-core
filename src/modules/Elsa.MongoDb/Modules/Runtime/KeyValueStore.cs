@@ -1,6 +1,9 @@
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
+using MongoDB.Driver.Linq;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
@@ -26,9 +29,15 @@ public class MongoKeyValueStore : IKeyValueStore
     }
 
     /// <inheritdoc />
-    public Task<SerializedKeyValuePair?> GetValue(string key, CancellationToken cancellationToken)
+    public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        return _keyValueMongoDbStore.FindAsync(x => x.Key == key, cancellationToken);
+        return _keyValueMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+    {
+        return await _keyValueMongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken).ToList();
     }
 
     /// <inheritdoc />
@@ -36,4 +45,7 @@ public class MongoKeyValueStore : IKeyValueStore
     {
         return _keyValueMongoDbStore.DeleteWhereAsync(x => x.Key == key, cancellationToken);
     }
+
+    private IMongoQueryable<SerializedKeyValuePair> Filter(IMongoQueryable<SerializedKeyValuePair> queryable, KeyValueFilter filter) =>
+        (filter.Apply(queryable) as IMongoQueryable<SerializedKeyValuePair>)!;
 }

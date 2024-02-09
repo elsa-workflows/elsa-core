@@ -200,6 +200,18 @@ public static class ParameterizedQueryBuilderExtensions
         return query;
     }
 
+    public static ParameterizedQuery StartsWith(this ParameterizedQuery query, string field, bool startsWith, string? value)
+    {
+        if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
+            return query;
+
+        var searchTermLike = $"{value}%";
+        query.Sql.AppendLine($"and {field} like @SearchTermLike");
+        query.Parameters.Add($"@{field}", searchTermLike);
+
+        return query;
+    }
+
     /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>

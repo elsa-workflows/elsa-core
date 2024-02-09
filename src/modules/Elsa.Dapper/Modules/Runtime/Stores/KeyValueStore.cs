@@ -1,9 +1,11 @@
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
+using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
@@ -32,16 +34,29 @@ public class DapperKeyValueStore : IKeyValueStore
     }
 
     /// <inheritdoc />
-    public async Task<SerializedKeyValuePair?> GetValue(string key, CancellationToken cancellationToken)
+    public async Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var record = await _store.FindAsync(query => query.Is(nameof(KeyValuePairRecord.Key), key), cancellationToken);
+        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : Map(record);
+    }
+
+    public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
         return _store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Key), key), cancellationToken);
+    }
+
+    private void ApplyFilter(ParameterizedQuery query, KeyValueFilter filter)
+    {
+        query
+            .Is(nameof(KeyValuePairRecord.Key), filter.Key)
+            .In(nameof(KeyValuePairRecord.Key), filter.Keys)
+            .StartsWith(nameof(KeyValuePairRecord.Key), filter.StartsWith, filter.Key);
     }
 
     private KeyValuePairRecord Map(SerializedKeyValuePair kvp)

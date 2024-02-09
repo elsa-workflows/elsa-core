@@ -1,6 +1,7 @@
 using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Stores;
 
@@ -27,12 +28,19 @@ public class MemoryKeyValueStore : IKeyValueStore
     }
 
     /// <inheritdoc />
-    public Task<SerializedKeyValuePair?> GetValue(string key, CancellationToken cancellationToken)
+    public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var result = _store.Find(x => x.Key == key);
+        var result = _store.Query(filter.Apply).FirstOrDefault();
         return Task.FromResult(result);
     }
 
+    /// <inheritdoc />
+    public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
+    {
+        var result = _store.Query(filter.Apply);
+        return Task.FromResult(result);
+    }
+    
     /// <inheritdoc />
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
