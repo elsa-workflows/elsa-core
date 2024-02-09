@@ -1,6 +1,6 @@
 using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Contracts;
 using Elsa.Workflows.Runtime.Options;
-using Humanizer;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -20,15 +20,16 @@ public static class ServiceBusChannelsConfigurationExtensions
     public static void SetupWorkflowDispatcherEndpoints(this IReceiveConfigurator configurator, IBusRegistrationContext context)
     {
         var dispatcherOptions = context.GetRequiredService<IOptions<WorkflowDispatcherOptions>>();
+        var formatter = context.GetRequiredService<IEndpointChannelFormatter>();
         var channelDescriptors = dispatcherOptions.Value.Channels;
-        var defaultQueue = "elsa-dispatch-workflow-request";
+        var defaultEndpointName = formatter.FormatEndpointName();
 
         var endpointNames = new List<string>
         {
-            defaultQueue
+            defaultEndpointName
         };
 
-        endpointNames.AddRange(channelDescriptors.Select(x => $"{defaultQueue}-{x.Name.Kebaberize()}"));
+        endpointNames.AddRange(channelDescriptors.Select(x => formatter.FormatEndpointName(x.Name)));
 
         foreach (string endpointName in endpointNames)
         {

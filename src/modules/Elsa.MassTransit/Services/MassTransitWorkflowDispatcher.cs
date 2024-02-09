@@ -1,3 +1,4 @@
+using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
@@ -13,13 +14,15 @@ namespace Elsa.MassTransit.Services;
 public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
 {
     private readonly IBus _bus;
+    private readonly IEndpointChannelFormatter _endpointChannelFormatter;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MassTransitWorkflowDispatcher(IBus bus)
+    public MassTransitWorkflowDispatcher(IBus bus, IEndpointChannelFormatter endpointChannelFormatter)
     {
         _bus = bus;
+        _endpointChannelFormatter = endpointChannelFormatter;
     }
 
     /// <inheritdoc />
@@ -88,8 +91,8 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     
     private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = default)
     {
-        var channelSuffix = !string.IsNullOrEmpty(options?.Channel) ? "-" + options.Channel.Kebaberize() : ""; 
-        var sendEndpoint = await _bus.GetSendEndpoint(new Uri($"queue:elsa-dispatch-workflow-request{channelSuffix}"));
+        var endpointName = _endpointChannelFormatter.FormatEndpointName(options?.Channel);
+        var sendEndpoint = await _bus.GetSendEndpoint(new Uri($"queue:{endpointName}"));
         return sendEndpoint;
     }
 }

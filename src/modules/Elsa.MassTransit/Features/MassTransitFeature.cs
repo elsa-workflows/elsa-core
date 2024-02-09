@@ -6,7 +6,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
-using Elsa.MassTransit.Messages;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
 using Elsa.MassTransit.Services;
