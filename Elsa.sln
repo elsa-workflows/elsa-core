@@ -156,7 +156,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.JavaScript.UnitTests", "test\unit\Elsa.JavaScript.UnitTests\Elsa.JavaScript.UnitTests.csproj", "{0BB927FB-8C12-49B6-9150-64B733B2EBFD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.IntegrationTests", "test\integration\Elsa.IntegrationTests\Elsa.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.IntegrationTests", "test\integration\Elsa.Workflows.IntegrationTests\Elsa.Workflows.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{89608AA5-5ADE-4832-AC7B-871C4AE64210}"
 EndProject
@@ -312,6 +312,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", 
 		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
 		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ElsaAlterationMigrateBug", "samples\aspnet\ElsaAlterationMigrateBug\ElsaAlterationMigrateBug.csproj", "{225AA845-8501-4A64-A151-C81AF54EFF22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -759,6 +763,14 @@ Global
 		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{225AA845-8501-4A64-A151-C81AF54EFF22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{225AA845-8501-4A64-A151-C81AF54EFF22}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{225AA845-8501-4A64-A151-C81AF54EFF22}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{225AA845-8501-4A64-A151-C81AF54EFF22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -893,6 +905,8 @@ Global
 		{E4BF9791-4086-41EB-8EF0-02686A5F3F65} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{73852FEC-9847-4C6C-B1F5-1BB014C50A79} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{AFEB799E-82C3-4D02-9D5C-766BB8DEF004} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
+		{225AA845-8501-4A64-A151-C81AF54EFF22} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
