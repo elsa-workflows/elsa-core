@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
@@ -24,6 +25,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     public override bool CanConvert(Type typeToConvert) => typeof(Input).IsAssignableFrom(typeToConvert);
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     public override Input<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
@@ -42,11 +44,17 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
             var memoryBlockReferenceType = memoryBlockReference?.GetType();
             var expressionValueElement = expressionElement.TryGetProperty("value", out var expressionElementValueValue) ? expressionElementValueValue : default;
-            var expressionValue = expressionValueElement.ValueKind == JsonValueKind.String
-                ? expressionValueElement.GetString()
-                : expressionValueElement.ValueKind != JsonValueKind.Undefined && memoryBlockReferenceType != null
-                    ? expressionValueElement.Deserialize(memoryBlockReferenceType, options)!
-                    : default;
+            
+            var expressionValue = expressionValueElement.ValueKind switch
+            {
+                JsonValueKind.String => expressionValueElement.GetString(),
+                JsonValueKind.False => false,
+                JsonValueKind.True => true,
+                JsonValueKind.Number => expressionValueElement.GetDouble(),
+                JsonValueKind.Undefined => default,
+                _ => memoryBlockReferenceType != null ? expressionValueElement.Deserialize(memoryBlockReferenceType, options)! : default
+            };
+                
             var expression = new Expression(expressionTypeName, expressionValue);
 
             if (memoryBlockReference == null)
