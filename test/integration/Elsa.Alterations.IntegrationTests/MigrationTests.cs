@@ -52,7 +52,7 @@ public class MigrationTests
         // Run version 1 workflow.
         var workflowState = await _services.RunWorkflowUntilEndAsync("my-workflow", versionOptions: VersionOptions.SpecificVersion(1));
 
-        // Migrate to version 2 and reset execution.
+        // Migrate to version 2.
         var alterations = new IAlteration[]
         {
             new Migrate
