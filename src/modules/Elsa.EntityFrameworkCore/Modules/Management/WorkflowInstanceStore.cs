@@ -167,7 +167,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     {
         return filter.Apply(query);
     }
-    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
 
     /// <inheritdoc />
     public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)

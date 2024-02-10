@@ -69,18 +69,19 @@ public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddlewar
                 Hash = _bookmarkHasher.Hash(bookmark.Name, payload)
             };
             workflowExecutionContext.Bookmarks.Add(bookmark);
-            
+
             // Update the bookmark.
-            var storedBookmark = new StoredBookmark(
-                bookmark.Id,
-                bookmark.Name,
-                bookmark.Hash,
-                workflowExecutionContext.Id,
-                bookmark.CreatedAt,
-                bookmark.ActivityInstanceId,
-                workflowExecutionContext.CorrelationId,
-                bookmark.Payload
-            );
+            var storedBookmark = new StoredBookmark
+            {
+                Id = bookmark.Id,
+                ActivityTypeName = bookmark.Name,
+                Hash = bookmark.Hash,
+                WorkflowInstanceId = workflowExecutionContext.Id,
+                CreatedAt = bookmark.CreatedAt,
+                ActivityInstanceId = workflowExecutionContext.CorrelationId,
+                CorrelationId = workflowExecutionContext.CorrelationId,
+                Payload = bookmark.Payload
+            };
             
             await _workflowRuntime.UpdateBookmarkAsync(storedBookmark, cancellationToken);
         }

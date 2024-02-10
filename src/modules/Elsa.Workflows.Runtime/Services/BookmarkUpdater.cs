@@ -28,7 +28,18 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
     {
         foreach (var bookmark in bookmarks)
         {
-            var storedBookmark = new StoredBookmark(bookmark.Id, bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.CreatedAt, bookmark.ActivityInstanceId, correlationId, bookmark.Payload);
+            var storedBookmark = new StoredBookmark
+            {
+                Id = bookmark.Id,
+                ActivityTypeName = bookmark.Name,
+                Hash = bookmark.Hash,
+                WorkflowInstanceId = workflowInstanceId,
+                CreatedAt = bookmark.CreatedAt,
+                ActivityInstanceId = bookmark.ActivityInstanceId,
+                CorrelationId = correlationId,
+                Payload = bookmark.Payload
+            };
+            
             await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }
