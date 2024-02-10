@@ -32,7 +32,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IBookmarkHasher _hasher;
-    private readonly IBookmarkManager _bookmarkManager;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowExecutionResultMapper _workflowExecutionResultMapper;
@@ -48,7 +47,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         IWorkflowInstanceStore workflowInstanceStore,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher hasher,
-        IBookmarkManager bookmarkManager,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowExecutionResultMapper workflowExecutionResultMapper)
@@ -60,7 +58,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         _workflowInstanceStore = workflowInstanceStore;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
-        _bookmarkManager = bookmarkManager;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowExecutionResultMapper = workflowExecutionResultMapper;

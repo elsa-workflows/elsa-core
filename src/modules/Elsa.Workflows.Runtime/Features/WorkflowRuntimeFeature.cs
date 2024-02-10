@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.Common.Accessors;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Common.Services;
@@ -189,8 +188,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
-            .AddScoped<ITenantAccessor, TenantAccessor>()
-            .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)

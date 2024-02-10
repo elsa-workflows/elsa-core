@@ -7,6 +7,7 @@ using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
+using Elsa.Tenants.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;

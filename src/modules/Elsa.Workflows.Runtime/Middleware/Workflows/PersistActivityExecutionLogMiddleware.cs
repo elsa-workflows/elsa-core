@@ -14,27 +14,22 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
     private readonly IActivityExecutionStore _activityExecutionStore;
     private readonly IActivityExecutionMapper _activityExecutionMapper;
     private readonly INotificationSender _notificationSender;
-    private readonly ITenantAccessor _tenantAccessor;
 
     /// <inheritdoc />
     public PersistActivityExecutionLogMiddleware(
         WorkflowMiddlewareDelegate next,
         IActivityExecutionStore activityExecutionStore,
         IActivityExecutionMapper activityExecutionMapper,
-        INotificationSender notificationSender,
-        ITenantAccessor tenantAccessor) : base(next)
+        INotificationSender notificationSender) : base(next)
     {
         _activityExecutionStore = activityExecutionStore;
         _activityExecutionMapper = activityExecutionMapper;
         _notificationSender = notificationSender;
-        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        _tenantAccessor.SetCurrentTenantId(context.Workflow.WorkflowMetadata.TenantId);
-
         // Invoke next middleware.
         await Next(context);
 

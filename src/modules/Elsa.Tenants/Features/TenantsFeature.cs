@@ -1,10 +1,15 @@
+using Elsa.Common.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Identity.Providers;
+using Elsa.Tenants.Accessors;
+using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Handlers;
 using Elsa.Tenants.Middlewares;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
+using Elsa.Tenants.Services;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,7 +53,9 @@ public class TenantsFeature : FeatureBase
         Services.Configure(TenantsOptions);
 
         Services
-            .AddScoped<ConfigurationTenantProvider>()
+            .AddScoped<ITenantAccessor, TenantAccessor>()
+            .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
+            .AddSingleton<ConfigurationTenantProvider>()
             .AddScoped(TenantProvider)
 
             .AddScoped<HttpTenantMiddleware>()

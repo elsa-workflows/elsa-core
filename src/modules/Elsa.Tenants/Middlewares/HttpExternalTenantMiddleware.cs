@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Contracts;
+using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;

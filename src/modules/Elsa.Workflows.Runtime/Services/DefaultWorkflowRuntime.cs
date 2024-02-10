@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
@@ -37,7 +36,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowExecutionContextStore _workflowExecutionContextStore;
     private readonly IServiceProvider _serviceProvider;
     private readonly IBookmarksPersister _bookmarksPersister;
-    private readonly ITenantAccessor _tenantAccessor;
 
     /// <summary>
     /// Constructor.
@@ -56,8 +54,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         IIdentityGenerator identityGenerator,
         IWorkflowExecutionContextStore workflowExecutionContextStore,
         IServiceProvider serviceProvider,
-        IBookmarksPersister bookmarksPersister,
-        ITenantAccessor tenantAccessor)
+        IBookmarksPersister bookmarksPersister)
     {
         _workflowHostFactory = workflowHostFactory;
         _workflowDefinitionService = workflowDefinitionService;
@@ -73,7 +70,6 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         _workflowExecutionContextStore = workflowExecutionContextStore;
         _serviceProvider = serviceProvider;
         _bookmarksPersister = bookmarksPersister;
-        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -484,7 +480,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     VersionOptions = VersionOptions.Published,
                     TriggerActivityId = trigger.ActivityId
                 };
-                _tenantAccessor.SetCurrentTenantId(trigger.TenantId);
+                
                 var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
                 var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);
 

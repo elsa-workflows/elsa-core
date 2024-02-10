@@ -1,7 +1,7 @@
-﻿using Elsa.Common.Contracts;
+﻿using Elsa.Tenants.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Common.Services;
+namespace Elsa.Tenants.Services;
 
 /// <inheritdoc/>
 public class TenantServiceScopeFactory(ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantServiceScopeFactory

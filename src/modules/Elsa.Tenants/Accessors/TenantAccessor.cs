@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Contracts;
+using Elsa.Tenants.Contracts;
 
 namespace Elsa.Tenants.Accessors;
 

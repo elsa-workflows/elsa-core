@@ -1,5 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Models;
+using Elsa.Tenants.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;

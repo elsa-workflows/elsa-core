@@ -1,6 +1,7 @@
 ﻿using Elsa.Common.Contracts;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using Elsa.Tenants.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.Middlewares;

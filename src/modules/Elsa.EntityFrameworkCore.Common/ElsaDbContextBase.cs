@@ -1,9 +1,10 @@
-﻿using System.Linq.Expressions;
-using Elsa.Common.Contracts;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Abstractions;
 using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.Tenants.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -23,10 +24,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// </summary>
     public static string ElsaSchema { get; set; } = "Elsa";
 
-    private string _schema;
-
     /// <inheritdoc/>
-    public string Schema => _schema;
+    public string Schema { get; }
 
     /// <summary>
     /// The table used to store the migrations history.
@@ -41,28 +40,24 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// Service Provider used in some strategies and filters.
     /// </summary>
-    protected readonly IServiceProvider _serviceProvider;
+    protected readonly IServiceProvider ServiceProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
     protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
-        _serviceProvider = serviceProvider;
+        ServiceProvider = serviceProvider;
 
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
         // ReSharper disable once VirtualMemberCallInConstructor
-        _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
 
-        ITenantAccessor? tenantAccessor = _serviceProvider.GetService<ITenantAccessor>();
+        var tenantAccessor = ServiceProvider.GetService<ITenantAccessor>();
         TenantId = tenantAccessor?.GetCurrentTenantId();
     }
-
-    /// <summary>
-    /// The schema used by Elsa.
-    /// </summary>
-   // protected virtual string Schema { get; set; }
 
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -86,7 +81,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         if (Database.IsOracle()) SetupForOracle(modelBuilder);
 
         //Add global filter on DbContext to split data between tenants
-        IEnumerable<IDbContextStrategy>? dbContextStrategies = _serviceProvider.GetServices<IDbContextStrategy>();
+        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>();
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -157,7 +152,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
     private async Task OnBeforeSaving()
     {
-        var dbContextStrategies = _serviceProvider.GetServices<IDbContextStrategy>();
+        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>();
         foreach (EntityEntry entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
             IEnumerable<IBeforeSavingDbContextStrategy> beforeSavingDbContextStrategies = dbContextStrategies
