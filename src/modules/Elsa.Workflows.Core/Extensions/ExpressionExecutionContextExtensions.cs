@@ -292,10 +292,10 @@ public static class ExpressionExecutionContextExtensions
             select v;
 
         var variable = q.FirstOrDefault();
-        
-        if(variable != null)
+
+        if (variable != null)
             variable.Set(context, value);
-        
+
         if (variable == null)
             CreateVariable(context, variableName, value);
     }
@@ -310,12 +310,23 @@ public static class ExpressionExecutionContextExtensions
         while (currentScope != null)
         {
             if (!currentScope.TryGetActivityExecutionContext(out var activityExecutionContext))
-                break;
+            {
+                var variables = currentScope.Memory.Blocks.Values
+                    .Where(x => x.Metadata is VariableBlockMetadata)
+                    .Select(x => x.Metadata as VariableBlockMetadata)
+                    .Select(x => x!.Variable)
+                    .ToList();
 
-            var variables = activityExecutionContext.Variables;
+                foreach (var variable in variables)
+                    yield return variable;
+            }
+            else
+            {
+                var variables = activityExecutionContext.Variables;
 
-            foreach (var variable in variables)
-                yield return variable;
+                foreach (var variable in variables)
+                    yield return variable;
+            }
 
             currentScope = currentScope.ParentContext;
         }
@@ -325,6 +336,18 @@ public static class ExpressionExecutionContextExtensions
             if (workflowExecutionContext.Workflow.ResultVariable != null)
                 yield return workflowExecutionContext.Workflow.ResultVariable;
         }
+    }
+
+    /// <summary>
+    /// Returns the input value associated with the specified <see cref="InputDefinition"/> in the given <see cref="ExpressionExecutionContext"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the input value.</typeparam>
+    /// <param name="context">The <see cref="ExpressionExecutionContext"/> containing the input.</param>
+    /// <param name="inputDefinition">The <see cref="InputDefinition"/> specifying the input to retrieve.</param>
+    /// <returns>The input value associated with the specified <see cref="InputDefinition"/> in the <see cref="ExpressionExecutionContext"/>.</returns>
+    public static T? GetInput<T>(this ExpressionExecutionContext context, InputDefinition inputDefinition)
+    {
+        return context.GetInput<T>(inputDefinition.Name);
     }
 
     /// <summary>
@@ -362,7 +385,7 @@ public static class ExpressionExecutionContextExtensions
         var input = workflowExecutionContext.Input;
         return input.TryGetValue(name, out var value) ? value : default;
     }
-    
+
     /// <summary>
     /// Returns the value of the specified input.
     /// </summary>
@@ -393,7 +416,9 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static IEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
     {
-        var activityExecutionContext = context.GetActivityExecutionContext();
+        if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
+            yield break;
+
         var useActivityName = activityExecutionContext.WorkflowExecutionContext.Workflow.CreatedWithModernTooling();
         var activitiesWithOutputs = activityExecutionContext.GetActivitiesWithOutputs();
 
@@ -411,7 +436,10 @@ public static class ExpressionExecutionContextExtensions
             foreach (var output in activityDescriptor.Outputs)
             {
                 var outputPascalName = output.Name.Pascalize();
-                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[] { outputPascalName });
+                yield return new ActivityOutputs(activity.Id, activityIdPascalName, new[]
+                {
+                    outputPascalName
+                });
             }
         }
     }
@@ -481,6 +509,10 @@ public static class ExpressionExecutionContextExtensions
         if (obj is not IEnumerable enumerable || obj is string || obj is IDictionary)
             return obj;
 
+        // If this is an async enumerable, return as-is.
+        if (obj.GetType().Name == "AsyncIListEnumerableAdapter`1")
+            return obj;
+
         // Use LINQ to convert the IEnumerable to an array.
         var elementType = obj.GetType().GetGenericArguments().FirstOrDefault();
 
@@ -488,6 +520,9 @@ public static class ExpressionExecutionContextExtensions
             return obj;
 
         var toArrayMethod = typeof(Enumerable).GetMethod("ToArray")!.MakeGenericMethod(elementType);
-        return toArrayMethod.Invoke(null, new object[] { enumerable })!;
+        return toArrayMethod.Invoke(null, new object[]
+        {
+            enumerable
+        })!;
     }
 }

@@ -14,10 +14,11 @@ internal class CreateIndices : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        using var scope = _serviceProvider.CreateScope();
         return Task.WhenAll(
-            CreateApplicationIndices(cancellationToken),
-            CreateUserIndices(cancellationToken),
-            CreateRoleIndices(cancellationToken));
+            CreateApplicationIndices(scope, cancellationToken),
+            CreateUserIndices(scope, cancellationToken),
+            CreateRoleIndices(scope, cancellationToken));
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -25,9 +26,9 @@ internal class CreateIndices : IHostedService
         return Task.CompletedTask;
     }
 
-    private Task CreateApplicationIndices(CancellationToken cancellationToken)
+    private static Task CreateApplicationIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var applicationCollection = _serviceProvider.GetService<IMongoCollection<Application>>();
+        var applicationCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<Application>>();
         if (applicationCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(
@@ -44,9 +45,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
     
-    private Task CreateUserIndices(CancellationToken cancellationToken)
+    private static Task CreateUserIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var userCollection = _serviceProvider.GetService<IMongoCollection<User>>();
+        var userCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<User>>();
         if (userCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(
@@ -63,9 +64,9 @@ internal class CreateIndices : IHostedService
             });
     }
 
-    private Task CreateRoleIndices(CancellationToken cancellationToken)
+    private static Task CreateRoleIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var roleCollection = _serviceProvider.GetService<IMongoCollection<Role>>();
+        var roleCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<Role>>();
         if (roleCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(

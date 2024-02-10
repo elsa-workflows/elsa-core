@@ -145,11 +145,26 @@ public static class ActivityExtensions
     /// Sets the root activity in the specified activity.
     /// </summary>
     public static void SetRoot(this JsonObject container, JsonObject root) => container.SetProperty(root, "root");
-    
+
     /// <summary>
     /// Gets the root activity in the specified activity.
     /// </summary>
-    public static string? GetWorkflowDefinitionId(this JsonObject activity) => activity.GetProperty<string?>("workflowDefinitionId");
+    public static string? GetWorkflowDefinitionId(this JsonObject activity)
+    {
+        // Determine if this activity represents a workflow definition activity based on the presence of the following properties.
+        var workflowDefinitionIdNode = activity.GetProperty("workflowDefinitionId");
+        var workflowDefinitionVersionId = activity.GetProperty("workflowDefinitionVersionId");
+        var latestAvailablePublishedVersion = activity.GetProperty("latestAvailablePublishedVersion");
+        var latestAvailablePublishedVersionId = activity.GetProperty("latestAvailablePublishedVersionId");
+
+        if (workflowDefinitionIdNode == null || workflowDefinitionVersionId == null || latestAvailablePublishedVersion == null || latestAvailablePublishedVersionId == null)
+            return null; // Not a workflow definition activity.
+
+        if (workflowDefinitionIdNode is JsonValue value)
+            return value.ToString();
+
+        return null; // Not a workflow definition activity.
+    }
 
     /// <summary>
     /// Determines whether the given activity is a workflow definition activity.
@@ -157,7 +172,7 @@ public static class ActivityExtensions
     /// <param name="activity">The JsonObject representing the activity.</param>
     /// <returns>Returns true if the activity is a workflow definition activity; otherwise, false.</returns>
     public static bool GetIsWorkflowDefinitionActivity(this JsonObject activity) => activity.ContainsKey("workflowDefinitionId") && activity.ContainsKey("workflowDefinitionVersionId");
-    
+
     /// <summary>
     /// Gets a value indicating whether the specified activity can trigger the workflow.
     /// </summary>

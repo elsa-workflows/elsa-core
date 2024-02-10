@@ -3,7 +3,6 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.Webhooks.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
 const bool useMassTransit = true;

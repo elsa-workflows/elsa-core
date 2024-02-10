@@ -28,10 +28,10 @@ public class EventPublisher : IEventPublisher
         string? correlationId = default,
         string? workflowInstanceId = default,
         string? activityInstanceId = default,
-        IDictionary<string, object>? input = default,
+        object? payload = default,
         CancellationToken cancellationToken = default)
     {
-        return await PublishInternalAsync(eventName, false, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        return await PublishInternalAsync(eventName, false, correlationId, workflowInstanceId, activityInstanceId, payload, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -40,10 +40,10 @@ public class EventPublisher : IEventPublisher
         string? correlationId = default,
         string? workflowInstanceId = default,
         string? activityInstanceId = default,
-        IDictionary<string, object>? input = default,
+        object? payload = default,
         CancellationToken cancellationToken = default)
     {
-        await PublishInternalAsync(eventName, true, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+        await PublishInternalAsync(eventName, true, correlationId, workflowInstanceId, activityInstanceId, payload, cancellationToken);
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> PublishInternalAsync(
@@ -52,11 +52,15 @@ public class EventPublisher : IEventPublisher
         string? correlationId = default,
         string? workflowInstanceId = default,
         string? activityInstanceId = default,
-        IDictionary<string, object>? input = default,
+        object? payload = default,
         CancellationToken cancellationToken = default)
     {
         var eventBookmark = new EventBookmarkPayload(eventName);
-        var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, input);
+        var workflowInput = new Dictionary<string, object>
+        {
+            [Event.EventPayloadWorkflowInputKey] = payload ?? new Dictionary<string, object>()
+        };
+        var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, workflowInput);
         var options = new WorkflowInboxMessageDeliveryOptions
         {
             DispatchAsynchronously = dispatchAsynchronously

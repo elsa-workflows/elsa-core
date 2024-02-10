@@ -4,6 +4,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Providers;
@@ -11,6 +12,7 @@ namespace Elsa.Workflows.Runtime.Providers;
 /// <summary>
 /// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeFeature"/>
 /// </summary>
+[UsedImplicitly]
 public class ClrWorkflowProvider : IWorkflowProvider
 {
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
@@ -18,7 +20,7 @@ public class ClrWorkflowProvider : IWorkflowProvider
     private readonly RuntimeOptions _options;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="ClrWorkflowProvider"/> class.
     /// </summary>
     public ClrWorkflowProvider(
         IOptions<RuntimeOptions> options,

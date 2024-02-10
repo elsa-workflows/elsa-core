@@ -44,5 +44,6 @@ public class JsonActivitySerializer : ConfigurableSerializer, IActivitySerialize
     protected override void AddConverters(JsonSerializerOptions options)
     {
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
+        options.Converters.Add(CreateInstance<InputJsonConverterFactory>());
     }
 }

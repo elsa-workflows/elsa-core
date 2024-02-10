@@ -18,8 +18,10 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
+    internal static string GetBackgroundActivityCompletedKey(string activityNodeId) => $"__BackgroundActivityCompleted:{activityNodeId}";
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
     internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
+    internal static string GetBackgroundActivityBookmarksKey(string activityNodeId) => $"__BackgroundActivityBookmarks:{activityNodeId}";
     internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
@@ -45,7 +47,9 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
             {
                 CaptureOutputIfAny(context);
                 CaptureJournalData(context);
+                CaptureBookmarkData(context);
                 await CompleteBackgroundActivityOutcomesAsync(context);
+                await CompleteBackgroundActivityAsync(context);
                 await CompleteBackgroundActivityScheduledActivitiesAsync(context);
             }
         }
@@ -76,7 +80,12 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
         var bookmarkPayload = new BackgroundActivityBookmark();
-        var bookmarkOptions = new CreateBookmarkArgs { BookmarkName = BackgroundActivityBookmarkName, Payload = bookmarkPayload, AutoComplete = false };
+        var bookmarkOptions = new CreateBookmarkArgs
+        {
+            BookmarkName = BackgroundActivityBookmarkName,
+            Payload = bookmarkPayload,
+            AutoComplete = false
+        };
         var bookmark = context.CreateBookmark(bookmarkOptions);
         scheduledBackgroundActivities.Add(new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmark.Id));
     }
@@ -90,6 +99,8 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var activity = context.Activity;
         var inputKey = GetBackgroundActivityOutputKey(activity.NodeId);
         var capturedOutput = context.WorkflowExecutionContext.GetProperty<IDictionary<string, object>>(inputKey);
+
+        context.WorkflowExecutionContext.Properties.Remove(inputKey);
 
         if (capturedOutput == null)
             return;
@@ -112,11 +123,26 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var journalDataKey = GetBackgroundActivityJournalDataKey(activity.NodeId);
         var journalData = context.WorkflowExecutionContext.GetProperty<IDictionary<string, object>>(journalDataKey);
 
+        context.WorkflowExecutionContext.Properties.Remove(journalDataKey);
+
         if (journalData == null)
             return;
 
         foreach (var journalEntry in journalData)
             context.JournalData[journalEntry.Key] = journalEntry.Value;
+    }
+
+    private void CaptureBookmarkData(ActivityExecutionContext context)
+    {
+        var activity = context.Activity;
+        var bookmarksKey = GetBackgroundActivityBookmarksKey(activity.NodeId);
+        var bookmarks = context.WorkflowExecutionContext.GetProperty<ICollection<Bookmark>>(bookmarksKey);
+        if (bookmarks != null)
+        {
+            context.AddBookmarks(bookmarks);
+        }
+
+        context.WorkflowExecutionContext.Properties.Remove(bookmarksKey);
     }
 
     private async Task CompleteBackgroundActivityOutcomesAsync(ActivityExecutionContext context)
@@ -127,10 +153,24 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         if (outcomes != null)
         {
             await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
-
-            // Remove the outcomes from the workflow execution context.
-            context.WorkflowExecutionContext.Properties.Remove(outcomesKey);
         }
+
+        // Remove the outcomes from the workflow execution context.
+        context.WorkflowExecutionContext.Properties.Remove(outcomesKey);
+    }
+
+    private async Task CompleteBackgroundActivityAsync(ActivityExecutionContext context)
+    {
+        var completedKey = GetBackgroundActivityCompletedKey(context.NodeId);
+        var completed = context.WorkflowExecutionContext.GetProperty<bool?>(completedKey);
+
+        if (completed is true)
+        {
+            await context.CompleteActivityAsync();
+        }
+
+        // Remove the outcomes from the workflow execution context.
+        context.WorkflowExecutionContext.Properties.Remove(completedKey);
     }
 
     private async Task CompleteBackgroundActivityScheduledActivitiesAsync(ActivityExecutionContext context)
@@ -158,9 +198,9 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
                     : default;
                 await context.ScheduleActivityAsync(activityNode, owner, options);
             }
-
-            // Remove the scheduled activities from the workflow execution context.
-            context.WorkflowExecutionContext.Properties.Remove(scheduledActivitiesKey);
         }
+
+        // Remove the scheduled activities from the workflow execution context.
+        context.WorkflowExecutionContext.Properties.Remove(scheduledActivitiesKey);
     }
 }

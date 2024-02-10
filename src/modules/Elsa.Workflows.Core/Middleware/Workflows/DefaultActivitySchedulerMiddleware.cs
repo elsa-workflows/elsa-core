@@ -60,7 +60,8 @@ public class DefaultActivitySchedulerMiddleware : WorkflowExecutionMiddleware
             Owner = workItem.Owner,
             ExistingActivityExecutionContext = workItem.ExistingActivityExecutionContext,
             Tag = workItem.Tag,
-            Variables = workItem.Variables
+            Variables = workItem.Variables,
+            Input = workItem.Input
         };
 
         await _activityInvoker.InvokeAsync(context, workItem.Activity, options);
