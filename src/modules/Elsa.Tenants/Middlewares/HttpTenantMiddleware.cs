@@ -5,32 +5,25 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.Middlewares;
 
-public class HttpTenantMiddleware : IMiddleware
+/// <summary>
+/// Middleware that sets the current tenant ID based on the authenticated user.
+/// </summary>
+public class HttpTenantMiddleware(ITenantAccessor tenantAccessor, IUserProvider userProvider) : IMiddleware
 {
-    private readonly ITenantAccessor _tenantAccessor;
-    private readonly IUserProvider _userProvider;
-
-    public HttpTenantMiddleware(ITenantAccessor tenantAccessor, IUserProvider userProvider)
-    {
-        _tenantAccessor = tenantAccessor;
-        _userProvider = userProvider;
-    }
-
+    /// <inheritdoc />
     public async Task InvokeAsync(HttpContext httpContext, RequestDelegate next)
     {
         string? tenantId = null;
 
-        var userName = httpContext?.User?.Identity?.Name;
+        var userName = httpContext.User.Identity?.Name;
 
         if (userName != null)
         {
-            var user = await _userProvider.FindAsync(new UserFilter { Name = userName });
+            var user = await userProvider.FindAsync(new UserFilter { Name = userName });
             tenantId = user?.TenantId;
         }
 
-        _tenantAccessor.SetCurrentTenantId(tenantId);
-
+        tenantAccessor.SetCurrentTenantId(tenantId);
         await next(httpContext);
-        return;
     }
 }

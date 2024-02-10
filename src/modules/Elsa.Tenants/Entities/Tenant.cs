@@ -1,6 +1,12 @@
 ﻿using Elsa.Common.Entities;
+using JetBrains.Annotations;
 
 namespace Elsa.Tenants.Entities;
+
+/// <summary>
+/// Represents a tenant.
+/// </summary>
+[UsedImplicitly]
 public class Tenant : Entity
 {
     /// <summary>
