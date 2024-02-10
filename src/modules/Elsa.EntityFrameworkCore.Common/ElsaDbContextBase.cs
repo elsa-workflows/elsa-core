@@ -62,7 +62,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await OnBeforeSaving();
+        OnBeforeSaving();
         return await base.SaveChangesAsync(cancellationToken);
     }
 
@@ -80,10 +80,10 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         if (Database.IsSqlite()) SetupForSqlite(modelBuilder);
         if (Database.IsOracle()) SetupForOracle(modelBuilder);
 
-        //Add global filter on DbContext to split data between tenants
-        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>();
+        // Add global filter on DbContext to split data between tenants
+        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>().ToList();
 
-        foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (dbContextStrategies != null && dbContextStrategies.Any())
             {
@@ -150,17 +150,17 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     {
     }
 
-    private async Task OnBeforeSaving()
+    private void OnBeforeSaving()
     {
-        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>();
+        var dbContextStrategies = ServiceProvider.GetServices<IDbContextStrategy>().ToList();
         foreach (EntityEntry entry in ChangeTracker.Entries().Where(IsModifiedEntity))
         {
-            IEnumerable<IBeforeSavingDbContextStrategy> beforeSavingDbContextStrategies = dbContextStrategies
+            var beforeSavingDbContextStrategies = dbContextStrategies
                 .OfType<IBeforeSavingDbContextStrategy>()
-                .Where(strategy => strategy.CanExecute(entry).Result);
+                .Where(strategy => strategy.CanExecute(entry));
 
             foreach (IBeforeSavingDbContextStrategy beforeSavingDbContextStrategy in beforeSavingDbContextStrategies)
-                await beforeSavingDbContextStrategy.Execute(entry);
+                beforeSavingDbContextStrategy.Execute(entry);
         }
     }
 
@@ -171,7 +171,12 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <returns></returns>
     protected virtual bool IsModifiedEntity(EntityEntry entityEntry)
     {
-        var states = new List<EntityState>() { EntityState.Added, EntityState.Modified, EntityState.Deleted };
+        var states = new List<EntityState>()
+        {
+            EntityState.Added,
+            EntityState.Modified,
+            EntityState.Deleted
+        };
 
         return states.Contains(entityEntry.State) &&
                entityEntry.Entity is Entity;

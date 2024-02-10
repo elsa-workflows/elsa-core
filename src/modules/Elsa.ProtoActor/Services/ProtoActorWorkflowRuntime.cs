@@ -11,11 +11,10 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Proto.Cluster;
-using Bookmark = Elsa.Workflows.Models.Bookmark;
-using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
 using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Services;
@@ -345,7 +344,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         foreach (var trigger in triggers)
         {
             var definitionId = trigger.WorkflowDefinitionId;
-
             var startOptions = new StartWorkflowRuntimeOptions
             {
                 CorrelationId = workflowsFilter.Options.CorrelationId,

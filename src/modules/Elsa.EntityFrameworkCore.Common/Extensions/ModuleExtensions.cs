@@ -1,4 +1,5 @@
 using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common.Strategies;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

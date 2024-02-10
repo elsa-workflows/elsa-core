@@ -1,6 +1,5 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
-using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Common.Exceptions;
 using Elsa.Tenants.Contracts;
 using Microsoft.EntityFrameworkCore;
@@ -8,26 +7,26 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Elsa.EntityFrameworkCore.Common.Strategies;
 
-public class MustHaveTenantIdBeforeSavingStrategy : IBeforeSavingDbContextStrategy
+/// <summary>
+/// Ensures that entities of type <see cref="Entity"/> have a TenantId before saving.
+/// </summary>
+public class MustHaveTenantIdBeforeSavingStrategy(ITenantAccessor tenantAccessor) : IBeforeSavingDbContextStrategy
 {
-    private readonly ITenantAccessor _tenantAccessor;
-
-    public MustHaveTenantIdBeforeSavingStrategy(ITenantAccessor tenantAccessor)
+    /// <inheritdoc />
+    public bool CanExecute(EntityEntry entityEntry)
     {
-        _tenantAccessor = tenantAccessor;
+        var states = new List<EntityState>
+        {
+            EntityState.Added
+        };
+
+        return entityEntry?.Entity is Entity && states.Contains(entityEntry.State);
     }
 
-    public async Task<bool> CanExecute(EntityEntry entityEntry)
+    /// <inheritdoc />
+    public void Execute(EntityEntry entityEntry)
     {
-        var states = new List<EntityState>() { EntityState.Added };
-
-        return entityEntry?.Entity is Entity &&
-            states.Contains(entityEntry.State);
-    }
-
-    public async Task Execute(EntityEntry entityEntry)
-    {
-        string? tenantId = _tenantAccessor.GetCurrentTenantId();
+        string? tenantId = tenantAccessor.GetCurrentTenantId();
 
         if (tenantId is null)
             throw new MustHaveTenantException($"Entity of type '{entityEntry.Entity.GetType()}' must have a TenantId to be created");

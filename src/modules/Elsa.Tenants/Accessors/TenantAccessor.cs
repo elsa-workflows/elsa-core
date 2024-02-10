@@ -1,16 +1,11 @@
-﻿using Elsa.Common.Contracts;
-using Elsa.Tenants.Contracts;
+﻿using Elsa.Tenants.Contracts;
 
 namespace Elsa.Tenants.Accessors;
 
+/// <inheritdoc />
 public class TenantAccessor : ITenantAccessor
 {
-    private readonly AsyncLocal<string?> _currentTenantId;
-
-    public TenantAccessor()
-    {
-        _currentTenantId = new AsyncLocal<string?>();
-    }
+    private readonly AsyncLocal<string?> _currentTenantId = new();
 
     /// <inheritdoc/>
     public string? GetCurrentTenantId()
