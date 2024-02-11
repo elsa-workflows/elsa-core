@@ -21,6 +21,7 @@ public class Configurations : IEntityTypeConfiguration<AlterationPlan>, IEntityT
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.CreatedAt)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.StartedAt)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.CompletedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.TenantId)}");
     }
 
     /// <inheritdoc />
@@ -35,5 +36,6 @@ public class Configurations : IEntityTypeConfiguration<AlterationPlan>, IEntityT
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.CreatedAt)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.StartedAt)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.CompletedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.TenantId)}");
     }
 }

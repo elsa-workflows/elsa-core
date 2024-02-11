@@ -5,76 +5,84 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20240203235547_V3_1")]
+    [Migration("20240211230717_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.14");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<byte[]>("BinaryData")
-                        .HasColumnType("BLOB");
+                        .HasColumnType("bytea");
 
-                    b.Property<string>("CreatedAt")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Data")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<bool>("IsLatest")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsPublished")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsReadonly")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("MaterializerContext")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("MaterializerName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("ProviderName")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("StringData")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
 
                     b.Property<string>("ToolVersion")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<bool?>("UsableAsActivity")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Version")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -87,6 +95,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
+
                     b.HasIndex("UsableAsActivity")
                         .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
 
@@ -97,58 +108,59 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .IsUnique()
                         .HasDatabaseName("IX_WorkflowDefinition_DefinitionId_Version");
 
-                    b.ToTable("WorkflowDefinitions");
+                    b.ToTable("WorkflowDefinitions", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("CorrelationId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
-                    b.Property<string>("CreatedAt")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Data")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("DataCompressionAlgorithm")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("DefinitionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("DefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
-                    b.Property<string>("FinishedAt")
-                        .HasColumnType("TEXT");
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("IncidentCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("SubStatus")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
-                    b.Property<string>("UpdatedAt")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Version")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -173,6 +185,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
+
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");
 
@@ -188,7 +203,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("Status", "SubStatus", "DefinitionId", "Version")
                         .HasDatabaseName("IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version");
 
-                    b.ToTable("WorkflowInstances");
+                    b.ToTable("WorkflowInstances", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

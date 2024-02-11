@@ -19,6 +19,7 @@ internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfi
     public void Configure(EntityTypeBuilder<User> builder)
     {
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(User)}_{nameof(User.Name)}").IsUnique();
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(User)}_{nameof(User.TenantId)}");
         builder.Property(x => x.Roles).HasColumnName("Roles").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }
 
@@ -26,12 +27,14 @@ internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfi
     {
         builder.HasIndex(x => x.ClientId).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.ClientId)}").IsUnique();
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.Name)}").IsUnique();
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.TenantId)}");
         builder.Property(x => x.Roles).HasColumnName("Roles").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }
 
     public void Configure(EntityTypeBuilder<Role> builder)
     {
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.Name)}").IsUnique();
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.TenantId)}");
         builder.Property(x => x.Permissions).HasColumnName("Permissions").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }
 }

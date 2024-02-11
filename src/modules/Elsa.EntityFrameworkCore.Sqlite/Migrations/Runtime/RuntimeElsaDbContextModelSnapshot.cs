@@ -68,6 +68,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -101,6 +104,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ActivityExecutionRecord_Status");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_TenantId");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -112,13 +118,17 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
-                    b.Property<string>("BookmarkId")
+                    b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityInstanceId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ActivityTypeName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BookmarkId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -139,11 +149,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.HasKey("BookmarkId");
+                    b.HasKey("Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
 
@@ -156,6 +169,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
 
@@ -181,6 +196,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -196,6 +214,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_StoredTrigger_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_StoredTrigger_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
@@ -254,6 +275,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("Source")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Timestamp")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -301,6 +325,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
                     b.HasIndex("Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
@@ -359,6 +386,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedInput")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .HasColumnType("TEXT");
 
@@ -375,6 +405,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_WorkflowInboxMessage_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 

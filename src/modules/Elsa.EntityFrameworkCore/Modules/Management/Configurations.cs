@@ -28,6 +28,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.IsLatest).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsLatest)}");
         builder.HasIndex(x => x.IsPublished).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsPublished)}");
         builder.HasIndex("UsableAsActivity").HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_UsableAsActivity");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.TenantId)}");
     }
         
     public void Configure(EntityTypeBuilder<WorkflowInstance> builder)
@@ -49,5 +50,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.CreatedAt)}");
         builder.HasIndex(x => x.UpdatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.UpdatedAt)}");
         builder.HasIndex(x => x.FinishedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.FinishedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.TenantId)}");
     }
 }

@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.2")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
@@ -71,6 +71,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -104,6 +107,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ActivityExecutionRecord_Status");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_TenantId");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -115,7 +121,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
-                    b.Property<string>("BookmarkId")
+                    b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("ActivityInstanceId")
@@ -124,6 +130,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("BookmarkId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("CorrelationId")
                         .HasColumnType("longtext");
@@ -141,11 +151,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("BookmarkId");
+                    b.HasKey("Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
 
@@ -158,6 +171,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
 
@@ -183,6 +198,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -198,6 +216,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_StoredTrigger_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_StoredTrigger_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
@@ -256,6 +277,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("Source")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("datetime(6)");
 
@@ -302,6 +326,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
                     b.HasIndex("Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
@@ -358,6 +385,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedInput")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .HasColumnType("varchar(255)");
 
@@ -374,6 +404,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_WorkflowInboxMessage_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 
