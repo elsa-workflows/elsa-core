@@ -69,9 +69,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("ToolVersion")
                         .HasColumnType("text");
 
@@ -145,9 +142,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.Property<string>("SubStatus")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAt")

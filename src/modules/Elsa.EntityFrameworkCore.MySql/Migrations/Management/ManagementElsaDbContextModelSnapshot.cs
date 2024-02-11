@@ -66,9 +66,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ToolVersion")
                         .HasColumnType("longtext");
 
@@ -143,9 +140,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("SubStatus")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetime(6)");

@@ -56,9 +56,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
                         .HasColumnType("text")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -85,9 +82,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("Permissions");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -119,9 +113,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("Roles");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

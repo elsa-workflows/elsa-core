@@ -1,8 +1,8 @@
-﻿using Elsa.EntityFrameworkCore.Common;
+﻿using System.Reflection;
+using Elsa.EntityFrameworkCore.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
-using System.Reflection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -15,7 +15,7 @@ public static class DbContextOptionsBuilderExtensions
     /// <summary>
     /// Configures Entity Framework Core with MySQL.
     /// </summary>
-    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = default, Action<MySqlDbContextOptionsBuilder>? configure = default) =>
+    public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString,ElsaDbContextOptions? options = default, Action<MySqlDbContextOptionsBuilder>? configure = default) =>
         builder
             .UseElsaDbContextOptions(options)
             .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString), db =>

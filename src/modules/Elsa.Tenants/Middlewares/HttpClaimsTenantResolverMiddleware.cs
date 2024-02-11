@@ -1,8 +1,8 @@
-﻿using Elsa.Tenants.Contracts;
+﻿using Elsa.Tenants.Constants;
+using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using Microsoft.Identity.Web;
 
 namespace Elsa.Tenants.Middlewares;
 

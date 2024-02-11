@@ -50,9 +50,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -79,9 +76,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("Permissions");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -113,9 +107,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 

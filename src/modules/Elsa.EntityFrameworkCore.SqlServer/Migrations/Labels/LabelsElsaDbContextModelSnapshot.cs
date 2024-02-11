@@ -41,9 +41,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Labels", "Elsa");
@@ -57,9 +54,6 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Labels
                     b.Property<string>("LabelId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()

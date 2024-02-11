@@ -38,12 +38,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.Property<string>("StartedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -93,12 +89,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.Property<string>("StartedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
