@@ -34,9 +34,9 @@ public class TenantsFeature : FeatureBase
     public Action<TenantsOptions> TenantsOptions { get; set; } = _ => { };
 
     /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="ITenantProvider"/>.
+    /// A delegate that creates an instance of an implementation of <see cref="ITenantsProvider"/>.
     /// </summary>
-    public Func<IServiceProvider, ITenantProvider> TenantProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantProvider>();
+    public Func<IServiceProvider, ITenantsProvider> TenantsProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
 
     /// <inheritdoc />
     public override void Configure()
@@ -55,11 +55,8 @@ public class TenantsFeature : FeatureBase
         Services
             .AddScoped<ITenantAccessor, TenantAccessor>()
             .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
-            .AddSingleton<ConfigurationTenantProvider>()
-            .AddScoped(TenantProvider)
-
-            .AddScoped<HttpTenantMiddleware>()
-            .AddScoped<HttpExternalTenantMiddleware>()
+            .AddSingleton<ConfigurationTenantsProvider>()
+            .AddScoped(TenantsProvider)
 
             .RemoveAll<DispatchWorkflowRequestHandler>()
             .AddScoped<DispatchTenantWorkflowRequestHandler>()
@@ -69,25 +66,18 @@ public class TenantsFeature : FeatureBase
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
     /// </summary>
-    public TenantsFeature UseConfigurationBasedTenantProvider(Action<TenantsOptions>? configure = default)
+    public TenantsFeature UseConfigurationBasedTenantsProvider()
     {
-        if (configure != null)
-            TenantsOptions += configure;
-
+        TenantsProvider = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
         return this;
     }
 
     /// <summary>
     /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
     /// </summary>
-    public TenantsFeature UseExternalTenantProvider(Action<TenantsOptions>? configure = default)
+    public TenantsFeature UseExternalTenantResolverMiddleware()
     {
-        Services
-            .AddScoped<HttpExternalTenantMiddleware>();
-
-        if (configure != null)
-            TenantsOptions += configure;
-
+        
         return this;
     }
 }

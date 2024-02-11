@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [PublicAPI]
-public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
+public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>
 {
     /// <inheritdoc />
     public WorkflowManagementPersistenceFeature(IModule module) : base(module)

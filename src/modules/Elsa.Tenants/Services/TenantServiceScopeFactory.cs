@@ -9,9 +9,8 @@ public class TenantServiceScopeFactory(ITenantAccessor tenantAccessor, IServiceS
     /// <inheritdoc/>
     public IServiceScope CreateScopeWithTenant()
     {
-        string? tenantId = tenantAccessor?.GetCurrentTenantId();
-        IServiceScope scope = serviceScopeFactory.CreateScope();
-
+        var tenantId = tenantAccessor?.GetCurrentTenantId();
+        var scope = serviceScopeFactory.CreateScope();
         var scopedTenantAccessor = scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
         scopedTenantAccessor.SetCurrentTenantId(tenantId);
 

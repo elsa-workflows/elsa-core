@@ -10,7 +10,8 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// Base class for features that require Entity Framework Core.
 /// </summary>
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
-public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDbContext : DbContext
+/// <typeparam name="TFeature">The type of the feature.</typeparam>
+public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase where TDbContext : DbContext
 {
     /// <inheritdoc />
     protected PersistenceFeatureBase(IModule module) : base(module)

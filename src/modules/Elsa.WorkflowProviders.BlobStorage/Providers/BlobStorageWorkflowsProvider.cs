@@ -16,7 +16,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.Providers;
 /// A workflow definition provider that loads workflow definitions from a storage using FluentStorage (See https://github.com/robinrodricks/FluentStorage).
 /// </summary>
 [PublicAPI]
-public class BlobStorageWorkflowProvider : IWorkflowProvider
+public class BlobStorageWorkflowsProvider : IWorkflowsProvider
 {
     private readonly IBlobStorageProvider _blobStorageProvider;
     private readonly IActivitySerializer _activitySerializer;
@@ -27,9 +27,9 @@ public class BlobStorageWorkflowProvider : IWorkflowProvider
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BlobStorageWorkflowProvider"/> class.
+    /// Initializes a new instance of the <see cref="BlobStorageWorkflowsProvider"/> class.
     /// </summary>
-    public BlobStorageWorkflowProvider(
+    public BlobStorageWorkflowsProvider(
         IBlobStorageProvider blobStorageProvider,
         IActivitySerializer activitySerializer,
         IDslEngine dslEngine,

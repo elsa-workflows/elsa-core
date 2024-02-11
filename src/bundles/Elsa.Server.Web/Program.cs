@@ -15,6 +15,7 @@ using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -31,6 +32,7 @@ const bool useMassTransit = false;
 const bool useMassTransitAzureServiceBus = true;
 const bool useMassTransitRabbitMq = false;
 const bool useZipCompression = true;
+const bool useMultitenancy = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -235,6 +237,9 @@ services
                 }
             });
         }
+
+        if (useMultitenancy)
+            elsa.UseTenants(tenants => tenants.UseExternalTenantResolverMiddleware());
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();

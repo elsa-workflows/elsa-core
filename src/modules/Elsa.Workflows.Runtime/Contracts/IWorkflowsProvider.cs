@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// <summary>
 /// Represents a source of workflow definitions.
 /// </summary>
-public interface IWorkflowProvider
+public interface IWorkflowsProvider
 {
     /// <summary>
     /// Gets the name of the provider.

@@ -190,7 +190,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
 
             // Lazy services.
-            .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
+            .AddScoped<Func<IEnumerable<IWorkflowsProvider>>>(sp => sp.GetServices<IWorkflowsProvider>)
             .AddScoped<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Noop stores.
@@ -209,7 +209,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(DistributedLockProvider)
 
             // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
+            .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
 
             // Domain handlers.
             .AddScoped(DispatchWorkflowCommandHandler)

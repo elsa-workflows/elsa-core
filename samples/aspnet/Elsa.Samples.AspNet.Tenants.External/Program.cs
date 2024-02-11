@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Elsa;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -34,11 +33,12 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
     elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString, dbContextOptions)));
-
     elsa.UseIdentity(options => identitySection.Bind(options));
-
-    elsa.UseTenants(configuration => configuration.UseExternalTenantProvider(options => identitySection.Bind(options)))
-        .UseTenantStrategies();
+    elsa.UseTenants(tenantsFeature =>
+    {
+        tenantsFeature.TenantsOptions = options => identitySection.Bind(options);
+        tenantsFeature.UseExternalTenantResolverMiddleware();
+    });
 
     elsa
         .UseHttp(options =>

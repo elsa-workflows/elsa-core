@@ -6,7 +6,7 @@ using Microsoft.Extensions.Hosting;
 namespace Elsa.Workflows.Runtime.HostedServices;
 
 /// <summary>
-/// Updates the workflow store from <see cref="IWorkflowProvider"/> implementations, creates triggers and updates the <see cref="IActivityRegistry"/>.
+/// Updates the workflow store from <see cref="IWorkflowsProvider"/> implementations, creates triggers and updates the <see cref="IActivityRegistry"/>.
 /// </summary>
 public class PopulateRegistriesHostedService : IHostedService
 {

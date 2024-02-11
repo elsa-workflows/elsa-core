@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
+public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreWorkflowRuntimePersistenceFeature(IModule module) : base(module)

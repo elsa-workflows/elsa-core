@@ -13,7 +13,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// </summary>
 [DependsOn(typeof(IdentityFeature))]
 [PublicAPI]
-public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<IdentityElsaDbContext>
+public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreIdentityPersistenceFeature(IModule module) : base(module)

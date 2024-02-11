@@ -1,10 +1,12 @@
 ﻿using Elsa.Tenants.Entities;
+using JetBrains.Annotations;
 
 namespace Elsa.Tenants.Models;
 
 /// <summary>
 /// Represents a tenant filter.
 /// </summary>
+[UsedImplicitly]
 public class TenantFilter
 {
     /// <summary>

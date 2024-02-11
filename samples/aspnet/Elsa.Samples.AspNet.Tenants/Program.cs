@@ -1,6 +1,5 @@
 using Elsa;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -42,8 +41,11 @@ builder.Services.AddElsa(elsa =>
         })
         .UseDefaultAuthentication();
 
-    elsa.UseTenants(configuration => configuration.UseConfigurationBasedTenantProvider(options => identitySection.Bind(options)))
-        .UseTenantStrategies();
+    elsa.UseTenants(tenantsFeature =>
+    {
+        tenantsFeature.TenantsOptions = options => identitySection.Bind(options);
+        tenantsFeature.UseConfigurationBasedTenantsProvider();
+    });
 
     elsa
         .UseHttp()

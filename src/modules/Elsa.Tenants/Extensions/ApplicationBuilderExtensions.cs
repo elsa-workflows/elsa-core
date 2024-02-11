@@ -9,12 +9,12 @@ namespace Elsa.Tenants.Extensions;
 public static class ApplicationBuilderExtensions
 {
     /// <summary>
-    /// Installs the <see cref="HttpTenantMiddleware"/> component.
+    /// Installs the <see cref="HttpCurrentUserTenantResolverMiddleware"/> component.
     /// </summary>
-    public static IApplicationBuilder UseHttpTenantMiddleware(this IApplicationBuilder app) => app.UseMiddleware<HttpTenantMiddleware>();
+    public static IApplicationBuilder UseHttpTenantMiddleware(this IApplicationBuilder app) => app.UseMiddleware<HttpCurrentUserTenantResolverMiddleware>();
 
     /// <summary>
-    /// Installs the <see cref="HttpExternalTenantMiddleware"/> component.
+    /// Installs the <see cref="HttpClaimsTenantResolverMiddleware"/> component.
     /// </summary>
-    public static IApplicationBuilder UseHttpExternalTenantMiddleware(this IApplicationBuilder app) => app.UseMiddleware<HttpExternalTenantMiddleware>();
+    public static IApplicationBuilder UseHttpExternalTenantMiddleware(this IApplicationBuilder app) => app.UseMiddleware<HttpClaimsTenantResolverMiddleware>();
 }
