@@ -8,7 +8,7 @@ using Nuke.Components;
 [CustomGitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        OnPullRequestBranches = ["main", "v3*"],
+        OnPullRequestBranches = ["main"],
         OnPullRequestIncludePaths = ["**/*"],
         OnPullRequestExcludePaths = ["docs/**/*", "package.json", "package-lock.json", "readme.md"],
         PublishArtifacts = false,

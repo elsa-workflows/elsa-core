@@ -120,7 +120,7 @@ public class SendEmail : Activity
         catch (Exception e)
         {
             logger.LogWarning(e, "Error while sending email message");
-            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace }, includeActivityState: true);
+            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace });
             await context.ScheduleActivityAsync(Error, OnErrorCompletedAsync);
         }
     }

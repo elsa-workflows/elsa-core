@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-    
     <PropertyGroup>
         <Description>
             Provides integration of RabbitMQ with MassTransit's integration of Elsa.
@@ -16,7 +12,7 @@
     </ItemGroup>
     
     <ItemGroup>
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.2" />
+        <PackageReference Include="MassTransit.RabbitMQ" />
     </ItemGroup>
 
 </Project>

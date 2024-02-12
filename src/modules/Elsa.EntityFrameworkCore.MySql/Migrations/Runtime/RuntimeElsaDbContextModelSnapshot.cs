@@ -52,6 +52,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("SerializedException")
                         .HasColumnType("longtext");
 

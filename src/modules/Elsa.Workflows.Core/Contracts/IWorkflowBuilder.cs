@@ -109,6 +109,31 @@ public interface IWorkflowBuilder
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     IWorkflowBuilder WithVariables(params Variable[] variables);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput<T>(string name, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(string name, Type type, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(string name, Type type, Action<InputDefinition>? setup = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(Action<InputDefinition> setup);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    IWorkflowBuilder WithInput(InputDefinition inputDefinition);
 
     /// <summary>
     /// A fluent method for adding a property to <see cref="CustomProperties"/>.

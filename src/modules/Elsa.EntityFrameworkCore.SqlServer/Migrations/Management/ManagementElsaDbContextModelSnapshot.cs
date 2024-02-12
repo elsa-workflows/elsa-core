@@ -116,6 +116,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DataCompressionAlgorithm")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");

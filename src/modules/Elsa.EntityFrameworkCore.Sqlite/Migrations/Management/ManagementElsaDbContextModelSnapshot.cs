@@ -112,6 +112,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DataCompressionAlgorithm")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("TEXT");

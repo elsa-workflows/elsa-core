@@ -60,6 +60,7 @@ public class Configurations :
         builder.Ignore(x => x.Payload);
         builder.Ignore(x => x.Outputs);
         builder.Property<string>("SerializedActivityState");
+        builder.Property<string>("SerializedActivityStateCompressionAlgorithm");
         builder.Property<string>("SerializedException");
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedOutputs");

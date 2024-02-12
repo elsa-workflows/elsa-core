@@ -34,11 +34,12 @@ public partial class ActivityExecutionContext
         WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == NodeId);
 
         // Add an execution log entry.
-        AddExecutionLogEntry("Canceled", payload: JournalData, includeActivityState: true);
+        AddExecutionLogEntry("Canceled", payload: JournalData);
         
-        _cancellationRegistration.Dispose();
-        
+        await _cancellationRegistration.DisposeAsync();
         await this.SendSignalAsync(new CancelSignal());
+        
+        // ReSharper disable once MethodSupportsCancellation
         await _publisher.SendAsync(new ActivityCancelled(this));
     }
 }

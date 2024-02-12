@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides Azure Service Bus integration and activities.
@@ -11,25 +7,17 @@
         <PackageTags>elsa module azure-service-bus service-bus</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0"/>
+    <ItemGroup>
+        <PackageReference Include="Azure.Messaging.ServiceBus" />
+        <PackageReference Include="Azure.ResourceManager.ServiceBus" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+        <PackageReference Include="System.Linq.Async" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.17.0"/>
-        <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.0.0"/>
-        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

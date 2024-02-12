@@ -16,4 +16,9 @@ public class ManagementOptions
     /// A collection of types that are available to the system as variable types.
     /// </summary>
     public HashSet<VariableDescriptor> VariableDescriptors { get; set; } = new();
+
+    /// <summary>
+    /// The format to use for compressing workflow state.
+    /// </summary>
+    public string? CompressionAlgorithm { get; set; }
 }

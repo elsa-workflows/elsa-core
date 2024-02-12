@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -66,4 +67,8 @@ partial class Build : NukeBuild, ITest, IPack
         .SetWarningLevel(IsServerBuild ? 0 : 1);
 
     public IEnumerable<Project> TestProjects => ((IHazSolution) this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
+
+    public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, _) => testSettings
+        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"));
+
 }

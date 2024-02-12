@@ -5,11 +5,13 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
+using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
+using Jint.Runtime.Interop;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
@@ -37,7 +39,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
-        ExpressionEvaluatorOptions options,
+        ExpressionEvaluatorOptions? options = default,
         Action<Engine>? configureEngine = default,
         CancellationToken cancellationToken = default)
     {
@@ -47,12 +49,25 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         return result.ConvertTo(returnType);
     }
 
-    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions options, CancellationToken cancellationToken)
+    private async Task<Engine> GetConfiguredEngine(Action<Engine>? configureEngine, ExpressionExecutionContext context, ExpressionEvaluatorOptions? options, CancellationToken cancellationToken)
     {
+        options ??= new ExpressionEvaluatorOptions();
+
         var engine = new Engine(opts =>
         {
             if (_jintOptions.AllowClrAccess)
                 opts.AllowClr();
+
+            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
+            opts.SetWrapObjectHandler((engine, target, type) =>
+            {
+                var instance = new ObjectWrapper(engine, target);
+
+                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
+
+                return instance;
+            });
         });
 
         configureEngine?.Invoke(engine);
@@ -76,11 +91,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create output getters for each activity.
         CreateActivityOutputAccessors(engine, context);
-        
+
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
             engine.SetValue($"get{argument.Key}", (Func<object?>)(() => argument.Value));
-        
+
         // Add common functions.
         engine.SetValue("isNullOrWhiteSpace", (Func<string, bool>)(value => string.IsNullOrWhiteSpace(value)));
         engine.SetValue("isNullOrEmpty", (Func<string, bool>)(value => string.IsNullOrEmpty(value)));
@@ -116,10 +131,18 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         if (context.IsInsideCompositeActivity())
             return;
 
-        var inputs = context.GetWorkflowInputs();
+        var inputs = context.GetWorkflowInputs().ToDictionary(x => x.Name);
 
-        foreach (var input in inputs)
-            engine.SetValue($"get{input.Name}", (Func<object?>)(() => input.Value));
+        if (!context.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+            return;
+
+        var inputDefinitions = workflowExecutionContext.Workflow.Inputs;
+
+        foreach (var inputDefinition in inputDefinitions)
+        {
+            var input = inputs.GetValueOrDefault(inputDefinition.Name);
+            engine.SetValue($"get{inputDefinition.Name}", (Func<object?>)(() => input?.Value));
+        }
     }
 
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)

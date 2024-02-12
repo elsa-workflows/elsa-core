@@ -55,6 +55,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("text");
 
+                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
+                        .HasColumnType("text");
+
                     b.Property<string>("SerializedException")
                         .HasColumnType("text");
 

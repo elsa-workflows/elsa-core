@@ -31,8 +31,13 @@ public static class SqlServerQuartzExtensions
             quartz.UsePersistentStore(store =>
             {
                 store.UseNewtonsoftJsonSerializer();
-                store.UseSqlServer(connectionString);
-                
+                store.UseSqlServer(options =>
+                {
+                    options.ConnectionString = connectionString;
+                    options.TablePrefix = "[quartz].qrtz_";
+
+                });
+
                 if (useClustering)
                     store.UseClustering();
             });

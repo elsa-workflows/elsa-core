@@ -16,6 +16,8 @@ namespace Elsa.Workflows.Runtime.Activities;
 [UsedImplicitly]
 public class Event : Trigger<object?>
 {
+    internal const string EventPayloadWorkflowInputKey = "__EventPayloadWorkflowInput";
+    
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -79,6 +81,8 @@ public class Event : Trigger<object?>
             return;
         }
 
+        var input = context.GetWorkflowInput<object?>(EventPayloadWorkflowInputKey);
+        context.SetResult(input);
         await context.CompleteActivityAsync();
     }
 }

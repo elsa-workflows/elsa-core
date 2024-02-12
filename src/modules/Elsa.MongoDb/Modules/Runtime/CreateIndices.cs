@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
@@ -18,14 +17,15 @@ internal class CreateIndices : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        using var scope = _serviceProvider.CreateScope();
         return Task.WhenAll(
-            CreateWorkflowStateIndices(cancellationToken),
-            CreateWorkflowExecutionLogIndices(cancellationToken),
-            CreateActivityExecutionLogIndices(cancellationToken),
-            CreateWorkflowBookmarkIndices(cancellationToken),
-            CreateWorkflowTriggerIndices(cancellationToken),
-            CreateWorkflowInboxIndices(cancellationToken),
-            CreateKeyValueIndices(cancellationToken)
+            CreateWorkflowStateIndices(scope, cancellationToken),
+            CreateWorkflowExecutionLogIndices(scope, cancellationToken),
+            CreateActivityExecutionLogIndices(scope, cancellationToken),
+            CreateWorkflowBookmarkIndices(scope, cancellationToken),
+            CreateWorkflowTriggerIndices(scope, cancellationToken),
+            CreateWorkflowInboxIndices(scope, cancellationToken),
+            CreateKeyValueIndices(scope, cancellationToken)
         );
     }
 
@@ -34,9 +34,9 @@ internal class CreateIndices : IHostedService
         return Task.CompletedTask;
     }
 
-    private Task CreateWorkflowStateIndices(CancellationToken cancellationToken)
+    private static Task CreateWorkflowStateIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowStateCollection = _serviceProvider.GetService<IMongoCollection<WorkflowState>>();
+        var workflowStateCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowState>>();
         if (workflowStateCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -66,9 +66,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateWorkflowExecutionLogIndices(CancellationToken cancellationToken)
+    private static Task CreateWorkflowExecutionLogIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowExecutionLogCollection = _serviceProvider.GetService<IMongoCollection<WorkflowExecutionLogRecord>>();
+        var workflowExecutionLogCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowExecutionLogRecord>>();
         if (workflowExecutionLogCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -95,9 +95,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateActivityExecutionLogIndices(CancellationToken cancellationToken)
+    private static Task CreateActivityExecutionLogIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var activityExecutionLogCollection = _serviceProvider.GetService<IMongoCollection<ActivityExecutionRecord>>();
+        var activityExecutionLogCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<ActivityExecutionRecord>>();
         if (activityExecutionLogCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -119,9 +119,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateWorkflowBookmarkIndices(CancellationToken cancellationToken)
+    private static Task CreateWorkflowBookmarkIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowBookmarkCollection = _serviceProvider.GetService<IMongoCollection<StoredBookmark>>();
+        var workflowBookmarkCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<StoredBookmark>>();
         if (workflowBookmarkCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -144,9 +144,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateWorkflowTriggerIndices(CancellationToken cancellationToken)
+    private static Task CreateWorkflowTriggerIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowTriggerCollection = _serviceProvider.GetService<IMongoCollection<StoredTrigger>>();
+        var workflowTriggerCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<StoredTrigger>>();
         if (workflowTriggerCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -163,9 +163,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateWorkflowInboxIndices(CancellationToken cancellationToken)
+    private static Task CreateWorkflowInboxIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var collection = _serviceProvider.GetService<IMongoCollection<WorkflowInboxMessage>>();
+        var collection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowInboxMessage>>();
         if (collection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -184,9 +184,9 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 
-    private Task CreateKeyValueIndices(CancellationToken cancellationToken)
+    private Task CreateKeyValueIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var keyValuePairCollection = _serviceProvider.GetService<IMongoCollection<SerializedKeyValuePair>>();
+        var keyValuePairCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<SerializedKeyValuePair>>();
         if (keyValuePairCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(
