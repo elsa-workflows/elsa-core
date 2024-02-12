@@ -12,6 +12,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Hosting.Management\Elsa.Hosting.Management.csproj" />
         <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
     </ItemGroup>
 

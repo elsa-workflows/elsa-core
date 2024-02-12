@@ -18,6 +18,9 @@
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj"/>

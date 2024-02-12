@@ -1,12 +1,18 @@
+using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.AzureServiceBus.Handlers;
+using Elsa.MassTransit.AzureServiceBus.Models;
+using Elsa.MassTransit.AzureServiceBus.Options;
+using Elsa.MassTransit.AzureServiceBus.Services;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
 using Elsa.Workflows.Contracts;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -29,6 +35,11 @@ public class AzureServiceBusFeature : FeatureBase
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
+    
+    /// <summary>
+    /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
+    /// </summary>
+    public Func<IServiceProvider, ServiceBusAdministrationClient> ServiceBusAdministrationClientFactory { get; set; } = sp => new(GetConnectionString(sp));
 
     /// <inheritdoc />
     public override void Configure()
@@ -41,6 +52,7 @@ public class AzureServiceBusFeature : FeatureBase
                 var shortLivedConsumers = consumers
                     .Where(c => c.IsShortLived)
                     .ToList();
+                RegisterConsumers(consumers);
                 
                 configure.AddServiceBusMessageScheduler();
                 configure.AddConsumers(shortLivedConsumers.Select(c => c.ConsumerType).ToArray());
@@ -69,5 +81,45 @@ public class AzureServiceBusFeature : FeatureBase
                 });
             };
         });
+    }
+
+    private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
+    {
+        var subscriptionTopology = new List<MessageSubscriptionTopology>();
+        
+        foreach (var consumer in consumers)
+        {
+            foreach (var consumerInterface in consumer!.ConsumerType.GetInterfaces())
+            {
+                if (!consumerInterface.IsGenericType ||
+                    consumerInterface.GetGenericTypeDefinition() != typeof(IConsumer<>))
+                {
+                    continue;
+                }
+
+                var genericType = consumerInterface.GetGenericArguments()[0];
+                var topicName = $"{genericType.Namespace.ToLower()}~{genericType.Name.ToLower()}";
+                    
+                subscriptionTopology.Add(new MessageSubscriptionTopology(topicName,
+                    consumer.Name ?? genericType.Name.ToLower(),
+                    consumer.IsShortLived));
+            }
+        }
+
+        Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
+    }
+
+    /// <inheritdoc />
+    public override void Apply()
+    {
+        Services.AddScoped(ServiceBusAdministrationClientFactory);
+        Services.AddNotificationHandler<OrphanedSubscriptionRemover>();
+    }
+
+    private static string GetConnectionString(IServiceProvider serviceProvider)
+    {
+        var options = serviceProvider.GetRequiredService<IOptions<AzureServiceBusOptions>>().Value;
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        return configuration.GetConnectionString(options.ConnectionStringOrName) ?? options.ConnectionStringOrName;
     }
 }
