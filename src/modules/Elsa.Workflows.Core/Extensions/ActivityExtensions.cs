@@ -70,8 +70,13 @@ public static class ActivityExtensions
     {
         var workflowExecutionContext = context.WorkflowExecutionContext;
         var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var output = outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
-        return output;
+        
+        // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
+        if(context.Activity.NodeId == activity.NodeId)
+            return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
+        
+        // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
+        return outputRegister.FindOutputByActivityId(activity.Id, outputName);
     }
     
     /// <summary>
