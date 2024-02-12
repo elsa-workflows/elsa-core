@@ -6,7 +6,7 @@ namespace Elsa.Dapper.Migrations.Runtime;
 /// <inheritdoc />
 [Migration(20002, "Elsa:Runtime:AddKeyValueStore")]
 [PublicAPI]
-public class AddKeyValueStore : Migration
+public class V3_1 : Migration
 {
     /// <inheritdoc />
     public override void Up()
