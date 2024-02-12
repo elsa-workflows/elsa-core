@@ -37,12 +37,13 @@ public class AzureServiceBusFeature : FeatureBase
         {
             massTransitFeature.BusConfigurator = configure =>
             {
-                var tempConsumers = massTransitFeature.GetConsumers()
-                    .Where(c => c.IsTemporary)
+                var consumers = massTransitFeature.GetConsumers().ToList();
+                var shortLivedConsumers = consumers
+                    .Where(c => c.IsShortLived)
                     .ToList();
                 
                 configure.AddServiceBusMessageScheduler();
-                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
+                configure.AddConsumers(shortLivedConsumers.Select(c => c.ConsumerType).ToArray());
                 
                 configure.UsingAzureServiceBus((context, serviceBus) =>
                 {
@@ -54,9 +55,9 @@ public class AzureServiceBusFeature : FeatureBase
                     serviceBus.UseServiceBusMessageScheduler();
                     ConfigureServiceBus?.Invoke(serviceBus);
 
-                    foreach (var consumer in tempConsumers)
+                    foreach (var consumer in shortLivedConsumers)
                     {
-                        serviceBus.ReceiveEndpoint($"{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
+                        serviceBus.ReceiveEndpoint($"Elsa-{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
                         {
                             configurator.AutoDeleteOnIdle = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
                             configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;

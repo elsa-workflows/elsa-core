@@ -42,7 +42,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
             massTransitFeature.BusConfigurator = configure =>
             {
                 var tempConsumers = massTransitFeature.GetConsumers()
-                    .Where(c => c.IsTemporary)
+                    .Where(c => c.IsShortLived)
                     .ToList();
                 
                 configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
