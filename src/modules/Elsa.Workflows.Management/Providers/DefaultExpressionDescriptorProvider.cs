@@ -62,9 +62,9 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             memoryBlockReferenceFactory: () => new Variable(),
             deserialize: context =>
             {
-                var expressionValueElement = context.JsonElement.TryGetProperty("value", out var expressionElementValueValue) ? expressionElementValueValue : default;
-                var expressionValue = expressionValueElement.Deserialize(context.MemoryBlockType, context.Options);
-                return new Expression("Variable", expressionValue);
+                var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
+                var value = valueElement.Deserialize(context.MemoryBlockType, context.Options);
+                return new Expression("Variable", value);
             }
         );
     }
@@ -86,15 +86,11 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             IsSerializable = isSerializable,
             IsBrowsable = isBrowsable,
             HandlerFactory = sp => ActivatorUtilities.GetServiceOrCreateInstance<THandler>(sp),
-            MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference()),
-            Deserialize = deserialize ??
-                          (context =>
-                          {
-                              return context.JsonElement.ValueKind == JsonValueKind.Object
-                                  ? context.JsonElement.Deserialize<Expression>((JsonSerializerOptions?)context.Options)!
-                                  : new Expression(expressionType, null!);
-                          })
+            MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference())
         };
+
+        if (deserialize != null) 
+            descriptor.Deserialize = deserialize;
 
         if (monacoLanguage != null)
             descriptor.Properties = new
