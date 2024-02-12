@@ -29,7 +29,7 @@ public class InstanceHeartbeatService : IHostedService, IDisposable
     
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _timer = new Timer(WriteHeartbeat, null, TimeSpan.Zero, _heartbeatSettings.InstanceHeartbeatRythm);
+        _timer = new Timer(WriteHeartbeat, null, TimeSpan.Zero, _heartbeatSettings.InstanceHeartbeatRhythm);
         return Task.CompletedTask;
     }
 

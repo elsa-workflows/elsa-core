@@ -30,7 +30,7 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
     
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _timer = new Timer(MonitorHeartbeats, null, TimeSpan.Zero, _heartbeatSettings.InstanceHeartbeatRythm);
+        _timer = new Timer(MonitorHeartbeats, null, TimeSpan.Zero, _heartbeatSettings.InstanceHeartbeatRhythm);
         return Task.CompletedTask;
     }
 
@@ -63,7 +63,7 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
         if (monitorLock == null)
             return;
         
-        var filter = new KeyValueFilter { StartsWith = true, Key = "Heartbeat_" };
+        var filter = new KeyValueFilter { StartsWith = true, Key = InstanceHeartbeatService.HeartbeatKeyPrefix };
         var heartbeats = await store.FindManyAsync(filter, default);
 
         foreach (var heartbeat in heartbeats)
