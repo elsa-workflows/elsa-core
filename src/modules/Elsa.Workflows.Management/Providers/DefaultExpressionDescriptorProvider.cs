@@ -39,7 +39,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
                     JsonValueKind.Number => elementValue.GetDecimal(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
-                    _ => v.GetString()
+                    _ => v.ToString()
                 });
 
                 return new Expression("Literal", value);
