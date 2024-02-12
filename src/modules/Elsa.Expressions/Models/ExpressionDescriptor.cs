@@ -41,4 +41,9 @@ public class ExpressionDescriptor
     /// Gets or sets the memory block reference factory.
     /// </summary>
     public Func<MemoryBlockReference> MemoryBlockReferenceFactory { get; set; } = () => new MemoryBlockReference();
+    
+    /// <summary>
+    /// Gets or sets the expression deserialization function.
+    /// </summary>
+    public Func<ExpressionSerializationContext, Expression> Deserialize { get; set; } = default!; 
 }
