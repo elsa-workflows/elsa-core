@@ -47,7 +47,7 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
                 return default!;
 
             var memoryBlockType = memoryBlockReference.GetType();
-            var context = new ExpressionSerializationContext(expressionElement, options, memoryBlockType);
+            var context = new ExpressionSerializationContext(expressionTypeName!, expressionElement, options, memoryBlockType);
             var expression = expressionDescriptor!.Deserialize(context);
 
             return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
