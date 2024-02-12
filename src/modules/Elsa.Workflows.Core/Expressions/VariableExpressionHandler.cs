@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Memory;
