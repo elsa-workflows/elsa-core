@@ -68,14 +68,15 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
 
         foreach (var heartbeat in heartbeats)
         {
-            var lastHeartbeat = DateTime.Parse(heartbeat.SerializedValue);
+            var lastHeartbeat = DateTimeOffset.Parse(heartbeat.SerializedValue).UtcDateTime;
+
             if (DateTime.UtcNow - lastHeartbeat <= _heartbeatSettings.InstanceDeactivatedPeriod)
-            {
                 continue;
-            }
 
             var instanceName = heartbeat.Key.Substring(InstanceHeartbeatService.HeartbeatKeyPrefix.Length);
             await notificationSender.SendAsync(new InstanceDeactivated(instanceName));
+
+            await store.DeleteAsync(heartbeat.Key, default);
         }
     }
 }
