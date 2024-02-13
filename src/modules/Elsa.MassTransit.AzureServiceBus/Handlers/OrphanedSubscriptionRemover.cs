@@ -8,7 +8,9 @@ namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 /// <summary>
 /// Class responsible for removing orphaned subscriptions.
 /// </summary>
-public class OrphanedSubscriptionRemover(MessageTopologyProvider topologyProvider, ServiceBusAdministrationClient client) 
+public class OrphanedSubscriptionRemover(
+    MessageTopologyProvider topologyProvider,
+    ServiceBusAdministrationClient client)
     : INotificationHandler<InstanceDeactivated>
 {
     /// <summary>
@@ -16,13 +18,26 @@ public class OrphanedSubscriptionRemover(MessageTopologyProvider topologyProvide
     /// </summary>
     public async Task HandleAsync(InstanceDeactivated notification, CancellationToken cancellationToken)
     {
-        var subscriptions = topologyProvider.GetShortLivedSubscriptions().ToList();
-        
-        foreach (var subscription in subscriptions)
+        var subscriptionTopology = topologyProvider.GetShortLivedSubscriptions().ToList();
+
+        foreach (var subscription in subscriptionTopology)
         {
-            await client.DeleteSubscriptionAsync(subscription.TopicName,
-                $"Elsa-{notification.InstanceName}-{subscription.SubscriptionName}",
-                cancellationToken);
+            // Get subscriptions based on topics instead of the topology since when names are longer than 50 characters
+            // MassTransit automatically truncates them.
+            await foreach (var asbSubscription in client.GetSubscriptionsAsync(subscription.TopicName,
+                               cancellationToken))
+            {
+                if (asbSubscription.SubscriptionName.StartsWith($"Elsa-{notification.InstanceName}-"))
+                {
+                    var queueName = asbSubscription.ForwardTo.Substring(asbSubscription.ForwardTo.LastIndexOf('/') + 1);
+
+                    await Task.WhenAll(
+                        client.DeleteSubscriptionAsync(subscription.TopicName,
+                            asbSubscription.SubscriptionName,
+                            cancellationToken),
+                        client.DeleteQueueAsync(queueName, cancellationToken));
+                }
+            }
         }
     }
 }

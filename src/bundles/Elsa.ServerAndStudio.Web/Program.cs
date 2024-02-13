@@ -47,7 +47,25 @@ services
 
         if (useMassTransit)
         {
-            elsa.UseMassTransit();
+            elsa.UseMassTransit(massTransit =>
+                massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                {
+                    bus.PrefetchCount = 4;
+                    bus.LockDuration = TimeSpan.FromMinutes(5);
+                    bus.MaxConcurrentCalls = 32;
+                    bus.MaxDeliveryCount = 8;
+                    // etc.
+                })
+            // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+            //     {
+            //         bus.PrefetchCount = 4;
+            //         bus.Durable = true;
+            //         bus.AutoDelete = false;
+            //         bus.ConcurrentMessageLimit = 32;
+            //         // etc.
+            //     }))
+            );
+
         }
     });
 

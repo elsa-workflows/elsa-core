@@ -37,6 +37,11 @@ public class AzureServiceBusFeature : FeatureBase
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
     
     /// <summary>
+    /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
+    /// </summary>
+    public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
+    
+    /// <summary>
     /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
     /// </summary>
     public Func<IServiceProvider, ServiceBusAdministrationClient> ServiceBusAdministrationClientFactory { get; set; } = sp => new(GetConnectionString(sp));
@@ -98,7 +103,9 @@ public class AzureServiceBusFeature : FeatureBase
                 }
 
                 var genericType = consumerInterface.GetGenericArguments()[0];
-                var topicName = $"{genericType.Namespace.ToLower()}~{genericType.Name.ToLower()}";
+                //While the name might show up in the Azure portal with a ~, the separator is actually an /
+                //see https://learn.microsoft.com/en-us/archive/blogs/servicebus/azure-service-bus-azure-resource-manager-and-this-character
+                var topicName = $"{genericType.Namespace.ToLower()}/{genericType.Name.ToLower()}";
                     
                 subscriptionTopology.Add(new MessageSubscriptionTopology(topicName,
                     consumer.Name ?? genericType.Name.ToLower(),
@@ -112,6 +119,7 @@ public class AzureServiceBusFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure(AzureServiceBusOptions);
         Services.AddScoped(ServiceBusAdministrationClientFactory);
         Services.AddNotificationHandler<OrphanedSubscriptionRemover>();
     }

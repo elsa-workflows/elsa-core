@@ -8,5 +8,5 @@ public class AzureServiceBusOptions
     /// <summary>
     /// Th connection string or connection string name to connect with the service bus.
     /// </summary>
-    public string ConnectionStringOrName { get; set; } = default!;
+    public string? ConnectionStringOrName { get; set; }
 }
