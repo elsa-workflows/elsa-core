@@ -31,10 +31,11 @@ jobs:
               PACKAGE_PREFIX="preview"
           fi
           
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
           echo "Ref: ${{ github.ref }}"
           echo "Branch name: ${BRANCH_NAME}"
           echo "Package prefix: ${PACKAGE_PREFIX}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
       - name: Verify commit exists in branch
