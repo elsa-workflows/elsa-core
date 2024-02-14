@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
       - 'feature/*'
+      - 'patch/*'
   release:
     types: [ prereleased, published ]
 env:
