@@ -34,7 +34,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
     }
 
-    private IDictionary<string, WorkflowDispatcherChannelDescriptor> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, WorkflowDispatcherChannelDescriptor>();
+    private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
 
     /// <summary>
     /// A list of workflow builders configured during application startup.
@@ -140,7 +140,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public WorkflowRuntimeFeature AddDispatcherChannel(string channel)
     {
-        return AddDispatcherChannel(new WorkflowDispatcherChannelDescriptor
+        return AddDispatcherChannel(new DispatcherChannel
         {
             Name = channel
         });
@@ -149,9 +149,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// Adds a dispatcher channel.
     /// </summary>
-    public WorkflowRuntimeFeature AddDispatcherChannel(WorkflowDispatcherChannelDescriptor channelDescriptor)
+    public WorkflowRuntimeFeature AddDispatcherChannel(DispatcherChannel channel)
     {
-        WorkflowDispatcherChannels[channelDescriptor.Name] = channelDescriptor;
+        WorkflowDispatcherChannels[channel.Name] = channel;
         return this;
     }
 

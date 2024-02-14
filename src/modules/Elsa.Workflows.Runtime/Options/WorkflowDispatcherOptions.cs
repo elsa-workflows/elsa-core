@@ -13,5 +13,5 @@ public class WorkflowDispatcherOptions
     /// <remarks>
     /// Channels are used to dispatch workflows to different queues or endpoints.
     /// </remarks>
-    public ICollection<WorkflowDispatcherChannelDescriptor> Channels { get; set; } = new List<WorkflowDispatcherChannelDescriptor>();
+    public ICollection<DispatcherChannel> Channels { get; set; } = new List<DispatcherChannel>();
 }

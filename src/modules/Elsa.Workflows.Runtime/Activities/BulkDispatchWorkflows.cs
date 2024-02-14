@@ -82,7 +82,7 @@ public class BulkDispatchWorkflows : Activity
         DisplayName = "Channel",
         Description = "The channel to dispatch the workflow to.",
         UIHint = InputUIHints.DropDown,
-        UIHandler = typeof(WorkflowDispatcherChannelOptionsProvider)
+        UIHandler = typeof(DispatcherChannelOptionsProvider)
     )]
     public Input<string?> ChannelName { get; set; } = default!;
 

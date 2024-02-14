@@ -8,12 +8,12 @@ namespace Elsa.Workflows.Runtime.UIHints;
 /// <summary>
 /// Provides options for activities that dispatch workflows to channels.
 /// </summary>
-public class WorkflowDispatcherChannelOptionsProvider : DropDownOptionsProviderBase
+public class DispatcherChannelOptionsProvider : DropDownOptionsProviderBase
 {
     private readonly WorkflowDispatcherOptions _options;
 
     /// <inheritdoc />
-    public WorkflowDispatcherChannelOptionsProvider(IOptions<WorkflowDispatcherOptions> options)
+    public DispatcherChannelOptionsProvider(IOptions<WorkflowDispatcherOptions> options)
     {
         _options = options.Value;
     }
@@ -22,7 +22,7 @@ public class WorkflowDispatcherChannelOptionsProvider : DropDownOptionsProviderB
     protected override ValueTask<ICollection<SelectListItem>> GetItemsAsync(PropertyInfo propertyInfo, object? context, CancellationToken cancellationToken)
     {
         var channelNames = _options.Channels.Select(x => x.Name).ToList();
-        var selectListItems = new List<SelectListItem> { new("", "") };
+        var selectListItems = new List<SelectListItem> { new("Default", "") };
 
         selectListItems.AddRange(channelNames.Select(x => new SelectListItem(x, x)));
 
