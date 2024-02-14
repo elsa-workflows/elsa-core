@@ -31,7 +31,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         */
 
         var workflowPersistenceProperty = source.WorkflowExecutionContext.Workflow.CustomProperties
-                            .GetValueOrDefault<PersistenceStrategy>("persistence", () => PersistenceStrategy.Exclude);
+                            .GetValueOrDefault<PersistenceStrategy>("persistence", () => _serverPersistenceStrategyProvider);
        
         var activityPersistenceProperties = source.Activity.CustomProperties
             .GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
