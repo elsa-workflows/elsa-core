@@ -20,10 +20,12 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Extract branch name
-        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
+        run: |
+          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
+          echo "Branch name: $BRANCH_NAME"
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Verify commit exists in origin/dispatch-channels
+      - name: Verify commit exists in branch
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/${BRANCH_NAME}
