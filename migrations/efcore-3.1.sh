@@ -8,15 +8,6 @@ mods=("Management" "Runtime")
 providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
 # providers=("SqlServer")
 
-# Connection strings for each provider
-typeset -A connStrings
-connStrings=(
-    MySql "Server=localhost;Port=3306;Database=elsa;User=root;Password=password;"
-    SqlServer ""
-    Sqlite ""
-    PostgreSql ""
-)
-
 # Loop through each module
 for module in "${mods[@]}"; do
     # Loop through each provider
@@ -27,7 +18,6 @@ for module in "${mods[@]}"; do
         echo "Updating migrations for $provider..."
         echo "Provider path: ${providerPath:?}/${migrationsPath}"
         echo "Migrations path: $migrationsPath"
-        echo "Connection string: ${connStrings[$provider]}"
         
         # 1. Remove all migrations except the initial and restore the snapshot to that state.
         migrations=$(dotnet ef migrations list --no-connect -c "$module"ElsaDbContext  -p "$providerPath" | grep -v ^Build | grep -v ^"Pending status" | grep -v Initial$)
@@ -37,6 +27,6 @@ for module in "${mods[@]}"; do
         done
             
         # 2. Run the migrations command
-        dotnet ef migrations add V3_1 -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath" --connectionString "${connStrings[$provider]}"
+        dotnet ef migrations add V3_1 -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath"
     done
 done
