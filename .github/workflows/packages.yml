@@ -23,6 +23,8 @@ jobs:
         run: |
           BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
           BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
+          # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123
+          BRANCH_NAME=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev)
           echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
           echo "Ref: ${{ github.ref }}"
           echo "Branch name: ${BRANCH_NAME}"
