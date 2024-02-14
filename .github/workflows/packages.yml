@@ -5,6 +5,7 @@ on:
     branches:
       - 'main'
       - 'feature/*'
+      - 'patch/*'
   release:
     types: [ prereleased, published ]
 env:
@@ -19,8 +20,21 @@ jobs:
     steps:
       - name: Extract branch name
         run: |
-          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
-          echo "Branch name: $BRANCH_NAME"
+          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
+          BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
+          # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
+          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev)
+          
+          # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
+          if [[ "${BRANCH_NAME}" == "main" ]]; then
+              PACKAGE_PREFIX="preview"
+          fi
+          
+          echo "Ref: ${{ github.ref }}"
+          echo "Branch name: ${BRANCH_NAME}"
+          echo "Package prefix: ${PACKAGE_PREFIX}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
       - name: Verify commit exists in branch
@@ -34,12 +48,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            # if branch name is main, use preview as the version. Otherwise, use the branch name.
-            if [[ "${BRANCH_NAME}" == "main" ]]; then
-              echo "VERSION=3.1.0-preview.${{github.run_number}}" >> $GITHUB_ENV
-            else
-              echo "VERSION=3.1.0-${BRANCH_NAME}.${{github.run_number}}" >> $GITHUB_ENV
-            fi
+            echo "VERSION=3.1.0-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION}
