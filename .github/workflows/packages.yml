@@ -21,7 +21,8 @@ jobs:
     steps:
       - name: Extract branch name
         run: |
-          echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
+          echo "BRANCH_NAME=$(echo ${${{ github.ref }}#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
+          echo "Ref: ${{ github.ref }}"
           echo "Branch name: ${BRANCH_NAME}"
       - name: Checkout
         uses: actions/checkout@v3
