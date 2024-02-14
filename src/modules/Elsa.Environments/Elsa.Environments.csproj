@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Version>3.0.0</Version>
         <Description>
             Provides API endpoints for client applications to enumerate available environments.
         </Description>
