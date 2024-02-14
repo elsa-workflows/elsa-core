@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - 'feature/dispatch-channels'
+      - 'feature/*'
   release:
     types: [ prereleased, published ]
 env:
