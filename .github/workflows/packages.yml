@@ -3,8 +3,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
-      - feature/*
+      - 'main'
+      - 'feature/*'
   release:
     types: [ prereleased, published ]
 env:
