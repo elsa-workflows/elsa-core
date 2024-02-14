@@ -558,6 +558,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         if (Status == WorkflowStatus.Finished
             || SubStatus == WorkflowSubStatus.Suspended)
         {
+            FinishedAt = UpdatedAt;
             foreach (var registration in _cancellationRegistrations)
             {
                 registration.Dispose();
