@@ -1,25 +1,29 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
-    public partial class AddKeyValueStore : Migration
+    public partial class V3_1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                type: "text",
+                nullable: true);
+
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
                 schema: "Elsa",
                 columns: table => new
                 {
                     Key = table.Column<string>(type: "text", nullable: false),
-                    SerializedValue = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    SerializedValue = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -33,6 +37,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
             migrationBuilder.DropTable(
                 name: "KeyValuePairs",
                 schema: "Elsa");
+
+            migrationBuilder.DropColumn(
+                name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords");
         }
     }
 }

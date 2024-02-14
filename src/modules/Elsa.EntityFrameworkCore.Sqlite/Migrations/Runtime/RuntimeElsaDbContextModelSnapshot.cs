@@ -110,6 +110,20 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("BookmarkId")

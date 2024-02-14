@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20240204000026_V3_1")]
+    [Migration("20240214080042_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -111,6 +111,20 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>

@@ -1,16 +1,23 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     /// <inheritdoc />
-    public partial class AddKeyValueStore : Migration
+    public partial class V3_1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
                 schema: "Elsa",
@@ -19,9 +26,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     Key = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SerializedValue = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -36,6 +41,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
             migrationBuilder.DropTable(
                 name: "KeyValuePairs",
                 schema: "Elsa");
+
+            migrationBuilder.DropColumn(
+                name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords");
         }
     }
 }
