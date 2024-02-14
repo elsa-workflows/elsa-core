@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+      - feature/*
+      - issue/*
+      - bug/*
   release:
     types: [ prereleased, published ]
 env:
@@ -16,12 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Extract branch name
+        run: echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | rev | cut -d/ -f1 | rev)" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Verify commit exists in origin/main
+      - name: Verify commit exists in origin/dispatch-channels
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          git branch --remote --contains | grep origin/main
+          git branch --remote --contains | grep origin/${BRANCH_NAME}
       - name: Set VERSION variable
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
@@ -29,7 +34,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=3.1.0-preview.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=3.1.0-${BRANCH_NAME}.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION}
