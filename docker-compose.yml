@@ -38,6 +38,18 @@ services:
       ACCEPT_EULA: "Y"
     volumes:
       - c:\data\docker\sqlserver2019:/var/opt/mssql/data
+        
+  postgres:
+    image: postgres:13.3-alpine
+    container_name: elsa3-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+      POSTGRES_DB: elsa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   mongodb:
     image: mongo:latest
@@ -110,5 +122,6 @@ networks:
 
 volumes:
   mongodb_data:
+  pgdata:
   elasticsearch-data:
     driver: local

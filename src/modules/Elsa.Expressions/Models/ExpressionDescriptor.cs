@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Expressions.Contracts;
 
 namespace Elsa.Expressions.Models;
@@ -7,6 +8,20 @@ namespace Elsa.Expressions.Models;
 /// </summary>
 public class ExpressionDescriptor
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpressionDescriptor"/> class.
+    /// </summary>
+    public ExpressionDescriptor()
+    {
+        // Default deserialization function.
+        Deserialize = context =>
+        {
+            return context.JsonElement.ValueKind == JsonValueKind.Object
+                ? context.JsonElement.Deserialize<Expression>((JsonSerializerOptions?)context.Options)!
+                : new Expression(context.ExpressionType, null!);
+        };
+    }
+
     /// <summary>
     /// Gets or sets the syntax name.
     /// </summary>
@@ -41,4 +56,9 @@ public class ExpressionDescriptor
     /// Gets or sets the memory block reference factory.
     /// </summary>
     public Func<MemoryBlockReference> MemoryBlockReferenceFactory { get; set; } = () => new MemoryBlockReference();
+
+    /// <summary>
+    /// Gets or sets the expression deserialization function.
+    /// </summary>
+    public Func<ExpressionSerializationContext, Expression> Deserialize { get; set; } = default!;
 }

@@ -39,26 +39,16 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
 
             var expressionElement = doc.RootElement.TryGetProperty("expression", out var expressionElementValue) ? expressionElementValue : default;
             var expressionTypeNameElement = expressionElement.ValueKind != JsonValueKind.Undefined ? expressionElement.TryGetProperty("type", out var expressionTypeNameElementValue) ? expressionTypeNameElementValue : default : default;
-            var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : "Literal";
-            var expressionDescriptor = _expressionDescriptorRegistry.Find(expressionTypeName);
-            var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory();
-            var memoryBlockReferenceType = memoryBlockReference?.GetType();
-            var expressionValueElement = expressionElement.TryGetProperty("value", out var expressionElementValueValue) ? expressionElementValueValue : default;
-            
-            var expressionValue = expressionValueElement.ValueKind switch
-            {
-                JsonValueKind.String => expressionValueElement.GetString(),
-                JsonValueKind.False => false,
-                JsonValueKind.True => true,
-                JsonValueKind.Number => expressionValueElement.GetDouble(),
-                JsonValueKind.Undefined => default,
-                _ => memoryBlockReferenceType != null ? expressionValueElement.Deserialize(memoryBlockReferenceType, options)! : default
-            };
-                
-            var expression = new Expression(expressionTypeName, expressionValue);
+            var expressionTypeName = expressionTypeNameElement.ValueKind != JsonValueKind.Undefined ? expressionTypeNameElement.GetString() ?? "Literal" : default;
+            var expressionDescriptor = expressionTypeName != null ? _expressionDescriptorRegistry.Find(expressionTypeName) : default;
+            var memoryBlockReference = expressionDescriptor?.MemoryBlockReferenceFactory?.Invoke();
 
             if (memoryBlockReference == null)
                 return default!;
+
+            var memoryBlockType = memoryBlockReference.GetType();
+            var context = new ExpressionSerializationContext(expressionTypeName!, expressionElement, options, memoryBlockType);
+            var expression = expressionDescriptor!.Deserialize(context);
 
             return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
         }
@@ -73,10 +63,10 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
         var expression = value.Expression;
         var expressionType = expression?.Type;
         var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
-        
+
         if (expressionDescriptor == null)
             throw new JsonException($"Could not find an expression descriptor for expression type '{expressionType}'.");
-        
+
         var targetType = value.Type;
         var expressionValue = expressionDescriptor.IsSerializable ? expression : null;
 

@@ -58,21 +58,6 @@ public static class ActivityExtensions
 
         return query.Select(x => x!).ToList();
     }
-
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity to get the output from.</param>
-    /// <param name="context">The workflow execution context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, WorkflowExecutionContext context, string? outputName = default)
-    {
-        var workflowExecutionContext = context;
-        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var output = outputRegister.FindOutputByActivityId(activity.Id, outputName);
-        return output;
-    }
     
     /// <summary>
     /// Gets the output with the specified name.
@@ -83,7 +68,15 @@ public static class ActivityExtensions
     /// <returns>The output value.</returns>
     public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = default)
     {
-        return activity.GetOutput(context.WorkflowExecutionContext, outputName);
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        
+        // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
+        if(context.Activity.NodeId == activity.NodeId)
+            return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
+        
+        // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
+        return outputRegister.FindOutputByActivityId(activity.Id, outputName);
     }
     
     /// <summary>
@@ -95,7 +88,12 @@ public static class ActivityExtensions
     /// <returns>The output value.</returns>
     public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = default)
     {
-        return activity.GetOutput(context.GetWorkflowExecutionContext(), outputName);
+        var activityExecutionContext = context.GetActivityExecutionContext();
+
+        if (activityExecutionContext == null)
+            return null;
+        
+        return activity.GetOutput(activityExecutionContext, outputName);
     }
 
     /// <summary>
