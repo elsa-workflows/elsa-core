@@ -6,7 +6,6 @@ on:
       - 'main'
       - 'feature/*'
       - 'patch/*'
-      - 'preview/*'
   release:
     types: [ prereleased, published ]
 env:
