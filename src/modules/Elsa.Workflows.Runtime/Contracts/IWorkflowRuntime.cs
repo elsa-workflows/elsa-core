@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
@@ -66,6 +67,24 @@ public interface IWorkflowRuntime
     /// <param name="workflowInstanceId">The ID of the workflow instance to cancel.</param>
     /// <param name="cancellationToken"></param>
     Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancels workflow executions with the specified workflow instance ID.
+    /// </summary>
+    Task CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancels all workflow instances by definition version ID.
+    /// </summary>
+    Task CancelWorkflowByDefinitionVersionAsync(string definitionVersionId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancels all workflows that match the specified workflow definition by its ID and version.
+    /// </summary>
+    Task CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.

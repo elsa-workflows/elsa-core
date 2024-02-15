@@ -166,6 +166,36 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    public Task CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
+    {
+        return Task.WhenAll(workflowInstanceIds.Select(id => CancelWorkflowAsync(id, cancellationToken)));
+    }
+
+    /// <inheritdoc />
+    public async Task CancelWorkflowByDefinitionVersionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            DefinitionVersionId = definitionVersionId,
+            WorkflowStatus = WorkflowStatus.Running
+        };
+        var instances = await _workflowInstanceStore.FindManyAsync(filter, cancellationToken);
+        await Task.WhenAll(instances.Select(instance => CancelWorkflowAsync(instance.Id, cancellationToken)));
+    }
+
+    /// <inheritdoc />
+    public async Task CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions,
+        CancellationToken cancellationToken = default)
+    {
+        // Shouldn't we get possible multiple definitions here?
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        if (workflowDefinition is null)
+            return;
+        
+        await CancelWorkflowByDefinitionVersionAsync(workflowDefinition.Id, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions options)
     {
         var results = new List<WorkflowExecutionResult>();
