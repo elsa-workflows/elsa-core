@@ -203,7 +203,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     private void StatusUpdated(WorkflowExecutionContext context)
     {
-        _ = Task.Run(async () => await Update(context));
+        if (context.Status == WorkflowStatus.Finished)
+        {
+            _cancellationTokenSources.Clear();
+            return;
+        }
+
+        if (context.SubStatus == WorkflowSubStatus.Cancelled)
+            _ = Task.Run(async () => await Update(context));
     }
 
     private async Task Update(WorkflowExecutionContext context)
@@ -306,11 +313,11 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     public override async Task Cancel()
     {
-        if (_workflowState.Status != WorkflowStatus.Finished)
-        {
-            _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
-            _workflowState.Status = WorkflowStatus.Finished;
-        }
+        if (_workflowState.Status == WorkflowStatus.Finished)
+            return;
+        
+        _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
+        _workflowState.Status = WorkflowStatus.Finished;
 
         foreach(var source in _cancellationTokenSources)
             source.Cancel();

@@ -63,6 +63,14 @@ public interface IWorkflowInstancesApi
     Task BulkDeleteAsync(BulkDeleteWorkflowInstancesRequest request, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Cancels a workflow instance.
+    /// </summary>
+    /// <param name="id">The ID of the workflow instance to cancel.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/cancel/workflow-instances/{id}")]
+    Task CancelAsync(string id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Exports a workflow instance.
     /// </summary>
     /// <param name="id">The ID of the workflow instance to export.</param>

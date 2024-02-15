@@ -9,6 +9,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
@@ -102,7 +103,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
     {
         var workflowExecutionContext = await _workflowExecutionContextStore.FindAsync(workflowInstanceId);
 
@@ -113,13 +114,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             // Use lock to prevent race conditions and other instances from updating the workflow context
             await using var cancelLock = await _distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel");
             if (cancelLock == null)
-                return;
+                return new CancellationResult(false, FailureReason.Locked);
 
             var workflowInstance = await _workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
-            if (workflowInstance is null
-                || workflowInstance.SubStatus == WorkflowSubStatus.Cancelled
-                || workflowInstance.SubStatus == WorkflowSubStatus.Faulted)
-                return;
+            if (workflowInstance is null)
+                return new CancellationResult(false, FailureReason.NotFound);
+            if (workflowInstance.Status == WorkflowStatus.Finished)
+                return new CancellationResult(false, FailureReason.InvalidState);
 
             var workflowState = await ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
@@ -137,13 +138,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             if (!cancellationToken.IsCancellationRequested)
                 await CancelWorkflowExecutionContextAsync();
 
-            return;
+            return new CancellationResult(true);
         }
 
         await using var mainCancelLock = await _distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1));
 
         await CancelWorkflowExecutionContextAsync();
 
+        return new CancellationResult(true);
+        
         async Task CancelWorkflowExecutionContextAsync()
         {
             var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
