@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -192,7 +193,10 @@ public class BulkDispatchWorkflows : Activity
             Channel = channelName
         };
 
-        await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
+        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
+        
+        if (!dispatchResponse.Succeeded)
+            throw new FaultException(dispatchResponse.ErrorMessage);
 
         return instanceId;
     }
