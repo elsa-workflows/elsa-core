@@ -37,13 +37,22 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
             await SendNotFoundAsync(cancellationToken);
             return;
         }
+        
+        var input = request.Input;
+        
+        if(input != null && input is not IDictionary<string, object>)
+        {
+            AddError("Input must be a dictionary.");
+            await SendErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
 
         var instanceId = request.InstanceId ?? identityGenerator.GenerateId();
         var dispatchRequest = new DispatchWorkflowDefinitionRequest
         {
             DefinitionId = definitionId,
             VersionOptions = versionOptions,
-            Input = (IDictionary<string, object>?)request.Input,
+            Input = input as IDictionary<string, object>,
             InstanceId = instanceId,
             CorrelationId = request.CorrelationId,
             TriggerActivityId = request.TriggerActivityId,
@@ -54,7 +63,15 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
             Channel = request.Channel
         };
 
-        await workflowDispatcher.DispatchAsync(dispatchRequest, options, cancellationToken);
+        var result = await workflowDispatcher.DispatchAsync(dispatchRequest, options, cancellationToken);
+        
+        if(!result.Succeeded)
+        {
+            AddError(result.ErrorMessage!);
+            await SendErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+        
         await SendOkAsync(new Response(instanceId), cancellationToken);
     }
 }

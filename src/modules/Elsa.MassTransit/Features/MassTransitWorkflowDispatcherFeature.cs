@@ -10,6 +10,7 @@ using Elsa.MassTransit.Options;
 using Elsa.MassTransit.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Features;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;
@@ -40,7 +41,11 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     public override void Configure()
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
+        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp =>
+        {
+            var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
+            return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+        });
     }
 
     /// <inheritdoc />
@@ -51,7 +56,6 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         if (ConfigureDispatcherOptions != null)
             options.Configure(ConfigureDispatcherOptions);
         
-        Services.AddScoped<MassTransitWorkflowDispatcher>();
         Services.AddSingleton(ChannelQueueFormatterFactory);
     }
 }

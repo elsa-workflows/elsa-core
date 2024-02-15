@@ -3,7 +3,7 @@ using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
-using Humanizer;
+using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
 
 namespace Elsa.MassTransit.Services;
@@ -17,7 +17,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     private readonly IEndpointChannelFormatter _endpointChannelFormatter;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="MassTransitWorkflowDispatcher"/> class.
     /// </summary>
     public MassTransitWorkflowDispatcher(IBus bus, IEndpointChannelFormatter endpointChannelFormatter)
     {
@@ -26,7 +26,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
         
@@ -39,11 +39,11 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             request.InstanceId,
             request.TriggerActivityId
         ), cancellationToken);
-        return new();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
         
@@ -58,11 +58,11 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             Properties = request.Properties,
             CorrelationId = request.CorrelationId
         }, cancellationToken);
-        return new();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
         await sendEndpoint.Send(new DispatchTriggerWorkflows(request.ActivityTypeName, request.BookmarkPayload)
@@ -72,11 +72,11 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             ActivityInstanceId = request.ActivityInstanceId,
             Input = request.Input
         }, cancellationToken);
-        return new();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
         await sendEndpoint.Send(new DispatchResumeWorkflows(request.ActivityTypeName, request.BookmarkPayload)
@@ -86,7 +86,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
             ActivityInstanceId = request.ActivityInstanceId,
             Input = request.Input
         }, cancellationToken);
-        return new();
+        return DispatchWorkflowResponse.Success();
     }
     
     private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = default)
