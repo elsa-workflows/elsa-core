@@ -10,6 +10,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
@@ -43,7 +44,7 @@ public class WorkflowManagementFeature : FeatureBase
     private const string DynamicCategory = "Dynamic";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
-
+    private PersistenceStrategy PersistenceStrategy { get; set; } = PersistenceStrategy.Include;
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -156,6 +157,16 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Set the default persistence strategy to use for worflow state (default is Include)
+    /// </summary>
+    /// <param name="persistenceStrategy">The strategy value</param>
+    public WorkflowManagementFeature SetDefaultPersistenceStrategy(PersistenceStrategy persistenceStrategy)
+    {
+        PersistenceStrategy = persistenceStrategy;
+        return this;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -205,6 +216,7 @@ public class WorkflowManagementFeature : FeatureBase
                 options.VariableDescriptors.Add(descriptor);
             
             options.CompressionAlgorithm = CompressionAlgorithm;
+            options.PersistenceStrategy = PersistenceStrategy;
         });
     }
 }

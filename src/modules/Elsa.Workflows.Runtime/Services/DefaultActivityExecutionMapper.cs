@@ -1,9 +1,11 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Enums;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -12,9 +14,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
     private PersistenceStrategy _serverPersistenceStrategyProvider;
 
-    public DefaultActivityExecutionMapper(IWorkflowActivityPersistenceStrategyProvider serverPersistenceStrategyProvider)
+    public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
     {
-        _serverPersistenceStrategyProvider =  serverPersistenceStrategyProvider.GetGlobalPersistenceStrategy();
+        _serverPersistenceStrategyProvider = options.Value.PersistenceStrategy;
     }
 
     /// <inheritdoc />
