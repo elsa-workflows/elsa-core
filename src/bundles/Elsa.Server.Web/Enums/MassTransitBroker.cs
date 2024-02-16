@@ -5,6 +5,7 @@ namespace Elsa.Server.Web;
 /// </summary>
 public enum MassTransitBroker
 {
+    Memory,
     AzureServiceBus,
     RabbitMq
 }
