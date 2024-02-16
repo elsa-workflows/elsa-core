@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -33,6 +34,8 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
     }
 
+    private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
+
     /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
@@ -46,7 +49,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+    public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
+    {
+        var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+    };
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -102,6 +109,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A delegate to configure the <see cref="WorkflowInboxCleanupOptions"/>.
     /// </summary>
     public Action<WorkflowInboxCleanupOptions> WorkflowInboxCleanupOptions { get; set; } = _ => { };
+    
+    /// <summary>
+    /// A delegate to configure the <see cref="WorkflowDispatcherOptions"/>.
+    /// </summary>
+    public Action<WorkflowDispatcherOptions> WorkflowDispatcherOptions { get; set; } = _ => { };
 
     /// <summary>
     /// Register the specified workflow type.
@@ -127,6 +139,26 @@ public class WorkflowRuntimeFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Adds a dispatcher channel.
+    /// </summary>
+    public WorkflowRuntimeFeature AddDispatcherChannel(string channel)
+    {
+        return AddDispatcherChannel(new DispatcherChannel
+        {
+            Name = channel
+        });
+    }
+
+    /// <summary>
+    /// Adds a dispatcher channel.
+    /// </summary>
+    public WorkflowRuntimeFeature AddDispatcherChannel(DispatcherChannel channel)
+    {
+        WorkflowDispatcherChannels[channel.Name] = channel;
+        return this;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
@@ -146,8 +178,13 @@ public class WorkflowRuntimeFeature : FeatureBase
     {
         // Options.
         Services.Configure(DistributedLockingOptions);
-        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure(WorkflowInboxCleanupOptions);
+        Services.Configure(WorkflowDispatcherOptions);
+        Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
+        Services.Configure<WorkflowDispatcherOptions>(options =>
+        {
+            options.Channels.AddRange(WorkflowDispatcherChannels.Values);
+        });
 
         Services
             // Core.
@@ -214,7 +251,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
-            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()            
+            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 
             // Workflow activation strategies.

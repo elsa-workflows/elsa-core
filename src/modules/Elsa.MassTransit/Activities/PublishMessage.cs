@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.MassTransit.Implementations;
+using Elsa.MassTransit.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;

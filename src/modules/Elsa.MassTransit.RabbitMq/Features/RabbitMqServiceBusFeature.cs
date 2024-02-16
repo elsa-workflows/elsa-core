@@ -1,6 +1,8 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,9 +23,8 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
-    /// Configures the RabbitMQ transport options.
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
-    
+
     /// <summary>
     /// Configures the RabbitMQ bus.
     /// </summary>
@@ -34,14 +35,15 @@ public class RabbitMqServiceBusFeature : FeatureBase
     {
         Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
         {
-            configure.UsingRabbitMq((context, serviceBus) =>
+            configure.UsingRabbitMq((context, configurator) =>
             {
                 if (!string.IsNullOrEmpty(ConnectionString))
-                    serviceBus.Host(ConnectionString);
+                    configurator.Host(ConnectionString);
 
-                ConfigureServiceBus?.Invoke(serviceBus);
+                ConfigureServiceBus?.Invoke(configurator);
 
-                serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                configurator.SetupWorkflowDispatcherEndpoints(context);
+                configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
             });
         };
     }

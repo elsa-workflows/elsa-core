@@ -25,6 +25,6 @@ public class RunWorkflowTask : ITask
     public async ValueTask ExecuteAsync(TaskExecutionContext context)
     {
         var workflowDispatcher = context.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-        await workflowDispatcher.DispatchAsync(_request, context.CancellationToken);
+        await workflowDispatcher.DispatchAsync(_request, cancellationToken: context.CancellationToken);
     }
 }

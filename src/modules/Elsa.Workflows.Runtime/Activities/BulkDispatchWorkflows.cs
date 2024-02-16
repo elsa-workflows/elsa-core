@@ -7,13 +7,16 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
@@ -74,6 +77,17 @@ public class BulkDispatchWorkflows : Activity
     public Input<bool> WaitForCompletion { get; set; } = new(true);
 
     /// <summary>
+    /// The channel to dispatch the workflow to.
+    /// </summary>
+    [Input(
+        DisplayName = "Channel",
+        Description = "The channel to dispatch the workflow to.",
+        UIHint = InputUIHints.DropDown,
+        UIHandler = typeof(DispatcherChannelOptionsProvider)
+    )]
+    public Input<string?> ChannelName { get; set; } = default!;
+
+    /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
     [Port]
@@ -97,7 +111,7 @@ public class BulkDispatchWorkflows : Activity
             await ProcessItem(context, item);
             dispatchedInstancesCount++;
         }
-        
+
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
 
         // If we need to wait for the child workflows to complete (if any), create a bookmark.
@@ -144,6 +158,7 @@ public class BulkDispatchWorkflows : Activity
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var channelName = ChannelName.GetOrDefault(context);
         var properties = new Dictionary<string, object>
         {
             ["ParentInstanceId"] = parentInstanceId
@@ -173,12 +188,19 @@ public class BulkDispatchWorkflows : Activity
             CorrelationId = correlationId,
             InstanceId = instanceId
         };
+        var options = new DispatchWorkflowOptions
+        {
+            Channel = channelName
+        };
 
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
+        
+        if (!dispatchResponse.Succeeded)
+            throw new FaultException(dispatchResponse.ErrorMessage);
 
         return instanceId;
     }
-    
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
