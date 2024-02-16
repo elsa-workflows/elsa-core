@@ -71,19 +71,19 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Cancels workflow executions with the specified workflow instance ID.
     /// </summary>
-    Task CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds,
+    Task<int> CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels all workflow instances by definition version ID.
     /// </summary>
-    Task CancelWorkflowByDefinitionVersionAsync(string definitionVersionId,
+    Task<int> CancelWorkflowByDefinitionVersionAsync(string definitionVersionId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels all workflows that match the specified workflow definition by its ID and version.
     /// </summary>
-    Task CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions,
+    Task<int> CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions,
         CancellationToken cancellationToken = default);
 
     /// <summary>

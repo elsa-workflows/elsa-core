@@ -1,9 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Results;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
 
+[PublicAPI]
 public class BulkCancel : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowRuntime _workflowRuntime;
@@ -21,7 +22,7 @@ public class BulkCancel : ElsaEndpoint<Request, Response>
     
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var tasks = new List<Task>();
+        var tasks = new List<Task<int>>();
         
         if (request.Ids is not null)
             tasks.Add(_workflowRuntime.CancelWorkflowAsync(request.Ids!, cancellationToken));
@@ -32,6 +33,6 @@ public class BulkCancel : ElsaEndpoint<Request, Response>
 
         await Task.WhenAll(tasks);
 
-        return new(1);
+        return new(tasks.Sum(t => t.Result));
     }
 }
