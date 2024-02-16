@@ -24,7 +24,7 @@ jobs:
           BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
           BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
           # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
-          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev)
+          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
           
           # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
           if [[ "${BRANCH_NAME}" == "main" ]]; then
