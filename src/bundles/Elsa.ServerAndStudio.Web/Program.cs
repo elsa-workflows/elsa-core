@@ -38,7 +38,7 @@ services
               identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
           })
           .UseDefaultAuthentication()
-          .UseInstanceManagement(x => x.HeartbeatSettings = settings => heartbeatSection.Bind(settings));
+          .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
           .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
           .UseWorkflowRuntime(runtime =>
           {

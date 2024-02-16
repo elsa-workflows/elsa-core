@@ -1,5 +1,5 @@
+using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,22 +14,23 @@ namespace Elsa.Hosting.Management.HostedServices;
 public class InstanceHeartbeatService : IHostedService, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly HeartbeatSettings _heartbeatSettings;
+    private readonly HeartbeatOptions _heartbeatOptions;
     private Timer? _timer;
 
     internal static string HeartbeatKeyPrefix = "Heartbeat_";
+
     /// <summary>
     /// Creates a new instance of the <see cref="InstanceHeartbeatService"/>
     /// </summary>
-    public InstanceHeartbeatService(IServiceProvider serviceProvider, IOptions<HeartbeatSettings> heartbeatSettings)
+    public InstanceHeartbeatService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions)
     {
         _serviceProvider = serviceProvider;
-        _heartbeatSettings = heartbeatSettings.Value;
+        _heartbeatOptions = heartbeatOptions.Value;
     }
-    
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _timer = new Timer(WriteHeartbeat, null, TimeSpan.Zero, _heartbeatSettings.InstanceHeartbeatRhythm);
+        _timer = new Timer(WriteHeartbeat, null, TimeSpan.Zero, _heartbeatOptions.InstanceHeartbeatRhythm);
         return Task.CompletedTask;
     }
 
@@ -48,17 +49,17 @@ public class InstanceHeartbeatService : IHostedService, IDisposable
     {
         _ = Task.Run(async () => await WriteHeartbeatAsync());
     }
-    
+
     private async Task WriteHeartbeatAsync()
     {
         using var scope = _serviceProvider.CreateScope();
-        
-        var instanceNameRetriever = scope.ServiceProvider.GetRequiredService<IInstanceNameRetriever>();
+
+        var instanceNameProvider = scope.ServiceProvider.GetRequiredService<IApplicationInstanceNameProvider>();
         var store = scope.ServiceProvider.GetRequiredService<IKeyValueStore>();
-        
+
         await store.SaveAsync(new SerializedKeyValuePair
             {
-                Key = $"{HeartbeatKeyPrefix}{instanceNameRetriever.GetName()}",
+                Key = $"{HeartbeatKeyPrefix}{instanceNameProvider.GetName()}",
                 SerializedValue = DateTime.UtcNow.ToString("o")
             },
             default);

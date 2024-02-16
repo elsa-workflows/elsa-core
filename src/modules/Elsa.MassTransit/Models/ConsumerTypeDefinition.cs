@@ -7,4 +7,4 @@ public record ConsumerTypeDefinition(
     Type ConsumerType,
     Type? ConsumerDefinitionType = default,
     string? Name = null,
-    bool IsShortLived = false);
+    bool IsTemporary = false);

@@ -18,10 +18,10 @@ public class MessageTopologyProvider
     }
 
     /// <summary>
-    /// Retrieves all the short-lived message subscriptions from the subscription topology.
+    /// Retrieves all the temporary message subscriptions from the subscription topology.
     /// </summary>
-    public IEnumerable<MessageSubscriptionTopology> GetShortLivedSubscriptions()
+    public IEnumerable<MessageSubscriptionTopology> GetTemporarySubscriptions()
     {
-        return _subscriptionTopology.Where(x => x.IsShortLived);
+        return _subscriptionTopology.Where(x => x.IsTemporary);
     }
 }

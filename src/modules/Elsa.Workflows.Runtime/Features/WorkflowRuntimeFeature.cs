@@ -104,10 +104,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
-    /// <summary>
-    /// A factory that instantiates an <see cref="IInstanceNameRetriever"/>.
-    /// </summary>
-    public Func<IServiceProvider, IInstanceNameRetriever> InstanceNameRetriever { get; set; } = sp => ActivatorUtilities.CreateInstance<RandomInstanceNameRetriever>(sp);
 
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
@@ -183,7 +179,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionContextStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
-            .AddSingleton(InstanceNameRetriever)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()

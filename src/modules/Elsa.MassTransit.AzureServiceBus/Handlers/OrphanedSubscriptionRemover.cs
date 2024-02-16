@@ -11,14 +11,14 @@ namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 public class OrphanedSubscriptionRemover(
     MessageTopologyProvider topologyProvider,
     ServiceBusAdministrationClient client)
-    : INotificationHandler<InstanceDeactivated>
+    : INotificationHandler<HeartbeatTimedOut>
 {
     /// <summary>
     /// Removes orphaned subscriptions from Azure Service Bus.
     /// </summary>
-    public async Task HandleAsync(InstanceDeactivated notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(HeartbeatTimedOut notification, CancellationToken cancellationToken)
     {
-        var subscriptionTopology = topologyProvider.GetShortLivedSubscriptions().ToList();
+        var subscriptionTopology = topologyProvider.GetTemporarySubscriptions().ToList();
 
         foreach (var subscription in subscriptionTopology)
         {

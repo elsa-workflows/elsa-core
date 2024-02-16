@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Hosting.Management.Contracts;
 using Elsa.MassTransit.AzureServiceBus.Handlers;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
@@ -10,7 +11,6 @@ using Elsa.MassTransit.AzureServiceBus.Services;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
-using Elsa.Workflows.Contracts;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,29 +54,29 @@ public class AzureServiceBusFeature : FeatureBase
             massTransitFeature.BusConfigurator = configure =>
             {
                 var consumers = massTransitFeature.GetConsumers().ToList();
-                var shortLivedConsumers = consumers
-                    .Where(c => c.IsShortLived)
+                var temporaryConsumers = consumers
+                    .Where(c => c.IsTemporary)
                     .ToList();
                 RegisterConsumers(consumers);
                 
                 configure.AddServiceBusMessageScheduler();
-                configure.AddConsumers(shortLivedConsumers.Select(c => c.ConsumerType).ToArray());
+                configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
                 
                 configure.UsingAzureServiceBus((context, serviceBus) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
-                    var instanceNameRetriever = context.GetRequiredService<IInstanceNameRetriever>();
+                    var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (ConnectionString != null) 
                         serviceBus.Host(ConnectionString);
                     serviceBus.UseServiceBusMessageScheduler();
                     ConfigureServiceBus?.Invoke(serviceBus);
 
-                    foreach (var consumer in shortLivedConsumers)
+                    foreach (var consumer in temporaryConsumers)
                     {
-                        serviceBus.ReceiveEndpoint($"Elsa-{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
+                        serviceBus.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
                         {
-                            configurator.AutoDeleteOnIdle = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
+                            configurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                             configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                             configurator.ConfigureConsumer(context, consumer.ConsumerType);
                         });
@@ -109,7 +109,7 @@ public class AzureServiceBusFeature : FeatureBase
                     
                 subscriptionTopology.Add(new MessageSubscriptionTopology(topicName,
                     consumer.Name ?? genericType.Name.ToLower(),
-                    consumer.IsShortLived));
+                    consumer.IsTemporary));
             }
         }
 

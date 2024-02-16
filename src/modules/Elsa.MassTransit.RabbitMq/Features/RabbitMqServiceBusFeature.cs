@@ -2,10 +2,10 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Hosting.Management.Contracts;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
-using Elsa.Workflows.Contracts;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -28,7 +28,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
 
     /// Configures the RabbitMQ transport options.
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
-    
+
     /// <summary>
     /// Configures the RabbitMQ bus.
     /// </summary>
@@ -42,26 +42,26 @@ public class RabbitMqServiceBusFeature : FeatureBase
             massTransitFeature.BusConfigurator = configure =>
             {
                 var tempConsumers = massTransitFeature.GetConsumers()
-                    .Where(c => c.IsShortLived)
+                    .Where(c => c.IsTemporary)
                     .ToList();
-                
+
                 configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
-                
+
                 configure.UsingRabbitMq((context, serviceBus) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
-                    var instanceNameRetriever = context.GetRequiredService<IInstanceNameRetriever>();
-                    
+                    var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
+
                     if (!string.IsNullOrEmpty(ConnectionString))
                         serviceBus.Host(ConnectionString);
 
                     ConfigureServiceBus?.Invoke(serviceBus);
-                    
+
                     foreach (var consumer in tempConsumers)
                     {
-                        serviceBus.ReceiveEndpoint($"{instanceNameRetriever.GetName()}-{consumer.Name}", configurator =>
+                        serviceBus.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
                         {
-                            configurator.QueueExpiration = options.ShortTermQueueLifetime ?? TimeSpan.FromHours(1);
+                            configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                             configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                             configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
                         });
