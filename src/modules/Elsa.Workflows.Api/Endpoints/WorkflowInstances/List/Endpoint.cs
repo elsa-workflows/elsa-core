@@ -39,7 +39,9 @@ internal class List : ElsaEndpoint<Request, Response>
             WorkflowStatus = request.Status,
             WorkflowSubStatus = request.SubStatus,
             WorkflowStatuses = request.Statuses?.Select(Enum.Parse<WorkflowStatus>).ToList(),
-            WorkflowSubStatuses = request.SubStatuses?.Select(Enum.Parse<WorkflowSubStatus>).ToList()
+            WorkflowSubStatuses = request.SubStatuses?.Select(Enum.Parse<WorkflowSubStatus>).ToList(),
+            ToCreatedAt = request.ToCreatedAt,
+            FromCreatedAt = request.FromCreatedAt,
         };
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);

@@ -78,6 +78,16 @@ public class WorkflowInstanceFilter
     public ICollection<WorkflowSubStatus>? WorkflowSubStatuses { get; set; }
 
     /// <summary>
+    ///  Filter workflow instances by created date time, start from this date time.
+    /// </summary>
+    public DateTimeOffset? FromCreatedAt { get; set; }
+
+    /// <summary>
+    ///  Filter workflow instances by created date time, to this date time.
+    /// </summary>
+    public DateTimeOffset? ToCreatedAt { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     public IQueryable<WorkflowInstance> Apply(IQueryable<WorkflowInstance> query)
@@ -96,6 +106,8 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
+        if (filter.ToCreatedAt is not null) query = query.Where(x => filter.ToCreatedAt >= x.CreatedAt);
+        if (filter.FromCreatedAt is not null) query = query.Where(x => filter.FromCreatedAt <= x.CreatedAt);
 
         var searchTerm = filter.SearchTerm;
         if (!string.IsNullOrWhiteSpace(searchTerm))

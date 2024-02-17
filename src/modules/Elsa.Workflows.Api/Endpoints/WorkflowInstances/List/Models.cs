@@ -19,6 +19,8 @@ public class Request
     public ICollection<string>? SubStatuses { get; set; }
     public OrderByWorkflowInstance? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
+    public DateTimeOffset? FromCreatedAt { get; set; }
+    public DateTimeOffset? ToCreatedAt { get; set; }
 }
 
 public class Response
