@@ -13,6 +13,7 @@ namespace Elsa.Workflows.Runtime.Services;
 public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
     private LogPersistenceMode _serverLogPersistenceMode;
+    private const string LogPersistenceModeKey = "logPersistenceMode";
 
     public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
     {
@@ -24,7 +25,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
     {
         /*
         * { 
-        *      "persistence": {
+        *      "logPersistenceMode": {
         *          "default": "default",
         *          "inputs": { k : v }, 
         *          "outputs": { k: v }
@@ -33,10 +34,10 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         */
 
         var workflowPersistenceProperty = source.WorkflowExecutionContext.Workflow.CustomProperties
-                            .GetValueOrDefault<LogPersistenceMode>("persistence", () => _serverLogPersistenceMode);
+                            .GetValueOrDefault<LogPersistenceMode>(LogPersistenceModeKey, () => _serverLogPersistenceMode);
        
         var activityPersistenceProperties = source.Activity.CustomProperties
-            .GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
+            .GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistencePropertyDefault = activityPersistenceProperties!
             .GetValueOrDefault("default",()=> workflowPersistenceProperty);
  
