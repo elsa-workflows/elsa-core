@@ -9,19 +9,13 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 
-[PublicAPI]
-internal class List : ElsaEndpoint<Request, Response>
+[UsedImplicitly]
+internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowInstanceStore _store;
-
-    public List(IWorkflowInstanceStore store)
-    {
-        _store = store;
-    }
-
     public override void Configure()
     {
         Get("/workflow-instances");
+        Post("/workflow-instances");
         ConfigurePermissions("read:workflow-instances");
     }
 
@@ -33,15 +27,14 @@ internal class List : ElsaEndpoint<Request, Response>
         {
             SearchTerm = request.SearchTerm,
             DefinitionId = request.DefinitionId,
-            DefinitionIds = request.DefinitionIds,
+            DefinitionIds = request.DefinitionIds?.Any() == true ? request.DefinitionIds : null,
             Version = request.Version,
             CorrelationId = request.CorrelationId,
             WorkflowStatus = request.Status,
             WorkflowSubStatus = request.SubStatus,
-            WorkflowStatuses = request.Statuses?.Select(Enum.Parse<WorkflowStatus>).ToList(),
-            WorkflowSubStatuses = request.SubStatuses?.Select(Enum.Parse<WorkflowSubStatus>).ToList(),
-            ToCreatedAt = request.ToCreatedAt,
-            FromCreatedAt = request.FromCreatedAt,
+            WorkflowStatuses = request.Statuses?.Any() == true ? request.Statuses : null,
+            WorkflowSubStatuses = request.SubStatuses?.Any() == true ? request.SubStatuses : null,
+            TimestampFilters = request.TimestampFilters?.Any() == true ? request.TimestampFilters : null,
         };
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
@@ -50,13 +43,12 @@ internal class List : ElsaEndpoint<Request, Response>
 
     private async Task<Page<WorkflowInstanceSummary>> FindAsync(Request request, WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
     {
-        request.OrderBy = request.OrderBy ?? OrderByWorkflowInstance.Created;
-        var direction = request.OrderBy == OrderByWorkflowInstance.Name ? (request.OrderDirection ?? OrderDirection.Ascending) : (request.OrderDirection ?? OrderDirection.Descending);
+        request.OrderBy ??= OrderByWorkflowInstance.Created;
+        var direction = request.OrderBy == OrderByWorkflowInstance.Name ? request.OrderDirection ?? OrderDirection.Ascending : request.OrderDirection ?? OrderDirection.Descending;
 
         switch (request.OrderBy)
         {
             default:
-            case OrderByWorkflowInstance.Created:
                 {
                     var o = new WorkflowInstanceOrder<DateTimeOffset>
                     {
@@ -64,7 +56,7 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
+                    return await store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
             case OrderByWorkflowInstance.UpdatedAt:
                 {
@@ -74,7 +66,7 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
+                    return await store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
             case OrderByWorkflowInstance.Finished:
                 {
@@ -84,7 +76,7 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
+                    return await store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
             case OrderByWorkflowInstance.Name:
                 {
@@ -94,7 +86,7 @@ internal class List : ElsaEndpoint<Request, Response>
                         Direction = direction
                     };
 
-                    return await _store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
+                    return await store.SummarizeManyAsync(filter, pageArgs, o, cancellationToken);
                 }
         }
     }
