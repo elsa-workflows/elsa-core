@@ -24,7 +24,7 @@ public class ManagementOptions
     public string? CompressionAlgorithm { get; set; }
 
     /// <summary>
-    /// The default persistence strategy to use for all the system
+    /// The default Log Persistence Mode to use for all the system
     /// </summary>
-    public PersistenceStrategy PersistenceStrategy { get; set; }
+    public LogPersistenceMode LogPersistenceMode { get; set; }
 }

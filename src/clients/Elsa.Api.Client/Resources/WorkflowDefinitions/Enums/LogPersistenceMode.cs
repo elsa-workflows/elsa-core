@@ -1,12 +1,12 @@
 ﻿namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Enums;
 
 /// <summary>
-/// Define the Persistence strategy to store information
+/// Define the Log Persistence mode to store information
 /// </summary>
-public enum PersistenceStrategy
+public enum LogPersistenceMode
 {
     /// <summary>
-    /// Persist using the Parent strategy
+    /// Persist using the Parent mode
     /// </summary>
     Default,
 

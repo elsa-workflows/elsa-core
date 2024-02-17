@@ -12,11 +12,11 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
-    private PersistenceStrategy _serverPersistenceStrategyProvider;
+    private LogPersistenceMode _serverLogPersistenceMode;
 
     public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
     {
-        _serverPersistenceStrategyProvider = options.Value.PersistenceStrategy;
+        _serverLogPersistenceMode = options.Value.LogPersistenceMode;
     }
 
     /// <inheritdoc />
@@ -33,7 +33,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         */
 
         var workflowPersistenceProperty = source.WorkflowExecutionContext.Workflow.CustomProperties
-                            .GetValueOrDefault<PersistenceStrategy>("persistence", () => _serverPersistenceStrategyProvider);
+                            .GetValueOrDefault<LogPersistenceMode>("persistence", () => _serverLogPersistenceMode);
        
         var activityPersistenceProperties = source.Activity.CustomProperties
             .GetValueOrDefault<IDictionary<string, object?>>("persistence", () => new Dictionary<string, object?>());
@@ -69,8 +69,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return default;
         });
 
-        outputs = StorePropertyUsingStrategy(outputs, activityPersistenceProperties.GetValueOrDefault("outputs", () => new Dictionary<string, object>()), activityPersistencePropertyDefault);
-        var activityState = StorePropertyUsingStrategy(source.ActivityState, activityPersistenceProperties.GetValueOrDefault("inputs", () => new Dictionary<string, object>()), activityPersistencePropertyDefault );
+        outputs = StorePropertyUsingPersistanceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+        var activityState = StorePropertyUsingPersistanceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault );
 
         return new ActivityExecutionRecord
         {
@@ -92,16 +92,16 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         };
     }
 
-    private static Dictionary<string,object?> StorePropertyUsingStrategy(IDictionary<string,object?> inputs
-        , IDictionary<string,object> strategies
-        , PersistenceStrategy defaultPersistenceStrategy = PersistenceStrategy.Exclude)
+    private static Dictionary<string,object?> StorePropertyUsingPersistanceMode(IDictionary<string,object?> inputs
+        , IDictionary<string,object> persistenceModeConfiguration
+        , LogPersistenceMode defaultLogPersistenceMode = LogPersistenceMode.Exclude)
     {
         var result = new Dictionary<string, object?>();
 
         foreach (var input in inputs)
         {
-            var persistence = strategies.GetValueOrDefault(input.Key, () => defaultPersistenceStrategy);
-            if (persistence.Equals(PersistenceStrategy.Include))
+            var persistence = persistenceModeConfiguration.GetValueOrDefault(input.Key, () => defaultLogPersistenceMode);
+            if (persistence.Equals(LogPersistenceMode.Include))
                 result.Add(input.Key, input.Value);
         }
 

@@ -44,7 +44,7 @@ public class WorkflowManagementFeature : FeatureBase
     private const string DynamicCategory = "Dynamic";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
-    private PersistenceStrategy PersistenceStrategy { get; set; } = PersistenceStrategy.Include;
+    private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -158,12 +158,12 @@ public class WorkflowManagementFeature : FeatureBase
     }
 
     /// <summary>
-    /// Set the default persistence strategy to use for worflow state (default is Include)
+    /// Set the default Log Persistence mode to use for worflow state (default is Include)
     /// </summary>
-    /// <param name="persistenceStrategy">The strategy value</param>
-    public WorkflowManagementFeature SetDefaultPersistenceStrategy(PersistenceStrategy persistenceStrategy)
+    /// <param name="logPersistenceMode">The mode persistence value</param>
+    public WorkflowManagementFeature SetDefaultLogPersistenceMode(LogPersistenceMode logPersistenceMode)
     {
-        PersistenceStrategy = persistenceStrategy;
+        LogPersistenceMode = logPersistenceMode;
         return this;
     }
 
@@ -216,7 +216,7 @@ public class WorkflowManagementFeature : FeatureBase
                 options.VariableDescriptors.Add(descriptor);
             
             options.CompressionAlgorithm = CompressionAlgorithm;
-            options.PersistenceStrategy = PersistenceStrategy;
+            options.LogPersistenceMode = LogPersistenceMode;
         });
     }
 }
