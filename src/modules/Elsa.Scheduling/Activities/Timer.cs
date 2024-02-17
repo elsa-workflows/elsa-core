@@ -34,7 +34,7 @@ public class Timer : EventGenerator
     /// The interval at which the timer should execute.
     /// </summary>
     [Input(Description = "The interval at which the timer should execute.", DefaultValue = "00:01:00")]
-    public Input<TimeSpan> Interval { get; set; } = default!;
+    public Input<TimeSpan> Interval { get; set; } = new(TimeSpan.FromMinutes(1));
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
