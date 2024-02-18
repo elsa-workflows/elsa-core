@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Enums;
 using Elsa.Workflows.Management.Models;
+using System.Linq.Dynamic.Core;
 
 namespace Elsa.Workflows.Management.Filters;
 
@@ -92,6 +94,7 @@ public class WorkflowInstanceFilter
     /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
+    [RequiresUnreferencedCode("The method uses reflection to create an expression tree.")]
     public IQueryable<WorkflowInstance> Apply(IQueryable<WorkflowInstance> query)
     {
         var filter = this;
@@ -114,99 +117,28 @@ public class WorkflowInstanceFilter
         {
             foreach (TimestampFilter timestampFilter in TimestampFilters)
             {
-                switch (timestampFilter.Operator)
+                var column = timestampFilter.Column;
+                var timestamp = timestampFilter.Timestamp;
+                var isZeroTime = timestamp.TimeOfDay == TimeSpan.Zero;
+                var startDay = new DateTimeOffset(timestamp.Date);
+                var endDay = startDay.AddDays(1);
+
+                query = timestampFilter.Operator switch
                 {
-                    case TimestampFilterOperator.GreaterThan:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt > timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt > timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt > timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                    case TimestampFilterOperator.GreaterThanOrEqual:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt >= timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt >= timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt >= timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                    case TimestampFilterOperator.LessThan:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt < timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt < timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt < timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                    case TimestampFilterOperator.LessThanOrEqual:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt <= timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt <= timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt <= timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                    case TimestampFilterOperator.Is:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt == timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt == timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt == timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                    case TimestampFilterOperator.IsNot:
-                        switch (timestampFilter.Column)
-                        {
-                            case nameof(WorkflowInstance.CreatedAt):
-                                query = query.Where(x => x.CreatedAt != timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.UpdatedAt):
-                                query = query.Where(x => x.UpdatedAt != timestampFilter.Timestamp);
-                                break;
-                            case nameof(WorkflowInstance.FinishedAt):
-                                query = query.Where(x => x.FinishedAt != timestampFilter.Timestamp);
-                                break;
-                        }
-
-                        break;
-                }
+                    TimestampFilterOperator.Is when isZeroTime => query.Where($"{column} >= @0 && {column} < @1", startDay, endDay),
+                    TimestampFilterOperator.Is => query.Where($"{column} == @0", timestamp),
+                    TimestampFilterOperator.IsNot when isZeroTime => query.Where($"{column} < @0 || {column} >= @1", startDay, endDay),
+                    TimestampFilterOperator.IsNot => query.Where($"{column} != @0", timestamp),
+                    TimestampFilterOperator.GreaterThan when isZeroTime => query.Where($"{column} > @0", endDay),
+                    TimestampFilterOperator.GreaterThan => query.Where($"{column} > @0", timestamp),
+                    TimestampFilterOperator.GreaterThanOrEqual when isZeroTime => query.Where($"{column} >= @0", startDay),
+                    TimestampFilterOperator.GreaterThanOrEqual => query.Where($"{column} >= @0", timestamp),
+                    TimestampFilterOperator.LessThan when isZeroTime => query.Where($"{column} < @0", startDay),
+                    TimestampFilterOperator.LessThan => query.Where($"{column} < @0", timestamp),
+                    TimestampFilterOperator.LessThanOrEqual when isZeroTime => query.Where($"{column} <= @0", endDay),
+                    TimestampFilterOperator.LessThanOrEqual => query.Where($"{column} <= @0", timestamp),
+                    _ => query
+                };
             }
         }
 
