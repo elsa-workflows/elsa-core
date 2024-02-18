@@ -10,7 +10,7 @@
     <ItemGroup>
         <PackageReference Include="Humanizer.Core" />
         <PackageReference Include="IronCompress" />
-        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="System.Linq.Dynamic.Core" />
     </ItemGroup>
 
     <ItemGroup>
