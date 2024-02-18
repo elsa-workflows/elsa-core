@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.List;
 
@@ -19,9 +20,15 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
         ConfigurePermissions("read:workflow-instances");
     }
 
-    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
+
+        if (!await ValidateInputAsync(request, cancellationToken))
+        {
+            await SendErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return;
+        }
 
         var filter = new WorkflowInstanceFilter
         {
@@ -39,7 +46,48 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
         };
 
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
-        return new Response(summaries.Items, summaries.TotalCount);
+        var response = new Response(summaries.Items, summaries.TotalCount);
+        await SendOkAsync(response, cancellationToken);
+    }
+
+    private async Task<bool> ValidateInputAsync(Request request, CancellationToken cancellationToken)
+    {
+        if (request.Page is < 0)
+        {
+            AddError("Page must be greater than or equal to 1.");
+            return false;
+        }
+
+        if (request.PageSize is < 1)
+        {
+            AddError("Page size must be greater than or equal to 1.");
+            return false;
+        }
+
+        var columnWhitelist = new[]
+        {
+            "CreatedAt", "UpdatedAt", "FinishedAt"
+        };
+
+        if (request.TimestampFilters?.Any() == true)
+        {
+            foreach (var timestampFilter in request.TimestampFilters)
+            {
+                if (string.IsNullOrWhiteSpace(timestampFilter.Column))
+                {
+                    AddError("Column must be specified.");
+                    return false;
+                }
+
+                if (!columnWhitelist.Contains(timestampFilter.Column))
+                {
+                    AddError($"Invalid column '{timestampFilter.Column}'.");
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private async Task<Page<WorkflowInstanceSummary>> FindAsync(Request request, WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken)
