@@ -22,5 +22,5 @@ public class TimestampFilter
     /// <summary>
     /// Gets or sets the timestamp to filter by.
     /// </summary>
-    public DateTimeOffset Timestamp { get; set; }
+    public required DateTimeOffset Timestamp { get; set; }
 }
