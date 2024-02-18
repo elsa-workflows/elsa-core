@@ -84,7 +84,7 @@ public class WorkflowInstanceFilter
     /// <summary>
     /// Filter workflow instances by whether they have incidents.
     /// </summary>
-    public bool HasIncidents { get; set; }
+    public bool? HasIncidents { get; set; }
 
     /// <summary>
     /// Filter workflow instances by timestamp.
@@ -111,7 +111,7 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowSubStatus != null) query = query.Where(x => x.SubStatus == filter.WorkflowSubStatus);
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
-        if (filter.HasIncidents) query = query.Where(x => x.IncidentCount > 0);
+        if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
 
         if (TimestampFilters != null)
         {

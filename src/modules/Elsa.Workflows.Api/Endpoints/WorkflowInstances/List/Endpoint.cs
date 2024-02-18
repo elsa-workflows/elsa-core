@@ -34,6 +34,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
             WorkflowSubStatus = request.SubStatus,
             WorkflowStatuses = request.Statuses?.Any() == true ? request.Statuses : null,
             WorkflowSubStatuses = request.SubStatuses?.Any() == true ? request.SubStatuses : null,
+            HasIncidents = request.HasIncidents,
             TimestampFilters = request.TimestampFilters?.Any() == true ? request.TimestampFilters : null,
         };
 
