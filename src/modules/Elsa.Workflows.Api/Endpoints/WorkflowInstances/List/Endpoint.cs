@@ -14,8 +14,8 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
 {
     public override void Configure()
     {
-        Get("/workflow-instances");
-        Post("/workflow-instances");
+        Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
+        Routes("/workflow-instances");
         ConfigurePermissions("read:workflow-instances");
     }
 
