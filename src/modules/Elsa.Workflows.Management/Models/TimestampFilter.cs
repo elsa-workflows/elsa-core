@@ -17,7 +17,7 @@ public class TimestampFilter
     /// <summary>
     /// Gets or sets the operator to use for filtering.
     /// </summary>
-    public TimestampFilterOperator Operator { get; set; }
+    public required TimestampFilterOperator Operator { get; set; }
 
     /// <summary>
     /// Gets or sets the timestamp to filter by.
