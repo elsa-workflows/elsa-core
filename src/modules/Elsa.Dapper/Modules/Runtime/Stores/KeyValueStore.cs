@@ -3,9 +3,9 @@ using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Models;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 

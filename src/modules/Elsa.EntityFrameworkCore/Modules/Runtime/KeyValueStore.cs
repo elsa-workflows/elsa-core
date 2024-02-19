@@ -1,7 +1,7 @@
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Models;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 

@@ -1,6 +1,7 @@
-using Elsa.Common.Entities;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Features;
 using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
@@ -22,6 +23,10 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.Configure<KeyValueFeature>(feature =>
+        {
+            feature.KeyValueStore = sp => sp.GetRequiredService<MongoKeyValueStore>();
+        });
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
@@ -29,7 +34,6 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MongoWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<MongoActivityExecutionLogStore>();
             feature.WorkflowInboxStore = sp => sp.GetRequiredService<MongoWorkflowInboxMessageStore>();
-            feature.KeyValueStore = sp => sp.GetRequiredService<MongoKeyValueStore>();
         });
     }
 

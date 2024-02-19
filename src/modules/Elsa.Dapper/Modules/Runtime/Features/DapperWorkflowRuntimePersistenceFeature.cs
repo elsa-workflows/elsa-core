@@ -3,6 +3,7 @@ using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.KeyValues.Features;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,10 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.Configure<KeyValueFeature>(feature =>
+        {
+            feature.KeyValueStore = sp => sp.GetRequiredService<DapperKeyValueStore>();
+        });
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
@@ -31,7 +36,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
             feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxMessageStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
-            feature.KeyValueStore = sp => sp.GetRequiredService<DapperKeyValueStore>();
         });
     }
 

@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Entities;
+namespace Elsa.KeyValues.Entities;
 
 public class SerializedKeyValuePair
 {

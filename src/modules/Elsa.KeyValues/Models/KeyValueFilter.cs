@@ -1,6 +1,6 @@
-using Elsa.Workflows.Runtime.Entities;
+using Elsa.KeyValues.Entities;
 
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.KeyValues.Models;
 
 public class KeyValueFilter
 {

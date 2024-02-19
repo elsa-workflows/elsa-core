@@ -1,8 +1,7 @@
-using System.Linq.Expressions;
-using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Models;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.KeyValues.Contracts;
 
 /// <summary>
 /// Store that holds key value entities not fit to store in specific stores.

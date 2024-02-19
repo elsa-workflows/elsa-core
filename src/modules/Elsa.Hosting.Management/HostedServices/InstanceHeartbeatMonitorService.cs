@@ -1,12 +1,12 @@
+using Elsa.Common.Contracts;
 using Elsa.Hosting.Management.Notifications;
 using Elsa.Hosting.Management.Options;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Internal;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Hosting.Management.HostedServices;

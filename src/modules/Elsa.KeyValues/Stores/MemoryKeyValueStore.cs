@@ -1,9 +1,9 @@
 using Elsa.Common.Services;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Models;
 
-namespace Elsa.Workflows.Runtime.Stores;
+namespace Elsa.KeyValues.Stores;
 
 /// <summary>
 /// Stores key value records in memory.
@@ -13,7 +13,7 @@ public class MemoryKeyValueStore : IKeyValueStore
     private readonly MemoryStore<SerializedKeyValuePair> _store;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryActivityExecutionStore"/> class.
+    /// Initializes a new instance of the <see cref="MemoryKeyValueStore"/> class.
     /// </summary>
     public MemoryKeyValueStore(MemoryStore<SerializedKeyValuePair> store)
     {

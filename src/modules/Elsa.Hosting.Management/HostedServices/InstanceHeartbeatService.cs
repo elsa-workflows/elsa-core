@@ -1,7 +1,7 @@
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Entities;
+using Elsa.KeyValues.Contracts;
+using Elsa.KeyValues.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
