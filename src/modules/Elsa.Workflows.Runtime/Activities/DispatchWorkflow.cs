@@ -3,11 +3,14 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -55,6 +58,17 @@ public class DispatchWorkflow : Activity<object>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = default!;
 
+    /// <summary>
+    /// The channel to dispatch the workflow to.
+    /// </summary>
+    [Input(
+        DisplayName = "Channel",
+        Description = "The channel to dispatch the workflow to.",
+        UIHint = InputUIHints.DropDown,
+        UIHandler = typeof(DispatcherChannelOptionsProvider)
+    )]
+    public Input<string?> ChannelName { get; set; } = default!;
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -85,6 +99,7 @@ public class DispatchWorkflow : Activity<object>
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var channelName = ChannelName.GetOrDefault(context);
 
         input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
 
@@ -98,11 +113,18 @@ public class DispatchWorkflow : Activity<object>
             VersionOptions = VersionOptions.Published,
             Input = input,
             CorrelationId = correlationId,
-            InstanceId = instanceId
+            InstanceId = instanceId,
+        };
+        var options = new DispatchWorkflowOptions
+        {
+            Channel = channelName
         };
 
         // Dispatch the child workflow.
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
+        
+        if (!dispatchResponse.Succeeded)
+            throw new FaultException(dispatchResponse.ErrorMessage);
 
         return instanceId;
     }

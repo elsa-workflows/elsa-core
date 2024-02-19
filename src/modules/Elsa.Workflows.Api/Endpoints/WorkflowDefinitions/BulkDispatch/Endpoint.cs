@@ -64,7 +64,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
                 TriggerActivityId = triggerActivityId
             };
 
-            await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
+            await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
             instanceIds.Add(instanceId);
         }
 

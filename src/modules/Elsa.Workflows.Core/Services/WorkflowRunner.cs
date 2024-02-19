@@ -200,11 +200,9 @@ public class WorkflowRunner : IWorkflowRunner
 
         await _pipeline.ExecuteAsync(workflowExecutionContext);
         var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
-        workflowState.UpdatedAt = _systemClock.UtcNow;
 
         if (workflowState.Status == WorkflowStatus.Finished)
         {
-            workflowState.FinishedAt = workflowState.UpdatedAt;
             await _notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), applicationCancellationToken);
         }
 

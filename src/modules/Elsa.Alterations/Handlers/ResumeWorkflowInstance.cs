@@ -37,6 +37,6 @@ public class ResumeWorkflowInstance : INotificationHandler<AlterationJobComplete
             return;
         
         // Resume workflow instance.
-        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(job.WorkflowInstanceId), cancellationToken);
+        await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(job.WorkflowInstanceId), cancellationToken: cancellationToken);
     }
 }

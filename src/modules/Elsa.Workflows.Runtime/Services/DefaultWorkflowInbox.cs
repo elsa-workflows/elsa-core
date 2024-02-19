@@ -133,7 +133,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId,
             Input = input
-        }, cancellationToken);
+        }, cancellationToken: cancellationToken);
 
         return new DeliverWorkflowInboxMessageResult(new List<WorkflowExecutionResult>());
     }
@@ -153,7 +153,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId,
             Input = input
-        }, cancellationToken);
+        }, cancellationToken: cancellationToken);
     }
 
     private async Task<IEnumerable<WorkflowExecutionResult>> ResumeWorkflowsSynchronouslyAsync(WorkflowInboxMessage message, CancellationToken cancellationToken = default)

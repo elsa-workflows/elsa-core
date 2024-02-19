@@ -36,6 +36,6 @@ public class WorkflowMessageConsumer<T> : IConsumer<T> where T : class
             CorrelationId = correlationId,
             Input = input
         };
-        await _workflowRuntime.DispatchAsync(request, cancellationToken);
+        await _workflowRuntime.DispatchAsync(request, cancellationToken: cancellationToken);
     }
 }
