@@ -10,11 +10,11 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Proto.Cluster;
-using Bookmark = Elsa.Workflows.Models.Bookmark;
 using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
 using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 
@@ -249,10 +249,51 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
     {
+        var filter = new WorkflowInstanceFilter
+        {
+            Id = workflowInstanceId
+        };
+
+        var instance = await _workflowInstanceStore.FindAsync(filter);
+        if (instance is null)
+            return new CancellationResult(false, FailureReason.NotFound);
+        
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        await client.Cancel(cancellationToken);
+        var result = await client.Cancel(cancellationToken);
+        return new CancellationResult(result?.Result ?? false);
+    }
+
+    public async Task<int> CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken = default)
+    {
+        var tasks = workflowInstanceIds.Select(id => CancelWorkflowAsync(id, cancellationToken)).ToList();
+        await Task.WhenAll(tasks);
+        return tasks.Count(t => t.Result.Result);
+    }
+
+    public async Task<int> CancelWorkflowByDefinitionVersionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            DefinitionVersionId = definitionVersionId,
+            WorkflowStatus = WorkflowStatus.Running
+        };
+        var instances = (await _workflowInstanceStore.FindManyAsync(filter, cancellationToken)).ToList();
+        await Task.WhenAll(instances.Select(instance => CancelWorkflowAsync(instance.Id, cancellationToken)));
+        
+        return instances.Count;
+    }
+
+    public async Task<int> CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        // Shouldn't we get possible multiple definitions here?
+        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        if (workflowDefinition is null)
+            return 0;
+
+        var result = await CancelWorkflowByDefinitionVersionAsync(workflowDefinition.Id, cancellationToken);
+        return result;
     }
 
     /// <inheritdoc />
@@ -263,7 +304,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
-
+    
     /// <inheritdoc />
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {

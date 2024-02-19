@@ -311,16 +311,18 @@ internal class WorkflowInstance : WorkflowInstanceBase
     /// <inheritdoc />
     public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
 
-    public override async Task Cancel()
+    public override async Task<WorkflowInstanceCancellationResponse> Cancel()
     {
         if (_workflowState.Status == WorkflowStatus.Finished)
-            return;
+            return new WorkflowInstanceCancellationResponse{Result = false};
         
         _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
         _workflowState.Status = WorkflowStatus.Finished;
 
         foreach(var source in _cancellationTokenSources)
             source.Cancel();
+
+        return new WorkflowInstanceCancellationResponse{Result = true};
     }
     
     /// <inheritdoc />

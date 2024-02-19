@@ -1,11 +1,14 @@
-using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.ServerAndStudio.Web.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
+using Proto.Persistence.Sqlite;
 
 const bool useMassTransit = true;
+const bool useProtoActor = false;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
@@ -31,7 +34,17 @@ services
           })
           .UseDefaultAuthentication()
           .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-          .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+          .UseWorkflowRuntime(runtime =>
+          {
+              runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+              if (useProtoActor)
+              {
+                  runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+                  {
+                      return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                  });
+              }
+          })
           .UseScheduling()
           .UseJavaScript(options => options.AllowClrAccess = true)
           .UseLiquid()
