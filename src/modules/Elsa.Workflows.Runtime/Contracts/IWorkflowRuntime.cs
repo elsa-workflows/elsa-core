@@ -69,24 +69,6 @@ public interface IWorkflowRuntime
     Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Cancels workflow executions with the specified workflow instance ID.
-    /// </summary>
-    Task<int> CancelWorkflowAsync(IEnumerable<string> workflowInstanceIds,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Cancels all workflow instances by definition version ID.
-    /// </summary>
-    Task<int> CancelWorkflowByDefinitionVersionAsync(string definitionVersionId,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Cancels all workflows that match the specified workflow definition by its ID and version.
-    /// </summary>
-    Task<int> CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Finds all the workflows that can be started or resumed based on a query model.
     /// </summary>
     /// <param name="filter"></param>

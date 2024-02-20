@@ -216,6 +216,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
+            .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
