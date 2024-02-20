@@ -1,7 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using MassTransit;
@@ -23,6 +22,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
+    /// <summary>
+    /// A delegate that configures the RabbitMQ transport options.
+    /// </summary>
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
 
     /// <summary>
