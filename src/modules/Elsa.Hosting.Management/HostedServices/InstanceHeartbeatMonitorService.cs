@@ -34,7 +34,7 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _timer = new Timer(MonitorHeartbeats, null, TimeSpan.Zero, _heartbeatOptions.InstanceHeartbeatRhythm);
+        _timer = new Timer(MonitorHeartbeats, null, TimeSpan.Zero, _heartbeatOptions.Interval);
         return Task.CompletedTask;
     }
 
@@ -78,7 +78,7 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
         {
             var lastHeartbeat = DateTimeOffset.Parse(heartbeat.SerializedValue).UtcDateTime;
 
-            if (_systemClock.UtcNow - lastHeartbeat <= _heartbeatOptions.HeartbeatTimeoutPeriod)
+            if (_systemClock.UtcNow - lastHeartbeat <= _heartbeatOptions.Timeout)
                 continue;
 
             var instanceName = heartbeat.Key.Substring(InstanceHeartbeatService.HeartbeatKeyPrefix.Length);
