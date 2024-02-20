@@ -22,7 +22,9 @@ public class InstanceManagementFeature : FeatureBase
     /// A factory that instantiates an <see cref="IApplicationInstanceNameProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IApplicationInstanceNameProvider> InstanceNameProvider { get; set; } = sp =>
-        ActivatorUtilities.CreateInstance<RandomApplicationInstanceNameProvider>(sp);
+    {
+        return ActivatorUtilities.CreateInstance<RandomApplicationInstanceNameProvider>(sp);
+    };
 
     /// <summary>
     /// Represents the options for heartbeat feature.

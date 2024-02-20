@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Common.Features;
 using Elsa.Extensions;
@@ -48,7 +49,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
-    
+
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
     /// </summary>
@@ -78,7 +79,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IWorkflowInboxMessageStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
-    
+
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
     /// </summary>
@@ -98,8 +99,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
-
-
+    
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
@@ -122,6 +122,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// Register all workflows in the specified assembly.
     /// </summary>
+    [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
         var workflowTypes = assembly.GetExportedTypes()
@@ -224,7 +225,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
-            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()            
+            .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 
             // Workflow activation strategies.

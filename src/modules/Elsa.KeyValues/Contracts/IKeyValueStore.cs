@@ -4,7 +4,7 @@ using Elsa.KeyValues.Models;
 namespace Elsa.KeyValues.Contracts;
 
 /// <summary>
-/// Store that holds key value entities not fit to store in specific stores.
+/// Store that holds key value entities that can be used to store application data. 
 /// </summary>
 public interface IKeyValueStore
 {

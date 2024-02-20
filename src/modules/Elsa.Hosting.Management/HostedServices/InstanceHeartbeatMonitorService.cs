@@ -4,6 +4,7 @@ using Elsa.Hosting.Management.Options;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Models;
 using Elsa.Mediator.Contracts;
+using JetBrains.Annotations;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,6 +15,7 @@ namespace Elsa.Hosting.Management.HostedServices;
 /// <summary>
 /// Service to check the heartbeats of all running instances and determine whether instances have stopped working. 
 /// </summary>
+[UsedImplicitly]
 public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
@@ -24,26 +26,28 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
     /// <summary>
     /// Creates a new instance of the <see cref="InstanceHeartbeatMonitorService"/>
     /// </summary>
-    public InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, ISystemClock systemClock,
-        IOptions<HeartbeatOptions> heartbeatOptions)
+    public InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, ISystemClock systemClock, IOptions<HeartbeatOptions> heartbeatOptions)
     {
         _serviceProvider = serviceProvider;
         _systemClock = systemClock;
         _heartbeatOptions = heartbeatOptions.Value;
     }
 
+    /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _timer = new Timer(MonitorHeartbeats, null, TimeSpan.Zero, _heartbeatOptions.Interval);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _timer?.Change(Timeout.Infinite, Timeout.Infinite);
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         _timer?.Dispose();
@@ -57,12 +61,10 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
     private async Task MonitorHeartbeatsAsync()
     {
         using var scope = _serviceProvider.CreateScope();
-
         var lockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
         var store = scope.ServiceProvider.GetRequiredService<IKeyValueStore>();
         var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
-
-        var lockKey = "InstanceHeartbeatMonitorService";
+        const string lockKey = "InstanceHeartbeatMonitorService";
         await using var monitorLock = await lockProvider.TryAcquireLockAsync(lockKey, TimeSpan.Zero);
         if (monitorLock == null)
             return;
@@ -81,9 +83,8 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
             if (_systemClock.UtcNow - lastHeartbeat <= _heartbeatOptions.Timeout)
                 continue;
 
-            var instanceName = heartbeat.Key.Substring(InstanceHeartbeatService.HeartbeatKeyPrefix.Length);
+            var instanceName = heartbeat.Key[InstanceHeartbeatService.HeartbeatKeyPrefix.Length..];
             await notificationSender.SendAsync(new HeartbeatTimedOut(instanceName));
-
             await store.DeleteAsync(heartbeat.Key, default);
         }
     }

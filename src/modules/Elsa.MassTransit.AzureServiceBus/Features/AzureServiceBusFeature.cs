@@ -27,7 +27,7 @@ public class AzureServiceBusFeature : FeatureBase
     public AzureServiceBusFeature(IModule module) : base(module)
     {
     }
-    
+
     /// An Azure Service Bus connection string.
     public string? ConnectionString { get; set; }
 
@@ -35,12 +35,12 @@ public class AzureServiceBusFeature : FeatureBase
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
-    
+
     /// <summary>
     /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
     /// </summary>
     public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
     /// </summary>
@@ -58,16 +58,16 @@ public class AzureServiceBusFeature : FeatureBase
                     .Where(c => c.IsTemporary)
                     .ToList();
                 RegisterConsumers(consumers);
-                
+
                 configure.AddServiceBusMessageScheduler();
                 configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
-                
+
                 configure.UsingAzureServiceBus((context, serviceBus) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
-                    if (ConnectionString != null) 
+                    if (ConnectionString != null)
                         serviceBus.Host(ConnectionString);
                     serviceBus.UseServiceBusMessageScheduler();
                     ConfigureServiceBus?.Invoke(serviceBus);
@@ -90,28 +90,14 @@ public class AzureServiceBusFeature : FeatureBase
 
     private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
     {
-        var subscriptionTopology = new List<MessageSubscriptionTopology>();
-        
-        foreach (var consumer in consumers)
-        {
-            foreach (var consumerInterface in consumer!.ConsumerType.GetInterfaces())
-            {
-                if (!consumerInterface.IsGenericType ||
-                    consumerInterface.GetGenericTypeDefinition() != typeof(IConsumer<>))
-                {
-                    continue;
-                }
-
-                var genericType = consumerInterface.GetGenericArguments()[0];
-                //While the name might show up in the Azure portal with a ~, the separator is actually an /
-                //see https://learn.microsoft.com/en-us/archive/blogs/servicebus/azure-service-bus-azure-resource-manager-and-this-character
-                var topicName = $"{genericType.Namespace.ToLower()}/{genericType.Name.ToLower()}";
-                    
-                subscriptionTopology.Add(new MessageSubscriptionTopology(topicName,
-                    consumer.Name ?? genericType.Name.ToLower(),
-                    consumer.IsTemporary));
-            }
-        }
+        var subscriptionTopology = (
+            from consumer in consumers
+            from consumerInterface in consumer.ConsumerType.GetInterfaces()
+            where consumerInterface.IsGenericType && consumerInterface.GetGenericTypeDefinition() == typeof(IConsumer<>)
+            let genericType = consumerInterface.GetGenericArguments()[0]
+            let topicName = $"{genericType.Namespace.ToLower()}/{genericType.Name.ToLower()}"
+            select new MessageSubscriptionTopology(topicName, consumer.Name ?? genericType.Name.ToLower(), consumer.IsTemporary)
+        ).ToList();
 
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
     }
@@ -121,7 +107,7 @@ public class AzureServiceBusFeature : FeatureBase
     {
         Services.Configure(AzureServiceBusOptions);
         Services.AddScoped(ServiceBusAdministrationClientFactory);
-        Services.AddNotificationHandler<OrphanedSubscriptionRemover>();
+        Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
     }
 
     private static string GetConnectionString(IServiceProvider serviceProvider)
