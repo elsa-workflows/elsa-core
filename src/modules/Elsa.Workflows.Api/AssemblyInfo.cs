@@ -1,3 +1,3 @@
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("Elsa.IntegrationTests")]
+[assembly: InternalsVisibleTo("Elsa.Workflows.IntegrationTests")]

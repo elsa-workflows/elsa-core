@@ -1,7 +1,7 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.MassTransit.Implementations;
 using Elsa.MassTransit.Models;
+using Elsa.MassTransit.Services;
 using MassTransit;
 
 // ReSharper disable once CheckNamespace

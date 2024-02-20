@@ -142,6 +142,6 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
             return;
         }
 
-        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
+        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
     }
 }

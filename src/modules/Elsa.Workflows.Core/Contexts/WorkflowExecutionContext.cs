@@ -70,6 +70,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteDelegate = executeDelegate;
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
+        UpdatedAt = createdAt;
         CancellationTokens = cancellationTokens;
         Incidents = incidents.ToList();
 
@@ -218,6 +219,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
+        
+        foreach (var activityExecutionContext in ActivityExecutionContexts) 
+            activityExecutionContext.Activity = NodeIdLookup[activityExecutionContext.Activity.NodeId].Activity;
     }
 
     /// <summary>
@@ -272,7 +276,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
-
+    
+    /// <summary>
+    /// The date and time the workflow execution context was last updated.
+    /// </summary>
+    public DateTimeOffset UpdatedAt { get; set; }
+    
     /// <summary>
     /// The date and time the workflow execution context has finished.
     /// </summary>
@@ -536,7 +545,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
             throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
 
         SubStatus = subStatus;
-
+        UpdatedAt = SystemClock.UtcNow;
+        
+        if (Status == WorkflowStatus.Finished)
+            FinishedAt = UpdatedAt;
+        
         //For now only trigger on Cancelled, since the other statuses are handling via the host/runner
         if (SubStatus == WorkflowSubStatus.Cancelled
             && _statusUpdatedCallback is not null)
