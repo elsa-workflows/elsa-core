@@ -25,7 +25,9 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             Input = GetPersistableInput(workflowExecutionContext),
             Output = workflowExecutionContext.Output,
             Incidents = workflowExecutionContext.Incidents,
-            CreatedAt = workflowExecutionContext.CreatedAt
+            CreatedAt = workflowExecutionContext.CreatedAt,
+            UpdatedAt = workflowExecutionContext.UpdatedAt,
+            FinishedAt = workflowExecutionContext.FinishedAt
         };
 
         ExtractProperties(state, workflowExecutionContext);
@@ -46,6 +48,8 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.Output = state.Output;
         workflowExecutionContext.ExecutionLogSequence = state.ExecutionLogSequence;
         workflowExecutionContext.CreatedAt = state.CreatedAt;
+        workflowExecutionContext.UpdatedAt = state.UpdatedAt;
+        workflowExecutionContext.FinishedAt = state.FinishedAt;
         ApplyInput(state, workflowExecutionContext);
         ApplyProperties(state, workflowExecutionContext);
         ApplyActivityExecutionContexts(state, workflowExecutionContext);

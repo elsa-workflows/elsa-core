@@ -39,6 +39,6 @@ public class ResumeWorkflowJob : IJob
             CorrelationId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.CorrelationId)),
             Input = map.GetDictionary(nameof(DispatchWorkflowInstanceRequest.Input))
         };
-        await _workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        await _workflowDispatcher.DispatchAsync(request, cancellationToken: context.CancellationToken);
     }
 }

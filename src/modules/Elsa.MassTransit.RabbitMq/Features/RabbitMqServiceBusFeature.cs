@@ -4,6 +4,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
 using MassTransit;
@@ -47,27 +48,29 @@ public class RabbitMqServiceBusFeature : FeatureBase
 
                 configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
 
-                configure.UsingRabbitMq((context, serviceBus) =>
+                configure.UsingRabbitMq((context, configurator) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (!string.IsNullOrEmpty(ConnectionString))
-                        serviceBus.Host(ConnectionString);
+                        configurator.Host(ConnectionString);
 
-                    ConfigureServiceBus?.Invoke(serviceBus);
+                    ConfigureServiceBus?.Invoke(configurator);
 
                     foreach (var consumer in tempConsumers)
                     {
-                        serviceBus.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
-                        {
-                            configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                            configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                            configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
-                        });
+                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
+                            configurator =>
+                            {
+                                configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                            });
                     }
 
-                    serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });

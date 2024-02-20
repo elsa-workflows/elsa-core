@@ -14,7 +14,7 @@ public interface IWorkflowInstancesApi
     /// <summary>
     /// Returns a list of workflow instances.
     /// </summary>
-    [Get("/workflow-instances")]
+    [Post("/workflow-instances")]
     Task<PagedListResponse<WorkflowInstanceSummary>> ListAsync(ListWorkflowInstancesRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>

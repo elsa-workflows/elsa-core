@@ -19,17 +19,15 @@ namespace Elsa.Hosting.Management.HostedServices;
 public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ISystemClock _systemClock;
     private readonly HeartbeatOptions _heartbeatOptions;
     private Timer? _timer;
 
     /// <summary>
     /// Creates a new instance of the <see cref="InstanceHeartbeatMonitorService"/>
     /// </summary>
-    public InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, ISystemClock systemClock, IOptions<HeartbeatOptions> heartbeatOptions)
+    public InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions)
     {
         _serviceProvider = serviceProvider;
-        _systemClock = systemClock;
         _heartbeatOptions = heartbeatOptions.Value;
     }
 
@@ -64,6 +62,8 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
         var lockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
         var store = scope.ServiceProvider.GetRequiredService<IKeyValueStore>();
         var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+        var systemClock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
+        
         const string lockKey = "InstanceHeartbeatMonitorService";
         await using var monitorLock = await lockProvider.TryAcquireLockAsync(lockKey, TimeSpan.Zero);
         if (monitorLock == null)
@@ -80,7 +80,7 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
         {
             var lastHeartbeat = DateTimeOffset.Parse(heartbeat.SerializedValue).UtcDateTime;
 
-            if (_systemClock.UtcNow - lastHeartbeat <= _heartbeatOptions.Timeout)
+            if (systemClock.UtcNow - lastHeartbeat <= _heartbeatOptions.Timeout)
                 continue;
 
             var instanceName = heartbeat.Key[InstanceHeartbeatService.HeartbeatKeyPrefix.Length..];

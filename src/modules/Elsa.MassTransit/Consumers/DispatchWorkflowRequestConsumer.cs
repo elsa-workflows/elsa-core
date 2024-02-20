@@ -1,6 +1,7 @@
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using JetBrains.Annotations;
 using MassTransit;
 
 namespace Elsa.MassTransit.Consumers;
@@ -8,6 +9,7 @@ namespace Elsa.MassTransit.Consumers;
 /// <summary>
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
+[UsedImplicitly]
 public class DispatchWorkflowRequestConsumer :
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>,

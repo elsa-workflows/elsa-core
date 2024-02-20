@@ -3,7 +3,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
 
-namespace Elsa.MassTransit.Implementations;
+namespace Elsa.MassTransit.Services;
 
 /// <summary>
 /// Dispatches workflow cancellation requests to a MassTransit bus.

@@ -26,6 +26,6 @@ public class ResumeWorkflowTask : ITask
     public async ValueTask ExecuteAsync(TaskExecutionContext context)
     {
         var workflowDispatcher = context.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-        await workflowDispatcher.DispatchAsync(_dispatchWorkflowInstanceRequest, context.CancellationToken);
+        await workflowDispatcher.DispatchAsync(_dispatchWorkflowInstanceRequest, cancellationToken: context.CancellationToken);
     }
 }

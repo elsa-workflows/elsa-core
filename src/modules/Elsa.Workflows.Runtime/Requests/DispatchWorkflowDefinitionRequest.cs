@@ -60,5 +60,5 @@ public class DispatchWorkflowDefinitionRequest
     /// <summary>
     /// The ID of the activity that triggered the workflow.
     /// </summary>
-    public string? TriggerActivityId { get; init; }
+    public string? TriggerActivityId { get; set; }
 }

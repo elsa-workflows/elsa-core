@@ -8,6 +8,7 @@ using Elsa.MassTransit.AzureServiceBus.Handlers;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
 using Elsa.MassTransit.AzureServiceBus.Services;
+using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
@@ -60,21 +61,25 @@ public class AzureServiceBusFeature : FeatureBase
                 RegisterConsumers(consumers);
 
                 configure.AddServiceBusMessageScheduler();
+                
                 configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
 
-                configure.UsingAzureServiceBus((context, serviceBus) =>
+                configure.UsingAzureServiceBus((context, configurator) =>
                 {
+                    if (ConnectionString != null) 
+                        configurator.Host(ConnectionString);
+                    
+                    configurator.UseServiceBusMessageScheduler();
+                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    ConfigureServiceBus?.Invoke(configurator);
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
-                    if (ConnectionString != null)
-                        serviceBus.Host(ConnectionString);
-                    serviceBus.UseServiceBusMessageScheduler();
-                    ConfigureServiceBus?.Invoke(serviceBus);
 
                     foreach (var consumer in temporaryConsumers)
                     {
-                        serviceBus.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
+                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
                         {
                             configurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                             configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
@@ -82,7 +87,7 @@ public class AzureServiceBusFeature : FeatureBase
                         });
                     }
 
-                    serviceBus.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });

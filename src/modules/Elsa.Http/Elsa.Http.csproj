@@ -8,14 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AspNetCore.Authentication.ApiKey" />
         <PackageReference Include="FluentStorage" />
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" />
-        <PackageReference Include="Microsoft.AspNetCore.Http" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" />
-        <PackageReference Include="Microsoft.AspNetCore.Routing" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
-        <PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
     <ItemGroup>

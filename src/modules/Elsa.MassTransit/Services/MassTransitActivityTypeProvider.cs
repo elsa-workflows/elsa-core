@@ -10,13 +10,15 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Humanizer;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.MassTransit.Implementations;
+namespace Elsa.MassTransit.Services;
 
 /// <summary>
 /// Provides activities to the system from the configured MassTransit message types.
 /// </summary>
+[UsedImplicitly]
 public class MassTransitActivityTypeProvider(IActivityFactory activityFactory, IOptions<MassTransitActivityOptions> options, IActivityDescriber activityDescriber) : IActivityProvider
 {
     /// <inheritdoc />
