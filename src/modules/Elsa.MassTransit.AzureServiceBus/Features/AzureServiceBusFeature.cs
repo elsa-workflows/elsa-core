@@ -111,7 +111,7 @@ public class AzureServiceBusFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(AzureServiceBusOptions);
-        Services.AddScoped(ServiceBusAdministrationClientFactory);
+        Services.AddSingleton(ServiceBusAdministrationClientFactory);
         Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
     }
 
