@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
 using Elsa.KeyValues.Contracts;
@@ -60,11 +61,11 @@ public class InstanceHeartbeatService : IHostedService, IDisposable
         using var scope = _serviceProvider.CreateScope();
         var instanceNameProvider = scope.ServiceProvider.GetRequiredService<IApplicationInstanceNameProvider>();
         var store = scope.ServiceProvider.GetRequiredService<IKeyValueStore>();
-
+        var systemClock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
         await store.SaveAsync(new SerializedKeyValuePair
             {
                 Key = $"{HeartbeatKeyPrefix}{instanceNameProvider.GetName()}",
-                SerializedValue = DateTime.UtcNow.ToString("o")
+                SerializedValue = systemClock.UtcNow.ToString("o")
             },
             default);
     }
