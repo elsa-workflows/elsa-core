@@ -16,6 +16,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Middleware;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -248,6 +249,11 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
+
+// app.UseSimulatedLatency(
+//     TimeSpan.FromMilliseconds(1000),
+//     TimeSpan.FromMilliseconds(3000)
+// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
