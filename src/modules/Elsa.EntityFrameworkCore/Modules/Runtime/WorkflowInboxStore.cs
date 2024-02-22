@@ -49,7 +49,7 @@ public class EFCoreWorkflowInboxMessageStore : IWorkflowInboxMessageStore
     /// <inheritdoc />
     public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteWhereAsync(q => Paginate(filter.Apply(q, _systemClock.UtcNow), pageArgs), cancellationToken);
+        return await _store.DeleteWhereAsync(q => filter.Apply(q, _systemClock.UtcNow), cancellationToken);
     }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowInboxMessage entity, CancellationToken cancellationToken)
