@@ -21,6 +21,7 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowRuntime(runtime =>
     {
         runtime.UseEntityFrameworkCore();
+        runtime.UseMassTransitDispatcher();
     });
     
     // Expose API endpoints.
