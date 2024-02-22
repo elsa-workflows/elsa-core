@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
@@ -12,18 +12,31 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
         {
             migrationBuilder.AddColumn<string>(
                 name: "SerializedActivityStateCompressionAlgorithm",
-                schema: "Elsa",
                 table: "ActivityExecutionRecords",
-                type: "text",
+                type: "TEXT",
                 nullable: true);
+
+            migrationBuilder.CreateTable(
+                name: "KeyValuePairs",
+                columns: table => new
+                {
+                    Key = table.Column<string>(type: "TEXT", nullable: false),
+                    SerializedValue = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_KeyValuePairs", x => x.Key);
+                });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "KeyValuePairs");
+
             migrationBuilder.DropColumn(
                 name: "SerializedActivityStateCompressionAlgorithm",
-                schema: "Elsa",
                 table: "ActivityExecutionRecords");
         }
     }

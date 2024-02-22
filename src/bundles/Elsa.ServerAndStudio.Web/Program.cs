@@ -2,8 +2,10 @@ using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.MassTransit.Options;
 using Elsa.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Elsa.Hosting.Management.Options;
 
 const bool useMassTransit = true;
 
@@ -12,8 +14,14 @@ builder.WebHost.UseStaticWebAssets();
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
+var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var massTransitSection = configuration.GetSection("MassTransit");
+var heartbeatSection = configuration.GetSection("Heartbeat");
+
+services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitSection);
 
 // Add Elsa services.
 services
@@ -30,8 +38,13 @@ services
               identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
           })
           .UseDefaultAuthentication()
+          .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
           .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-          .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+          .UseWorkflowRuntime(runtime =>
+          {
+              runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+              runtime.UseMassTransitDispatcher();
+          })
           .UseScheduling()
           .UseJavaScript(options => options.AllowClrAccess = true)
           .UseLiquid()
@@ -47,7 +60,25 @@ services
 
         if (useMassTransit)
         {
-            elsa.UseMassTransit();
+            elsa.UseMassTransit(massTransit =>
+                massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                {
+                    bus.PrefetchCount = 4;
+                    bus.LockDuration = TimeSpan.FromMinutes(5);
+                    bus.MaxConcurrentCalls = 32;
+                    bus.MaxDeliveryCount = 8;
+                    // etc.
+                })
+            // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+            //     {
+            //         bus.PrefetchCount = 4;
+            //         bus.Durable = true;
+            //         bus.AutoDelete = false;
+            //         bus.ConcurrentMessageLimit = 32;
+            //         // etc.
+            //     }))
+            );
+
         }
     });
 

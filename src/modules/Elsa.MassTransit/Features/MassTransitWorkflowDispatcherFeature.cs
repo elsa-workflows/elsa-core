@@ -41,6 +41,7 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     public override void Configure()
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
+        Module.AddMassTransitConsumer<DispatchCancelWorkflowsRequestConsumer>("elsa-dispatch-cancel-workflow", true);
         Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp =>
         {
             var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
