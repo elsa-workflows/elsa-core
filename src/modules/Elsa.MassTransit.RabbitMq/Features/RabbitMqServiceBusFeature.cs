@@ -1,11 +1,15 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Hosting.Management.Contracts;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Options;
 using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.RabbitMq.Features;
 
@@ -23,6 +27,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
+    /// Configures the RabbitMQ transport options.
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
 
     /// <summary>
@@ -33,19 +38,42 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        Module.Configure<MassTransitFeature>().BusConfigurator = configure =>
+        Module.Configure<MassTransitFeature>(massTransitFeature =>
         {
-            configure.UsingRabbitMq((context, configurator) =>
+            massTransitFeature.BusConfigurator = configure =>
             {
-                if (!string.IsNullOrEmpty(ConnectionString))
-                    configurator.Host(ConnectionString);
+                var tempConsumers = massTransitFeature.GetConsumers()
+                    .Where(c => c.IsTemporary)
+                    .ToList();
 
-                ConfigureServiceBus?.Invoke(configurator);
+                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
 
-                configurator.SetupWorkflowDispatcherEndpoints(context);
-                configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
-            });
-        };
+                configure.UsingRabbitMq((context, configurator) =>
+                {
+                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
+
+                    if (!string.IsNullOrEmpty(ConnectionString))
+                        configurator.Host(ConnectionString);
+
+                    ConfigureServiceBus?.Invoke(configurator);
+
+                    foreach (var consumer in tempConsumers)
+                    {
+                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
+                            configurator =>
+                            {
+                                configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                            });
+                    }
+
+                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                });
+            };
+        });
     }
 
     /// <inheritdoc />
