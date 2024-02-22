@@ -12,6 +12,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Proto.Cluster;
@@ -67,7 +68,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options  = default)
+    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options  = default)
     {
         var versionOptions = options?.VersionOptions;
         var correlationId = options?.CorrelationId;
@@ -92,7 +93,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
         // Load the workflow definition.
         var versionOptions = options?.VersionOptions ?? VersionOptions.Published;
@@ -105,7 +106,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
         var versionOptions = options?.VersionOptions;
         var correlationId = options?.CorrelationId;
@@ -142,7 +143,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         {
             var definitionId = trigger.WorkflowDefinitionId;
 
-            var startOptions = new StartWorkflowRuntimeOptions
+            var startOptions = new StartWorkflowRuntimeParams
             {
                 CorrelationId = options?.CorrelationId,
                 Input = options?.Input,
@@ -167,7 +168,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeParams? options = default)
     {
         var request = new ResumeWorkflowRequest
         {
@@ -196,7 +197,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         return await ResumeWorkflowsAsync(
             bookmarks,
-            new ResumeWorkflowRuntimeOptions
+            new ResumeWorkflowRuntimeParams
             {
                 CorrelationId = correlationId,
                 Input = options?.Input,
@@ -217,11 +218,11 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowOptions? options = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
-            var startOptions = new StartWorkflowRuntimeOptions
+            var startOptions = new StartWorkflowRuntimeParams
             {
                 CorrelationId = collectedStartableWorkflow.CorrelationId,
                 Input = options?.Input,
@@ -235,7 +236,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         }
 
         var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
-        var runtimeOptions = new ResumeWorkflowRuntimeOptions
+        var runtimeOptions = new ResumeWorkflowRuntimeParams
         {
             CorrelationId = collectedResumableWorkflow.CorrelationId,
             Input = options?.Input,
@@ -320,7 +321,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
 
-    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions)
+    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeParams runtimeParams)
     {
         var resumedWorkflows = new List<WorkflowExecutionResult>();
 
@@ -328,17 +329,17 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
 
-            var newRuntimeOptions = new ResumeWorkflowRuntimeOptions
+            var newRuntimeOptions = new ResumeWorkflowRuntimeParams
             {
-                CorrelationId = runtimeOptions.CorrelationId,
-                Input = runtimeOptions.Input,
-                Properties = runtimeOptions.Properties,
+                CorrelationId = runtimeParams.CorrelationId,
+                Input = runtimeParams.Input,
+                Properties = runtimeParams.Properties,
                 BookmarkId = bookmark.BookmarkId,
-                ActivityId = runtimeOptions.ActivityId,
-                ActivityNodeId = runtimeOptions.ActivityNodeId,
-                ActivityInstanceId = runtimeOptions.ActivityInstanceId,
-                ActivityHash = runtimeOptions.ActivityHash,
-                CancellationTokens = runtimeOptions.CancellationTokens
+                ActivityId = runtimeParams.ActivityId,
+                ActivityNodeId = runtimeParams.ActivityNodeId,
+                ActivityInstanceId = runtimeParams.ActivityInstanceId,
+                ActivityHash = runtimeParams.ActivityHash,
+                CancellationTokens = runtimeParams.CancellationTokens
             };
 
             var resumeResult = await ResumeWorkflowAsync(workflowInstanceId, newRuntimeOptions);
@@ -359,7 +360,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         {
             var definitionId = trigger.WorkflowDefinitionId;
 
-            var startOptions = new StartWorkflowRuntimeOptions
+            var startOptions = new StartWorkflowRuntimeParams
             {
                 CorrelationId = workflowsFilter.Options.CorrelationId,
                 Input = workflowsFilter.Options.Input,

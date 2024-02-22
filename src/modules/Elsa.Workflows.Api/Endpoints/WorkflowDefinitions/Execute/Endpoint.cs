@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -64,7 +65,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
         var correlationId = request.CorrelationId;
         var input = (IDictionary<string, object>?)request.Input;
         var instanceId = _identityGenerator.GenerateId();
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
         {
             CorrelationId = correlationId,
             Input = input,

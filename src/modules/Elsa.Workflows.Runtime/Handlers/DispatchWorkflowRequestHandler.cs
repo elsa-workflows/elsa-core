@@ -3,11 +3,12 @@ using Elsa.Mediator.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
 // ReSharper disable once UnusedType.Global
-internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) :
+internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) :
     ICommandHandler<DispatchTriggerWorkflowsCommand>,
     ICommandHandler<DispatchWorkflowDefinitionCommand>,
     ICommandHandler<DispatchWorkflowInstanceCommand>,
@@ -31,7 +32,7 @@ internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) 
 
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
-        var options = new StartWorkflowRuntimeOptions
+        var options = new StartWorkflowRuntimeParams
         {
             CorrelationId = command.CorrelationId,
             Input = command.Input,
@@ -49,7 +50,7 @@ internal class DispatchWorkflowRequestHandler(IWorkflowRuntime workflowRuntime) 
 
     public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
-        var options = new ResumeWorkflowRuntimeOptions
+        var options = new ResumeWorkflowRuntimeParams
         {
             CorrelationId = command.CorrelationId,
             BookmarkId = command.BookmarkId,

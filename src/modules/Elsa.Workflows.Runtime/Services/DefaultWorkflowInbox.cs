@@ -8,6 +8,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 
@@ -48,12 +49,12 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     /// <inheritdoc />
     public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, CancellationToken cancellationToken = default)
     {
-        var defaultOptions = new WorkflowInboxMessageDeliveryOptions();
+        var defaultOptions = new WorkflowInboxMessageDeliveryParams();
         return await SubmitAsync(message, defaultOptions, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage newMessage, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default)
+    public async ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage newMessage, WorkflowInboxMessageDeliveryParams @params, CancellationToken cancellationToken = default)
     {
         var now = _systemClock.UtcNow;
 
@@ -77,7 +78,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
 
         // Send a notification.
         var workflowExecutionResults = new List<WorkflowExecutionResult>();
-        var notification = new WorkflowInboxMessageReceived(message, options, workflowExecutionResults);
+        var notification = new WorkflowInboxMessageReceived(message, @params, workflowExecutionResults);
         await _notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
 
         // Return the result.
