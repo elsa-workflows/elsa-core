@@ -13,24 +13,23 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 [UsedImplicitly]
 public class PopulateRegistriesHostedService : IHostedService
 {
-    private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PopulateRegistriesHostedService"/> class.
     /// </summary>
-    public PopulateRegistriesHostedService(IDistributedLockProvider distributedLockProvider, IServiceScopeFactory scopeFactory)
+    public PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory)
     {
-        _distributedLockProvider = distributedLockProvider;
         _scopeFactory = scopeFactory;
     }
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await using (await _distributedLockProvider.AcquireLockAsync("PopulateRegistries", TimeSpan.FromMinutes(10), cancellationToken))
+        using var scope = _scopeFactory.CreateScope();
+        var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
+        await using (await distributedLockProvider.AcquireLockAsync("PopulateRegistries", TimeSpan.FromMinutes(10), cancellationToken))
         {
-            using var scope = _scopeFactory.CreateScope();
             var registriesPopulator = scope.ServiceProvider.GetRequiredService<IRegistriesPopulator>();
             await registriesPopulator.PopulateAsync(cancellationToken);
         }
