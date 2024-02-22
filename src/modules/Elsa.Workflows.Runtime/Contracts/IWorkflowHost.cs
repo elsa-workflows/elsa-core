@@ -1,5 +1,5 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
@@ -23,15 +23,15 @@ public interface IWorkflowHost
     /// <summary>
     /// Returns a value indicating whether or not the specified workflow can start a new instance or not.
     /// </summary>
-    Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    Task<bool> CanStartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Start a new workflow instance and execute it.
     /// </summary>
-    Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Resume an existing workflow instance.
     /// </summary>
-    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
 }

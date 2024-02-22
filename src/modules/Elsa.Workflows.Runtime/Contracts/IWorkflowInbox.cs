@@ -1,7 +1,7 @@
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Contracts;
@@ -24,7 +24,7 @@ public interface IWorkflowInbox
     /// <param name="message">The message to store.</param>
     /// <param name="options">An optional set of delivery options.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, WorkflowInboxMessageDeliveryOptions options, CancellationToken cancellationToken = default);
+    ValueTask<SubmitWorkflowInboxMessageResult> SubmitAsync(NewWorkflowInboxMessage message, WorkflowInboxMessageDeliveryParams options, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Delivers a message to a workflow instance.

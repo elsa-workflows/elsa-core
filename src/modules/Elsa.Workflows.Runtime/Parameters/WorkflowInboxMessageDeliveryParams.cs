@@ -1,9 +1,9 @@
-namespace Elsa.Workflows.Runtime.Options;
+namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
 /// Options for delivering a workflow inbox message.
 /// </summary>
-public class WorkflowInboxMessageDeliveryOptions
+public class WorkflowInboxMessageDeliveryParams
 {
     /// <summary>
     /// Whether to dispatch the message to the workflow dispatcher or send immediately.

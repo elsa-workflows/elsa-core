@@ -1,11 +1,11 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Runtime.Options;
+namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
 /// Represents options for starting a workflow host.
 /// </summary>
-public class StartWorkflowHostOptions
+public class StartWorkflowHostParams
 {
     /// <summary>An optional workflow instance ID. If not specified, a new ID will be generated.</summary>
     public string? InstanceId { get; set; }

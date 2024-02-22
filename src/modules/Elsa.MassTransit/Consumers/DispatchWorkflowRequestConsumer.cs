@@ -1,6 +1,7 @@
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using JetBrains.Annotations;
 using MassTransit;
 
@@ -31,7 +32,7 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        var options = new StartWorkflowRuntimeOptions
+        var options = new StartWorkflowRuntimeParams
         {
             CorrelationId = message.CorrelationId,
             Input = message.Input,
@@ -51,7 +52,7 @@ public class DispatchWorkflowRequestConsumer :
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
 
-        var options = new ResumeWorkflowRuntimeOptions
+        var options = new ResumeWorkflowRuntimeParams
         {
             CorrelationId = message.CorrelationId,
             BookmarkId = message.BookmarkId,
