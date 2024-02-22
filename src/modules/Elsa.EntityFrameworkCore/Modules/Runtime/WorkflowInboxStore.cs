@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Filters;
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <summary>
-/// An EF Core implementation of <see cref="IBookmarkStore"/>.
+/// An EF Core implementation of <see cref="IWorkflowInboxMessageStore"/>.
 /// </summary>
 public class EFCoreWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 {
