@@ -1,12 +1,12 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Runtime.Options;
+namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
 /// Represents options for starting a workflow.
 /// </summary>
-public class StartWorkflowRuntimeOptions
+public class StartWorkflowRuntimeParams
 {
     public string? CorrelationId { get; set; }
 

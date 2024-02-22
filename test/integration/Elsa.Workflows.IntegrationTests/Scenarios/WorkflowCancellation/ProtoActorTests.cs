@@ -6,15 +6,15 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Xunit;
 using Xunit.Abstractions;
-using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
-using WorkflowSubStatus = Elsa.Workflows.WorkflowSubStatus;
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation;
 
@@ -77,7 +77,7 @@ public class ProtoActorTests
         await _workflowServerHost.StartAsync(default);
         const string workflowDefinitionId = nameof(SimpleSuspendedWorkflow);
         var workflowState =
-            await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
+            await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeParams());
 
         Assert.Equal(WorkflowStatus.Running, workflowState.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
@@ -91,8 +91,7 @@ public class ProtoActorTests
         Assert.Empty(_capturingTextWriter.Lines);
     }
 
-    [Fact(DisplayName = "Cancelling a running workflow",
-        Skip = "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
+    [Fact(DisplayName = "Cancelling a running workflow", Skip = "Unpredictable result, need to create a dispatcher for tests that will run outside of the unit test")]
     public async Task RunningCancelTest()
     {
         // Populate registries.
@@ -103,10 +102,10 @@ public class ProtoActorTests
 
         const string workflowDefinitionId = nameof(BulkSuspendedWorkflow);
         var workflowState =
-            await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
+            await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeParams());
 
         var bookmarks = new Stack<Bookmark>(workflowState.Bookmarks);
-        var resumeOptions = new ResumeWorkflowRuntimeOptions
+        var resumeOptions = new ResumeWorkflowRuntimeParams
         {
             BookmarkId = bookmarks.Pop().Id
         };

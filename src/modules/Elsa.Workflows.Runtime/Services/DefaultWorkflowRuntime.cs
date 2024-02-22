@@ -10,6 +10,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
@@ -73,12 +74,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
+    public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
         var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options?.CancellationTokens.SystemCancellationToken ?? default);
-        var startWorkflowOptions = new StartWorkflowHostOptions
+        var startWorkflowOptions = new StartWorkflowHostParams
         {
             CorrelationId = correlationId,
             Input = input,
@@ -89,14 +90,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(definitionId, options, options?.CancellationTokens.SystemCancellationToken ?? default);
         return await StartWorkflowAsync(workflowHost, options);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
         return await StartWorkflowAsync(definitionId, options);
     }
@@ -184,7 +185,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             {
                 var definitionId = trigger.WorkflowDefinitionId;
 
-                var startOptions = new StartWorkflowRuntimeOptions
+                var startOptions = new StartWorkflowRuntimeParams
                 {
                     CorrelationId = options.CorrelationId,
                     Input = options.Input,
@@ -213,7 +214,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeOptions? options = default)
+    public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeParams? options = default)
     {
         var applicationCancellationToken = options?.CancellationTokens.ApplicationCancellationToken ?? default;
         var systemCancellationToken = options?.CancellationTokens.SystemCancellationToken ?? default;
@@ -245,7 +246,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var workflowState = _workflowStateMapper.Map(workflowInstance)!;
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, systemCancellationToken);
 
-            var resumeWorkflowOptions = new ResumeWorkflowHostOptions
+            var resumeWorkflowOptions = new ResumeWorkflowHostParams
             {
                 CorrelationId = options?.CorrelationId,
                 BookmarkId = options?.BookmarkId,
@@ -286,7 +287,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         return await ResumeWorkflowsAsync(
             bookmarks,
-            new ResumeWorkflowRuntimeOptions
+            new ResumeWorkflowRuntimeParams
             {
                 CorrelationId = correlationId,
                 Input = options.Input,
@@ -304,11 +305,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowOptions? options = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
-            var startOptions = new StartWorkflowRuntimeOptions
+            var startOptions = new StartWorkflowRuntimeParams
             {
                 CorrelationId = collectedStartableWorkflow.CorrelationId,
                 Input = options?.Input,
@@ -327,7 +328,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
 
         var collectedResumableWorkflow = (match as ResumableWorkflowMatch)!;
-        var runtimeOptions = new ResumeWorkflowRuntimeOptions
+        var runtimeOptions = new ResumeWorkflowRuntimeParams
         {
             CorrelationId = collectedResumableWorkflow.CorrelationId,
             BookmarkId = collectedResumableWorkflow.BookmarkId,
@@ -381,7 +382,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
 
-    private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeOptions? options = default)
+    private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeParams? options = default)
     {
         var workflowInstanceId = string.IsNullOrEmpty(options?.InstanceId) ? _identityGenerator.GenerateId() : options?.InstanceId;
         var cancellationTokens = options?.CancellationTokens ?? default;
@@ -390,7 +391,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         {
             var input = options?.Input;
             var correlationId = options?.CorrelationId;
-            var startWorkflowOptions = new StartWorkflowHostOptions
+            var startWorkflowOptions = new StartWorkflowHostParams
             {
                 InstanceId = workflowInstanceId,
                 CorrelationId = correlationId,
@@ -414,7 +415,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         }
     }
 
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeOptions? options, CancellationToken cancellationToken)
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeParams? options, CancellationToken cancellationToken)
     {
         var versionOptions = options?.VersionOptions;
         var host = await _workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published, cancellationToken);
@@ -425,7 +426,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return host;
     }
 
-    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeOptions runtimeOptions)
+    private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeParams runtimeParams)
     {
         var resumedWorkflows = new List<WorkflowExecutionResult>();
 
@@ -435,12 +436,12 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
             var resumeResult = await ResumeWorkflowAsync(
                 workflowInstanceId,
-                new ResumeWorkflowRuntimeOptions
+                new ResumeWorkflowRuntimeParams
                 {
-                    CorrelationId = runtimeOptions.CorrelationId,
-                    Input = runtimeOptions.Input,
-                    Properties = runtimeOptions.Properties,
-                    CancellationTokens = runtimeOptions.CancellationTokens,
+                    CorrelationId = runtimeParams.CorrelationId,
+                    Input = runtimeParams.Input,
+                    Properties = runtimeParams.Properties,
+                    CancellationTokens = runtimeParams.CancellationTokens,
                     BookmarkId = bookmark.BookmarkId,
                     ActivityInstanceId = bookmark.ActivityInstanceId
                 });
@@ -475,7 +476,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             foreach (var trigger in triggers)
             {
                 var definitionId = trigger.WorkflowDefinitionId;
-                var startOptions = new StartWorkflowRuntimeOptions
+                var startOptions = new StartWorkflowRuntimeParams
                 {
                     CorrelationId = workflowsFilter.Options.CorrelationId,
                     Input = workflowsFilter.Options.Input,

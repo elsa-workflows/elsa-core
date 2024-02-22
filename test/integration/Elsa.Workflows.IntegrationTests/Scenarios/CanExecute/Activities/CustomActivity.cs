@@ -1,6 +1,5 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Services;

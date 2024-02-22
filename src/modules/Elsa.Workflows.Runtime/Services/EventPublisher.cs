@@ -5,6 +5,7 @@ using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -61,7 +62,7 @@ public class EventPublisher : IEventPublisher
             [Event.EventPayloadWorkflowInputKey] = payload ?? new Dictionary<string, object>()
         };
         var message = NewWorkflowInboxMessage.For<Event>(eventBookmark, workflowInstanceId, correlationId, activityInstanceId, workflowInput);
-        var options = new WorkflowInboxMessageDeliveryOptions
+        var options = new WorkflowInboxMessageDeliveryParams
         {
             DispatchAsynchronously = dispatchAsynchronously
         };

@@ -1,11 +1,11 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Runtime.Options;
+namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
 /// Options for resuming workflows.
 /// </summary>
-public class ResumeWorkflowRuntimeOptions
+public class ResumeWorkflowRuntimeParams
 {
     public string? CorrelationId { get; set; }
     public string? BookmarkId { get; set; }

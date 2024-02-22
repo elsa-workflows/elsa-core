@@ -1,11 +1,11 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Runtime.Options;
+namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
 /// Represents options for resuming a workflow host.
 /// </summary>
-public class ResumeWorkflowHostOptions
+public class ResumeWorkflowHostParams
 {
     /// <summary>An optional correlation ID.</summary>
     public string? CorrelationId { get; set; }

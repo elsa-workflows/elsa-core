@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Workflows;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Activities;

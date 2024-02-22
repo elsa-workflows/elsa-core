@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Notifications;
@@ -11,5 +12,5 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// <param name="InboxMessage">The inbox message that was received.</param>
 public record WorkflowInboxMessageReceived(
     WorkflowInboxMessage InboxMessage, 
-    WorkflowInboxMessageDeliveryOptions Options,
+    WorkflowInboxMessageDeliveryParams Options,
     ICollection<WorkflowExecutionResult> WorkflowExecutionResults) : INotification;

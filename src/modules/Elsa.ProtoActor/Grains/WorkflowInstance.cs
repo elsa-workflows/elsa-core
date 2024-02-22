@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -110,7 +111,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var startWorkflowOptions = new StartWorkflowHostOptions
+        var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
             CorrelationId = correlationId,
@@ -161,7 +162,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _input = input;
         }
 
-        var startWorkflowOptions = new StartWorkflowHostOptions
+        var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
             CorrelationId = correlationId,
@@ -252,7 +253,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _cancellationTokenSources.Add(cancellationTokenSource);
         cancellationToken = cancellationTokenSource.Token;
 
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostParams
         {
             CorrelationId = correlationId,
             BookmarkId = bookmarkId,

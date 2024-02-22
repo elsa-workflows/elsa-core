@@ -1,11 +1,10 @@
 using Elsa.Mediator.HostedServices;
 using Elsa.Mediator.Options;
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
 using Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -13,6 +12,9 @@ using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation;
 
+/// <summary>
+/// Represents a class containing unit tests for the DefaultRuntime class.
+/// </summary>
 public class DefaultRuntimeTests
 {
     private readonly IServiceProvider _services;
@@ -22,6 +24,9 @@ public class DefaultRuntimeTests
     private readonly BackgroundCommandSenderHostedService _backgroundCommandSenderHostedService;
     private readonly BackgroundEventPublisherHostedService _backgroundEventPublisherHostedService;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultRuntimeTests"/> class.
+    /// </summary>
     public DefaultRuntimeTests(ITestOutputHelper testOutputHelper)
     {
         _services = new TestApplicationBuilder(testOutputHelper)
@@ -59,7 +64,7 @@ public class DefaultRuntimeTests
         await _services.PopulateRegistriesAsync();
 
         const string workflowDefinitionId = nameof(SimpleSuspendedWorkflow);
-        var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
+        var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeParams());
 
         Assert.Equal(WorkflowStatus.Running, workflowState.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
@@ -83,10 +88,10 @@ public class DefaultRuntimeTests
         await _services.PopulateRegistriesAsync();
 
         const string workflowDefinitionId = nameof(BulkSuspendedWorkflow);
-        var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeOptions());
+        var workflowState = await _workflowRuntime.StartWorkflowAsync(workflowDefinitionId, new StartWorkflowRuntimeParams());
 
         var bookmarks = new Stack<Bookmark>(workflowState.Bookmarks);
-        var resumeOptions = new ResumeWorkflowRuntimeOptions
+        var resumeOptions = new ResumeWorkflowRuntimeParams
         {
             BookmarkId = bookmarks.Pop().Id
         };

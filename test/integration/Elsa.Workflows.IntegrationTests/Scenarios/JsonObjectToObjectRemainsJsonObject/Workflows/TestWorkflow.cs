@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Models;
-using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Activities;
