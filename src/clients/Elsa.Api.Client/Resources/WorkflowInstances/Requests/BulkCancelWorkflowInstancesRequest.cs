@@ -1,9 +1,11 @@
-using System.Text.Json.Serialization;
-using Elsa.Common.Models;
+using Elsa.Api.Client.Shared.Models;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
+namespace Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 
-public class Request
+/// <summary>
+/// Represents a request to bulk cancel workflow instances.
+/// </summary>
+public class BulkCancelWorkflowInstancesRequest
 {
     /// <summary>
     /// Gets or sets the IDs of the workflow instances to delete.
@@ -26,14 +28,5 @@ public class Request
     /// </summary>
     /// <remarks>This should be used in combination with <see cref="DefinitionId"/></remarks>
     public VersionOptions? VersionOptions { get; set; }
-}
-
-public class Response
-{
-    public Response(int cancelledCount)
-    {
-        CancelledCount = cancelledCount;
-    }
-
-    [JsonPropertyName("cancelled")] public int CancelledCount { get; }
+    
 }

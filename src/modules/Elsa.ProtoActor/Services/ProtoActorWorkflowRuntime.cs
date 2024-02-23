@@ -10,12 +10,12 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Proto.Cluster;
-using Bookmark = Elsa.Workflows.Models.Bookmark;
 using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
 using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 
@@ -250,10 +250,20 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken)
     {
+        var filter = new WorkflowInstanceFilter
+        {
+            Id = workflowInstanceId
+        };
+
+        var instance = await _workflowInstanceStore.FindAsync(filter);
+        if (instance is null)
+            return new CancellationResult(false, FailureReason.NotFound);
+        
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        await client.Cancel(cancellationToken);
+        var result = await client.Cancel(cancellationToken);
+        return new CancellationResult(result?.Result ?? false);
     }
 
     /// <inheritdoc />
@@ -264,7 +274,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
-
+    
     /// <inheritdoc />
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {

@@ -82,6 +82,10 @@ message ImportWorkflowStateRequest {
 
 message ImportWorkflowStateResponse {}
 
+message WorkflowInstanceCancellationResponse{
+  bool Result = 1;
+}
+
 enum RunWorkflowResult {
   RunWorkflowResultFinished = 0;
   RunWorkflowResultSuspended = 1;
