@@ -19,10 +19,27 @@ public class DapperMigrationsFeature : FeatureBase
     }
 
     /// <summary>
+    /// Configures migrations to use SQLite.
+    /// </summary>
+    public DapperMigrationsFeature UseSqlite()
+    {
+        ConfigureRunner += runner => runner.AddSQLite();
+        return this;
+    }
+
+    /// <summary>
+    /// Configures migrations to use SQLite.
+    /// </summary>
+    public DapperMigrationsFeature UseSqlServer()
+    {
+        ConfigureRunner += runner => runner.AddSqlServer();
+        return this;
+    }
+
+    /// <summary>
     /// Gets or sets a delegate to configure migrations.
     /// </summary>
     public Action<IMigrationRunnerBuilder> ConfigureRunner { get; set; } = runner => runner
-        .AddSQLite()
         .WithGlobalConnectionString(sp => sp.GetRequiredService<IDbConnectionProvider>().GetConnectionString())
         .WithMigrationsIn(typeof(Initial).Assembly);
 

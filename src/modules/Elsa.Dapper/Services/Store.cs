@@ -264,7 +264,7 @@ public class Store<T> where T : notnull
         filter(selectQuery);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
-        var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, selectQuery);
+        var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
         using var connection = _dbConnectionProvider.GetConnection();
         return await deleteQuery.ExecuteAsync(connection);
     }
