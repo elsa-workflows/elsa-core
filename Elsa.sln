@@ -140,6 +140,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Webhook
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MassTransitActivities", "samples\aspnet\Elsa.Samples.AspNet.MassTransitActivities\Elsa.Samples.AspNet.MassTransitActivities.csproj", "{A1A8AD89-C9C4-41BF-BBCB-EF0544A28BFB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.MassTransitWorkflow", "samples\aspnet\Elsa.Samples.AspNet.MassTransitWorkflow\Elsa.Samples.AspNet.MassTransitWorkflow.csproj", "{086A7E2A-6CE7-41DA-927B-C033638060B1}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoActor.Cluster.AzureContainerApps", "src\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj", "{9F79BBEC-02CE-4F76-AED4-BC191DA3054B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.AzureServiceBusActivities", "samples\aspnet\Elsa.Samples.AspNet.AzureServiceBusActivities\Elsa.Samples.AspNet.AzureServiceBusActivities.csproj", "{C25CFDCF-8E06-4DD8-A83E-FF7EF9FDA02E}"
@@ -780,6 +782,10 @@ Global
 		{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -918,6 +924,7 @@ Global
 		{A516931E-EDBB-4FC3-BB94-1BB824D5BC61} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{BBCE36D1-6767-4ED1-B3E8-84D2567A962A} = {A516931E-EDBB-4FC3-BB94-1BB824D5BC61}
 		{73BBB1E3-AEEC-44E8-83D7-6DD9CD687FE3} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{086A7E2A-6CE7-41DA-927B-C033638060B1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
