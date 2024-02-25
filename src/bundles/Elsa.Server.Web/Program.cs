@@ -24,7 +24,7 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
-const bool useSqlServer = true;
+const bool useSqlServer = false;
 const bool useDapper = true;
 const bool useProtoActor = false;
 const bool useHangfire = false;
