@@ -54,7 +54,13 @@ services
         if (useDapper)
             elsa.UseDapper(dapper =>
             {
-                dapper.UseMigrations();
+                dapper.UseMigrations(feature =>
+                {
+                    if (useSqlServer)
+                        feature.UseSqlServer();
+                    else
+                        feature.UseSqlite();
+                });
                 dapper.DbConnectionProvider = sp =>
                 {
                     if (useSqlServer)
@@ -108,8 +114,8 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-                
-                if(useZipCompression)
+
+                if (useZipCompression)
                     management.SetCompressionAlgorithm(nameof(Zstd));
             })
             .UseWorkflowRuntime(runtime =>
@@ -138,10 +144,11 @@ services
                     });
                 }
 
-                if(useMassTransit)
+                if (useMassTransit)
                 {
                     runtime.UseMassTransitDispatcher();
                 }
+
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
@@ -187,19 +194,29 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
             {
-                alterations.UseEntityFrameworkCore(ef =>
+                if (useMongoDb)
                 {
-                    if (useSqlServer)
-                        ef.UseSqlServer(sqlServerConnectionString);
-                    else
-                        ef.UseSqlite(sqliteConnectionString);
-                });
+                    // TODO: alterations.UseMongoDb();
+                }
+                else if (useDapper)
+                {
+                    // TODO: alterations.UseDapper();
+                }
+                else
+                {
+                    alterations.UseEntityFrameworkCore(ef =>
+                    {
+                        if (useSqlServer)
+                            ef.UseSqlServer(sqlServerConnectionString);
+                        else
+                            ef.UseSqlite(sqliteConnectionString);
+                    });
+                }
 
                 if (useMassTransit)
                 {
                     alterations.UseMassTransitDispatcher();
                 }
-                
             })
             .UseWorkflowContexts();
 
