@@ -16,9 +16,9 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Server.Web.Middleware;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -26,7 +26,7 @@ using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
-const bool useDapper = true;
+const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
@@ -271,11 +271,6 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
-
-// app.UseSimulatedLatency(
-//     TimeSpan.FromMilliseconds(1000),
-//     TimeSpan.FromMilliseconds(3000)
-// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
