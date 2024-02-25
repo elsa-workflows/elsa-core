@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
-    [Migration("20240211225155_Initial")]
+    [Migration("20231015122151_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
@@ -44,12 +44,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("longtext");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -98,12 +94,8 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("TenantId")
-                        .HasColumnType("longtext");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
