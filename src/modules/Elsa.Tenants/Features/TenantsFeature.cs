@@ -1,19 +1,14 @@
-using Elsa.Common.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Providers;
 using Elsa.Tenants.Accessors;
 using Elsa.Tenants.Contracts;
-using Elsa.Tenants.Handlers;
-using Elsa.Tenants.Middlewares;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Services;
 using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.Handlers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Tenants.Features;
 
@@ -39,15 +34,6 @@ public class TenantsFeature : FeatureBase
     public Func<IServiceProvider, ITenantsProvider> TenantsProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
 
     /// <inheritdoc />
-    public override void Configure()
-    {
-        Module.Configure<WorkflowRuntimeFeature>(feature =>
-        {
-            feature.DispatchWorkflowCommandHandler = sp => sp.GetRequiredService<DispatchTenantWorkflowRequestHandler>();
-        });
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(TenantsOptions);
@@ -56,11 +42,7 @@ public class TenantsFeature : FeatureBase
             .AddScoped<ITenantAccessor, TenantAccessor>()
             .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
             .AddSingleton<ConfigurationTenantsProvider>()
-            .AddScoped(TenantsProvider)
-
-            .RemoveAll<DispatchWorkflowRequestHandler>()
-            .AddScoped<DispatchTenantWorkflowRequestHandler>()
-        ;
+            .AddScoped(TenantsProvider);
     }
 
     /// <summary>
@@ -77,7 +59,6 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public TenantsFeature UseExternalTenantResolverMiddleware()
     {
-        
         return this;
     }
 }

@@ -121,6 +121,7 @@ public class Configurations :
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
     {
-        builder.HasKey(x => x.Key);
+        builder.HasIndex(x => x.Key, $"IX_{nameof(SerializedKeyValuePair)}_{nameof(SerializedKeyValuePair.Key)}");
+        builder.HasIndex(x => x.TenantId, $"IX_{nameof(SerializedKeyValuePair)}_{nameof(SerializedKeyValuePair.TenantId)}");
     }
 }

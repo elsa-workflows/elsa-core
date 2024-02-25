@@ -113,7 +113,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
     /// </summary>
-    public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowRequestHandler>();
+    public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
 
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
@@ -230,7 +230,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
-            .AddScoped<DispatchWorkflowRequestHandler>()
+            .AddScoped<DispatchWorkflowCommandHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
