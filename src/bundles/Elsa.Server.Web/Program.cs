@@ -25,7 +25,7 @@ using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
-const bool useDapper = false;
+const bool useDapper = true;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;

@@ -30,6 +30,6 @@ public class DapperFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped(DbConnectionProvider);
+        Services.AddSingleton(DbConnectionProvider);
     }
 }
