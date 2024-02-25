@@ -31,64 +31,65 @@ services
     .AddElsa(elsa =>
     {
         elsa
-          .UseSasTokens()
-          .UseIdentity(identity =>
-          {
-              identity.IdentityOptions = options => identitySection.Bind(options);
-              identity.TokenOptions = options => identityTokenSection.Bind(options);
-              identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
-              identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
-              identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
-          })
-          .UseDefaultAuthentication()
-          .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
-          .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
-          .UseWorkflowRuntime(runtime =>
-          {
-              runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-              runtime.UseMassTransitDispatcher();
-              if (useProtoActor)
-              {
-                  runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
-                  {
-                      return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                  });
-              }
-          })
-          .UseScheduling()
-          .UseJavaScript(options => options.AllowClrAccess = true)
-          .UseLiquid()
-          .UseCSharp()
-          .UsePython()
-          .UseHttp(http => http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options))
-          .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-          .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
-          .UseWorkflowsApi()
-          .UseRealTimeWorkflows()
-          .AddActivitiesFrom<Program>()
-          .AddWorkflowsFrom<Program>();
+            .UseSasTokens()
+            .UseIdentity(identity =>
+            {
+                identity.IdentityOptions = options => identitySection.Bind(options);
+                identity.TokenOptions = options => identityTokenSection.Bind(options);
+                identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+                identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+                identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
+            })
+            .UseDefaultAuthentication()
+            .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
+            .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+            .UseWorkflowRuntime(runtime =>
+            {
+                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                runtime.UseMassTransitDispatcher();
+                if (useProtoActor)
+                {
+                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+                    {
+                        return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                    });
+                }
+            })
+            .UseScheduling()
+            .UseJavaScript(options => options.AllowClrAccess = true)
+            .UseLiquid()
+            .UseCSharp()
+            .UsePython()
+            .UseHttp(http => http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options))
+            .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
+            .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
+            .UseWorkflowsApi()
+            .UseRealTimeWorkflows()
+            .AddActivitiesFrom<Program>()
+            .AddWorkflowsFrom<Program>();
 
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>
-                massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                 {
-                    bus.PrefetchCount = 4;
-                    bus.LockDuration = TimeSpan.FromMinutes(5);
-                    bus.MaxConcurrentCalls = 32;
-                    bus.MaxDeliveryCount = 8;
-                    // etc.
-                })
-            // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
-            //     {
-            //         bus.PrefetchCount = 4;
-            //         bus.Durable = true;
-            //         bus.AutoDelete = false;
-            //         bus.ConcurrentMessageLimit = 32;
-            //         // etc.
-            //     }))
+                    // massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    // {
+                    //     bus.PrefetchCount = 4;
+                    //     bus.LockDuration = TimeSpan.FromMinutes(5);
+                    //     bus.MaxConcurrentCalls = 32;
+                    //     bus.MaxDeliveryCount = 8;
+                    //     // etc.
+                    // });
+                    // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                    //     {
+                    //         bus.PrefetchCount = 4;
+                    //         bus.Durable = true;
+                    //         bus.AutoDelete = false;
+                    //         bus.ConcurrentMessageLimit = 32;
+                    //         // etc.
+                    //     }))
+                }
             );
-
         }
     });
 
