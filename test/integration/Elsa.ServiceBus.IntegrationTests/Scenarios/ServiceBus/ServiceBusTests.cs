@@ -10,6 +10,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -82,7 +83,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
         {
             VersionOptions = Common.Models.VersionOptions.Published
         };
@@ -151,7 +152,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -222,7 +223,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(SendOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -287,7 +288,7 @@ public class ServiceBusTest : IDisposable
 
         //Start Workflow
         var workflowDefinitionId = nameof(SendOneMessageWithCorrelationIdWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -333,7 +334,7 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         var workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 

@@ -1,4 +1,5 @@
 using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.Fluent;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Humanizer;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 
@@ -109,7 +111,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
-        var propName = order.KeySelector.GetPropertyName();
+        var propName = order.KeySelector.GetPropertyName().Camelize();
         var sortOrder = order.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
         sortDescriptor.Field(propName, f => f.Order(sortOrder));
 
@@ -139,12 +141,12 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         if (filter.WorkflowStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.Status).Query(filter.WorkflowStatus.ToString()!));
         if (filter.WorkflowSubStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.SubStatus).Query(filter.WorkflowSubStatus.ToString()!));
 
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-            descriptor = descriptor
+        if (string.IsNullOrWhiteSpace(filter.SearchTerm))
+            return descriptor.MatchAll();
+
+        return descriptor
                 .QueryString(c => c
                     .Query(filter.SearchTerm));
-
-        return descriptor;
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor) =>

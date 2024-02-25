@@ -8,6 +8,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,7 +67,7 @@ public static class ServiceProviderExtensions
         IDictionary<string, object>? input = default, 
         VersionOptions? versionOptions = default)
     {
-        var startWorkflowOptions = new StartWorkflowRuntimeOptions
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
         {
             Input = input,
             VersionOptions = versionOptions ?? VersionOptions.Published
@@ -78,7 +79,7 @@ public static class ServiceProviderExtensions
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
         while (result.Status != WorkflowStatus.Finished && bookmarks.TryPop(out var bookmark))
         {
-            var resumeOptions = new ResumeWorkflowRuntimeOptions { BookmarkId = bookmark.Id };
+            var resumeOptions = new ResumeWorkflowRuntimeParams { BookmarkId = bookmark.Id };
             var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
 
             foreach (var newBookmark in resumeResult!.Bookmarks)

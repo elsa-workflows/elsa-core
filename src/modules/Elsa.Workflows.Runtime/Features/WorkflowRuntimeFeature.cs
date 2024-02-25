@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
@@ -20,6 +21,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Services;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +59,11 @@ public class WorkflowRuntimeFeature : FeatureBase
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
         return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
     };
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
@@ -102,7 +109,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
-
+    
     /// <summary>
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
     /// </summary>
@@ -135,6 +142,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// Register all workflows in the specified assembly.
     /// </summary>
+    [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
         var workflowTypes = assembly.GetExportedTypes()
@@ -202,6 +210,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
+            .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(BookmarkStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
@@ -210,6 +219,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionContextStore)
             .AddSingleton(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
+            .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -225,6 +235,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
+            .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowsProvider>>>(sp => sp.GetServices<IWorkflowsProvider>)
@@ -249,7 +260,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
 
             // Domain handlers.
-            .AddScoped(DispatchWorkflowCommandHandler)
+            .AddCommandHandler<DispatchWorkflowCommandHandler>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexWorkflowTriggersHandler>()

@@ -1,7 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 // Setup service container.
@@ -20,10 +20,10 @@ await serviceProvider.PopulateRegistriesAsync();
 var workflowJson = await File.ReadAllTextAsync("HelloWorld.json");
 
 // Get a serializer to deserialize the workflow.
-var serializer = serviceProvider.GetRequiredService<IActivitySerializer>();
+var serializer = serviceProvider.GetRequiredService<IWorkflowSerializer>();
 
 // Deserialize the workflow.
-var workflow = serializer.Deserialize<Workflow>(workflowJson);
+var workflow = serializer.Deserialize(workflowJson);
 
 // Resolve a workflow runner to run the workflow.
 var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();

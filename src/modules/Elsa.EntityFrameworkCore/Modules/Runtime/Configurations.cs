@@ -1,3 +1,4 @@
+using Elsa.KeyValues.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -12,7 +13,8 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
-    IEntityTypeConfiguration<WorkflowInboxMessage>
+    IEntityTypeConfiguration<WorkflowInboxMessage>,
+    IEntityTypeConfiguration<SerializedKeyValuePair>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<StoredTrigger> builder)
@@ -114,5 +116,11 @@ public class Configurations :
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
         builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.TenantId)}");
+    }
+
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
+    {
+        builder.HasKey(x => x.Key);
     }
 }

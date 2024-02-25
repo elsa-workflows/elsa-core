@@ -1,5 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
 using Xunit;
 using Xunit.Abstractions;
 

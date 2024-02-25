@@ -1,6 +1,8 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Features;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +23,10 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.Configure<KeyValueFeature>(feature =>
+        {
+            feature.KeyValueStore = sp => sp.GetRequiredService<EFCoreKeyValueStore>();
+        });
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
@@ -41,5 +47,6 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
         AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxMessageStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
+        AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
     }
 }

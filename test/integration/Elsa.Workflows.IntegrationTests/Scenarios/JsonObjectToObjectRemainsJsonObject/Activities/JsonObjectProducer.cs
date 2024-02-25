@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using Elsa.Extensions;
-using Elsa.Workflows;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectToObjectRemainsJsonObject.Activities;
 

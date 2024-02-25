@@ -98,7 +98,10 @@ public class MassTransitFeature : FeatureBase
             .Select(x => new ConsumerTypeDefinition(workflowMessageConsumerType.MakeGenericType(x)));
 
         // Concatenate the manually registered consumers with the workflow message consumers.
-        var consumerTypeDefinitions = this.GetConsumers().Concat(workflowMessageConsumers).ToArray();
+        var consumerTypeDefinitions = this.GetConsumers()
+            // Temporary queues require implementation specific variables which will be handled in their respective projects.
+            .Where(c => c.IsTemporary == false)
+            .Concat(workflowMessageConsumers).ToArray();
 
         Services.AddMassTransit(bus =>
         {

@@ -16,6 +16,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Middleware;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
@@ -25,7 +26,7 @@ using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
-const bool useDapper = false;
+const bool useDapper = true;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
@@ -55,7 +56,13 @@ services
         if (useDapper)
             elsa.UseDapper(dapper =>
             {
-                dapper.UseMigrations();
+                dapper.UseMigrations(feature =>
+                {
+                    if (useSqlServer)
+                        feature.UseSqlServer();
+                    else
+                        feature.UseSqlite();
+                });
                 dapper.DbConnectionProvider = sp =>
                 {
                     if (useSqlServer)
@@ -109,8 +116,8 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-                
-                if(useZipCompression)
+
+                if (useZipCompression)
                     management.SetCompressionAlgorithm(nameof(Zstd));
             })
             .UseWorkflowRuntime(runtime =>
@@ -139,10 +146,11 @@ services
                     });
                 }
 
-                if(useMassTransit)
+                if (useMassTransit)
                 {
                     runtime.UseMassTransitDispatcher();
                 }
+
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
@@ -188,19 +196,29 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
             {
-                alterations.UseEntityFrameworkCore(ef =>
+                if (useMongoDb)
                 {
-                    if (useSqlServer)
-                        ef.UseSqlServer(sqlServerConnectionString);
-                    else
-                        ef.UseSqlite(sqliteConnectionString);
-                });
+                    // TODO: alterations.UseMongoDb();
+                }
+                else if (useDapper)
+                {
+                    // TODO: alterations.UseDapper();
+                }
+                else
+                {
+                    alterations.UseEntityFrameworkCore(ef =>
+                    {
+                        if (useSqlServer)
+                            ef.UseSqlServer(sqlServerConnectionString);
+                        else
+                            ef.UseSqlite(sqliteConnectionString);
+                    });
+                }
 
                 if (useMassTransit)
                 {
                     alterations.UseMassTransitDispatcher();
                 }
-                
             })
             .UseWorkflowContexts();
 
@@ -253,6 +271,11 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
+
+// app.UseSimulatedLatency(
+//     TimeSpan.FromMilliseconds(1000),
+//     TimeSpan.FromMilliseconds(3000)
+// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())

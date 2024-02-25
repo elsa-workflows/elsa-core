@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Memory;

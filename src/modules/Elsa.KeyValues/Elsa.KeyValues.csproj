@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides a store for holding key value records.
+        </Description>
+        <PackageTags>elsa module keyvalue</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+    </ItemGroup>
+</Project>

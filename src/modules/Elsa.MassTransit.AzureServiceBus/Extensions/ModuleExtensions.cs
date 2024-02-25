@@ -22,6 +22,7 @@ public static class ModuleExtensions
 
         void Configure(AzureServiceBusFeature bus)
         {
+            bus.AzureServiceBusOptions = options => options.ConnectionStringOrName = connectionString;
             bus.ConnectionString = connectionString;
             configure?.Invoke(bus);
         }
