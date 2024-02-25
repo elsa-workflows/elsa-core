@@ -202,10 +202,10 @@ public class WorkflowManagementFeature : FeatureBase
 
         Services.Configure<ManagementOptions>(options =>
         {
-            foreach (var activityType in ActivityTypes)
+            foreach (var activityType in ActivityTypes.Distinct())
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors) 
+            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type)) 
                 options.VariableDescriptors.Add(descriptor);
             
             options.CompressionAlgorithm = CompressionAlgorithm;
