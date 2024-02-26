@@ -1,4 +1,3 @@
-using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;

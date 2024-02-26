@@ -28,8 +28,8 @@ Elsa is a powerful workflow library that enables workflow execution within any .
 To give the Elsa Studio + Elsa Server a quick spin, you can run the following command to start the Elsa Docker container:
 
 ```shell
-docker pull elsaworkflows/elsa-v3:latest
-docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -p 13000:8080 elsaworkflows/elsa-v3:latest
+docker pull elsaworkflows/elsa-server-and-studio-v3:latest
+docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
 ```
 
 > This Docker image is based on a reference ASP.NET application that hosts both the workflow server and designer and is not intended for production use.

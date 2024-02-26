@@ -21,6 +21,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
     /// Constructor.
@@ -51,13 +52,10 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
-            foreach (var result in results)
-            {
-                await AddAsync(result, cancellationToken);
-            }
+            foreach (var result in results) await AddAsync(result, cancellationToken);
         }
     }
-    
+
     /// <inheritdoc />
     public async Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
@@ -72,6 +70,20 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     private async Task AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+
+        try
+        {
+            await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    private async Task AddOrUpdateCoreAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         var workflow = materializedWorkflow.Workflow;
         var definitionId = workflow.Identity.DefinitionId;
@@ -89,25 +101,29 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             DefinitionId = definitionId,
             VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version)
         };
-        
+
         var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
 
         // Setup a list to collect all workflow definitions to be persisted.
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
-        
-        if(existingDefinitionVersion != null)
+
+        if (existingDefinitionVersion != null)
             workflowDefinitionsToSave.Add(existingDefinitionVersion);
-        
+
         // If the workflow being added is configured to be the latest version, then we need to reset the current latest version.
         if (workflow.Publication.IsLatest)
         {
             // Reset current latest definitions.
-            var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
+            var filter = new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = VersionOptions.Latest
+            };
             var latestWorkflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken)).ToList();
 
             // If the latest definitions contains definitions with the same ID then we need to replace them with the latest workflow definitions.
             SyncExistingCopies(latestWorkflowDefinitions, workflowDefinitionsToSave);
-            
+
             foreach (var latestWorkflowDefinition in latestWorkflowDefinitions)
             {
                 latestWorkflowDefinition.IsLatest = false;
@@ -119,12 +135,16 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         if (workflow.Publication.IsPublished)
         {
             // Reset current published definitions.
-            var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published };
+            var filter = new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId,
+                VersionOptions = VersionOptions.Published
+            };
             var publishedWorkflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken)).ToList();
 
             // If the published workflow definitions contains definitions with the same ID as definitions in the latest workflow definitions, then we need to replace them with the latest workflow definitions.
             SyncExistingCopies(publishedWorkflowDefinitions, workflowDefinitionsToSave);
-            
+
             foreach (var publishedWorkflowDefinition in publishedWorkflowDefinitions)
             {
                 publishedWorkflowDefinition.IsPublished = false;
@@ -138,7 +158,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             Id = workflow.Identity.Id,
             Version = workflow.Identity.Version
         };
-        
+
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
         workflowDefinition.ToolVersion = workflow.WorkflowMetadata.ToolVersion;
@@ -171,6 +191,6 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var ids = secondary.Select(x => x.Id).Distinct().ToList();
         var latestWorkflowDefinitions = primary.Where(x => ids.Contains(x.Id)).ToList();
         primary.RemoveAll(x => latestWorkflowDefinitions.Contains(x));
-        primary.AddRange(secondary.Where(x => ids.Contains(x.Id)));   
+        primary.AddRange(secondary.Where(x => ids.Contains(x.Id)));
     }
 }

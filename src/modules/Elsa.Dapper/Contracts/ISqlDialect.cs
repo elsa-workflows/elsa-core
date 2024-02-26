@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Common.Models;
 
 namespace Elsa.Dapper.Contracts;
 
@@ -95,6 +96,13 @@ public interface ISqlDialect
     /// </summary>
     /// <param name="count">The number of records to take.</param>
     string Take(int count);
+
+    /// <summary>
+    /// Adds pagination to a SQL query.
+    /// </summary>
+    /// <param name="pageArgs">The pagination arguments.</param>
+    /// <returns>The modified SQL query with pagination.</returns>
+    string Page(PageArgs pageArgs);
 
     /// <summary>
     /// Builds an INSERT query.

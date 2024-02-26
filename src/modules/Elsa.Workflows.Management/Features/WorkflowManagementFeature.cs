@@ -1,6 +1,6 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
-using System.IO.Compression;
 using System.Reflection;
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
@@ -63,8 +63,10 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
+        new(typeof(int), PrimitivesCategory, "A 32 bit integer."),
         new(typeof(long), PrimitivesCategory, "A 64 bit integer."),
-        new(typeof(double), PrimitivesCategory, "A real number with double precision."),
+        new(typeof(float), PrimitivesCategory, "A 32 bit floating point number."),
+        new(typeof(double), PrimitivesCategory, "A 64 bit floating point number."),
         new(typeof(decimal), PrimitivesCategory, "A decimal number."),
         new(typeof(Guid), PrimitivesCategory, "Represents a Globally Unique Identifier."),
         new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
@@ -92,6 +94,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
     /// </summary>
+    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
@@ -168,6 +171,7 @@ public class WorkflowManagementFeature : FeatureBase
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
     {
         AddActivitiesFrom<WorkflowManagementFeature>();
@@ -209,10 +213,10 @@ public class WorkflowManagementFeature : FeatureBase
 
         Services.Configure<ManagementOptions>(options =>
         {
-            foreach (var activityType in ActivityTypes)
+            foreach (var activityType in ActivityTypes.Distinct())
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors) 
+            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type)) 
                 options.VariableDescriptors.Add(descriptor);
             
             options.CompressionAlgorithm = CompressionAlgorithm;

@@ -17,9 +17,7 @@ public class DapperFeature : FeatureBase
     public DapperFeature(IModule module) : base(module)
     {
         // See: https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/dapper-limitations#data-types
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
         SqlMapper.AddTypeHandler(new GuidHandler());
-        SqlMapper.AddTypeHandler(new TimeSpanHandler());
     }
     
     /// <summary>
@@ -30,6 +28,6 @@ public class DapperFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped(DbConnectionProvider);
+        Services.AddSingleton(DbConnectionProvider);
     }
 }

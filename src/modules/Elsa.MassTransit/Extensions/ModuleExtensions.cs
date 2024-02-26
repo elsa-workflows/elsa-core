@@ -18,20 +18,20 @@ public static class ModuleExtensions
     /// <summary>
     /// Registers the specified consumer with MassTransit.
     /// </summary>
-    public static IModule AddMassTransitConsumer<T>(this IModule module) where T : IConsumer
+    public static IModule AddMassTransitConsumer<T>(this IModule module, string? name = null, bool isTemporary = false) where T : IConsumer
     {
-        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>());
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T>(name, isTemporary));
         return module;
     }
     
     /// <summary>
     /// Registers the specified consumer and consumer definition with MassTransit.
     /// </summary>
-    public static IModule AddMassTransitConsumer<T, TDefinition>(this IModule module) 
+    public static IModule AddMassTransitConsumer<T, TDefinition>(this IModule module, string? name = null, bool isTemporary = false) 
         where T : IConsumer 
         where TDefinition : IConsumerDefinition
     {
-        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T, TDefinition>());
+        module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T, TDefinition>(name, isTemporary));
         return module;
     }
     

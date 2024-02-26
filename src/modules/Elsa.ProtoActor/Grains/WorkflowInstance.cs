@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -110,7 +111,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var startWorkflowOptions = new StartWorkflowHostOptions
+        var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
             CorrelationId = correlationId,
@@ -161,7 +162,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             _input = input;
         }
 
-        var startWorkflowOptions = new StartWorkflowHostOptions
+        var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
             CorrelationId = correlationId,
@@ -203,7 +204,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     private void StatusUpdated(WorkflowExecutionContext context)
     {
-        _ = Task.Run(async () => await Update(context));
+        if (context.Status == WorkflowStatus.Finished)
+        {
+            _cancellationTokenSources.Clear();
+            return;
+        }
+
+        if (context.SubStatus == WorkflowSubStatus.Cancelled)
+            _ = Task.Run(async () => await Update(context));
     }
 
     private async Task Update(WorkflowExecutionContext context)
@@ -252,7 +260,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _cancellationTokenSources.Add(cancellationTokenSource);
         cancellationToken = cancellationTokenSource.Token;
 
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostOptions
+        var resumeWorkflowHostOptions = new ResumeWorkflowHostParams
         {
             CorrelationId = correlationId,
             BookmarkId = bookmarkId,
@@ -304,16 +312,18 @@ internal class WorkflowInstance : WorkflowInstanceBase
     /// <inheritdoc />
     public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
 
-    public override async Task Cancel()
+    public override async Task<WorkflowInstanceCancellationResponse> Cancel()
     {
-        if (_workflowState.Status != WorkflowStatus.Finished)
-        {
-            _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
-            _workflowState.Status = WorkflowStatus.Finished;
-        }
+        if (_workflowState.Status == WorkflowStatus.Finished)
+            return new WorkflowInstanceCancellationResponse{Result = false};
+        
+        _workflowState.SubStatus = WorkflowSubStatus.Cancelled;
+        _workflowState.Status = WorkflowStatus.Finished;
 
         foreach(var source in _cancellationTokenSources)
             source.Cancel();
+
+        return new WorkflowInstanceCancellationResponse{Result = true};
     }
     
     /// <inheritdoc />

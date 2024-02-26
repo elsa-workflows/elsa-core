@@ -24,6 +24,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
@@ -155,7 +156,7 @@ public class WorkflowsMiddleware
     {
         var httpBookmarkProcessor = serviceProvider.GetRequiredService<IHttpBookmarkProcessor>();
         var systemCancellationToken = cancellationTokens.SystemCancellationToken;
-        var executionOptions = new ExecuteWorkflowOptions
+        var executionOptions = new ExecuteWorkflowParams
         {
             Input = input,
             CancellationTokens = cancellationTokens

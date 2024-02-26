@@ -116,6 +116,20 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("BookmarkId")

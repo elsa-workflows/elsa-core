@@ -1,5 +1,4 @@
 using Elsa.Testing.Shared;
-using Elsa.Workflows;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.IntegrationTests.Scenarios.Incidents.Statics;
 using Elsa.Workflows.IntegrationTests.Scenarios.Incidents.Workflows;

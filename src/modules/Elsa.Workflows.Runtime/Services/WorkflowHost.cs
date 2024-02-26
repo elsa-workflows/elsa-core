@@ -5,6 +5,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,7 +46,7 @@ public class WorkflowHost : IWorkflowHost
     public WorkflowState WorkflowState { get; set; }
 
     /// <inheritdoc />
-    public async Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<bool> CanStartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
     {
         var strategyType = Workflow.Options.ActivationStrategyType;
 
@@ -59,19 +60,19 @@ public class WorkflowHost : IWorkflowHost
         if (strategy == null)
             return true;
 
-        var correlationId = options?.CorrelationId;
+        var correlationId = @params?.CorrelationId;
         var strategyContext = new WorkflowInstantiationStrategyContext(Workflow, correlationId, cancellationToken);
         return await strategy.GetAllowActivationAsync(strategyContext);
     }
 
     /// <inheritdoc />
-    public async Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
     {
-        var correlationId = options?.CorrelationId;
-        var instanceId = options?.InstanceId ?? _identityGenerator.GenerateId();
+        var correlationId = @params?.CorrelationId;
+        var instanceId = @params?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
-        var input = options?.Input;
-        var properties = options?.Properties;
+        var input = @params?.Input;
+        var properties = @params?.Properties;
 
         var runOptions = new RunWorkflowOptions
         {
@@ -79,9 +80,9 @@ public class WorkflowHost : IWorkflowHost
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
-            TriggerActivityId = options?.TriggerActivityId,
-            StatusUpdatedCallback = options?.StatusUpdatedCallback,
-            CancellationTokens = options?.CancellationTokens ?? cancellationToken
+            TriggerActivityId = @params?.TriggerActivityId,
+            StatusUpdatedCallback = @params?.StatusUpdatedCallback,
+            CancellationTokens = @params?.CancellationTokens ?? cancellationToken
         };
 
         using var scope = _serviceScopeFactory.CreateScope();
@@ -99,7 +100,7 @@ public class WorkflowHost : IWorkflowHost
     /// <summary>
     /// Resumes the <see cref="Workflow"/>.
     /// </summary>
-    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
     {
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
 
@@ -110,20 +111,20 @@ public class WorkflowHost : IWorkflowHost
         }
 
         var instanceId = WorkflowState.Id;
-        var input = options?.Input;
+        var input = @params?.Input;
 
         var runOptions = new RunWorkflowOptions
         {
             WorkflowInstanceId = instanceId,
-            CorrelationId = options?.CorrelationId,
-            BookmarkId = options?.BookmarkId,
-            ActivityId = options?.ActivityId,
-            ActivityNodeId = options?.ActivityNodeId,
-            ActivityInstanceId = options?.ActivityInstanceId,
-            ActivityHash = options?.ActivityHash,
+            CorrelationId = @params?.CorrelationId,
+            BookmarkId = @params?.BookmarkId,
+            ActivityId = @params?.ActivityId,
+            ActivityNodeId = @params?.ActivityNodeId,
+            ActivityInstanceId = @params?.ActivityInstanceId,
+            ActivityHash = @params?.ActivityHash,
             Input = input,
-            Properties = options?.Properties,
-            CancellationTokens = options?.CancellationTokens ?? cancellationToken
+            Properties = @params?.Properties,
+            CancellationTokens = @params?.CancellationTokens ?? cancellationToken
         };
 
         using var scope = _serviceScopeFactory.CreateScope();

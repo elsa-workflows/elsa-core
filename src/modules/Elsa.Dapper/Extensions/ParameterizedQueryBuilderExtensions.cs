@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
@@ -75,11 +76,12 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
+    /// <param name="primaryKey">The primary key.</param>
     /// <param name="innerQuery">The inner query.</param>
-    public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, ParameterizedQuery innerQuery)
+    public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, string primaryKey, ParameterizedQuery innerQuery)
     {
         query.Sql.AppendLine(query.Dialect.Delete(table));
-        query.Sql.AppendLine("and rowid in (");
+        query.Sql.AppendLine($"and {primaryKey} in (");
         query.Sql.AppendLine(innerQuery.Sql.ToString());
         query.Sql.AppendLine(")");
         return query;
@@ -200,6 +202,18 @@ public static class ParameterizedQueryBuilderExtensions
         return query;
     }
 
+    public static ParameterizedQuery StartsWith(this ParameterizedQuery query, string field, bool startsWith, string? value)
+    {
+        if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
+            return query;
+
+        var searchTermLike = $"{value}%";
+        query.Sql.AppendLine($"and {field} like @SearchTermLike");
+        query.Parameters.Add($"@{field}", searchTermLike);
+
+        return query;
+    }
+
     /// <summary>
     /// Appends an AND clause to the query if the value is not null.
     /// </summary>
@@ -312,13 +326,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="pageArgs">The page arguments.</param>
     public static ParameterizedQuery Page(this ParameterizedQuery query, PageArgs pageArgs)
     {
-        // Attention: the order is important here for SQLite (LIMIT must come before OFFSET).
-        if (pageArgs.Limit != null)
-            query.Take(pageArgs.Limit.Value);
-
-        if (pageArgs.Offset != null)
-            query.Skip(pageArgs.Offset.Value);
-
+        query.Sql.AppendLine(query.Dialect.Page(pageArgs));
         return query;
     }
 
@@ -338,16 +346,20 @@ public static class ParameterizedQueryBuilderExtensions
             .ToArray();
 
         getParameterName ??= x => x;
-        
+
         query.Sql.AppendLine(query.Dialect.Upsert(table, primaryKeyField, fields, getParameterName));
-        
+
         var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
         query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
-        
+
+        var recordType = record.GetType();
         foreach (var field in fields)
         {
-            var value = record.GetType().GetProperty(field)?.GetValue(record);
-            query.Parameters.Add($"@{getParameterName(field)}", value);
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : default;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
         }
 
         return query;
@@ -376,5 +388,11 @@ public static class ParameterizedQueryBuilderExtensions
         }
 
         return query;
+    }
+
+    private static DbType? GetDbType(Type type)
+    {
+        if (type == typeof(byte[])) return DbType.Binary;
+        return null;
     }
 }

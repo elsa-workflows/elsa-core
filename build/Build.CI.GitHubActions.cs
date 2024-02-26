@@ -4,7 +4,9 @@ using Nuke.Components;
 [GitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        OnPullRequestBranches = ["main"],
+        On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest, GitHubActionsTrigger.WorkflowDispatch],
+        OnPushBranches = ["main", "feature/*", "patch/*", "fix/*", "enhancement/*"],
+        OnPullRequestBranches = ["main", "feature/*", "patch/*", "fix/*", "enhancement/*"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test), nameof(IPack.Pack)],
