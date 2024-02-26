@@ -245,6 +245,11 @@ public class Store<T> where T : notnull
     {
         var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
         filter(query);
+        
+        // If there are no conditions, we don't want to delete all records.
+        if (!query.Parameters.ParameterNames.Any())
+            return 0;
+        
         using var connection = _dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
     }
@@ -262,6 +267,11 @@ public class Store<T> where T : notnull
     {
         var selectQuery = _dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
         filter(selectQuery);
+        
+        // If there are no conditions, we don't want to delete all records.
+        if (!selectQuery.Parameters.ParameterNames.Any())
+            return 0;
+        
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, selectQuery);
