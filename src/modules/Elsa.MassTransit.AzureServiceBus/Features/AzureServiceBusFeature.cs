@@ -4,6 +4,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
+using Elsa.Hosting.Management.Features;
 using Elsa.MassTransit.AzureServiceBus.Handlers;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
@@ -22,6 +23,7 @@ namespace Elsa.MassTransit.AzureServiceBus.Features;
 /// Configures MassTransit to use the Azure Service Bus transport.
 /// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
 [DependsOn(typeof(MassTransitFeature))]
+[DependsOn(typeof(InstanceManagementFeature))]
 public class AzureServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />

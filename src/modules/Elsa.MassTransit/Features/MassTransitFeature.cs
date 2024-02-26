@@ -3,6 +3,7 @@ using System.Reflection;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
