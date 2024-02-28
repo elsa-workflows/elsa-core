@@ -1,9 +1,13 @@
+using Elsa.Alterations.Activities;
+using Elsa.Alterations.Bookmarks;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Handlers;
@@ -14,6 +18,7 @@ namespace Elsa.Alterations.Handlers;
 [UsedImplicitly]
 public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobCompleted>
 {
+    private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly IAlterationPlanStore _alterationPlanStore;
     private readonly IAlterationJobStore _alterationJobStore;
     private readonly ISystemClock _systemClock;
@@ -21,8 +26,9 @@ public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobC
     /// <summary>
     /// Initializes a new instance of the <see cref="AlterationJobCompletedHandler"/> class.
     /// </summary>
-    public AlterationJobCompletedHandler(IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore, ISystemClock systemClock)
+    public AlterationJobCompletedHandler(IWorkflowDispatcher workflowDispatcher, IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore, ISystemClock systemClock)
     {
+        _workflowDispatcher = workflowDispatcher;
         _alterationPlanStore = alterationPlanStore;
         _alterationJobStore = alterationJobStore;
         _systemClock = systemClock;
@@ -53,5 +59,10 @@ public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobC
         plan.CompletedAt = _systemClock.UtcNow;
         
         await _alterationPlanStore.SaveAsync(plan, cancellationToken);
+        
+        // Trigger any workflow instances that are waiting for the plan to complete.
+        var bookmarkPayload = new AlterationPlanCompletedPayload(planId);
+        var triggerRequest = new DispatchTriggerWorkflowsRequest(nameof(AlterationPlanCompleted), bookmarkPayload);
+        await _workflowDispatcher.DispatchAsync(triggerRequest, cancellationToken);
     }
 }

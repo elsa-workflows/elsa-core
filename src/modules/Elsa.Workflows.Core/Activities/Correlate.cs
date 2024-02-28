@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -16,6 +17,18 @@ public class Correlate : CodeActivity
     /// <inheritdoc />
     public Correlate([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
+    }
+    
+    /// <inheritdoc />
+    public Correlate(string correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+        CorrelationId = new Input<string>(correlationId);
+    }
+    
+    /// <inheritdoc />
+    public Correlate(Variable<string> correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+        CorrelationId = new Input<string>(correlationId);
     }
     
     /// <summary>

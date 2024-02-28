@@ -1,12 +1,13 @@
 using System.Linq.Expressions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.MongoDb.Helpers;
 
 internal class ExpressionHelpers
 {
-    public static readonly Expression<Func<WorkflowDefinition, WorkflowDefinitionSummary>> WorkflowDefinitionSummary = 
+    public static readonly Expression<Func<WorkflowDefinition, WorkflowDefinitionSummary>> WorkflowDefinitionSummary =
         workflowDefinition => new WorkflowDefinitionSummary
         {
             Id = workflowDefinition.Id,
@@ -19,8 +20,8 @@ internal class ExpressionHelpers
             MaterializerName = workflowDefinition.MaterializerName,
             CreatedAt = workflowDefinition.CreatedAt
         };
-    
-    public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> WorkflowInstanceSummary = 
+
+    public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceSummary>> WorkflowInstanceSummary =
         workflowInstance => new WorkflowInstanceSummary
         {
             Id = workflowInstance.Id,
@@ -34,5 +35,24 @@ internal class ExpressionHelpers
             CreatedAt = workflowInstance.CreatedAt,
             UpdatedAt = workflowInstance.UpdatedAt,
             FinishedAt = workflowInstance.FinishedAt
+        };
+
+    public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceId>> WorkflowInstanceId = workflowInstance => new WorkflowInstanceId
+    {
+        Id = workflowInstance.Id
+    };
+    
+    public static readonly Expression<Func<ActivityExecutionRecord, ActivityExecutionRecordSummary>> ActivityExecutionRecordSummary =
+        workflowInstance => new ActivityExecutionRecordSummary
+        {
+            Id = workflowInstance.Id,
+            Status = workflowInstance.Status,
+            ActivityId = workflowInstance.ActivityId,
+            ActivityNodeId = workflowInstance.ActivityNodeId,
+            ActivityType = workflowInstance.ActivityType,
+            ActivityTypeVersion = workflowInstance.ActivityTypeVersion,
+            ActivityName = workflowInstance.ActivityName,
+            StartedAt = workflowInstance.StartedAt,
+            HasBookmarks = workflowInstance.HasBookmarks
         };
 }

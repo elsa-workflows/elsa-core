@@ -76,6 +76,27 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId( Filter(d, filter)), cancellationToken);
+        return results.Select(x => x.Id).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), pageArgs, cancellationToken);
+        return new(results.Items.Select(x => x.Id).ToList(), results.TotalCount);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId(Sort(Filter(d, filter), order)), pageArgs, cancellationToken);
+        return new(results.Items.Select(x => x.Id).ToList(), results.TotalCount);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var results = await _store.SearchAsync(d => Summarize(Filter(d, filter)), cancellationToken);
@@ -157,4 +178,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.DefinitionVersionId),
             field => field.Field(f => f.UpdatedAt)
         );
+    
+    private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
+        descriptor.Fields(field => field.Field(f => f.Id));
 }

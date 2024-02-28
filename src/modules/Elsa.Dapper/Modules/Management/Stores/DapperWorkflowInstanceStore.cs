@@ -107,6 +107,31 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var items = await _store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), cancellationToken);
+        return items.Select(x => x.Id).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        return await FindManyIdsAsync(
+            filter,
+            pageArgs,
+            new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var page = await _store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var ids = page.Items.Select(x => x.Id).ToList();
+        return Page.Of(ids, page.TotalCount);
+    }
+
+    /// <inheritdoc />
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = await MapAsync(instance);

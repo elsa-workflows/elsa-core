@@ -58,18 +58,40 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+    public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+    }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
+    public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
+    }
 
     /// <inheritdoc />
-    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.CountAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), cancellationToken);
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(query => Filter(query, filter), ActivityExecutionRecordSummary.FromRecordExpression(), cancellationToken).ToList().AsEnumerable();
+    }
 
     /// <inheritdoc />
-    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(queryable => EFCoreActivityExecutionStore.Filter(queryable, filter), cancellationToken);
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(query => Filter(query, filter), ActivityExecutionRecordSummary.FromRecordExpression(), cancellationToken).ToList().AsEnumerable();
+    }
+
+    /// <inheritdoc />
+    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(queryable => Filter(queryable, filter), cancellationToken);
+    }
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {

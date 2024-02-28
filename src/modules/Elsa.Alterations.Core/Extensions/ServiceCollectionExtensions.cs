@@ -1,7 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Options;
 using Elsa.Alterations.Core.Serialization;
-using Elsa.Alterations.Core.Services;
 using Elsa.Common.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,9 +17,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAlterationsCore(this IServiceCollection services)
     {
         services.Configure<AlterationOptions>(_ => { }); // Ensure that the options are configured even if the application doesn't do so.
-        services.AddScoped<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
-        services.AddScoped<IAlterationJobRunner, DefaultAlterationJobRunner>();
-        services.AddScoped<IAlterationRunner, DefaultAlterationRunner>();
         services.AddScoped<IAlteredWorkflowDispatcher, DefaultAlteredWorkflowDispatcher>();
         services.AddScoped<IAlterationSerializer, AlterationSerializer>();
         services.AddScoped<ISerializationOptionsConfigurator, AlterationSerializationOptionConfigurator>();

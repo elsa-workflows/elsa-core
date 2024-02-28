@@ -1,13 +1,15 @@
-using Elsa.Common.Entities;
-using Elsa.Workflows.State;
-
-namespace Elsa.Workflows.Runtime.Entities;
+namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>
-/// Represents a single activity execution of an activity instance.
+/// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
-public class ActivityExecutionRecord : Entity
+public class ActivityExecutionSummaryRecord
 {
+    /// <summary>
+    /// Gets or sets the ID of the activity execution record.
+    /// </summary>
+    public string Id { get; set; } = default!;
+    
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
@@ -37,41 +39,21 @@ public class ActivityExecutionRecord : Entity
     /// The name of the activity.
     /// </summary>
     public string? ActivityName { get; set; }
-    
-    /// <summary>
-    /// The state of the activity at the time this record is created or last updated.
-    /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
-    
-    /// <summary>
-    /// Any additional payload associated with the log record.
-    /// </summary>
-    public IDictionary<string, object>? Payload { get; set; }
-    
-    /// <summary>
-    /// Any outputs provided by the activity.
-    /// </summary>
-    public IDictionary<string, object?>? Outputs { get; set; }
-
-    /// <summary>
-    /// Gets or sets the exception that occurred during the activity execution.
-    /// </summary>
-    public ExceptionState? Exception { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = default!;
+    public DateTimeOffset StartedAt { get; set; }
 
     /// <summary>
     /// Gets or sets whether the activity has any bookmarks.
     /// </summary>
     public bool HasBookmarks { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the status of the activity.
     /// </summary>
-    public ActivityStatus Status { get; set; }
+    public string Status { get; set; } = default!;
     
     /// <summary>
     /// Gets or sets the time at which the activity execution completed.

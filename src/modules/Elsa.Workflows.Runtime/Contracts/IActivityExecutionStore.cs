@@ -22,15 +22,15 @@ public interface IActivityExecutionStore
     /// <param name="records">The activity execution records.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     Task SaveManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
-    /// Finds the activity execution records matching the specified filter.
+    /// Finds an activity execution record matching the specified filter.
     /// </summary>
-    /// <param name="filter">The filter to use when finding the activity execution record.</param>
+    /// <param name="filter">The filter to apply when searching for the activity execution record.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>The activity execution record, if found.</returns>
+    /// <returns>The activity execution record that matches the filter, or null if no match is found.</returns>
     Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Finds all activity execution records matching the specified filter.
     /// </summary>
@@ -48,6 +48,24 @@ public interface IActivityExecutionStore
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A collection of activity execution records.</returns>
     Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds all activity execution record matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter to use when finding activity execution records.</param>
+    /// <param name="order">The order to use when finding activity execution records.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <typeparam name="TOrderBy">The type of the order by field.</typeparam>
+    /// <returns>A collection of activity execution record summaries.</returns>
+    Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Finds all activity execution records matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter to use when finding activity execution records.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A collection of activity execution record summaries.</returns>
+    Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Counts all activity execution records matching the specified filter.

@@ -5,8 +5,13 @@ namespace Elsa.Alterations.Core.Models;
 /// <summary>
 /// Represents a new alteration plan.
 /// </summary>
-public class NewAlterationPlan
+public class AlterationPlanParams
 {
+    /// <summary>
+    /// The unique identifier for the alteration plan. If not specified, a new ID will be generated.
+    /// </summary>
+    public string? Id { get; set; }
+
     /// <summary>
     /// The alterations to be applied.
     /// </summary>
@@ -15,5 +20,5 @@ public class NewAlterationPlan
     /// <summary>
     /// The IDs of the workflow instances that this plan applies to.
     /// </summary>
-    public ICollection<string> WorkflowInstanceIds { get; set; } = new List<string>();
+    public AlterationWorkflowInstanceFilter AlterationWorkflowInstanceFilter { get; set; } = new();
 }
