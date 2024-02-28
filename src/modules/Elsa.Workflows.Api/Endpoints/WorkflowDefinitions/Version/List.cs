@@ -1,4 +1,5 @@
-﻿using Elsa.Common.Entities;
+﻿using Elsa.Abstractions;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
 [PublicAPI]
-internal class ListVersions : EndpointWithoutRequest
+internal class ListVersions : ElsaEndpointWithoutRequest
 {
     private readonly IWorkflowDefinitionStore _store;
     
@@ -21,7 +22,7 @@ internal class ListVersions : EndpointWithoutRequest
     public override void Configure()
     {
         Get("workflow-definitions/{definitionId}/versions");
-        AllowAnonymous();
+        ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
