@@ -95,14 +95,15 @@
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.extensibility.core" Version="2.6.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.4" />
-	<PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.0" />
-	<PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.MySql" Version="0.5.0" />
-	<PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.0" />
-	<PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.0" />
-	<PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.0" />
+    <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.0" />
+    <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.MySql" Version="0.5.0" />
+    <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.0" />
+    <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.0" />
+    <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
+    <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="7.16.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="7.0.14" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.14" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.14" />
@@ -134,6 +135,7 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.0" />
+    <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="8.16.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" />
@@ -160,7 +162,7 @@
     <PackageVersion Include="Npgsql" Version="8.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
     <PackageVersion Include="Polly" Version="8.2.0" />
-    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0-beta.2" />
+    <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
     <PackageVersion Include="System.Text.Json" Version="8.0.0" />
   </ItemGroup>
 </Project>
