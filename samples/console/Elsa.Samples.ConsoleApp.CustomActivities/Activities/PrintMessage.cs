@@ -2,8 +2,10 @@ using Elsa.Workflows;
 
 public class PrintMessage : CodeActivity
 {
-    public void Execute(ActivityExecutionContext context)
+    public string Message { get; set; }
+    
+    protected override void Execute(ActivityExecutionContext context)
     {
-        Console.WriteLine("Hello world!");
+        Console.WriteLine(Message);
     }
 }
