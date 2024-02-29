@@ -4,6 +4,7 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Handlers;
@@ -12,7 +13,7 @@ namespace Elsa.Workflows.Management.Handlers;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistryHandler :
+public class RefreshActivityRegistryHandler(IActivityRegistryPopulator activityRegistryPopulator, IWorkflowDefinitionDispatcher workflowDefinitionDispatcher) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
@@ -21,18 +22,9 @@ public class RefreshActivityRegistryHandler :
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>
 {
-    private readonly IActivityRegistryPopulator _activityRegistryPopulator;
-    
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RefreshActivityRegistryHandler"/> class.
-    /// </summary>
-    public RefreshActivityRegistryHandler(IActivityRegistryPopulator activityRegistryPopulator) => _activityRegistryPopulator = activityRegistryPopulator;
-    
+
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
-    {
-        await RefreshAsync(cancellationToken);
-    }
+    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
@@ -52,5 +44,9 @@ public class RefreshActivityRegistryHandler :
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsDeleted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
     
-    private async Task RefreshAsync(CancellationToken cancellationToken) => await _activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider), cancellationToken);
+    private async Task RefreshAsync(CancellationToken cancellationToken)
+    {
+        await workflowDefinitionDispatcher.DispatchAsync(new RefreshWorkflowDefinitionsRequest(), cancellationToken);
+        await activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider), cancellationToken);
+    }
 }

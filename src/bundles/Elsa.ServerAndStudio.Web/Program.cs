@@ -5,6 +5,7 @@ using Elsa.MassTransit.Options;
 using Elsa.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.Hosting.Management.Options;
+using Elsa.Workflows.Management.MassTransit.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
@@ -42,7 +43,16 @@ services
             })
             .UseDefaultAuthentication()
             .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
-            .UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+            .UseWorkflowManagement(management =>
+            {
+                if (useMassTransit)
+                {
+                    management.UseMassTransitDispatcher();
+                }
+                
+                management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                
+            })
             .UseWorkflowRuntime(runtime =>
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
@@ -59,7 +69,7 @@ services
             .UseJavaScript(options => options.AllowClrAccess = true)
             .UseLiquid()
             .UseCSharp()
-            .UsePython()
+            // .UsePython()
             .UseHttp(http => http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options))
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))

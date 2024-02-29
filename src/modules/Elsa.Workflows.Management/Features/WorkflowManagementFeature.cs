@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -15,6 +14,7 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -50,15 +50,19 @@ public class WorkflowManagementFeature : FeatureBase
     }
 
     /// <summary>
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; } = sp => sp.GetRequiredService<NoOpWorkflowDefinitionDispatcher>();
+    
+    /// <summary>
     /// A set of activity types to make available to the system. 
     /// </summary>
-    public HashSet<Type> ActivityTypes { get; } = new();
+    public HashSet<Type> ActivityTypes { get; } = [];
 
     /// <summary>
     /// A set of variable types to make available to the system. 
     /// </summary>
-    public HashSet<VariableDescriptor> VariableDescriptors { get; } = new()
-    {
+    public HashSet<VariableDescriptor> VariableDescriptors { get; } =
+    [
         new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
@@ -69,12 +73,14 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(decimal), PrimitivesCategory, "A decimal number."),
         new(typeof(Guid), PrimitivesCategory, "Represents a Globally Unique Identifier."),
         new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
-        new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
+        new(typeof(DateTimeOffset), PrimitivesCategory,
+            "A value type that consists of a DateTime and a time zone offset."),
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
-    };
+        new(typeof(ExpandoObject), DynamicCategory,
+            "A dictionary that can be typed as dynamic to access members using dot notation.")
+    ];
 
     /// <summary>
     /// Adds the specified activity type to the system.
@@ -196,6 +202,8 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ICompressionCodec, None>()
             .AddSingleton<ICompressionCodec, GZip>()
             .AddSingleton<ICompressionCodec, Zstd>()
+            .AddScoped<NoOpWorkflowDefinitionDispatcher>()
+            .AddScoped(WorkflowDefinitionDispatcherFactory)
             ;
 
         Services.AddNotificationHandlersFrom(GetType());
