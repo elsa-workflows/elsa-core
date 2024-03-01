@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20240229204957_V3_1")]
+    [Migration("20240301161118_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
