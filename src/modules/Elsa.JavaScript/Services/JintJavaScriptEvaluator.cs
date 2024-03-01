@@ -12,6 +12,7 @@ using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
 using Jint.Runtime.Interop;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
@@ -25,14 +26,16 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly INotificationSender _mediator;
     private readonly JintOptions _jintOptions;
+    private readonly IConfiguration _configuration;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(INotificationSender mediator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions)
     {
         _mediator = mediator;
         _jintOptions = scriptOptions.Value;
+        _configuration = configuration;
     }
 
     /// <inheritdoc />
@@ -110,6 +113,10 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Deprecated, use newShortGuid instead.
         engine.SetValue("getShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
+
+        // Create configuration value accessor
+        if (_jintOptions.AllowConfigurationAccess)
+            engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
