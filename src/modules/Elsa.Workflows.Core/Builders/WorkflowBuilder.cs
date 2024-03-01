@@ -123,6 +123,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         return WithInput(inputDefinition =>
         {
             inputDefinition.Name = name;
+            inputDefinition.Type = typeof(T);
 
             if (description != null)
                 inputDefinition.Description = description;
