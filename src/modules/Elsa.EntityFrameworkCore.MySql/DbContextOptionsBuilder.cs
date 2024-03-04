@@ -18,7 +18,7 @@ public static class DbContextOptionsBuilderExtensions
     public static DbContextOptionsBuilder UseElsaMySql(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = default, Action<MySqlDbContextOptionsBuilder>? configure = default) =>
         builder
             .UseElsaDbContextOptions(options)
-            .UseMySql(connectionString, ServerVersion.Create(8, 3, 0, ServerType.MySql), db =>
+            .UseMySql(connectionString, ServerVersion.Create(7, 0, 14, ServerType.MySql), db =>
             {
                 db
                     .MigrationsAssembly(options.GetMigrationsAssemblyName(migrationsAssembly))

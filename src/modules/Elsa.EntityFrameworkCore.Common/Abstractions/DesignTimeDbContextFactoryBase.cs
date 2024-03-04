@@ -22,11 +22,11 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
         var parser = new Parser(command);
         var parseResult = parser.Parse(args);
         var connectionString = parseResult.GetValueForOption(connectionStringOption) ?? "Data Source=local";
-        
+
         ConfigureBuilder(builder, connectionString);
 
         var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options);
-        
+
         return dbContext;
     }
 

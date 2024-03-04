@@ -112,12 +112,7 @@ public class HttpFeature : FeatureBase
         {
             management.AddVariableTypes(new[]
             {
-                typeof(RouteData),
-                typeof(HttpRequest),
-                typeof(HttpResponse),
-                typeof(HttpResponseMessage),
-                typeof(HttpHeaders),
-                typeof(IFormFile)
+                typeof(RouteData), typeof(HttpRequest), typeof(HttpResponse), typeof(HttpResponseMessage), typeof(HttpHeaders), typeof(IFormFile)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -155,7 +150,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
-            
+
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
@@ -163,7 +158,7 @@ public class HttpFeature : FeatureBase
             // Content parsers.            
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
-            
+
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
             .AddScoped<IHttpContentFactory, JsonContentFactory>()
@@ -195,14 +190,10 @@ public class HttpFeature : FeatureBase
             // File caches.
             .AddScoped(FileCache)
             .AddScoped<ZipManager>()
-            
-            // Serialization.
-            .AddSerializationOptionsConfigurator<AdditionalConvertersConfigurator>()
 
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
             .AddAuthorization();
-        
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();

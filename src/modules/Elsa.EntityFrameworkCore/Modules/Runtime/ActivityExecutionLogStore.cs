@@ -32,8 +32,8 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
     /// Initializes a new instance of the <see cref="EFCoreActivityExecutionStore"/> class.
     /// </summary>
     public EFCoreActivityExecutionStore(
-        EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store, 
-        ISafeSerializer safeSerializer, 
+        EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord> store,
+        ISafeSerializer safeSerializer,
         IPayloadSerializer payloadSerializer,
         ICompressionCodecResolver compressionCodecResolver,
         IOptions<ManagementOptions> options)
@@ -98,7 +98,7 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
         var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
         var serializedActivityState = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
         var compressedSerializedActivityState = serializedActivityState != null ? await _compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;
-        
+
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
         dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = compressionAlgorithm;
         dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null ? await _safeSerializer.SerializeAsync(entity.Outputs, cancellationToken) : default;
@@ -129,10 +129,10 @@ public class EFCoreActivityExecutionStore : IActivityExecutionStore
             var dictionary = JsonSerializer.Deserialize<IDictionary<string, object>>(json);
             return dictionary?.ToDictionary(x => x.Key, x => (object)x.Value);
         }
-        
+
         return default;
     }
-    
+
     private T Deserialize<T>(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, string propertyName)
     {
         var json = dbContext.Entry(entity).Property<string>(propertyName).CurrentValue;
