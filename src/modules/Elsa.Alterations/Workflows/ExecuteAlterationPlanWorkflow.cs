@@ -17,7 +17,8 @@ public class ExecuteAlterationPlanWorkflow : WorkflowBase
     /// <inheritdoc />
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.DefinitionId = WorkflowDefinitionId;
+        builder.WithDefinitionId(WorkflowDefinitionId);
+        builder.AsSystemWorkflow();
         var plan = builder.WithInput<AlterationPlanParams>("Plan", "The parameters for the new plan");
         var planId = builder.WithVariable<string>();
 
@@ -27,10 +28,7 @@ public class ExecuteAlterationPlanWorkflow : WorkflowBase
             {
                 new SubmitAlterationPlan
                 {
-                    Params = new(context =>
-                    {
-                        return context.GetInput<AlterationPlanParams>(plan)!;
-                    }),
+                    Params = new(context => context.GetInput<AlterationPlanParams>(plan)!),
                     Result = new(planId)
                 },
                 new Correlate(planId),

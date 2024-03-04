@@ -40,11 +40,12 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
 
         return new WorkflowDefinitionFilter
         {
+            IsSystem = request.IsSystem,
             VersionOptions = versionOptions,
             SearchTerm = request.SearchTerm?.Trim(),
             MaterializerName = request.MaterializerName,
             DefinitionIds = request.DefinitionIds,
-            Ids = request.Ids
+            Ids = request.Ids,
         };
     }
 

@@ -22,6 +22,7 @@ internal class WorkflowInstanceMapper : ResponseMapper<WorkflowInstanceModel, Wo
         CorrelationId = e.CorrelationId,
         Name = e.Name,
         IncidentCount = e.IncidentCount,
+        IsSystem = e.IsSystem,
         CreatedAt = e.CreatedAt,
         FinishedAt = e.FinishedAt,
         UpdatedAt = e.UpdatedAt

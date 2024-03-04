@@ -45,6 +45,9 @@ public class WorkflowBuilder : IWorkflowBuilder
     public bool IsReadonly { get; set; }
 
     /// <inheritdoc />
+    public bool IsSystem { get; set; }
+
+    /// <inheritdoc />
     public IActivity? Root { get; set; }
 
     /// <inheritdoc />
@@ -67,6 +70,13 @@ public class WorkflowBuilder : IWorkflowBuilder
 
     /// <inheritdoc />
     public WorkflowOptions WorkflowOptions { get; } = new();
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithDefinitionId(string definitionId)
+    {
+        DefinitionId = definitionId;
+        return this;
+    }
 
     /// <inheritdoc />
     public Variable<T> WithVariable<T>()
@@ -184,6 +194,25 @@ public class WorkflowBuilder : IWorkflowBuilder
         return this;
     }
 
+    /// <summary>
+    /// Marks the workflow as readonly.
+    /// </summary>
+    public IWorkflowBuilder AsReadonly()
+    {
+        IsReadonly = true;
+        return this;
+    }
+
+    /// <summary>
+    ///   Marks the workflow as a system workflow.
+    ///   System workflows are not visible in the UI by default and are not meant to be modified by users.
+    /// </summary>
+    public IWorkflowBuilder AsSystemWorkflow()
+    {
+        IsSystem = true;
+        return this;
+    }
+
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
@@ -194,9 +223,9 @@ public class WorkflowBuilder : IWorkflowBuilder
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);
-        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly);
+        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly, IsSystem);
 
-        // If a Result variable is defined, install it into the workflow so we can capture the output into it.
+        // If a Result variable is defined, install it into the workflow, so we can capture the output into it.
         if (Result != null)
         {
             workflow.ResultVariable = Result;

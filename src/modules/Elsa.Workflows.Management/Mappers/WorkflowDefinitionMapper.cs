@@ -46,7 +46,8 @@ public class WorkflowDefinitionMapper
             source.Outputs,
             source.Outcomes,
             source.CustomProperties,
-            source.IsReadonly);
+            source.IsReadonly,
+            source.IsSystem);
     }
 
     /// <summary>
@@ -77,7 +78,8 @@ public class WorkflowDefinitionMapper
             source.Outputs ?? new List<OutputDefinition>(),
             source.Outcomes ?? new List<string>(),
             source.CustomProperties ?? new Dictionary<string, object>(),
-            source.IsReadonly);
+            source.IsReadonly,
+            source.IsSystem);
     }
 
     /// <summary>
@@ -114,6 +116,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
             workflowDefinition.IsReadonly,
+            workflowDefinition.IsSystem,
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,
@@ -144,6 +147,7 @@ public class WorkflowDefinitionMapper
             workflow.Outcomes,
             workflow.CustomProperties,
             workflow.IsReadonly,
+            workflow.IsSystem,
             workflow.Publication.IsLatest,
             workflow.Publication.IsPublished,
             workflow.Options,
