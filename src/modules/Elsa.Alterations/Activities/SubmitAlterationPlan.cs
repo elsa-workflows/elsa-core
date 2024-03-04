@@ -40,7 +40,7 @@ public class SubmitAlterationPlan : CodeActivity<string>
         {
             Id = string.IsNullOrWhiteSpace(planParams.Id) ? identityGenerator.GenerateId() : planParams.Id,
             Alterations = planParams.Alterations,
-            WorkflowInstanceFilter = planParams.AlterationWorkflowInstanceFilter,
+            WorkflowInstanceFilter = planParams.Filter,
             Status = AlterationPlanStatus.Pending,
             CreatedAt = now
         };

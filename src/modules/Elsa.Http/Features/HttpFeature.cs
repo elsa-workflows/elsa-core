@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
@@ -20,6 +21,7 @@ using Elsa.Http.UIHints;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
+using Elsa.Workflows.Serialization.Configurators;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -193,10 +195,14 @@ public class HttpFeature : FeatureBase
             // File caches.
             .AddScoped(FileCache)
             .AddScoped<ZipManager>()
+            
+            // Serialization.
+            .AddSerializationOptionsConfigurator<AdditionalConvertersConfigurator>()
 
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
             .AddAuthorization();
+        
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();

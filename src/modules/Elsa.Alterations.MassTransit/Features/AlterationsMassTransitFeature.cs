@@ -2,12 +2,15 @@ using Elsa.Alterations.Features;
 using Elsa.Alterations.MassTransit.Consumers;
 using Elsa.Alterations.MassTransit.Messages;
 using Elsa.Alterations.MassTransit.Services;
+using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
+using Elsa.Workflows.Serialization.Converters;
 using MassTransit;
+using MassTransit.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.MassTransit.Features;

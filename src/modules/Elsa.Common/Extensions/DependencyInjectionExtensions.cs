@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -18,5 +19,14 @@ public static class DependencyInjectionExtensions
          services.TryAddSingleton<MemoryStore<TEntity>>();
          services.TryAddScoped<TStore>();
          return services;
+    }
+
+    /// <summary>
+    /// Adds a serialization options configurator for the specified type.
+    /// </summary>
+    public static IServiceCollection AddSerializationOptionsConfigurator<T>(this IServiceCollection services) where T : class, ISerializationOptionsConfigurator
+    {
+        services.AddSingleton<ISerializationOptionsConfigurator, T>();
+        return services;
     }
 }

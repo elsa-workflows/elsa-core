@@ -83,11 +83,11 @@ public class GenerateAlterationJobs : CodeActivity
 
         var workflowInstanceStore = context.GetRequiredService<IWorkflowInstanceStore>();
         var activityExecutionStore = context.GetRequiredService<IActivityExecutionStore>();
-        var workflowInstanceIds = (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
+        var workflowInstanceIds = workflowInstanceFilter.IsEmpty ? Enumerable.Empty<string>().ToHashSet() : (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
 
         if (activityExecutionFilters != null)
         {
-            foreach (ActivityExecutionRecordFilter activityExecutionFilter in activityExecutionFilters)
+            foreach (ActivityExecutionRecordFilter activityExecutionFilter in activityExecutionFilters.Where(x => !x.IsEmpty))
             {
                 var activityExecutionRecords = await activityExecutionStore.FindManySummariesAsync(activityExecutionFilter, cancellationToken);
                 var matchingWorkflowInstanceIds = activityExecutionRecords.Select(x => x.WorkflowInstanceId).ToHashSet();
@@ -107,10 +107,5 @@ public class GenerateAlterationJobs : CodeActivity
 
         var alterationJobStore = context.GetRequiredService<IAlterationJobStore>();
         await alterationJobStore.SaveManyAsync(jobs, cancellationToken);
-
-        // Enqueue each job.
-        var alterationJobDispatcher = context.GetRequiredService<IAlterationJobDispatcher>();
-        foreach (var job in jobs)
-            await alterationJobDispatcher.DispatchAsync(job.Id, cancellationToken);
     }
 }

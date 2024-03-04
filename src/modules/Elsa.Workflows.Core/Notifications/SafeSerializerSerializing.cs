@@ -7,4 +7,4 @@ namespace Elsa.Workflows.Notifications;
 /// <summary>
 /// A notification that is published when a value is being serialized by <see cref="SafeSerializer"/>.
 /// </summary>
-public record SafeSerializerSerializing(object? Value, JsonSerializerOptions SerializerOptions) : INotification;
+//public record SafeSerializerSerializing(object? Value, JsonSerializerOptions SerializerOptions) : INotification;

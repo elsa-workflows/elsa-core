@@ -43,7 +43,7 @@ public class AlterationPlanCompleted : Trigger
         
         var planId = context.Get(PlanId)!;
         var bookmarkPayload = new AlterationPlanCompletedPayload(planId);
-        context.CreateBookmark(bookmarkPayload);
+        context.CreateBookmark(bookmarkPayload, false);
     }
 
     /// <inheritdoc />

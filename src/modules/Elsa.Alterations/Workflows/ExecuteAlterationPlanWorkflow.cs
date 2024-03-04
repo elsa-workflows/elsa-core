@@ -27,7 +27,10 @@ public class ExecuteAlterationPlanWorkflow : WorkflowBase
             {
                 new SubmitAlterationPlan
                 {
-                    Params = new(context => context.GetInput<AlterationPlanParams>(plan)!),
+                    Params = new(context =>
+                    {
+                        return context.GetInput<AlterationPlanParams>(plan)!;
+                    }),
                     Result = new(planId)
                 },
                 new Correlate(planId),

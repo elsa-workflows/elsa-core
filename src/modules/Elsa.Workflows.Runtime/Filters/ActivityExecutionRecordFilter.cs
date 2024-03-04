@@ -73,6 +73,11 @@ public class ActivityExecutionRecordFilter
     public bool? Completed { get; set; }
     
     /// <summary>
+    /// Returns true if the filter is empty.
+    /// </summary>
+    public bool IsEmpty => Id == null && Ids == null && WorkflowInstanceId == null && WorkflowInstanceIds == null && ActivityId == null && ActivityIds == null && ActivityNodeId == null && ActivityNodeIds == null && Name == null && Names == null && Status == null && Statuses == null && Completed == null;
+    
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     public IQueryable<ActivityExecutionRecord> Apply(IQueryable<ActivityExecutionRecord> queryable)

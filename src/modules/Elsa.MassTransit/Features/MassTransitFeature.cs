@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Reflection;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -17,6 +18,7 @@ using Elsa.Workflows.Serialization.Converters;
 using MassTransit;
 using MassTransit.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.Features;
 
@@ -53,12 +55,34 @@ public class MassTransitFeature : FeatureBase
 
         void Configurator(IBusRegistrationConfigurator configure)
         {
-            configure.UsingInMemory((context, configurator) =>
-            {
-                configurator.SetupWorkflowDispatcherEndpoints(context);
-                configurator.ConfigureEndpoints(context);
+            var consumers = this.GetConsumers().ToList();
+            var temporaryConsumers = consumers
+                .Where(c => c.IsTemporary)
+                .ToList();
 
-                if (PrefetchCount != null) configurator.PrefetchCount = PrefetchCount.Value;
+            configure.UsingInMemory((context, busFactoryConfigurator) =>
+            {
+                var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+
+                foreach (var consumer in temporaryConsumers)
+                {
+                    busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                    {
+                        endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                        endpoint.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                    });
+                }
+
+                busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+                busFactoryConfigurator.ConfigureEndpoints(context);
+                busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
+                {
+                    var serializer = context.GetRequiredService<IJsonSerializer>();
+                    serializer.ApplyOptions(serializerOptions);
+                    return serializerOptions;
+                });
+
+                if (PrefetchCount != null) busFactoryConfigurator.PrefetchCount = PrefetchCount.Value;
             });
         }
 
@@ -82,10 +106,6 @@ public class MassTransitFeature : FeatureBase
                 options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
             }
         });
-
-        // Configure message serializer.
-        SystemTextJsonMessageSerializer.Options.Converters.Add(
-            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
     }
 
     /// <summary>
@@ -101,7 +121,7 @@ public class MassTransitFeature : FeatureBase
         // Concatenate the manually registered consumers with the workflow message consumers.
         var consumerTypeDefinitions = this.GetConsumers()
             // Temporary queues require implementation specific variables which will be handled in their respective projects.
-            .Where(c => c.IsTemporary == false)
+            //.Where(c => c.IsTemporary == false)
             .Concat(workflowMessageConsumers).ToArray();
 
         Services.AddMassTransit(bus =>

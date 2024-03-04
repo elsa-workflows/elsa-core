@@ -20,5 +20,5 @@ public class AlterationPlanParams
     /// <summary>
     /// The IDs of the workflow instances that this plan applies to.
     /// </summary>
-    public AlterationWorkflowInstanceFilter AlterationWorkflowInstanceFilter { get; set; } = new();
+    public AlterationWorkflowInstanceFilter Filter { get; set; } = new();
 }

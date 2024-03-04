@@ -6,6 +6,7 @@ using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
@@ -62,7 +63,7 @@ public class AlterationJobCompletedHandler : INotificationHandler<AlterationJobC
         
         // Trigger any workflow instances that are waiting for the plan to complete.
         var bookmarkPayload = new AlterationPlanCompletedPayload(planId);
-        var triggerRequest = new DispatchTriggerWorkflowsRequest(nameof(AlterationPlanCompleted), bookmarkPayload);
+        var triggerRequest = new DispatchTriggerWorkflowsRequest(ActivityTypeNameHelper.GenerateTypeName<AlterationPlanCompleted>(), bookmarkPayload);
         await _workflowDispatcher.DispatchAsync(triggerRequest, cancellationToken);
     }
 }
