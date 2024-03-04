@@ -112,7 +112,12 @@ public class HttpFeature : FeatureBase
         {
             management.AddVariableTypes(new[]
             {
-                typeof(RouteData), typeof(HttpRequest), typeof(HttpResponse), typeof(HttpResponseMessage), typeof(HttpHeaders), typeof(IFormFile)
+                typeof(RouteData), 
+                typeof(HttpRequest), 
+                typeof(HttpResponse), 
+                typeof(HttpResponseMessage), 
+                typeof(HttpHeaders), 
+                typeof(IFormFile)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();

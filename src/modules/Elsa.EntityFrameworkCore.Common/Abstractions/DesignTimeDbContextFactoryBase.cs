@@ -25,9 +25,7 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
 
         ConfigureBuilder(builder, connectionString);
 
-        var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options);
-
-        return dbContext;
+        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
     }
 
     /// <summary>

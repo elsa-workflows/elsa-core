@@ -11,15 +11,8 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinitionSummary>>
+internal class List(IWorkflowDefinitionStore store) : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinitionSummary>>
 {
-    private readonly IWorkflowDefinitionStore _store;
-
-    public List(IWorkflowDefinitionStore store)
-    {
-        _store = store;
-    }
-
     public override void Configure()
     {
         Get("/workflow-definitions");
@@ -45,7 +38,7 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
             SearchTerm = request.SearchTerm?.Trim(),
             MaterializerName = request.MaterializerName,
             DefinitionIds = request.DefinitionIds,
-            Ids = request.Ids,
+            Ids = request.Ids
         };
     }
 
@@ -58,35 +51,35 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
         switch (request.OrderBy)
         {
             default:
-            {
-                var order = new WorkflowDefinitionOrder<DateTimeOffset>
                 {
-                    KeySelector = p => p.CreatedAt,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<DateTimeOffset>
+                    {
+                        KeySelector = p => p.CreatedAt,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
             case OrderByWorkflowDefinition.Name:
-            {
-                var order = new WorkflowDefinitionOrder<string>
                 {
-                    KeySelector = p => p.Name!,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<string>
+                    {
+                        KeySelector = p => p.Name!,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
             case OrderByWorkflowDefinition.Version:
-            {
-                var order = new WorkflowDefinitionOrder<int>
                 {
-                    KeySelector = p => p.Version,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<int>
+                    {
+                        KeySelector = p => p.Version,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
         }
     }
 }
