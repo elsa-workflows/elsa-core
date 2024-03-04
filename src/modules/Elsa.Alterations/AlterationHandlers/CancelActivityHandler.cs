@@ -4,12 +4,14 @@ using Elsa.Alterations.Core.Contexts;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
 /// Cancels an activity.
 /// </summary>
+[UsedImplicitly]
 public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
 {
     private readonly IBookmarkManager _bookmarkManager;

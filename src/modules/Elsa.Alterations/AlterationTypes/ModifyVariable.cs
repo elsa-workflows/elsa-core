@@ -1,10 +1,12 @@
 using Elsa.Alterations.Core.Abstractions;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationTypes;
 
 /// <summary>
 /// Modifies a variable.
 /// </summary>
+[UsedImplicitly]
 public class ModifyVariable : AlterationBase
 {
     /// <summary>
