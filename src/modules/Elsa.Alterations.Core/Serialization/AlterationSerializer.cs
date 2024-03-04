@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Common.Serialization;
@@ -15,6 +16,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public string Serialize(IAlteration alteration)
     {
         var options = CreateOptions();
@@ -22,6 +24,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public string SerializeMany(IEnumerable<IAlteration> alterations)
     {
         var options = CreateOptions();
@@ -29,6 +32,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public IAlteration Deserialize(string json)
     {
         var options = CreateOptions();
@@ -36,6 +40,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public IEnumerable<IAlteration> DeserializeMany(string json)
     {
         var options = CreateOptions();
