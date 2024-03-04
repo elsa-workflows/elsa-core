@@ -74,7 +74,7 @@ public class MassTransitFeature : FeatureBase
                 }
 
                 busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
-                busFactoryConfigurator.ConfigureEndpoints(context);
+                busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
                 {
                     var serializer = context.GetRequiredService<IJsonSerializer>();
@@ -90,8 +90,7 @@ public class MassTransitFeature : FeatureBase
         AddMassTransit(busConfigurator);
 
         // Add collected message types to options.
-        Services.Configure<MassTransitActivityOptions>(
-            options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
 
         // Add collected message types as available variable types.
         Services.Configure<ManagementOptions>(options =>

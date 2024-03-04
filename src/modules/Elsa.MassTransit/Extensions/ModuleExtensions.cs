@@ -34,6 +34,4 @@ public static class ModuleExtensions
         module.Configure<MassTransitFeature>(massTransit => massTransit.AddConsumer<T, TDefinition>(name, isTemporary));
         return module;
     }
-    
-    
 }

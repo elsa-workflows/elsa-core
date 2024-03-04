@@ -16,7 +16,6 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Server.Web.Middleware;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -24,14 +23,14 @@ using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
-const bool useSqlServer = false;
+const bool useSqlServer = false;    
 const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
