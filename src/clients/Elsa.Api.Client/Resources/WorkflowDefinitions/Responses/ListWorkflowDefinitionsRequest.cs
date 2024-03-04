@@ -44,6 +44,11 @@ public class ListWorkflowDefinitionsRequest
     public string[]? Labels { get; set; }
     
     /// <summary>
+    /// Gets or sets whether to include system workflows.
+    /// </summary>
+    public bool? IsSystem { get; set; }
+    
+    /// <summary>
     /// The field to order by.
     /// </summary>
     public OrderByWorkflowDefinition? OrderBy { get; set; }

@@ -48,6 +48,11 @@ public class ListWorkflowInstancesRequest
     /// Gets or sets whether the workflow instances have incidents or not.
     /// </summary>
     public bool? HasIncidents { get; set; }
+    
+    /// <summary>
+    /// Gets or sets whether to include system workflows.
+    /// </summary>
+    public bool? IsSystem { get; set; }
 
     /// <summary>
     /// Gets or sets the status.

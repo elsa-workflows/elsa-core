@@ -29,6 +29,7 @@ public class WorkflowStateMapper
             SubStatus = source.SubStatus,
             CorrelationId = source.CorrelationId,
             IncidentCount = source.Incidents.Count,
+            IsSystem = source.IsSystem,
             UpdatedAt = source.UpdatedAt,
             FinishedAt = source.FinishedAt,
             WorkflowState = source
@@ -59,6 +60,7 @@ public class WorkflowStateMapper
         workflowState.CorrelationId = source.CorrelationId;
         workflowState.UpdatedAt = source.UpdatedAt;
         workflowState.FinishedAt = source.FinishedAt;
+        workflowState.IsSystem = source.IsSystem;
 
         if (source.Name != null)
             workflowState.Properties[SetName.WorkflowInstanceNameKey] = source.Name;
