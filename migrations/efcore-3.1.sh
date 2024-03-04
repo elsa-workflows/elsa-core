@@ -1,12 +1,10 @@
 #!/usr/bin/env bash
 
 # Define the modules to update
-# mods=("Runtime" "Management" "Identity" "Labels")
 mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
 
 # Define the list of providers
-# providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
-providers=("MySql" "SqlServer" "PostgreSql")
+providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
 
 # Loop through each module
 for module in "${mods[@]}"; do
