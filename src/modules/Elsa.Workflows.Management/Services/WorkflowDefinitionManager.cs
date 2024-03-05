@@ -128,7 +128,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
         var workflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
         {
-            VersionOptions = VersionOptions.LatestAndPublished
+            VersionOptions = VersionOptions.LatestOrPublished
         }, cancellationToken)).ToList();
         
         // Remove the dependency from the list of workflow definitions to consider.
