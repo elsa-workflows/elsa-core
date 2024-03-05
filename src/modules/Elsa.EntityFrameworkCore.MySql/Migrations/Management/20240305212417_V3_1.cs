@@ -5,7 +5,7 @@
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 {
     /// <inheritdoc />
-    public partial class V31 : Migration
+    public partial class V3_1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

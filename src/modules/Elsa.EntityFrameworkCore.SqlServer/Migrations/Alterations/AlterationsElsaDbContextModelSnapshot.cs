@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -44,8 +44,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -94,8 +95,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                     b.Property<DateTimeOffset?>("StartedAt")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 

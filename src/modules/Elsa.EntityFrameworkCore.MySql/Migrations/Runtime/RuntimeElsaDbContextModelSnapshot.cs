@@ -20,6 +20,20 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
                     b.Property<string>("Id")
@@ -62,6 +76,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasColumnType("longtext");
 
                     b.Property<string>("SerializedPayload")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedProperties")
                         .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset>("StartedAt")
@@ -111,20 +128,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
-                });
-
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.SerializedKeyValuePair", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("SerializedValue")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("KeyValuePairs", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>

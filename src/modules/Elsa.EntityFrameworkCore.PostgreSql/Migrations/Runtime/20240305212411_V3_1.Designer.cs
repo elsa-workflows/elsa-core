@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20240214075920_V3_1")]
+    [Migration("20240305212411_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -25,6 +25,20 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs", "Elsa");
+                });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
@@ -68,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedPayload")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerializedProperties")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("StartedAt")
@@ -117,20 +134,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
-                });
-
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.SerializedKeyValuePair", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SerializedValue")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("KeyValuePairs", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
