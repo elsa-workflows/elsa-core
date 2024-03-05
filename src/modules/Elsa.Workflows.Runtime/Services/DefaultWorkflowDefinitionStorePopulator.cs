@@ -179,6 +179,18 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.MaterializerName = materializedWorkflow.MaterializerName;
 
         workflowDefinitionsToSave.Add(workflowDefinition);
+        
+        // Temporary measure to try and find the root cause of https://github.com/elsa-workflows/elsa-core/issues/5033
+        var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        
+        if (duplicates.Any())
+        {
+            throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
+        }
+        
         await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
     }
 
