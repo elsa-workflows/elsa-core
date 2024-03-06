@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Expressions;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
@@ -21,35 +22,85 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
         yield return CreateVariableDescriptor();
     }
 
-    private ExpressionDescriptor CreateLiteralDescriptor() => CreateDescriptor<LiteralExpressionHandler>("Literal", "Literal", isBrowsable: false);
+    private ExpressionDescriptor CreateLiteralDescriptor()
+    {
+        return CreateDescriptor<LiteralExpressionHandler>(
+            "Literal",
+            "Literal",
+            isBrowsable: false,
+            memoryBlockReferenceFactory: () => new Literal(),
+            deserialize: (context) =>
+            {
+                var elementValue = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
+
+                var value = (object?)(elementValue.ValueKind switch
+                {
+                    JsonValueKind.String => elementValue.GetString(),
+                    JsonValueKind.Number => elementValue.GetDecimal(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    _ => v.GetString()
+                });
+
+                return new Expression("Literal", value);
+            });
+    }
+
     private ExpressionDescriptor CreateObjectDescriptor() => CreateDescriptor<ObjectExpressionHandler>("Object", "Object", monacoLanguage: "json", isBrowsable: false);
 
     [Obsolete("Use Object instead.")]
     private ExpressionDescriptor CreateJsonDescriptor() => CreateDescriptor<ObjectExpressionHandler>("Json", "Json", monacoLanguage: "json", isBrowsable: false);
 
     private ExpressionDescriptor CreateDelegateDescriptor() => CreateDescriptor<DelegateExpressionHandler>("Delegate", "Delegate", false, false);
-    private ExpressionDescriptor CreateVariableDescriptor() => CreateDescriptor<VariableExpressionHandler>("Variable", "Variable", isBrowsable: false, memoryBlockReferenceFactory: () => new Variable());
+
+    private ExpressionDescriptor CreateVariableDescriptor()
+    {
+        return CreateDescriptor<VariableExpressionHandler>(
+            "Variable",
+            "Variable",
+            isBrowsable: false,
+            memoryBlockReferenceFactory: () => new Variable(),
+            deserialize: context =>
+            {
+                var expressionValueElement = context.JsonElement.TryGetProperty("value", out var expressionElementValueValue) ? expressionElementValueValue : default;
+                var expressionValue = expressionValueElement.Deserialize(context.MemoryBlockType, context.Options);
+                return new Expression("Variable", expressionValue);
+            }
+        );
+    }
 
     private static ExpressionDescriptor CreateDescriptor<THandler>(
-        string type,
+        string expressionType,
         string displayName,
         bool isSerializable = true,
         bool isBrowsable = true,
         string? monacoLanguage = null,
-        Func<MemoryBlockReference>? memoryBlockReferenceFactory = default) where THandler : IExpressionHandler
+        Func<MemoryBlockReference>? memoryBlockReferenceFactory = default,
+        Func<ExpressionSerializationContext, Expression>? deserialize = default)
+        where THandler : IExpressionHandler
     {
         var descriptor = new ExpressionDescriptor
         {
-            Type = type,
+            Type = expressionType,
             DisplayName = displayName,
             IsSerializable = isSerializable,
             IsBrowsable = isBrowsable,
             HandlerFactory = sp => ActivatorUtilities.GetServiceOrCreateInstance<THandler>(sp),
-            MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference())
+            MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference()),
+            Deserialize = deserialize ??
+                          (context =>
+                          {
+                              return context.JsonElement.ValueKind == JsonValueKind.Object
+                                  ? context.JsonElement.Deserialize<Expression>((JsonSerializerOptions?)context.Options)!
+                                  : new Expression(expressionType, null!);
+                          })
         };
 
         if (monacoLanguage != null)
-            descriptor.Properties = new { MonacoLanguage = monacoLanguage }.ToDictionary();
+            descriptor.Properties = new
+            {
+                MonacoLanguage = monacoLanguage
+            }.ToDictionary();
 
         return descriptor;
     }
