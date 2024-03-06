@@ -83,6 +83,11 @@ public record ActivityDescriptor
     public bool IsBrowsable { get; set; }
 
     /// <summary>
+    /// Whether this activity type is a start activity.
+    /// </summary>
+    public bool IsStart { get; set; }
+    
+    /// <summary>
     /// Whether this activity type is a terminal activity.
     /// </summary>
     public bool IsTerminal { get; set; }
