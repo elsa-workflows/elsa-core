@@ -29,7 +29,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             "Literal",
             isBrowsable: false,
             memoryBlockReferenceFactory: () => new Literal(),
-            deserialize: (context) =>
+            deserialize: context =>
             {
                 var elementValue = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
 
@@ -39,7 +39,11 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
                     JsonValueKind.Number => elementValue.GetDecimal(),
                     JsonValueKind.True => true,
                     JsonValueKind.False => false,
-                    _ => v.GetString()
+                    JsonValueKind.Undefined => null,
+                    JsonValueKind.Null => null,
+                    JsonValueKind.Object => elementValue.GetRawText(),
+                    JsonValueKind.Array => elementValue.GetRawText(),
+                    _ => v.GetRawText()
                 });
 
                 return new Expression("Literal", value);
