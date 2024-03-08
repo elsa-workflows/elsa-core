@@ -1,10 +1,13 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Globalization;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Exceptions;
 using Elsa.Expressions.Extensions;
@@ -31,6 +34,7 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
     {
         try
@@ -47,11 +51,13 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)
@@ -62,11 +68,17 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
-        options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.ReferenceHandler = ReferenceHandler.Preserve;
-        options.PropertyNameCaseInsensitive = true;
-        options.Converters.Add(new JsonStringEnumConverter());
+        var serializerOptions = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
+        serializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+        serializerOptions.PropertyNameCaseInsensitive = true;
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        serializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
+
+        var internalSerializerOptions = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), 
+        };
 
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
         var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
@@ -79,7 +91,7 @@ public static class ObjectConverter
             if (jsonElement.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
                 return jsonElement.GetString().ConvertTo(underlyingTargetType);
 
-            return jsonElement.Deserialize(targetType, options);
+            return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
         if (value is JsonObject jsonObject)
@@ -87,7 +99,7 @@ public static class ObjectConverter
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonObject.ToString(),
-                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, options),
+                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
                 _ => jsonObject,
             };
         }
@@ -101,7 +113,7 @@ public static class ObjectConverter
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
 
                 if (firstChar is '{' or '[')
-                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType, options);
+                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType, serializerOptions);
             }
             catch (Exception e)
             {
@@ -125,7 +137,7 @@ public static class ObjectConverter
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
             {
-                var expandoJson = JsonSerializer.Serialize(value);
+                var expandoJson = JsonSerializer.Serialize(value, internalSerializerOptions);
                 return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
             }
 
@@ -133,13 +145,13 @@ public static class ObjectConverter
                 return new Dictionary<string, object>((IDictionary<string, object>)value);
 
             var sourceDictionary = (IDictionary<string, object>)value;
-            var json = JsonSerializer.Serialize(sourceDictionary);
+            var json = JsonSerializer.Serialize(sourceDictionary, internalSerializerOptions);
             return ConvertTo(json, underlyingTargetType, converterOptions);
         }
 
         if (typeof(IEnumerable<object>).IsAssignableFrom(underlyingSourceType))
             if (underlyingTargetType == typeof(string))
-                return JsonSerializer.Serialize(value);
+                return JsonSerializer.Serialize(value, internalSerializerOptions);
 
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
