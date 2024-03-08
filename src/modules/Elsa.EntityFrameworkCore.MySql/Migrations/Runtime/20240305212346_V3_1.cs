@@ -18,6 +18,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedProperties",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
                 schema: "Elsa",
@@ -44,6 +52,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 
             migrationBuilder.DropColumn(
                 name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropColumn(
+                name: "SerializedProperties",
                 schema: "Elsa",
                 table: "ActivityExecutionRecords");
         }

@@ -16,6 +16,12 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 type: "TEXT",
                 nullable: true);
 
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedProperties",
+                table: "ActivityExecutionRecords",
+                type: "TEXT",
+                nullable: true);
+
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
                 columns: table => new
@@ -37,6 +43,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 
             migrationBuilder.DropColumn(
                 name: "SerializedActivityStateCompressionAlgorithm",
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropColumn(
+                name: "SerializedProperties",
                 table: "ActivityExecutionRecords");
         }
     }
