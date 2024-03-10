@@ -60,6 +60,7 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
 
         Services.AddScoped<IEntitySavingHandler, ApplyTenantId>();
         Services.AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
     }
 
     /// <summary>

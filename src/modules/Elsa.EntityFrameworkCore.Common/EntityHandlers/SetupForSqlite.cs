@@ -1,5 +1,4 @@
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
@@ -15,31 +14,6 @@ public class SetupForSqlite : IEntityModelCreatingHandler
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
         if(!dbContext.Database.IsSqlite())
-            return;
-        
-        // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
-        // here: https://docs.microsoft.com/en-us/ef/core/providers/sqlite/limitations#query-limitations
-        var properties = entityType.ClrType.GetProperties().Where(p => p.PropertyType == typeof(DateTimeOffset) || p.PropertyType == typeof(DateTimeOffset?));
-
-        foreach (var property in properties)
-        {
-            modelBuilder
-                .Entity(entityType.Name)
-                .Property(property.Name)
-                .HasConversion(new DateTimeOffsetToStringConverter());
-        }
-    }
-}
-
-/// <summary>
-/// Represents a class that handles entity model creation for SQLite databases.
-/// </summary>
-public class SetupForOracle : IEntityModelCreatingHandler
-{
-    /// <inheritdoc />
-    public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
-    {
-        if(!dbContext.Database.IsOracle())
             return;
         
         // SQLite does not have proper support for DateTimeOffset via Entity Framework Core, see the limitations
