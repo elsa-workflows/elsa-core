@@ -13,6 +13,7 @@ ConfigurationManager configuration = builder.Configuration;
 
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var multiTenancySection = configuration.GetSection("MultiTenancy");
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -46,7 +47,7 @@ builder.Services.AddElsa(elsa =>
     {
         tenantsFeature.TenantsOptions = options =>
         {
-            identitySection.Bind(options);
+            multiTenancySection.Bind(options);
             options.TenantResolutionPipelineBuilder.Append<CurrentUserTenantResolver>();
         };
         tenantsFeature.UseConfigurationBasedTenantsProvider();

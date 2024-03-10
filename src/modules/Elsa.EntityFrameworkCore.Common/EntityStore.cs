@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 public class EntityStore<TDbContext, TEntity> : Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : Entity
 {
     /// <inheritdoc />
-    public EntityStore(IDbContextFactory<TDbContext> dbContextFactory) : base(dbContextFactory)
+    public EntityStore(IServiceProvider serviceProvider) : base(serviceProvider)
     {
     }
 

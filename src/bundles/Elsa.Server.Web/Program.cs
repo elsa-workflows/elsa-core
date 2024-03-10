@@ -262,7 +262,7 @@ services
             {
                 tenants.TenantsOptions = options =>
                 {
-                    configuration.GetSection("Tenants").Bind(options);
+                    configuration.GetSection("MultiTenancy").Bind(options);
                     options.TenantResolutionPipelineBuilder
                         .Append<ClaimsTenantResolver>()
                         .Append<CurrentUserTenantResolver>();

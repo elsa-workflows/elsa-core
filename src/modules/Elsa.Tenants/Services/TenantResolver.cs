@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Tenants.Services;
 
 /// <inheritdoc />
-public class TenantResolver(IOptions<TenantsOptions> options, ITenantsProvider tenantsProvider, IServiceProvider serviceProvider) : ITenantResolver
+public class TenantResolver(IOptions<MultiTenancyOptions> options, ITenantsProvider tenantsProvider, IServiceProvider serviceProvider) : ITenantResolver
 {
     /// <inheritdoc/>
     public async Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default)

@@ -10,7 +10,7 @@ namespace Elsa.Tenants.Resolvers;
 /// <summary>
 /// Resolves the tenant from the user's claims.
 /// </summary>
-public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<TenantsOptions> options) : TenantResolutionStrategyBase
+public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<MultiTenancyOptions> options) : TenantResolutionStrategyBase
 {
     /// <inheritdoc />
     protected override TenantResolutionResult Resolve()

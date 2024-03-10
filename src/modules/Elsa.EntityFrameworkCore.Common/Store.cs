@@ -5,6 +5,8 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
+using Elsa.Tenants.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -16,18 +18,18 @@ namespace Elsa.EntityFrameworkCore.Common;
 [PublicAPI]
 public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : class
 {
+    private readonly IServiceProvider _serviceProvider;
+
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
 
-    private readonly IDbContextFactory<TDbContext> _dbContextFactory;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="Store{TDbContext, TEntity}"/> class.
     /// </summary>
-    public Store(IDbContextFactory<TDbContext> dbContextFactory)
+    public Store(IServiceProvider serviceProvider)
     {
-        _dbContextFactory = dbContextFactory;
+        _serviceProvider = serviceProvider;
     }
 
     /// <summary>
@@ -37,8 +39,11 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// <returns>The database context.</returns>
     public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
     {
-        var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
-        dbContext.TenantId = "Foo";
+        var dbContextFactory = _serviceProvider.GetRequiredService<IDbContextFactory<TDbContext>>();
+        var tenantResolver = _serviceProvider.GetRequiredService<ITenantResolver>();
+        var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        dbContext.TenantId = tenant?.Id;
         return dbContext;
     }
 
