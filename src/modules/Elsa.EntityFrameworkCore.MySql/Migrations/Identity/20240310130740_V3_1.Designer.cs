@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    [Migration("20240225202309_V3_1")]
+    [Migration("20240310130740_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />

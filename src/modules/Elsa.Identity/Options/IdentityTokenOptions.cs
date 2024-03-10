@@ -45,7 +45,7 @@ public class IdentityTokenOptions
     /// Configures the <see cref="JwtBearerOptions"/> with the values from this instance.
     /// </summary>
     /// <param name="options">The options to configure.</param>
-    internal void ConfigureJwtBearerOptions(JwtBearerOptions options)
+    public void ConfigureJwtBearerOptions(JwtBearerOptions options)
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {

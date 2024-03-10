@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
@@ -19,69 +19,58 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 name: "TenantId",
                 schema: "Elsa",
                 table: "WorkflowInboxMessages",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: "Elsa",
                 table: "WorkflowExecutionLogRecords",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: "Elsa",
                 table: "Triggers",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
-                schema: "Elsa",
-                table: "Bookmarks",
-                type: "longtext",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "Id",
                 schema: "Elsa",
                 table: "Bookmarks",
-                type: "varchar(255)",
+                type: "text",
                 nullable: false,
-                defaultValue: "")
-                .Annotation("MySql:CharSet", "utf8mb4");
+                defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: "Elsa",
                 table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SerializedActivityStateCompressionAlgorithm",
                 schema: "Elsa",
                 table: "ActivityExecutionRecords",
-                type: "longtext",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
+
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedProperties",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "TenantId",
                 schema: "Elsa",
                 table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
+                type: "text",
+                nullable: true);
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Bookmarks",
@@ -94,20 +83,15 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: "Elsa",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Key = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedValue = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Id = table.Column<string>(type: "text", nullable: false),
+                    Key = table.Column<string>(type: "text", nullable: false),
+                    SerializedValue = table.Column<string>(type: "text", nullable: false),
+                    TenantId = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_KeyValuePairs", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInboxMessage_TenantId",
@@ -220,20 +204,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 table: "ActivityExecutionRecords");
 
             migrationBuilder.DropColumn(
-                name: "TenantId",
+                name: "SerializedProperties",
                 schema: "Elsa",
                 table: "ActivityExecutionRecords");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "BookmarkId",
+            migrationBuilder.DropColumn(
+                name: "TenantId",
                 schema: "Elsa",
-                table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "longtext")
-                .Annotation("MySql:CharSet", "utf8mb4")
-                .OldAnnotation("MySql:CharSet", "utf8mb4");
+                table: "ActivityExecutionRecords");
 
             migrationBuilder.AddPrimaryKey(
                 name: "PK_Bookmarks",

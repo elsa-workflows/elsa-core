@@ -2,16 +2,16 @@
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    [Migration("20240305212456_V3_1")]
+    [Migration("20240310130805_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -21,43 +21,46 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
             modelBuilder
                 .HasDefaultSchema("Elsa")
                 .HasAnnotation("ProductVersion", "7.0.14")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("ClientId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedApiKey")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedApiKeySalt")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedClientSecret")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedClientSecretSalt")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("Roles");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -69,22 +72,28 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Application_TenantId");
+
                     b.ToTable("Applications", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Permissions")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("Permissions");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -92,36 +101,45 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Identity
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Role_TenantId");
+
                     b.ToTable("Roles", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedPassword")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("HashedPasswordSalt")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Roles")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("text")
                         .HasColumnName("Roles");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users", "Elsa");
                 });
