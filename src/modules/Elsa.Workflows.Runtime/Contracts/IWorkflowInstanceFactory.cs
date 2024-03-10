@@ -11,5 +11,6 @@ public interface IWorkflowInstanceFactory
 {
     Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, string? correlationId, CancellationToken cancellationToken = default);
     Task<WorkflowInstance> CreateAsync(string workflowDefinitionId, VersionOptions versionOptions, string? correlationId, CancellationToken cancellationToken = default);
+    Task<WorkflowInstance> CreateAsync(WorkflowDefinition workflowDefinition, string? correlationId, CancellationToken cancellationToken = default);
     WorkflowInstance Create(Workflow workflow, string? correlationId);
 }

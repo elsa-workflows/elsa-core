@@ -36,9 +36,9 @@ public class WorkflowDefinitionMapper
         var root = _activitySerializer.Deserialize(source.StringData!);
 
         return new(
-            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
+            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id, source.TenantId),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
-            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion, source.TenantId),
+            new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             source.Options,
             root,
             source.Variables,
@@ -67,7 +67,7 @@ public class WorkflowDefinitionMapper
 #pragma warning restore CS0618
 
         return new(
-            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id),
+            new WorkflowIdentity(source.DefinitionId, source.Version, source.Id, source.TenantId),
             new WorkflowPublication(source.IsLatest, source.IsPublished),
             new WorkflowMetadata(source.Name, source.Description, source.CreatedAt, source.ToolVersion),
             options,
@@ -103,6 +103,7 @@ public class WorkflowDefinitionMapper
         return new(
             workflowDefinition.Id,
             workflowDefinition.DefinitionId,
+            workflowDefinition.TenantId,
             workflowDefinition.Name,
             workflowDefinition.Description,
             workflowDefinition.CreatedAt,
@@ -133,6 +134,7 @@ public class WorkflowDefinitionMapper
         return new(
             workflow.Identity.Id,
             workflow.Identity.DefinitionId,
+            workflow.Identity.TenantId,
             workflow.WorkflowMetadata.Name,
             workflow.WorkflowMetadata.Description,
             workflow.WorkflowMetadata.CreatedAt,

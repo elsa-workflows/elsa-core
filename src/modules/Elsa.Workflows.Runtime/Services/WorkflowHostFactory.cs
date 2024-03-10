@@ -1,4 +1,3 @@
-using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -24,17 +23,6 @@ public class WorkflowHostFactory : IWorkflowHostFactory
         _identityGenerator = identityGenerator;
         _serviceProvider = serviceProvider;
         _workflowDefinitionService = workflowDefinitionService;
-    }
-
-    /// <inheritdoc />
-    public async Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
-
-        if (workflowDefinition == null)
-            return default;
-
-        return await CreateAsync(workflowDefinition, cancellationToken);
     }
 
     /// <inheritdoc />

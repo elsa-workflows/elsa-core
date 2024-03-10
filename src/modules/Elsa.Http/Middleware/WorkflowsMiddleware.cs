@@ -21,6 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Http.Extensions;
 
 namespace Elsa.Http.Middleware;
 
@@ -87,7 +88,8 @@ public class WorkflowsMiddleware
         {
             CorrelationId = correlationId,
             WorkflowInstanceId = workflowInstanceId,
-            Input = input
+            Input = input,
+            TenantAgnostic = true
         };
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
         var workflowMatches = (await workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
@@ -99,6 +101,11 @@ public class WorkflowsMiddleware
             return;
 
         var matchedWorkflow = workflowMatches.Single();
+        
+        // Set up the current tenant ID based on this request, given that the matched workflow is associated with a tenant.
+        var tenantId = matchedWorkflow.WorkflowInstance?.TenantId;
+        httpContext.SetTenantId(tenantId);
+        
         if (await AuthorizeAsync(serviceProvider, httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
             return;
 

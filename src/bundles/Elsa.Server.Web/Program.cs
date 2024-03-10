@@ -11,6 +11,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Options;
+using Elsa.Http.TenantResolvers;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
@@ -264,6 +265,7 @@ services
                 {
                     configuration.GetSection("MultiTenancy").Bind(options);
                     options.TenantResolutionPipelineBuilder
+                        .Append<HttpContextTenantResolver>()
                         .Append<ClaimsTenantResolver>()
                         .Append<CurrentUserTenantResolver>();
                 };

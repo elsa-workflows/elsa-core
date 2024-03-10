@@ -1,17 +1,15 @@
+using Elsa.Http.Extensions;
 using Elsa.Tenants.Abstractions;
-using Elsa.Tenants.Constants;
 using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Options;
 using Elsa.Tenants.Results;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 
-namespace Elsa.Tenants.Resolvers;
+namespace Elsa.Http.TenantResolvers;
 
 /// <summary>
-/// Resolves the tenant from the user's claims.
+/// Resolves the tenant based on the Items collection of the current <see cref="HttpContext"/>.
 /// </summary>
-public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<MultiTenancyOptions> options) : TenantResolutionStrategyBase
+public class HttpContextTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolutionStrategyBase
 {
     /// <inheritdoc />
     protected override TenantResolutionResult Resolve(TenantResolutionContext context)
@@ -21,7 +19,7 @@ public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOpt
         if (httpContext == null)
             return Unresolved();
 
-        var tenantId = httpContext.User.FindFirst(options.Value.TenantIdClaimsType ?? ClaimConstants.TenantId)?.Value;
+        var tenantId = httpContext.GetTenantId();
         return AutoResolve(tenantId);
     }
 }

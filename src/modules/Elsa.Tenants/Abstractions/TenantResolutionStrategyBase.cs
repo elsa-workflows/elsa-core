@@ -19,14 +19,14 @@ public abstract class TenantResolutionStrategyBase : ITenantResolutionStrategy
     /// </summary>
     protected virtual ValueTask<TenantResolutionResult> ResolveAsync(TenantResolutionContext context)
     {
-        return new(Resolve());
+        return new(Resolve(context));
     }
 
     /// <summary>
     /// Implement this method to resolve the tenant.
     /// </summary>
     /// <returns></returns>
-    protected virtual TenantResolutionResult Resolve()
+    protected virtual TenantResolutionResult Resolve(TenantResolutionContext context)
     {
         return Unresolved();
     }

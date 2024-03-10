@@ -335,33 +335,39 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// <summary>
     /// Queries the database using a query.
     /// </summary>
-    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default) => await QueryAsync(query, default, false, cancellationToken);
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, default, false, cancellationToken);
+    }
 
     /// <summary>
     /// Queries the database using a query.
     /// </summary>
-    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, bool tenantAgnostic, CancellationToken cancellationToken = default) => await QueryAsync(query, default, tenantAgnostic, cancellationToken);
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        return await QueryAsync(query, default, tenantAgnostic, cancellationToken);
+    }
 
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
     public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, CancellationToken cancellationToken = default)
-        => await QueryAsync(query, onLoading, false, cancellationToken);
+    {
+        return await QueryAsync(query, onLoading, false, cancellationToken);
+    }
 
     /// <summary>
     /// Queries the database using a query and a selector.
     /// </summary>
-    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<TEntity>> QueryAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Func<TDbContext, TEntity?, CancellationToken, ValueTask>? onLoading = default, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var asNoTracking = onLoading == null;
         var set = asNoTracking ? dbContext.Set<TEntity>().AsNoTracking() : dbContext.Set<TEntity>();
         var queryable = query(set.AsQueryable());
 
-        if (tenantAgnostic)
-        {
-            queryable = queryable.IgnoreQueryFilters<TEntity>();
-        }
+        if (ignoreQueryFilters)
+            queryable = queryable.IgnoreQueryFilters();
 
         var entities = await queryable.ToListAsync(cancellationToken);
 
@@ -379,9 +385,20 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// </summary>
     public async Task<IEnumerable<TResult>> QueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Expression<Func<TEntity, TResult>> selector, CancellationToken cancellationToken = default)
     {
+        return await QueryAsync(query, selector, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Queries the database using a query and a selector.
+    /// </summary>
+    public async Task<IEnumerable<TResult>> QueryAsync<TResult>(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, Expression<Func<TEntity, TResult>> selector, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
+    {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>().AsNoTracking();
         var queryable = query(set.AsQueryable());
+
+        if (ignoreQueryFilters)
+            queryable = queryable.IgnoreQueryFilters();
 
         queryable = query(queryable);
         return await queryable.Select(selector).ToListAsync(cancellationToken);
@@ -392,9 +409,20 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// </summary>
     public async Task<long> CountAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, CancellationToken cancellationToken = default)
     {
+        return await CountAsync(query, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Counts the number of entities matching a query.
+    /// </summary>
+    public async Task<long> CountAsync(Func<IQueryable<TEntity>, IQueryable<TEntity>> query, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
+    {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>().AsNoTracking();
         var queryable = query(set.AsQueryable());
+
+        if (ignoreQueryFilters)
+            queryable = queryable.IgnoreQueryFilters();
 
         queryable = query(queryable);
         return await queryable.LongCountAsync(cancellationToken: cancellationToken);
@@ -404,6 +432,14 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// Checks if any entities exist.
     /// </summary>
     public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
+    {
+        return await AnyAsync(predicate, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Checks if any entities exist.
+    /// </summary>
+    public async Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
         var set = dbContext.Set<TEntity>().AsNoTracking();
@@ -417,9 +453,24 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate, CancellationToken cancellationToken = default)
     {
+        return await CountAsync(predicate, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Counts the number of entities matching a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate.</param>
+    /// <param name="ignoreQueryFilters">Whether to ignore query filters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task<long> CountAsync(Expression<Func<TEntity, bool>> predicate, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
+    {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>().AsNoTracking();
-        return await set.CountAsync(predicate, cancellationToken);
+        var queryable = dbContext.Set<TEntity>().AsNoTracking();
+
+        if (ignoreQueryFilters)
+            queryable = queryable.IgnoreQueryFilters();
+
+        return await queryable.CountAsync(predicate, cancellationToken);
     }
 
     /// <summary>
@@ -430,9 +481,25 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task<long> CountAsync<TProperty>(Expression<Func<TEntity, bool>> predicate, Expression<Func<TEntity, TProperty>> propertySelector, CancellationToken cancellationToken = default)
     {
+        return await CountAsync(predicate, propertySelector, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Counts the distinct number of entities matching a predicate.
+    /// </summary>
+    /// <param name="predicate">The predicate.</param>
+    /// <param name="propertySelector">The property selector to distinct by.</param>
+    /// <param name="ignoreQueryFilters">Whether to ignore query filters.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task<long> CountAsync<TProperty>(Expression<Func<TEntity, bool>> predicate, Expression<Func<TEntity, TProperty>> propertySelector, bool ignoreQueryFilters = false, CancellationToken cancellationToken = default)
+    {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>().AsNoTracking();
-        return await set
+        var queryable = dbContext.Set<TEntity>().AsNoTracking();
+
+        if (ignoreQueryFilters)
+            queryable = queryable.IgnoreQueryFilters();
+
+        return await queryable
             .Where(predicate)
             .Select(propertySelector)
             .Distinct()
