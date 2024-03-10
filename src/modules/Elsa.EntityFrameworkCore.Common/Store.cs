@@ -14,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
 [PublicAPI]
-public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : class
+public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : class
 {
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
@@ -35,7 +35,12 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The database context.</returns>
-    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+    {
+        var dbContext = await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+        dbContext.TenantId = "Foo";
+        return dbContext;
+    }
 
     /// <summary>
     /// Adds the specified entity.

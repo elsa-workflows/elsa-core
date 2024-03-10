@@ -6,6 +6,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Tenants.Extensions;
+using Elsa.Tenants.Resolvers;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NSwag;
@@ -16,6 +17,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 
 var identitySection = configuration.GetSection("Identity");
+var tenantsSection = configuration.GetSection("Tenants");
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -36,8 +38,12 @@ builder.Services.AddElsa(elsa =>
     elsa.UseIdentity(options => identitySection.Bind(options));
     elsa.UseTenants(tenantsFeature =>
     {
-        tenantsFeature.TenantsOptions = options => identitySection.Bind(options);
-        tenantsFeature.UseExternalTenantResolverMiddleware();
+        tenantsFeature.TenantsOptions = options =>
+        {
+            tenantsSection.Bind(options);
+            options.TenantResolutionPipelineBuilder.Append<ClaimsTenantResolver>();
+        };
+        tenantsFeature.UseConfigurationBasedTenantsProvider();
     });
 
     elsa
@@ -95,10 +101,17 @@ builder.Services.SwaggerDocument(options =>
                 {
                     AuthorizationUrl = $"{configuration.GetValue<string>("Authentication:Authority")}/connect/authorize",
                     TokenUrl = $"{configuration.GetValue<string>("Authentication:Authority")}/connect/token",
-                    Scopes = new Dictionary<string, string> {
-                        { "workflows.*", "workflows.*" },
-                        { "openid", "OpenId" },
-                        { "profile", "Profile" },
+                    Scopes = new Dictionary<string, string>
+                    {
+                        {
+                            "workflows.*", "workflows.*"
+                        },
+                        {
+                            "openid", "OpenId"
+                        },
+                        {
+                            "profile", "Profile"
+                        },
                     },
                 },
             }
@@ -115,7 +128,6 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
-app.UseHttpExternalTenantMiddleware();
 app.MapControllers();
 app.UseCors();
 app.UseWorkflows();

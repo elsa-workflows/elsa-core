@@ -1,14 +1,14 @@
 ﻿namespace Elsa.Tenants.Contracts;
 
 /// <summary>
-/// Provides access to the current tenant ID.
+/// Provides access to the current tenant ID stored in an ambient context.
 /// </summary>
-public interface ITenantAccessor
+public interface IAmbientTenantAccessor
 {
     /// <summary>
     /// Set the current Tenant ID.
     /// </summary>
-    /// <param name="tenantId">Id of the tenant</param>
+    /// <param name="tenantId">ID of the tenant</param>
     void SetCurrentTenantId(string? tenantId);
 
     /// <summary>

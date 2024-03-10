@@ -1,7 +1,7 @@
 ﻿using Elsa.Tenants.Entities;
 using Elsa.Tenants.Models;
 
-namespace Elsa.Tenants.Providers;
+namespace Elsa.Tenants.Contracts;
 
 /// <summary>
 /// Represents a tenant provider.

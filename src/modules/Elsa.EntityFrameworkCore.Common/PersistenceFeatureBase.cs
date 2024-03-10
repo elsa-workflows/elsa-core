@@ -1,4 +1,6 @@
 using Elsa.Common.Entities;
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Common.EntityHandlers;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +13,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// </summary>
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TFeature">The type of the feature.</typeparam>
-public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase where TDbContext : DbContext
+public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase where TDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
     protected PersistenceFeatureBase(IModule module) : base(module)
@@ -55,6 +57,9 @@ public abstract class PersistenceFeatureBase<TFeature, TDbContext> : FeatureBase
             Services.AddPooledDbContextFactory<TDbContext>(DbContextOptionsBuilder);
         else
             Services.AddDbContextFactory<TDbContext>(DbContextOptionsBuilder, DbContextFactoryLifetime);
+
+        Services.AddScoped<IEntitySavingHandler, ApplyTenantId>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>();
     }
 
     /// <summary>

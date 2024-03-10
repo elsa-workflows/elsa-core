@@ -2,10 +2,10 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Providers;
-using Elsa.Tenants.Accessors;
 using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
+using Elsa.Tenants.Resolvers;
 using Elsa.Tenants.Services;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,10 +39,16 @@ public class TenantsFeature : FeatureBase
         Services.Configure(TenantsOptions);
 
         Services
-            .AddScoped<ITenantAccessor, TenantAccessor>()
-            .AddScoped<ITenantServiceScopeFactory, TenantServiceScopeFactory>()
+            .AddScoped<ITenantResolver, TenantResolver>()
             .AddSingleton<ConfigurationTenantsProvider>()
-            .AddScoped(TenantsProvider);
+            .AddSingleton<IAmbientTenantAccessor, AmbientTenantAccessor>()
+            .AddScoped(TenantsProvider)
+            .AddHttpContextAccessor();
+
+        Services
+            .AddScoped<ITenantResolutionStrategy, AmbientTenantResolver>()
+            .AddScoped<ITenantResolutionStrategy, ClaimsTenantResolver>()
+            .AddScoped<ITenantResolutionStrategy, CurrentUserTenantResolver>();
     }
 
     /// <summary>
@@ -51,14 +57,6 @@ public class TenantsFeature : FeatureBase
     public TenantsFeature UseConfigurationBasedTenantsProvider()
     {
         TenantsProvider = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
-        return this;
-    }
-
-    /// <summary>
-    /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
-    /// </summary>
-    public TenantsFeature UseExternalTenantResolverMiddleware()
-    {
         return this;
     }
 }

@@ -1,9 +1,9 @@
 ﻿using Elsa.Tenants.Contracts;
 
-namespace Elsa.Tenants.Accessors;
+namespace Elsa.Tenants.Services;
 
 /// <inheritdoc />
-public class TenantAccessor : ITenantAccessor
+public class AmbientTenantAccessor : IAmbientTenantAccessor
 {
     private readonly AsyncLocal<string?> _currentTenantId = new();
 

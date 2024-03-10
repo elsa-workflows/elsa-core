@@ -17,8 +17,8 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
+using Elsa.Tenants.Resolvers;
 using Elsa.Workflows.Management.Compression;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
@@ -258,7 +258,17 @@ services
         }
 
         if (useMultitenancy)
-            elsa.UseTenants(tenants => tenants.UseExternalTenantResolverMiddleware());
+            elsa.UseTenants(tenants =>
+            {
+                tenants.TenantsOptions = options =>
+                {
+                    configuration.GetSection("Tenants").Bind(options);
+                    options.TenantResolutionPipelineBuilder
+                        .Append<ClaimsTenantResolver>()
+                        .Append<CurrentUserTenantResolver>();
+                };
+                tenants.UseConfigurationBasedTenantsProvider();
+            });
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();

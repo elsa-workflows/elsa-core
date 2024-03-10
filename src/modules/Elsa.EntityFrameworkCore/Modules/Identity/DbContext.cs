@@ -30,8 +30,10 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     public DbSet<Role> Roles { get; set; } = default!;
 
     /// <inheritdoc />
-    protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<User>(config);
         modelBuilder.ApplyConfiguration<Application>(config);

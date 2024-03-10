@@ -5,6 +5,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Tenants.Extensions;
+using Elsa.Tenants.Resolvers;
 using FastEndpoints.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -43,7 +44,11 @@ builder.Services.AddElsa(elsa =>
 
     elsa.UseTenants(tenantsFeature =>
     {
-        tenantsFeature.TenantsOptions = options => identitySection.Bind(options);
+        tenantsFeature.TenantsOptions = options =>
+        {
+            identitySection.Bind(options);
+            options.TenantResolutionPipelineBuilder.Append<CurrentUserTenantResolver>();
+        };
         tenantsFeature.UseConfigurationBasedTenantsProvider();
     });
 

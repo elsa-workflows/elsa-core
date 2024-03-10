@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Entities;
 using Elsa.Tenants.Models;
 using Elsa.Tenants.Options;

@@ -1,4 +1,5 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
@@ -48,5 +49,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
+        
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }
