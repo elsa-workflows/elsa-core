@@ -54,6 +54,11 @@ public class ActivityExecutionRecord : Entity
     /// Any outputs provided by the activity.
     /// </summary>
     public IDictionary<string, object?>? Outputs { get; set; }
+
+    /// <summary>
+    /// Any properties provided by the activity.
+    /// </summary>
+    public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
     
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.

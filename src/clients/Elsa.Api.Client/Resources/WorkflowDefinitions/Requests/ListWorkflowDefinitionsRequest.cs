@@ -2,7 +2,8 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Enums;
 using Elsa.Api.Client.Shared.Models;
 using Refit;
 
-namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
+namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Requests
+;
 
 /// <summary>
 /// Represents a request to list workflow definitions.
@@ -42,6 +43,11 @@ public class ListWorkflowDefinitionsRequest
     /// </summary>
     [AliasAs("label")]
     public string[]? Labels { get; set; }
+
+    /// <summary>
+    /// The search term used to filter workflow definitions by their name, ID or description.
+    /// </summary>
+    public string? SearchTerm { get; set; }
     
     /// <summary>
     /// The field to order by.

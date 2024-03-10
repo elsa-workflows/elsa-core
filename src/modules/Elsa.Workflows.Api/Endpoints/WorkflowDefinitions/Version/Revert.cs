@@ -1,11 +1,12 @@
-﻿using Elsa.Workflows.Management.Contracts;
+﻿using Elsa.Abstractions;
+using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
 [PublicAPI]
-internal class RevertVersion : EndpointWithoutRequest
+internal class RevertVersion : ElsaEndpointWithoutRequest
 {
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
 
@@ -17,7 +18,7 @@ internal class RevertVersion : EndpointWithoutRequest
     public override void Configure()
     {
         Post("workflow-definitions/{definitionId}/revert/{version}");
-        AllowAnonymous();
+        ConfigurePermissions("publish:workflow-definitions");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

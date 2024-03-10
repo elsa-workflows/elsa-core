@@ -188,7 +188,7 @@ public class WorkflowsMiddleware
             cancellationTokens);
 
         // Check if there were any errors.
-        var faultedWorkflowState = affectedWorkflowStates.FirstOrDefault(x => x.SubStatus == WorkflowSubStatus.Faulted);
+        var faultedWorkflowState = affectedWorkflowStates.FirstOrDefault(x => x.Incidents.Any());
 
         if (faultedWorkflowState != null)
             await HandleWorkflowFaultAsync(serviceProvider, httpContext, faultedWorkflowState, systemCancellationToken);
@@ -305,9 +305,7 @@ public class WorkflowsMiddleware
 
     private async Task<bool> HandleWorkflowFaultAsync(IServiceProvider serviceProvider, IWorkflowRuntime workflowRuntime, HttpContext httpContext, WorkflowExecutionResult workflowExecutionResult, CancellationToken cancellationToken)
     {
-        var subStatus = workflowExecutionResult.SubStatus;
-
-        if (subStatus != WorkflowSubStatus.Faulted || httpContext.Response.HasStarted)
+        if (!workflowExecutionResult.Incidents.Any() || httpContext.Response.HasStarted)
             return false;
 
         var workflowState = (await workflowRuntime.ExportWorkflowStateAsync(workflowExecutionResult.WorkflowInstanceId, cancellationToken))!;

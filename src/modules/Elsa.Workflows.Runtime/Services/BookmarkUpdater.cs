@@ -37,7 +37,8 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
                 CreatedAt = bookmark.CreatedAt,
                 ActivityInstanceId = bookmark.ActivityInstanceId,
                 CorrelationId = correlationId,
-                Payload = bookmark.Payload
+                Payload = bookmark.Payload,
+                Metadata = bookmark.Metadata
             };
             
             await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
