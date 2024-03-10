@@ -15,15 +15,10 @@ public class SetTenantIdFilter : IEntityModelCreatingHandler
     /// <inheritdoc />
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
-        var tenantId = dbContext.TenantId;
-        
-        if (tenantId == null)
-            return;
-        
         if (entityType.ClrType.IsAssignableTo(typeof(Entity)))
         {
             var parameter = Expression.Parameter(entityType.ClrType);
-            Expression<Func<Entity, bool>> filterExpr = entity => tenantId == entity.TenantId;
+            Expression<Func<Entity, bool>> filterExpr = entity => dbContext.TenantId == entity.TenantId;
             var body = ReplacingExpressionVisitor.Replace(filterExpr.Parameters[0], parameter, filterExpr.Body);
             var lambdaExpression = Expression.Lambda(body, parameter);
 
