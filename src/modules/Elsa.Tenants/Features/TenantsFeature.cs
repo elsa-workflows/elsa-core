@@ -1,3 +1,4 @@
+using System;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -13,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Tenants.Features;
 
 /// <summary>
-/// Configures liquid functionality.
+/// Configures multi-tenancy features.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class TenantsFeature : FeatureBase
@@ -56,7 +57,15 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public TenantsFeature UseConfigurationBasedTenantsProvider()
     {
-        TenantsProvider = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
+        return UseTenantsProvider(sp => sp.GetRequiredService<ConfigurationTenantsProvider>());
+    }
+    
+    /// <summary>
+    /// Configures the feature to use <see cref="ConfigurationBasedUserProvider"/>.
+    /// </summary>
+    public TenantsFeature UseTenantsProvider(Func<IServiceProvider, ITenantsProvider> provider)
+    {
+        TenantsProvider = provider;  
         return this;
     }
 }
