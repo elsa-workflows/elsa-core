@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -21,6 +22,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
+    private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
@@ -33,7 +35,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         IActivitySerializer activitySerializer,
         IPayloadSerializer payloadSerializer,
         ISystemClock systemClock,
-        IIdentityGraphService identityGraphService)
+        IIdentityGraphService identityGraphService,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -42,6 +45,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _payloadSerializer = payloadSerializer;
         _systemClock = systemClock;
         _identityGraphService = identityGraphService;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -176,10 +180,16 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.ProviderName = materializedWorkflow.ProviderName;
         workflowDefinition.MaterializerContext = materializerContextJson;
         workflowDefinition.MaterializerName = materializedWorkflow.MaterializerName;
-
-        workflowDefinitionsToSave.Add(workflowDefinition);
         
         // Temporary measure to try and find the root cause of https://github.com/elsa-workflows/elsa-core/issues/5033
+        if (existingDefinitionVersion is null
+            && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
+            _logger.LogError("Trying to create duplicate workflows with id {workflowId}", workflowDefinition.Id);
+        else
+        {
+            workflowDefinitionsToSave.Add(workflowDefinition);
+        }
+
         var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
