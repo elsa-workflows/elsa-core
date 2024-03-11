@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
@@ -16,9 +17,9 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 
     /// <inheritdoc />
     public PersistActivityExecutionLogMiddleware(
-        WorkflowMiddlewareDelegate next, 
-        IActivityExecutionStore activityExecutionStore, 
-        IActivityExecutionMapper activityExecutionMapper, 
+        WorkflowMiddlewareDelegate next,
+        IActivityExecutionStore activityExecutionStore,
+        IActivityExecutionMapper activityExecutionMapper,
         INotificationSender notificationSender) : base(next)
     {
         _activityExecutionStore = activityExecutionStore;
@@ -34,10 +35,10 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 
         // Get the managed cancellation token.
         var cancellationToken = context.CancellationTokens.SystemCancellationToken;
-        
+
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;
-        
+
         // Persist activity execution entries.
         var entries = activityExecutionContexts.Select(_activityExecutionMapper.Map).ToList();
 

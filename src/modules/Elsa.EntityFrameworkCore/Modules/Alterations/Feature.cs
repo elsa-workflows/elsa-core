@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Features;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(AlterationsFeature))]
-public class EFCoreAlterationsPersistenceFeature : PersistenceFeatureBase<AlterationsElsaDbContext>
+public class EFCoreAlterationsPersistenceFeature : PersistenceFeatureBase<EFCoreAlterationsPersistenceFeature, AlterationsElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreAlterationsPersistenceFeature(IModule module) : base(module)
@@ -35,5 +36,6 @@ public class EFCoreAlterationsPersistenceFeature : PersistenceFeatureBase<Altera
 
         AddEntityStore<AlterationPlan, EFCoreAlterationPlanStore>();
         AddEntityStore<AlterationJob, EFCoreAlterationJobStore>();
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

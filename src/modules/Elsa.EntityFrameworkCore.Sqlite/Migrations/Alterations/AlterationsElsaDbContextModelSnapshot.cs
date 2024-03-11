@@ -42,6 +42,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -62,6 +65,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationJob_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationJob_TenantId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
@@ -94,6 +100,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
@@ -107,6 +116,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationPlan_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationPlan_TenantId");
 
                     b.ToTable("AlterationPlans");
                 });

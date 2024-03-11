@@ -8,10 +8,11 @@ internal class Request
 }
 
 internal record Response(
-    string Id, 
-    string Name, 
+    string Id,
+    string Name,
     string Password,
     ICollection<string> Roles,
+    string? TenantId,
     string HashedPassword,
     string HashedPasswordSalt
 );

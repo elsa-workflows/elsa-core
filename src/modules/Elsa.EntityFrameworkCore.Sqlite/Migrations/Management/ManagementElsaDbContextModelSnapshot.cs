@@ -64,6 +64,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ToolVersion")
                         .HasColumnType("TEXT");
 
@@ -83,6 +86,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
 
                     b.HasIndex("UsableAsActivity")
                         .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
@@ -140,6 +146,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("UpdatedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -169,6 +178,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");

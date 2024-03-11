@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -11,6 +10,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
+using System.Text.Json.Serialization;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -32,20 +32,20 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).FirstOrDefault();
+        return await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).FirstOrDefault();
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
-        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 
@@ -53,20 +53,20 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), cancellationToken).LongCount();
-        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).ToList();
+        return await _store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
     }
 
     /// <inheritdoc />
@@ -75,6 +75,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter);
+
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
+        
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = Paginate(queryable, pageArgs);
         var results = await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
@@ -87,8 +91,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
-
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
+        
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
 
         var count = await queryable.LongCountAsync(cancellationToken);
         queryable = Paginate(queryable, pageArgs);
@@ -102,6 +108,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter);
+        
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
+        
         return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
     }
 
@@ -111,18 +121,30 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions.AsNoTracking();
         var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
+        
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
+        
         return await queryable.Select(WorkflowDefinitionSummary.FromDefinitionExpression()).ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) =>
-        await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), OnLoadAsync, cancellationToken).FirstOrDefault();
+    public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
+    }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) => await _store.SaveAsync(definition, OnSaveAsync, cancellationToken);
+    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(definition, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);
+    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -130,24 +152,37 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var set = dbContext.WorkflowDefinitions;
         var queryable = set.AsQueryable();
+        
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
+        
         var ids = await Filter(queryable, filter).Select(x => x.Id).Distinct().ToListAsync(cancellationToken);
         return await _store.DeleteWhereAsync(x => ids.Contains(x.Id), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).Any();
+    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken).Any();
+    }
 
     /// <inheritdoc />
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(x => true, x =>  x.DefinitionId, cancellationToken);
+        return await _store.CountAsync(x => true, x => x.DefinitionId, false, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        var exists = await _store.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, cancellationToken);
+        var exists = await _store.AnyAsync(x => x.Name == name && x.DefinitionId != definitionId, false, cancellationToken);
         return !exists;
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
+    {
+        return await _store.GetTenantIdAsync<WorkflowDefinition>(x => x.DefinitionId == definitionId, cancellationToken);
     }
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
@@ -202,7 +237,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
     }
-    
+
     private class WorkflowDefinitionState
     {
         [JsonConstructor]

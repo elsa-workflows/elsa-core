@@ -11,12 +11,14 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Options;
+using Elsa.Http.TenantResolvers;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Server.Web.Middleware;
+using Elsa.Tenants.Extensions;
+using Elsa.Tenants.Resolvers;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -32,6 +34,7 @@ const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = false;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const bool useMultitenancy = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -255,6 +258,20 @@ services
             });
         }
 
+        if (useMultitenancy)
+            elsa.UseTenants(tenants =>
+            {
+                tenants.TenantsOptions = options =>
+                {
+                    configuration.GetSection("MultiTenancy").Bind(options);
+                    options.TenantResolutionPipelineBuilder
+                        .Append<HttpContextTenantResolver>()
+                        .Append<ClaimsTenantResolver>()
+                        .Append<CurrentUserTenantResolver>();
+                };
+                tenants.UseConfigurationBasedTenantsProvider();
+            });
+
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
         elsa.AddFastEndpointsAssembly<Program>();
@@ -266,11 +283,6 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
-
-// app.UseSimulatedLatency(
-//     TimeSpan.FromMilliseconds(1000),
-//     TimeSpan.FromMilliseconds(3000)
-// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())

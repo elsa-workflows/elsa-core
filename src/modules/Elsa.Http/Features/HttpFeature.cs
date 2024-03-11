@@ -16,7 +16,9 @@ using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
+using Elsa.Http.TenantResolvers;
 using Elsa.Http.UIHints;
+using Elsa.Tenants.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
@@ -200,6 +202,10 @@ public class HttpFeature : FeatureBase
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        
+        // Tenant resolvers.
+        Services.AddScoped<ITenantResolutionStrategy, HttpContextTenantResolver>();
+        Services.AddScoped<ITenantResolutionStrategy, RoutePrefixTenantResolver>();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

@@ -14,7 +14,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
     ICommandHandler<DispatchWorkflowInstanceCommand>,
     ICommandHandler<DispatchResumeWorkflowsCommand>
 {
-    public async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var options = new TriggerWorkflowsOptions
         {
@@ -30,7 +30,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
         var options = new StartWorkflowRuntimeParams
         {
@@ -48,7 +48,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
         var options = new ResumeWorkflowRuntimeParams
         {
@@ -68,7 +68,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var options = new TriggerWorkflowsOptions
         {

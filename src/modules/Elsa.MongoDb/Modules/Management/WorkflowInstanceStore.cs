@@ -136,4 +136,11 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
     {
         return (queryable.OrderBy(order).Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
     }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
+        return instance?.TenantId;
+    }
 }

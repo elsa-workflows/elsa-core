@@ -122,4 +122,12 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The number of deleted workflow instances.</returns>
     ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Finds the tenant ID of the workflow instance for a specified ID.
+    /// </summary>
+    /// <param name="instanceId">The ID of the instance to get.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>tenant ID if an instance was found and if it has a tenant ID, or null</returns>
+    Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken);
 }

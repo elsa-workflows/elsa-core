@@ -130,7 +130,18 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
                 var payload = _payloadSerializer.Deserialize<object>(payloadElement);
                 var metadata = _payloadSerializer.Deserialize<IDictionary<string, string>>(metadataElement);
 
-                return new StoredBookmark(bookmarkId, activityTypeName, hash, workflowInstanceId, createdAt, activityInstanceId, correlationId, payload, metadata);
+                return new StoredBookmark
+                {
+                    Id = bookmarkId,
+                    ActivityTypeName = activityTypeName,
+                    Hash = hash,
+                    WorkflowInstanceId = workflowInstanceId,
+                    CreatedAt = createdAt,
+                    ActivityInstanceId = activityInstanceId,
+                    CorrelationId = correlationId,
+                    Payload = payload,
+                    Metadata = metadata
+                };
             }).ToList();
             await _bookmarkStore.SaveManyAsync(bookmarks, cancellationToken);
         }

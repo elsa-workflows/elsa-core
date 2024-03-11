@@ -23,7 +23,7 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule UseIdentity(this IModule module, string signingKey, string issuer = "http://elsa.api", string audience = "http://elsa.api", TimeSpan? tokenLifetime = default)
     {
-        module.UseIdentity(identity => identity.TokenOptions = options =>
+        module.UseIdentity(identity => identity.TokenOptions += options =>
         {
             options.Audience = audience;
             options.Issuer = issuer;

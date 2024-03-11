@@ -101,6 +101,13 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
 
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
+        return instance?.TenantId;
+    }
+
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();

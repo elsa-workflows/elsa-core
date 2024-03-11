@@ -167,4 +167,10 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     {
         return filter.Apply(query);
     }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        return await _store.GetTenantIdAsync<WorkflowInstance>(x => x.Id == instanceId, cancellationToken);
+    }
 }

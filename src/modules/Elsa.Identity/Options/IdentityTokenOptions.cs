@@ -54,7 +54,7 @@ public class IdentityTokenOptions
             ValidIssuer = Issuer,
             ValidateLifetime = true,
             LifetimeValidator = ValidateLifetime,
-            NameClaimType = JwtRegisteredClaimNames.Name
+            NameClaimType = JwtRegisteredClaimNames.Name,
         };
     }
 

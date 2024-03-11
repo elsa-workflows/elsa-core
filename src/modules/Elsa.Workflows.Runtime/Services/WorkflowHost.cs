@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
@@ -26,10 +27,10 @@ public class WorkflowHost : IWorkflowHost
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
     /// </summary>
     public WorkflowHost(
-        IServiceScopeFactory serviceScopeFactory,
         Workflow workflow,
         WorkflowState workflowState,
         IIdentityGenerator identityGenerator,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<WorkflowHost> logger)
     {
         Workflow = workflow;

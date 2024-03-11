@@ -11,7 +11,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// Configures the <see cref="WorkflowDefinitionsFeature"/> feature with an Entity Framework Core persistence provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
-public class EFCoreWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
+public class EFCoreWorkflowDefinitionPersistenceFeature : PersistenceFeatureBase<EFCoreWorkflowDefinitionPersistenceFeature, ManagementElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreWorkflowDefinitionPersistenceFeature(IModule module) : base(module)

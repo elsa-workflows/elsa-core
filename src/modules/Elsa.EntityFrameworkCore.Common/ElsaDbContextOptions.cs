@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -12,12 +13,12 @@ public class ElsaDbContextOptions
     /// The schema used by Elsa.
     /// </summary>
     public string? SchemaName { get; set; }
-    
+
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
     public string? MigrationsHistoryTableName { get; set; }
-    
+
     /// <summary>
     /// The assembly name containing the migrations.
     /// </summary>

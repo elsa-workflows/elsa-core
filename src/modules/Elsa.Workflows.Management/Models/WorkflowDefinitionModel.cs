@@ -28,6 +28,7 @@ namespace Elsa.Workflows.Management.Models;
 public record WorkflowDefinitionModel(
     string Id,
     string DefinitionId,
+    string? TenantId,
     string? Name,
     string? Description,
     DateTimeOffset CreatedAt,
@@ -49,6 +50,7 @@ public record WorkflowDefinitionModel(
 {
     /// <inheritdoc />
     public WorkflowDefinitionModel() : this(
+        default!,
         default!,
         default!,
         default!,

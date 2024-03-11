@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <inheritdoc />
 public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStorePopulator
 {
-    private readonly Func<IEnumerable<IWorkflowProvider>> _workflowDefinitionProviders;
+    private readonly Func<IEnumerable<IWorkflowsProvider>> _workflowDefinitionProviders;
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly IActivitySerializer _activitySerializer;
@@ -29,7 +29,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     /// Constructor.
     /// </summary>
     public DefaultWorkflowDefinitionStorePopulator(
-        Func<IEnumerable<IWorkflowProvider>> workflowDefinitionProviders,
+        Func<IEnumerable<IWorkflowsProvider>> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
         IWorkflowDefinitionStore workflowDefinitionStore,
         IActivitySerializer activitySerializer,

@@ -1,32 +1,27 @@
-using Elsa.Extensions;
-using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
-using Elsa.Http.Options;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Matches;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Results;
-using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Workflows;
+using Elsa.Http.Contracts;
+using Elsa.Http.Models;
+using Elsa.Http.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
+using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Elsa.Workflows.Runtime.Parameters;
+using System.Diagnostics.CodeAnalysis;
+using Elsa.Http.Extensions;
 
 namespace Elsa.Http.Middleware;
 
@@ -52,8 +47,9 @@ public class WorkflowsMiddleware
     }
 
     /// <summary>
-    /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
+    /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
         var workflowRuntime = serviceProvider.GetRequiredService<IWorkflowRuntime>();
@@ -92,7 +88,8 @@ public class WorkflowsMiddleware
         {
             CorrelationId = correlationId,
             WorkflowInstanceId = workflowInstanceId,
-            Input = input
+            Input = input,
+            TenantAgnostic = true
         };
         var workflowsFilter = new WorkflowsFilter(_activityTypeName, bookmarkPayload, triggerOptions);
         var workflowMatches = (await workflowRuntime.FindWorkflowsAsync(workflowsFilter, cancellationToken)).ToList();
@@ -104,7 +101,11 @@ public class WorkflowsMiddleware
             return;
 
         var matchedWorkflow = workflowMatches.Single();
-
+        
+        // Set up the current tenant ID based on this request, given that the matched workflow is associated with a tenant.
+        var tenantId = matchedWorkflow.WorkflowInstance?.TenantId;
+        httpContext.SetTenantId(tenantId);
+        
         if (await AuthorizeAsync(serviceProvider, httpContext, matchedWorkflow, bookmarkPayload, cancellationToken))
             return;
 
@@ -231,6 +232,7 @@ public class WorkflowsMiddleware
         return workflowInstanceId;
     }
 
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private static async Task WriteResponseAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         var response = httpContext.Response;
@@ -265,12 +267,13 @@ public class WorkflowsMiddleware
             return true;
         }
 
-        // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares. 
+        // If no base path was configured on the other hand, the request could be targeting anything else and should be handled by subsequent middlewares.
         await _next(httpContext);
 
         return true;
     }
 
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private async Task<bool> HandleMultipleWorkflowsFoundAsync(HttpContext httpContext, ICollection<WorkflowMatch> workflowMatches, CancellationToken cancellationToken)
     {
         if (workflowMatches.Count <= 1)

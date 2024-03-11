@@ -110,13 +110,20 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         _store.SaveMany(instances, GetId);
         return ValueTask.CompletedTask;
     }
-    
+
     /// <inheritdoc />
     public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var query = Filter(_store.List().AsQueryable(), filter);
         var count = _store.DeleteMany(query, x => x.Id);
         return ValueTask.FromResult(count);
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
+    {
+        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
+        return instance?.TenantId;
     }
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;

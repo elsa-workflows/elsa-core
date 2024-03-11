@@ -4,12 +4,12 @@ using Elsa.Workflows.Runtime.Models;
 namespace Elsa.Workflows.Runtime.Contracts;
 
 /// <summary>
-/// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowProvider"/> implementations.
+/// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowsProvider"/> implementations.
 /// </summary>
 public interface IWorkflowDefinitionStorePopulator
 {
     /// <summary>
-    /// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowProvider"/> implementations.
+    /// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowsProvider"/> implementations.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task PopulateStoreAsync(CancellationToken cancellationToken = default);

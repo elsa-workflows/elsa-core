@@ -20,6 +20,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
     </ItemGroup>
 
 </Project>

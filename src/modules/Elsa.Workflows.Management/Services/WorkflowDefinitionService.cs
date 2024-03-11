@@ -52,14 +52,35 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
+        return await FindAsync(definitionId, versionOptions, false, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = versionOptions,
+            TenantAgnostic = tenantAgnostic
+        };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { Id = definitionVersionId };
+        return await FindAsync(definitionVersionId, false, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            Id = definitionVersionId,
+            TenantAgnostic = tenantAgnostic
+        };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 }

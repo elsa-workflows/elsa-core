@@ -62,6 +62,11 @@ public class WorkflowDefinitionFilter
     public bool? UsableAsActivity { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether to include tenant matching in the filter.
+    /// </summary>
+    public bool TenantAgnostic { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable to apply the filter to.</param>
