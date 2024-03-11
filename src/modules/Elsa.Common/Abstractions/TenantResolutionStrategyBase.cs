@@ -1,8 +1,8 @@
-using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Contracts;
-using Elsa.Tenants.Results;
+using Elsa.Common.Contexts;
+using Elsa.Common.Contracts;
+using Elsa.Common.Results;
 
-namespace Elsa.Tenants.Abstractions;
+namespace Elsa.Common.Abstractions;
 
 /// <summary>
 /// Resolves the tenant from the user's claims.

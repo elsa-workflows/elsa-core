@@ -4,6 +4,7 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Identity.MultiTenancy;
 using Elsa.Tenants.Extensions;
 using Elsa.Tenants.Resolvers;
 using FastEndpoints.Swagger;

@@ -1,3 +1,5 @@
+using Elsa.Common.Contracts;
+
 namespace Elsa.Tenants.Contracts;
 
 /// <summary>

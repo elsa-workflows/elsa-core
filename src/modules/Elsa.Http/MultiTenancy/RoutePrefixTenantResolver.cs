@@ -1,13 +1,13 @@
+using Elsa.Common.Abstractions;
+using Elsa.Common.Contexts;
+using Elsa.Common.Results;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
-using Elsa.Tenants.Abstractions;
-using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Http.TenantResolvers;
+namespace Elsa.Http.MultiTenancy;
 
 /// <summary>
 /// Resolves the tenant based on the route prefix in the request URL. The tenant ID is expected to be part of the route.

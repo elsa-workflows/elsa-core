@@ -1,4 +1,4 @@
-﻿using Elsa.Tenants.Entities;
+﻿using Elsa.Common.Entities;
 
 namespace Elsa.Tenants.Contracts;
 

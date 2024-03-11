@@ -1,6 +1,6 @@
-using Elsa.Tenants.Entities;
+using Elsa.Common.Entities;
 
-namespace Elsa.Tenants.Contexts;
+namespace Elsa.Common.Contexts;
 
 /// <summary>
 /// Represents the context for resolving a tenant in a tenant resolution strategy pipeline.
@@ -11,7 +11,7 @@ namespace Elsa.Tenants.Contexts;
 /// </remarks>
 public class TenantResolutionContext
 {
-    private readonly IDictionary<string,Tenant> _tenantsDictionary;
+    private readonly IDictionary<string, Tenant> _tenantsDictionary;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TenantResolutionContext"/> class.
@@ -21,12 +21,12 @@ public class TenantResolutionContext
         CancellationToken = cancellationToken;
         _tenantsDictionary = tenants;
     }
-    
+
     /// <summary>
     /// Gets the cancellation token.
     /// </summary>
-    public CancellationToken CancellationToken { get;  } = default;
-    
+    public CancellationToken CancellationToken { get; } = default;
+
     /// <summary>
     /// Finds a tenant based on the provided tenant ID.
     /// </summary>

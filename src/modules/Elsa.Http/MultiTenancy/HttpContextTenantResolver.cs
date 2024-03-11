@@ -1,10 +1,10 @@
+using Elsa.Common.Abstractions;
+using Elsa.Common.Contexts;
+using Elsa.Common.Results;
 using Elsa.Http.Extensions;
-using Elsa.Tenants.Abstractions;
-using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Results;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Http.TenantResolvers;
+namespace Elsa.Http.MultiTenancy;
 
 /// <summary>
 /// Resolves the tenant based on the Items collection of the current <see cref="HttpContext"/>.

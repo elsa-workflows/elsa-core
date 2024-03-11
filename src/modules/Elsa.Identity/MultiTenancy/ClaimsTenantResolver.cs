@@ -1,17 +1,17 @@
-using Elsa.Tenants.Abstractions;
-using Elsa.Tenants.Constants;
-using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Options;
-using Elsa.Tenants.Results;
+using Elsa.Common.Abstractions;
+using Elsa.Common.Contexts;
+using Elsa.Common.Results;
+using Elsa.Identity.Constants;
+using Elsa.Identity.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Tenants.Resolvers;
+namespace Elsa.Identity.MultiTenancy;
 
 /// <summary>
 /// Resolves the tenant from the user's claims.
 /// </summary>
-public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<MultiTenancyOptions> options) : TenantResolutionStrategyBase
+public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<IdentityOptions> options) : TenantResolutionStrategyBase
 {
     /// <inheritdoc />
     protected override TenantResolutionResult Resolve(TenantResolutionContext context)

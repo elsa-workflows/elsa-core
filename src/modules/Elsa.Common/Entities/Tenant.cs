@@ -1,7 +1,6 @@
-﻿using Elsa.Common.Entities;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
-namespace Elsa.Tenants.Entities;
+namespace Elsa.Common.Entities;
 
 /// <summary>
 /// Represents a tenant.

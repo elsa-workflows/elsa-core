@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using Elsa.Common.Entities;
 using Elsa.Tenants.Contracts;
-using Elsa.Tenants.Entities;
 using Elsa.Tenants.Models;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;

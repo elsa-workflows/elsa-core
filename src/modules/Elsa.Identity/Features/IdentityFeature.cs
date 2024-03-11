@@ -1,4 +1,5 @@
 using AspNetCore.Authentication.ApiKey;
+using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -6,6 +7,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.MultiTenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
@@ -44,17 +46,17 @@ public class IdentityFeature : FeatureBase
         options.Realm = "Elsa Workflows";
         options.KeyName = "ApiKey";
     };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="UsersOptions"/>.
     /// </summary>
     public Action<UsersOptions> UsersOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="ApplicationsOptions"/>.
     /// </summary>
     public Action<ApplicationsOptions> ApplicationsOptions { get; set; } = _ => { };
-    
+
     /// <summary>
     /// A delegate that configures the <see cref="RolesOptions"/>.
     /// </summary>
@@ -79,12 +81,12 @@ public class IdentityFeature : FeatureBase
     /// A delegate that creates an instance of an implementation of <see cref="IUserProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IUserProvider> UserProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedUserProvider>();
-    
+
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IApplicationProvider"/>.
     /// </summary>
     public Func<IServiceProvider, IApplicationProvider> ApplicationProvider { get; set; } = sp => sp.GetRequiredService<StoreBasedApplicationProvider>();
-    
+
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="IRoleProvider"/>.
     /// </summary>
@@ -168,17 +170,22 @@ public class IdentityFeature : FeatureBase
             .AddScoped<AdminUserProvider>()
             .AddScoped<StoreBasedUserProvider>()
             .AddScoped<ConfigurationBasedUserProvider>();
-        
+
         // Application providers.
         Services
             .AddScoped<StoreBasedApplicationProvider>()
             .AddScoped<ConfigurationBasedApplicationProvider>();
-        
+
         // Role providers.
         Services
             .AddScoped<AdminRoleProvider>()
             .AddScoped<StoreBasedRoleProvider>()
             .AddScoped<ConfigurationBasedRoleProvider>();
+
+        // Tenant resolution strategies.
+        Services
+            .AddScoped<ITenantResolutionStrategy, ClaimsTenantResolver>()
+            .AddScoped<ITenantResolutionStrategy, CurrentUserTenantResolver>();
 
         // Services.
         Services

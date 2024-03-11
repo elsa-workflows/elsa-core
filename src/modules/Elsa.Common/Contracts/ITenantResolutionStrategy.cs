@@ -1,8 +1,7 @@
-using Elsa.Tenants.Contexts;
-using Elsa.Tenants.Entities;
-using Elsa.Tenants.Results;
+using Elsa.Common.Contexts;
+using Elsa.Common.Results;
 
-namespace Elsa.Tenants.Contracts;
+namespace Elsa.Common.Contracts;
 
 /// <summary>
 /// A tenant resolver strategy in a pipeline of tenant resolvers.

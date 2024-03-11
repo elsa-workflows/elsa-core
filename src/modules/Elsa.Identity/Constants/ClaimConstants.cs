@@ -1,4 +1,4 @@
-namespace Elsa.Tenants.Constants;
+namespace Elsa.Identity.Constants;
 
 /// <summary>
 /// Constants for claims.
