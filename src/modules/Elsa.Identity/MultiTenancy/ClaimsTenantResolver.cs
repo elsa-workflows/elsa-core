@@ -21,7 +21,7 @@ public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOpt
         if (httpContext == null)
             return Unresolved();
 
-        var tenantId = httpContext.User.FindFirst(options.Value.TenantIdClaimsType ?? CustomClaimTypes.TenantId)?.Value;
+        var tenantId = httpContext.User.FindFirst(options.Value.TenantIdClaimsType)?.Value;
         return AutoResolve(tenantId);
     }
 }
