@@ -74,6 +74,7 @@ public class ActivityDescriber : IActivityDescriber
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
         var isTerminal = activityType.FindInterfaces((type, criteria) => type == typeof(ITerminalNode), null).Any();
+        var isStart = activityType.FindInterfaces((type, criteria) => type == typeof(IStartNode), null).Any();
         var attributes = activityType.GetCustomAttributes(true).Cast<Attribute>().ToList();
         var outputAttribute = attributes.OfType<OutputAttribute>().FirstOrDefault();
 
@@ -92,6 +93,7 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
+            IsStart = isStart,
             IsTerminal = isTerminal,
             Attributes = attributes,
             Constructor = context =>
