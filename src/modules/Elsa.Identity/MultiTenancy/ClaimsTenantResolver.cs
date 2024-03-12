@@ -1,7 +1,6 @@
 using Elsa.Common.Abstractions;
 using Elsa.Common.Contexts;
 using Elsa.Common.Results;
-using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
