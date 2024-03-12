@@ -29,7 +29,7 @@ const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useZipCompression = true;
+const bool useZipCompression = false;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);

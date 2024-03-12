@@ -74,6 +74,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SerializedProperties")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StartedAt")
                         .IsRequired()
                         .HasColumnType("TEXT");

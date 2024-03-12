@@ -1,6 +1,8 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Text.Unicode;
 using Elsa.Common.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -53,7 +55,8 @@ public abstract class ConfigurableSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         };
         
         options.Converters.Add(new JsonStringEnumConverter());

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
-    [Migration("20240304112906_V3_1")]
+    [Migration("20240312145231_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />

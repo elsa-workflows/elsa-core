@@ -81,6 +81,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SerializedProperties")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("datetimeoffset");
 

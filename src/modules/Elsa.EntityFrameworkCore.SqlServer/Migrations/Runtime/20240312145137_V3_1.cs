@@ -17,6 +17,13 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 type: "nvarchar(max)",
                 nullable: true);
 
+            migrationBuilder.AddColumn<string>(
+                name: "SerializedProperties",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords",
+                type: "nvarchar(max)",
+                nullable: true);
+
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
                 schema: "Elsa",
@@ -40,6 +47,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
             migrationBuilder.DropColumn(
                 name: "SerializedActivityStateCompressionAlgorithm",
+                schema: "Elsa",
+                table: "ActivityExecutionRecords");
+
+            migrationBuilder.DropColumn(
+                name: "SerializedProperties",
                 schema: "Elsa",
                 table: "ActivityExecutionRecords");
         }

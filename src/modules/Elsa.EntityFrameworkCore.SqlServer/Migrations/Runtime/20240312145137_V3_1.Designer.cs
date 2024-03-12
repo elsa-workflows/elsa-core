@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20240304112742_V3_1")]
+    [Migration("20240312145137_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -82,6 +82,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedPayload")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedProperties")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("StartedAt")

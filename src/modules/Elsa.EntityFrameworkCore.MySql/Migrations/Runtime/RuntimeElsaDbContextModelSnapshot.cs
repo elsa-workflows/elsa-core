@@ -78,6 +78,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("SerializedProperties")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("datetime(6)");
 
