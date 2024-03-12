@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.AzureServiceBus.HostedServices;
@@ -14,18 +15,16 @@ namespace Elsa.AzureServiceBus.HostedServices;
 /// </summary>
 public class StartWorkers : IHostedService
 {
-    private readonly ITriggerStore _triggerStore;
-    private readonly IBookmarkStore _bookmarkStore;
     private readonly IWorkerManager _workerManager;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public StartWorkers(ITriggerStore triggerStore, IBookmarkStore bookmarkStore, IWorkerManager workerManager)
+    public StartWorkers(IWorkerManager workerManager, IServiceScopeFactory serviceScopeFactory)
     {
-        _triggerStore = triggerStore;
-        _bookmarkStore = bookmarkStore;
         _workerManager = workerManager;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     /// <inheritdoc />
@@ -33,9 +32,13 @@ public class StartWorkers : IHostedService
     {
         var activityType = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
         var triggerFilter = new TriggerFilter { Name = activityType};
-        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
         var bookmarkFilter = new BookmarkFilter { ActivityTypeName = activityType };
-        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
+        
+        using var scope = _serviceScopeFactory.CreateScope();
+        var triggerStore = scope.ServiceProvider.GetRequiredService<ITriggerStore>();
+        var bookmarkStore = scope.ServiceProvider.GetRequiredService<IBookmarkStore>();
+        var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
+        var bookmarks = (await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
         var payloads = triggers.Concat(bookmarks).ToList();
 
         await EnsureWorkersAsync(payloads, cancellationToken);
