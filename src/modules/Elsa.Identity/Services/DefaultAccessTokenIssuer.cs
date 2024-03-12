@@ -21,11 +21,11 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultAccessTokenIssuer"/> class.
     /// </summary>
-    public DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityOptions)
+    public DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock systemClock, IOptions<IdentityTokenOptions> identityTokenOptions)
     {
         _roleProvider = roleProvider;
         _systemClock = systemClock;
-        _identityOptions = identityOptions.Value;
+        _identityOptions = identityTokenOptions.Value;
     }
 
     /// <inheritdoc />
@@ -33,14 +33,24 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
     {
         var roles = (await _roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToList();
         var permissions = roles.SelectMany(x => x.Permissions).ToList();
-        var (signingKey, issuer, audience, accessTokenLifetime, refreshTokenLifetime) = _identityOptions;
+        var signingKey = _identityOptions.SigningKey;
+        var issuer = _identityOptions.Issuer;
+        var audience = _identityOptions.Audience;
+        var accessTokenLifetime = _identityOptions.AccessTokenLifetime;
+        var refreshTokenLifetime = _identityOptions.RefreshTokenLifetime;
 
         if (string.IsNullOrWhiteSpace(signingKey)) throw new Exception("No signing key configured");
         if (string.IsNullOrWhiteSpace(issuer)) throw new Exception("No issuer configured");
         if (string.IsNullOrWhiteSpace(audience)) throw new Exception("No audience configured");
 
         var nameClaim = new Claim(JwtRegisteredClaimNames.Name, user.Name);
-        var claims = new[] { nameClaim };
+        var claims = new List<Claim> { nameClaim };
+        
+        if (!string.IsNullOrWhiteSpace(user.TenantId))
+        {
+            var tenantIdClaim = new Claim(_identityOptions.TenantIdClaimsType, user.TenantId);
+            claims.Add(tenantIdClaim);
+        }
 
         var accessTokenExpiresAt = _systemClock.UtcNow.Add(accessTokenLifetime);
         var refreshTokenExpiresAt = _systemClock.UtcNow.Add(refreshTokenLifetime);

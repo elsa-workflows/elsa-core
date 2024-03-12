@@ -96,8 +96,7 @@ services
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
-
-                identity.IdentityOptions = options => identitySection.Bind(options);
+                
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));

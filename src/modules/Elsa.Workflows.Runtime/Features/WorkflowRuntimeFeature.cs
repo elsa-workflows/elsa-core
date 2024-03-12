@@ -254,7 +254,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
-            .AddScoped(DistributedLockProvider)
+            .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
             .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()

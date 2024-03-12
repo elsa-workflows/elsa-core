@@ -29,11 +29,6 @@ public class IdentityFeature : FeatureBase
     }
 
     /// <summary>
-    /// Gets or sets the <see cref="IdentityOptions"/>.
-    /// </summary>
-    public Action<IdentityOptions> IdentityOptions { get; set; } = _ => { };
-
-    /// <summary>
     /// Gets or sets the <see cref="IdentityTokenOptions"/>.
     /// </summary>
     public Action<IdentityTokenOptions> TokenOptions { get; set; } = _ => { };
@@ -152,7 +147,6 @@ public class IdentityFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure(IdentityOptions);
         Services.Configure(TokenOptions);
         Services.Configure(ApiKeyDefaults.AuthenticationScheme, ApiKeyOptions);
         Services.Configure(UsersOptions);

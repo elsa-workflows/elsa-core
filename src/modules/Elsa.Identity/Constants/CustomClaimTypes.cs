@@ -3,7 +3,7 @@ namespace Elsa.Identity.Constants;
 /// <summary>
 /// Constants for claims.
 /// </summary>
-public static class ClaimConstants
+public static class CustomClaimTypes
 {
     /// <summary>
     /// The tenant ID claim.
