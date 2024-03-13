@@ -4,6 +4,7 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
+using Elsa.Alterations.Core.Models;
 using Elsa.Common.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -44,10 +45,15 @@ public class GenerateAlterationJobs : CodeActivity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        var plan = await GetPlanAsync(context);
+        await UpdatePlanStatusAsync(context, plan);
+        var workflowInstanceIds = await FindMatchingWorkflowInstanceIdsAsync(context, plan.WorkflowInstanceFilter);
+        await GenerateJobsAsync(context, plan, workflowInstanceIds);
+    }
+    
+    private async Task<AlterationPlan> GetPlanAsync(ActivityExecutionContext context)
+    {
         var cancellationToken = context.CancellationToken;
-        var systemClock = context.GetRequiredService<ISystemClock>();
-        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var now = systemClock.UtcNow;
         var planId = context.Get(PlanId)!;
         var alterationPlanStore = context.GetRequiredService<IAlterationPlanStore>();
         var planFilter = new AlterationPlanFilter
@@ -58,13 +64,21 @@ public class GenerateAlterationJobs : CodeActivity
 
         if (plan == null)
             throw new FaultException($"Alteration Plan with ID {planId} not found.");
+        
+        return plan;
+    }
 
-        // Update status.
+    private async Task UpdatePlanStatusAsync(ActivityExecutionContext context, AlterationPlan plan)
+    {
+        var cancellationToken = context.CancellationToken;
+        var alterationPlanStore = context.GetRequiredService<IAlterationPlanStore>();
         plan.Status = AlterationPlanStatus.Generating;
         await alterationPlanStore.SaveAsync(plan, cancellationToken);
+    }
 
-        // Process all matching workflow instances and generate jobs.
-        var filter = plan.WorkflowInstanceFilter;
+    private async Task<IEnumerable<string>> FindMatchingWorkflowInstanceIdsAsync(ActivityExecutionContext context, AlterationWorkflowInstanceFilter filter)
+    {
+        var cancellationToken = context.CancellationToken;
         var workflowInstanceFilter = new WorkflowInstanceFilter
         {
             Ids = filter.WorkflowInstanceIds?.ToList(),
@@ -94,14 +108,22 @@ public class GenerateAlterationJobs : CodeActivity
                 workflowInstanceIds.UnionWith(matchingWorkflowInstanceIds);
             }
         }
-
+        
+        return workflowInstanceIds;
+    }
+    
+    private async Task GenerateJobsAsync(ActivityExecutionContext context, AlterationPlan plan, IEnumerable<string> workflowInstanceIds)
+    {
+        var cancellationToken = context.CancellationToken;
+        var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var systemClock = context.GetRequiredService<ISystemClock>();
         var jobs = workflowInstanceIds.Select(workflowInstanceId => new AlterationJob
             {
                 Id = identityGenerator.GenerateId(),
                 PlanId = plan.Id,
                 Status = AlterationJobStatus.Pending,
                 WorkflowInstanceId = workflowInstanceId,
-                CreatedAt = now
+                CreatedAt = systemClock.UtcNow
             })
             .ToList();
 
