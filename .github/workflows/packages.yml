@@ -7,7 +7,6 @@ on:
       - 'feature/*'
       - 'issue/*'
       - 'enhancement/*'
-      - 'issue/*'
       - 'patch/*'
       - 'fix/*'
   release:
