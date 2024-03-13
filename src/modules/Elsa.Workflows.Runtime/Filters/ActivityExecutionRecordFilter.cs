@@ -11,22 +11,22 @@ public class ActivityExecutionRecordFilter
     /// The ID of the activity execution record.
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// The IDs of the activity execution records.
     /// </summary>
     public ICollection<string>? Ids { get; set; }
-    
+
     /// <summary>
     /// The ID of the workflow instance.
     /// </summary>
     public string? WorkflowInstanceId { get; set; }
-    
+
     /// <summary>
     /// The IDs of the workflow instances.
     /// </summary>
     public ICollection<string>? WorkflowInstanceIds { get; set; }
-    
+
     /// <summary>
     /// The ID of the activity.
     /// </summary>
@@ -36,7 +36,7 @@ public class ActivityExecutionRecordFilter
     /// The IDs of the activities.
     /// </summary>
     public ICollection<string>? ActivityIds { get; set; }
-    
+
     /// <summary>
     /// The node ID of the activity.
     /// </summary>
@@ -46,7 +46,7 @@ public class ActivityExecutionRecordFilter
     /// The node IDs of the activities.
     /// </summary>
     public ICollection<string>? ActivityNodeIds { get; set; }
-    
+
     /// <summary>
     /// The name of the activity.
     /// </summary>
@@ -56,7 +56,7 @@ public class ActivityExecutionRecordFilter
     /// The names of the activities.
     /// </summary>
     public ICollection<string>? Names { get; set; }
-    
+
     /// <summary>
     /// The status of the activity.
     /// </summary>
@@ -71,12 +71,25 @@ public class ActivityExecutionRecordFilter
     /// Whether to include completed activity execution records. If not specified, all activity execution records will be included.
     /// </summary>
     public bool? Completed { get; set; }
-    
+
     /// <summary>
     /// Returns true if the filter is empty.
     /// </summary>
-    public bool IsEmpty => Id == null && Ids == null && WorkflowInstanceId == null && WorkflowInstanceIds == null && ActivityId == null && ActivityIds == null && ActivityNodeId == null && ActivityNodeIds == null && Name == null && Names == null && Status == null && Statuses == null && Completed == null;
-    
+    public bool IsEmpty =>
+        Id == null
+        && Ids == null
+        && WorkflowInstanceId == null
+        && WorkflowInstanceIds == null
+        && ActivityId == null
+        && ActivityIds == null
+        && ActivityNodeId == null
+        && ActivityNodeIds == null
+        && Name == null
+        && Names == null
+        && Status == null
+        && Statuses == null
+        && Completed == null;
+
     /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
