@@ -1,6 +1,7 @@
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Samples.AspNet.BatchProcessing.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,12 +29,17 @@ builder.Services.AddElsa(elsa =>
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
     elsa.AddActivitiesFrom<Program>();
     elsa.AddWorkflowsFrom<Program>();
+
+    elsa.AddVariableTypeAndAlias<Order>("Order", "Warehousing");
+    elsa.AddVariableTypeAndAlias<IAsyncEnumerable<ICollection<Order>>>("BatchedOrderStream", "Warehousing");
 });
 
+builder.Services.AddHealthChecks();
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("*")));
 
 var app = builder.Build();
 app.UseHttpsRedirection();
+app.UseHealthChecks("/");
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
