@@ -92,6 +92,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var workflow = materializedWorkflow.Workflow;
         var definitionId = workflow.Identity.DefinitionId;
 
+        var olderWorkflowLatest = false;
+        var olderWorkflowPublished = false;
+
         // Serialize materializer context.
         var materializerContext = materializedWorkflow.MaterializerContext;
         var materializerContextJson = materializerContext != null ? _payloadSerializer.Serialize(materializerContext) : default;
@@ -130,6 +133,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var latestWorkflowDefinition in latestWorkflowDefinitions)
             {
+                if (latestWorkflowDefinition.Version > workflow.Version)
+                {
+                    _logger.LogWarning("A more recent version of the workflow has been found, overwriting the IsLatest property on the workflow.");
+                    olderWorkflowLatest = true;
+                    continue;
+                }
+
                 latestWorkflowDefinition.IsLatest = false;
                 workflowDefinitionsToSave.Add(latestWorkflowDefinition);
             }
@@ -151,6 +161,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var publishedWorkflowDefinition in publishedWorkflowDefinitions)
             {
+                if (publishedWorkflowDefinition.Version > workflow.Version)
+                {
+                    _logger.LogWarning("A more recent version of the workflow has been found to be published, overwriting the IsPublished property on the workflow.");
+                    olderWorkflowPublished = true;
+                    continue;
+                }
+
                 publishedWorkflowDefinition.IsPublished = false;
                 workflowDefinitionsToSave.Add(publishedWorkflowDefinition);
             }
@@ -166,8 +183,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
         workflowDefinition.ToolVersion = workflow.WorkflowMetadata.ToolVersion;
-        workflowDefinition.IsLatest = workflow.Publication.IsLatest;
-        workflowDefinition.IsPublished = workflow.Publication.IsPublished;
+        workflowDefinition.IsLatest = !olderWorkflowLatest && workflow.Publication.IsLatest;
+        workflowDefinition.IsPublished = !olderWorkflowPublished && workflow.Publication.IsPublished;
         workflowDefinition.IsReadonly = workflow.IsReadonly;
         workflowDefinition.CustomProperties = workflow.CustomProperties;
         workflowDefinition.Variables = workflow.Variables;
@@ -181,14 +198,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.MaterializerContext = materializerContextJson;
         workflowDefinition.MaterializerName = materializedWorkflow.MaterializerName;
         
-        // Temporary measure to try and find the root cause of https://github.com/elsa-workflows/elsa-core/issues/5033
         if (existingDefinitionVersion is null
             && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
-            _logger.LogError("Trying to create duplicate workflows with id {workflowId}", workflowDefinition.Id);
-        else
         {
-            workflowDefinitionsToSave.Add(workflowDefinition);
+            _logger.LogError("Trying to create a new workflow with existing id {workflowId}", workflowDefinition.Id);
+            return;
         }
+        workflowDefinitionsToSave.Add(workflowDefinition);
 
         var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
             .Where(g => g.Count() > 1)
