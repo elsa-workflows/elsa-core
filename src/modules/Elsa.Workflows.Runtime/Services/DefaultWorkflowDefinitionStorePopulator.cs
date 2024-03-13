@@ -185,7 +185,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         // Temporary measure to try and find the root cause of https://github.com/elsa-workflows/elsa-core/issues/5033
         if (existingDefinitionVersion is null
             && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
-            _logger.LogError("Trying to create duplicate workflows with id {workflowId}", workflowDefinition.Id);
+            _logger.LogError("Trying to create duplicate workflows with id {WorkflowDefinitionId}", workflowDefinition.Id);
         else
         {
             workflowDefinitionsToSave.Add(workflowDefinition);
