@@ -1,9 +1,8 @@
 using System.ComponentModel;
 using System.Reflection;
-using Elsa.Expressions.Services;
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
-using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
@@ -13,10 +12,9 @@ using Elsa.MassTransit.Services;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Serialization.Converters;
 using MassTransit;
-using MassTransit.Serialization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.MassTransit.Features;
 
@@ -50,24 +48,11 @@ public class MassTransitFeature : FeatureBase
 
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
-
-        void Configurator(IBusRegistrationConfigurator configure)
-        {
-            configure.UsingInMemory((context, configurator) =>
-            {
-                configurator.SetupWorkflowDispatcherEndpoints(context);
-                configurator.ConfigureEndpoints(context);
-
-                if (PrefetchCount != null) configurator.PrefetchCount = PrefetchCount.Value;
-            });
-        }
-
-        var busConfigurator = BusConfigurator ??= Configurator;
+        var busConfigurator = BusConfigurator ??= ConfigureInMemoryTransport;
         AddMassTransit(busConfigurator);
 
         // Add collected message types to options.
-        Services.Configure<MassTransitActivityOptions>(
-            options => options.MessageTypes = new HashSet<Type>(messageTypes));
+        Services.Configure<MassTransitActivityOptions>(options => options.MessageTypes = new HashSet<Type>(messageTypes));
 
         // Add collected message types as available variable types.
         Services.Configure<ManagementOptions>(options =>
@@ -82,10 +67,6 @@ public class MassTransitFeature : FeatureBase
                 options.VariableDescriptors.Add(new VariableDescriptor(messageType, category, description));
             }
         });
-
-        // Configure message serializer.
-        SystemTextJsonMessageSerializer.Options.Converters.Add(
-            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
     }
 
     /// <summary>
@@ -100,9 +81,8 @@ public class MassTransitFeature : FeatureBase
 
         // Concatenate the manually registered consumers with the workflow message consumers.
         var consumerTypeDefinitions = this.GetConsumers()
-            // Temporary queues require implementation specific variables which will be handled in their respective projects.
-            .Where(c => c.IsTemporary == false)
-            .Concat(workflowMessageConsumers).ToArray();
+            .Concat(workflowMessageConsumers)
+            .ToArray();
 
         Services.AddMassTransit(bus =>
         {
@@ -118,6 +98,39 @@ public class MassTransitFeature : FeatureBase
         {
             // Wait until the bus is started before returning from IHostedService.StartAsync.
             options.WaitUntilStarted = true;
+        });
+    }
+    
+    private void ConfigureInMemoryTransport(IBusRegistrationConfigurator configure)
+    {
+        var consumers = this.GetConsumers().ToList();
+        var temporaryConsumers = consumers
+            .Where(c => c.IsTemporary)
+            .ToList();
+
+        configure.UsingInMemory((context, busFactoryConfigurator) =>
+        {
+            var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+
+            foreach (var consumer in temporaryConsumers)
+            {
+                busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                {
+                    endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    endpoint.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                });
+            }
+
+            busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+            busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+            busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
+            {
+                var serializer = context.GetRequiredService<IJsonSerializer>();
+                serializer.ApplyOptions(serializerOptions);
+                return serializerOptions;
+            });
+
+            if (PrefetchCount != null) busFactoryConfigurator.PrefetchCount = PrefetchCount.Value;
         });
     }
 }

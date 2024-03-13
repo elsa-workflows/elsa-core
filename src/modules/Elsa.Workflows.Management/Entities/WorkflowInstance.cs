@@ -52,6 +52,11 @@ public class WorkflowInstance : Entity
     /// The number of incidents that have occurred during execution, if any.
     /// </summary>
     public int IncidentCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is a system workflow.
+    /// </summary>
+    public bool IsSystem { get; set; }
     
     /// <summary>
     /// The timestamp when the workflow instance was created.

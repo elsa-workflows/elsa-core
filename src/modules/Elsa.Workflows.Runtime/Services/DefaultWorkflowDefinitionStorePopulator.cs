@@ -26,7 +26,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="DefaultWorkflowDefinitionStorePopulator"/> class.
     /// </summary>
     public DefaultWorkflowDefinitionStorePopulator(
         Func<IEnumerable<IWorkflowProvider>> workflowDefinitionProviders,
@@ -111,7 +111,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
         var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
 
-        // Setup a list to collect all workflow definitions to be persisted.
+        // Set up a list to collect all workflow definitions to be persisted.
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
 
         if (existingDefinitionVersion != null)
@@ -186,6 +186,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.IsLatest = !olderWorkflowLatest && workflow.Publication.IsLatest;
         workflowDefinition.IsPublished = !olderWorkflowPublished && workflow.Publication.IsPublished;
         workflowDefinition.IsReadonly = workflow.IsReadonly;
+        workflowDefinition.IsSystem = workflow.IsSystem;
         workflowDefinition.CustomProperties = workflow.CustomProperties;
         workflowDefinition.Variables = workflow.Variables;
         workflowDefinition.Inputs = workflow.Inputs;

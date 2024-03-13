@@ -27,6 +27,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Name)}");
         builder.HasIndex(x => x.IsLatest).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsLatest)}");
         builder.HasIndex(x => x.IsPublished).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsPublished)}");
+        builder.HasIndex(x => x.IsSystem).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsSystem)}");
         builder.HasIndex("UsableAsActivity").HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_UsableAsActivity");
     }
         
@@ -49,5 +50,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.CreatedAt)}");
         builder.HasIndex(x => x.UpdatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.UpdatedAt)}");
         builder.HasIndex(x => x.FinishedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.FinishedAt)}");
+        builder.HasIndex(x => x.IsSystem).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.IsSystem)}");
     }
 }

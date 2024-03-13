@@ -1,10 +1,12 @@
 using Elsa.Alterations.Core.Abstractions;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationTypes;
 
 /// <summary>
 /// Cancels an activity.
 /// </summary>
+[UsedImplicitly]
 public class CancelActivity : AlterationBase
 {
     /// <summary>

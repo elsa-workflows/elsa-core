@@ -53,21 +53,35 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
     public async Task<ActivityExecutionRecord?> FindAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return record == null ? null : await Map(record, cancellationToken);
+        return record == null ? null : await MapAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-        return await Task.WhenAll(records.Select(async x => await Map(x, cancellationToken)));
+        return await Task.WhenAll(records.Select(async x => await MapAsync(x, cancellationToken)));
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return await Task.WhenAll(records.Select(async x => await Map(x, cancellationToken)));
+        return await Task.WhenAll(records.Select(async x => await MapAsync(x, cancellationToken)));
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var records = await _store.FindManyAsync<ActivityExecutionSummaryRecord>(q => ApplyFilter(q, filter), cancellationToken);
+        return records.Select(MapSummary).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var records = await _store.FindManyAsync<ActivityExecutionSummaryRecord>(q => ApplyFilter(q, filter), cancellationToken);
+        return records.Select(MapSummary).ToList();
     }
 
     /// <inheritdoc />
@@ -123,7 +137,7 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
         };
     }
 
-    private async ValueTask<ActivityExecutionRecord> Map(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
+    private async ValueTask<ActivityExecutionRecord> MapAsync(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
     {
         return new ActivityExecutionRecord
         {
@@ -142,6 +156,24 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             Payload = source.SerializedPayload != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedPayload, cancellationToken) : default,
             Outputs = source.SerializedOutputs != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object?>>(source.SerializedOutputs, cancellationToken) : default,
             Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default
+        };
+    }
+
+    private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source)
+    {
+        return new ActivityExecutionRecordSummary
+        {
+            Id = source.Id,
+            ActivityId = source.ActivityId,
+            ActivityNodeId = source.ActivityNodeId,
+            ActivityType = source.ActivityType,
+            ActivityName = source.ActivityName,
+            WorkflowInstanceId = source.WorkflowInstanceId,
+            CompletedAt = source.CompletedAt,
+            StartedAt = source.StartedAt,
+            HasBookmarks = source.HasBookmarks,
+            Status = Enum.Parse<ActivityStatus>(source.Status),
+            ActivityTypeVersion = source.ActivityTypeVersion
         };
     }
 }

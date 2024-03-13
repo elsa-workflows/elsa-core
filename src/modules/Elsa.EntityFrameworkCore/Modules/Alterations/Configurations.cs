@@ -13,9 +13,9 @@ public class Configurations : IEntityTypeConfiguration<AlterationPlan>, IEntityT
     public void Configure(EntityTypeBuilder<AlterationPlan> builder)
     {
         builder.Ignore(x => x.Alterations);
-        builder.Ignore(x => x.WorkflowInstanceIds);
+        builder.Ignore(x => x.WorkflowInstanceFilter);
         builder.Property<string>("SerializedAlterations");
-        builder.Property<string>("SerializedWorkflowInstanceIds");
+        builder.Property<string>("SerializedWorkflowInstanceFilter");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.Status)}");
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.CreatedAt)}");

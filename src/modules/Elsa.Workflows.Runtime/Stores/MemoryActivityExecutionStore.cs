@@ -58,6 +58,20 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
     }
 
     /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, order, cancellationToken);
+        return entities.Select(ActivityExecutionRecordSummary.FromRecord);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, cancellationToken);
+        return entities.Select(ActivityExecutionRecordSummary.FromRecord);
+    }
+
+    /// <inheritdoc />
     public Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();

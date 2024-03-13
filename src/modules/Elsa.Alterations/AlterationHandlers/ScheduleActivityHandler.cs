@@ -4,12 +4,14 @@ using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Signals;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationHandlers;
 
 /// <summary>
 /// Schedules an activity for execution.
 /// </summary>
+[UsedImplicitly]
 public class ScheduleActivityHandler : AlterationHandlerBase<ScheduleActivity>
 {
     /// <inheritdoc />

@@ -16,7 +16,6 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Server.Web.Middleware;
 using Elsa.Workflows.Management.Compression;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;

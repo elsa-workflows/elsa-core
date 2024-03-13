@@ -4,7 +4,7 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Runtime.Entities;
 
 /// <summary>
-/// Represents a single workflow execution, associated with an individual activity instance.
+/// Represents a single activity execution of an activity instance.
 /// </summary>
 public class ActivityExecutionRecord : Entity
 {

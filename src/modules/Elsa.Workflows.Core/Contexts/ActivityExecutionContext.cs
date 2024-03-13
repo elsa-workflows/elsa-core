@@ -390,6 +390,23 @@ public partial class ActivityExecutionContext : IExecutionContext
     }
 
     /// <summary>
+    /// Creates a bookmark for the current activity execution context.
+    /// </summary>
+    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="includeActivityInstanceId">Specifies whether to include the activity instance ID in the bookmark information. Defaults to true.</param>
+    /// <param name="customProperties">Additional custom properties to associate with the bookmark. Defaults to null.</param>
+    /// <returns>The created bookmark.</returns>
+    public Bookmark CreateBookmark(object payload, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
+    {
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Payload = payload,
+            IncludeActivityInstanceId = includeActivityInstanceId,
+            Metadata = customProperties
+        });
+    }
+
+    /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
     /// <param name="payload">The payload to associate with the bookmark.</param>

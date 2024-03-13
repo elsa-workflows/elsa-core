@@ -86,7 +86,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                     b.Property<string>("SerializedAlterations")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("SerializedWorkflowInstanceIds")
+                    b.Property<string>("SerializedWorkflowInstanceFilter")
                         .HasColumnType("longtext");
 
                     b.Property<DateTimeOffset?>("StartedAt")

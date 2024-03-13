@@ -54,6 +54,11 @@ public class WorkflowState
     public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
 
     /// <summary>
+    /// Gets or sets the value indicating whether the workflow is a system workflow.
+    /// </summary>
+    public bool IsSystem { get; set; }
+
+    /// <summary>
     /// A list of callbacks that activities registered in order to be notified when the activities they scheduled complete. 
     /// </summary>
     public ICollection<CompletionCallbackState> CompletionCallbacks { get; set; } = new List<CompletionCallbackState>();

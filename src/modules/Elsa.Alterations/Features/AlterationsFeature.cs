@@ -1,9 +1,11 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
+using Elsa.Alterations.Core.Services;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
+using Elsa.Alterations.Workflows;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -52,6 +54,7 @@ public class AlterationsFeature : FeatureBase
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly<AlterationsFeature>();
+        Module.AddWorkflow<ExecuteAlterationPlanWorkflow>();
     }
 
     /// <inheritdoc />
@@ -60,6 +63,9 @@ public class AlterationsFeature : FeatureBase
         Services.AddAlterations();
         Services.AddAlterationsCore();
         Services.AddScoped<BackgroundAlterationJobDispatcher>();
+        Services.AddScoped<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
+        Services.AddScoped<IAlterationJobRunner, DefaultAlterationJobRunner>();
+        Services.AddScoped<IAlterationRunner, DefaultAlterationRunner>();
 
         Services.AddMemoryStore<AlterationPlan, MemoryAlterationPlanStore>();
         Services.AddMemoryStore<AlterationJob, MemoryAlterationJobStore>();

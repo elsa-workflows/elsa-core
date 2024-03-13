@@ -1,10 +1,12 @@
 using Elsa.Alterations.Core.Abstractions;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationTypes;
 
 /// <summary>
 /// Schedules an activity for execution.
 /// </summary>
+[UsedImplicitly]
 public class ScheduleActivity : AlterationBase
 {
     /// <summary>

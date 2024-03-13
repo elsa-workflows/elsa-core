@@ -36,6 +36,7 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
 
         var filter = new WorkflowInstanceFilter
         {
+            IsSystem = request.IsSystem,
             SearchTerm = request.SearchTerm,
             DefinitionId = request.DefinitionId,
             DefinitionIds = request.DefinitionIds?.Any() == true ? request.DefinitionIds : null,

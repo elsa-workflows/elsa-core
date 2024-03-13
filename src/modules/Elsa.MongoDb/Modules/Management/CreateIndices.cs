@@ -24,33 +24,36 @@ internal class CreateIndices : IHostedService
     {
         return Task.CompletedTask;
     }
-    
+
     private static Task CreateWorkflowDefinitionIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var workflowDefinitionCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowDefinition>>();
         if (workflowDefinitionCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowDefinitionCollection,
             async (collection, indexBuilder) =>
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<WorkflowDefinition>>
                     {
-                        new(indexBuilder.Ascending(x => x.DefinitionId).Ascending(x => x.Version), 
-                            new CreateIndexOptions {Unique = true}),
+                        new(indexBuilder.Ascending(x => x.DefinitionId).Ascending(x => x.Version), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.Version)),
                         new(indexBuilder.Ascending(x => x.Name)),
+                        new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.IsLatest)),
                         new(indexBuilder.Ascending(x => x.IsPublished))
                     },
                     cancellationToken));
     }
-    
+
     private static Task CreateWorkflowInstanceIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var workflowInstanceCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowInstance>>();
         if (workflowInstanceCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             workflowInstanceCollection,
             async (collection, indexBuilder) =>
@@ -76,6 +79,7 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.SubStatus)),
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
                         new(indexBuilder.Ascending(x => x.Name)),
+                        new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.UpdatedAt)),
                         new(indexBuilder.Ascending(x => x.FinishedAt))

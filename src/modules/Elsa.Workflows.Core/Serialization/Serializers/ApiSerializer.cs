@@ -48,7 +48,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
 
     JsonSerializerOptions IApiSerializer.ApplyOptions(JsonSerializerOptions options)
     {
-        Apply(options);
+        ApplyOptions(options);
         return options;
     }
 }
