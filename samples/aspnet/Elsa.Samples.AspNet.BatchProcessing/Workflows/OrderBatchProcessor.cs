@@ -4,6 +4,7 @@ using Elsa.Samples.AspNet.BatchProcessing.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Samples.AspNet.BatchProcessing.Workflows;
 
@@ -27,7 +28,14 @@ public class OrderBatchProcessor : WorkflowBase
                 },
                 new ParallelForEach<Order>
                 {
-                    Items = new(orders) 
+                    Items = new(orders),
+                    Body = new Sequence
+                    {
+                        Activities =
+                        {
+                            new WriteLine(context => $"Processing order {context.GetVariable<Order>("CurrentValue")!.Id}"),
+                        }
+                    }
                 },
                 new WriteLine("Done!")
             }
