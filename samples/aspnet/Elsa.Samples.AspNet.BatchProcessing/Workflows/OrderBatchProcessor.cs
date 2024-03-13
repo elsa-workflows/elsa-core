@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Samples.AspNet.BatchProcessing.Activities;
 using Elsa.Samples.AspNet.BatchProcessing.Models;
 using Elsa.Workflows;
@@ -14,7 +15,7 @@ public class OrderBatchProcessor : WorkflowBase
     /// <inheritdoc />
     protected override void Build(IWorkflowBuilder builder)
     {
-        var orders = builder.WithVariable<IAsyncEnumerable<ICollection<Order>>>();
+        var orders = builder.WithVariable<IAsyncEnumerable<ICollection<Order>>>().WithMemoryStorage();
         builder.Root = new Sequence
         {
             Activities =
