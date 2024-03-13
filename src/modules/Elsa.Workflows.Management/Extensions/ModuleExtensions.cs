@@ -65,4 +65,19 @@ public static class ModuleExtensions
     /// Removes the specified activity type from the system.
     /// </summary>
     public static IModule RemoveActivity<T>(this IModule module) where T : IActivity => module.UseWorkflowManagement(management => management.RemoveActivity<T>());
+    
+    /// <summary>
+    /// Adds the specified variable type to the system.
+    /// </summary>
+    public static IModule AddVariableType<T>(this IModule module, string category) => module.UseWorkflowManagement(management => management.AddVariableType<T>(category));
+
+    /// <summary>
+    /// Adds a variable type and its alias to the specified module.
+    /// </summary>
+    public static IModule AddVariableTypeAndAlias<T>(this IModule module, string alias, string category)
+    {
+        return module
+            .UseWorkflowManagement(management => management.AddVariableType<T>(category))
+            .AddTypeAlias<T>(alias);
+    }
 }
