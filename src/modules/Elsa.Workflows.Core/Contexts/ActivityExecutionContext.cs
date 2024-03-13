@@ -278,6 +278,7 @@ public partial class ActivityExecutionContext : IExecutionContext
         {
             if (completionCallback != null)
             {
+                Tag = options?.Tag;
                 var completedContext = new ActivityCompletedContext(this, this);
                 await completionCallback(completedContext);
             }
