@@ -7,6 +7,9 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Samples.AspNet.BatchProcessing.Activities;
 
+/// <summary>
+/// Fetches orders from the data source.
+/// </summary>
 [Activity("Demo", "Warehousing", "Fetch orders from the data source.")]
 [Output(IsSerializable = false)]
 public class FetchOrders : CodeActivity<IAsyncEnumerable<ICollection<Order>>>
@@ -14,24 +17,31 @@ public class FetchOrders : CodeActivity<IAsyncEnumerable<ICollection<Order>>>
     /// <summary>
     /// The total number of orders to fetch.
     /// </summary>
-    [Input(Description = "The total number of orders to fetch.")]
-    public Input<int> Count { get; set; } = new(100);
-    
+    [Input(
+        Description = "The total number of orders to fetch.",
+        DefaultValue = 1000
+    )]
+    public Input<int> Count { get; set; } = new(1000);
+
     /// <summary>
     /// The number of orders to fetch per batch.
     /// </summary>
-    [Input(Description = "The number of orders to fetch per batch.")]
+    [Input(
+        Description = "The number of orders to fetch per batch.",
+        DefaultValue = 100
+    )]
     public Input<int> BatchSize { get; set; } = new(100);
-    
+
+    /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
         var count = Count.Get(context);
         var batchSize = BatchSize.Get(context);
         var orders = GenerateOrders(count).Chunk(batchSize).ToAsyncEnumerable();
-        
+
         Result.Set(context, orders);
     }
-    
+
     private IEnumerable<Order> GenerateOrders(int count)
     {
         var orderFaker = new Faker<Order>()

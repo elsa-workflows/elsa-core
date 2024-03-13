@@ -23,8 +23,12 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
+        var workflowStatuses = request.Statuses?.Any() == true ? ParseEnumStrings<WorkflowStatus>(request.Statuses).ToList() : null;
+        var workflowSubStatuses = request.SubStatuses?.Any() == true ? ParseEnumStrings<WorkflowSubStatus>(request.SubStatuses).ToList() : null;
 
-        if (!await ValidateInputAsync(request, cancellationToken))
+        ValidateInput(request);
+
+        if (ValidationFailed)
         {
             await SendErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return;
@@ -40,8 +44,8 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
             CorrelationId = request.CorrelationId,
             WorkflowStatus = request.Status,
             WorkflowSubStatus = request.SubStatus,
-            WorkflowStatuses = request.Statuses?.Any() == true ? request.Statuses : null,
-            WorkflowSubStatuses = request.SubStatuses?.Any() == true ? request.SubStatuses : null,
+            WorkflowStatuses = workflowStatuses,
+            WorkflowSubStatuses = workflowSubStatuses,
             HasIncidents = request.HasIncidents,
             TimestampFilters = request.TimestampFilters?.Any() == true ? request.TimestampFilters : null,
         };
@@ -51,7 +55,21 @@ internal class List(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Respon
         await SendOkAsync(response, cancellationToken);
     }
 
-    private async Task<bool> ValidateInputAsync(Request request, CancellationToken cancellationToken)
+    private IEnumerable<TEnum> ParseEnumStrings<TEnum>(IEnumerable<string> strings) where TEnum : struct
+    {
+        foreach (string s in strings)
+        {
+            if (Enum.TryParse<TEnum>(s, true, out var result))
+                yield return result;
+            else
+            {
+                AddError($"Invalid enum value '{s}'.");
+                yield break;
+            }
+        }
+    }
+
+    private bool ValidateInput(Request request)
     {
         if (request.Page is < 0)
         {
