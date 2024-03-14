@@ -1,6 +1,5 @@
 using Elsa.DataSets.Models;
 using Elsa.Extensions;
-using Elsa.Samples.AspNet.BatchProcessing.DataSets;
 using Elsa.Samples.AspNet.BatchProcessing.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
@@ -17,16 +16,21 @@ public class OrderBatchProcessor : WorkflowBase
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Name = "Order Batch Processor - Sequence";
-        var orders = builder.WithVariable<IAsyncEnumerable<ICollection<Order>>>().WithMemoryStorage();
-        var ordersDataSet = builder.WithVariable<DataSetReference>("Orders");
+        //var orders = builder.WithVariable<IAsyncEnumerable<ICollection<Order>>>().WithMemoryStorage();
+        var ordersDataSet = builder.WithVariable<DataSetReference>();
         builder.Root = new Sequence
         {
             Activities =
             {
                 new WriteLine("Fetching orders..."),
+                new SetVariable
+                {
+                    Variable = ordersDataSet,
+                    Value = new(DataSetReference.Create("Orders"))
+                },
                 new ParallelForEach<Order>
                 {
-                    Items = new(orders),
+                    Items = new(ordersDataSet),
                     Body = new Sequence
                     {
                         Activities =

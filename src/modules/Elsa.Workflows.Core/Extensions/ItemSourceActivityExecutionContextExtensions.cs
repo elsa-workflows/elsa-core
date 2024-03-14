@@ -1,4 +1,5 @@
 using System.Collections;
+using Elsa.DataSets.Models;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows;
@@ -22,6 +23,15 @@ public static class ItemSourceActivityExecutionContextExtensions
 
         if (items == null)
             yield break;
+
+        if (items is IDataSource dataSource)
+        {
+            var dataSourceContext = new DataSourceContext(context.WorkflowExecutionContext.ServiceProvider);
+            var dataSourceItems = dataSource.ListAsync<T>(dataSourceContext);
+            
+            await foreach (var dataSourceItem in dataSourceItems)
+                yield return dataSourceItem;
+        }
         
         var itemsType = items.GetType();
         if (itemsType.Name == "AsyncEnumerableAdapter`1")

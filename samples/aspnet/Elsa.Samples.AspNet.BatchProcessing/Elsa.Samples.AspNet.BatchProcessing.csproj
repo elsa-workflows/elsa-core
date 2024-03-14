@@ -23,6 +23,7 @@
 
     <ItemGroup>
       <Folder Include="Activities\" />
+      <Folder Include="App_Data\" />
       <Folder Include="Contracts\" />
     </ItemGroup>
 

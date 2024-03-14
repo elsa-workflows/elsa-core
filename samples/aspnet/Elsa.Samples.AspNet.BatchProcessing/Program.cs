@@ -6,6 +6,7 @@ using Elsa.Samples.AspNet.BatchProcessing.DataSets;
 using Elsa.Samples.AspNet.BatchProcessing.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
 var sqliteConnectionString = "Data Source=App_Data/elsa.db";
 
 builder.Services.AddElsa(elsa =>
@@ -33,10 +34,14 @@ builder.Services.AddElsa(elsa =>
         };
     });
 
+    elsa.UseDataSets(dataSets =>
+    {
+        dataSets.WithConfigurationBasedProviders(configuration.GetSection("DataSets"));
+    });
+
     elsa.UseDefaultAuthentication(auth => auth.UseAdminApiKey());
     elsa.AddActivitiesFrom<Program>();
     elsa.AddWorkflowsFrom<Program>();
-
     elsa.AddVariableTypeAndAlias<Order>("Order", "Warehousing");
     elsa.AddVariableTypeAndAlias<OrderDataSet>("OrderDataSet", "Warehousing");
 });

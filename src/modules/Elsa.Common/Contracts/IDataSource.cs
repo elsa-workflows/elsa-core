@@ -2,5 +2,5 @@ namespace Elsa.DataSets.Models;
 
 public interface IDataSource
 {
-    ValueTask<IEnumerable<object>> ListAsync(DataSourceContext context);
+    IAsyncEnumerable<T> ListAsync<T>(DataSourceContext context);
 }

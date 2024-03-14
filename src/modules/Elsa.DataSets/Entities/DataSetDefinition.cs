@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.DataSets.Contracts;
 
