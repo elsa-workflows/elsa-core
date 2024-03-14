@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Dynamic;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Common.Services;
 using Elsa.DataSets.Contracts;
 using Elsa.DataSets.Entities;
@@ -108,6 +110,14 @@ public class DataSetFeature(IModule module) : FeatureBase(module)
     private void BindOptions(IConfigurationSection configurationSection, DataSetOptions options)
     {
         var dataSetsSection = configurationSection.GetSection("DataSets");
+        var dataSetsModel1 = new JsonElement();
+        var dataSetsModel2 = new ExpandoObject();
+        var dataSetsModel3 = new JsonObject();
+        var dataSetsModel4 = new JsonArray();
+        dataSetsSection.Bind(dataSetsModel1);
+        dataSetsSection.Bind(dataSetsModel2);
+        dataSetsSection.Bind(dataSetsModel3);
+        dataSetsSection.Bind(dataSetsModel4);
         var dataSetsJson = dataSetsSection.Value!;
         var linkedServicesSection = configurationSection.GetSection("LinkedServices");
         var linkedServicesJson = linkedServicesSection.Value!;

@@ -19,6 +19,11 @@ public interface ILinkedServiceDefinitionProvider
     ValueTask<IEnumerable<LinkedServiceDefinition>> FindManyAsync(LinkedServiceDefinitionFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Finds a <see cref="LinkedServiceDefinition"/> that matches the given name.
+    /// </summary>
+    ValueTask<LinkedServiceDefinition?> FindAsync(string name, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Finds a <see cref="LinkedServiceDefinition"/> that matches the given filter.
     /// </summary>
     ValueTask<LinkedServiceDefinition?> FindAsync(LinkedServiceDefinitionFilter filter, CancellationToken cancellationToken = default);

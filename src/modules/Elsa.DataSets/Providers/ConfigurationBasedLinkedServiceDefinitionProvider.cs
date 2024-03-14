@@ -26,6 +26,12 @@ public class ConfigurationBasedLinkedServiceDefinitionProvider(IOptions<DataSetO
     }
 
     /// <inheritdoc />
+    public ValueTask<LinkedServiceDefinition?> FindAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return new(options.Value.LinkedServiceDefinitions.FirstOrDefault(x => x.Name == name));
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("The filter may contain references to types that cannot be statically analyzed.")]
     public ValueTask<LinkedServiceDefinition?> FindAsync(LinkedServiceDefinitionFilter filter, CancellationToken cancellationToken = default)
     {

@@ -4,5 +4,5 @@ namespace Elsa.DataSets.Contracts;
 
 public interface IDataSet
 {
-    LinkedServiceReference LinkedServiceReference { get; set; }
+    IAsyncEnumerable<T> ReadAsync<T>(ILinkedService linkedService, CancellationToken cancellationToken = default);
 }

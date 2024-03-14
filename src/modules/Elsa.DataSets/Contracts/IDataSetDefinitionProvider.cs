@@ -19,6 +19,11 @@ public interface IDataSetDefinitionProvider
     ValueTask<IEnumerable<DataSetDefinition>> FindManyAsync(DataSetDefinitionFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Finds a <see cref="DataSetDefinition"/> that matches the given name.
+    /// </summary>
+    ValueTask<DataSetDefinition?> FindAsync(string name, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Finds a <see cref="DataSetDefinition"/> that matches the given filter.
     /// </summary>
     ValueTask<DataSetDefinition?> FindAsync(DataSetDefinitionFilter filter, CancellationToken cancellationToken = default);

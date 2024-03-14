@@ -22,6 +22,16 @@ public class StoreBasedLinkedServiceDefinitionProvider(ILinkedServiceDefinitionS
     }
 
     /// <inheritdoc />
+    public async ValueTask<LinkedServiceDefinition?> FindAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var filter = new LinkedServiceDefinitionFilter
+        {
+            Name = name
+        };
+        return await store.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<LinkedServiceDefinition?> FindAsync(LinkedServiceDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.FindAsync(filter, cancellationToken);

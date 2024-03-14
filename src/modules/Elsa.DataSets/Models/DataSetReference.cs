@@ -20,10 +20,17 @@ public class DataSetReference : IDataSource
     
     public async IAsyncEnumerable<T> ListAsync<T>(DataSourceContext context)
     {
-        var store = context.ServiceProvider.GetRequiredService<IDataSetDefinitionStore>();
-        var definition = await store.FindAsync(Name);
-        //definition.DataSet.ReadAsync(context.ServiceProvider);
-        yield break;
+        var dataSetDefinitionProvider = context.ServiceProvider.GetRequiredService<IDataSetDefinitionProvider>();
+        var linkedServiceDefinitionProvider = context.ServiceProvider.GetRequiredService<ILinkedServiceDefinitionProvider>();
+        var dataSetDefinition = await dataSetDefinitionProvider.FindAsync(Name);
+        var linkedServiceReference = dataSetDefinition!.LinkedServiceReference;
+        var linkedServiceDefinition = await linkedServiceDefinitionProvider.FindAsync(linkedServiceReference.Name);
+        var linkedService = linkedServiceDefinition!.LinkedService;
+        var dataSet = dataSetDefinition.DataSet;
+        var records = dataSet.ReadAsync<T>(linkedService);
+        
+        await foreach (var record in records)
+            yield return record;
     }
     
 }

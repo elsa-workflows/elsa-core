@@ -26,6 +26,12 @@ public class ConfigurationBasedDataSetDefinitionProvider(IOptions<DataSetOptions
     }
 
     /// <inheritdoc />
+    public ValueTask<DataSetDefinition?> FindAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return new(options.Value.DataSetDefinitions.FirstOrDefault(x => x.Name == name));
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("The filter may contain references to types that cannot be statically analyzed.")]
     public ValueTask<DataSetDefinition?> FindAsync(DataSetDefinitionFilter filter, CancellationToken cancellationToken = default)
     {

@@ -22,6 +22,16 @@ public class StoreBasedDataSetDefinitionProvider(IDataSetDefinitionStore store) 
     }
 
     /// <inheritdoc />
+    public async ValueTask<DataSetDefinition?> FindAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var filter = new DataSetDefinitionFilter
+        {
+            Name = name
+        };
+        return await store.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<DataSetDefinition?> FindAsync(DataSetDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.FindAsync(filter, cancellationToken);
