@@ -1,6 +1,5 @@
-using Bogus;
 using Elsa.Extensions;
-using Elsa.Samples.AspNet.BatchProcessing.Models;
+using Elsa.Samples.AspNet.BatchProcessing.DataSets;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -12,45 +11,20 @@ namespace Elsa.Samples.AspNet.BatchProcessing.Activities;
 /// </summary>
 [Activity("Demo", "Warehousing", "Fetch orders from the data source.")]
 [Output(IsSerializable = false)]
-public class FetchOrders : CodeActivity<IAsyncEnumerable<ICollection<Order>>>
+public class FetchOrders : CodeActivity<OrderDataSet>
 {
     /// <summary>
-    /// The total number of orders to fetch.
+    /// The ID of the customer to fetch orders for.
     /// </summary>
-    [Input(
-        Description = "The total number of orders to fetch.",
-        DefaultValue = 1000
-    )]
-    public Input<int> Count { get; set; } = new(1000);
-
-    /// <summary>
-    /// The number of orders to fetch per batch.
-    /// </summary>
-    [Input(
-        Description = "The number of orders to fetch per batch.",
-        DefaultValue = 100
-    )]
-    public Input<int> BatchSize { get; set; } = new(100);
+    [Input(Description = "The ID of the customer to fetch orders for.")]
+    public Input<string> CustomerId { get; set; } = default!;
 
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
-        var count = Count.Get(context);
-        var batchSize = BatchSize.Get(context);
-        var orders = GenerateOrders(count).Chunk(batchSize).ToAsyncEnumerable();
+        var customerId = CustomerId.Get(context);
+        var dataSet = new OrderDataSet(customerId);
 
-        Result.Set(context, orders);
-    }
-
-    private IEnumerable<Order> GenerateOrders(int count)
-    {
-        var orderFaker = new Faker<Order>()
-            .RuleFor(o => o.Id, f => Guid.NewGuid().ToString())
-            .RuleFor(o => o.CustomerId, f => Guid.NewGuid().ToString())
-            .RuleFor(o => o.ProductId, f => Guid.NewGuid().ToString())
-            .RuleFor(o => o.Quantity, f => f.Random.Int(1, 100))
-            .RuleFor(o => o.Price, f => f.Random.Decimal(0.01m, 1000.00m));
-
-        return orderFaker.Generate(count);
+        Result.Set(context, dataSet);
     }
 }

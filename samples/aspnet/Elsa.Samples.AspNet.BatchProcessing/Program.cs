@@ -2,6 +2,8 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Samples.AspNet.BatchProcessing.Activities;
+using Elsa.Samples.AspNet.BatchProcessing.DataSets;
 using Elsa.Samples.AspNet.BatchProcessing.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,7 +39,7 @@ builder.Services.AddElsa(elsa =>
     elsa.AddWorkflowsFrom<Program>();
 
     elsa.AddVariableTypeAndAlias<Order>("Order", "Warehousing");
-    elsa.AddVariableTypeAndAlias<IAsyncEnumerable<ICollection<Order>>>("BatchedOrderStream", "Warehousing");
+    elsa.AddVariableTypeAndAlias<OrderDataSet>("OrderDataSet", "Warehousing");
 });
 
 builder.Services.AddHealthChecks();
