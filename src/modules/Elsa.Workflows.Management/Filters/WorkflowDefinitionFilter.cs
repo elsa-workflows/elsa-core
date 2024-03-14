@@ -62,6 +62,11 @@ public class WorkflowDefinitionFilter
     public bool? UsableAsActivity { get; set; }
 
     /// <summary>
+    /// Filter on workflows that are system workflows.
+    /// </summary>
+    public bool? IsSystem { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable to apply the filter to.</param>
@@ -78,7 +83,8 @@ public class WorkflowDefinitionFilter
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == filter.UsableAsActivity);
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name.Contains(filter.SearchTerm) || x.Description.Contains(filter.SearchTerm) || x.Id == filter.SearchTerm || x.DefinitionId == filter.SearchTerm);
+        if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(filter.SearchTerm) || x.Description!.Contains(filter.SearchTerm) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
+        if (filter.IsSystem != null) queryable = queryable.Where(x => x.IsSystem == filter.IsSystem);
 
         return queryable;
     }

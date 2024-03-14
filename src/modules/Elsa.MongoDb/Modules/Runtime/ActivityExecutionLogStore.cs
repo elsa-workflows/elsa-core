@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDb.Common;
+using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -45,6 +46,18 @@ public class MongoActivityExecutionLogStore : IActivityExecutionStore
     public async Task<IEnumerable<ActivityExecutionRecord>> FindManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         return await _mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(queryable => Order(Filter(queryable, filter), order), ExpressionHelpers.ActivityExecutionRecordSummary, cancellationToken).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), ExpressionHelpers.ActivityExecutionRecordSummary, cancellationToken).ToList();
     }
 
     /// <inheritdoc />

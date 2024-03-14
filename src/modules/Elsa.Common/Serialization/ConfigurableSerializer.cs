@@ -1,7 +1,10 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using System.Text.Unicode;
 using Elsa.Common.Contracts;
+using Elsa.Common.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Serialization;
@@ -27,17 +30,17 @@ public abstract class ConfigurableSerializer
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/> with the configured options. 
     /// </summary>
-    protected virtual JsonSerializerOptions CreateOptions()
+    public virtual JsonSerializerOptions CreateOptions()
     {
         var options = CreateOptionsInternal();
-        Apply(options);
+        ApplyOptions(options);
         return options;
     }
     
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/> with the configured options. 
     /// </summary>
-    protected virtual void Apply(JsonSerializerOptions options)
+    public virtual void ApplyOptions(JsonSerializerOptions options)
     {
         Configure(options);
         AddConverters(options);
@@ -53,11 +56,14 @@ public abstract class ConfigurableSerializer
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         };
         
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
+        options.Converters.Add(new IntegerJsonConverter());
+        options.Converters.Add(new DecimalJsonConverter());
 
         return options;
     }

@@ -30,7 +30,8 @@ public class Workflow : Composite<object>, ICloneable
         ICollection<OutputDefinition> outputs,
         ICollection<string> outcomes,
         IDictionary<string, object> customProperties,
-        bool isReadonly)
+        bool isReadonly,
+        bool isSystem)
     {
         Identity = identity;
         Publication = publication;
@@ -43,6 +44,7 @@ public class Workflow : Composite<object>, ICloneable
         CustomProperties = customProperties;
         Root = root;
         IsReadonly = isReadonly;
+        IsSystem = isSystem;
     }
 
     /// <summary>
@@ -99,6 +101,11 @@ public class Workflow : Composite<object>, ICloneable
     /// Make workflow definition readonly.
     /// </summary>
     public bool IsReadonly { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow is a system workflow.
+    /// </summary>
+    public bool IsSystem { get; }
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.

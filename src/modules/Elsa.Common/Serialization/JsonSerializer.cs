@@ -1,0 +1,48 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using Elsa.Common.Contracts;
+
+namespace Elsa.Common.Serialization;
+
+/// <summary>
+/// Provides JSON serialization services.
+/// </summary>
+public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
+{
+    /// <inheritdoc />
+    public StandardJsonSerializer(IServiceProvider serviceProvider) : base(serviceProvider)
+    {
+    }
+
+    /// <inheritdoc />
+    [RequiresUnreferencedCode("The type is not known at compile time.")]
+    public string Serialize(object value)
+    {
+        var options = CreateOptions();
+        return JsonSerializer.Serialize(value, options);
+    }
+
+    /// <inheritdoc />
+    [RequiresUnreferencedCode("The type is not known at compile time.")]
+    public string Serialize(object value, Type type)
+    {
+        var options = CreateOptions();
+        return JsonSerializer.Serialize(value, type, options);
+    }
+
+    /// <inheritdoc />
+    [RequiresUnreferencedCode("The type is not known at compile time.")]
+    public object Deserialize(string json)
+    {
+        var options = CreateOptions();
+        return JsonSerializer.Deserialize<object>(json, options)!;
+    }
+
+    /// <inheritdoc />
+    [RequiresUnreferencedCode("The type is not known at compile time.")]
+    public object Deserialize(string json, Type type)
+    {
+        var options = CreateOptions();
+        return JsonSerializer.Deserialize(json, type, options)!;
+    }
+}

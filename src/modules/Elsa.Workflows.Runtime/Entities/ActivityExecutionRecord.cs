@@ -4,7 +4,7 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Runtime.Entities;
 
 /// <summary>
-/// Represents a single workflow execution, associated with an individual activity instance.
+/// Represents a single activity execution of an activity instance.
 /// </summary>
 public class ActivityExecutionRecord : Entity
 {
@@ -54,6 +54,11 @@ public class ActivityExecutionRecord : Entity
     public IDictionary<string, object?>? Outputs { get; set; }
 
     /// <summary>
+    /// Any properties provided by the activity.
+    /// </summary>
+    public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+
+    /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.
     /// </summary>
     public ExceptionState? Exception { get; set; }
@@ -61,7 +66,7 @@ public class ActivityExecutionRecord : Entity
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = default!;
+    public DateTimeOffset StartedAt { get; set; }
 
     /// <summary>
     /// Gets or sets whether the activity has any bookmarks.

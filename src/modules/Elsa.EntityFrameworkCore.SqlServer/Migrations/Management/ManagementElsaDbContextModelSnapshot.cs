@@ -53,6 +53,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<bool>("IsReadonly")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("nvarchar(max)");
 
@@ -85,6 +88,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
+
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsSystem");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
@@ -133,6 +139,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(450)");
 
@@ -163,6 +172,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowInstance_IsSystem");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");

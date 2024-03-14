@@ -85,11 +85,38 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances by whether they have incidents.
     /// </summary>
     public bool? HasIncidents { get; set; }
+    
+    /// <summary>
+    /// Filter on workflows that are system workflows.
+    /// </summary>
+    public bool? IsSystem { get; set; }
 
     /// <summary>
     /// Filter workflow instances by timestamp.
     /// </summary>
     public ICollection<TimestampFilter>? TimestampFilters { get; set; }
+    
+    /// <summary>
+    /// Returns true if the filter is empty.
+    /// </summary>
+    public bool IsEmpty =>
+        Id == null &&
+        Ids == null &&
+        DefinitionId == null &&
+        DefinitionVersionId == null &&
+        DefinitionIds == null &&
+        DefinitionVersionIds == null &&
+        Version == null &&
+        CorrelationId == null &&
+        CorrelationIds == null &&
+        WorkflowStatus == null &&
+        WorkflowSubStatus == null &&
+        WorkflowStatuses == null &&
+        WorkflowSubStatuses == null &&
+        HasIncidents == null &&
+        IsSystem == null &&
+        TimestampFilters == null
+        && string.IsNullOrWhiteSpace(SearchTerm);
 
     /// <summary>
     /// Applies the filter to the specified query.
@@ -98,6 +125,7 @@ public class WorkflowInstanceFilter
     public IQueryable<WorkflowInstance> Apply(IQueryable<WorkflowInstance> query)
     {
         var filter = this;
+        
         if (!string.IsNullOrWhiteSpace(filter.Id)) query = query.Where(x => x.Id == filter.Id);
         if (filter.Ids != null) query = query.Where(x => filter.Ids.Contains(x.Id));
         if (!string.IsNullOrWhiteSpace(filter.DefinitionId)) query = query.Where(x => x.DefinitionId == filter.DefinitionId);
@@ -112,6 +140,7 @@ public class WorkflowInstanceFilter
         if (filter.WorkflowStatuses != null) query = query.Where(x => filter.WorkflowStatuses.Contains(x.Status));
         if (filter.WorkflowSubStatuses != null) query = query.Where(x => filter.WorkflowSubStatuses.Contains(x.SubStatus));
         if (filter.HasIncidents != null) query = filter.HasIncidents == true ? query.Where(x => x.IncidentCount > 0) : query.Where(x => x.IncidentCount == 0);
+        if (filter.IsSystem != null) query = query.Where(x => x.IsSystem == filter.IsSystem);
 
         if (TimestampFilters != null)
         {

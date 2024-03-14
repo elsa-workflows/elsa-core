@@ -1,4 +1,5 @@
 using System.Collections;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
@@ -360,7 +361,9 @@ public static class ExpressionExecutionContextExtensions
     public static T? GetInput<T>(this ExpressionExecutionContext context, string name)
     {
         var value = context.GetInput(name);
-        return value.ConvertTo<T>();
+        var serializerOptions = context.GetRequiredService<IJsonSerializer>().CreateOptions();
+        var converterOptions = new ObjectConverterOptions(serializerOptions);
+        return value.ConvertTo<T>(converterOptions);
     }
 
     /// <summary>

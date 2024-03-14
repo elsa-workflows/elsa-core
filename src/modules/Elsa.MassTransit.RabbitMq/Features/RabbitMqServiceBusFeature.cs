@@ -3,6 +3,8 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
+using Elsa.Hosting.Management.Features;
+using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
@@ -16,6 +18,7 @@ namespace Elsa.MassTransit.RabbitMq.Features;
 /// Configures MassTransit to use the RabbitMQ transport.
 /// </summary>
 [DependsOn(typeof(MassTransitFeature))]
+[DependsOn(typeof(InstanceManagementFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />

@@ -18,5 +18,6 @@ internal class WorkflowDefinitionRecord
     public int Version { get; set; } = 1;
     public bool IsLatest { get; set; }
     public bool IsPublished { get; set; }
-    public bool IsReadonly { get; set; } = false;
+    public bool IsReadonly { get; set; }
+    public bool IsSystem { get; set; }
 }

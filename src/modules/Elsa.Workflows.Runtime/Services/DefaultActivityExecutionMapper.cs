@@ -86,6 +86,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             ActivityName = source.Activity.Name,
             ActivityState = activityState,
             Outputs = outputs,
+            Properties = source.Properties,
             Payload = payload,
             Exception = ExceptionState.FromException(source.Exception),
             ActivityTypeVersion = source.Activity.Version,

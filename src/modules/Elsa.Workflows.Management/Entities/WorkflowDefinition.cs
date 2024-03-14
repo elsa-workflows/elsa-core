@@ -87,7 +87,13 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// An option to use the workflow as a readonly workflow
     /// </summary>
-    public bool IsReadonly { get; set; } = false;
+    public bool IsReadonly { get; set; }
+    
+    /// <summary>
+    /// Specifies whether the workflow is a system workflow.
+    /// System workflows are provided by modules and are not meant to be modified by users.
+    /// </summary>
+    public bool IsSystem { get; set; }
 
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.

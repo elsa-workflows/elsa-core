@@ -4,6 +4,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
+using Elsa.Hosting.Management.Features;
 using Elsa.MassTransit.AzureServiceBus.Handlers;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
@@ -22,6 +23,7 @@ namespace Elsa.MassTransit.AzureServiceBus.Features;
 /// Configures MassTransit to use the Azure Service Bus transport.
 /// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
 [DependsOn(typeof(MassTransitFeature))]
+[DependsOn(typeof(InstanceManagementFeature))]
 public class AzureServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -58,10 +60,9 @@ public class AzureServiceBusFeature : FeatureBase
                 var temporaryConsumers = consumers
                     .Where(c => c.IsTemporary)
                     .ToList();
-                RegisterConsumers(consumers);
-
-                configure.AddServiceBusMessageScheduler();
                 
+                RegisterConsumers(consumers);
+                configure.AddServiceBusMessageScheduler();
                 configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
 
                 configure.UsingAzureServiceBus((context, configurator) =>
@@ -75,8 +76,7 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
-
-
+                    
                     foreach (var consumer in temporaryConsumers)
                     {
                         configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
@@ -92,21 +92,7 @@ public class AzureServiceBusFeature : FeatureBase
             };
         });
     }
-
-    private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
-    {
-        var subscriptionTopology = (
-            from consumer in consumers
-            from consumerInterface in consumer.ConsumerType.GetInterfaces()
-            where consumerInterface.IsGenericType && consumerInterface.GetGenericTypeDefinition() == typeof(IConsumer<>)
-            let genericType = consumerInterface.GetGenericArguments()[0]
-            let topicName = $"{genericType.Namespace.ToLower()}/{genericType.Name.ToLower()}"
-            select new MessageSubscriptionTopology(topicName, consumer.Name ?? genericType.Name.ToLower(), consumer.IsTemporary)
-        ).ToList();
-
-        Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
-    }
-
+    
     /// <inheritdoc />
     public override void Apply()
     {
@@ -121,4 +107,19 @@ public class AzureServiceBusFeature : FeatureBase
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
         return configuration.GetConnectionString(options.ConnectionStringOrName) ?? options.ConnectionStringOrName;
     }
+    
+    private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
+    {
+        var subscriptionTopology = (
+            from consumer in consumers
+            from consumerInterface in consumer.ConsumerType.GetInterfaces()
+            where consumerInterface.IsGenericType && consumerInterface.GetGenericTypeDefinition() == typeof(IConsumer<>)
+            let genericType = consumerInterface.GetGenericArguments()[0]
+            let topicName = $"{genericType.Namespace.ToLower()}/{genericType.Name.ToLower()}"
+            select new MessageSubscriptionTopology(topicName, consumer.Name ?? genericType.Name.ToLower(), consumer.IsTemporary)
+        ).ToList();
+
+        Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
+    }
+
 }

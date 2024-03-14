@@ -35,8 +35,7 @@ public static class MassTransitFeatureExtensions
     /// <summary>
     /// Registers the specified type for MassTransit service bus consumer discovery.
     /// </summary>
-    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type, string? name, bool isTemporary,
-        Type? consumerDefinitionType = default)
+    public static MassTransitFeature AddConsumer(this MassTransitFeature feature, Type type, string? name, bool isTemporary, Type? consumerDefinitionType = default)
     {
         var types = feature.Module.Properties.GetOrAdd(ServiceBusConsumerTypesKey, () => new HashSet<ConsumerTypeDefinition>());
         types.Add(new ConsumerTypeDefinition(type, consumerDefinitionType, name, isTemporary));
