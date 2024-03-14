@@ -11,4 +11,8 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Common\Elsa.Common.csproj" />
+    </ItemGroup>
+
 </Project>
