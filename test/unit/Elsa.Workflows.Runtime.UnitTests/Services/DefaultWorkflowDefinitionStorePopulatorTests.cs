@@ -24,7 +24,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         _storeMock = Substitute.For<IWorkflowDefinitionStore>();
         _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
             .Returns(_workflowDefinitionsInStore);
-        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowProvider>(),
+        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowsProvider>(),
             Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),
