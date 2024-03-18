@@ -463,7 +463,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         if (tenantAgnostic)
             return;
 
-        var tenantId = tenantResolver.GetTenantAsync(cancellationToken);
+        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
+        var tenantId = tenant?.Id;
         query.Is(nameof(Record.TenantId), tenantId);
     }
     
