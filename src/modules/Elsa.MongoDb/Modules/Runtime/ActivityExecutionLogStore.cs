@@ -78,12 +78,18 @@ public class MongoActivityExecutionLogStore : IActivityExecutionStore
         return await _mongoDbStore.DeleteWhereAsync<string>(queryable => Filter(queryable, filter), x => x.Id, cancellationToken);
     }
 
-    private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter) =>
-        (filter.Apply(queryable) as IMongoQueryable<ActivityExecutionRecord>)!;
+    private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter)
+    {
+        return (filter.Apply(queryable) as IMongoQueryable<ActivityExecutionRecord>)!;
+    }
 
-    private IMongoQueryable<ActivityExecutionRecord> Order<TOrderBy>(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordOrder<TOrderBy> order) =>
-        (queryable.OrderBy(order) as IMongoQueryable<ActivityExecutionRecord>)!;
+    private IMongoQueryable<ActivityExecutionRecord> Order<TOrderBy>(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordOrder<TOrderBy> order)
+    {
+        return (queryable.OrderBy(order) as IMongoQueryable<ActivityExecutionRecord>)!;
+    }
 
-    private IMongoQueryable<ActivityExecutionRecord> Paginate(IMongoQueryable<ActivityExecutionRecord> queryable, PageArgs pageArgs) =>
-        (queryable.Paginate(pageArgs) as IMongoQueryable<ActivityExecutionRecord>)!;
+    private IMongoQueryable<ActivityExecutionRecord> Paginate(IMongoQueryable<ActivityExecutionRecord> queryable, PageArgs pageArgs)
+    {
+        return (queryable.Paginate(pageArgs) as IMongoQueryable<ActivityExecutionRecord>)!;
+    }
 }
