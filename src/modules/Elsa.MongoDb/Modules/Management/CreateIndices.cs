@@ -27,7 +27,7 @@ internal class CreateIndices : IHostedService
 
     private static Task CreateWorkflowDefinitionIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowDefinitionCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowDefinition>>();
+        var workflowDefinitionCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowDefinition>>();
         if (workflowDefinitionCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -51,7 +51,7 @@ internal class CreateIndices : IHostedService
 
     private static Task CreateWorkflowInstanceIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowInstanceCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowInstance>>();
+        var workflowInstanceCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowInstance>>();
         if (workflowInstanceCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -87,3 +87,4 @@ internal class CreateIndices : IHostedService
                     cancellationToken));
     }
 }
+
