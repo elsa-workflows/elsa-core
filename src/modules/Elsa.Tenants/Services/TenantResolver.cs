@@ -9,9 +9,14 @@ namespace Elsa.Tenants.Services;
 /// <inheritdoc />
 public class TenantResolver(IOptions<MultiTenancyOptions> options, ITenantsProvider tenantsProvider, IServiceProvider serviceProvider) : ITenantResolver
 {
+    private Tenant? _currentTenant;
+
     /// <inheritdoc/>
     public async Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default)
     {
+        if (_currentTenant != null)
+            return _currentTenant;
+
         var resolutionPipeline = options.Value.TenantResolutionPipelineBuilder.Build(serviceProvider);
         var tenantsDictionary = (await tenantsProvider.ListAsync(cancellationToken)).ToDictionary(x => x.Id);
         var resolutionContext = new TenantResolutionContext(tenantsDictionary, cancellationToken);
@@ -21,9 +26,12 @@ public class TenantResolver(IOptions<MultiTenancyOptions> options, ITenantsProvi
             var result = await strategy.ResolveAsync(resolutionContext);
 
             if (result.IsResolved)
-                return tenantsDictionary!.GetValueOrDefault(result.TenantId);
+            {
+                _currentTenant = tenantsDictionary!.GetValueOrDefault(result.TenantId);
+                break;
+            }
         }
 
-        return null;
+        return _currentTenant;
     }
 }

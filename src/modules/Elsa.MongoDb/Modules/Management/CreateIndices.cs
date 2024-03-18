@@ -6,15 +6,11 @@ using MongoDB.Driver;
 
 namespace Elsa.MongoDb.Modules.Management;
 
-internal class CreateIndices : IHostedService
+internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public CreateIndices(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         return Task.WhenAll(
             CreateWorkflowDefinitionIndices(scope, cancellationToken),
             CreateWorkflowInstanceIndices(scope, cancellationToken));
@@ -44,7 +40,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.IsLatest)),
-                        new(indexBuilder.Ascending(x => x.IsPublished))
+                        new(indexBuilder.Ascending(x => x.IsPublished)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -82,7 +79,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.UpdatedAt)),
-                        new(indexBuilder.Ascending(x => x.FinishedAt))
+                        new(indexBuilder.Ascending(x => x.FinishedAt)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }

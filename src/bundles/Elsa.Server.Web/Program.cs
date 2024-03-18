@@ -26,7 +26,7 @@ using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
-const bool useMongoDb = false;
+const bool useMongoDb = true;
 const bool useSqlServer = false;
 const bool useDapper = false;
 const bool useProtoActor = false;

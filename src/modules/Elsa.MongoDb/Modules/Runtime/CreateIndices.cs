@@ -10,17 +10,12 @@ using WorkflowExecutionLogRecord = Elsa.Workflows.Runtime.Entities.WorkflowExecu
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
-internal class CreateIndices : IHostedService
+internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public CreateIndices(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         return Task.WhenAll(
-            CreateWorkflowStateIndices(scope, cancellationToken),
             CreateWorkflowExecutionLogIndices(scope, cancellationToken),
             CreateActivityExecutionLogIndices(scope, cancellationToken),
             CreateWorkflowBookmarkIndices(scope, cancellationToken),
@@ -34,39 +29,7 @@ internal class CreateIndices : IHostedService
     {
         return Task.CompletedTask;
     }
-
-    private static Task CreateWorkflowStateIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
-    {
-        var workflowStateCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowState>>();
-        if (workflowStateCollection == null) return Task.CompletedTask;
-
-        return IndexHelpers.CreateAsync(
-            workflowStateCollection,
-            async (collection, indexBuilder) =>
-                await collection.Indexes.CreateManyAsync(
-                    new List<CreateIndexModel<WorkflowState>>
-                    {
-                        new(indexBuilder
-                            .Ascending(x => x.DefinitionId)
-                            .Ascending(x => x.DefinitionVersionId)
-                            .Ascending(x => x.DefinitionVersion)
-                            .Ascending(x => x.SubStatus)
-                            .Ascending(x => x.Status)),
-                        new(indexBuilder
-                            .Ascending(x => x.SubStatus)
-                            .Ascending(x => x.Status)),
-                        new(indexBuilder
-                            .Ascending(x => x.DefinitionId)
-                            .Ascending(x => x.Status)),
-                        new(indexBuilder
-                            .Ascending(x => x.DefinitionId)
-                            .Ascending(x => x.SubStatus)),
-                        new(indexBuilder.Ascending(x => x.DefinitionId)),
-                        new(indexBuilder.Ascending(x => x.CorrelationId)),
-                    },
-                    cancellationToken));
-    }
-
+    
     private static Task CreateWorkflowExecutionLogIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var workflowExecutionLogCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowExecutionLogRecord>>();
@@ -91,7 +54,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.ActivityName)),
                         new(indexBuilder.Ascending(x => x.EventName)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
-                        new(indexBuilder.Ascending(x => x.WorkflowVersion))
+                        new(indexBuilder.Ascending(x => x.WorkflowVersion)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -115,7 +79,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.HasBookmarks)),
                         new(indexBuilder.Ascending(x => x.Status)),
-                        new(indexBuilder.Ascending(x => x.CompletedAt))
+                        new(indexBuilder.Ascending(x => x.CompletedAt)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -140,7 +105,8 @@ internal class CreateIndices : IHostedService
                             .Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.ActivityTypeName)),
-                        new(indexBuilder.Ascending(x => x.Hash))
+                        new(indexBuilder.Ascending(x => x.Hash)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -159,7 +125,8 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Name)),
-                        new(indexBuilder.Ascending(x => x.Hash))
+                        new(indexBuilder.Ascending(x => x.Hash)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -181,6 +148,7 @@ internal class CreateIndices : IHostedService
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.ExpiresAt)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
