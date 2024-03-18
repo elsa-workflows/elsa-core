@@ -32,7 +32,7 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return Map(records);
     }
 
