@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -53,9 +53,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<bool>("IsReadonly")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("text");
 
@@ -70,9 +67,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .HasColumnType("text");
 
                     b.Property<string>("StringData")
-                        .HasColumnType("text");
-
-                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<string>("ToolVersion")
@@ -92,14 +86,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
 
-                    b.HasIndex("IsSystem")
-                        .HasDatabaseName("IX_WorkflowDefinition_IsSystem");
-
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
 
                     b.HasIndex("UsableAsActivity")
                         .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
@@ -128,9 +116,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("text");
 
-                    b.Property<string>("DataCompressionAlgorithm")
-                        .HasColumnType("text");
-
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -145,9 +130,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("integer");
 
-                    b.Property<bool>("IsSystem")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
@@ -157,9 +139,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.Property<string>("SubStatus")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
@@ -182,9 +161,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
 
-                    b.HasIndex("IsSystem")
-                        .HasDatabaseName("IX_WorkflowInstance_IsSystem");
-
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
 
@@ -193,9 +169,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");
