@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,18 +8,24 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public V3_1(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.RenameColumn(
                 name: "SerializedWorkflowInstanceIds",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationPlans",
                 newName: "SerializedWorkflowInstanceFilter");
 
             migrationBuilder.AlterColumn<string>(
                 name: "Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationPlans",
                 type: "varchar(255)",
                 nullable: false,
@@ -28,7 +35,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
             migrationBuilder.AlterColumn<string>(
                 name: "Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationJobs",
                 type: "varchar(255)",
                 nullable: false,
@@ -42,13 +49,13 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
         {
             migrationBuilder.RenameColumn(
                 name: "SerializedWorkflowInstanceFilter",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationPlans",
                 newName: "SerializedWorkflowInstanceIds");
 
             migrationBuilder.AlterColumn<int>(
                 name: "Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationPlans",
                 type: "int",
                 nullable: false,
@@ -58,7 +65,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
             migrationBuilder.AlterColumn<int>(
                 name: "Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "AlterationJobs",
                 type: "int",
                 nullable: false,

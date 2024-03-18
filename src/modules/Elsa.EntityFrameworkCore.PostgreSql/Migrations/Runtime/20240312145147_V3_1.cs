@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,26 +8,31 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public V3_1(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
                 name: "SerializedActivityStateCompressionAlgorithm",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "text",
                 nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "SerializedProperties",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
                 type: "text",
                 nullable: true);
 
             migrationBuilder.CreateTable(
                 name: "KeyValuePairs",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Key = table.Column<string>(type: "text", nullable: false),
@@ -43,16 +49,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
         {
             migrationBuilder.DropTable(
                 name: "KeyValuePairs",
-                schema: "Elsa");
+                schema: _schema.Schema);
 
             migrationBuilder.DropColumn(
                 name: "SerializedActivityStateCompressionAlgorithm",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
 
             migrationBuilder.DropColumn(
                 name: "SerializedProperties",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ActivityExecutionRecords");
         }
     }
