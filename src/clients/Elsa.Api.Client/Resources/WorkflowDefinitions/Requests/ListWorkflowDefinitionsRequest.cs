@@ -50,6 +50,11 @@ public class ListWorkflowDefinitionsRequest
     public string? SearchTerm { get; set; }
     
     /// <summary>
+    /// Gets or sets whether to include system workflows.
+    /// </summary>
+    public bool? IsSystem { get; set; }
+    
+    /// <summary>
     /// The field to order by.
     /// </summary>
     public OrderByWorkflowDefinition? OrderBy { get; set; }

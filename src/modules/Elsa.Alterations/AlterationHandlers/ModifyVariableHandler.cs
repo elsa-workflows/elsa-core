@@ -8,6 +8,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Services;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.AlterationHandlers;
@@ -15,6 +16,7 @@ namespace Elsa.Alterations.AlterationHandlers;
 /// <summary>
 /// Modifies a workflow variable.
 /// </summary>
+[UsedImplicitly]
 public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
 {
     /// <inheritdoc />

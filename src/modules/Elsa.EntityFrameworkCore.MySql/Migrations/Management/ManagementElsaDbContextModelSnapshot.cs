@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<bool>("IsReadonly")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("longtext");
 
@@ -85,6 +88,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
+
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsSystem");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
@@ -136,6 +142,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
 
@@ -169,6 +178,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowInstance_IsSystem");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");

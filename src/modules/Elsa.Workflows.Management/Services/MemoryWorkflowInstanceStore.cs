@@ -98,6 +98,29 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = _store.Query(query => Filter(query, filter)).Select(x => x.Id).ToList().AsEnumerable();
+        return ValueTask.FromResult(entities);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var page = await FindManyAsync(filter, pageArgs, cancellationToken);
+        var ids = page.Items.Select(x => x.Id).ToList();
+        return new(ids, page.TotalCount);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var page = await FindManyAsync(filter, pageArgs, order, cancellationToken);
+        var ids = page.Items.Select(x => x.Id).ToList();
+        return new(ids, page.TotalCount);
+    }
+
+    /// <inheritdoc />
     public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         _store.Save(instance, x => x.Id);

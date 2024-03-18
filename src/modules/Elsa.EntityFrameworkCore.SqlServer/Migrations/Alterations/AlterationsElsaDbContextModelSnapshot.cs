@@ -95,7 +95,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                     b.Property<string>("SerializedAlterations")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SerializedWorkflowInstanceIds")
+                    b.Property<string>("SerializedWorkflowInstanceFilter")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("StartedAt")

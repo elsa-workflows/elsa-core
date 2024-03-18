@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
@@ -107,6 +108,32 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var items = await _store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), cancellationToken);
+        return items.Select(x => x.Id).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        return await FindManyIdsAsync(
+            filter,
+            pageArgs,
+            new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var page = await _store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var ids = page.Items.Select(x => x.Id).ToList();
+        return Page.Of(ids, page.TotalCount);
+    }
+
+    /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = await MapAsync(instance);
@@ -114,6 +141,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         var records = await MapAsync(instances);
@@ -152,18 +180,26 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private async ValueTask<Page<WorkflowInstance>> MapAsync(Page<WorkflowInstanceRecord> source)
     {
         var items = (await MapAsync(source.Items)).ToList();
         return Page.Of(items, source.TotalCount);
     }
 
-    private async ValueTask<IEnumerable<WorkflowInstance>> MapAsync(IEnumerable<WorkflowInstanceRecord> source) =>
-        await Task.WhenAll(source.Select(async x => await MapAsync(x)));
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
+    private async ValueTask<IEnumerable<WorkflowInstance>> MapAsync(IEnumerable<WorkflowInstanceRecord> source)
+    {
+        return await Task.WhenAll(source.Select(async x => await MapAsync(x)));
+    }
 
-    private async ValueTask<IEnumerable<WorkflowInstanceRecord>> MapAsync(IEnumerable<WorkflowInstance> source) =>
-        await Task.WhenAll(source.Select(async x => await MapAsync(x)));
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
+    private async ValueTask<IEnumerable<WorkflowInstanceRecord>> MapAsync(IEnumerable<WorkflowInstance> source)
+    {
+        return await Task.WhenAll(source.Select(async x => await MapAsync(x)));
+    }
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private async ValueTask<WorkflowInstance> MapAsync(WorkflowInstanceRecord source)
     {
         var workflowState = await _workflowStateSerializer.DeserializeAsync(source.WorkflowState);
@@ -175,6 +211,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             Version = source.Version,
             Name = source.Name,
             IncidentCount = source.IncidentCount,
+            IsSystem = source.IsSystem,
             WorkflowState = workflowState,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,
@@ -185,6 +222,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
         };
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private async ValueTask<WorkflowInstanceRecord> MapAsync(WorkflowInstance source)
     {
         var workflowState = await _workflowStateSerializer.SerializeAsync(source.WorkflowState);
@@ -196,6 +234,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             Version = source.Version,
             Name = source.Name,
             IncidentCount = source.IncidentCount,
+            IsSystem = source.IsSystem,
             WorkflowState = workflowState,
             CreatedAt = source.CreatedAt,
             UpdatedAt = source.UpdatedAt,

@@ -33,12 +33,16 @@ public interface IWorkflowBuilder
     /// A description of the workflow.
     /// </summary>
     string? Description { get; set; }
-
-
+    
     /// <summary>
     /// WorkflowDefinition is readonly.
     /// </summary>
     bool IsReadonly { get; set; }
+    
+    /// <summary>
+    /// WorkflowDefinition is readonly.
+    /// </summary>
+    bool IsSystem { get; set; }
 
     /// <summary>
     /// Options for the workflow being built.
@@ -79,6 +83,12 @@ public interface IWorkflowBuilder
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
     IDictionary<string, object> CustomProperties { get; }
+    
+    /// <summary>
+    /// A fluent method for setting the <see cref="DefinitionId"/> property.
+    /// </summary>
+    /// <param name="definitionId">The definition ID to use for the workflow being built.</param>
+    IWorkflowBuilder WithDefinitionId(string definitionId);
     
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
@@ -144,7 +154,17 @@ public interface IWorkflowBuilder
     /// Configure the workflow to use the specified <see cref="IWorkflowActivationStrategy"/> type.
     /// </summary>
     IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy;
+
+    /// <summary>
+    /// Marks the workflow as readonly.
+    /// </summary>
+    IWorkflowBuilder AsReadonly();
     
+    /// <summary>
+    /// Marks the workflow as a system workflow.
+    /// </summary>
+    IWorkflowBuilder AsSystemWorkflow();
+
     /// <summary>
     /// Build a new <see cref="Workflow"/> instance using the information collected in this pipelineBuilder.
     /// </summary>

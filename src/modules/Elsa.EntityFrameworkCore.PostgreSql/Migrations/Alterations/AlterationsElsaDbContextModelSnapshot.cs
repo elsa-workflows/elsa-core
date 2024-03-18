@@ -95,7 +95,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                     b.Property<string>("SerializedAlterations")
                         .HasColumnType("text");
 
-                    b.Property<string>("SerializedWorkflowInstanceIds")
+                    b.Property<string>("SerializedWorkflowInstanceFilter")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset?>("StartedAt")

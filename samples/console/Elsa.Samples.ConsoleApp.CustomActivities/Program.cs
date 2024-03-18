@@ -4,9 +4,11 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 // Setup service container.
 var services = new ServiceCollection();
+services.AddLogging(logging => logging.AddConsole());
 
 // Add Elsa services.
 services.AddElsa();
@@ -29,7 +31,10 @@ var workflow = new Workflow
         Variables = {a, b, sum},
         Activities =
         {
-            new WriteLine("Enter first value"),
+            new PrintMessage
+            {
+                Message = "Enter first value"
+            },
             new ReadLine(a),
             new WriteLine("Enter second value"),
             new ReadLine(b),

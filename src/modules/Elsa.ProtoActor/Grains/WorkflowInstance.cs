@@ -224,9 +224,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         await SaveSnapshotAsync();
         SaveWorkflowInstance(workflowState);
         var newBookmarks = workflowState.Bookmarks;
-        
         var diff = Diff.For(originalBookmarks, newBookmarks);
-
         var bookmarkRequest = new UpdateBookmarksRequest(workflowState.DefinitionId, diff, workflowState.CorrelationId);
         await bookmarkPersistor.PersistBookmarksAsync(bookmarkRequest);
     }

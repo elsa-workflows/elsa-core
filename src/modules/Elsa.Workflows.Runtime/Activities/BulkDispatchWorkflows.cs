@@ -42,6 +42,7 @@ public class BulkDispatchWorkflows : Activity
     /// The definition ID of the workflows to dispatch. 
     /// </summary>
     [Input(
+        DisplayName = "Workflow Definition",
         Description = "The definition ID of the workflows to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]

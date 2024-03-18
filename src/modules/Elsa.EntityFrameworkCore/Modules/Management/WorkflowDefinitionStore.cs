@@ -228,6 +228,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(filter.SearchTerm) || x.Description!.Contains(filter.SearchTerm) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
+        if (filter.IsSystem != null) queryable = queryable.Where(x => x.IsSystem == filter.IsSystem);
         return queryable;
     }
 

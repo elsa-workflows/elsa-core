@@ -22,6 +22,7 @@ using Elsa.Http.UIHints;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
+using Elsa.Workflows.Serialization.Configurators;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -155,7 +156,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
-            
+
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
@@ -163,6 +164,7 @@ public class HttpFeature : FeatureBase
             // Content parsers.            
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
             
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()

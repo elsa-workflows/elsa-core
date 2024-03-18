@@ -16,8 +16,6 @@ for module in "${mods[@]}"; do
         echo "Updating migrations for $provider..."
         echo "Provider path: ${providerPath:?}/${migrationsPath}"
         echo "Migrations path: $migrationsPath"
-            
-        # Run the migrations command
         dotnet ef migrations add V3_1 -c "$module"ElsaDbContext -p "$providerPath"  -o "$migrationsPath"
     done
 done

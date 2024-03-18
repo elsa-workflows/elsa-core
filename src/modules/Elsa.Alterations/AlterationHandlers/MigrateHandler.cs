@@ -3,6 +3,7 @@ using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.AlterationHandlers;
@@ -10,6 +11,7 @@ namespace Elsa.Alterations.AlterationHandlers;
 /// <summary>
 /// Upgrades the version of the workflow instance.
 /// </summary>
+[UsedImplicitly]
 public class MigrateHandler : AlterationHandlerBase<Migrate>
 {
     /// <inheritdoc />

@@ -11,7 +11,7 @@ namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 /// Executes an alteration plan.
 /// </summary>
 [PublicAPI]
-public class Submit : ElsaEndpoint<Request, Response>
+public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
 {
     private readonly IAlterationPlanScheduler _alterationPlanScheduler;
     private readonly IIdentityGenerator _identityGenerator;
@@ -33,17 +33,10 @@ public class Submit : ElsaEndpoint<Request, Response>
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(AlterationPlanParams planParams, CancellationToken cancellationToken)
     {
-        // Create a plan.
-        var plan = new NewAlterationPlan
-        {
-            Alterations = request.Alterations.ToList(),
-            WorkflowInstanceIds = request.WorkflowInstanceIds.ToList()
-        };
-        
         // Submit the plan.
-        var planId = await _alterationPlanScheduler.SubmitAsync(plan, cancellationToken);
+        var planId = await _alterationPlanScheduler.SubmitAsync(planParams, cancellationToken);
 
         // Write response.
         var response = new Response(planId);

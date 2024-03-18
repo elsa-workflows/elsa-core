@@ -15,10 +15,11 @@ public class Request
     public string? Name { get; set; }
     public int? Version { get; set; }
     public bool? HasIncidents { get; set; }
+    public bool? IsSystem { get; set; }
     public WorkflowStatus? Status { get; set; }
-    public ICollection<WorkflowStatus>? Statuses { get; set; }
+    public ICollection<string>? Statuses { get; set; }
     public WorkflowSubStatus? SubStatus { get; set; }
-    public ICollection<WorkflowSubStatus>? SubStatuses { get; set; }
+    public ICollection<string>? SubStatuses { get; set; }
     public OrderByWorkflowInstance? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
     public ICollection<TimestampFilter>? TimestampFilters { get; set; }

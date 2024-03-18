@@ -90,7 +90,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.Property<string>("SerializedAlterations")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SerializedWorkflowInstanceIds")
+                    b.Property<string>("SerializedWorkflowInstanceFilter")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StartedAt")

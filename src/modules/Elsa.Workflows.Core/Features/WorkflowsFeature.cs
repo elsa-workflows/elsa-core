@@ -1,5 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Features;
+using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -154,8 +155,8 @@ public class WorkflowsFeature : FeatureBase
             // Built-in activity services.
             .AddScoped<IActivityResolver, PropertyBasedActivityResolver>()
             .AddScoped<IActivityResolver, SwitchActivityResolver>()
-            .AddScoped<ISerializationOptionsConfigurator, AdditionalConvertersConfigurator>()
-            .AddScoped<ISerializationOptionsConfigurator, CustomConstructorConfigurator>()
+            .AddSerializationOptionsConfigurator<AdditionalConvertersConfigurator>()
+            .AddSerializationOptionsConfigurator<CustomConstructorConfigurator>()
 
             // Domain event handlers.
             .AddHandlersFrom<WorkflowsFeature>()
@@ -170,11 +171,12 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
-            .AddScoped<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
-            .AddScoped<IPayloadSerializer, JsonPayloadSerializer>()
-            .AddScoped<IActivitySerializer, JsonActivitySerializer>()
-            .AddScoped<IApiSerializer, ApiSerializer>()
-            .AddScoped<ISafeSerializer, SafeSerializer>()
+            .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
+            .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
+            .AddSingleton<IActivitySerializer, JsonActivitySerializer>()
+            .AddSingleton<IApiSerializer, ApiSerializer>()
+            .AddSingleton<ISafeSerializer, SafeSerializer>()
+            .AddSingleton<IJsonSerializer, StandardJsonSerializer>()
 
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()

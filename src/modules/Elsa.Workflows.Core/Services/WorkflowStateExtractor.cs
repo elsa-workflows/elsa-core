@@ -25,6 +25,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             Input = GetPersistableInput(workflowExecutionContext),
             Output = workflowExecutionContext.Output,
             Incidents = workflowExecutionContext.Incidents,
+            IsSystem = workflowExecutionContext.Workflow.IsSystem,
             CreatedAt = workflowExecutionContext.CreatedAt,
             UpdatedAt = workflowExecutionContext.UpdatedAt,
             FinishedAt = workflowExecutionContext.FinishedAt

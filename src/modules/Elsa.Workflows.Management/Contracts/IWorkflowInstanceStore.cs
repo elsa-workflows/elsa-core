@@ -84,12 +84,41 @@ public interface IWorkflowInstanceStore
     ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns a list of workflow instance IDs matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A list of workflow instance IDs.</returns>
+    ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Returns a paginated list of workflow instance IDs matching the specified filter.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A paginated list of workflow instance IDs.</returns>
+    ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a paginated list of workflow instance IDs matching the specified filter and order.
+    /// </summary>
+    /// <param name="filter">The filter.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="order">The order.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <typeparam name="TOrderBy">The type of the property to order by.</typeparam>
+    /// <returns>A paginated list of workflow instance IDs.</returns>
+    ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Returns a list of workflow instance summaries matching the specified filter.
     /// </summary>
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of workflow instance summaries.</returns>
     ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
+    
 
     /// <summary>
     /// Returns a list of workflow instance summaries matching the specified filter and order.

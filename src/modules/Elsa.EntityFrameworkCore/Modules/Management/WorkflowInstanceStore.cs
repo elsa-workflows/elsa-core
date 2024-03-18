@@ -115,6 +115,36 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceId.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
+        return entities.Select(x => x.Id).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = await _store.QueryAsync(query => Filter(query, filter), x => x.Id, cancellationToken).LongCount();
+        var entities = await _store.QueryAsync(query => Filter(query, filter).Paginate(pageArgs), WorkflowInstanceId.FromInstanceExpression(), cancellationToken).ToList();
+        var ids = entities.Select(x => x.Id).ToList();
+        return Page.Of(ids, count);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var set = dbContext.WorkflowInstances;
+        var queryable = Filter(set.AsQueryable(), filter).OrderBy(order);
+        var count = await queryable.LongCountAsync(cancellationToken);
+        queryable = queryable.Paginate(pageArgs);
+        var entities = await queryable.Select(WorkflowInstanceId.FromInstanceExpression()).ToListAsync(cancellationToken);
+        var ids = entities.Select(x => x.Id).ToList();
+
+        return Page.Of(ids, count);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
