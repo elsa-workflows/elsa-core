@@ -35,7 +35,7 @@ public class DeleteSchedules :
 
     async Task INotificationHandler<BookmarksDeleting>.HandleAsync(BookmarksDeleting notification, CancellationToken cancellationToken)
     {
-        var ids = notification.Bookmarks.Select(x => x.BookmarkId).ToList();
+        var ids = notification.Bookmarks.Select(x => x.Id).ToList();
         var bookmarks = await _bookmarkStore.FindManyAsync(new BookmarkFilter { BookmarkIds = ids }, cancellationToken);
         await _bookmarkScheduler.UnscheduleAsync(bookmarks, cancellationToken);
     }

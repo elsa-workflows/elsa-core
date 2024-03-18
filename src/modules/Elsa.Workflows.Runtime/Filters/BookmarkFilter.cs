@@ -68,8 +68,8 @@ public class BookmarkFilter
     public IQueryable<StoredBookmark> Apply(IQueryable<StoredBookmark> query)
     {
         var filter = this;
-        if (filter.BookmarkId != null) query = query.Where(x => x.BookmarkId == filter.BookmarkId);
-        if (filter.BookmarkIds != null) query = query.Where(x => filter.BookmarkIds.Contains(x.BookmarkId));
+        if (filter.BookmarkId != null) query = query.Where(x => x.Id == filter.BookmarkId);
+        if (filter.BookmarkIds != null) query = query.Where(x => filter.BookmarkIds.Contains(x.Id));
         if (filter.CorrelationId != null) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
         if (filter.Hash != null) query = query.Where(x => x.Hash == filter.Hash);
         if (filter.Hashes != null) query = query.Where(x => filter.Hashes.Contains(x.Hash));

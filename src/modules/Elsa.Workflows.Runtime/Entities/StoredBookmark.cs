@@ -8,16 +8,6 @@ namespace Elsa.Workflows.Runtime.Entities;
 public class StoredBookmark : Entity
 {
     /// <summary>
-    /// The ID of the bookmark.
-    /// </summary>
-    [Obsolete("This property is obsolete and will be removed in a future version of Elsa. Use the Id property instead.")]
-    public string BookmarkId
-    {
-        get => Id;
-        set => Id = value;
-    }
-
-    /// <summary>
     /// The name of the activity type associated with the bookmark.
     /// </summary>
     public string ActivityTypeName { get; set; } = default!;

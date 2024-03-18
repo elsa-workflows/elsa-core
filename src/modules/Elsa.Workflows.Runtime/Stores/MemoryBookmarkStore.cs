@@ -21,14 +21,14 @@ public class MemoryBookmarkStore : IBookmarkStore
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record, x => x.BookmarkId);
+        _store.Save(record, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
-        _store.SaveMany(records, x => x.BookmarkId);
+        _store.SaveMany(records, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
@@ -42,7 +42,7 @@ public class MemoryBookmarkStore : IBookmarkStore
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.BookmarkId);
+        var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
         return _store.DeleteMany(ids);
     }
     

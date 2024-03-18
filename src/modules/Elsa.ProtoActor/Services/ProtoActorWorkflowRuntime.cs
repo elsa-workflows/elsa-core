@@ -331,7 +331,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 CorrelationId = runtimeParams.CorrelationId,
                 Input = runtimeParams.Input,
                 Properties = runtimeParams.Properties,
-                BookmarkId = bookmark.BookmarkId,
+                BookmarkId = bookmark.Id,
                 ActivityId = runtimeParams.ActivityId,
                 ActivityNodeId = runtimeParams.ActivityNodeId,
                 ActivityInstanceId = runtimeParams.ActivityInstanceId,
@@ -385,7 +385,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var activityInstanceId = workflowsFilter.Options.ActivityInstanceId;
         var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
-        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId, b.Payload)).ToList();
+        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.Id, b.Payload)).ToList();
         return collectedWorkflows;
     }
 }

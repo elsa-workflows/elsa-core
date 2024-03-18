@@ -467,7 +467,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     Input = runtimeParams.Input,
                     Properties = runtimeParams.Properties,
                     CancellationTokens = runtimeParams.CancellationTokens,
-                    BookmarkId = bookmark.BookmarkId,
+                    BookmarkId = bookmark.Id,
                     ActivityInstanceId = bookmark.ActivityInstanceId
                 });
 
@@ -551,7 +551,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             TenantAgnostic = true
         };
         var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
-        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId, b.Payload)).ToList();
+        var collectedWorkflows = bookmarks.Select(b => new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.Id, b.Payload)).ToList();
         return collectedWorkflows;
     }
 

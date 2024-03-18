@@ -77,7 +77,7 @@ public class DapperBookmarkStore : IBookmarkStore
     {
         return new StoredBookmarkRecord
         {
-            Id = source.BookmarkId,
+            Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
@@ -94,7 +94,7 @@ public class DapperBookmarkStore : IBookmarkStore
     {
         return new StoredBookmark
         {
-            BookmarkId = source.Id,
+            Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,

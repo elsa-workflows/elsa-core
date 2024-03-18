@@ -133,7 +133,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     {
         var jsonBookmarkNodes = bookmarks.Select(x => new JsonObject
         {
-            ["id"] = x.BookmarkId,
+            ["id"] = x.Id,
             ["activityTypeName"] = x.ActivityTypeName,
             ["workflowInstanceId"] = x.WorkflowInstanceId,
             ["activityInstanceId"] = x.ActivityInstanceId,
