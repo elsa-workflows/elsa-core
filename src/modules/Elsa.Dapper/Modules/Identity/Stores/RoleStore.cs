@@ -75,7 +75,8 @@ public class DapperRoleStore : IRoleStore
         {
             Id = source.Id,
             Name = source.Name,
-            Permissions = string.Join(',', source.Permissions)
+            Permissions = string.Join(',', source.Permissions),
+            TenantId = source.TenantId
         };
     }
     
@@ -85,7 +86,8 @@ public class DapperRoleStore : IRoleStore
         {
             Id = source.Id,
             Name = source.Name,
-            Permissions = source.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            Permissions = source.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            TenantId = source.TenantId
         };
     }
 }

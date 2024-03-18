@@ -60,21 +60,25 @@ public class DapperKeyValueStore : IKeyValueStore
             .StartsWith(nameof(KeyValuePairRecord.Key), filter.StartsWith, filter.Key);
     }
 
-    private KeyValuePairRecord Map(SerializedKeyValuePair kvp)
+    private KeyValuePairRecord Map(SerializedKeyValuePair source)
     {
         return new()
         {
-            Key = kvp.Key,
-            Value = kvp.SerializedValue
+            Id = source.Id,
+            Key = source.Key,
+            Value = source.SerializedValue,
+            TenantId = source.TenantId
         };
     }
 
-    private SerializedKeyValuePair Map(KeyValuePairRecord kvp)
+    private SerializedKeyValuePair Map(KeyValuePairRecord source)
     {
         return new()
         {
-            Key = kvp.Key,
-            SerializedValue = kvp.Value
+            Id = source.Id,
+            Key = source.Key,
+            SerializedValue = source.Value,
+            TenantId = source.TenantId
         };
     }
 }

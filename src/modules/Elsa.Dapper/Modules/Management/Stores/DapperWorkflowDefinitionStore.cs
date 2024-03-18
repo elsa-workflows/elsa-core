@@ -215,7 +215,8 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             MaterializerContext = source.MaterializerContext,
             BinaryData = source.BinaryData,
             MaterializerName = source.MaterializerName,
-            ProviderName = source.ProviderName
+            ProviderName = source.ProviderName,
+            TenantId = source.TenantId
         };
     }
 
@@ -249,7 +250,8 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             UsableAsActivity = source.Options.UsableAsActivity,
             ProviderName = source.ProviderName,
             BinaryData = source.BinaryData,
-            MaterializerContext = source.MaterializerContext
+            MaterializerContext = source.MaterializerContext,
+            TenantId = source.TenantId
         };
     }
 

@@ -5,7 +5,7 @@ using static System.Int32;
 namespace Elsa.Dapper.Migrations.Management;
 
 /// <inheritdoc />
-[Migration(10001, "Elsa:Management:Initial")]
+[Migration(10001, "Elsa:Management:V3.0")]
 [PublicAPI]
 public class Initial : Migration
 {

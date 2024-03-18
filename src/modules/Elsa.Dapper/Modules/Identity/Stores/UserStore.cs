@@ -54,27 +54,29 @@ public class DapperUserStore : IUserStore
             ;
     }
 
-    private UserRecord Map(User user)
+    private UserRecord Map(User source)
     {
         return new()
         {
-            Id = user.Id,
-            Name = user.Name,
-            HashedPassword = user.HashedPassword,
-            HashedPasswordSalt = user.HashedPasswordSalt,
-            Roles = string.Join(',', user.Roles)
+            Id = source.Id,
+            Name = source.Name,
+            HashedPassword = source.HashedPassword,
+            HashedPasswordSalt = source.HashedPasswordSalt,
+            Roles = string.Join(',', source.Roles),
+            TenantId = source.TenantId
         };
     }
 
-    private User Map(UserRecord user)
+    private User Map(UserRecord source)
     {
         return new()
         {
-            Id = user.Id,
-            Name = user.Name,
-            HashedPassword = user.HashedPassword,
-            HashedPasswordSalt = user.HashedPasswordSalt,
-            Roles = user.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            Id = source.Id,
+            Name = source.Name,
+            HashedPassword = source.HashedPassword,
+            HashedPasswordSalt = source.HashedPasswordSalt,
+            Roles = source.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            TenantId = source.TenantId
         };
     }
 }

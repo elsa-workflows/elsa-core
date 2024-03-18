@@ -113,6 +113,7 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             SerializedInput = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
+            TenantId = source.TenantId
         };
     }
 
@@ -130,6 +131,7 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             Input = source.SerializedInput != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.SerializedInput) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
+            TenantId = source.TenantId
         };
     }
 }

@@ -91,7 +91,8 @@ public class DapperTriggerStore : ITriggerStore
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
             WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
-            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default
+            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default,
+            TenantId = source.TenantId
         };
     }
 
@@ -105,7 +106,8 @@ public class DapperTriggerStore : ITriggerStore
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
             WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
-            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default
+            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default,
+            TenantId = source.TenantId
         };
     }
 }

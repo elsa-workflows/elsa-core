@@ -1,15 +1,12 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>
 /// A message that can be delivered to a workflow instance.
 /// </summary>
-public class WorkflowInboxMessageRecord
+internal class WorkflowInboxMessageRecord : Record
 {
-    /// <summary>
-    /// The ID of the message.
-    /// </summary>
-    public string Id { get; set; } = default!;
-    
     /// <summary>
     /// The type name of the activity to deliver the message to.
     /// </summary>

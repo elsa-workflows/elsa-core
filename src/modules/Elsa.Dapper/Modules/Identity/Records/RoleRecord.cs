@@ -1,8 +1,9 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Identity.Records;
 
-internal class RoleRecord
+internal class RoleRecord : Record
 {
-    public string Id { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string Permissions { get; set; } = default!;
 }

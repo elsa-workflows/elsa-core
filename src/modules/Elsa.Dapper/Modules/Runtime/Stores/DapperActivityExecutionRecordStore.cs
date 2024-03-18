@@ -133,7 +133,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             SerializedActivityState = source.ActivityState != null ? await _safeSerializer.SerializeAsync(source.ActivityState, cancellationToken) : default,
             SerializedPayload = source.Payload != null ? await _safeSerializer.SerializeAsync(source.Payload, cancellationToken) : default,
             SerializedOutputs = source.Outputs != null ? await _safeSerializer.SerializeAsync(source.Outputs, cancellationToken) : default,
-            SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : default
+            SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : default,
+            TenantId = source.TenantId
         };
     }
 
@@ -155,7 +156,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
             Payload = source.SerializedPayload != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedPayload, cancellationToken) : default,
             Outputs = source.SerializedOutputs != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object?>>(source.SerializedOutputs, cancellationToken) : default,
-            Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default
+            Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default,
+            TenantId = source.TenantId
         };
     }
 
@@ -173,7 +175,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             StartedAt = source.StartedAt,
             HasBookmarks = source.HasBookmarks,
             Status = Enum.Parse<ActivityStatus>(source.Status),
-            ActivityTypeVersion = source.ActivityTypeVersion
+            ActivityTypeVersion = source.ActivityTypeVersion,
+            TenantId = source.TenantId
         };
     }
 }

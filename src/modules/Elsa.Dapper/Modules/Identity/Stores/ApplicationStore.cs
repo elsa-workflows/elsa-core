@@ -55,33 +55,35 @@ public class DapperApplicationStore : IApplicationStore
             ;
     }
     
-    private ApplicationRecord Map(Application application)
+    private ApplicationRecord Map(Application source)
     {
         return new()
         {
-            Id = application.Id,
-            ClientId = application.ClientId,
-            HashedClientSecret = application.HashedClientSecret,
-            HashedClientSecretSalt = application.HashedClientSecretSalt,
-            Name = application.Name,
-            HashedApiKey = application.HashedApiKey,
-            HashedApiKeySalt = application.HashedApiKeySalt,
-            Roles = string.Join(',', application.Roles)
+            Id = source.Id,
+            ClientId = source.ClientId,
+            HashedClientSecret = source.HashedClientSecret,
+            HashedClientSecretSalt = source.HashedClientSecretSalt,
+            Name = source.Name,
+            HashedApiKey = source.HashedApiKey,
+            HashedApiKeySalt = source.HashedApiKeySalt,
+            Roles = string.Join(',', source.Roles),
+            TenantId = source.TenantId
         };
     }
     
-    private Application Map(ApplicationRecord record)
+    private Application Map(ApplicationRecord source)
     {
         return new()
         {
-            Id = record.Id,
-            ClientId = record.ClientId,
-            HashedClientSecret = record.HashedClientSecret,
-            HashedClientSecretSalt = record.HashedClientSecretSalt,
-            Name = record.Name,
-            HashedApiKey = record.HashedApiKey,
-            HashedApiKeySalt = record.HashedApiKeySalt,
-            Roles = record.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            Id = source.Id,
+            ClientId = source.ClientId,
+            HashedClientSecret = source.HashedClientSecret,
+            HashedClientSecretSalt = source.HashedClientSecretSalt,
+            Name = source.Name,
+            HashedApiKey = source.HashedApiKey,
+            HashedApiKeySalt = source.HashedApiKeySalt,
+            Roles = source.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries),
+            TenantId = source.TenantId
         };
     }
 }

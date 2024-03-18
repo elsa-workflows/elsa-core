@@ -219,6 +219,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             Status = Enum.Parse<WorkflowStatus>(source.Status),
             SubStatus = Enum.Parse<WorkflowSubStatus>(source.SubStatus),
             CorrelationId = source.CorrelationId,
+            TenantId = source.TenantId
         };
     }
 
@@ -241,7 +242,8 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             FinishedAt = source.FinishedAt,
             Status = source.Status.ToString(),
             SubStatus = source.SubStatus.ToString(),
-            CorrelationId = source.CorrelationId
+            CorrelationId = source.CorrelationId,
+            TenantId = source.TenantId
         };
     }
 }

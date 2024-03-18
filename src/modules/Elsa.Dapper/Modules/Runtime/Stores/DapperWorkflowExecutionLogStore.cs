@@ -127,6 +127,7 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
             Source = source.Source,
             SerializedActivityState = source.ActivityState != null ? _payloadSerializer.Serialize(source.ActivityState) : null,
             SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : null,
+            TenantId = source.TenantId
         };
     }
 
@@ -153,6 +154,7 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
             Source = source.Source,
             ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
             Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : null,
+            TenantId = source.TenantId
         };
     }
 }

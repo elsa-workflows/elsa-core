@@ -85,7 +85,8 @@ public class DapperBookmarkStore : IBookmarkStore
             Hash = source.Hash,
             SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default,
             SerializedMetadata = source.Metadata != null ? _payloadSerializer.Serialize(source.Metadata) : default,
-            CreatedAt = source.CreatedAt
+            CreatedAt = source.CreatedAt,
+            TenantId = source.TenantId
         };
     }
 
@@ -101,7 +102,8 @@ public class DapperBookmarkStore : IBookmarkStore
             Hash = source.Hash,
             Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default,
             Metadata = source.SerializedMetadata != null ? _payloadSerializer.Deserialize<Dictionary<string, string>>(source.SerializedMetadata) : default,
-            CreatedAt = source.CreatedAt
+            CreatedAt = source.CreatedAt,
+            TenantId = source.TenantId
         };
     }
 }

@@ -1,8 +1,9 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
-internal class StoredBookmarkRecord
+internal class StoredBookmarkRecord : Record
 {
-    public string Id { get; set; } = default!;
     public string ActivityTypeName { get; set; } = default!;
     public string Hash { get; set; } = default!;
     public string WorkflowInstanceId { get; set; } = default!;

@@ -1,8 +1,9 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Management.Records;
 
-internal class WorkflowInstanceRecord
+internal class WorkflowInstanceRecord : Record
 {
-    public string Id { get; set; } = default!;
     public string DefinitionId { get; set; } = default!;
     public string DefinitionVersionId { get; set; } = default!;
     public int Version { get; set; }
