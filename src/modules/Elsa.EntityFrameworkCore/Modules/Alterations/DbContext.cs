@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Models;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +33,7 @@ public class AlterationsElsaDbContext : ElsaDbContextBase
     {
         modelBuilder.Ignore<AlterationLogEntry>();
         modelBuilder.Ignore<AlterationWorkflowInstanceFilter>();
+        modelBuilder.Ignore<TimestampFilter>();
         
         var configuration = new Configurations();
         modelBuilder.ApplyConfiguration<AlterationPlan>(configuration);
