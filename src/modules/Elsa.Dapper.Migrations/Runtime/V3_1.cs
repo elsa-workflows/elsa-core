@@ -18,15 +18,7 @@ public class V3_1 : Migration
             .Table("KeyValuePairs")
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("Key").AsString().Indexed()
-            .WithColumn("Value").AsString(MaxValue).NotNullable()
-            .WithColumn("TenantId").AsString().Nullable();
-        
-        Alter.Table("WorkflowInstances").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("Triggers").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("Bookmarks").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("WorkflowExecutionLogRecords").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("ActivityExecutionRecords").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("WorkflowInboxMessages").AddColumn("TenantId").AsString().Nullable();
+            .WithColumn("Value").AsString(MaxValue).NotNullable();
     }
 
     /// <inheritdoc />

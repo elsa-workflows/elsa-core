@@ -12,44 +12,32 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// <summary>
 /// A Dapper implementation of <see cref="IKeyValueStore"/>.
 /// </summary>
-public class DapperKeyValueStore : IKeyValueStore
+internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueStore
 {
-    private const string TableName = "Users";
-    private const string PrimaryKeyName = "Key";
-    private readonly Store<KeyValuePairRecord> _store;
-    
-    /// <summary>
-    /// Initializes a new instance of <see cref="DapperKeyValueStore"/>.
-    /// </summary>
-    public DapperKeyValueStore(IDbConnectionProvider dbConnectionProvider)
-    {
-        _store = new Store<KeyValuePairRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
     {
         var record = Map(keyValuePair);
-        return _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
+        return store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : Map(record);
     }
 
     public async Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return records.Select(Map);
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
-        return _store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Key), key), cancellationToken);
+        return store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Key), key), cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, KeyValueFilter filter)

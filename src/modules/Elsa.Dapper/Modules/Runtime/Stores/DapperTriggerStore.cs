@@ -13,40 +13,27 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// <summary>
 /// Provides a Dapper implementation of <see cref="ITriggerStore"/>.
 /// </summary>
-public class DapperTriggerStore : ITriggerStore
+internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSerializer payloadSerializer)
+    : ITriggerStore
 {
-    private const string TableName = "Triggers";
-    private const string PrimaryKeyName = "Id";
-    private readonly IPayloadSerializer _payloadSerializer;
-    private readonly Store<StoredTriggerRecord> _store;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DapperTriggerStore"/> class.
-    /// </summary>
-    public DapperTriggerStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
-    {
-        _payloadSerializer = payloadSerializer;
-        _store = new Store<StoredTriggerRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
+        await store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
     {
         var mappedRecords = records.Select(Map);
-        await _store.SaveManyAsync(mappedRecords, PrimaryKeyName, cancellationToken);
+        await store.SaveManyAsync(mappedRecords, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return Map(records);
     }
 
@@ -61,7 +48,7 @@ public class DapperTriggerStore : ITriggerStore
     /// <inheritdoc />
     public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)
@@ -91,7 +78,7 @@ public class DapperTriggerStore : ITriggerStore
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
             WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
-            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : default,
+            Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : default,
             TenantId = source.TenantId
         };
     }
@@ -106,7 +93,7 @@ public class DapperTriggerStore : ITriggerStore
             Name = source.Name,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
             WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
-            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : default,
+            SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : default,
             TenantId = source.TenantId
         };
     }

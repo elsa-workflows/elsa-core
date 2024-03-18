@@ -20,33 +20,20 @@ namespace Elsa.Dapper.Modules.Management.Stores;
 /// <summary>
 /// Provides a Dapper implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
-public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
+internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer)
+    : IWorkflowDefinitionStore
 {
-    private const string TableName = "WorkflowDefinitions";
-    private const string PrimaryKeyName = "Id";
-    private readonly IPayloadSerializer _payloadSerializer;
-    private readonly Store<WorkflowDefinitionRecord> _store;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DapperWorkflowDefinitionStore"/> class.
-    /// </summary>
-    public DapperWorkflowDefinitionStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
-    {
-        _payloadSerializer = payloadSerializer;
-        _store = new Store<WorkflowDefinitionRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : Map(record);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return record == null ? null : Map(record);
     }
 
@@ -63,21 +50,21 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var page = await _store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return Map(page);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return Map(records).ToList();
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return Map(records).ToList();
     }
 
@@ -94,26 +81,26 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        return await _store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), cancellationToken);
         return records.ToList();
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await _store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), nameof(WorkflowDefinitionRecord.Version), OrderDirection.Descending, cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), nameof(WorkflowDefinitionRecord.Version), OrderDirection.Descending, cancellationToken);
         return record == null ? null : Map(record);
     }
 
@@ -121,40 +108,40 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var record = Map(definition);
-        await _store.SaveAsync(record, nameof(WorkflowDefinitionRecord.Id), cancellationToken);
+        await store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         var records = definitions.Select(Map).ToList();
-        await _store.SaveManyAsync(records, nameof(WorkflowDefinitionRecord.Id), cancellationToken);
+        await store.SaveManyAsync(records, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(
-            filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", TableName),
+        return await store.CountAsync(
+            filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", store.TableName),
             cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        var exists = await _store.AnyAsync(query =>
+        var exists = await store.AnyAsync(query =>
         {
             query.Is(nameof(WorkflowDefinition.Name), name);
 
@@ -192,7 +179,7 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     private WorkflowDefinition Map(WorkflowDefinitionRecord source)
     {
-        var props = _payloadSerializer.Deserialize<WorkflowDefinitionProps>(source.Props);
+        var props = payloadSerializer.Deserialize<WorkflowDefinitionProps>(source.Props);
         return new WorkflowDefinition
         {
             Id = source.Id,
@@ -245,7 +232,7 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             IsReadonly = source.IsReadonly,
             IsSystem = source.IsSystem,
             StringData = source.StringData,
-            Props = _payloadSerializer.Serialize(props),
+            Props = payloadSerializer.Serialize(props),
             MaterializerName = source.MaterializerName,
             UsableAsActivity = source.Options.UsableAsActivity,
             ProviderName = source.ProviderName,

@@ -12,37 +12,25 @@ namespace Elsa.Dapper.Modules.Identity.Stores;
 /// <summary>
 /// A Dapper implementation of <see cref="IUserStore"/>.
 /// </summary>
-public class DapperUserStore : IUserStore
+internal class DapperUserStore(Store<UserRecord> store) : IUserStore
 {
-    private const string TableName = "Users";
-    private const string PrimaryKeyName = "Id";
-    private readonly Store<UserRecord> _store;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="DapperUserStore"/>.
-    /// </summary>
-    public DapperUserStore(IDbConnectionProvider dbConnectionProvider)
-    {
-        _store = new Store<UserRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public async Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
         var record = Map(user);
-        await _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
+        await store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : Map(record);
     }
 

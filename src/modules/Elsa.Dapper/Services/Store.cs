@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
+using Elsa.Tenants.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;
@@ -12,29 +13,18 @@ namespace Elsa.Dapper.Services;
 /// Provides a generic store using Dapper.
 /// </summary>
 [PublicAPI]
-public class Store<T> where T : notnull
+public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolver tenantResolver, string tableName, string primaryKey = "Id")
+    where T : notnull
 {
-    private readonly IDbConnectionProvider _dbConnectionProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Store{T}"/> class.
-    /// </summary>
-    public Store(IDbConnectionProvider dbConnectionProvider, string tableName, string primaryKey = "Id")
-    {
-        _dbConnectionProvider = dbConnectionProvider;
-        TableName = tableName;
-        PrimaryKey = primaryKey;
-    }
-
     /// <summary>
     /// The name of the table.
     /// </summary>
-    public string TableName { get; }
+    public string TableName { get; } = tableName;
 
     /// <summary>
     /// The name of the primary key column.
     /// </summary>
-    public string PrimaryKey { get; }
+    public string PrimaryKey { get; } = primaryKey;
 
     /// <summary>
     /// Finds a single record.
@@ -44,9 +34,9 @@ public class Store<T> where T : notnull
     /// <returns>The record, if found.</returns>
     public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbConnectionProvider.CreateQuery().From(TableName);
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         return await query.FirstOrDefaultAsync<T>(connection);
     }
 
@@ -60,8 +50,8 @@ public class Store<T> where T : notnull
     /// <returns>The record, if found.</returns>
     public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = _dbConnectionProvider.CreateQuery().From(TableName);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
         query = query.OrderBy(orderKey, orderDirection);
         return await query.FirstOrDefaultAsync<T>(connection);
@@ -118,13 +108,13 @@ public class Store<T> where T : notnull
     /// <returns>A page of records.</returns>
     public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
 
-        var query = _dbConnectionProvider.CreateQuery().From(TableName);
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
         query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
-        var countQuery = _dbConnectionProvider.CreateQuery().Count(TableName);
+        var countQuery = dbConnectionProvider.CreateQuery().Count(TableName);
         filter(countQuery);
 
         var records = (await query.QueryAsync<TShape>(connection)).ToList();
@@ -149,8 +139,8 @@ public class Store<T> where T : notnull
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = _dbConnectionProvider.CreateQuery().From(TableName);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
         return await query.QueryAsync<TShape>(connection);
     }
@@ -176,8 +166,8 @@ public class Store<T> where T : notnull
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = _dbConnectionProvider.CreateQuery().From(TableName);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
         filter(query);
         query = query.OrderBy(orderKey, orderDirection);
         return await query.QueryAsync<TShape>(connection);
@@ -187,12 +177,11 @@ public class Store<T> where T : notnull
     /// Saves the specified record.
     /// </summary>
     /// <param name="record">The record.</param>
-    /// <param name="primaryKey">The primary key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveAsync(T record, string primaryKey = "Id", CancellationToken cancellationToken = default)
+    public async Task SaveAsync(T record, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Upsert(TableName, primaryKey, record);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, primaryKey, record);
         await query.ExecuteAsync(connection);
     }
 
@@ -200,16 +189,15 @@ public class Store<T> where T : notnull
     /// Saves the specified records.
     /// </summary>
     /// <param name="records">The records.</param>
-    /// <param name="primaryKey">The primary key.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task SaveManyAsync(IEnumerable<T> records, string primaryKey = "Id", CancellationToken cancellationToken = default)
+    public async Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
     {
         var recordsList = records.ToList();
 
         if (!recordsList.Any())
             return;
 
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect);
         var currentIndex = 0;
 
         foreach (var record in recordsList)
@@ -219,7 +207,7 @@ public class Store<T> where T : notnull
             currentIndex++;
         }
 
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
 
@@ -230,8 +218,8 @@ public class Store<T> where T : notnull
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task AddAsync(T record, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Insert(TableName, record);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Insert(TableName, record);
         await query.ExecuteAsync(connection);
     }
 
@@ -243,14 +231,14 @@ public class Store<T> where T : notnull
     /// <returns>The number of records deleted.</returns>
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
+        var query = dbConnectionProvider.CreateQuery().Delete(TableName);
         filter(query);
         
         // If there are no conditions, we don't want to delete all records.
         if (!query.Parameters.ParameterNames.Any())
             return 0;
         
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
     }
 
@@ -265,7 +253,7 @@ public class Store<T> where T : notnull
     /// <returns>The number of records deleted.</returns>
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
-        var selectQuery = _dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
+        var selectQuery = dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
         filter(selectQuery);
         
         // If there are no conditions, we don't want to delete all records.
@@ -274,8 +262,8 @@ public class Store<T> where T : notnull
         
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
-        var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
-        using var connection = _dbConnectionProvider.GetConnection();
+        var deleteQuery = dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
+        using var connection = dbConnectionProvider.GetConnection();
         return await deleteQuery.ExecuteAsync(connection);
     }
 
@@ -287,9 +275,9 @@ public class Store<T> where T : notnull
     /// <returns><c>true</c> if any records match the specified query.</returns>
     public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
-        var query = _dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
+        var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
         filter(query);
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
     }
 
@@ -301,9 +289,9 @@ public class Store<T> where T : notnull
     /// <returns>The number of records matching the specified query.</returns>
     public async Task<long> CountAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
-        var countQuery = _dbConnectionProvider.CreateQuery().Count(TableName);
+        var countQuery = dbConnectionProvider.CreateQuery().Count(TableName);
         filter(countQuery);
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         return await countQuery.SingleAsync<long>(connection);
     }
 }

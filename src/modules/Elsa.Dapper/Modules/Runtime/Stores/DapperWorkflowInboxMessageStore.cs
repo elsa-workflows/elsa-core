@@ -16,42 +16,27 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// <summary>
 /// A Dapper-based <see cref="IBookmarkStore"/> implementation.
 /// </summary>
-public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
+internal class DapperWorkflowInboxMessageStore(Store<WorkflowInboxMessageRecord> store, IPayloadSerializer payloadSerializer)
+    : IWorkflowInboxMessageStore
 {
-    private readonly IPayloadSerializer _payloadSerializer;
-    private readonly ISystemClock _systemClock;
-    private const string TableName = "WorkflowInboxMessages";
-    private const string PrimaryKeyName = "Id";
-    private readonly Store<WorkflowInboxMessageRecord> _store;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DapperWorkflowInboxMessageStore"/> class.
-    /// </summary>
-    public DapperWorkflowInboxMessageStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer, ISystemClock systemClock)
-    {
-        _payloadSerializer = payloadSerializer;
-        _systemClock = systemClock;
-        _store = new Store<WorkflowInboxMessageRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
+        await store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return Map(records);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(IEnumerable<WorkflowInboxMessageFilter> filters, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filters.ToArray()), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filters.ToArray()), cancellationToken);
         return Map(records);
     }
 
@@ -59,9 +44,9 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
     public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
     {
         if (pageArgs == null)
-            return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+            return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), pageArgs, new[] { new OrderField(nameof(WorkflowInboxMessage.CreatedAt), OrderDirection.Ascending) }, cancellationToken: cancellationToken);
+        return await store.DeleteAsync(q => ApplyFilter(q, filter), pageArgs, new[] { new OrderField(nameof(WorkflowInboxMessage.CreatedAt), OrderDirection.Ascending) }, cancellationToken: cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, params WorkflowInboxMessageFilter[] filters)
@@ -109,8 +94,8 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
-            SerializedBookmarkPayload = _payloadSerializer.Serialize(source.BookmarkPayload),
-            SerializedInput = source.Input != null ? _payloadSerializer.Serialize(source.Input) : default,
+            SerializedBookmarkPayload = payloadSerializer.Serialize(source.BookmarkPayload),
+            SerializedInput = source.Input != null ? payloadSerializer.Serialize(source.Input) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
             TenantId = source.TenantId
@@ -127,8 +112,8 @@ public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
             CorrelationId = source.CorrelationId,
             ActivityInstanceId = source.ActivityInstanceId,
             Hash = source.Hash,
-            BookmarkPayload = _payloadSerializer.Deserialize(source.SerializedBookmarkPayload),
-            Input = source.SerializedInput != null ? _payloadSerializer.Deserialize<Dictionary<string, object>>(source.SerializedInput) : default,
+            BookmarkPayload = payloadSerializer.Deserialize(source.SerializedBookmarkPayload),
+            Input = source.SerializedInput != null ? payloadSerializer.Deserialize<Dictionary<string, object>>(source.SerializedInput) : default,
             CreatedAt = source.CreatedAt,
             ExpiresAt = source.ExpiresAt,
             TenantId = source.TenantId

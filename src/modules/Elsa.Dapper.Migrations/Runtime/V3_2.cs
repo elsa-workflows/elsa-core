@@ -14,7 +14,6 @@ public class V3_2 : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        Alter.Table("WorkflowInstances").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("Triggers").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("Bookmarks").AddColumn("TenantId").AsString().Nullable();
         Alter.Table("WorkflowExecutionLogRecords").AddColumn("TenantId").AsString().Nullable();
@@ -26,7 +25,6 @@ public class V3_2 : Migration
     /// <inheritdoc />
     public override void Down()
     {
-        Delete.Column("TenantId").FromTable("WorkflowInstances");
         Delete.Column("TenantId").FromTable("Triggers");
         Delete.Column("TenantId").FromTable("Bookmarks");
         Delete.Column("TenantId").FromTable("WorkflowExecutionLogRecords");

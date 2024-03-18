@@ -17,47 +17,34 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 /// <summary>
 /// Implements the <see cref="IWorkflowExecutionLogStore"/> using Dapper.
 /// </summary>
-public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
+internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordRecord> store, IPayloadSerializer payloadSerializer)
+    : IWorkflowExecutionLogStore
 {
-    private const string TableName = "WorkflowExecutionLogRecords";
-    private const string PrimaryKeyName = "Id";
-    private readonly IPayloadSerializer _payloadSerializer;
-    private readonly Store<WorkflowExecutionLogRecordRecord> _store;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DapperWorkflowExecutionLogStore"/> class.
-    /// </summary>
-    public DapperWorkflowExecutionLogStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
-    {
-        _payloadSerializer = payloadSerializer;
-        _store = new Store<WorkflowExecutionLogRecordRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
-    }
-
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
+        await store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
         var mappedRecords = records.Select(Map);
-        await _store.SaveManyAsync(mappedRecords, PrimaryKeyName, cancellationToken);
+        await store.SaveManyAsync(mappedRecords,  cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record != null ? Map(record) : default;
     }
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return record != null ? Map(record) : default;
     }
 
@@ -74,14 +61,14 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var page = await _store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return Map(page);
     }
 
     /// <inheritdoc />
     public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
     }
 
     private static void ApplyFilter(ParameterizedQuery query, WorkflowExecutionLogRecordFilter filter)
@@ -125,8 +112,8 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
             EventName = source.EventName,
             Message = source.Message,
             Source = source.Source,
-            SerializedActivityState = source.ActivityState != null ? _payloadSerializer.Serialize(source.ActivityState) : null,
-            SerializedPayload = source.Payload != null ? _payloadSerializer.Serialize(source.Payload) : null,
+            SerializedActivityState = source.ActivityState != null ? payloadSerializer.Serialize(source.ActivityState) : null,
+            SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : null,
             TenantId = source.TenantId
         };
     }
@@ -152,8 +139,8 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
             EventName = source.EventName,
             Message = source.Message,
             Source = source.Source,
-            ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
-            Payload = source.SerializedPayload != null ? _payloadSerializer.Deserialize(source.SerializedPayload) : null,
+            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
+            Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : null,
             TenantId = source.TenantId
         };
     }
