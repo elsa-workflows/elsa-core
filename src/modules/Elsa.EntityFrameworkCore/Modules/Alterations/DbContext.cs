@@ -32,6 +32,10 @@ public class AlterationsElsaDbContext : ElsaDbContextBase
     {
         modelBuilder.Ignore<AlterationLogEntry>();
         modelBuilder.Ignore<AlterationWorkflowInstanceFilter>();
+        
+        var configuration = new Configurations();
+        modelBuilder.ApplyConfiguration<AlterationPlan>(configuration);
+        modelBuilder.ApplyConfiguration<AlterationJob>(configuration);
         base.OnModelCreating(modelBuilder);
     }
 }

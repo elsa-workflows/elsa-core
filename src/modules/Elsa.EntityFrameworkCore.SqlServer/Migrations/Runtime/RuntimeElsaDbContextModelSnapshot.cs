@@ -18,10 +18,35 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "Key" }, "IX_SerializedKeyValuePair_Key");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_SerializedKeyValuePair_TenantId");
+
+                    b.ToTable("KeyValuePairs", "Elsa");
+                });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
@@ -55,6 +80,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SerializedException")
                         .HasColumnType("nvarchar(max)");
 
@@ -64,11 +92,17 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SerializedProperties")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTimeOffset>("StartedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Status")
                         .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("WorkflowInstanceId")
@@ -104,6 +138,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ActivityExecutionRecord_Status");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_TenantId");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -115,7 +152,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
-                    b.Property<string>("BookmarkId")
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ActivityInstanceId")
@@ -124,6 +161,10 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("ActivityTypeName")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("BookmarkId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CorrelationId")
                         .HasColumnType("nvarchar(max)");
@@ -141,11 +182,14 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("BookmarkId");
+                    b.HasKey("Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
 
@@ -158,6 +202,8 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
 
@@ -183,6 +229,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -198,6 +247,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_StoredTrigger_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_StoredTrigger_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
@@ -256,6 +308,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("Source")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("datetimeoffset");
 
@@ -302,6 +357,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 
                     b.HasIndex("Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
 
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
@@ -358,6 +416,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedInput")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .HasColumnType("nvarchar(450)");
 
@@ -374,6 +435,8 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_WorkflowInboxMessage_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
 
