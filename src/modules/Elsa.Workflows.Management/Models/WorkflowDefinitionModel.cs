@@ -52,6 +52,7 @@ public record WorkflowDefinitionModel(
         default!,
         default!,
         default!,
+        default!,
         default!)
     {
     }

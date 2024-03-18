@@ -54,9 +54,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
-
-        var tenantAccessor = ServiceProvider.GetService<ITenantResolver>();
-        //TenantId = tenantAccessor?.GetTenantAsync();
     }
 
     /// <inheritdoc/>
