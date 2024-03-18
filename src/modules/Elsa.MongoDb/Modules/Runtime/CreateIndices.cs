@@ -62,7 +62,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateActivityExecutionLogIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var activityExecutionLogCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<ActivityExecutionRecord>>();
+        var activityExecutionLogCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<ActivityExecutionRecord>>();
         if (activityExecutionLogCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -113,7 +113,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateWorkflowTriggerIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowTriggerCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<StoredTrigger>>();
+        var workflowTriggerCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<StoredTrigger>>();
         if (workflowTriggerCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -133,7 +133,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateWorkflowInboxIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var collection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowInboxMessage>>();
+        var collection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowInboxMessage>>();
         if (collection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -155,7 +155,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private Task CreateKeyValueIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var keyValuePairCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<SerializedKeyValuePair>>();
+        var keyValuePairCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<SerializedKeyValuePair>>();
         if (keyValuePairCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(

@@ -24,7 +24,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateApplicationIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var applicationCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<Application>>();
+        var applicationCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<Application>>();
         if (applicationCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -48,7 +48,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateUserIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var userCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<User>>();
+        var userCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<User>>();
         if (userCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
@@ -71,7 +71,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateRoleIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var roleCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<Role>>();
+        var roleCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<Role>>();
         if (roleCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
