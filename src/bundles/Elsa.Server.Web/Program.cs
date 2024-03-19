@@ -24,6 +24,7 @@ using Proto.Persistence.SqlServer;
 
 const bool useMongoDb = false;
 const bool useSqlServer = false;
+const bool usePostgres = false;
 const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
@@ -39,6 +40,7 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
+var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
@@ -88,6 +90,8 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
@@ -110,6 +114,8 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
@@ -128,6 +134,8 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
@@ -207,6 +215,8 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString);
                         else
                             ef.UseSqlite(sqliteConnectionString);
                     });
