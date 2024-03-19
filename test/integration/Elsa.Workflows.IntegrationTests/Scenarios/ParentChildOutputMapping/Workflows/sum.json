@@ -8,8 +8,8 @@
   "variables": [],
   "inputs": [
     {
-      "uiHint": "single-line",
-      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
       "type": "Int32",
       "name": "A",
       "displayName": "A",
@@ -17,8 +17,8 @@
       "isArray": false
     },
     {
-      "uiHint": "single-line",
-      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
       "type": "Int32",
       "name": "B",
       "displayName": "B",

@@ -11,13 +11,13 @@
       "typeName": "String",
       "isArray": false,
       "value": "",
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     }
   ],
   "inputs": [
     {
-      "uiHint": "single-line",
-      "storageDriverType": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
       "type": "String",
       "name": "fromMain",
       "displayName": "fromMain",
