@@ -33,7 +33,9 @@ public class DefaultAlterationPlanScheduler : IAlterationPlanScheduler
     [RequiresUnreferencedCode("The type of the object to be deserialized is not known at compile time.")]
     public async Task<string> SubmitAsync(AlterationPlanParams planParams, CancellationToken cancellationToken = default)
     {
-        var planId = !string.IsNullOrWhiteSpace(planParams.Id) ? planParams.Id : _identityGenerator.GenerateId();
+        if(string.IsNullOrWhiteSpace(planParams.Id))
+            planParams.Id = _identityGenerator.GenerateId();
+        
         var definitionId = ExecuteAlterationPlanWorkflow.WorkflowDefinitionId;
         var serializedPlan = _jsonSerializer.Serialize(planParams);
         var request = new DispatchWorkflowDefinitionRequest(definitionId, VersionOptions.Published)
@@ -45,6 +47,6 @@ public class DefaultAlterationPlanScheduler : IAlterationPlanScheduler
         };
         await _workflowDispatcher.DispatchAsync(request, cancellationToken);
 
-        return planId;
+        return planParams.Id;
     }
 }
