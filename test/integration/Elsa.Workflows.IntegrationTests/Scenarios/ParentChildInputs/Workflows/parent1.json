@@ -7,7 +7,7 @@
   "variables": [],
   "inputs": [
     {
-      "uiHint": "single-line",
+      "uiHint": "singleline",
       "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
       "type": "Object",
       "name": "Input1",
