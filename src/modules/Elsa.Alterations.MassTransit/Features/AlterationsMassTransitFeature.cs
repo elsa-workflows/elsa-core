@@ -28,7 +28,8 @@ public class MassTransitAlterationsFeature : FeatureBase
     public override void Configure()
     {
         Module.Configure<AlterationsFeature>(feature => feature.AlterationJobDispatcherFactory = sp => sp.GetRequiredService<MassTransitAlterationJobDispatcher>());
-        Module.AddMassTransitConsumer<RunAlterationJobConsumer>();
+        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<RunAlterationJobConsumer>();
+        Module.AddMassTransitConsumer<RunAlterationJobConsumer>(queueName);
     }
 
     /// <inheritdoc />

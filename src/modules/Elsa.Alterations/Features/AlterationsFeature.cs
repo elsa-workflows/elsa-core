@@ -1,7 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
-using Elsa.Alterations.Core.Services;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
@@ -60,6 +59,7 @@ public class AlterationsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();
         Services.AddAlterations();
         Services.AddAlterationsCore();
         Services.AddScoped<BackgroundAlterationJobDispatcher>();
