@@ -43,7 +43,7 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             var activityExecutionRecords = await activityExecutionStore.FindManySummariesAsync(activityExecutionFilter, cancellationToken);
             var matchingWorkflowInstanceIds = activityExecutionRecords.Select(x => x.WorkflowInstanceId).ToHashSet();
             
-            if (workflowInstanceIds.Count == 0)
+            if (workflowInstanceFilter.IsEmpty)
                 workflowInstanceIds = matchingWorkflowInstanceIds;
             else
                 workflowInstanceIds.IntersectWith(matchingWorkflowInstanceIds);
