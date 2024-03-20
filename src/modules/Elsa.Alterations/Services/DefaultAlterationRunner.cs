@@ -9,7 +9,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Alterations.Core.Services;
+namespace Elsa.Alterations.Services;
 
 /// <inheritdoc />
 public class DefaultAlterationRunner : IAlterationRunner

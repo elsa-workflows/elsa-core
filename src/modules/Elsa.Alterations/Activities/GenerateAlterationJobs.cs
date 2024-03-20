@@ -6,6 +6,7 @@ using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
@@ -24,7 +25,7 @@ namespace Elsa.Alterations.Activities;
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "Alterations", "Generates jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
-public class GenerateAlterationJobs : CodeActivity
+public class GenerateAlterationJobs : CodeActivity<int>
 {
     /// <inheritdoc />
     public GenerateAlterationJobs([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -47,10 +48,14 @@ public class GenerateAlterationJobs : CodeActivity
     {
         var plan = await GetPlanAsync(context);
         await UpdatePlanStatusAsync(context, plan);
-        var workflowInstanceIds = await FindMatchingWorkflowInstanceIdsAsync(context, plan.WorkflowInstanceFilter);
-        await GenerateJobsAsync(context, plan, workflowInstanceIds);
+        var workflowInstanceIds = (await FindMatchingWorkflowInstanceIdsAsync(context, plan.WorkflowInstanceFilter)).ToList();
+
+        if (workflowInstanceIds.Any())
+            await GenerateJobsAsync(context, plan, workflowInstanceIds);
+
+        context.SetResult(workflowInstanceIds.Count);
     }
-    
+
     private async Task<AlterationPlan> GetPlanAsync(ActivityExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
@@ -64,7 +69,7 @@ public class GenerateAlterationJobs : CodeActivity
 
         if (plan == null)
             throw new FaultException($"Alteration Plan with ID {planId} not found.");
-        
+
         return plan;
     }
 
@@ -108,10 +113,10 @@ public class GenerateAlterationJobs : CodeActivity
                 workflowInstanceIds.UnionWith(matchingWorkflowInstanceIds);
             }
         }
-        
+
         return workflowInstanceIds;
     }
-    
+
     private async Task GenerateJobsAsync(ActivityExecutionContext context, AlterationPlan plan, IEnumerable<string> workflowInstanceIds)
     {
         var cancellationToken = context.CancellationToken;
