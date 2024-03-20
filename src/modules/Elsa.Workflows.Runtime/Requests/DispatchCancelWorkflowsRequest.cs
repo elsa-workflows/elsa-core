@@ -11,6 +11,7 @@ namespace Elsa.Workflows.Runtime.Requests;
 /// If you want to cancel all instances of a specific workflow definition, only set the <see cref="DefinitionId"/> property and the <see cref="VersionOptions"/> property.
 /// And if you want to cancel all instances of a specific workflow definition version, only set the <see cref="DefinitionVersionId"/> property.
 /// </remarks>
+/// ToDo: Current implementation allows combination of these properties (not constrictive). Do we need to add validation for that or remove this message?
 public class DispatchCancelWorkflowsRequest
 {
     /// <summary>
