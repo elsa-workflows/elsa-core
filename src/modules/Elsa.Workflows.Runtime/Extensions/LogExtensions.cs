@@ -3,9 +3,9 @@ using Elsa.Workflows.Runtime.Entities;
 namespace Elsa.Workflows.Runtime.Extensions;
 
 /// <summary>
-/// Provides a set of extension methods for <see cref="string"/>.
+/// Provides extension methods for sanitizing log messages.
 /// </summary>
-public static class LogStringExtensions
+public static class LogExtensions
 {
     /// <summary>
     /// Sanitizes a log message by replacing null characters with the string "\0".
