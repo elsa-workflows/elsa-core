@@ -10,7 +10,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Alterations.Activities;
 
 /// <summary>
-/// Submits an alteration plan for execution.
+/// Marks an alteration plan as completed.
 /// </summary>
 [Browsable(false)]
 [Activity("Elsa", "Alterations", "Dispatches jobs for the specified Alteration Plan", Kind = ActivityKind.Job)]
