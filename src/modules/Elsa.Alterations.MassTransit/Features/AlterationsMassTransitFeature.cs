@@ -29,15 +29,14 @@ public class MassTransitAlterationsFeature : FeatureBase
     {
         Module.Configure<AlterationsFeature>(feature => feature.AlterationJobDispatcherFactory = sp => sp.GetRequiredService<MassTransitAlterationJobDispatcher>());
         var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<RunAlterationJobConsumer>();
+        var queueAddress = new Uri($"queue:elsa-{queueName}");
+        EndpointConvention.Map<RunAlterationJob>(queueAddress);
         Module.AddMassTransitConsumer<RunAlterationJobConsumer>(queueName);
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<RunAlterationJobConsumer>();
-        var queueAddress = new Uri($"queue:elsa-{queueName}");
-        EndpointConvention.Map<RunAlterationJob>(queueAddress);
         Services.AddScoped<MassTransitAlterationJobDispatcher>();
     }
 }
