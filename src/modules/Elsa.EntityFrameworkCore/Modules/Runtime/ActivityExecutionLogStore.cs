@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
@@ -80,6 +81,7 @@ public class EFCoreActivityExecutionStore(
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, ActivityExecutionRecord entity, CancellationToken cancellationToken)
     {
+        entity = entity.SanitizeLogMessage();
         var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
         var serializedActivityState = entity.ActivityState != null ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
         var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;

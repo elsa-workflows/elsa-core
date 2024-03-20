@@ -659,7 +659,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public void ClearCompletionCallbacks()
     {
-        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
+        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this).ToList();
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
 
