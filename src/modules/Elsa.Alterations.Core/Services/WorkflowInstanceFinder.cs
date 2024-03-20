@@ -1,5 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
+using Elsa.Workflows;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
@@ -21,6 +22,7 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             HasIncidents = filter.HasIncidents,
             IsSystem = filter.IsSystem,
             TimestampFilters = filter.TimestampFilters?.ToList(),
+            WorkflowStatus = WorkflowStatus.Running
         };
         var activityExecutionFilters = filter.ActivityFilters?.Select(x => new ActivityExecutionRecordFilter
         {
@@ -31,7 +33,9 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             Status = x.Status,
         }).ToList();
 
-        var workflowInstanceIds = workflowInstanceFilter.IsEmpty
+        var workflowInstanceFilterIsEmpty = WorkflowFilterIsEmpty(workflowInstanceFilter);
+
+        var workflowInstanceIds = workflowInstanceFilterIsEmpty
             ? Enumerable.Empty<string>().ToHashSet()
             : (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
 
@@ -42,13 +46,29 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
         {
             var activityExecutionRecords = await activityExecutionStore.FindManySummariesAsync(activityExecutionFilter, cancellationToken);
             var matchingWorkflowInstanceIds = activityExecutionRecords.Select(x => x.WorkflowInstanceId).ToHashSet();
-            
-            if (workflowInstanceFilter.IsEmpty)
+
+            if (workflowInstanceFilterIsEmpty)
                 workflowInstanceIds = matchingWorkflowInstanceIds;
             else
                 workflowInstanceIds.IntersectWith(matchingWorkflowInstanceIds);
         }
 
         return workflowInstanceIds;
+    }
+
+    private bool WorkflowFilterIsEmpty(WorkflowInstanceFilter filter)
+    {
+        return filter.Id == null &&
+               filter.Ids == null &&
+               filter.DefinitionId == null &&
+               filter.DefinitionVersionId == null &&
+               filter.DefinitionIds == null &&
+               filter.DefinitionVersionIds == null &&
+               filter.Version == null &&
+               filter.CorrelationId == null &&
+               filter.CorrelationIds == null &&
+               filter.HasIncidents == null &&
+               filter.TimestampFilters == null
+               && string.IsNullOrWhiteSpace(filter.SearchTerm);
     }
 }
