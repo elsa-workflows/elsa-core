@@ -1,18 +1,19 @@
+using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Results;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 
-namespace Elsa.Alterations.Core.Contracts;
+namespace Elsa.Alterations.Core.Services;
 
 /// <inheritdoc />
-public class DefaultAlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
+public class AlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
 {
     private readonly IWorkflowDispatcher _workflowDispatcher;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultAlteredWorkflowDispatcher"/> class.
+    /// Initializes a new instance of the <see cref="AlteredWorkflowDispatcher"/> class.
     /// </summary>
-    public DefaultAlteredWorkflowDispatcher(IWorkflowDispatcher workflowDispatcher)
+    public AlteredWorkflowDispatcher(IWorkflowDispatcher workflowDispatcher)
     {
         _workflowDispatcher = workflowDispatcher;
     }

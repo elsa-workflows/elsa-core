@@ -97,7 +97,7 @@ public class WorkflowInstanceFilter
     public ICollection<TimestampFilter>? TimestampFilters { get; set; }
     
     /// <summary>
-    /// Returns true if the filter is empty.
+    /// Returns true if the filter is empty. The filter is empty if all properties are null or empty, except for <see cref="IsSystem"/> to allow filtering on system workflows.
     /// </summary>
     public bool IsEmpty =>
         Id == null &&
@@ -114,7 +114,6 @@ public class WorkflowInstanceFilter
         WorkflowStatuses == null &&
         WorkflowSubStatuses == null &&
         HasIncidents == null &&
-        IsSystem == null &&
         TimestampFilters == null
         && string.IsNullOrWhiteSpace(SearchTerm);
 
