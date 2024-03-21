@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Open.Linq.AsyncExtensions;
@@ -73,6 +74,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
+        entity = entity.SanitizeLogMessage();
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await _safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
     }

@@ -1,20 +1,13 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Alterations.Core.Contracts;
-using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
-using Elsa.Common.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Exceptions;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Alterations.Activities;
 
@@ -72,5 +65,9 @@ public class DispatchAlterationJobs : CodeActivity
         var alterationJobDispatcher = context.GetRequiredService<IAlterationJobDispatcher>();
         foreach (var jobId in alterationJobIds)
             await alterationJobDispatcher.DispatchAsync(jobId, cancellationToken);
+        
+        // Update status.
+        plan.Status = AlterationPlanStatus.Running;
+        await alterationPlanStore.SaveAsync(plan, cancellationToken);
     }
 }
