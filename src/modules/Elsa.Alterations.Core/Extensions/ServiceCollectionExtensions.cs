@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Options;
 using Elsa.Alterations.Core.Serialization;
+using Elsa.Alterations.Core.Services;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddAlterationsCore(this IServiceCollection services)
     {
         services.Configure<AlterationOptions>(_ => { }); // Ensure that the options are configured even if the application doesn't do so.
-        services.AddScoped<IAlteredWorkflowDispatcher, DefaultAlteredWorkflowDispatcher>();
+        services.AddScoped<IAlteredWorkflowDispatcher, AlteredWorkflowDispatcher>();
+        services.AddScoped<IWorkflowInstanceFinder, WorkflowInstanceFinder>();
         services.AddSingleton<IAlterationSerializer, AlterationSerializer>();
         services.AddSerializationOptionsConfigurator<AlterationSerializationOptionConfigurator>();
         return services;

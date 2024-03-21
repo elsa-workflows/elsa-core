@@ -84,37 +84,8 @@ public class GenerateAlterationJobs : CodeActivity<int>
     private async Task<IEnumerable<string>> FindMatchingWorkflowInstanceIdsAsync(ActivityExecutionContext context, AlterationWorkflowInstanceFilter filter)
     {
         var cancellationToken = context.CancellationToken;
-        var workflowInstanceFilter = new WorkflowInstanceFilter
-        {
-            Ids = filter.WorkflowInstanceIds?.ToList(),
-            DefinitionVersionIds = filter.DefinitionVersionIds?.ToList(),
-            CorrelationIds = filter.CorrelationIds?.ToList(),
-            HasIncidents = filter.HasIncidents,
-            TimestampFilters = filter.TimestampFilters?.ToList(),
-        };
-        var activityExecutionFilters = filter.ActivityFilters?.Select(x => new ActivityExecutionRecordFilter
-        {
-            ActivityId = x.Id,
-            ActivityNodeId = x.NodeId,
-            Name = x.Name,
-            Status = x.Status,
-        }).ToList();
-
-        var workflowInstanceStore = context.GetRequiredService<IWorkflowInstanceStore>();
-        var activityExecutionStore = context.GetRequiredService<IActivityExecutionStore>();
-        var workflowInstanceIds = workflowInstanceFilter.IsEmpty ? Enumerable.Empty<string>().ToHashSet() : (await workflowInstanceStore.FindManyIdsAsync(workflowInstanceFilter, cancellationToken)).ToHashSet();
-
-        if (activityExecutionFilters != null)
-        {
-            foreach (ActivityExecutionRecordFilter activityExecutionFilter in activityExecutionFilters.Where(x => !x.IsEmpty))
-            {
-                var activityExecutionRecords = await activityExecutionStore.FindManySummariesAsync(activityExecutionFilter, cancellationToken);
-                var matchingWorkflowInstanceIds = activityExecutionRecords.Select(x => x.WorkflowInstanceId).ToHashSet();
-                workflowInstanceIds.UnionWith(matchingWorkflowInstanceIds);
-            }
-        }
-
-        return workflowInstanceIds;
+        var workflowInstanceFinder = context.GetRequiredService<IWorkflowInstanceFinder>();
+        return await workflowInstanceFinder.FindAsync(filter, cancellationToken);
     }
 
     private async Task GenerateJobsAsync(ActivityExecutionContext context, AlterationPlan plan, IEnumerable<string> workflowInstanceIds)

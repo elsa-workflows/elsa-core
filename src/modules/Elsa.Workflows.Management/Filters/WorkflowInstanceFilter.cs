@@ -95,28 +95,6 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances by timestamp.
     /// </summary>
     public ICollection<TimestampFilter>? TimestampFilters { get; set; }
-    
-    /// <summary>
-    /// Returns true if the filter is empty.
-    /// </summary>
-    public bool IsEmpty =>
-        Id == null &&
-        Ids == null &&
-        DefinitionId == null &&
-        DefinitionVersionId == null &&
-        DefinitionIds == null &&
-        DefinitionVersionIds == null &&
-        Version == null &&
-        CorrelationId == null &&
-        CorrelationIds == null &&
-        WorkflowStatus == null &&
-        WorkflowSubStatus == null &&
-        WorkflowStatuses == null &&
-        WorkflowSubStatuses == null &&
-        HasIncidents == null &&
-        IsSystem == null &&
-        TimestampFilters == null
-        && string.IsNullOrWhiteSpace(SearchTerm);
 
     /// <summary>
     /// Applies the filter to the specified query.
