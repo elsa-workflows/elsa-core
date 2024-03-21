@@ -21,10 +21,12 @@ using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Tenants.Resolvers;
 using Elsa.Workflows.Management.Compression;
+using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
+using StackExchange.Redis;
 
 const bool useMongoDb = true;
 const bool useSqlServer = false;
@@ -154,6 +156,12 @@ services
 
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
+                runtime.DistributedLockProvider = sp =>
+                {
+                    var connection = ConnectionMultiplexer.Connect("localhost:6379");
+                    var database = connection.GetDatabase();
+                    return new RedisDistributedSynchronizationProvider(database);
+                };
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
             .UseScheduling(scheduling =>

@@ -19,6 +19,7 @@
     <PackageVersion Include="Cronos" Version="0.7.1" />
     <PackageVersion Include="Dapper" Version="2.1.24" />
     <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.1" />
+    <PackageVersion Include="DistributedLock.Redis" Version="1.0.2" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.11.0" />
     <PackageVersion Include="Elsa.Studio" Version="3.0.4" />
     <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.4" />
