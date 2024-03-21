@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Management.Services;
 /// <summary>
 /// Dispatcher that does not dispatch any messages.
 /// </summary>
-public class NoOpWorkflowDefinitionDispatcher : IWorkflowDefinitionDispatcher
+public class NoOpDistributedEventsDispatcher : IDistributedEventsDispatcher
 {
     /// <inheritdoc />
     public Task DispatchAsync(RefreshWorkflowDefinitionsRequest request, CancellationToken cancellationToken = default)

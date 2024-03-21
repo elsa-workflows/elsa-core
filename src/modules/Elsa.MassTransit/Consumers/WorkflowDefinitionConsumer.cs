@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Requests;
 using JetBrains.Annotations;
 using MassTransit;
 
-namespace Elsa.Workflows.Management.MassTransit.Consumers;
+namespace Elsa.MassTransit.Consumers;
 
 /// <summary>
 /// Consumes messages related to workflow definition changes.

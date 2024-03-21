@@ -51,7 +51,7 @@ public class WorkflowManagementFeature : FeatureBase
 
     /// <summary>
     /// </summary>
-    public Func<IServiceProvider, IWorkflowDefinitionDispatcher> WorkflowDefinitionDispatcherFactory { get; set; } = sp => sp.GetRequiredService<NoOpWorkflowDefinitionDispatcher>();
+    public Func<IServiceProvider, IDistributedEventsDispatcher> WorkflowDefinitionDispatcherFactory { get; set; } = sp => sp.GetRequiredService<NoOpDistributedEventsDispatcher>();
     
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -202,7 +202,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ICompressionCodec, None>()
             .AddSingleton<ICompressionCodec, GZip>()
             .AddSingleton<ICompressionCodec, Zstd>()
-            .AddScoped<NoOpWorkflowDefinitionDispatcher>()
+            .AddScoped<NoOpDistributedEventsDispatcher>()
             .AddScoped(WorkflowDefinitionDispatcherFactory)
             ;
 

@@ -1,15 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.MassTransit.Features;
+using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Services;
 using Elsa.Workflows.Management.Features;
-using Elsa.Extensions;
-using Elsa.Workflows.Management.MassTransit.Consumers;
-using Elsa.Workflows.Management.MassTransit.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Management.MassTransit.Features;
+namespace Elsa.MassTransit.Features;
 
 /// <summary>
 /// A feature for implementing distributed messaging using MassTransit for workflow management.
@@ -22,13 +21,13 @@ public class MassTransitWorkflowManagementFeature(IModule module) : FeatureBase(
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
     {
-        Module.Configure<WorkflowManagementFeature>(feature => feature.WorkflowDefinitionDispatcherFactory = sp => sp.GetRequiredService<MassTransitWorkflowDefinitionDispatcher>());
+        Module.Configure<WorkflowManagementFeature>(feature => feature.WorkflowDefinitionDispatcherFactory = sp => sp.GetRequiredService<MassTransitDistributedEventsDispatcher>());
         Module.AddMassTransitConsumer<WorkflowDefinitionConsumer>("elsa-workflow-definition-updates", true);
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<MassTransitWorkflowDefinitionDispatcher>();
+        Services.AddScoped<MassTransitDistributedEventsDispatcher>();
     }
 }
