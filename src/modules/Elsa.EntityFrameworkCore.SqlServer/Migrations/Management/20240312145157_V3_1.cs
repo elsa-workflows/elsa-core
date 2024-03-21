@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,19 +8,24 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+        public V3_1(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "nvarchar(max)",
                 nullable: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "bit",
                 nullable: false,
@@ -27,7 +33,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 type: "bit",
                 nullable: false,
@@ -35,13 +41,13 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "IsSystem");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 column: "IsSystem");
         }
@@ -51,27 +57,27 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
         {
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowInstance_IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowDefinition_IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions");
 
             migrationBuilder.DropColumn(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "WorkflowDefinitions");
         }
     }
