@@ -16,6 +16,9 @@
     <ItemGroup>
         <PackageReference Include="LinqKit.Core" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
         <PackageReference Include="System.Text.Json" />
     </ItemGroup>
 
