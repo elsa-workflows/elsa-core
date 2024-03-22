@@ -29,7 +29,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
+    /// <summary>
     /// Configures the RabbitMQ transport options.
+    /// </summary>
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
 
     /// <summary>
