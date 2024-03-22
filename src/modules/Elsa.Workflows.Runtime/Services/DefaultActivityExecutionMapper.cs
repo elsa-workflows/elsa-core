@@ -103,6 +103,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             .GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
         var persistencePropertyDefault = properties!
             .GetValueOrDefault("default", defaultFactory);
+
+        if(persistencePropertyDefault == LogPersistenceMode.Default) 
+            return defaultFactory();
         return persistencePropertyDefault; 
     }
 
