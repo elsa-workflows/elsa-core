@@ -10,7 +10,7 @@ namespace Elsa.MassTransit.Consumers;
 /// Consumes messages related to workflow definition changes.
 /// </summary>
 [PublicAPI]
-public class WorkflowDefinitionConsumer(IActivityRegistryPopulator activityRegistryPopulator) :
+public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activityRegistryPopulator) :
     IConsumer<WorkflowDefinitionCreated>,
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
