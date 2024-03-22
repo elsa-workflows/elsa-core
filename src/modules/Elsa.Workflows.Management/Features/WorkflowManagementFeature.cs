@@ -14,7 +14,6 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
@@ -49,9 +48,6 @@ public class WorkflowManagementFeature : FeatureBase
     {
     }
 
-    /// <summary>
-    /// </summary>
-    public Func<IServiceProvider, IDistributedEventsDispatcher> WorkflowDefinitionDispatcherFactory { get; set; } = sp => sp.GetRequiredService<NoOpDistributedEventsDispatcher>();
     
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -73,13 +69,11 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(decimal), PrimitivesCategory, "A decimal number."),
         new(typeof(Guid), PrimitivesCategory, "Represents a Globally Unique Identifier."),
         new(typeof(DateTime), PrimitivesCategory, "A value type that represents a date and time."),
-        new(typeof(DateTimeOffset), PrimitivesCategory,
-            "A value type that consists of a DateTime and a time zone offset."),
+        new(typeof(DateTimeOffset), PrimitivesCategory, "A value type that consists of a DateTime and a time zone offset."),
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory,
-            "A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory,"A dictionary that can be typed as dynamic to access members using dot notation.")
     ];
 
     /// <summary>
@@ -202,8 +196,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ICompressionCodec, None>()
             .AddSingleton<ICompressionCodec, GZip>()
             .AddSingleton<ICompressionCodec, Zstd>()
-            .AddScoped<NoOpDistributedEventsDispatcher>()
-            .AddScoped(WorkflowDefinitionDispatcherFactory)
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

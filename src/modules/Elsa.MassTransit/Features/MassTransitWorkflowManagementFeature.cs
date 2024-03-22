@@ -4,6 +4,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Services;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,13 +22,14 @@ public class MassTransitWorkflowManagementFeature(IModule module) : FeatureBase(
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
     {
-        Module.Configure<WorkflowManagementFeature>(feature => feature.WorkflowDefinitionDispatcherFactory = sp => sp.GetRequiredService<MassTransitDistributedEventsDispatcher>());
         Module.AddMassTransitConsumer<WorkflowDefinitionConsumer>("elsa-workflow-definition-updates", true);
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<MassTransitDistributedEventsDispatcher>();
+        Services.AddScoped<IDistributedWorkflowDefinitionEventsDispatcher, MassTransitDistributedEventsDispatcher>();
+        
+        Services.AddNotificationHandlersFrom(GetType());
     }
 }

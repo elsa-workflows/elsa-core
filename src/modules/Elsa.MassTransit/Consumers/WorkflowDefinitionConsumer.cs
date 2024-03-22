@@ -1,6 +1,6 @@
+using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Requests;
 using JetBrains.Annotations;
 using MassTransit;
 
@@ -11,15 +11,34 @@ namespace Elsa.MassTransit.Consumers;
 /// </summary>
 [PublicAPI]
 public class WorkflowDefinitionConsumer(IActivityRegistryPopulator activityRegistryPopulator) :
-    IConsumer<RefreshWorkflowDefinitionsRequest>
+    IConsumer<WorkflowDefinitionCreated>,
+    IConsumer<WorkflowDefinitionDeleted>,
+    IConsumer<WorkflowDefinitionPublished>,
+    IConsumer<WorkflowDefinitionRetracted>,
+    IConsumer<WorkflowDefinitionsDeleted>,
+    IConsumer<WorkflowDefinitionVersionDeleted>,
+    IConsumer<WorkflowDefinitionVersionsDeleted>
 {
-    /// <summary>
-    /// Consumes requests to refresh the workflow definitions.
-    /// </summary>
-    public Task Consume(ConsumeContext<RefreshWorkflowDefinitionsRequest> context)
-    {
-        return RefreshAsync();
-    }
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context) => RefreshAsync();
+    
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context) => RefreshAsync();
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context) => RefreshAsync();
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context) => RefreshAsync();
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionsDeleted> context) => RefreshAsync();
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionVersionDeleted> context) => RefreshAsync();
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionVersionsDeleted> context) => RefreshAsync();
     
     private async Task RefreshAsync() => await activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider));
 }

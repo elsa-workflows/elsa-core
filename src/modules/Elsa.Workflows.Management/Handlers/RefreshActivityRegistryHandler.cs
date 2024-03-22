@@ -4,7 +4,6 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Handlers;
@@ -13,7 +12,7 @@ namespace Elsa.Workflows.Management.Handlers;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistryHandler(IActivityRegistryPopulator activityRegistryPopulator, IDistributedEventsDispatcher distributedEventsDispatcher) :
+public class RefreshActivityRegistryHandler(IActivityRegistryPopulator activityRegistryPopulator) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
@@ -46,7 +45,6 @@ public class RefreshActivityRegistryHandler(IActivityRegistryPopulator activityR
     
     private async Task RefreshAsync(CancellationToken cancellationToken)
     {
-        await distributedEventsDispatcher.DispatchAsync(new RefreshWorkflowDefinitionsRequest(), cancellationToken);
         await activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider), cancellationToken);
     }
 }
