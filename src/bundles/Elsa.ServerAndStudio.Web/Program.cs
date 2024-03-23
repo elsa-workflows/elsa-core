@@ -63,6 +63,9 @@ services
                         return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                     });
                 }
+                
+                runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
+                runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
             .UseScheduling()
             .UseJavaScript(options => options.AllowClrAccess = true)
@@ -81,14 +84,14 @@ services
         {
             elsa.UseMassTransit(massTransit =>
                 {
-                    // massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
-                    // {
-                    //     bus.PrefetchCount = 4;
-                    //     bus.LockDuration = TimeSpan.FromMinutes(5);
-                    //     bus.MaxConcurrentCalls = 32;
-                    //     bus.MaxDeliveryCount = 8;
-                    //     // etc.
-                    // });
+                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    {
+                        bus.PrefetchCount = 4;
+                        bus.LockDuration = TimeSpan.FromMinutes(5);
+                        bus.MaxConcurrentCalls = 32;
+                        bus.MaxDeliveryCount = 8;
+                        // etc.
+                    });
                     // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     //     {
                     //         bus.PrefetchCount = 4;
