@@ -5,6 +5,7 @@ using Elsa.MassTransit.Options;
 using Elsa.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.MassTransit.Extensions;
+using Elsa.ServerAndStudio.Web.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
@@ -23,6 +24,7 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
 var heartbeatSection = configuration.GetSection("Heartbeat");
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitSection);
 
@@ -48,9 +50,8 @@ services
                 {
                     management.UseMassTransitDispatcher();
                 }
-                
+
                 management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-                
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -63,7 +64,7 @@ services
                         return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                     });
                 }
-                
+
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
@@ -84,22 +85,29 @@ services
         {
             elsa.UseMassTransit(massTransit =>
                 {
-                    massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                    if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
                     {
-                        bus.PrefetchCount = 4;
-                        bus.LockDuration = TimeSpan.FromMinutes(5);
-                        bus.MaxConcurrentCalls = 32;
-                        bus.MaxDeliveryCount = 8;
-                        // etc.
-                    });
-                    // massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
-                    //     {
-                    //         bus.PrefetchCount = 4;
-                    //         bus.Durable = true;
-                    //         bus.AutoDelete = false;
-                    //         bus.ConcurrentMessageLimit = 32;
-                    //         // etc.
-                    //     }))
+                        massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
+                        {
+                            bus.PrefetchCount = 4;
+                            bus.LockDuration = TimeSpan.FromMinutes(5);
+                            bus.MaxConcurrentCalls = 32;
+                            bus.MaxDeliveryCount = 8;
+                            // etc.
+                        });
+                    }
+
+                    if (useMassTransitBroker == MassTransitBroker.RabbitMq)
+                    {
+                        massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
+                        {
+                            bus.PrefetchCount = 4;
+                            bus.Durable = true;
+                            bus.AutoDelete = false;
+                            bus.ConcurrentMessageLimit = 32;
+                            // etc.
+                        });
+                    }
                 }
             );
         }
