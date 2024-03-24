@@ -12,6 +12,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.Options;
+using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
@@ -145,6 +146,9 @@ services
 
                 if (useMemoryStores)
                     management.UseWorkflowInstances(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>());
+                
+                if(useMassTransit)
+                    management.UseMassTransitDispatcher();
             })
             .UseWorkflowRuntime(runtime =>
             {
