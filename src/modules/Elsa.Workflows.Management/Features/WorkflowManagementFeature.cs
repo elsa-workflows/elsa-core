@@ -48,7 +48,6 @@ public class WorkflowManagementFeature : FeatureBase
     {
     }
 
-    
     /// <summary>
     /// A set of activity types to make available to the system. 
     /// </summary>
@@ -73,7 +72,7 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory,"A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
     ];
 
     /// <summary>
@@ -133,7 +132,10 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[] { type }, category);
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[]
+    {
+        type
+    }, category);
 
     /// <summary>
     /// Adds the specified variable types to the system.
@@ -149,7 +151,7 @@ public class WorkflowManagementFeature : FeatureBase
         VariableDescriptors.AddRange(descriptors);
         return this;
     }
-    
+
     /// <summary>
     /// Sets the compression algorithm to use for compressing workflow state.
     /// </summary>
@@ -205,9 +207,9 @@ public class WorkflowManagementFeature : FeatureBase
             foreach (var activityType in ActivityTypes.Distinct())
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type)) 
+            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type))
                 options.VariableDescriptors.Add(descriptor);
-            
+
             options.CompressionAlgorithm = CompressionAlgorithm;
         });
     }
