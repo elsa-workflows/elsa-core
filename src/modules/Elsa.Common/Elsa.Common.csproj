@@ -17,6 +17,7 @@
         <PackageReference Include="LinqKit.Core" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
         <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="DistributedLock.Core" />
     </ItemGroup>
 
 </Project>
