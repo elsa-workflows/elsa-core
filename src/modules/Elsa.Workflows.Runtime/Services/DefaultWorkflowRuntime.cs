@@ -404,6 +404,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var startWorkflowOptions = new StartWorkflowHostParams
             {
                 InstanceId = workflowInstanceId,
+                ParentWorkflowInstanceId = options?.ParentWorkflowInstanceId,
                 CorrelationId = correlationId,
                 Input = input,
                 Properties = options?.Properties,

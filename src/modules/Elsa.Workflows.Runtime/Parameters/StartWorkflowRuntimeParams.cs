@@ -21,4 +21,6 @@ public class StartWorkflowRuntimeParams
     public string? InstanceId { get; set; }
 
     public CancellationTokens CancellationTokens { get; set; }
+    
+    public string? ParentWorkflowInstanceId { get; set; }
 }

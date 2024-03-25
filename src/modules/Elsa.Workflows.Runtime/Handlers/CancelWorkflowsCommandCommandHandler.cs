@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.Contracts;
 namespace Elsa.Workflows.Runtime.Handlers;
 
 /// <summary>
-/// Handles the <see cref="DispatchWorkflowDefinitionCommand"/>.
+/// Handles the <see cref="CancelWorkflowsCommand"/>.
 /// </summary>
 public class CancelWorkflowsCommandHandler(IWorkflowCancellationService workflowCancellationService) : ICommandHandler<CancelWorkflowsCommand>
 {
