@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 {
     [DbContext(typeof(ManagementElsaDbContext))]
-    [Migration("20240312145207_V3_1")]
+    [Migration("20240326133211_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />
@@ -146,6 +146,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .HasColumnType("boolean");
 
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParentWorkflowInstanceId")
                         .HasColumnType("text");
 
                     b.Property<string>("Status")

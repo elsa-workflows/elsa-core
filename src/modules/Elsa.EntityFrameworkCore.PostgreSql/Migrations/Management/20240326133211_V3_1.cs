@@ -25,6 +25,13 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 nullable: false,
                 defaultValue: false);
 
+            migrationBuilder.AddColumn<string>(
+                name: "ParentWorkflowInstanceId",
+                schema: "Elsa",
+                table: "WorkflowInstances",
+                type: "text",
+                nullable: true);
+
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
                 schema: "Elsa",
@@ -66,6 +73,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
+                schema: "Elsa",
+                table: "WorkflowInstances");
+
+            migrationBuilder.DropColumn(
+                name: "ParentWorkflowInstanceId",
                 schema: "Elsa",
                 table: "WorkflowInstances");
 

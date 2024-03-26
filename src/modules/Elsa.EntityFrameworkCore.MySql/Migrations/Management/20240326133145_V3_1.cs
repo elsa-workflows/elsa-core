@@ -26,6 +26,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                 nullable: false,
                 defaultValue: false);
 
+            migrationBuilder.AddColumn<string>(
+                name: "ParentWorkflowInstanceId",
+                schema: "Elsa",
+                table: "WorkflowInstances",
+                type: "longtext",
+                nullable: true)
+                .Annotation("MySql:CharSet", "utf8mb4");
+
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
                 schema: "Elsa",
@@ -67,6 +75,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
+                schema: "Elsa",
+                table: "WorkflowInstances");
+
+            migrationBuilder.DropColumn(
+                name: "ParentWorkflowInstanceId",
                 schema: "Elsa",
                 table: "WorkflowInstances");
 

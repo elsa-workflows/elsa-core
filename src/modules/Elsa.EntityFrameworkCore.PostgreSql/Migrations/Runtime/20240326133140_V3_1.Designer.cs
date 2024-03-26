@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    [Migration("20240312145147_V3_1")]
+    [Migration("20240326133140_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />

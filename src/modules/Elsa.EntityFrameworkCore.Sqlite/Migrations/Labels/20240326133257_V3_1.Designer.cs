@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
-    [Migration("20240312145240_V3_1")]
+    [Migration("20240326133257_V3_1")]
     partial class V3_1
     {
         /// <inheritdoc />

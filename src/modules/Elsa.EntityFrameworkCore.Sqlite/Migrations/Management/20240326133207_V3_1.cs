@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 {
     /// <inheritdoc />
     public partial class V3_1 : Migration
@@ -12,36 +12,37 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
         {
             migrationBuilder.AddColumn<string>(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
                 table: "WorkflowInstances",
-                type: "nvarchar(max)",
+                type: "TEXT",
                 nullable: true);
 
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
-                schema: "Elsa",
                 table: "WorkflowInstances",
-                type: "bit",
+                type: "INTEGER",
                 nullable: false,
                 defaultValue: false);
 
+            migrationBuilder.AddColumn<string>(
+                name: "ParentWorkflowInstanceId",
+                table: "WorkflowInstances",
+                type: "TEXT",
+                nullable: true);
+
             migrationBuilder.AddColumn<bool>(
                 name: "IsSystem",
-                schema: "Elsa",
                 table: "WorkflowDefinitions",
-                type: "bit",
+                type: "INTEGER",
                 nullable: false,
                 defaultValue: false);
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_IsSystem",
-                schema: "Elsa",
                 table: "WorkflowInstances",
                 column: "IsSystem");
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_IsSystem",
-                schema: "Elsa",
                 table: "WorkflowDefinitions",
                 column: "IsSystem");
         }
@@ -51,27 +52,26 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management
         {
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowInstance_IsSystem",
-                schema: "Elsa",
                 table: "WorkflowInstances");
 
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowDefinition_IsSystem",
-                schema: "Elsa",
                 table: "WorkflowDefinitions");
 
             migrationBuilder.DropColumn(
                 name: "DataCompressionAlgorithm",
-                schema: "Elsa",
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
-                schema: "Elsa",
+                table: "WorkflowInstances");
+
+            migrationBuilder.DropColumn(
+                name: "ParentWorkflowInstanceId",
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "IsSystem",
-                schema: "Elsa",
                 table: "WorkflowDefinitions");
         }
     }
