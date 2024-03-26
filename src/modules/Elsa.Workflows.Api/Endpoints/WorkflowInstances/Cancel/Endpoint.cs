@@ -1,13 +1,12 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Cancel;
 
 [PublicAPI]
-internal class Cancel(IWorkflowCancellationDispatcher workflowCancellationDispatcher)
+internal class Cancel(IWorkflowCancellationService workflowCancellationService)
     : ElsaEndpoint<Request>
 {
     public override void Configure()
@@ -20,10 +19,7 @@ internal class Cancel(IWorkflowCancellationDispatcher workflowCancellationDispat
     
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        await workflowCancellationDispatcher.DispatchAsync(new DispatchCancelWorkflowsRequest
-        {
-            WorkflowInstanceId = request.Id
-        }, cancellationToken);
+        await workflowCancellationService.CancelWorkflowAsync(request.Id, cancellationToken);
         
         await SendOkAsync(cancellationToken);
     }

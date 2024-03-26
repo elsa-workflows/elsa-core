@@ -194,7 +194,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         entity.WorkflowState = data;
     }
 
-    [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)
     {
         return filter.Apply(query);

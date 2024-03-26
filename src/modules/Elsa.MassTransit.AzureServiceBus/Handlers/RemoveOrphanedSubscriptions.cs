@@ -1,3 +1,4 @@
+using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Elsa.Hosting.Management.Notifications;
 using Elsa.MassTransit.AzureServiceBus.Services;
@@ -21,18 +22,24 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
 
         foreach (var subscription in subscriptionTopology)
         {
-            // Get subscriptions based on topics instead of the topology since when names are longer than 50 characters.
-            // MassTransit automatically truncates them.
-            await foreach (var asbSubscription in client.GetSubscriptionsAsync(subscription.TopicName, cancellationToken))
+            try
             {
-                if (asbSubscription.SubscriptionName.StartsWith($"Elsa-{notification.InstanceName}-"))
+                // Get subscriptions based on topics instead of the topology since when names are longer than 50 characters.
+                // MassTransit automatically truncates them.
+                await foreach (var asbSubscription in client.GetSubscriptionsAsync(subscription.TopicName, cancellationToken))
                 {
-                    var queueName = asbSubscription.ForwardTo[(asbSubscription.ForwardTo.LastIndexOf('/') + 1)..];
+                    if (asbSubscription.SubscriptionName.StartsWith($"Elsa-{notification.InstanceName}-"))
+                    {
+                        var queueName = asbSubscription.ForwardTo[(asbSubscription.ForwardTo.LastIndexOf('/') + 1)..];
 
-                    await Task.WhenAll(
-                        client.DeleteSubscriptionAsync(subscription.TopicName, asbSubscription.SubscriptionName, cancellationToken),
-                        client.DeleteQueueAsync(queueName, cancellationToken));
+                        await Task.WhenAll(
+                            client.DeleteSubscriptionAsync(subscription.TopicName, asbSubscription.SubscriptionName, cancellationToken),
+                            client.DeleteQueueAsync(queueName, cancellationToken));
+                    }
                 }
+            }
+            catch (ServiceBusException e) when(e.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+            {
             }
         }
     }
