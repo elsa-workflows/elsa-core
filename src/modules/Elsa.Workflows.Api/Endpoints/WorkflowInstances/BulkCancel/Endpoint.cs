@@ -1,6 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
@@ -9,7 +8,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
 /// Represents an endpoint for bulk cancelling workflow instances.
 /// </summary>
 [PublicAPI]
-public class BulkCancel(IWorkflowCancellationDispatcher workflowCancellationDispatcher) : ElsaEndpoint<Request, Response>
+public class BulkCancel(IWorkflowCancellationService workflowCancellationService) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -21,16 +20,17 @@ public class BulkCancel(IWorkflowCancellationDispatcher workflowCancellationDisp
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var dispatchRequest = new DispatchCancelWorkflowsRequest
-        {
-            WorkflowInstanceIds = request.Ids,
-            DefinitionVersionId = request.DefinitionVersionId,
-            DefinitionId = request.DefinitionId,
-            VersionOptions = request.VersionOptions
-        };
-        await workflowCancellationDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
+        var tasks = new List<Task<int>>();
         
-        //ToDo: how are we going to return feedback to the UI?
-        return new(999);
+        if (request.Ids is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowsAsync(request.Ids!, cancellationToken));
+        if (request.DefinitionVersionId is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowByDefinitionVersionAsync(request.DefinitionVersionId!, cancellationToken));
+        if (request.DefinitionId is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowByDefinitionAsync(request.DefinitionId!, request.VersionOptions!.Value, cancellationToken));
+
+        await Task.WhenAll(tasks);
+
+        return new(tasks.Sum(t => t.Result));
     }
 }

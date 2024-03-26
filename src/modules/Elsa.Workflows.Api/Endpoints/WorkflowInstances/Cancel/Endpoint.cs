@@ -22,7 +22,7 @@ internal class Cancel(IWorkflowCancellationDispatcher workflowCancellationDispat
     {
         await workflowCancellationDispatcher.DispatchAsync(new DispatchCancelWorkflowsRequest
         {
-            WorkflowInstanceIds = [request.Id]
+            WorkflowInstanceId = request.Id
         }, cancellationToken);
         
         await SendOkAsync(cancellationToken);

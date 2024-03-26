@@ -58,4 +58,21 @@ public static class EnumerableExtensions
     /// <typeparam name="T">The type of the items in the lists.</typeparam>
     /// <returns>True if the lists are equal, otherwise false.</returns>
     public static bool IsEqualTo<T>(this IEnumerable<T> list1, IEnumerable<T> list2) => list1.OrderBy(g => g).SequenceEqual(list2.OrderBy(g => g));
+
+    /// <summary>
+    /// Splits an enumerable into batches of a specified size.
+    /// </summary>
+    public static IEnumerable<IEnumerable<T>> ToBatches<T>(this IEnumerable<T> enumerable, int pageLimit)
+    {
+        var batches = enumerable.Select((item, index) => new
+            {
+                Item = item,
+                Index = index
+            })
+            .GroupBy(x => x.Index / pageLimit)
+            .Select(g => g.Select(x => x.Item).ToList())
+            .ToList();
+
+        return batches;
+    }
 }
