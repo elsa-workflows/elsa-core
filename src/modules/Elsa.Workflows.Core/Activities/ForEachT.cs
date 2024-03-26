@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
@@ -6,12 +7,16 @@ using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// A strongly-typed for-each construct where <see cref="T"/> is the item type.
 /// </summary>
+[Browsable(false)]
+[Activity("Stereograph.TeiaWorkflow.Modules.TeiaSuite.Activities", "Looping", "Iterate over a set of values.")]
+[PublicAPI]
 public class ForEach<T> : Activity
 {
     private const string CurrentIndexProperty = "CurrentIndex";
@@ -20,7 +25,7 @@ public class ForEach<T> : Activity
     public ForEach(Func<ExpressionExecutionContext, ICollection<T>> @delegate, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(@delegate), source, line)
     {
     }
-    
+
     /// <inheritdoc />
     public ForEach(Func<ICollection<T>> @delegate, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(@delegate), source, line)
     {
@@ -30,13 +35,13 @@ public class ForEach<T> : Activity
     public ForEach(ICollection<T> items, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(new Input<ICollection<T>>(items), source, line)
     {
     }
-    
+
     /// <inheritdoc />
     public ForEach(Input<ICollection<T>> items, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line)
     {
         Items = items;
     }
-    
+
     /// <inheritdoc />
     public ForEach([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
     {
@@ -71,13 +76,13 @@ public class ForEach<T> : Activity
     private async Task HandleIteration(ActivityExecutionContext context)
     {
         var isBreaking = context.GetIsBreaking();
-        
+
         if (isBreaking)
         {
             await context.CompleteActivityAsync();
             return;
         }
-        
+
         var currentIndex = context.GetProperty<int>(CurrentIndexProperty);
         var items = context.Get(Items)!.ToList();
 
