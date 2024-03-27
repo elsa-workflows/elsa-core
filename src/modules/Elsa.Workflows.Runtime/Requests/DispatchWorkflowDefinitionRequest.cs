@@ -36,6 +36,11 @@ public class DispatchWorkflowDefinitionRequest
     /// The version options to use when dispatching the workflow definition.
     /// </summary>
     public VersionOptions VersionOptions { get; init; }
+
+    /// <summary>
+    /// The ID of the parent workflow instance.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
     
     /// <summary>
     /// Any input to pass to the workflow.

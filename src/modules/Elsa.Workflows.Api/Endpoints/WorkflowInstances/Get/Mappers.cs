@@ -16,6 +16,7 @@ internal class WorkflowInstanceMapper : ResponseMapper<WorkflowInstanceModel, Wo
         DefinitionId = e.DefinitionId,
         DefinitionVersionId = e.DefinitionVersionId,
         Version = e.Version,
+        ParentWorkflowInstanceId = e.ParentWorkflowInstanceId,
         WorkflowState = e.WorkflowState,
         Status = e.Status,
         SubStatus = e.SubStatus,

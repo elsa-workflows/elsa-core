@@ -25,6 +25,7 @@ public class WorkflowStateMapper
             DefinitionId = source.DefinitionId,
             DefinitionVersionId = source.DefinitionVersionId,
             Version = source.DefinitionVersion,
+            ParentWorkflowInstanceId = source.ParentWorkflowInstanceId,
             Status = source.Status,
             SubStatus = source.SubStatus,
             CorrelationId = source.CorrelationId,
@@ -55,6 +56,7 @@ public class WorkflowStateMapper
         workflowState.DefinitionId = source.DefinitionId;
         workflowState.DefinitionVersionId = source.DefinitionVersionId;
         workflowState.DefinitionVersion = source.Version;
+        workflowState.ParentWorkflowInstanceId = source.ParentWorkflowInstanceId;
         workflowState.Status = source.Status;
         workflowState.SubStatus = source.SubStatus;
         workflowState.CorrelationId = source.CorrelationId;

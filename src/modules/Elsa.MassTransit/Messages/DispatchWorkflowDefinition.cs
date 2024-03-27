@@ -7,6 +7,7 @@ namespace Elsa.MassTransit.Messages;
 /// </summary>
 /// <param name="DefinitionId">The ID of the workflow definition to dispatch.</param>
 /// <param name="VersionOptions">The version options to use when dispatching the workflow definition.</param>
+/// <param name="ParentWorkflowInstanceId">The ID of the parent workflow instance.</param>
 /// <param name="Input">Any input to pass to the workflow.</param>
 /// <param name="Properties">Any properties to attach to the workflow.</param>
 /// <param name="CorrelationId">A correlation ID to associate the workflow with.</param>
@@ -15,6 +16,7 @@ namespace Elsa.MassTransit.Messages;
 public record DispatchWorkflowDefinition(
     string DefinitionId,
     VersionOptions VersionOptions,
+    string? ParentWorkflowInstanceId,
     IDictionary<string, object>? Input,
     IDictionary<string, object>? Properties,
     string? CorrelationId,

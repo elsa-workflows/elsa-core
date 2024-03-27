@@ -29,6 +29,11 @@ public class WorkflowState
     public int DefinitionVersion { get; set; }
 
     /// <summary>
+    /// The ID of the parent workflow.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
+
+    /// <summary>
     /// The correlation ID of the workflow, if any.
     /// </summary>
     public string? CorrelationId { get; set; }

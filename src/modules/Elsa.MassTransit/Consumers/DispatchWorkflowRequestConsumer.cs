@@ -34,6 +34,7 @@ public class DispatchWorkflowRequestConsumer :
         var cancellationToken = context.CancellationToken;
         var options = new StartWorkflowRuntimeParams
         {
+            ParentWorkflowInstanceId = message.ParentWorkflowInstanceId,
             CorrelationId = message.CorrelationId,
             Input = message.Input,
             Properties = message.Properties,

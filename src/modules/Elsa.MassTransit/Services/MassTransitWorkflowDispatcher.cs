@@ -33,6 +33,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
         await sendEndpoint.Send(new DispatchWorkflowDefinition(
             request.DefinitionId,
             request.VersionOptions,
+            request.ParentWorkflowInstanceId,
             request.Input,
             request.Properties,
             request.CorrelationId,

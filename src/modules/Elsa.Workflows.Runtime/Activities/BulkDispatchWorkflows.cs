@@ -184,6 +184,7 @@ public class BulkDispatchWorkflows : Activity
         {
             DefinitionId = workflowDefinitionId,
             VersionOptions = VersionOptions.Published,
+            ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
             CorrelationId = correlationId,
