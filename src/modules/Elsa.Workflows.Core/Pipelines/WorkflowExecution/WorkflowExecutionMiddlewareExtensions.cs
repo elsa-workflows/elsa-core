@@ -18,7 +18,17 @@ public static class WorkflowExecutionMiddlewareExtensions
         var delegateFactory = CreateMiddlewareDelegateFactory<TMiddleware>(pipelineBuilder, args);
         return pipelineBuilder.Use(delegateFactory);
     }
-    
+
+    /// <summary>
+    /// Replaces the terminal middleware component with the specified middleware component.
+    /// </summary>
+    public static IWorkflowExecutionPipelineBuilder ReplaceTerminal<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TMiddleware>(
+        this IWorkflowExecutionPipelineBuilder pipelineBuilder, params object[] args) where TMiddleware : IWorkflowExecutionMiddleware
+    {
+        var index = pipelineBuilder.Components.Count() - 1;
+        return pipelineBuilder.Replace<TMiddleware>(index, args);
+    }
+
     /// <summary>
     /// Replaces the middleware component at the specified index with the specified middleware component.
     /// </summary>

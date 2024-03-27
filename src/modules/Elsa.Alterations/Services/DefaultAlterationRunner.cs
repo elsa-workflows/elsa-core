@@ -96,14 +96,13 @@ public class DefaultAlterationRunner : IAlterationRunner
         var pipelineBuilder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
         _workflowExecutionPipeline.ConfigurePipelineBuilder(pipelineBuilder);
 
-        // Replace the DefaultActivitySchedulerMiddleware with the RunAlterationsMiddleware.
-        var runAlterationsMiddlewareDelegate = pipelineBuilder.CreateMiddlewareDelegateFactory<RunAlterationsMiddleware>();
-        var lastIndex = pipelineBuilder.Components.Count() - 1;
-        pipelineBuilder.Replace(lastIndex, runAlterationsMiddlewareDelegate);
+        // Replace the terminal DefaultActivitySchedulerMiddleware with the RunAlterationsMiddleware terminal.
+        pipelineBuilder.ReplaceTerminal<RunAlterationsMiddleware>();
 
-        // Build modified workflow middleware pipeline.
+        // Build modified pipeline.
         var pipeline = pipelineBuilder.Build();
 
+        // Execute the pipeline.
         await pipeline(workflowExecutionContext);
 
         // Extract workflow state.
