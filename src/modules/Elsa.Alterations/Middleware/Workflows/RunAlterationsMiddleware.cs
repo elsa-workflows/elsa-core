@@ -22,7 +22,7 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
         await RunAsync(context, alterations, log, context.CancellationTokens.ApplicationCancellationToken);
     }
 
-    private async Task<bool> RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
+    private async Task RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
     {
         var commitActions = new List<Func<Task>>();
 
@@ -39,7 +39,7 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
 
                 // If the handler has failed, exit.
                 if (alterationContext.HasFailed)
-                    return false;
+                    return;
 
                 // Collect the commit handler, if any.
                 if (alterationContext.CommitAction != null)
@@ -50,7 +50,5 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
         // Execute commit handlers.
         foreach (var commitAction in commitActions)
             await commitAction();
-
-        return true;
     }
 }
