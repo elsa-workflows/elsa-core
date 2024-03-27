@@ -29,7 +29,7 @@ public class WorkflowState
     public int DefinitionVersion { get; set; }
 
     /// <summary>
-    /// The ID of the workflow which dispatched this workflow.
+    /// The ID of the parent workflow.
     /// </summary>
     public string? ParentWorkflowInstanceId { get; set; }
 

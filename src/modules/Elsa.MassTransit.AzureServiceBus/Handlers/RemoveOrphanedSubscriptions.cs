@@ -4,6 +4,7 @@ using Elsa.Hosting.Management.Notifications;
 using Elsa.MassTransit.AzureServiceBus.Services;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 
@@ -11,7 +12,10 @@ namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 /// A handler for the <see cref="HeartbeatTimedOut"/> notification that removes orphaned subscriptions from Azure Service Bus.
 /// </summary>
 [UsedImplicitly]
-public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvider, ServiceBusAdministrationClient client) : INotificationHandler<HeartbeatTimedOut>
+public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvider,
+    ServiceBusAdministrationClient client,
+    ILogger<RemoveOrphanedSubscriptions> logger) 
+    : INotificationHandler<HeartbeatTimedOut>
 {
     /// <summary>
     /// Removes orphaned subscriptions from Azure Service Bus.
@@ -38,8 +42,9 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
                     }
                 }
             }
-            catch (ServiceBusException e) when(e.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+            catch (ServiceBusException ex) when(ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
             {
+                logger.LogWarning(ex, $"Service bus entity {ex.EntityPath} was not found");
             }
         }
     }

@@ -73,12 +73,12 @@ public class WorkflowCancellationService(
     private async Task<int> CancelChildWorkflowInstances(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
     {
         var tasks = new List<Task<int>>();
-        var workflowInstanceIdBatches = workflowInstanceIds.ToBatches(50);
+        var workflowInstanceIdBatches = workflowInstanceIds.Chunk(50);
 
         foreach (var workflowInstanceIdBatch in workflowInstanceIdBatches)
         {
             // Find child instances for the current workflow instance ID and cancel them.
-            // Do not check on status as their
+            // Do not check on status as their children might still be running and need to be cancelled.
             var filter = new WorkflowInstanceFilter
             {
                 ParentWorkflowInstanceIds = workflowInstanceIdBatch.ToList()
