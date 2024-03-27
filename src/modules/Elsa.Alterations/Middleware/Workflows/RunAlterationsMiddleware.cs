@@ -29,9 +29,9 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
         foreach (var alteration in alterations)
         {
             // Find handlers.
-            var handlers1 = handlers.Where(x => x.CanHandle(alteration)).ToList();
+            var supportedHandlers = handlers.Where(x => x.CanHandle(alteration)).ToList();
 
-            foreach (var handler in handlers1)
+            foreach (var handler in supportedHandlers)
             {
                 // Execute handler.
                 var alterationContext = new AlterationContext(alteration, workflowExecutionContext, log, cancellationToken);
