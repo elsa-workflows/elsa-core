@@ -17,8 +17,8 @@ namespace Elsa.Alterations.Services;
 /// <inheritdoc />
 public class DefaultAlterationRunner : IAlterationRunner
 {
-    private readonly IEnumerable<IAlterationHandler> _handlers;
     private readonly IWorkflowRuntime _workflowRuntime;
+    private readonly IWorkflowExecutionPipeline _workflowExecutionPipeline;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly ISystemClock _systemClock;
@@ -28,15 +28,15 @@ public class DefaultAlterationRunner : IAlterationRunner
     /// Initializes a new instance of the <see cref="DefaultAlterationRunner"/> class.
     /// </summary>
     public DefaultAlterationRunner(
-        IEnumerable<IAlterationHandler> handlers,
         IWorkflowRuntime workflowRuntime,
+        IWorkflowExecutionPipeline workflowExecutionPipeline,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowStateExtractor workflowStateExtractor,
         ISystemClock systemClock,
         IServiceProvider serviceProvider)
     {
-        _handlers = handlers;
         _workflowRuntime = workflowRuntime;
+        _workflowExecutionPipeline = workflowExecutionPipeline;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowStateExtractor = workflowStateExtractor;
         _systemClock = systemClock;
@@ -92,16 +92,17 @@ public class DefaultAlterationRunner : IAlterationRunner
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsPropertyKey, alterations);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsLogPropertyKey, log);
 
-        // Apply modified workflow middleware pipeline.
-        // TODO: Discuss solutions to be able to reuse the same pipeline as the one used in the workflow runtime, but without components such as DefaultActivitySchedulerMiddleware.
-        // For example, we might annotate components with a [SupportsDryRun] attribute, and then filter out components that don't support dry run. 
-        var pipeline = new WorkflowExecutionPipelineBuilder(_serviceProvider)
-            .UseBookmarkPersistence()
-            .UseActivityExecutionLogPersistence()
-            .UseWorkflowExecutionLogPersistence()
-            .UsePersistentVariables()
-            .UseAlterationsRunnerMiddleware() // Replaces the DefaultActivitySchedulerMiddleware with the RunAlterationsMiddleware.
-            .Build();
+        // Build a new workflow execution pipeline.
+        var pipelineBuilder = new WorkflowExecutionPipelineBuilder(_serviceProvider);
+        _workflowExecutionPipeline.ConfigurePipelineBuilder(pipelineBuilder);
+
+        // Replace the DefaultActivitySchedulerMiddleware with the RunAlterationsMiddleware.
+        var runAlterationsMiddlewareDelegate = pipelineBuilder.CreateMiddlewareDelegateFactory<RunAlterationsMiddleware>();
+        var lastIndex = pipelineBuilder.Components.Count() - 1;
+        pipelineBuilder.Replace(lastIndex, runAlterationsMiddlewareDelegate);
+
+        // Build modified workflow middleware pipeline.
+        var pipeline = pipelineBuilder.Build();
 
         await pipeline(workflowExecutionContext);
 

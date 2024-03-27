@@ -20,6 +20,9 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     public IDictionary<object, object?> Properties { get; } = new Dictionary<object, object?>();
 
     /// <inheritdoc />
+    public IEnumerable<Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate>> Components => _components.ToList();
+
+    /// <inheritdoc />
     public IServiceProvider ServiceProvider
     {
         get => GetProperty<IServiceProvider>(ServicesKey)!;
@@ -48,6 +51,12 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     public IWorkflowExecutionPipelineBuilder Reset()
     {
         _components.Clear();
+        return this;
+    }
+
+    public IWorkflowExecutionPipelineBuilder Replace(int index, Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate> middleware)
+    {
+        _components[index] = middleware;
         return this;
     }
 
