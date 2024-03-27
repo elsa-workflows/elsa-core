@@ -3,9 +3,11 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
@@ -89,12 +91,24 @@ public class DefaultAlterationRunner : IAlterationRunner
 
         // Execute alterations.
         var success = await RunAsync(workflowExecutionContext, alterations, log, cancellationToken);
-        
+
         // If the alterations have failed, exit.
         if (!success)
             return result;
 
-        // Update workflow state.
+        // Apply workflow middleware pipeline.
+        // TODO: Discuss solutions to be able to reuse the same pipeline as the one used in the workflow runtime, but without components such as DefaultActivitySchedulerMiddleware.
+        // For example, we might annotate components with a [SupportsDryRun] attribute, and then filter out components that don't support dry run. 
+        var pipeline = new WorkflowExecutionPipelineBuilder(_serviceProvider)
+            .UseBookmarkPersistence()
+            .UseActivityExecutionLogPersistence()
+            .UseWorkflowExecutionLogPersistence()
+            .UsePersistentVariables()
+            .Build();
+
+        await pipeline(workflowExecutionContext);
+
+        // Extract workflow state.
         workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
 
         // Apply updated workflow state.
@@ -134,7 +148,7 @@ public class DefaultAlterationRunner : IAlterationRunner
         // Execute commit handlers.
         foreach (var commitAction in commitActions)
             await commitAction();
-        
+
         return true;
     }
 }
