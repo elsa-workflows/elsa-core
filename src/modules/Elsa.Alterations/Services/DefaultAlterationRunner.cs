@@ -2,6 +2,7 @@ using Elsa.Alterations.Core.Contexts;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
+using Elsa.Alterations.Middleware.Workflows;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows;
@@ -88,15 +89,10 @@ public class DefaultAlterationRunner : IAlterationRunner
 
         // Create workflow execution context.
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+        workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsPropertyKey, alterations);
+        workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsLogPropertyKey, log);
 
-        // Execute alterations.
-        var success = await RunAsync(workflowExecutionContext, alterations, log, cancellationToken);
-
-        // If the alterations have failed, exit.
-        if (!success)
-            return result;
-
-        // Apply workflow middleware pipeline.
+        // Apply modified workflow middleware pipeline.
         // TODO: Discuss solutions to be able to reuse the same pipeline as the one used in the workflow runtime, but without components such as DefaultActivitySchedulerMiddleware.
         // For example, we might annotate components with a [SupportsDryRun] attribute, and then filter out components that don't support dry run. 
         var pipeline = new WorkflowExecutionPipelineBuilder(_serviceProvider)
@@ -104,6 +100,7 @@ public class DefaultAlterationRunner : IAlterationRunner
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
             .UsePersistentVariables()
+            .UseAlterationsRunnerMiddleware() // Replaces the DefaultActivitySchedulerMiddleware with the RunAlterationsMiddleware.
             .Build();
 
         await pipeline(workflowExecutionContext);
@@ -118,37 +115,5 @@ public class DefaultAlterationRunner : IAlterationRunner
         result.WorkflowHasScheduledWork = workflowExecutionContext.Scheduler.HasAny;
 
         return result;
-    }
-
-    private async Task<bool> RunAsync(WorkflowExecutionContext workflowExecutionContext, IEnumerable<IAlteration> alterations, AlterationLog log, CancellationToken cancellationToken = default)
-    {
-        var commitActions = new List<Func<Task>>();
-
-        foreach (var alteration in alterations)
-        {
-            // Find handlers.
-            var handlers = _handlers.Where(x => x.CanHandle(alteration)).ToList();
-
-            foreach (var handler in handlers)
-            {
-                // Execute handler.
-                var alterationContext = new AlterationContext(alteration, workflowExecutionContext, log, cancellationToken);
-                await handler.HandleAsync(alterationContext);
-
-                // If the handler has failed, exit.
-                if (alterationContext.HasFailed)
-                    return false;
-
-                // Collect the commit handler, if any.
-                if (alterationContext.CommitAction != null)
-                    commitActions.Add(alterationContext.CommitAction);
-            }
-        }
-
-        // Execute commit handlers.
-        foreach (var commitAction in commitActions)
-            await commitAction();
-
-        return true;
     }
 }
