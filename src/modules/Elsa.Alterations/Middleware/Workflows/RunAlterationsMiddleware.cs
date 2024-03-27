@@ -3,30 +3,17 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 
 namespace Elsa.Alterations.Middleware.Workflows;
 
-public static class UseRunAlterationsMiddlewareExtensions
+/// <summary>
+/// Middleware that runs alterations.
+/// </summary>
+internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumerable<IAlterationHandler> handlers) : WorkflowExecutionMiddleware(next)
 {
-    /// <summary>
-    /// Installs middleware that executes scheduled work items. 
-    /// </summary>
-    public static IWorkflowExecutionPipelineBuilder UseAlterationsRunnerMiddleware(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<RunAlterationsMiddleware>();
-}
-
-public class RunAlterationsMiddleware : WorkflowExecutionMiddleware
-{
-    private readonly IEnumerable<IAlterationHandler> _handlers;
     public static readonly object AlterationsPropertyKey = new();
     public static readonly object AlterationsLogPropertyKey = new();
-
-    public RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumerable<IAlterationHandler> handlers) : base(next)
-    {
-        _handlers = handlers;
-    }
 
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
@@ -42,9 +29,9 @@ public class RunAlterationsMiddleware : WorkflowExecutionMiddleware
         foreach (var alteration in alterations)
         {
             // Find handlers.
-            var handlers = _handlers.Where(x => x.CanHandle(alteration)).ToList();
+            var handlers1 = handlers.Where(x => x.CanHandle(alteration)).ToList();
 
-            foreach (var handler in handlers)
+            foreach (var handler in handlers1)
             {
                 // Execute handler.
                 var alterationContext = new AlterationContext(alteration, workflowExecutionContext, log, cancellationToken);
