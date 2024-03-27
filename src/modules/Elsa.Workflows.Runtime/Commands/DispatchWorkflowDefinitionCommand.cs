@@ -11,6 +11,7 @@ public class DispatchWorkflowDefinitionCommand(string definitionId, VersionOptio
 {
     public string DefinitionId { get; init; } = definitionId;
     public VersionOptions VersionOptions { get; init; } = versionOptions;
+    public string? ParentWorkflowInstanceId { get; init; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
     public string? CorrelationId { get; set; }

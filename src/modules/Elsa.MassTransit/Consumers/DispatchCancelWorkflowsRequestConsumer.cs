@@ -12,8 +12,8 @@ public class DispatchCancelWorkflowsRequestConsumer(IWorkflowRuntime workflowRun
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchCancelWorkflowsRequest> context)
     {
-        var message = context.Message;
-        
-        // TODO: Implement cancellation.
+        var request = context.Message;
+
+        await workflowRuntime.CancelWorkflowAsync(request.WorkflowInstanceId);
     }
 }

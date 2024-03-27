@@ -68,6 +68,7 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
     {
+        var parentWorkflowInstanceId = @params?.ParentWorkflowInstanceId;
         var correlationId = @params?.CorrelationId;
         var instanceId = @params?.InstanceId ?? _identityGenerator.GenerateId();
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
@@ -77,6 +78,7 @@ public class WorkflowHost : IWorkflowHost
         var runOptions = new RunWorkflowOptions
         {
             WorkflowInstanceId = instanceId,
+            ParentWorkflowInstanceId = parentWorkflowInstanceId,
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
