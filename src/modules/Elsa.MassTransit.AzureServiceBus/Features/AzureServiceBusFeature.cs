@@ -60,10 +60,9 @@ public class AzureServiceBusFeature : FeatureBase
                 var temporaryConsumers = consumers
                     .Where(c => c.IsTemporary)
                     .ToList();
-                
+
                 RegisterConsumers(consumers);
                 configure.AddServiceBusMessageScheduler();
-                configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
 
                 configure.UsingAzureServiceBus((context, configurator) =>
                 {
@@ -79,11 +78,12 @@ public class AzureServiceBusFeature : FeatureBase
                     
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
+                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
+                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", endpointConfigurator =>
                         {
-                            configurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                            configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                            configurator.ConfigureConsumer(context, consumer.ConsumerType);
+                            endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                            endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                         });
                     }
 
