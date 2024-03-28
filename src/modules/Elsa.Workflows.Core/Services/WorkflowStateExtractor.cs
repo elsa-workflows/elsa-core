@@ -172,7 +172,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         foreach (var activityWorkItemState in state.ScheduledActivities)
         {
-            var activity = workflowExecutionContext.FindActivityById(activityWorkItemState.ActivityId);
+            var activity = workflowExecutionContext.FindActivityByNodeId(activityWorkItemState.ActivityNodeId);
 
             if (activity == null)
                 continue;
@@ -247,7 +247,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             .Scheduler.List()
             .Select(x => new ActivityWorkItemState
             {
-                ActivityId = x.Activity.Id,
+                ActivityNodeId = x.Activity.NodeId,
                 OwnerContextId = x.Owner?.Id,
                 Tag = x.Tag,
                 Variables = x.Variables?.ToList(),
