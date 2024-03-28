@@ -26,7 +26,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// </summary>
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
-[FlowNode("Finished", "Canceled", "Done")]
+[FlowNode("Completed", "Canceled", "Done")]
 [UsedImplicitly]
 public class BulkDispatchWorkflows : Activity
 {
@@ -255,6 +255,6 @@ public class BulkDispatchWorkflows : Activity
         var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
-            await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
+            await context.CompleteActivityWithOutcomesAsync("Completed", "Done");
     }
 }
