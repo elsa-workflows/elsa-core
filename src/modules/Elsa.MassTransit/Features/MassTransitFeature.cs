@@ -81,6 +81,7 @@ public class MassTransitFeature : FeatureBase
 
         // Concatenate the manually registered consumers with the workflow message consumers.
         var consumerTypeDefinitions = this.GetConsumers()
+            .Where(c => !c.IsTemporary)
             .Concat(workflowMessageConsumers)
             .ToArray();
 
