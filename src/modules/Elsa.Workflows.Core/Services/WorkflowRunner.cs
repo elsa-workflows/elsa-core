@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -66,7 +67,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow
+    public async Task<RunWorkflowResult> RunAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
+        RunWorkflowOptions? options = default,
+        CancellationToken cancellationToken = default) where T : IWorkflow
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -74,7 +77,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>
+    public async Task<TResult> RunAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TResult>(
+        RunWorkflowOptions? options = default,
+        CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -88,7 +93,7 @@ public class WorkflowRunner : IWorkflowRunner
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
-        // Setup a workflow execution context.
+        // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
         var properties = options?.Properties;
@@ -134,7 +139,7 @@ public class WorkflowRunner : IWorkflowRunner
             workflowState,
             correlationId,
             parentWorkflowInstanceId,
-            input, 
+            input,
             properties,
             default,
             triggerActivityId,

@@ -515,7 +515,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    public IActivity? FindActivityById(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId)?.Activity;
+    public IActivity? FindActivityById(string activityId) => FindNodeById(NodeIdLookup.SingleOrDefault(n => n.Key.EndsWith(activityId)).Value.NodeId)?.Activity;
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified hash of the activity node ID from the workflow graph.
