@@ -44,10 +44,14 @@ public class RabbitMqServiceBusFeature : FeatureBase
         {
             massTransitFeature.BusConfigurator = configure =>
             {
-                var tempConsumers = massTransitFeature.GetConsumers()
+                var temporaryConsumers = massTransitFeature.GetConsumers()
                     .Where(c => c.IsTemporary)
                     .ToList();
-
+                
+                // Consumers need to be added before the UsingRabbitMq statement to prevent exceptions.
+                foreach (var consumer in temporaryConsumers)
+                    configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
+                
                 configure.UsingRabbitMq((context, configurator) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
@@ -58,16 +62,17 @@ public class RabbitMqServiceBusFeature : FeatureBase
 
                     ConfigureServiceBus?.Invoke(configurator);
 
-                    foreach (var consumer in tempConsumers)
+                    foreach (var consumer in temporaryConsumers)
                     {
                         configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
                         
                         configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
-                            configurator =>
+                            endpointConfigurator =>
                             {
-                                configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                                endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                
+                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                     }
 

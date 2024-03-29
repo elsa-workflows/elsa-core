@@ -63,6 +63,10 @@ public class AzureServiceBusFeature : FeatureBase
 
                 RegisterConsumers(consumers);
                 configure.AddServiceBusMessageScheduler();
+                
+                // Consumers need to be added before the UsingAzureServiceBus statement to prevent exceptions.
+                foreach (var consumer in temporaryConsumers)
+                    configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
                 configure.UsingAzureServiceBus((context, configurator) =>
                 {
@@ -72,13 +76,11 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.UseServiceBusMessageScheduler();
                     configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
-                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
                     
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
                         configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", endpointConfigurator =>
                         {
                             endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
