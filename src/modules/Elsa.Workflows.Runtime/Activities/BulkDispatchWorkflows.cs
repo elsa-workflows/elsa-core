@@ -19,6 +19,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -101,6 +102,7 @@ public class BulkDispatchWorkflows : Activity
     public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
@@ -203,6 +205,7 @@ public class BulkDispatchWorkflows : Activity
         return instanceId;
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
@@ -239,17 +242,17 @@ public class BulkDispatchWorkflows : Activity
                 await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
-                await CheckIfFinishedAsync(context);
+                await CheckIfCompletedAsync(context);
                 break;
         }
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
     {
-        await CheckIfFinishedAsync(context.TargetContext);
+        await CheckIfCompletedAsync(context.TargetContext);
     }
 
-    private async ValueTask CheckIfFinishedAsync(ActivityExecutionContext context)
+    private async ValueTask CheckIfCompletedAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);
