@@ -50,6 +50,11 @@ public class WorkflowInstanceFilter
     /// Filter workflow instances by version.
     /// </summary>
     public int? Version { get; set; }
+    
+    /// <summary>
+    /// Filter workflow instances by their parent instance IDs.
+    /// </summary>
+    public ICollection<string>? ParentWorkflowInstanceIds { get; set; }
 
     /// <summary>
     /// Filter workflow instances by correlation ID.
@@ -111,6 +116,7 @@ public class WorkflowInstanceFilter
         if (filter.DefinitionIds != null) query = query.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
         if (filter.DefinitionVersionIds != null) query = query.Where(x => filter.DefinitionVersionIds.Contains(x.DefinitionVersionId));
         if (filter.Version != null) query = query.Where(x => x.Version == filter.Version);
+        if (filter.ParentWorkflowInstanceIds != null) query = query.Where(x => x.ParentWorkflowInstanceId != null && filter.ParentWorkflowInstanceIds.Contains(x.ParentWorkflowInstanceId));
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) query = query.Where(x => x.CorrelationId == filter.CorrelationId);
         if (filter.CorrelationIds != null) query = query.Where(x => filter.CorrelationIds.Contains(x.CorrelationId!));
         if (filter.WorkflowStatus != null) query = query.Where(x => x.Status == filter.WorkflowStatus);

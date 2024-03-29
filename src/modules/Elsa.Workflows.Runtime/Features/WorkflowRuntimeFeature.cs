@@ -209,7 +209,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(ActivityExecutionLogStore)
             .AddScoped(WorkflowInboxStore)
             .AddScoped(WorkflowExecutionContextStore)
-            .AddSingleton(RunTaskDispatcher)
+            .AddScoped(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()

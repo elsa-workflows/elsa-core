@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -53,13 +52,13 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// A set of activity types to make available to the system. 
     /// </summary>
-    public HashSet<Type> ActivityTypes { get; } = new();
+    public HashSet<Type> ActivityTypes { get; } = [];
 
     /// <summary>
     /// A set of variable types to make available to the system. 
     /// </summary>
-    public HashSet<VariableDescriptor> VariableDescriptors { get; } = new()
-    {
+    public HashSet<VariableDescriptor> VariableDescriptors { get; } =
+    [
         new(typeof(object), PrimitivesCategory, "The root class for all object in the CLR System."),
         new(typeof(string), PrimitivesCategory, "Represents a static string of characters."),
         new(typeof(bool), PrimitivesCategory, "Represents a true or false value."),
@@ -75,7 +74,7 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
         new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
-    };
+    ];
 
     /// <summary>
     /// Adds the specified activity type to the system.
@@ -134,7 +133,10 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[] { type }, category);
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[]
+    {
+        type
+    }, category);
 
     /// <summary>
     /// Adds the specified variable types to the system.
@@ -150,7 +152,7 @@ public class WorkflowManagementFeature : FeatureBase
         VariableDescriptors.AddRange(descriptors);
         return this;
     }
-    
+
     /// <summary>
     /// Sets the compression algorithm to use for compressing workflow state.
     /// </summary>
@@ -216,9 +218,9 @@ public class WorkflowManagementFeature : FeatureBase
             foreach (var activityType in ActivityTypes.Distinct())
                 options.ActivityTypes.Add(activityType);
 
-            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type)) 
+            foreach (var descriptor in VariableDescriptors.DistinctBy(x => x.Type))
                 options.VariableDescriptors.Add(descriptor);
-            
+
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
         });

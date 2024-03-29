@@ -42,6 +42,7 @@ public class InstanceManagementFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(HeartbeatOptions)
-            .AddSingleton(InstanceNameProvider);
+            .AddSingleton(InstanceNameProvider)
+            .AddSingleton<RandomIntIdentityGenerator>();
     }
 }

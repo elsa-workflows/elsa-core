@@ -50,8 +50,6 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     .Where(c => c.IsTemporary)
                     .ToList();
 
-                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
-
                 configure.UsingRabbitMq((context, configurator) =>
                 {
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
@@ -64,6 +62,8 @@ public class RabbitMqServiceBusFeature : FeatureBase
 
                     foreach (var consumer in tempConsumers)
                     {
+                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
+                        
                         configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
                             configurator =>
                             {

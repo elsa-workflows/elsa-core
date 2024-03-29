@@ -163,6 +163,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
             .In(nameof(WorkflowInstance.DefinitionId), filter.DefinitionIds)
             .Is(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionId)
             .In(nameof(WorkflowInstance.DefinitionVersionId), filter.DefinitionVersionIds)
+            .In(nameof(WorkflowInstance.ParentWorkflowInstanceId), filter.ParentWorkflowInstanceIds)
             .Is(nameof(WorkflowInstance.Status), filter.WorkflowStatus?.ToString())
             .Is(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatus?.ToString())
             .Is(nameof(WorkflowInstance.Name), filter.Version)

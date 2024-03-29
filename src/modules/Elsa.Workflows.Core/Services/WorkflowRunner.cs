@@ -94,12 +94,14 @@ public class WorkflowRunner : IWorkflowRunner
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
             instanceId,
             correlationId,
+            parentWorkflowInstanceId,
             input,
             properties,
             default,
@@ -124,12 +126,14 @@ public class WorkflowRunner : IWorkflowRunner
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
             workflowState,
             correlationId,
+            parentWorkflowInstanceId,
             input, 
             properties,
             default,

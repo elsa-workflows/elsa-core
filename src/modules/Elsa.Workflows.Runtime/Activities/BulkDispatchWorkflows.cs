@@ -19,6 +19,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -26,12 +27,12 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// </summary>
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
-[FlowNode("Finished", "Canceled", "Done")]
+[FlowNode("Completed", "Canceled", "Done")]
 [UsedImplicitly]
 public class BulkDispatchWorkflows : Activity
 {
     private const string DispatchedInstancesCountKey = nameof(DispatchedInstancesCountKey);
-    private const string FinishedInstancesCountKey = nameof(FinishedInstancesCountKey);
+    private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -73,7 +74,7 @@ public class BulkDispatchWorkflows : Activity
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
     [Input(
-        Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.",
+        Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
 
@@ -92,7 +93,7 @@ public class BulkDispatchWorkflows : Activity
     /// An activity to execute when the child workflow finishes.
     /// </summary>
     [Port]
-    public IActivity? ChildFinished { get; set; }
+    public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
@@ -101,6 +102,7 @@ public class BulkDispatchWorkflows : Activity
     public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
@@ -184,6 +186,7 @@ public class BulkDispatchWorkflows : Activity
         {
             DefinitionId = workflowDefinitionId,
             VersionOptions = VersionOptions.Published,
+            ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
             CorrelationId = correlationId,
@@ -202,15 +205,16 @@ public class BulkDispatchWorkflows : Activity
         return instanceId;
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
         var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
-        context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
+        context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);
 
         var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
@@ -234,26 +238,26 @@ public class BulkDispatchWorkflows : Activity
             case WorkflowSubStatus.Faulted when ChildFaulted is not null:
                 await context.ScheduleActivityAsync(ChildFaulted, options);
                 return;
-            case WorkflowSubStatus.Finished when ChildFinished is not null:
-                await context.ScheduleActivityAsync(ChildFinished, options);
+            case WorkflowSubStatus.Finished when ChildCompleted is not null:
+                await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
-                await CheckIfFinishedAsync(context);
+                await CheckIfCompletedAsync(context);
                 break;
         }
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
     {
-        await CheckIfFinishedAsync(context.TargetContext);
+        await CheckIfCompletedAsync(context.TargetContext);
     }
 
-    private async ValueTask CheckIfFinishedAsync(ActivityExecutionContext context)
+    private async ValueTask CheckIfCompletedAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
-            await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
+            await context.CompleteActivityWithOutcomesAsync("Completed", "Done");
     }
 }

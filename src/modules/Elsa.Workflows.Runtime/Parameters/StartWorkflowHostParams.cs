@@ -29,4 +29,9 @@ public class StartWorkflowHostParams
     /// Callback method that will be called when the status of the workflow has been updated
     /// </summary>
     public Action<WorkflowExecutionContext>? StatusUpdatedCallback { get; set; }
+
+    /// <summary>
+    /// The ID of the parent workflow instance.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
 }
