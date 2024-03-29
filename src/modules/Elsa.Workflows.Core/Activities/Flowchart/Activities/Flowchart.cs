@@ -264,19 +264,18 @@ public class Flowchart : Container
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
-        var flowchartContext = context;
-        var hasPendingWork = HasPendingWork(flowchartContext);
+        var hasPendingWork = HasPendingWork(context);
 
         if (!hasPendingWork)
         {
             logger.LogDebug("No pending work found");
-            var hasFaultedActivities = flowchartContext.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+            var hasFaultedActivities = context.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
 
             if (!hasFaultedActivities)
             {
                 logger.LogDebug("No faulted activities found");
                 logger.LogDebug("Completing flowchart");
-                await flowchartContext.CompleteActivityAsync();
+                await context.CompleteActivityAsync();
             }
         }
     }
