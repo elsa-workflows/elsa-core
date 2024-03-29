@@ -52,8 +52,22 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
             else
                 workflowInstanceIds.IntersectWith(matchingWorkflowInstanceIds);
         }
+        
+        // Alterations must apply only to running workflows.
+        workflowInstanceIds = (await FilterRunningWorkflowInstancesAsync(workflowInstanceIds, cancellationToken)).ToHashSet();
 
         return workflowInstanceIds;
+    }
+
+    private async Task<IEnumerable<string>> FilterRunningWorkflowInstancesAsync(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
+    {
+        var filter = new WorkflowInstanceFilter
+        {
+            Ids = workflowInstanceIds.ToList(),
+            WorkflowStatus = WorkflowStatus.Running
+        };
+        
+        return await workflowInstanceStore.FindManyIdsAsync(filter, cancellationToken);
     }
 
     private bool WorkflowFilterIsEmpty(WorkflowInstanceFilter filter)
