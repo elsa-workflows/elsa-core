@@ -67,9 +67,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
+    public async Task<RunWorkflowResult> RunAsync<T>(
         RunWorkflowOptions? options = default,
-        CancellationToken cancellationToken = default) where T : IWorkflow
+        CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -77,9 +77,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<TResult> RunAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T, TResult>(
+    public async Task<TResult> RunAsync<T, TResult>(
         RunWorkflowOptions? options = default,
-        CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>
+        CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
