@@ -18,24 +18,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
-                {
-                    b.Property<string>("Key")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SerializedValue")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Key");
-
-                    b.ToTable("KeyValuePairs", "Elsa");
-                });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
@@ -69,9 +55,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("text");
 
-                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
-                        .HasColumnType("text");
-
                     b.Property<string>("SerializedException")
                         .HasColumnType("text");
 
@@ -79,9 +62,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedPayload")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SerializedProperties")
                         .HasColumnType("text");
 
                     b.Property<DateTimeOffset>("StartedAt")

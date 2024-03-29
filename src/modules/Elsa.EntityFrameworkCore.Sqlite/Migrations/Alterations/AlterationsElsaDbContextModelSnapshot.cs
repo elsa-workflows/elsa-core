@@ -14,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.14");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.11");
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
@@ -38,9 +38,8 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.Property<string>("StartedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
@@ -84,15 +83,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                     b.Property<string>("SerializedAlterations")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("SerializedWorkflowInstanceFilter")
+                    b.Property<string>("SerializedWorkflowInstanceIds")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StartedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
