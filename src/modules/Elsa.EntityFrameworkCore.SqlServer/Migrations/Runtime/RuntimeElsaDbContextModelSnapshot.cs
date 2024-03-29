@@ -18,10 +18,24 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("SerializedValue")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("KeyValuePairs", "Elsa");
+                });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
@@ -55,6 +69,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                     b.Property<string>("SerializedActivityState")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SerializedActivityStateCompressionAlgorithm")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SerializedException")
                         .HasColumnType("nvarchar(max)");
 
@@ -62,6 +79,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("SerializedPayload")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SerializedProperties")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("StartedAt")

@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.11")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -51,6 +51,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsReadonly")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSystem")
                         .HasColumnType("boolean");
 
                     b.Property<string>("MaterializerContext")
@@ -86,6 +89,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
 
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsSystem");
+
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
 
@@ -116,6 +122,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Data")
                         .HasColumnType("text");
 
+                    b.Property<string>("DataCompressionAlgorithm")
+                        .HasColumnType("text");
+
                     b.Property<string>("DefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -130,7 +139,13 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<int>("IncidentCount")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParentWorkflowInstanceId")
                         .HasColumnType("text");
 
                     b.Property<string>("Status")
@@ -160,6 +175,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
+
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowInstance_IsSystem");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
