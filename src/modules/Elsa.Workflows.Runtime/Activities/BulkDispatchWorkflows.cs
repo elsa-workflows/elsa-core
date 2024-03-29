@@ -73,7 +73,7 @@ public class BulkDispatchWorkflows : Activity
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
     [Input(
-        Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.",
+        Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
 
