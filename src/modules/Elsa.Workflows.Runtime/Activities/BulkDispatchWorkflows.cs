@@ -31,7 +31,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 public class BulkDispatchWorkflows : Activity
 {
     private const string DispatchedInstancesCountKey = nameof(DispatchedInstancesCountKey);
-    private const string FinishedInstancesCountKey = nameof(FinishedInstancesCountKey);
+    private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -92,7 +92,7 @@ public class BulkDispatchWorkflows : Activity
     /// An activity to execute when the child workflow finishes.
     /// </summary>
     [Port]
-    public IActivity? ChildFinished { get; set; }
+    public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
@@ -209,9 +209,9 @@ public class BulkDispatchWorkflows : Activity
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
         var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
-        context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
+        context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);
 
         var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
@@ -235,8 +235,8 @@ public class BulkDispatchWorkflows : Activity
             case WorkflowSubStatus.Faulted when ChildFaulted is not null:
                 await context.ScheduleActivityAsync(ChildFaulted, options);
                 return;
-            case WorkflowSubStatus.Finished when ChildFinished is not null:
-                await context.ScheduleActivityAsync(ChildFinished, options);
+            case WorkflowSubStatus.Finished when ChildCompleted is not null:
+                await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
                 await CheckIfFinishedAsync(context);
@@ -252,7 +252,7 @@ public class BulkDispatchWorkflows : Activity
     private async ValueTask CheckIfFinishedAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
             await context.CompleteActivityWithOutcomesAsync("Completed", "Done");
