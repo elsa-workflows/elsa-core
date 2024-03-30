@@ -35,9 +35,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.ToTable("Labels");
@@ -52,9 +49,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -67,9 +61,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("WorkflowDefinitionLabel_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");
