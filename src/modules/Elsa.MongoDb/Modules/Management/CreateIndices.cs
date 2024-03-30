@@ -85,3 +85,4 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                     cancellationToken));
     }
 }
+

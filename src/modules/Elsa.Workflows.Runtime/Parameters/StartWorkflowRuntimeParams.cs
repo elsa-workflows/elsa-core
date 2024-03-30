@@ -22,4 +22,6 @@ public class StartWorkflowRuntimeParams
     public bool TenantAgnostic { get; set; }
 
     public CancellationTokens CancellationTokens { get; set; }
+    
+    public string? ParentWorkflowInstanceId { get; set; }
 }

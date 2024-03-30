@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Contracts;
@@ -50,13 +51,14 @@ public static class VariableExtensions
     /// <summary>
     /// Converts the specified value into a type that is compatible with the variable.
     /// </summary>
-    public static object ParseValue(this Variable variable, object value)
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+    public static object? ParseValue(this Variable variable, object? value)
     {
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
         var jsonSerializerOptions = new JsonSerializerOptions();
         jsonSerializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
         var converterOptions = new ObjectConverterOptions(jsonSerializerOptions);
-        return genericType == null ? value : value.ConvertTo(genericType, converterOptions)!;
+        return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
 
     /// <summary>

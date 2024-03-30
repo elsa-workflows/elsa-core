@@ -33,6 +33,11 @@ public class AlterationWorkflowInstanceFilter
     /// Whether the workflow instances to match have incidents.
     /// </summary>
     public bool? HasIncidents { get; set; }
+
+    /// <summary>
+    /// Whether the workflow instances to match are system workflows. Defaults to <c>false</c>.
+    /// </summary>
+    public bool? IsSystem { get; set; } = false;
     
     /// <summary>
     /// Represents a collection of filters for activities.

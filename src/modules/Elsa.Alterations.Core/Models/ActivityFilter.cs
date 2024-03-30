@@ -12,7 +12,12 @@ public class ActivityFilter
     /// <summary>
     /// The ID of the activity.
     /// </summary>
-    public string? Id { get; set; }
+    public string? ActivityId { get; set; }
+    
+    /// <summary>
+    /// The ID of the activity instance.
+    /// </summary>
+    public string? ActivityInstanceId { get; set; }
 
     /// <summary>
     /// The node ID of the activity.

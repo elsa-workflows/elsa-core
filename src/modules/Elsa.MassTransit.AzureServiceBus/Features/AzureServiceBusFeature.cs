@@ -60,10 +60,13 @@ public class AzureServiceBusFeature : FeatureBase
                 var temporaryConsumers = consumers
                     .Where(c => c.IsTemporary)
                     .ToList();
-                
+
                 RegisterConsumers(consumers);
                 configure.AddServiceBusMessageScheduler();
-                configure.AddConsumers(temporaryConsumers.Select(c => c.ConsumerType).ToArray());
+                
+                // Consumers need to be added before the UsingAzureServiceBus statement to prevent exceptions.
+                foreach (var consumer in temporaryConsumers)
+                    configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
                 configure.UsingAzureServiceBus((context, configurator) =>
                 {
@@ -73,17 +76,16 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.UseServiceBusMessageScheduler();
                     configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
-                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                     var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
                     
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", configurator =>
+                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", endpointConfigurator =>
                         {
-                            configurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                            configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                            configurator.ConfigureConsumer(context, consumer.ConsumerType);
+                            endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                            endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                         });
                     }
 

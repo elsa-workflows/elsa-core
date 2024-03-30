@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDb.Common;
@@ -142,6 +143,7 @@ public class MongoWorkflowInstanceStore : IWorkflowInstanceStore
         await _mongoDbStore.SaveManyAsync(instances.Select(i => i), cancellationToken);
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
     private IMongoQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> queryable, WorkflowInstanceFilter filter)
     {
         return (filter.Apply(queryable.Select(i => i)) as IMongoQueryable<WorkflowInstance>)!;

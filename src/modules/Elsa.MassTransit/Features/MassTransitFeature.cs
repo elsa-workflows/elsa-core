@@ -23,6 +23,8 @@ namespace Elsa.MassTransit.Features;
 /// </summary>
 public class MassTransitFeature : FeatureBase
 {
+    private bool _runInMemory;
+
     /// <inheritdoc />
     public MassTransitFeature(IModule module) : base(module)
     {
@@ -48,6 +50,7 @@ public class MassTransitFeature : FeatureBase
 
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
+        _runInMemory = BusConfigurator is null;
         var busConfigurator = BusConfigurator ??= ConfigureInMemoryTransport;
         AddMassTransit(busConfigurator);
 
@@ -81,6 +84,7 @@ public class MassTransitFeature : FeatureBase
 
         // Concatenate the manually registered consumers with the workflow message consumers.
         var consumerTypeDefinitions = this.GetConsumers()
+            .Where(c => !c.IsTemporary || _runInMemory)
             .Concat(workflowMessageConsumers)
             .ToArray();
 

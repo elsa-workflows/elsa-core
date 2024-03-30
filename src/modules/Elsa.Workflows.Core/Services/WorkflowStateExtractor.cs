@@ -18,6 +18,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             DefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id,
             DefinitionVersion = workflowExecutionContext.Workflow.Identity.Version,
             CorrelationId = workflowExecutionContext.CorrelationId,
+            ParentWorkflowInstanceId = workflowExecutionContext.ParentWorkflowInstanceId,
             Status = workflowExecutionContext.Status,
             SubStatus = workflowExecutionContext.SubStatus,
             Bookmarks = workflowExecutionContext.Bookmarks,
@@ -44,6 +45,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
+        workflowExecutionContext.ParentWorkflowInstanceId = state.ParentWorkflowInstanceId;
         workflowExecutionContext.SubStatus = state.SubStatus;
         workflowExecutionContext.Bookmarks = state.Bookmarks;
         workflowExecutionContext.Output = state.Output;
@@ -170,7 +172,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     {
         foreach (var activityWorkItemState in state.ScheduledActivities)
         {
-            var activity = workflowExecutionContext.FindActivityById(activityWorkItemState.ActivityId);
+            var activity = workflowExecutionContext.FindActivityByNodeId(activityWorkItemState.ActivityNodeId);
 
             if (activity == null)
                 continue;
@@ -245,7 +247,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             .Scheduler.List()
             .Select(x => new ActivityWorkItemState
             {
-                ActivityId = x.Activity.Id,
+                ActivityNodeId = x.Activity.NodeId,
                 OwnerContextId = x.Owner?.Id,
                 Tag = x.Tag,
                 Variables = x.Variables?.ToList(),

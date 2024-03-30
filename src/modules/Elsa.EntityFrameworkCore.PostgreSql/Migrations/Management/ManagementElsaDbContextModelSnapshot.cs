@@ -151,6 +151,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("Name")
                         .HasColumnType("text");
 
+                    b.Property<string>("ParentWorkflowInstanceId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");

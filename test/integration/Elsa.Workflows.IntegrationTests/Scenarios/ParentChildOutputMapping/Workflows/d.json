@@ -11,14 +11,14 @@
       "name": "Variable1",
       "typeName": "Object",
       "isArray": false,
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     },
     {
       "id": "3a8b25edc9bf109",
       "name": "Variable2",
       "typeName": "Object",
       "isArray": false,
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     }
   ],
   "inputs": [],

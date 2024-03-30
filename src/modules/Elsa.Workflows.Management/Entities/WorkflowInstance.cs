@@ -22,6 +22,11 @@ public class WorkflowInstance : Entity
     /// The version of the workflow definition.
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// The ID of the parent workflow.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
     
     /// <summary>
     /// The state of the workflow instance.

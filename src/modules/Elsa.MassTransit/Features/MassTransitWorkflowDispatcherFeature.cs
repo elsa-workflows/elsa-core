@@ -42,10 +42,15 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
         Module.AddMassTransitConsumer<DispatchCancelWorkflowsRequestConsumer>("elsa-dispatch-cancel-workflow", true);
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp =>
+        Module.Configure<WorkflowRuntimeFeature>(f =>
         {
-            var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
-            return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            f.WorkflowDispatcher = sp =>
+            {
+                var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
+                return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            };
+
+            f.WorkflowCancellationDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowCancellationDispatcher>();
         });
     }
 
@@ -58,5 +63,6 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
             options.Configure(ConfigureDispatcherOptions);
         
         Services.AddSingleton(ChannelQueueFormatterFactory);
+        Services.AddScoped<MassTransitWorkflowCancellationDispatcher>();
     }
 }

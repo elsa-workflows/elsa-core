@@ -148,6 +148,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Management
                     b.Property<string>("Name")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("ParentWorkflowInstanceId")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");

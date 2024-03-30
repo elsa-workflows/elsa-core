@@ -12,14 +12,14 @@
       "name": "Variable1",
       "typeName": "Object",
       "isArray": false,
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     },
     {
       "id": "4e256dab27d33eac",
       "name": "Variable2",
       "typeName": "Object",
       "isArray": false,
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     }
   ],
   "inputs": [],
@@ -50,7 +50,7 @@
           "id": "d4f37df0c6781767",
           "name": "Variable1",
           "typeName": "Object",
-          "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+          "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
         },
         "value": {
           "typeName": "Object",
@@ -89,7 +89,7 @@
           "id": "4e256dab27d33eac",
           "name": "Variable2",
           "typeName": "Object",
-          "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+          "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
         },
         "value": {
           "typeName": "Object",

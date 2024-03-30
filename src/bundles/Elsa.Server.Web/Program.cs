@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
+using Elsa.Common.DistributedLocks.Noop;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -12,6 +13,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
+using Elsa.MassTransit.Extensions;
 using Elsa.Identity.MultiTenancy;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Identity;
@@ -21,6 +23,10 @@ using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Tenants.Resolvers;
 using Elsa.Workflows.Management.Compression;
+using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Runtime.Stores;
+using Medallion.Threading.FileSystem;
+using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
@@ -30,13 +36,17 @@ using StackExchange.Redis;
 
 const bool useMongoDb = true;
 const bool useSqlServer = false;
+const bool usePostgres = false;
+const bool useCockroachDb = false;
 const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useZipCompression = false;
+const bool useZipCompression = true;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const bool runEFCoreMigrations = true;
+const bool useMemoryStores = false;
 const bool useMultitenancy = true;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,9 +56,13 @@ var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
+var postgresConnectionString = configuration.GetConnectionString("PostgreSql")!;
+var cockroachDbConnectionString = configuration.GetConnectionString("CockroachDb")!;
 var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
+var redisConnectionString = configuration.GetConnectionString("Redis")!;
+var distributedLockProviderName = configuration["DistributedLockProvider"];
 
 // Add Elsa services.
 services
@@ -95,8 +109,14 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
+                        else if (useCockroachDb)
+                            ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
+
+                        ef.RunMigrations = runEFCoreMigrations;
                     });
                 
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
@@ -116,12 +136,24 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
+                        else if (useCockroachDb)
+                            ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
+                        
+                        ef.RunMigrations = runEFCoreMigrations;
                     });
 
                 if (useZipCompression)
                     management.SetCompressionAlgorithm(nameof(Zstd));
+
+                if (useMemoryStores)
+                    management.UseWorkflowInstances(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>());
+                
+                if(useMassTransit)
+                    management.UseMassTransitDispatcher();
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -134,8 +166,14 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString!);
+                        else if (useCockroachDb)
+                            ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
+                        
+                        ef.RunMigrations = runEFCoreMigrations;
                     });
 
                 if (useProtoActor)
@@ -156,11 +194,35 @@ services
 
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
-                runtime.DistributedLockProvider = sp =>
+
+                if (useMemoryStores)
                 {
-                    var connection = ConnectionMultiplexer.Connect("localhost:6379");
-                    var database = connection.GetDatabase();
-                    return new RedisDistributedSynchronizationProvider(database);
+                    runtime.ActivityExecutionLogStore = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
+                    runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
+                    runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
+                }
+
+                runtime.DistributedLockProvider = _ =>
+                {
+                    switch (distributedLockProviderName)
+                    {
+                        case "Postgres":
+                            return new PostgresDistributedSynchronizationProvider(postgresConnectionString, options =>
+                            {
+                                options.KeepaliveCadence(TimeSpan.FromMinutes(5));
+                                options.UseMultiplexing();
+                            });
+                        case "Redis":
+                            {
+                                var connectionMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnectionString);
+                                var database = connectionMultiplexer.GetDatabase();
+                                return new RedisDistributedSynchronizationProvider(database);
+                            }
+                        case "Noop":
+                            return new NoopDistributedSynchronizationProvider();
+                        default:
+                            return new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
+                    }
                 };
             })
             .UseEnvironments(environments => environments.EnvironmentsOptions = options => configuration.GetSection("Environments").Bind(options))
@@ -219,8 +281,14 @@ services
                     {
                         if (useSqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
+                        else if (usePostgres)
+                            ef.UsePostgreSql(postgresConnectionString);
+                        else if (useCockroachDb)
+                            ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
+                        
+                        ef.RunMigrations = runEFCoreMigrations;
                     });
                 }
 

@@ -111,6 +111,7 @@ public class DispatchWorkflow : Activity<object>
         {
             DefinitionId = workflowDefinitionId,
             VersionOptions = VersionOptions.Published,
+            ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,
             CorrelationId = correlationId,
             InstanceId = instanceId,

@@ -11,7 +11,7 @@
       "typeName": "Int32",
       "isArray": false,
       "value": "0",
-      "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
     }
   ],
   "inputs": [],
@@ -36,7 +36,7 @@
           "name": "Counter",
           "typeName": "Int32",
           "value": "0",
-          "storageDriverTypeName": "Elsa.Workflows.Core.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+          "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
         },
         "value": {
           "typeName": "Object",

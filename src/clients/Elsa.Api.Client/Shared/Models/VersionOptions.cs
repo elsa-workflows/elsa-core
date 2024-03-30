@@ -31,7 +31,7 @@ public struct VersionOptions
     /// <summary>
     /// Gets the latest, published version.
     /// </summary>
-    public static readonly VersionOptions LatestAndPublished = new() { IsLatestOrPublished = true };
+    public static readonly VersionOptions LatestAndPublished = new() { IsLatestAndPublished = true };
 
     /// <summary>
     /// Gets the draft version.

@@ -46,6 +46,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         string id,
         string? correlationId,
+        string? parentWorkflowInstanceId,
         IDictionary<string, object>? input,
         IDictionary<string, object>? properties,
         ExecuteActivityDelegate? executeDelegate,
@@ -62,6 +63,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
         CorrelationId = correlationId;
+        ParentWorkflowInstanceId = parentWorkflowInstanceId;
         _activityExecutionContexts = new List<ActivityExecutionContext>();
         Scheduler = serviceProvider.GetRequiredService<IActivitySchedulerFactory>().CreateScheduler();
         IdentityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
@@ -90,6 +92,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         Workflow workflow,
         string id,
         string? correlationId,
+        string? parentWorkflowInstanceId = default,
         IDictionary<string, object>? input = default,
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
@@ -106,6 +109,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             new List<ActivityIncident>(),
             systemClock.UtcNow,
             correlationId,
+            parentWorkflowInstanceId,
             input,
             properties,
             executeDelegate,
@@ -123,6 +127,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         Workflow workflow,
         WorkflowState workflowState,
         string? correlationId = default,
+        string? parentWorkflowInstanceId = default,
         IDictionary<string, object>? input = default,
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
@@ -137,6 +142,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             workflowState.Incidents,
             workflowState.CreatedAt,
             correlationId,
+            parentWorkflowInstanceId,
             input,
             properties,
             executeDelegate,
@@ -160,6 +166,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
         string? correlationId = default,
+        string? parentWorkflowInstanceId = default,
         IDictionary<string, object>? input = default,
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
@@ -172,6 +179,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             serviceProvider,
             id,
             correlationId,
+            parentWorkflowInstanceId,
             input,
             properties,
             executeDelegate,
@@ -271,6 +279,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// An application-specific identifier associated with the execution context.
     /// </summary>
     public string? CorrelationId { get; set; }
+    
+    /// <summary>
+    /// The ID of the workflow instance that triggered this instance.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
 
     /// <summary>
     /// The date and time the workflow execution context was created.
@@ -502,7 +515,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified ID from the workflow graph.
     /// </summary>
-    public IActivity? FindActivityById(string activityId) => FindNodeById(NodeIdLookup.Single(n => n.Key.Contains(activityId)).Value.NodeId)?.Activity;
+    public IActivity? FindActivityById(string activityId) => FindNodeById(NodeIdLookup.SingleOrDefault(n => n.Key.EndsWith(activityId)).Value.NodeId)?.Activity;
 
     /// <summary>
     /// Returns the <see cref="IActivity"/> with the specified hash of the activity node ID from the workflow graph.

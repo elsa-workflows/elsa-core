@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -66,7 +67,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow
+    public async Task<RunWorkflowResult> RunAsync<T>(
+        RunWorkflowOptions? options = default,
+        CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -74,7 +77,9 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
-    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>
+    public async Task<TResult> RunAsync<T, TResult>(
+        RunWorkflowOptions? options = default,
+        CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
         var builder = _workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -88,18 +93,20 @@ public class WorkflowRunner : IWorkflowRunner
         // Create a child scope.
         using var scope = _serviceScopeFactory.CreateScope();
 
-        // Setup a workflow execution context.
+        // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
             instanceId,
             correlationId,
+            parentWorkflowInstanceId,
             input,
             properties,
             default,
@@ -124,13 +131,15 @@ public class WorkflowRunner : IWorkflowRunner
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             scope.ServiceProvider,
             workflow,
             workflowState,
             correlationId,
-            input, 
+            parentWorkflowInstanceId,
+            input,
             properties,
             default,
             triggerActivityId,

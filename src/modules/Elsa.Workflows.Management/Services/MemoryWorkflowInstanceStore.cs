@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
@@ -151,5 +152,6 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
 }

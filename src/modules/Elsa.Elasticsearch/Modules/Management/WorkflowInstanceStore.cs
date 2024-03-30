@@ -153,6 +153,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         // TODO: filter by IDs
         // TODO: filter by DefinitionIDs
         // TODO: filter by DefinitionVersionIDs
+        // TODO: filter by ParentWorkflowInstanceIds
         // TODO: filter by CorrelationIDs
         // TODO: filter by WorkflowStatuses
         // TODO: filter by WorkflowSubStatuses
