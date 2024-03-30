@@ -29,7 +29,7 @@ public class ConfigurationTenantsProvider : ITenantsProvider
     }
 
     /// <inheritdoc />
-    [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "<Pending>")]
+    [RequiresUnreferencedCode("The caller of this method may require dynamic access to the tenant properties.")]
     public ValueTask<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
     {
         var tenantsQueryable = _options.Value.Tenants.AsQueryable();
