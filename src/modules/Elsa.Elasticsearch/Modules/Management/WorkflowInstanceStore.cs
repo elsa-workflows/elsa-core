@@ -78,7 +78,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var results = await _store.SearchAsync(d => SelectId( Filter(d, filter)), cancellationToken);
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), cancellationToken);
         return results.Select(x => x.Id).ToList();
     }
 
@@ -122,13 +122,6 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
 
-    /// <inheritdoc />
-    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
-    {
-        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
-        return instance?.TenantId;
-    }
-
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
@@ -167,8 +160,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             return descriptor.MatchAll();
 
         return descriptor
-                .QueryString(c => c
-                    .Query(filter.SearchTerm));
+            .QueryString(c => c
+                .Query(filter.SearchTerm));
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
@@ -186,7 +179,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.DefinitionVersionId),
             field => field.Field(f => f.UpdatedAt)
         );
-    
+
     private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
         descriptor.Fields(field => field.Field(f => f.Id));
 }

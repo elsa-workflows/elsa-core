@@ -90,7 +90,7 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of workflow instance IDs.</returns>
     ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns a paginated list of workflow instance IDs matching the specified filter.
     /// </summary>
@@ -118,7 +118,6 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of workflow instance summaries.</returns>
     ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
-    
 
     /// <summary>
     /// Returns a list of workflow instance summaries matching the specified filter and order.
