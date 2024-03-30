@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -30,8 +31,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// Constructor.
     /// </summary>
     public EFCoreWorkflowInstanceStore(
-        EntityStore<ManagementElsaDbContext, WorkflowInstance> store, 
-        IWorkflowStateSerializer workflowStateSerializer, 
+        EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
+        IWorkflowStateSerializer workflowStateSerializer,
         ICompressionCodecResolver compressionCodecResolver,
         IOptions<ManagementOptions> options)
     {
@@ -76,6 +77,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         return await _store.CountAsync(filter.Apply, cancellationToken);
@@ -151,17 +153,20 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
     }
 
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     private async ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
         var data = entity.WorkflowState;
@@ -196,11 +201,5 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)
     {
         return filter.Apply(query);
-    }
-
-    /// <inheritdoc />
-    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
-    {
-        return await _store.GetTenantIdAsync<WorkflowInstance>(x => x.Id == instanceId, cancellationToken);
     }
 }
