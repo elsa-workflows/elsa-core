@@ -9,7 +9,6 @@ using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -45,7 +44,6 @@ public class ServiceBusTest : IDisposable
                     .AddSingleton<IServiceBusProcessorManager, ServiceBusProcessorManager>()
                     .AddSingleton<IWorkerManager, WorkerManager>()
                     .AddSingleton(_resetEventManager)
-
                     .AddSingleton(sp =>
                     {
                         var options = sp.GetRequiredService<IOptions<MediatorOptions>>().Value;
@@ -102,7 +100,10 @@ public class ServiceBusTest : IDisposable
         await _worker.StartWorkerAsync("topicName", "subscriptionName");
         await _sbProcessorManager
             .Get("topicName", "subscriptionName")
-            .SendMessage<dynamic>(new { hello = "world" }, null!);
+            .SendMessage<dynamic>(new
+            {
+                hello = "world"
+            }, null!);
 
         // Wait for receiving first message
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
@@ -138,7 +139,6 @@ public class ServiceBusTest : IDisposable
         await _backgroundEventPublisherHostedService.StartAsync(CancellationToken.None);
     }
 
-
     [Fact(DisplayName = "1 Receive - Sending 1 message - Should Finished")]
     public async Task Receive_1_Message_Should_Finish_With_One_Receive()
     {
@@ -152,7 +152,10 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
+        {
+            VersionOptions = Common.Models.VersionOptions.Published
+        };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -168,7 +171,10 @@ public class ServiceBusTest : IDisposable
         await _worker.StartWorkerAsync("topicName", "subscriptionName");
         await _sbProcessorManager
             .Get("topicName", "subscriptionName")
-            .SendMessage<dynamic>(new { hello = "world" }, null!);
+            .SendMessage<dynamic>(new
+            {
+                hello = "world"
+            }, null!);
 
         //Wait for receiving first message
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
@@ -207,7 +213,7 @@ public class ServiceBusTest : IDisposable
 
         senderMock
             .SendMessageAsync(Arg.Any<ServiceBusMessage>(), Arg.Any<CancellationToken>())
-            .ReturnsForAnyArgs(async (callback) =>
+            .ReturnsForAnyArgs(async callback =>
             {
                 var sb = callback.Arg<ServiceBusMessage>();
                 var c = callback.Arg<CancellationToken>();
@@ -217,13 +223,19 @@ public class ServiceBusTest : IDisposable
                 await _worker.StartWorkerAsync("topicName", "subscriptionName", c);
                 await _sbProcessorManager
                     .Get("topicName", "subscriptionName")
-                    .SendMessage<dynamic>(new { hello = "world" }, null!);
+                    .SendMessage<dynamic>(new
+                    {
+                        hello = "world"
+                    }, null!);
             });
 
 
         // Start Workflow
         const string workflowDefinitionId = nameof(SendOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
+        {
+            VersionOptions = Common.Models.VersionOptions.Published
+        };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -273,22 +285,28 @@ public class ServiceBusTest : IDisposable
 
         senderMock
             .SendMessageAsync(Arg.Any<ServiceBusMessage>(), Arg.Any<CancellationToken>())
-            .ReturnsForAnyArgs(async (callback) =>
+            .ReturnsForAnyArgs(async callback =>
             {
                 var sb = callback.Arg<ServiceBusMessage>();
                 var c = callback.Arg<CancellationToken>();
 
                 _testOutputHelper.WriteLine("Sending Message from activity");
 
-                await _worker.StartWorkerAsync("topicName", "subscriptionName");
+                await _worker.StartWorkerAsync("topicName", "subscriptionName", c);
                 await _sbProcessorManager
                     .Get("topicName", "subscriptionName")
-                    .SendMessage<dynamic>(new { hello = "world" }, correlationId);
+                    .SendMessage<dynamic>(new
+                    {
+                        hello = "world"
+                    }, correlationId);
             });
 
         //Start Workflow
         var workflowDefinitionId = nameof(SendOneMessageWithCorrelationIdWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
+        {
+            VersionOptions = Common.Models.VersionOptions.Published
+        };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -301,7 +319,7 @@ public class ServiceBusTest : IDisposable
         Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
 
         // Wait for receiving first message.
-        var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
+        var wait1 = _resetEventManager.Get("receive1")!.WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
         await Task.Delay(500); // Todo find how to remove delay
@@ -334,7 +352,10 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         var workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
+        var startWorkflowOptions = new StartWorkflowRuntimeParams
+        {
+            VersionOptions = Common.Models.VersionOptions.Published
+        };
         var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
 
@@ -350,10 +371,13 @@ public class ServiceBusTest : IDisposable
         await _worker.StartWorkerAsync("topicName1", "subscriptionName1");
         await _sbProcessorManager
             .Get("topicName1", "subscriptionName1")
-            .SendMessage<dynamic>(new { hello = "world" }, null!);
+            .SendMessage<dynamic>(new
+            {
+                hello = "world"
+            }, null!);
 
         //Wait for receiving first message
-        var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
+        var wait1 = _resetEventManager.Get("receive1")!.WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
         var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
