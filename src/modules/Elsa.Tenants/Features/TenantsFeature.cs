@@ -23,7 +23,7 @@ public class TenantsFeature : FeatureBase
     /// <summary>
     /// Configures the Tenants options.
     /// </summary>
-    public Action<MultiTenancyOptions> TenantsOptions { get; set; } = _ => { };
+    public Action<MultitenancyOptions> TenantsOptions { get; set; } = _ => { };
 
     /// <summary>
     /// A delegate that creates an instance of an implementation of <see cref="ITenantsProvider"/>.

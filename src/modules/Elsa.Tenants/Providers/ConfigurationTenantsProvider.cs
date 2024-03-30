@@ -12,12 +12,12 @@ namespace Elsa.Tenants.Providers;
 /// </summary>
 public class ConfigurationTenantsProvider : ITenantsProvider
 {
-    private readonly IOptions<MultiTenancyOptions> _options;
+    private readonly IOptions<MultitenancyOptions> _options;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationTenantsProvider"/> class.
     /// </summary>
-    public ConfigurationTenantsProvider(IOptions<MultiTenancyOptions> options)
+    public ConfigurationTenantsProvider(IOptions<MultitenancyOptions> options)
     {
         _options = options;
     }

@@ -9,7 +9,7 @@ namespace Elsa.Tenants.Options;
 /// <summary>
 /// Options for configuring the Tenants.
 /// </summary>
-public class MultiTenancyOptions
+public class MultitenancyOptions
 {
     /// <summary>
     /// Gets or sets the tenants through configuration. Will be used by the <see cref="ConfigurationTenantsProvider"/>
