@@ -2,40 +2,32 @@ using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
-public class MemoryBookmarkStore : IBookmarkStore
+[UsedImplicitly]
+public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store) : IBookmarkStore
 {
-    private readonly MemoryStore<StoredBookmark> _store;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public MemoryBookmarkStore(MemoryStore<StoredBookmark> store)
-    {
-        _store = store;
-    }
-
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record, x => x.Id);
+        store.Save(record, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
-        _store.SaveMany(records, x => x.Id);
+        store.SaveMany(records, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = _store.Query(query => Filter(query, filter)).AsEnumerable();
+        var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
         return new(entities);
     }
 
@@ -43,7 +35,7 @@ public class MemoryBookmarkStore : IBookmarkStore
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
-        return _store.DeleteMany(ids);
+        return store.DeleteMany(ids);
     }
     
     private static IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> query, BookmarkFilter filter) => filter.Apply(query);
