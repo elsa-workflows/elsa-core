@@ -10,12 +10,10 @@ using Elsa.Studio.Login.BlazorWasm.Extensions;
 using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Options;
 using Elsa.Studio.Workflows.Designer.Extensions;
-using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
-using System.Text.Json;
 
 // Build the host.
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
