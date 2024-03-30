@@ -10,7 +10,7 @@ public interface ITenantResolutionPipelineBuilder
     /// <summary>
     /// Contains strategies for resolving tenants.
     /// </summary>
-    IEnumerable<Type> Strategies { get; }
+    IEnumerable<Type> Resolvers { get; }
     
     /// <summary>
     /// Appends a new strategy to the pipeline. The last appended strategy will be the first to be executed.
@@ -20,7 +20,7 @@ public interface ITenantResolutionPipelineBuilder
     /// <summary>
     /// Appends a new strategy to the pipeline. The last appended strategy will be the first to be executed.
     /// </summary>
-    ITenantResolutionPipelineBuilder Append(Type strategyType);
+    ITenantResolutionPipelineBuilder Append(Type resolverType);
     
     /// <summary>
     /// Clears the pipeline.
