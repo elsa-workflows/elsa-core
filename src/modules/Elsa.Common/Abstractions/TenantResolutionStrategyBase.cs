@@ -5,7 +5,7 @@ using Elsa.Common.Results;
 namespace Elsa.Common.Abstractions;
 
 /// <summary>
-/// Resolves the tenant from the user's claims.
+/// Base class for implementing a tenant resolution strategy.
 /// </summary>
 public abstract class TenantResolutionStrategyBase : ITenantResolutionStrategy
 {
