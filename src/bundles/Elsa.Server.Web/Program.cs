@@ -137,7 +137,7 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
-                        
+
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
@@ -146,8 +146,8 @@ services
 
                 if (useMemoryStores)
                     management.UseWorkflowInstances(feature => feature.WorkflowInstanceStore = sp => sp.GetRequiredService<MemoryWorkflowInstanceStore>());
-                
-                if(useMassTransit)
+
+                if (useMassTransit)
                     management.UseMassTransitDispatcher();
             })
             .UseWorkflowRuntime(runtime =>
@@ -167,7 +167,7 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
-                        
+
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
@@ -213,10 +213,11 @@ services
                                 var database = connectionMultiplexer.GetDatabase();
                                 return new RedisDistributedSynchronizationProvider(database);
                             }
-                        case "Noop":
-                            return new NoopDistributedSynchronizationProvider();
-                        default:
+                        case "File":
                             return new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
+                        case "Noop":
+                        default:
+                            return new NoopDistributedSynchronizationProvider();
                     }
                 };
             })
@@ -282,7 +283,7 @@ services
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
-                        
+
                         ef.RunMigrations = runEFCoreMigrations;
                     });
                 }
