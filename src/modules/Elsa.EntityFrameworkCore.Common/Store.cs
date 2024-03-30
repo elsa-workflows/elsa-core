@@ -283,21 +283,6 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     }
 
     /// <summary>
-    /// Finds the tenantId of the entity matching the specified predicate.
-    /// </summary>
-    /// <param name="predicate">The predicate to use.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>TenantId if entity found and if it has any, or null</returns>
-    public async Task<string?> GetTenantIdAsync<TTenantEntity>(Expression<Func<TTenantEntity, bool>> predicate, CancellationToken cancellationToken = default) where TTenantEntity : Entity
-    {
-        await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TTenantEntity>().IgnoreQueryFilters<TTenantEntity>().AsNoTracking();
-        var entity = await set.FirstOrDefaultAsync(predicate, cancellationToken);
-
-        return entity?.TenantId;
-    }
-
-    /// <summary>
     /// Finds a single entity using a query.
     /// </summary>
     /// <returns>True if the entity was found, otherwise false.</returns>

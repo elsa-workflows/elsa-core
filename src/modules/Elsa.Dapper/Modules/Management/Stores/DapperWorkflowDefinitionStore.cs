@@ -152,13 +152,6 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
         return !exists;
     }
 
-    /// <inheritdoc />
-    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
-    {
-        var definition = await FindAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId }, cancellationToken);
-        return definition?.TenantId;
-    }
-
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
     {
         query

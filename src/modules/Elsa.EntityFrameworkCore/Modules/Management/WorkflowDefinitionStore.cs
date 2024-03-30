@@ -179,12 +179,6 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         return !exists;
     }
 
-    /// <inheritdoc />
-    public async Task<string?> GetTenantId(string definitionId, CancellationToken cancellationToken)
-    {
-        return await _store.GetTenantIdAsync<WorkflowDefinition>(x => x.DefinitionId == definitionId, cancellationToken);
-    }
-
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
         var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);

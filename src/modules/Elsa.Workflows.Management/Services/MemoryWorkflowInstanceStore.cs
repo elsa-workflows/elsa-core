@@ -143,13 +143,6 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         return ValueTask.FromResult(count);
     }
 
-    /// <inheritdoc />
-    public async Task<string?> GetTenantId(string instanceId, CancellationToken cancellationToken)
-    {
-        var instance = await FindAsync(new WorkflowInstanceFilter { Id = instanceId }, cancellationToken);
-        return instance?.TenantId;
-    }
-
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
