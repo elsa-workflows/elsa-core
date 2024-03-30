@@ -339,7 +339,7 @@ services
             {
                 tenants.TenantsOptions = options =>
                 {
-                    configuration.GetSection("MultiTenancy").Bind(options);
+                    configuration.GetSection("Multitenancy").Bind(options);
                     options.TenantResolutionPipelineBuilder
                         .Append<HttpContextTenantResolver>()
                         .Append<ClaimsTenantResolver>()
