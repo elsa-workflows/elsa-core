@@ -14,7 +14,7 @@ ConfigurationManager configuration = builder.Configuration;
 
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-var multiTenancySection = configuration.GetSection("MultiTenancy");
+var multiTenancySection = configuration.GetSection("Multitenancy");
 
 // Add services to the container.
 builder.Services.AddControllers();

@@ -18,7 +18,7 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 
 var identitySection = configuration.GetSection("Identity");
-var tenantsSection = configuration.GetSection("MultiTenancy");
+var tenantsSection = configuration.GetSection("Multitenancy");
 
 // Add services to the container.
 builder.Services.AddControllers();
