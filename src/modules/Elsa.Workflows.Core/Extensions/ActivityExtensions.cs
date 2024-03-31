@@ -137,6 +137,21 @@ public static class ActivityExtensions
         var outputName = outputExpression.GetPropertyName();
         return ((IActivity)activity!).GetOutput<T>(context, outputName);
     }
+    
+    /// <summary>
+    /// Gets the output with the specified name.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="outputExpression">The output expression.</param>
+    /// <typeparam name="TActivity">The type of the activity.</typeparam>
+    /// <typeparam name="T">The type of the output.</typeparam>
+    /// <returns>The output value.</returns>
+    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    {
+        var outputName = outputExpression.GetPropertyName();
+        return ((IActivity)activity!).GetOutput<T>(context, outputName);
+    }
 
     /// <summary>
     /// Gets the Result output of the specified activity.
