@@ -78,7 +78,10 @@ public class RabbitMqServiceBusFeature : FeatureBase
                             });
                     }
 
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                    if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                        configurator.SetupWorkflowDispatcherEndpoints(context);
+                    
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
