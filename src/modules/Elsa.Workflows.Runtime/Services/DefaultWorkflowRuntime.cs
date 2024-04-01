@@ -189,13 +189,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
                 var startOptions = new StartWorkflowRuntimeParams
                 {
-                    CorrelationId = options.CorrelationId,
-                    Input = options.Input,
-                    Properties = options.Properties,
+                    CorrelationId = options?.CorrelationId,
+                    Input = options?.Input,
+                    Properties = options?.Properties,
                     VersionOptions = VersionOptions.Published,
                     TriggerActivityId = trigger.ActivityId,
-                    InstanceId = options.WorkflowInstanceId,
-                    CancellationTokens = options.CancellationTokens
+                    InstanceId = options?.WorkflowInstanceId,
+                    CancellationTokens = options?.CancellationTokens ?? default
                 };
 
                 var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
