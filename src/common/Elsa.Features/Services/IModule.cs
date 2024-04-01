@@ -17,6 +17,16 @@ public interface IModule
     /// A dictionary into which features can stash away values for later use. 
     /// </summary>
     IDictionary<object, object> Properties { get; }
+    
+    /// <summary>
+    /// Returns true if a feature of the specified type has been configured.
+    /// </summary>
+    bool HasFeature<T>() where T : class, IFeature;
+    
+    /// <summary>
+    /// Returns true if a feature of the specified type has been configured.
+    /// </summary>
+    bool HasFeature(Type featureType);
 
     /// <summary>
     /// Creates and configures a feature of the specified type.
