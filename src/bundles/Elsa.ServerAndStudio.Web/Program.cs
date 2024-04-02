@@ -1,3 +1,4 @@
+using Elsa.Common.DistributedLocks.Noop;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -65,6 +66,7 @@ services
                     });
                 }
 
+                runtime.DistributedLockProvider = _ => new NoopDistributedSynchronizationProvider();
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
