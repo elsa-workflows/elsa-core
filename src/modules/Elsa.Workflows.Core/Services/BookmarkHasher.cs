@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Contracts;
@@ -30,6 +31,7 @@ public class BookmarkHasher : IBookmarkHasher
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]
     public string Hash(string activityTypeName, object? payload, string? activityInstanceId = default)
     {
         var json = payload != null ? Serialize(payload) : null;
@@ -47,5 +49,12 @@ public class BookmarkHasher : IBookmarkHasher
         return hash;
     }
 
-    private string Serialize(object payload) => JsonSerializer.Serialize(payload, payload.GetType(), _settings);
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]
+    private string Serialize(object payload)
+    {
+        if(payload is string s)
+            return s;
+        
+        return JsonSerializer.Serialize(payload, payload.GetType(), _settings);
+    }
 }

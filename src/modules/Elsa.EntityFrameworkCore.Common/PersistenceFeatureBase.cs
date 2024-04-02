@@ -36,6 +36,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
+        .UseElsaDbContextOptions(default)
         .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
             .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
             .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
