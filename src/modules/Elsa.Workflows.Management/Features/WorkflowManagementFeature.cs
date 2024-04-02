@@ -21,6 +21,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ namespace Elsa.Workflows.Management.Features;
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(MemoryCacheFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]

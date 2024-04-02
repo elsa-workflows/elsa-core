@@ -6,7 +6,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Services;
+namespace Elsa.Workflows.Management.Stores;
 
 /// <summary>
 /// A memory implementation of <see cref="IWorkflowDefinitionStore"/>.

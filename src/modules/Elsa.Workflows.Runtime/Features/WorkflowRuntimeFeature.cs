@@ -203,11 +203,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
-            .AddScoped(BookmarkStore)
-            .AddScoped(TriggerStore)
-            .AddScoped(WorkflowExecutionLogStore)
-            .AddScoped(ActivityExecutionLogStore)
-            .AddScoped(WorkflowInboxStore)
             .AddScoped(WorkflowExecutionContextStore)
             .AddScoped(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
@@ -227,6 +222,13 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            
+            // Stores.
+            .AddScoped(BookmarkStore)
+            .AddScoped(TriggerStore)
+            .AddScoped(WorkflowExecutionLogStore)
+            .AddScoped(ActivityExecutionLogStore)
+            .AddScoped(WorkflowInboxStore)
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)

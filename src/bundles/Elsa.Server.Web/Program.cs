@@ -20,6 +20,7 @@ using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -42,6 +43,7 @@ const bool useZipCompression = true;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
+const bool useCachingStores = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -149,6 +151,9 @@ services
 
                 if (useMassTransit)
                     management.UseMassTransitDispatcher();
+                
+                if (useCachingStores)
+                    management.UseCachingStores();
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -182,10 +187,7 @@ services
                     });
                 }
 
-                if (useMassTransit)
-                {
-                    runtime.UseMassTransitDispatcher();
-                }
+                if (useMassTransit) runtime.UseMassTransitDispatcher();
 
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
@@ -196,6 +198,9 @@ services
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
                     runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
+                
+                if (useCachingStores)
+                    runtime.UseCachingStores();
 
                 runtime.DistributedLockProvider = _ =>
                 {

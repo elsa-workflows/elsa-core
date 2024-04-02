@@ -52,12 +52,11 @@ public class WorkflowsMiddleware
     }
 
     /// <summary>
-    /// Attempts to matches the inbound request path to an associated workflow and then run that workflow.
+    /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
     /// </summary>
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
         var workflowRuntime = serviceProvider.GetRequiredService<IWorkflowRuntime>();
-
         var path = GetPath(httpContext);
         var basePath = _options.BasePath?.ToString().NormalizeRoute();
 

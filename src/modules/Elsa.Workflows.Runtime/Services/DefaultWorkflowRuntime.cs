@@ -472,8 +472,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
     }
 
-    private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter,
-        CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken = default)
     {
         var results = new List<WorkflowMatch>();
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);

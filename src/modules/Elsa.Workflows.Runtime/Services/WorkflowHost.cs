@@ -4,7 +4,6 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;

@@ -82,6 +82,7 @@
         <PackageVersion Include="Quartz.Serialization.Json" Version="3.8.0"/>
         <PackageVersion Include="Refit" Version="7.0.0"/>
         <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0"/>
+        <PackageVersion Include="Scrutor" Version="4.2.2"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.7.4"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1"/>
