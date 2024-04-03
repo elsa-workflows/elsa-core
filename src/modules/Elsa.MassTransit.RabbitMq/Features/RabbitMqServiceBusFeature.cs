@@ -56,12 +56,16 @@ public class RabbitMqServiceBusFeature : FeatureBase
                 
                 configure.UsingRabbitMq((context, configurator) =>
                 {
-                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (!string.IsNullOrEmpty(ConnectionString))
                         configurator.Host(ConnectionString);
 
+                    if (options.PrefetchCount is not null)
+                        configurator.PrefetchCount = options.PrefetchCount.Value;
+                    configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    
                     ConfigureServiceBus?.Invoke(configurator);
 
                     foreach (var consumer in temporaryConsumers)
