@@ -56,25 +56,27 @@ public class RabbitMqServiceBusFeature : FeatureBase
                 
                 configure.UsingRabbitMq((context, configurator) =>
                 {
-                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (!string.IsNullOrEmpty(ConnectionString))
                         configurator.Host(ConnectionString);
 
+                    if (options.PrefetchCount is not null)
+                        configurator.PrefetchCount = options.PrefetchCount.Value;
+                    configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    
                     ConfigureServiceBus?.Invoke(configurator);
 
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
-                        
-                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
-                        configurator.ReceiveEndpoint(queueName,
+                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
                             endpointConfigurator =>
                             {
                                 endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                                 endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                
+                                endpointConfigurator.Durable = false;
+                                endpointConfigurator.AutoDelete = true;
                                 endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                     }

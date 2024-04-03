@@ -73,10 +73,17 @@ public class AzureServiceBusFeature : FeatureBase
                     if (ConnectionString != null) 
                         configurator.Host(ConnectionString);
                     
+                    var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
+
+                    if (options.PrefetchCount is not null)
+                        configurator.PrefetchCount = options.PrefetchCount.Value;
+                    if (options.MaxAutoRenewDuration is not null)
+                        configurator.MaxAutoRenewDuration = options.MaxAutoRenewDuration.Value;
+                    configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    
                     configurator.UseServiceBusMessageScheduler();
                     configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
-                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
                     
                     foreach (var consumer in temporaryConsumers)

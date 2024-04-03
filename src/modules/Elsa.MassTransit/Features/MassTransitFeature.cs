@@ -33,6 +33,7 @@ public class MassTransitFeature : FeatureBase
     }
 
     /// The number of messages to prefetch.
+    [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
 
     /// <summary>
@@ -56,6 +57,7 @@ public class MassTransitFeature : FeatureBase
         var messageTypes = this.GetMessages();
 
         Services.AddSingleton(ChannelQueueFormatterFactory);
+        Services.Configure<MassTransitOptions>(x => x.PrefetchCount ??= PrefetchCount);
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
         _runInMemory = BusConfigurator is null;

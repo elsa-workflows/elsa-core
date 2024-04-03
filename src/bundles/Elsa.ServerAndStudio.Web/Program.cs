@@ -24,10 +24,12 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
+var massTransitDispatcherSection = configuration.GetSection("MassTransit.Dispatcher");
 var heartbeatSection = configuration.GetSection("Heartbeat");
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
 
-services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitSection);
+services.Configure<MassTransitOptions>(massTransitSection);
+services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
 
 // Add Elsa services.
 services
@@ -87,28 +89,14 @@ services
         {
             elsa.UseMassTransit(massTransit =>
                 {
-                    if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                    switch (useMassTransitBroker)
                     {
-                        massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
-                        {
-                            bus.PrefetchCount = 4;
-                            bus.LockDuration = TimeSpan.FromMinutes(5);
-                            bus.MaxConcurrentCalls = 32;
-                            bus.MaxDeliveryCount = 8;
-                            // etc.
-                        });
-                    }
-
-                    if (useMassTransitBroker == MassTransitBroker.RabbitMq)
-                    {
-                        massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
-                        {
-                            bus.PrefetchCount = 4;
-                            bus.Durable = true;
-                            bus.AutoDelete = false;
-                            bus.ConcurrentMessageLimit = 32;
-                            // etc.
-                        });
+                        case MassTransitBroker.AzureServiceBus:
+                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                            break;
+                        case MassTransitBroker.RabbitMq:
+                            massTransit.UseRabbitMq(rabbitMqConnectionString);
+                            break;
                     }
                 }
             );
