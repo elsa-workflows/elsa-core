@@ -90,13 +90,8 @@ public class HttpWorkflowsCacheManager(
 
     private async Task<Workflow?> FindWorkflowAsync(StoredTrigger trigger, CancellationToken cancellationToken)
     {
-        var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, cancellationToken);
-
-        if (workflowDefinition == null)
-            return default;
-
-        return await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
+        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
     }
 
     private string GetWorkflowChangeTokenKey(string workflowDefinitionId) => $"{GetType().FullName}:workflow:{workflowDefinitionId}:changeToken";
