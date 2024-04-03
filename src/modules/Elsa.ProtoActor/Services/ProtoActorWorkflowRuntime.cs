@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
@@ -33,7 +34,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IIdentityGenerator _identityGenerator;
     private readonly IBookmarkHasher _hasher;
-    private readonly IBookmarkManager _bookmarkManager;
     private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
     private readonly WorkflowExecutionResultMapper _workflowExecutionResultMapper;
@@ -49,7 +49,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         IWorkflowInstanceStore workflowInstanceStore,
         IIdentityGenerator identityGenerator,
         IBookmarkHasher hasher,
-        IBookmarkManager bookmarkManager,
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowInstanceFactory workflowInstanceFactory,
         WorkflowExecutionResultMapper workflowExecutionResultMapper)
@@ -61,7 +60,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         _workflowInstanceStore = workflowInstanceStore;
         _identityGenerator = identityGenerator;
         _hasher = hasher;
-        _bookmarkManager = bookmarkManager;
         _workflowDefinitionService = workflowDefinitionService;
         _workflowInstanceFactory = workflowInstanceFactory;
         _workflowExecutionResultMapper = workflowExecutionResultMapper;
@@ -257,7 +255,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Id = workflowInstanceId
         };
 
-        var instance = await _workflowInstanceStore.FindAsync(filter);
+        var instance = await _workflowInstanceStore.FindAsync(filter, cancellationToken);
         if (instance is null)
             return new CancellationResult(false, FailureReason.NotFound);
         
@@ -274,8 +272,9 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
-    
+
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
@@ -286,6 +285,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);
