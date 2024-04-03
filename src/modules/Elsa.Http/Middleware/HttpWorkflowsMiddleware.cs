@@ -13,7 +13,6 @@ using System.Net;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
