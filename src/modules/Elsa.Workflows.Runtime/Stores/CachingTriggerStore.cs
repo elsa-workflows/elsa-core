@@ -13,14 +13,14 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// A decorator for <see cref="ITriggerStore"/> that caches trigger records.
 /// </summary>
 public class CachingTriggerStore(
-    ITriggerStore decoratedStore, 
-    IMemoryCache cache, 
-    IHasher hasher, 
-    IChangeTokenSignaler changeTokenSignaler, 
+    ITriggerStore decoratedStore,
+    IMemoryCache cache,
+    IHasher hasher,
+    IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : ITriggerStore
 {
     private static readonly string CacheInvalidationTokenKey = typeof(CachingTriggerStore).FullName!;
-    
+
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
@@ -36,18 +36,17 @@ public class CachingTriggerStore(
     }
 
     /// <inheritdoc />
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = hasher.Hash(filter);
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindAsync(filter, cancellationToken)))!;
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        var cacheEntry = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
-            entry.AddExpirationToken(invalidationRequestToken);
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            return (await decoratedStore.FindManyAsync(filter, cancellationToken)).ToList();
-        });
-        
-        return cacheEntry!;
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, cancellationToken)))!;
     }
 
     /// <inheritdoc />
@@ -62,5 +61,17 @@ public class CachingTriggerStore(
     {
         changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
         return decoratedStore.DeleteManyAsync(filter, cancellationToken);
+    }
+
+    private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
+    {
+        var internalKey = $"{typeof(T).Name}:{key}";
+        return await cache.GetOrCreateAsync(internalKey, async entry =>
+        {
+            var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
+            entry.AddExpirationToken(invalidationRequestToken);
+            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
+            return await factory();
+        });
     }
 }

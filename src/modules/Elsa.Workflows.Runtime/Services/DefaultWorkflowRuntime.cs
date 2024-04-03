@@ -513,8 +513,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return results;
     }
 
-    private async Task<IEnumerable<WorkflowMatch>> FindResumableWorkflowsAsync(WorkflowsFilter workflowsFilter,
-        CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<WorkflowMatch>> FindResumableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken = default)
     {
         var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var correlationId = workflowsFilter.Options.CorrelationId;
@@ -531,8 +530,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return collectedWorkflows;
     }
 
-    private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource,
-        CancellationToken cancellationToken)
+    private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource, CancellationToken cancellationToken)
     {
         return await _distributedLockProvider.AcquireLockAsync(resource, TimeSpan.FromMinutes(2), cancellationToken);
     }

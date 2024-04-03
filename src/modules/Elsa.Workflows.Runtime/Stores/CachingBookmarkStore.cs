@@ -36,18 +36,17 @@ public class CachingBookmarkStore(
     }
 
     /// <inheritdoc />
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = hasher.Hash(filter);
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindAsync(filter, cancellationToken)))!;
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        var cacheEntry = await cache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
-            entry.AddExpirationToken(invalidationRequestToken);
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            return (await decoratedStore.FindManyAsync(filter, cancellationToken)).ToList();
-        });
-
-        return cacheEntry!;
+        return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, cancellationToken)))!;
     }
 
     /// <inheritdoc />
@@ -55,5 +54,18 @@ public class CachingBookmarkStore(
     {
         changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
         return await decoratedStore.DeleteAsync(filter, cancellationToken);
+    }
+    
+    private async ValueTask<T?> GetOrCreateAsync<T>(string key, Func<Task<T?>> factory)
+    {
+        var cacheEntry = await cache.GetOrCreateAsync(key, async entry =>
+        {
+            var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
+            entry.AddExpirationToken(invalidationRequestToken);
+            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
+            return await factory();
+        });
+
+        return cacheEntry!;
     }
 }

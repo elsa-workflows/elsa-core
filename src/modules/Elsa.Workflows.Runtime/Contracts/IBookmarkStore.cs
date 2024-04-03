@@ -19,6 +19,11 @@ public interface IBookmarkStore
     ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Returns the first bookmark matching the specified filter.
+    /// </summary>
+    ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Returns a set of bookmarks matching the specified filter.
     /// </summary>
     ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);

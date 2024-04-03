@@ -19,6 +19,11 @@ public interface ITriggerStore
     ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns the first record matching the specified filter.
+    /// </summary>
+    ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Returns all records matching the specified filter.
     /// </summary>
     ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default);

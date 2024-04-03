@@ -20,16 +20,28 @@ public class MongoTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => 
+    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
+    {
         await _mongoDbStore.SaveAsync(record, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => 
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    {
         await _mongoDbStore.SaveManyAsync(records, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
