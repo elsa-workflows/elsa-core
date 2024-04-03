@@ -70,14 +70,13 @@ public class RabbitMqServiceBusFeature : FeatureBase
 
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
-                        
                         configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
                             endpointConfigurator =>
                             {
                                 endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                                 endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                
+                                endpointConfigurator.Durable = false;
+                                endpointConfigurator.AutoDelete = true;
                                 endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                     }
