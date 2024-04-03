@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Http.Handlers;
 
 /// <summary>
-/// A handler that updates the route table when workflow triggers and bookmarks are indexed.
+/// A handler that invalidates the HTTP workflows cache when a workflow definition is published, retracted, or deleted or when triggers are indexed.
 /// </summary>
 [UsedImplicitly]
 public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) :
