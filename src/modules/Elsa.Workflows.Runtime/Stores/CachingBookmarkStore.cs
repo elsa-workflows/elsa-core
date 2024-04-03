@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Options;
+using Elsa.Caching.Contracts;
+using Elsa.Caching.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -13,9 +13,9 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// A decorator for <see cref="IBookmarkStore"/> that caches bookmark records.
 /// </summary>
 public class CachingBookmarkStore(
-    IBookmarkStore decoratedStore, 
-    IMemoryCache cache, 
-    IHasher hasher, 
+    IBookmarkStore decoratedStore,
+    IMemoryCache cache,
+    IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IBookmarkStore
 {
@@ -55,7 +55,7 @@ public class CachingBookmarkStore(
         changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
         return await decoratedStore.DeleteAsync(filter, cancellationToken);
     }
-    
+
     private async ValueTask<T?> GetOrCreateAsync<T>(string key, Func<Task<T?>> factory)
     {
         var cacheEntry = await cache.GetOrCreateAsync(key, async entry =>

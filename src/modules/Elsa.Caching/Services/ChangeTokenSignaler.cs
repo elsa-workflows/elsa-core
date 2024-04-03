@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using Elsa.Common.Contracts;
+using Elsa.Caching.Contracts;
 using Microsoft.Extensions.Primitives;
 
-namespace Elsa.Common.Services;
+namespace Elsa.Caching.Services;
 
 /// <inheritdoc />
 public class ChangeTokenSignaler : IChangeTokenSignaler

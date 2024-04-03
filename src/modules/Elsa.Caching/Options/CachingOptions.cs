@@ -1,4 +1,4 @@
-namespace Elsa.Common.Options;
+namespace Elsa.Caching.Options;
 
 /// <summary>
 /// Provides options for configuring caching.

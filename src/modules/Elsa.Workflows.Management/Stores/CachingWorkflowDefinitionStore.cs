@@ -1,6 +1,6 @@
-using Elsa.Common.Contracts;
+using Elsa.Caching.Contracts;
+using Elsa.Caching.Options;
 using Elsa.Common.Models;
-using Elsa.Common.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;

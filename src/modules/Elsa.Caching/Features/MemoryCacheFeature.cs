@@ -1,11 +1,11 @@
-﻿using Elsa.Common.Contracts;
-using Elsa.Common.Options;
-using Elsa.Common.Services;
+﻿using Elsa.Caching.Contracts;
+using Elsa.Caching.Options;
+using Elsa.Caching.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Common.Features;
+namespace Elsa.Caching.Features;
 
 /// <summary>
 /// Configures the MemoryCache.

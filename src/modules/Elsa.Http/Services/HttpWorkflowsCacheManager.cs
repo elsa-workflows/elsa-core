@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Options;
+using Elsa.Caching.Contracts;
+using Elsa.Caching.Options;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Activities;

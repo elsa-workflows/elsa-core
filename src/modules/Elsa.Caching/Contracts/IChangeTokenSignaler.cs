@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Primitives;
 
-namespace Elsa.Common.Contracts;
+namespace Elsa.Caching.Contracts;
 
 /// <summary>
 /// Provides change tokens for memory caches, allowing code to evict cache entries by triggering a signal.

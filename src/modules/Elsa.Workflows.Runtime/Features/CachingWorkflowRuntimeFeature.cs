@@ -1,4 +1,4 @@
-using Elsa.Common.Features;
+using Elsa.Caching.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
+using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;

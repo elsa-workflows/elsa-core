@@ -19,7 +19,6 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Workflows.Management.Compression;
-using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading.FileSystem;
@@ -42,7 +41,7 @@ const bool useMassTransit = true;
 const bool useZipCompression = true;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool runEFCoreMigrations = true;
-const bool useMemoryStores = false;
+const bool useMemoryStores = true;
 const bool useCachingStores = true;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -236,7 +235,7 @@ services
                     scheduling.UseQuartzScheduler();
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
-            .UseRealTimeWorkflows()
+            //.UseRealTimeWorkflows()
             .UseCSharp(options =>
             {
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
@@ -386,7 +385,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // SignalR.
-app.UseWorkflowsSignalRHubs();
+//app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();
