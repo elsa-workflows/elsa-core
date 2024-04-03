@@ -81,7 +81,7 @@ public class AzureServiceBusFeature : FeatureBase
                     
                     foreach (var consumer in temporaryConsumers)
                     {
-                        var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
+                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
                         configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
                         {
                             endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);

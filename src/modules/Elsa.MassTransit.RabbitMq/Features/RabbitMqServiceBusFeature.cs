@@ -68,7 +68,7 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     {
                         configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
                         
-                        var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
+                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
                         configurator.ReceiveEndpoint(queueName,
                             endpointConfigurator =>
                             {

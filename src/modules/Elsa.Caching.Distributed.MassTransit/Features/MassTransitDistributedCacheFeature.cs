@@ -21,11 +21,12 @@ public class MassTransitDistributedCacheFeature(IModule module) : FeatureBase(mo
     public override void Configure()
     {
         Module.AddMassTransitConsumer<TriggerChangeTokenSignalConsumer>("elsa-trigger-change-token-signal", true);
+        Module.Use<DistributedCacheFeature>(feature => feature.WithChangeTokenSignalPublisher(sp => sp.GetRequiredService<MassTransitChangeTokenSignalPublisher>()));
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<MassTransitChangeTokenSignalPublisher>();
+        Services.AddSingleton<MassTransitChangeTokenSignalPublisher>();
     }
 }
