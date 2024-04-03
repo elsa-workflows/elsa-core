@@ -417,7 +417,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
         if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
-        
+
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
 
