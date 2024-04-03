@@ -97,7 +97,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     {
         // Load the workflow definition.
         var versionOptions = options?.VersionOptions ?? VersionOptions.Published;
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
 
         if (workflowDefinition == null)
             return null;

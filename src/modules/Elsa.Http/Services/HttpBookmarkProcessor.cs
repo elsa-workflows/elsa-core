@@ -80,7 +80,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
                 continue;
             }
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(
                 workflowState.DefinitionId,
                 VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
                 systemCancellationToken);

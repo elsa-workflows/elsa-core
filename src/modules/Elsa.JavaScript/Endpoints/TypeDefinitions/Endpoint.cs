@@ -54,7 +54,7 @@ internal class Get : ElsaEndpoint<Request>
 
     private async Task<Workflow?> GetWorkflowDefinition(string workflowDefinitionId, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
 
         if (workflowDefinition == null)
             return null;

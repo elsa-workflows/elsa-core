@@ -91,7 +91,7 @@ public class HttpWorkflowsCacheManager(
     private async Task<Workflow?> FindWorkflowAsync(StoredTrigger trigger, CancellationToken cancellationToken)
     {
         var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
-        var workflowDefinition = await workflowDefinitionService.FindAsync(workflowDefinitionId, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, cancellationToken);
 
         if (workflowDefinition == null)
             return default;

@@ -57,7 +57,7 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         if (workflowState == null)
             throw new Exception("Workflow state not found");
 
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Workflow definition not found");

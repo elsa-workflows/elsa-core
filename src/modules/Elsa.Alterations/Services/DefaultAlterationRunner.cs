@@ -75,7 +75,7 @@ public class DefaultAlterationRunner : IAlterationRunner
         }
 
         // Load workflow definition.
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionVersionId, cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowState.DefinitionVersionId, cancellationToken);
 
         // If the workflow definition is not found, log an error and continue.
         if (workflowDefinition == null)

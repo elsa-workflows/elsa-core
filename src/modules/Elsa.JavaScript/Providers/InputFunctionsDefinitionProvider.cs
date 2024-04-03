@@ -26,7 +26,7 @@ internal class InputFunctionsDefinitionProvider : FunctionDefinitionProvider
     {
         var cancellationToken = context.CancellationToken;
         var workflow = context.Workflow;
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflow.Identity.DefinitionId, VersionOptions.SpecificVersion(workflow.Identity.Version), cancellationToken);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflow.Identity.DefinitionId, VersionOptions.SpecificVersion(workflow.Identity.Version), cancellationToken);
         return workflowDefinition == null ? Array.Empty<FunctionDefinition>() : GetFunctionDefinitionsAsync(workflowDefinition);
     }
     

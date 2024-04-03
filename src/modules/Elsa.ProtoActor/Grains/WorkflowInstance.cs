@@ -79,7 +79,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
 
         // Load the workflow definition.
-        var workflowDefinition = await workflowDefinitionService.FindAsync(_definitionId, VersionOptions.SpecificVersion(_version), cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(_definitionId, VersionOptions.SpecificVersion(_version), cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Workflow definition is no longer available");
@@ -371,7 +371,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");
@@ -387,7 +387,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var versionOptions = VersionOptions.SpecificVersion(workflowState.DefinitionVersion);
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
 
         if (workflowDefinition == null)
             throw new Exception("Specified workflow definition and version does not exist");

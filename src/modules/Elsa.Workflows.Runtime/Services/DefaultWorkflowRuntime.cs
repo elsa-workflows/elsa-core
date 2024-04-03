@@ -128,7 +128,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             if (workflowState == null)
                 throw new Exception("Workflow state not found");
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId,
+            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowState.DefinitionId,
                 VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
             if (workflowDefinition == null)
@@ -234,7 +234,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var definitionId = workflowInstance.DefinitionId;
             var version = workflowInstance.Version;
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(
                 definitionId,
                 VersionOptions.SpecificVersion(version),
                 systemCancellationToken);

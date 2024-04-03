@@ -1,6 +1,8 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Handlers;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +21,9 @@ public class CachingWorkflowDefinitionsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.AddSingleton<IWorkflowDefinitionCacheManager, WorkflowDefinitionCacheManager>();
         Services.Decorate<IWorkflowDefinitionStore, CachingWorkflowDefinitionStore>();
+        Services.AddSingleton<IWorkflowDefinitionService, CachingWorkflowDefinitionService>();
+        Services.AddNotificationHandler<EvictWorkflowDefinitionServiceCache>();
     }
 }

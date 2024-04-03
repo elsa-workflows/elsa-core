@@ -63,7 +63,7 @@ public class TriggerIndexer : ITriggerIndexer
 
         foreach (string workflowDefinitionVersionId in workflowDefinitionVersionIds)
         {
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowDefinitionVersionId, cancellationToken);
+            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionVersionId, cancellationToken);
 
             if (workflowDefinition == null)
                 continue;

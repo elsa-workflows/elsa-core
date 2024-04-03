@@ -139,7 +139,7 @@ public class HttpWorkflowsMiddleware
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
-        var workflowDefinition = await workflowDefinitionService.FindAsync(workflowDefinitionId, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, cancellationToken);
 
         if (workflowDefinition == null)
             return default;
@@ -154,7 +154,7 @@ public class HttpWorkflowsMiddleware
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
         var workflowHostFactory = serviceProvider.GetRequiredService<IWorkflowHostFactory>();
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
         if (workflowDefinition == null)
         {
@@ -202,7 +202,7 @@ public class HttpWorkflowsMiddleware
         }
 
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowInstance.DefinitionVersionId, cancellationToken);
 
         if (workflowDefinition == null)
         {

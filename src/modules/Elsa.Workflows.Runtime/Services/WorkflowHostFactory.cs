@@ -31,7 +31,7 @@ public class WorkflowHostFactory : IWorkflowHostFactory
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
         
         if(workflowDefinition == null)
             return default;
