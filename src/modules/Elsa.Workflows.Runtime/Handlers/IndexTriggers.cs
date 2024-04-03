@@ -5,7 +5,6 @@ using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
-// ReSharper disable once UnusedType.Global
 [UsedImplicitly]
 internal class IndexTriggers(ITriggerIndexer triggerIndexer) :
     INotificationHandler<WorkflowDefinitionPublished>,
