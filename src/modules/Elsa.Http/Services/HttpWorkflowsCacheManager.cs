@@ -1,7 +1,10 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Options;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -17,15 +20,28 @@ public class HttpWorkflowsCacheManager(
     IMemoryCache memoryCache,
     ITriggerStore triggerStore,
     IWorkflowDefinitionService workflowDefinitionService,
+    IBookmarkHasher bookmarkHasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IHttpWorkflowsCacheManager
 {
+    private static readonly string HttpEndpointActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+    
     /// <inheritdoc />
-    public async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindCachedWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
+    public string ComputeBookmarkHash(string path, string method)
+    {
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+        return bookmarkHasher.Hash(HttpEndpointActivityTypeName, bookmarkPayload);
+    }
+
+    /// <inheritdoc />
+    public async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
         var key = $"workflow:{bookmarkHash}";
         return await memoryCache.GetOrCreateAsync(key, async entry =>
         {
+            entry.SetSlidingExpiration(cachingOptions.Value.CacheDuration);
+            entry.AddExpirationToken(changeTokenSignaler.GetToken(GetTriggerChangeTokenKey(bookmarkHash)));
+            
             var triggers = await FindTriggersAsync(bookmarkHash, cancellationToken).ToList();
 
             if (triggers.Count > 1)
@@ -41,19 +57,25 @@ public class HttpWorkflowsCacheManager(
             if (workflow == null)
                 return default;
 
-            var changeTokenKey = GetChangeTokenKey(workflow.Identity.DefinitionId);
+            var changeTokenKey = GetWorkflowChangeTokenKey(workflow.Identity.DefinitionId);
             var changeToken = changeTokenSignaler.GetToken(changeTokenKey);
             entry.AddExpirationToken(changeToken);
-            entry.SetSlidingExpiration(cachingOptions.Value.CacheDuration);
-
+            
             return (workflow, triggers);
         });
     }
 
     /// <inheritdoc />
-    public void EvictCachedWorkflow(string workflowDefinitionId)
+    public void EvictWorkflow(string workflowDefinitionId)
     {
-        var changeTokenKey = GetChangeTokenKey(workflowDefinitionId);
+        var changeTokenKey = GetWorkflowChangeTokenKey(workflowDefinitionId);
+        changeTokenSignaler.TriggerToken(changeTokenKey);
+    }
+
+    /// <inheritdoc />
+    public void EvictTrigger(string bookmarkHash)
+    {
+        var changeTokenKey = GetTriggerChangeTokenKey(bookmarkHash);
         changeTokenSignaler.TriggerToken(changeTokenKey);
     }
 
@@ -77,5 +99,6 @@ public class HttpWorkflowsCacheManager(
         return await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
     }
 
-    private string GetChangeTokenKey(string workflowDefinitionId) => $"workflow:{workflowDefinitionId}:changeToken";
+    private string GetWorkflowChangeTokenKey(string workflowDefinitionId) => $"{GetType().FullName}:workflow:{workflowDefinitionId}:changeToken";
+    private string GetTriggerChangeTokenKey(string bookmarkHash) => $"{GetType().FullName}:trigger:{bookmarkHash}:changeToken";
 }

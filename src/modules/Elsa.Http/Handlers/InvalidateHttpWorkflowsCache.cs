@@ -1,6 +1,7 @@
 ﻿using Elsa.Http.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
 namespace Elsa.Http.Handlers;
@@ -9,7 +10,11 @@ namespace Elsa.Http.Handlers;
 /// A handler that updates the route table when workflow triggers and bookmarks are indexed.
 /// </summary>
 [UsedImplicitly]
-public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) : INotificationHandler<WorkflowDefinitionPublished>, INotificationHandler<WorkflowDefinitionRetracted>, INotificationHandler<WorkflowDefinitionDeleted>
+public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) : 
+    INotificationHandler<WorkflowDefinitionPublished>, 
+    INotificationHandler<WorkflowDefinitionRetracted>, 
+    INotificationHandler<WorkflowDefinitionDeleted>,
+    INotificationHandler<WorkflowTriggersIndexed>
 {
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
@@ -28,10 +33,24 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
     {
         return InvalidateCacheAsync(notification.DefinitionId);
     }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
+    {
+        var hashes = new List<string>();
+        hashes.AddRange(notification.IndexedWorkflowTriggers.RemovedTriggers.Select(x => x.Hash)!);
+        hashes.AddRange(notification.IndexedWorkflowTriggers.AddedTriggers.Select(x => x.Hash)!);
+        
+        foreach (string hash in hashes) 
+            httpWorkflowsCacheManager.EvictTrigger(hash);
+        
+        InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
+        return Task.CompletedTask;
+    }
     
     private Task InvalidateCacheAsync(string workflowDefinitionId)
     {
-        httpWorkflowsCacheManager.EvictCachedWorkflow(workflowDefinitionId);
+        httpWorkflowsCacheManager.EvictWorkflow(workflowDefinitionId);
         return Task.CompletedTask;
     }
 }

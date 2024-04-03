@@ -22,9 +22,6 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Common.Contracts;
-using Elsa.Common.Options;
-using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -82,17 +79,15 @@ public class HttpWorkflowsMiddleware
         var cancellationToken = httpContext.RequestAborted;
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
-        var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
-        var bookmarkHash = bookmarkHasher.Hash(_activityTypeName, bookmarkPayload);
         var httpEndpointCacheManager = serviceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
-        var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindCachedWorkflowAsync(bookmarkHash, cancellationToken);
+        var bookmarkHash = httpEndpointCacheManager.ComputeBookmarkHash(matchingPath, method);
+        var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
         if (cachedWorkflowAndTriggers != null)
         {
             var triggers = cachedWorkflowAndTriggers.Value.Triggers;
 
-            if (triggers.Count > 1)
+            if (triggers?.Count > 1)
             {
                 await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
                 {
@@ -101,10 +96,10 @@ public class HttpWorkflowsMiddleware
                 return;
             }
 
-            var trigger = triggers.FirstOrDefault();
-            var workflow = cachedWorkflowAndTriggers.Value.Workflow!;
+            var trigger = triggers?.FirstOrDefault();
             if (trigger != null)
             {
+                var workflow = cachedWorkflowAndTriggers.Value.Workflow!;
                 await StartWorkflowAsync(httpContext, trigger, workflow, input);
                 return;
             }
