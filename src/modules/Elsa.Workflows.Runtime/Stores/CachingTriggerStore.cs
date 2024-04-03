@@ -22,17 +22,17 @@ public class CachingTriggerStore(
     private static readonly string CacheInvalidationTokenKey = typeof(CachingTriggerStore).FullName!;
 
     /// <inheritdoc />
-    public ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
+    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
-        return decoratedStore.SaveAsync(record, cancellationToken);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await decoratedStore.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
-        return decoratedStore.SaveManyAsync(records, cancellationToken);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await decoratedStore.SaveManyAsync(records, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -50,17 +50,17 @@ public class CachingTriggerStore(
     }
 
     /// <inheritdoc />
-    public ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
+    public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
-        return decoratedStore.ReplaceAsync(removed, added, cancellationToken);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await decoratedStore.ReplaceAsync(removed, added, cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
-        return decoratedStore.DeleteManyAsync(filter, cancellationToken);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        return await decoratedStore.DeleteManyAsync(filter, cancellationToken);
     }
 
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)

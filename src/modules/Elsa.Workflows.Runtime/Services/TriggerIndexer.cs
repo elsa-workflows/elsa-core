@@ -84,7 +84,7 @@ public class TriggerIndexer : ITriggerIndexer
     public async Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         // Get current triggers
-        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.Id, cancellationToken).ToList();
+        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
         // Collect new triggers **if workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
@@ -121,7 +121,7 @@ public class TriggerIndexer : ITriggerIndexer
     public async Task<IndexedWorkflowTriggers> DeleteTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
         var emptyTriggerList = new List<StoredTrigger>(0);
-        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.Id, cancellationToken).ToList();
+        var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
         var diff = Diff.For(currentTriggers, emptyTriggerList, new WorkflowTriggerEqualityComparer());
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
@@ -129,11 +129,11 @@ public class TriggerIndexer : ITriggerIndexer
         return indexedWorkflow;
     }
 
-    private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken)
+    private async Task<IEnumerable<StoredTrigger>> GetCurrentTriggersAsync(string workflowDefinitionId, CancellationToken cancellationToken)
     {
         var filter = new TriggerFilter
         {
-            WorkflowDefinitionVersionId = workflowDefinitionVersionId
+            WorkflowDefinitionId = workflowDefinitionId
         };
         return await _triggerStore.FindManyAsync(filter, cancellationToken);
     }

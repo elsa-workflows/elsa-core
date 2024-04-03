@@ -10,9 +10,9 @@ namespace Elsa.Http.Handlers;
 /// A handler that updates the route table when workflow triggers and bookmarks are indexed.
 /// </summary>
 [UsedImplicitly]
-public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) : 
-    INotificationHandler<WorkflowDefinitionPublished>, 
-    INotificationHandler<WorkflowDefinitionRetracted>, 
+public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) :
+    INotificationHandler<WorkflowDefinitionPublished>,
+    INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowTriggersIndexed>
 {
@@ -35,22 +35,20 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
         var hashes = new List<string>();
         hashes.AddRange(notification.IndexedWorkflowTriggers.RemovedTriggers.Select(x => x.Hash)!);
         hashes.AddRange(notification.IndexedWorkflowTriggers.AddedTriggers.Select(x => x.Hash)!);
-        
-        foreach (string hash in hashes) 
-            httpWorkflowsCacheManager.EvictTrigger(hash);
-        
-        InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
-        return Task.CompletedTask;
+
+        foreach (string hash in hashes)
+            await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);
+
+        await InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
     }
-    
-    private Task InvalidateCacheAsync(string workflowDefinitionId)
+
+    private async Task InvalidateCacheAsync(string workflowDefinitionId)
     {
-        httpWorkflowsCacheManager.EvictWorkflow(workflowDefinitionId);
-        return Task.CompletedTask;
+        await httpWorkflowsCacheManager.EvictWorkflowAsync(workflowDefinitionId);
     }
 }

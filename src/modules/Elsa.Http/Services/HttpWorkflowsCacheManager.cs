@@ -66,17 +66,17 @@ public class HttpWorkflowsCacheManager(
     }
 
     /// <inheritdoc />
-    public void EvictWorkflow(string workflowDefinitionId)
+    public async Task EvictWorkflowAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
         var changeTokenKey = GetWorkflowChangeTokenKey(workflowDefinitionId);
-        changeTokenSignaler.TriggerToken(changeTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
-    public void EvictTrigger(string bookmarkHash)
+    public async Task EvictTriggerAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
         var changeTokenKey = GetTriggerChangeTokenKey(bookmarkHash);
-        changeTokenSignaler.TriggerToken(changeTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
     }
 
     private async Task<IEnumerable<StoredTrigger>> FindTriggersAsync(string bookmarkHash, CancellationToken cancellationToken)

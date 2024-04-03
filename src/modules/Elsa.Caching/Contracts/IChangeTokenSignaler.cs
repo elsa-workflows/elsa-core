@@ -15,5 +15,5 @@ public interface IChangeTokenSignaler
     /// <summary>
     /// Triggers the change token for the specified key.
     /// </summary>
-    void TriggerToken(string key);
+    ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default);
 }

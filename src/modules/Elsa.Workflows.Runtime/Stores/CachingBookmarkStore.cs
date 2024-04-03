@@ -24,14 +24,14 @@ public class CachingBookmarkStore(
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
         await decoratedStore.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
         await decoratedStore.SaveManyAsync(records, cancellationToken);
     }
 
@@ -52,7 +52,7 @@ public class CachingBookmarkStore(
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
         return await decoratedStore.DeleteAsync(filter, cancellationToken);
     }
 

@@ -23,10 +23,12 @@ public class ChangeTokenSignaler : IChangeTokenSignaler
     }
 
     /// <inheritdoc />
-    public void TriggerToken(string key)
+    public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
     {
         if (_changeTokens.TryRemove(key, out var changeTokenInfo))
             changeTokenInfo.TokenSource.Cancel();
+        
+        return default;
     }
 
     private readonly struct ChangeTokenInfo(IChangeToken changeToken, CancellationTokenSource tokenSource)

@@ -104,21 +104,21 @@ public class CachingWorkflowDefinitionStore(
     public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         await decoratedStore.SaveAsync(definition, cancellationToken);
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await decoratedStore.SaveManyAsync(definitions, cancellationToken);
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var result = await decoratedStore.DeleteAsync(filter, cancellationToken);
-        changeTokenSignaler.TriggerToken(CacheInvalidationTokenKey);
+        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
         return result;
     }
 

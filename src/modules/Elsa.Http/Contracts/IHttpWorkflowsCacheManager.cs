@@ -8,6 +8,9 @@ namespace Elsa.Http.Contracts;
 /// </summary>
 public interface IHttpWorkflowsCacheManager
 {
+    /// <summary>
+    /// Computes a bookmark hash for a given path and method.
+    /// </summary>
     string ComputeBookmarkHash(string path, string method);
     
     /// <summary>
@@ -18,10 +21,10 @@ public interface IHttpWorkflowsCacheManager
     /// <summary>
     /// Evicts a cached entry by its definition ID.
     /// </summary>
-    void EvictWorkflow(string workflowDefinitionId);
+    Task EvictWorkflowAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Evicts a cached entry by its bookmark hash.
     /// </summary>
-    void EvictTrigger(string bookmarkHash);
+    Task EvictTriggerAsync(string bookmarkHash, CancellationToken cancellationToken = default);
 }
