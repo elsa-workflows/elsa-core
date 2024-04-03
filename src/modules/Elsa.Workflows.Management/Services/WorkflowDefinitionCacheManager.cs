@@ -1,12 +1,11 @@
 using Elsa.Caching.Contracts;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management.Contracts;
-using Microsoft.Extensions.Caching.Memory;
 
 namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
-public class WorkflowDefinitionCacheManager(IMemoryCache memoryCache, IChangeTokenSignaler changeTokenSignaler) : IWorkflowDefinitionCacheManager
+public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSignaler) : IWorkflowDefinitionCacheManager
 {
     /// <inheritdoc />
     public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"WorkflowDefinition:{definitionId}:{versionOptions}";
@@ -22,24 +21,6 @@ public class WorkflowDefinitionCacheManager(IMemoryCache memoryCache, IChangeTok
 
     /// <inheritdoc />
     public string CreateWorkflowDefinitionChangeTokenKey(string definitionId) => $"WorkflowChangeToken:{definitionId}";
-
-    /// <inheritdoc />
-    public string CreateWorkflowDefinitionVersionChangeTokenKey(string definitionVersionId) => $"WorkflowChangeToken:{definitionVersionId}";
-
-    /// <inheritdoc />
-    public Task EvictWorkflowDefinitionVersionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        var cacheKey = CreateWorkflowDefinitionVersionCacheKey(definitionId, versionOptions);
-        memoryCache.Remove(cacheKey);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public async Task EvictWorkflowDefinitionVersionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
-    {
-        var changeTokenKey = CreateWorkflowDefinitionVersionChangeTokenKey(definitionVersionId);
-        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task EvictWorkflowDefinitionAsync(string definitionId, CancellationToken cancellationToken = default)

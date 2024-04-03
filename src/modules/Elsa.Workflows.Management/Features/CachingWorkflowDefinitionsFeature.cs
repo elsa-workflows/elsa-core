@@ -23,7 +23,7 @@ public class CachingWorkflowDefinitionsFeature : FeatureBase
     {
         Services.AddSingleton<IWorkflowDefinitionCacheManager, WorkflowDefinitionCacheManager>();
         Services.Decorate<IWorkflowDefinitionStore, CachingWorkflowDefinitionStore>();
-        Services.AddSingleton<IWorkflowDefinitionService, CachingWorkflowDefinitionService>();
+        Services.Decorate<IWorkflowDefinitionService, CachingWorkflowDefinitionService>();
         Services.AddNotificationHandler<EvictWorkflowDefinitionServiceCache>();
     }
 }

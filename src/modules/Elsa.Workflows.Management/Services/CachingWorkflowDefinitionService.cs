@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
@@ -12,6 +13,7 @@ namespace Elsa.Workflows.Management.Services;
 /// <summary>
 /// Decorates an <see cref="IWorkflowDefinitionService"/> with caching capabilities.
 /// </summary>
+[UsedImplicitly]
 public class CachingWorkflowDefinitionService(
     IWorkflowDefinitionService decoratedService,
     IWorkflowDefinitionCacheManager cacheManager,
@@ -36,10 +38,8 @@ public class CachingWorkflowDefinitionService(
 
             if (definition == null)
                 return null;
-
-            var definitionVersionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definition.Id);
+            
             var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definition.DefinitionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionVersionChangeTokenKey));
             entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
             return definition;
         });
@@ -53,10 +53,7 @@ public class CachingWorkflowDefinitionService(
         {
             entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
             var definition = await decoratedService.FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
-
-            var definitionVersionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definitionVersionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionVersionChangeTokenKey));
-
+            
             if (definition == null)
                 return null;
 
@@ -79,9 +76,7 @@ public class CachingWorkflowDefinitionService(
                 return null;
 
             var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(workflow.Identity.DefinitionId);
-            var definitionVersionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(workflow.Identity.Id);
             entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionVersionChangeTokenKey));
             return workflow;
         });
     }
@@ -92,9 +87,7 @@ public class CachingWorkflowDefinitionService(
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
         return await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            var definitionVersionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definitionVersionId);
             entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionVersionChangeTokenKey));
             var definition = await decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken);
 
             if (definition == null)

@@ -21,13 +21,13 @@ public class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManager
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
     {
-        await workflowDefinitionCacheManager.EvictWorkflowDefinitionVersionAsync(notification.WorkflowDefinition.Id, cancellationToken);
+        await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     {
-        await workflowDefinitionCacheManager.EvictWorkflowDefinitionVersionAsync(notification.WorkflowDefinition.Id, cancellationToken);
+        await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
