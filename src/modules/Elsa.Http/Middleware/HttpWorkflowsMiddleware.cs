@@ -125,12 +125,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowDefinitionId, cancellationToken);
-
-        if (workflowDefinition == null)
-            return default;
-
-        return await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, cancellationToken);
     }
 
     private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, Workflow workflow, IDictionary<string, object> input)
@@ -188,15 +183,14 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         }
 
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowInstance.DefinitionVersionId, cancellationToken);
 
-        if (workflowDefinition == null)
+        if (workflow == null)
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
 
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         var workflowState = workflowInstance.WorkflowState;
         var workflowHostFactory = serviceProvider.GetRequiredService<IWorkflowHostFactory>();
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
