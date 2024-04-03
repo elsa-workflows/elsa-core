@@ -29,22 +29,9 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware
+public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
 {
-    private readonly RequestDelegate _next;
-    private readonly HttpActivityOptions _options;
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public HttpWorkflowsMiddleware(
-        RequestDelegate next,
-        IOptions<HttpActivityOptions> options)
-    {
-        _next = next;
-        _options = options.Value;
-    }
 
     /// <summary>
     /// Attempts to match the inbound request path to an associated workflow and then run that workflow.
@@ -53,14 +40,14 @@ public class HttpWorkflowsMiddleware
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
         var path = GetPath(httpContext);
-        var basePath = _options.BasePath?.ToString().NormalizeRoute();
+        var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
         // If the request path does not match the configured base path to handle workflows, then skip.
         if (!string.IsNullOrWhiteSpace(basePath))
         {
             if (!path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
             {
-                await _next(httpContext);
+                await next(httpContext);
                 return;
             }
 
@@ -131,7 +118,7 @@ public class HttpWorkflowsMiddleware
         }
 
         // If no base path was configured, the request should be handled by subsequent middlewares. 
-        await _next(httpContext);
+        await next(httpContext);
     }
 
     private async Task<Workflow?> FindWorkflowAsync(IServiceProvider serviceProvider, StoredTrigger trigger, CancellationToken cancellationToken)
