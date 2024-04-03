@@ -22,6 +22,7 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common.Contracts;
 using Elsa.Common.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
@@ -32,7 +33,7 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class WorkflowsMiddleware
+public class HttpWorkflowsMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly HttpActivityOptions _options;
@@ -41,7 +42,7 @@ public class WorkflowsMiddleware
     /// <summary>
     /// Constructor.
     /// </summary>
-    public WorkflowsMiddleware(
+    public HttpWorkflowsMiddleware(
         RequestDelegate next,
         IOptions<HttpActivityOptions> options)
     {
@@ -84,7 +85,8 @@ public class WorkflowsMiddleware
         var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
         var bookmarkHash = bookmarkHasher.Hash(_activityTypeName, bookmarkPayload);
-        var cachedWorkflowAndTriggers = await FindCachedWorkflowAsync(serviceProvider, bookmarkHash, cancellationToken);
+        var httpEndpointCacheManager = serviceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
+        var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindCachedWorkflowAsync(bookmarkHash, cancellationToken);
 
         if (cachedWorkflowAndTriggers != null)
         {
@@ -136,34 +138,6 @@ public class WorkflowsMiddleware
 
         // If no base path was configured, the request should be handled by subsequent middlewares. 
         await _next(httpContext);
-    }
-
-    private async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindCachedWorkflowAsync(IServiceProvider serviceProvider, string bookmarkHash, CancellationToken cancellationToken)
-    {
-        var cache = serviceProvider.GetRequiredService<IMemoryCache>();
-        
-        var key = $"workflow:{bookmarkHash}";
-        return await cache.GetOrCreateAsync(key, async entry =>
-        {
-            var cacheOptions = serviceProvider.GetRequiredService<IOptions<CachingOptions>>().Value;
-            entry.SetSlidingExpiration(cacheOptions.CacheDuration);
-            var triggers = await FindTriggersAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
-
-            if (triggers.Count > 1)
-                return (default, triggers);
-
-            var trigger = triggers.SingleOrDefault();
-
-            if (trigger == null)
-                return default;
-
-            var workflow = await FindWorkflowAsync(serviceProvider, trigger, cancellationToken);
-
-            if (workflow == null)
-                return default;
-
-            return (workflow, triggers);
-        });
     }
 
     private async Task<Workflow?> FindWorkflowAsync(IServiceProvider serviceProvider, StoredTrigger trigger, CancellationToken cancellationToken)

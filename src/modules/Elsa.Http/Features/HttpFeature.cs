@@ -112,12 +112,7 @@ public class HttpFeature : FeatureBase
         {
             management.AddVariableTypes(new[]
             {
-                typeof(RouteData),
-                typeof(HttpRequest),
-                typeof(HttpResponse),
-                typeof(HttpResponseMessage),
-                typeof(HttpHeaders),
-                typeof(IFormFile)
+                typeof(RouteData), typeof(HttpRequest), typeof(HttpResponse), typeof(HttpResponseMessage), typeof(HttpHeaders), typeof(IFormFile)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -153,18 +148,20 @@ public class HttpFeature : FeatureBase
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
+            .AddScoped<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
 
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
+            .AddNotificationHandler<InvalidateHttpWorkflowsCache>()
 
-            // Content parsers.            
+            // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
-            
+
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
             .AddScoped<IHttpContentFactory, JsonContentFactory>()

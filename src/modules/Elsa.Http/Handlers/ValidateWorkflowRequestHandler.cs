@@ -7,12 +7,14 @@ using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Http.Handlers;
 
 /// <summary>
 /// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors. 
 /// </summary>
+[UsedImplicitly]
 public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRequest, ValidateWorkflowResponse>
 {
     private readonly ITriggerStore _triggerStore;
