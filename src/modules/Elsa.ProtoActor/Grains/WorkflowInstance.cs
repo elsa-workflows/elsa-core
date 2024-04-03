@@ -413,12 +413,11 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var versionOptions = VersionOptions.SpecificVersion(workflowState.DefinitionVersion);
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
 
-        if (workflowDefinition == null)
+        if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
-
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
 
