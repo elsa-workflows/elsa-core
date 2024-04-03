@@ -22,6 +22,7 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
 
@@ -140,10 +141,12 @@ public class WorkflowsMiddleware
     private async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindCachedWorkflowAsync(IServiceProvider serviceProvider, string bookmarkHash, CancellationToken cancellationToken)
     {
         var cache = serviceProvider.GetRequiredService<IMemoryCache>();
+        
         var key = $"workflow:{bookmarkHash}";
         return await cache.GetOrCreateAsync(key, async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+            var cacheOptions = serviceProvider.GetRequiredService<IOptions<CachingOptions>>().Value;
+            entry.SetSlidingExpiration(cacheOptions.CacheDuration);
             var triggers = await FindTriggersAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
 
             if (triggers.Count > 1)
