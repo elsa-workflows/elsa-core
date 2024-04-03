@@ -1,4 +1,5 @@
 using Elsa.Caching.Contracts;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching.Services;
@@ -6,7 +7,8 @@ namespace Elsa.Caching.Services;
 /// <summary>
 /// Decorates an <see cref="IChangeTokenSignaler"/> and publishes a signal after the signal has been triggered.
 /// </summary>
-public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher) : IChangeTokenSignaler
+[UsedImplicitly]
+public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher) : IChangeTokenSignaler, IDistributedChangeTokenSignaler
 {
     /// <inheritdoc />
     public IChangeToken GetToken(string key)
@@ -17,7 +19,13 @@ public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignal
     /// <inheritdoc />
     public async ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
     {
-        await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
+        await TriggerTokenLocalAsync(key, cancellationToken);
         await signalPublisher.PublishAsync(key, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask TriggerTokenLocalAsync(string key, CancellationToken cancellationToken = default)
+    {
+        await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
     }
 }

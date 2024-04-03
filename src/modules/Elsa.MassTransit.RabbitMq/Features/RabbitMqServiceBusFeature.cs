@@ -18,7 +18,7 @@ namespace Elsa.MassTransit.RabbitMq.Features;
 /// Configures MassTransit to use the RabbitMQ transport.
 /// </summary>
 [DependsOn(typeof(MassTransitFeature))]
-[DependsOn(typeof(InstanceManagementFeature))]
+[DependsOn(typeof(ClusteringFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -68,7 +68,8 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     {
                         configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
                         
-                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
+                        var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
+                        configurator.ReceiveEndpoint(queueName,
                             endpointConfigurator =>
                             {
                                 endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);

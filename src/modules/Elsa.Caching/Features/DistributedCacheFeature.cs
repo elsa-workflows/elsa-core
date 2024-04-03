@@ -18,7 +18,7 @@ public class DistributedCacheFeature(IModule module) : FeatureBase(module)
     /// A delegate to configure the <see cref="CachingOptions"/>.
     /// </summary>
     private Func<IServiceProvider, IChangeTokenSignalPublisher> ChangeTokenSignalPublisherFactory { get; set; } = _ => new NoopChangeTokenSignalPublisher();
-    
+
     /// <summary>
     /// Configures the change token signal publisher.
     /// </summary>
@@ -33,5 +33,6 @@ public class DistributedCacheFeature(IModule module) : FeatureBase(module)
     {
         Services.AddSingleton(ChangeTokenSignalPublisherFactory);
         Services.Decorate<IChangeTokenSignaler, DistributedChangeTokenSignaler>();
+        Services.AddSingleton<IDistributedChangeTokenSignaler>(sp => (DistributedChangeTokenSignaler)sp.GetRequiredService<IChangeTokenSignaler>());
     }
 }

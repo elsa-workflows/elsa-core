@@ -39,10 +39,12 @@ const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = true;
 const bool useCachingStores = true;
+const bool useDistributedCaching = true;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -150,7 +152,7 @@ services
 
                 if (useMassTransit)
                     management.UseMassTransitDispatcher();
-                
+
                 if (useCachingStores)
                     management.UseCachingStores();
             })
@@ -197,7 +199,7 @@ services
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
                     runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
-                
+
                 if (useCachingStores)
                     runtime.UseCachingStores();
 
@@ -331,6 +333,14 @@ services
                         // etc.
                     });
                 }
+            });
+        }
+
+        if (useDistributedCaching)
+        {
+            elsa.UseDistributedCache(distributedCaching =>
+            {
+                if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
             });
         }
 

@@ -44,7 +44,7 @@ services
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
             .UseDefaultAuthentication()
-            .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
+            .UseApplicationCluster(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
             .UseWorkflowManagement(management =>
             {
                 if (useMassTransit)
