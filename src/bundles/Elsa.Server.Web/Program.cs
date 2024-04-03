@@ -44,7 +44,7 @@ const bool useMemoryStores = true;
 const bool useCachingStores = true;
 const bool useDistributedCaching = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -188,7 +188,8 @@ services
                     });
                 }
 
-                if (useMassTransit) runtime.UseMassTransitDispatcher();
+                if (useMassTransit)
+                    runtime.UseMassTransitDispatcher();
 
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
@@ -237,7 +238,7 @@ services
                     scheduling.UseQuartzScheduler();
             })
             .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
-            //.UseRealTimeWorkflows()
+            .UseRealTimeWorkflows()
             .UseCSharp(options =>
             {
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
@@ -395,7 +396,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // SignalR.
-//app.UseWorkflowsSignalRHubs();
+app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();
