@@ -22,6 +22,7 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Caching.Memory;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -82,22 +83,28 @@ public class WorkflowsMiddleware
         var bookmarkPayload = new HttpEndpointBookmarkPayload(matchingPath, method);
         var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
         var bookmarkHash = bookmarkHasher.Hash(_activityTypeName, bookmarkPayload);
-        var triggers = await FindTriggersAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
+        var cachedWorkflowAndTriggers = await FindCachedWorkflowAsync(serviceProvider, bookmarkHash, cancellationToken);
 
-        if (triggers.Count > 1)
+        if (cachedWorkflowAndTriggers != null)
         {
-            await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
+            var triggers = cachedWorkflowAndTriggers.Value.Triggers;
+
+            if (triggers.Count > 1)
             {
-                x.WorkflowDefinitionId
-            }), cancellationToken);
-            return;
-        }
+                await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
+                {
+                    x.WorkflowDefinitionId
+                }), cancellationToken);
+                return;
+            }
 
-        var trigger = triggers.SingleOrDefault();
-        if (trigger != null)
-        {
-            await StartWorkflowAsync(httpContext, trigger, input);
-            return;
+            var trigger = triggers.FirstOrDefault();
+            var workflow = cachedWorkflowAndTriggers.Value.Workflow!;
+            if (trigger != null)
+            {
+                await StartWorkflowAsync(httpContext, trigger, workflow, input);
+                return;
+            }
         }
 
         var bookmarks = await FindBookmarksAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
@@ -130,7 +137,45 @@ public class WorkflowsMiddleware
         await _next(httpContext);
     }
 
-    private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, IDictionary<string, object> input)
+    private async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindCachedWorkflowAsync(IServiceProvider serviceProvider, string bookmarkHash, CancellationToken cancellationToken)
+    {
+        var cache = serviceProvider.GetRequiredService<IMemoryCache>();
+        var key = $"workflow:{bookmarkHash}";
+        return await cache.GetOrCreateAsync(key, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1);
+            var triggers = await FindTriggersAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
+
+            if (triggers.Count > 1)
+                return (default, triggers);
+
+            var trigger = triggers.SingleOrDefault();
+
+            if (trigger == null)
+                return default;
+
+            var workflow = await FindWorkflowAsync(serviceProvider, trigger, cancellationToken);
+
+            if (workflow == null)
+                return default;
+
+            return (workflow, triggers);
+        });
+    }
+
+    private async Task<Workflow?> FindWorkflowAsync(IServiceProvider serviceProvider, StoredTrigger trigger, CancellationToken cancellationToken)
+    {
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
+        var workflowDefinition = await workflowDefinitionService.FindAsync(workflowDefinitionId, cancellationToken);
+
+        if (workflowDefinition == null)
+            return default;
+
+        return await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+    }
+
+    private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, Workflow workflow, IDictionary<string, object> input)
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
@@ -145,7 +190,7 @@ public class WorkflowsMiddleware
             return;
         }
 
-        var workflowHost = await workflowHostFactory.CreateAsync(workflowDefinition, cancellationToken);
+        var workflowHost = await workflowHostFactory.CreateAsync(workflow, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
 
