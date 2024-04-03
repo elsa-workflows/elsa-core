@@ -128,13 +128,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             if (workflowState == null)
                 throw new Exception("Workflow state not found");
 
-            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(workflowState.DefinitionId,
-                VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+            var workflow = await _workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
-            if (workflowDefinition == null)
+            if (workflow == null)
                 throw new Exception("Workflow definition not found");
 
-            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
             workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
 
             if (!cancellationToken.IsCancellationRequested)
@@ -234,18 +232,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var definitionId = workflowInstance.DefinitionId;
             var version = workflowInstance.Version;
 
-            var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(
+            var workflow = await _workflowDefinitionService.FindWorkflowAsync(
                 definitionId,
                 VersionOptions.SpecificVersion(version),
                 systemCancellationToken);
 
-            if (workflowDefinition == null)
-            {
+            if (workflow == null)
                 throw new Exception($"The workflow definition {definitionId} version {version} was not found");
-            }
 
-            var workflow =
-                await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, systemCancellationToken);
             var workflowState = _workflowStateMapper.Map(workflowInstance)!;
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, systemCancellationToken);
 
@@ -355,16 +349,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId,
-        CancellationToken cancellationToken = default)
+    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var workflowInstance = await _workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
         return _workflowStateMapper.Map(workflowInstance);
     }
 
     /// <inheritdoc />
-    public async Task ImportWorkflowStateAsync(WorkflowState workflowState,
-        CancellationToken cancellationToken = default)
+    public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var workflowInstance = _workflowStateMapper.Map(workflowState)!;
         await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
@@ -377,8 +369,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowInstanceFilter
         {
@@ -411,10 +402,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 TriggerActivityId = options?.TriggerActivityId,
                 CancellationTokens = cancellationTokens
             };
-            await workflowHost.StartWorkflowAsync(startWorkflowOptions,
-                cancellationTokens.ApplicationCancellationToken);
+            await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationTokens.ApplicationCancellationToken);
             var workflowState = workflowHost.WorkflowState;
-
             await SaveWorkflowStateAsync(workflowState, cancellationTokens.SystemCancellationToken);
 
             return new WorkflowExecutionResult(
@@ -430,8 +419,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeParams? options, CancellationToken cancellationToken)
     {
         var versionOptions = options?.VersionOptions;
-        var host = await _workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published,
-            cancellationToken);
+        var host = await _workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published, cancellationToken);
 
         if (host == null)
             throw new Exception("Specified workflow definition and version does not exist");
@@ -499,13 +487,17 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     TriggerActivityId = trigger.ActivityId
                 };
                 var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
-                var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId,
-                    workflowsFilter.Options.CorrelationId, cancellationToken);
+                var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId, workflowsFilter.Options.CorrelationId, cancellationToken);
 
                 if (canStartResult.CanStart)
                 {
-                    results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance,
-                        workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId, trigger.Payload));
+                    results.Add(new StartableWorkflowMatch(
+                        workflowInstance.Id,
+                        workflowInstance,
+                        workflowsFilter.Options.CorrelationId,
+                        trigger.ActivityId,
+                        definitionId,
+                        trigger.Payload));
                 }
             }
         }
