@@ -93,7 +93,6 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
-        // Load the workflow definition.
         var versionOptions = options?.VersionOptions ?? VersionOptions.Published;
         var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
 
