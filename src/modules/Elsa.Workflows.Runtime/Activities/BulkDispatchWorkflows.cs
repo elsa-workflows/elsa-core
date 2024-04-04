@@ -56,18 +56,24 @@ public class BulkDispatchWorkflows : Activity
     public Input<object> Items { get; set; } = default!;
 
     /// <summary>
+    /// The default key to use for the item input. Will not be used if the Items contain a list of dictionaries.
+    /// </summary>
+    [Input(Description = "The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries", DefaultValue = "Item")]
+    public Input<string> DefaultItemInputKey { get; set; } = new("Item");
+
+    /// <summary>
     /// The correlation ID to associate the workflow with. 
     /// </summary>
     [Input(
         DisplayName = "Correlation ID Function",
-        Description = "A function to compute the correlation ID to associate a dispatched workflow with. Receives the current item as an argument called Item.",
+        Description = "A function to compute the correlation ID to associate a dispatched workflow with.",
         AutoEvaluate = false)]
     public Input<string?>? CorrelationIdFunction { get; set; }
 
     /// <summary>
     /// The input to send to the workflows.
     /// </summary>
-    [Input(Description = """Additional input to send to the workflows being dispatched. The "Item" key is reserved and should not be used.""")]
+    [Input(Description = "Additional input to send to the workflows being dispatched.")]
     public Input<IDictionary<string, object>?> Input { get; set; } = default!;
 
     /// <summary>
@@ -102,7 +108,6 @@ public class BulkDispatchWorkflows : Activity
     public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
-    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
@@ -162,20 +167,24 @@ public class BulkDispatchWorkflows : Activity
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
         var channelName = ChannelName.GetOrDefault(context);
+        var defaultInputItemKey = DefaultItemInputKey.GetOrDefault(context, () => "Item")!;
         var properties = new Dictionary<string, object>
         {
             ["ParentInstanceId"] = parentInstanceId
         };
+
+        var itemAsInputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>
+        {
+            [defaultInputItemKey] = item
+        };
+
         var evaluatorOptions = new ExpressionEvaluatorOptions
         {
-            Arguments = new Dictionary<string, object>
-            {
-                ["Item"] = item
-            }
+            Arguments = itemAsInputDictionary
         };
 
         input["ParentInstanceId"] = parentInstanceId;
-        input["Item"] = item;
+        input.Merge(itemAsInputDictionary);
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
@@ -198,7 +207,7 @@ public class BulkDispatchWorkflows : Activity
         };
 
         var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
-        
+
         if (!dispatchResponse.Succeeded)
             throw new FaultException(dispatchResponse.ErrorMessage);
 

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Contracts;
@@ -11,7 +10,6 @@ public partial class ActivityExecutionContext
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
-    [RequiresUnreferencedCode("The activity may be serialized and executed in a different context.")]
     public async ValueTask CompleteActivityAsync(object? result = default)
     {
         var outcomes = result as Outcomes;
@@ -93,7 +91,6 @@ public partial class ActivityExecutionContext
     /// <summary>
     /// Complete the current activity with the specified outcomes.
     /// </summary>
-    [RequiresUnreferencedCode("The activity may be serialized and executed in a different context.")]
     public ValueTask CompleteActivityWithOutcomesAsync(params string[] outcomes)
     {
         return CompleteActivityAsync(new Outcomes(outcomes));
