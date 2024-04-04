@@ -68,6 +68,7 @@ public static class DictionaryExtensions
     
     /// <summary>
     /// Merges the specified dictionary with the other dictionary.
+    /// When a key exists in both dictionaries, the value in the other dictionary will overwrite the value in the specified dictionary.
     /// </summary>
     public static void Merge(this IDictionary<string, object> dictionary, IDictionary<string, object> other)
     {
