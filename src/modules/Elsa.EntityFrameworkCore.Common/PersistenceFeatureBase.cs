@@ -62,7 +62,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// </summary>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <typeparam name="TStore">The type of the store.</typeparam>
-    protected void AddStore<TEntity, TStore>() where TEntity : class where TStore : class
+    protected void AddStore<TEntity, TStore>() where TEntity : class, new() where TStore : class
     {
         Services
             .AddScoped<Store<TDbContext, TEntity>>()
