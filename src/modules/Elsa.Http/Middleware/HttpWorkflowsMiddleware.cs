@@ -134,15 +134,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
         var workflowHostFactory = serviceProvider.GetRequiredService<IWorkflowHostFactory>();
-        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
-
-        if (workflowDefinition == null)
-        {
-            await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
-            return;
-        }
-
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
