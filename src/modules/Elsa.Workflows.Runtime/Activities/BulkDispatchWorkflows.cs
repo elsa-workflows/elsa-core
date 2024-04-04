@@ -141,7 +141,7 @@ public class BulkDispatchWorkflows : Activity
         else
         {
             // Otherwise, we can complete immediately.
-            await context.CompleteActivityAsync();
+            await context.CompleteActivityWithOutcomesAsync("Done");
         }
     }
 
