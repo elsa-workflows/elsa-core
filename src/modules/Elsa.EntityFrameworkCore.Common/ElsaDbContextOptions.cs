@@ -1,5 +1,4 @@
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
