@@ -138,23 +138,22 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
 
-        var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
-        var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
-        var cancellationTokens = new CancellationTokens(cancellationToken, cancellationToken);
-        var startParams = new StartWorkflowHostParams
-        {
-            Input = input,
-            InstanceId = workflowInstanceId,
-            CorrelationId = correlationId,
-            TriggerActivityId = trigger.ActivityId,
-            CancellationTokens = cancellationTokens
-        };
-
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        await ExecuteWithinTimeoutAsync(async () =>
+        await ExecuteWithinTimeoutAsync(async ct =>
         {
-            await workflowHost.StartWorkflowAsync(startParams, cancellationToken);
-            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, cancellationToken);
+            var cancellationTokens = new CancellationTokens(ct, ct);
+            var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
+            var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
+            var startParams = new StartWorkflowHostParams
+            {
+                Input = input,
+                InstanceId = workflowInstanceId,
+                CorrelationId = correlationId,
+                TriggerActivityId = trigger.ActivityId,
+                CancellationTokens = cancellationTokens
+            };
+            await workflowHost.StartWorkflowAsync(startParams, ct);
+            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);
     }
@@ -188,22 +187,21 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
 
-        var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
-        var cancellationTokens = new CancellationTokens(cancellationToken, cancellationToken);
-        var resumeParams = new ResumeWorkflowHostParams
-        {
-            Input = input,
-            CorrelationId = correlationId,
-            ActivityInstanceId = bookmark.ActivityInstanceId,
-            BookmarkId = bookmark.BookmarkId,
-            CancellationTokens = cancellationTokens
-        };
-
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        await ExecuteWithinTimeoutAsync(async () =>
+        await ExecuteWithinTimeoutAsync(async ct =>
         {
-            await workflowHost.ResumeWorkflowAsync(resumeParams, cancellationToken);
-            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, cancellationToken);
+            var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);
+            var cancellationTokens = new CancellationTokens(ct, ct);
+            var resumeParams = new ResumeWorkflowHostParams
+            {
+                Input = input,
+                CorrelationId = correlationId,
+                ActivityInstanceId = bookmark.ActivityInstanceId,
+                BookmarkId = bookmark.BookmarkId,
+                CancellationTokens = cancellationTokens
+            };
+            await workflowHost.ResumeWorkflowAsync(resumeParams, ct);
+            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);
     }
@@ -228,18 +226,28 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
 
-    private async Task ExecuteWithinTimeoutAsync(Func<Task> action, TimeSpan? requestTimeout, HttpContext httpContext)
+    private async Task ExecuteWithinTimeoutAsync(Func<CancellationToken, Task> action, TimeSpan? requestTimeout, HttpContext httpContext)
     {
+        // If no request timeout is specified, execute the action without any timeout.
         if (requestTimeout == null)
         {
-            await action();
+            await action(httpContext.RequestAborted);
             return;
         }
 
-        using var cts = new CancellationTokenSource(requestTimeout.Value);
+        // Create a combined cancellation token that cancels when the request is aborted or when the request timeout is reached.
+        using var requestTimeoutCancellationTokenSource = new CancellationTokenSource();
+        requestTimeoutCancellationTokenSource.CancelAfter(requestTimeout.Value);
+        using var combinedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(httpContext.RequestAborted, requestTimeoutCancellationTokenSource.Token);
         var originalCancellationToken = httpContext.RequestAborted;
-        httpContext.RequestAborted = cts.Token;
-        await action();
+
+        // Replace the original cancellation token with the combined one.
+        httpContext.RequestAborted = combinedTokenSource.Token;
+
+        // Execute the action.
+        await action(httpContext.RequestAborted);
+
+        // Restore the original cancellation token.
         httpContext.RequestAborted = originalCancellationToken;
     }
 
