@@ -5,7 +5,9 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.MassTransit.Consumers;
+using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Extensions;
+using Elsa.MassTransit.Formatters;
 using Elsa.MassTransit.Models;
 using Elsa.MassTransit.Options;
 using Elsa.MassTransit.Services;
@@ -31,12 +33,18 @@ public class MassTransitFeature : FeatureBase
     }
 
     /// The number of messages to prefetch.
+    [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
 
     /// <summary>
     /// A delegate that can be set to configure MassTransit's <see cref="IBusRegistrationConfigurator"/>. Used by transport-level features such as AzureServiceBusFeature and RabbitMqServiceBusFeature. 
     /// </summary>
     public Action<IBusRegistrationConfigurator>? BusConfigurator { get; set; }
+    
+    /// <summary>
+    /// A factory that creates a <see cref="IEndpointChannelFormatter"/>.
+    /// </summary>
+    public Func<IServiceProvider, IEndpointChannelFormatter> ChannelQueueFormatterFactory { get; set; } = _ => new DefaultEndpointChannelFormatter();
 
     /// <inheritdoc />
     public override void Configure()
@@ -48,6 +56,8 @@ public class MassTransitFeature : FeatureBase
     {
         var messageTypes = this.GetMessages();
 
+        Services.AddSingleton(ChannelQueueFormatterFactory);
+        Services.Configure<MassTransitOptions>(x => x.PrefetchCount ??= PrefetchCount);
         Services.Configure<MassTransitWorkflowDispatcherOptions>(x => { });
         Services.AddActivityProvider<MassTransitActivityTypeProvider>();
         _runInMemory = BusConfigurator is null;

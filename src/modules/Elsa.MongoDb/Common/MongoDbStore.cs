@@ -97,7 +97,10 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
             writes.Add(replacement);
         }
 
-        await collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
+        if (!writes.Any())
+            return;
+
+        await _collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -121,7 +124,10 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
             writes.Add(replacement);
         }
 
-        await collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
+        if (!writes.Any())
+            return;
+
+        await _collection.BulkWriteAsync(writes, cancellationToken: cancellationToken);
     }
 
     /// <summary>

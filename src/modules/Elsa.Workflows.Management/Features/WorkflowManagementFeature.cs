@@ -9,6 +9,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
@@ -42,7 +43,7 @@ public class WorkflowManagementFeature : FeatureBase
     private const string DynamicCategory = "Dynamic";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
-
+    private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -161,6 +162,16 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Set the default Log Persistence mode to use for worflow state (default is Include)
+    /// </summary>
+    /// <param name="logPersistenceMode">The mode persistence value</param>
+    public WorkflowManagementFeature SetDefaultLogPersistenceMode(LogPersistenceMode logPersistenceMode)
+    {
+        LogPersistenceMode = logPersistenceMode;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -211,6 +222,7 @@ public class WorkflowManagementFeature : FeatureBase
                 options.VariableDescriptors.Add(descriptor);
 
             options.CompressionAlgorithm = CompressionAlgorithm;
+            options.LogPersistenceMode = LogPersistenceMode;
         });
     }
 }

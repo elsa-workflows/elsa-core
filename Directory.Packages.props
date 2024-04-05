@@ -66,6 +66,7 @@
         <PackageVersion Include="Nuke.Components" Version="8.0.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
         <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0"/>
+        <PackageVersion Include="PolySharp" Version="1.14.1"/>
         <PackageVersion Include="Proto.Actor" Version="1.5.0"/>
         <PackageVersion Include="Proto.Cluster" Version="1.5.0"/>
         <PackageVersion Include="Proto.Cluster.CodeGen" Version="1.5.0"/>
@@ -103,7 +104,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0"/>
-        <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="7.16.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="7.0.14"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.14"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.14"/>
@@ -135,7 +135,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.0"/>
-        <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="8.16.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0"/>

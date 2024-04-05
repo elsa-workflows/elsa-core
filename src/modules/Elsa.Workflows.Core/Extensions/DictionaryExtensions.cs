@@ -65,6 +65,16 @@ public static class DictionaryExtensions
         dictionary.Add(key, value);
         return dictionary;
     }
+    
+    /// <summary>
+    /// Merges the specified dictionary with the other dictionary.
+    /// When a key exists in both dictionaries, the value in the other dictionary will overwrite the value in the specified dictionary.
+    /// </summary>
+    public static void Merge(this IDictionary<string, object> dictionary, IDictionary<string, object> other)
+    {
+        foreach (var (key, value) in other)
+            dictionary[key] = value;
+    }
 
     private static T? ConvertValue<T>(object? value) => value.ConvertTo<T>();
 }

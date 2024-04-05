@@ -289,10 +289,10 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options)
     {
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload, options.ActivityInstanceId);
-        var correlationId = options.CorrelationId;
-        var workflowInstanceId = options.WorkflowInstanceId;
-        var activityInstanceId = options.ActivityInstanceId;
+        var hash = _hasher.Hash(activityTypeName, bookmarkPayload, options?.ActivityInstanceId);
+        var correlationId = options?.CorrelationId;
+        var workflowInstanceId = options?.WorkflowInstanceId;
+        var activityInstanceId = options?.ActivityInstanceId;
         var filter = new BookmarkFilter
         {
             Hash = hash,
@@ -300,15 +300,15 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId
         };
-        var bookmarks = await _bookmarkStore.FindManyAsync(filter, options.CancellationTokens.SystemCancellationToken);
+        var bookmarks = await _bookmarkStore.FindManyAsync(filter, options?.CancellationTokens.SystemCancellationToken ?? default);
 
         return await ResumeWorkflowsAsync(
             bookmarks,
             new ResumeWorkflowRuntimeParams
             {
                 CorrelationId = correlationId,
-                Input = options.Input,
-                CancellationTokens = options.CancellationTokens
+                Input = options?.Input,
+                CancellationTokens = options?.CancellationTokens ?? default
             });
     }
 

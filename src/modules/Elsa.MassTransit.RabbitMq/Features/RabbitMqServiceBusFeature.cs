@@ -29,7 +29,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
+    /// <summary>
     /// Configures the RabbitMQ transport options.
+    /// </summary>
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
 
     /// <summary>
@@ -54,29 +56,35 @@ public class RabbitMqServiceBusFeature : FeatureBase
                 
                 configure.UsingRabbitMq((context, configurator) =>
                 {
-                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (!string.IsNullOrEmpty(ConnectionString))
                         configurator.Host(ConnectionString);
 
+                    if (options.PrefetchCount is not null)
+                        configurator.PrefetchCount = options.PrefetchCount.Value;
+                    configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    
                     ConfigureServiceBus?.Invoke(configurator);
 
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
-                        
                         configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
                             endpointConfigurator =>
                             {
                                 endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                                 endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                
+                                endpointConfigurator.Durable = false;
+                                endpointConfigurator.AutoDelete = true;
                                 endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                     }
 
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                    if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                        configurator.SetupWorkflowDispatcherEndpoints(context);
+                    
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };

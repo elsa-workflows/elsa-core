@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
@@ -6,7 +7,6 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
-using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
@@ -406,95 +406,7 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
-    public static async ValueTask CompleteActivityAsync(this ActivityCompletedContext context, object? result = default)
-    {
-        await context.TargetContext.CompleteActivityAsync(result);
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
-    public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
-    {
-        var outcomes = result as Outcomes;
-
-        // If the activity is executing in the background, simply capture the result and return.
-        if (context.GetIsBackgroundExecution())
-        {
-            if (outcomes != null)
-                context.SetBackgroundOutcomes(outcomes.Names);
-            else
-                context.SetBackgroundCompletion();
-            return;
-        }
-
-        // If the activity is not running, do nothing.
-        if (context.Status != ActivityStatus.Running)
-            return;
-
-        // Update all child contexts.
-        var childContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-
-        foreach (var childContext in childContexts)
-            await childContext.CancelActivityAsync();
-
-        // Mark the activity as complete.
-        context.TransitionTo(ActivityStatus.Completed);
-
-        // Record the outcomes, if any.
-        if (outcomes != null)
-            context.JournalData["Outcomes"] = outcomes.Names;
-
-        // Record the output, if any.
-        var activity = context.Activity;
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-        var activityDescriptor = context.ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
-        var serializer = context.GetRequiredService<ISafeSerializer>();
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            if (outputDescriptor.IsSerializable == false)
-                continue;
-
-            var outputName = outputDescriptor.Name;
-            var outputValue = outputs[outputName];
-
-            if (outputValue == null!)
-                continue;
-
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue);
-            context.JournalData[outputName] = serializedOutputValue;
-        }
-
-        // Add an execution log entry.
-        context.AddExecutionLogEntry("Completed", payload: context.JournalData);
-
-        // Send a signal.
-        await context.SendSignalAsync(new ActivityCompleted(result));
-
-        // Clear bookmarks.
-        context.ClearBookmarks();
-        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
-
-        // Remove completion callbacks.
-        context.ClearCompletionCallbacks();
-
-        // Remove all associated variables, unless this is the root context - in which case we want to keep the variables since we're not deleting that one.
-        if (context.ParentActivityExecutionContext != null)
-        {
-            var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-            await variablePersistenceManager.DeleteVariablesAsync(context);
-        }
-
-        // Update the completed at timestamp.
-        context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
+    [RequiresUnreferencedCode("The activity may be serialized and executed in a different context.")]
     public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
     {
         var cancellationToken = context.CancellationToken;
@@ -525,22 +437,7 @@ public static class ActivityExecutionContextExtensions
         // Send a signal.
         await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
     }
-
-    /// <summary>
-    /// Complete the current activity with the specified outcome.
-    /// </summary>
-    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityCompletedContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-
-    /// <summary>
-    /// Complete the current activity with the specified outcome.
-    /// </summary>
-    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-
-    /// <summary>
-    /// Complete the current composite activity with the specified outcome.
-    /// </summary>
-    public static async ValueTask CompleteCompositeAsync(this ActivityExecutionContext context, params string[] outcomes) => await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
-
+    
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
     /// </summary>

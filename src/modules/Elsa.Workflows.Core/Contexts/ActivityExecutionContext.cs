@@ -10,12 +10,14 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents the context of an activity execution.
 /// </summary>
+[PublicAPI]
 public partial class ActivityExecutionContext : IExecutionContext
 {
     private readonly ISystemClock _systemClock;
@@ -136,13 +138,11 @@ public partial class ActivityExecutionContext : IExecutionContext
     public void TransitionTo(ActivityStatus status)
     {
         Status = status;
-        
-        if (Status is ActivityStatus.Completed 
-            or ActivityStatus.Canceled
-            or ActivityStatus.Faulted)
+
+        if (Status is ActivityStatus.Completed or ActivityStatus.Canceled or ActivityStatus.Faulted)
             _cancellationRegistration.Dispose();
     }
-    
+
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution, if any.
     /// </summary>
@@ -254,15 +254,17 @@ public partial class ActivityExecutionContext : IExecutionContext
             {
                 ActivityNodeId = activityNode?.NodeId,
                 OwnerActivityInstanceId = owner?.Id,
-                Options = options != null ? new ScheduledActivityOptions
-                {
-                    CompletionCallback = options?.CompletionCallback?.Method.Name,
-                    Tag = options?.Tag,
-                    ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
-                    PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
-                    Variables = options?.Variables?.ToList(),
-                    Input = options?.Input
-                } : default
+                Options = options != null
+                    ? new ScheduledActivityOptions
+                    {
+                        CompletionCallback = options?.CompletionCallback?.Method.Name,
+                        Tag = options?.Tag,
+                        ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
+                        PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
+                        Variables = options?.Variables?.ToList(),
+                        Input = options?.Input
+                    }
+                    : default
             };
 
             var scheduledActivities = this.GetBackgroundScheduledActivities().ToList();
