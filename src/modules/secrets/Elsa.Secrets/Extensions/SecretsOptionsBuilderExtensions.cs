@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Extensions
 {
+    using Elsa.Secrets.Encryption;
+
     public static class SecretsOptionsBuilderExtensions
     {
         public static ElsaOptionsBuilder AddSecrets(this ElsaOptionsBuilder elsaOptions, IConfiguration configuration)
@@ -23,7 +25,8 @@ namespace Elsa.Secrets.Extensions
                 .AddScoped<ISecretsManager, SecretsManager>()
                 .AddScoped<ISecretsProvider, SecretsProvider>()
                 .Decorate<ISecretsStore, EventPublishingSecretsStore>()
-                .AddNotificationHandlersFrom<DescribingActivityTypeHandler>();
+                .AddNotificationHandlersFrom<DescribingActivityTypeHandler>()
+                .AddSingleton<ISecretEncryptor, AesSecretEncryptor>();
 
             elsaOptions.Services
                 .TryAddProvider<IExpressionHandler, SecretsExpressionHandler>(ServiceLifetime.Scoped);
