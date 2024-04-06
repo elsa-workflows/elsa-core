@@ -17,14 +17,14 @@ public interface IWorkflowRuntime
     /// <summary>
     /// Returns a value whether or not the specified workflow definition can create a new instance.
     /// </summary>
-    Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default);
+    Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? @params = default);
 
     /// <summary>
     /// Creates a new workflow instance of the specified definition ID and executes it.
     /// </summary>
     /// <param name="definitionId">The workflow definition ID to run.</param>
-    /// <param name="options">Options for starting the workflow.</param>
-    Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default);
+    /// <param name="params">Options for starting the workflow.</param>
+    Task<WorkflowExecutionResult> StartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? @params = default);
 
     /// <summary>
     /// Starts all workflows with triggers matching the specified activity type and bookmark payload.

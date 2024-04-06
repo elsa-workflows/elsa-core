@@ -23,7 +23,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
             ActivityInstanceId = command.ActivityInstanceId,
             Input = command.Input,
             Properties = command.Properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
         await workflowRuntime.TriggerWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options);
 
@@ -40,7 +40,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
             VersionOptions = command.VersionOptions,
             InstanceId = command.InstanceId,
             TriggerActivityId = command.TriggerActivityId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await workflowRuntime.TryStartWorkflowAsync(command.DefinitionId, options);
@@ -60,7 +60,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
             ActivityHash = command.ActivityHash,
             Input = command.Input,
             Properties = command.Properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await workflowRuntime.ResumeWorkflowAsync(command.InstanceId, options);
@@ -77,7 +77,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
             Properties = command.Properties,
             WorkflowInstanceId = command.WorkflowInstanceId,
             ActivityInstanceId = command.ActivityInstanceId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await workflowRuntime.ResumeWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options);

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;

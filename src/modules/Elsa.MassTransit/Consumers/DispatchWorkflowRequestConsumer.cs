@@ -41,7 +41,7 @@ public class DispatchWorkflowRequestConsumer :
             VersionOptions = message.VersionOptions,
             TriggerActivityId = message.TriggerActivityId,
             InstanceId = message.InstanceId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
@@ -63,7 +63,7 @@ public class DispatchWorkflowRequestConsumer :
             ActivityHash = message.ActivityHash,
             Input = message.Input,
             Properties = message.Properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
@@ -81,7 +81,7 @@ public class DispatchWorkflowRequestConsumer :
             ActivityInstanceId = message.ActivityInstanceId,
             Input = message.Input,
             Properties = message.Properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
         await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
@@ -98,7 +98,7 @@ public class DispatchWorkflowRequestConsumer :
             WorkflowInstanceId = message.WorkflowInstanceId,
             Input = message.Input,
             Properties = message.Properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);

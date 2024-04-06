@@ -84,7 +84,7 @@ public class WorkflowHost : IWorkflowHost
             Properties = properties,
             TriggerActivityId = @params?.TriggerActivityId,
             StatusUpdatedCallback = @params?.StatusUpdatedCallback,
-            CancellationTokens = @params?.CancellationTokens ?? cancellationToken
+            CancellationToken = @params?.CancellationToken ?? cancellationToken
         };
 
         using var scope = _serviceScopeFactory.CreateScope();
@@ -126,7 +126,7 @@ public class WorkflowHost : IWorkflowHost
             ActivityHash = @params?.ActivityHash,
             Input = input,
             Properties = @params?.Properties,
-            CancellationTokens = @params?.CancellationTokens ?? cancellationToken
+            CancellationToken = @params?.CancellationToken ?? cancellationToken
         };
 
         using var scope = _serviceScopeFactory.CreateScope();

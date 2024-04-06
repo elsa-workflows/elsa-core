@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;

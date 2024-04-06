@@ -1,6 +1,5 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Workflows.Management.Contracts;
-using FastEndpoints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;

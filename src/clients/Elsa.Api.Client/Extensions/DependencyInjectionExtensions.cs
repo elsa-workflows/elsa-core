@@ -18,7 +18,6 @@ using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Polly;
 using Refit;
 
 namespace Elsa.Api.Client.Extensions;

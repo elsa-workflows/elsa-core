@@ -21,7 +21,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     /// <inheritdoc />
     public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var cancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
         var contexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
 
         foreach (var context in contexts)
@@ -56,7 +56,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
     /// <inheritdoc />
     public async Task SaveVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var cancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
         var contexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
 
         foreach (var context in contexts)

@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using FluentMigrator;
 using JetBrains.Annotations;
-using static System.Int32;
 
 namespace Elsa.Dapper.Migrations.Management;
 

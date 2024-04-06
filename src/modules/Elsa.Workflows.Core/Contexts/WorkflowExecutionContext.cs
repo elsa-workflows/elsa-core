@@ -54,7 +54,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
         Action<WorkflowExecutionContext>? statusUpdatedCallback,
-        CancellationTokens cancellationTokens)
+        CancellationToken cancellationToken)
     {
         ServiceProvider = serviceProvider;
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
@@ -73,15 +73,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
-        CancellationTokens = cancellationTokens;
+        CancellationToken = cancellationToken;
         Incidents = incidents.ToList();
 
-        var appSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.ApplicationCancellationToken);
-        _cancellationTokenSources.Add(appSource);
-        var sysSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.SystemCancellationToken);
-        _cancellationTokenSources.Add(sysSource);
-        _cancellationRegistrations.Add(appSource.Token.Register(CancelWorkflow));
-        _cancellationRegistrations.Add(sysSource.Token.Register(CancelWorkflow));
+        var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationTokenSources.Add(linkedCancellationTokenSource);
+        _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
     }
 
     /// <summary>
@@ -98,7 +95,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
         var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
 
@@ -115,7 +112,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             executeDelegate,
             triggerActivityId,
             statusUpdatedCallback,
-            cancellationTokens
+            cancellationToken
         );
     }
 
@@ -133,7 +130,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await CreateAsync(
             serviceProvider,
@@ -148,7 +145,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             executeDelegate,
             triggerActivityId,
             statusUpdatedCallback,
-            cancellationTokens);
+            cancellationToken);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
         workflowStateExtractor.Apply(workflowExecutionContext, workflowState);
@@ -172,7 +169,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
         Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
@@ -187,12 +184,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
             incidents,
             createdAt,
             statusUpdatedCallback,
-            cancellationTokens)
+            cancellationToken)
         {
             MemoryRegister = workflow.CreateRegister()
         };
 
-        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
+        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
         await workflowExecutionContext.SetWorkflowAsync(workflow);
         return workflowExecutionContext;
@@ -206,12 +203,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         var activityVisitor = GetRequiredService<IActivityVisitor>();
         var root = workflow;
-        var graph = await activityVisitor.VisitAsync(root, CancellationTokens.ApplicationCancellationToken);
+        var graph = await activityVisitor.VisitAsync(root, CancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register activity types.
         var activityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
-        await ActivityRegistry.RegisterAsync(activityTypes, CancellationTokens.ApplicationCancellationToken);
+        await ActivityRegistry.RegisterAsync(activityTypes, CancellationToken);
 
         var needsIdentityAssignment = nodes.Any(x => string.IsNullOrEmpty(x.Activity.Id));
 
@@ -227,8 +224,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
         NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
         NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
-        
-        foreach (var activityExecutionContext in ActivityExecutionContexts) 
+
+        foreach (var activityExecutionContext in ActivityExecutionContexts)
             activityExecutionContext.Activity = NodeIdLookup[activityExecutionContext.Activity.NodeId].Activity;
     }
 
@@ -279,7 +276,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// An application-specific identifier associated with the execution context.
     /// </summary>
     public string? CorrelationId { get; set; }
-    
+
     /// <summary>
     /// The ID of the workflow instance that triggered this instance.
     /// </summary>
@@ -289,12 +286,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// The date and time the workflow execution context was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }
-    
+
     /// <summary>
     /// The date and time the workflow execution context was last updated.
     /// </summary>
     public DateTimeOffset UpdatedAt { get; set; }
-    
+
     /// <summary>
     /// The date and time the workflow execution context has finished.
     /// </summary>
@@ -382,7 +379,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A set of cancellation tokens that can be used to cancel the workflow execution without cancelling system-level operations.
     /// </summary>
-    public CancellationTokens CancellationTokens { get; }
+    public CancellationToken CancellationToken { get; }
 
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
@@ -559,15 +556,15 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         SubStatus = subStatus;
         UpdatedAt = SystemClock.UtcNow;
-        
+
         if (Status == WorkflowStatus.Finished)
             FinishedAt = UpdatedAt;
-        
+
         //For now only trigger on Cancelled, since the other statuses are handling via the host/runner
         if (SubStatus == WorkflowSubStatus.Cancelled
             && _statusUpdatedCallback is not null)
             _statusUpdatedCallback(this);
-        
+
         if (Status == WorkflowStatus.Finished
             || SubStatus == WorkflowSubStatus.Suspended)
         {
@@ -590,11 +587,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationTokens.ApplicationCancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var id = IdentityGenerator.GenerateId();
-        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
-        var variableContainer = new[] { activityExecutionContext.ActivityNode }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
+        var variableContainer = new[]
+        {
+            activityExecutionContext.ActivityNode
+        }.Concat(activityExecutionContext.ActivityNode.Ancestors()).FirstOrDefault(x => x.Activity is IVariableContainer)?.Activity as IVariableContainer;
         expressionExecutionContext.TransientProperties[ExpressionExecutionContextExtensions.ActivityExecutionContextKey] = activityExecutionContext;
 
         if (variableContainer != null)

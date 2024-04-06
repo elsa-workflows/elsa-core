@@ -23,7 +23,7 @@ public record ActivityCompletedContext(ActivityExecutionContext TargetContext, A
     /// <summary>
     /// A cancellation token to use when invoking asynchronous operations.
     /// </summary>
-    public CancellationToken CancellationToken => WorkflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
+    public CancellationToken CancellationToken => WorkflowExecutionContext.CancellationToken;
     
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.

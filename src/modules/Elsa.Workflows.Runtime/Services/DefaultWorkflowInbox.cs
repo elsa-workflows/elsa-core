@@ -122,7 +122,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
                 WorkflowInstanceId = workflowInstanceId,
                 ActivityInstanceId = activityInstanceId,
                 Input = input,
-                CancellationTokens = cancellationToken
+                CancellationToken = cancellationToken
             });
 
             return new DeliverWorkflowInboxMessageResult(results.TriggeredWorkflows);
@@ -172,7 +172,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId,
             Input = input,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         });
     }
 

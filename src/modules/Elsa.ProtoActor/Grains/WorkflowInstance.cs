@@ -10,7 +10,6 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
@@ -18,7 +17,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
-using CancellationTokens = Elsa.Workflows.Models.CancellationTokens;
 using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 using WorkflowSubStatus = Elsa.Workflows.WorkflowSubStatus;
 
@@ -175,7 +173,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             Properties = properties,
             TriggerActivityId = request.TriggerActivityId,
             StatusUpdatedCallback = StatusUpdated,
-            CancellationTokens = new CancellationTokens(cancellationToken)
+            CancellationToken = cancellationToken
         };
 
         var task = _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
@@ -276,7 +274,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             ActivityHash = activityHash,
             Input = _input,
             Properties = _properties,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         var definitionId = _definitionId;

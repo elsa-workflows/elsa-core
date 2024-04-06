@@ -1,4 +1,3 @@
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
@@ -16,5 +15,5 @@ public interface IHttpBookmarkProcessor
         IEnumerable<WorkflowExecutionResult> executionResults,
         string? correlationId = default,
         IDictionary<string, object>? input = default,
-        CancellationTokens cancellationToken = default);
+        CancellationToken cancellationToken = default);
 }

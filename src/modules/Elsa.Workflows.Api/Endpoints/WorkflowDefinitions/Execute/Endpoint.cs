@@ -6,7 +6,6 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
@@ -72,7 +71,7 @@ internal class Execute : ElsaEndpoint<Request, Response>
             VersionOptions = versionOptions,
             TriggerActivityId = request.TriggerActivityId,
             InstanceId = instanceId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 

@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
@@ -45,7 +44,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
         IEnumerable<WorkflowExecutionResult> executionResults,
         string? correlationId,
         IDictionary<string, object>? input,
-        CancellationTokens cancellationTokens)
+        CancellationToken cancellationToken)
     {
         var httpContext = _httpContextAccessor.HttpContext;
 
@@ -64,15 +63,13 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
 
         var workflowExecutionResults = new Stack<(string InstanceId, string BookmarkId)>(query);
         var workflowStates = new List<WorkflowState>();
-        var applicationCancellationToken = cancellationTokens.ApplicationCancellationToken;
-        var systemCancellationToken = cancellationTokens.SystemCancellationToken;
 
         while (workflowExecutionResults.TryPop(out var result))
         {
             // Resume the workflow "in-process".
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(
                 result.InstanceId,
-                systemCancellationToken);
+                cancellationToken);
 
             if (workflowState == null)
             {
@@ -83,7 +80,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             var workflow = await _workflowDefinitionService.FindWorkflowAsync(
                 workflowState.DefinitionId,
                 VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
-                systemCancellationToken);
+                cancellationToken);
 
             if (workflow == null)
             {
@@ -91,25 +88,25 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
                 continue;
             }
             
-            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, applicationCancellationToken);
+            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
             var options = new ResumeWorkflowHostParams
             {
                 CorrelationId = correlationId,
                 BookmarkId = result.BookmarkId,
                 Input = input,
-                CancellationTokens = cancellationTokens
+                CancellationToken = cancellationToken
             };
-            await workflowHost.ResumeWorkflowAsync(options, applicationCancellationToken);
+            await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
 
             // Import the updated workflow state into the runtime.
             workflowState = workflowHost.WorkflowState;
-            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, systemCancellationToken);
+            await _workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
             workflowStates.Add(workflowState);
         }
 
         // Save the updated workflow states.
         foreach (var workflowInstance in workflowStates.Select(workflowState => _workflowStateMapper.Map(workflowState)!))
-            await _workflowInstanceManager.SaveAsync(workflowInstance, systemCancellationToken);
+            await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
 
         return workflowStates;
     }

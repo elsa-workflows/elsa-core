@@ -11,11 +11,9 @@ using Elsa.ServiceBus.IntegrationTests.Helpers;
 using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Xunit.Abstractions;
 
 namespace Elsa.ServiceBus.IntegrationTests.Scenarios.ServiceBus;
 

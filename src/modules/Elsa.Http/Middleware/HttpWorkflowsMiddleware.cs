@@ -15,7 +15,6 @@ using System.Text.Json;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
@@ -140,7 +139,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         await ExecuteWithinTimeoutAsync(async ct =>
         {
-            var cancellationTokens = new CancellationTokens(ct, ct);
             var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
             var startParams = new StartWorkflowHostParams
@@ -149,7 +147,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 InstanceId = workflowInstanceId,
                 CorrelationId = correlationId,
                 TriggerActivityId = trigger.ActivityId,
-                CancellationTokens = cancellationTokens
+                CancellationToken = ct
             };
             await workflowHost.StartWorkflowAsync(startParams, ct);
             await workflowHost.PersistStateAsync(ct);
@@ -190,14 +188,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);
-            var cancellationTokens = new CancellationTokens(ct, ct);
             var resumeParams = new ResumeWorkflowHostParams
             {
                 Input = input,
                 CorrelationId = correlationId,
                 ActivityInstanceId = bookmark.ActivityInstanceId,
                 BookmarkId = bookmark.BookmarkId,
-                CancellationTokens = cancellationTokens
+                CancellationToken = ct
             };
             await workflowHost.ResumeWorkflowAsync(resumeParams, ct);
             await workflowHost.PersistStateAsync(ct);

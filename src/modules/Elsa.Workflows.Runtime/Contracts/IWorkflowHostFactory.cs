@@ -1,6 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.Contracts;

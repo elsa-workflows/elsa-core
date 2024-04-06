@@ -2,4 +2,9 @@ using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Results;
 
-public record CancellationResult(bool Result, FailureReason? Reason = default);
+/// <summary>
+/// Represents the result of a cancellation operation.
+/// </summary>
+/// <param name="Success">True if the operation was successful; otherwise, false.</param>
+/// <param name="Reason">The reason for the failure, if any.</param>
+public record CancellationResult(bool Success, FailureReason? Reason = default);

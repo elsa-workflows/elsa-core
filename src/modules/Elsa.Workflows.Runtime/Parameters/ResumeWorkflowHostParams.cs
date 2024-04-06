@@ -1,5 +1,3 @@
-using Elsa.Workflows.Models;
-
 namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
@@ -34,5 +32,5 @@ public class ResumeWorkflowHostParams
     public IDictionary<string, object>? Properties { get; set; }
 
     /// <summary>Optional cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</summary>
-    public CancellationTokens CancellationTokens { get; set; }
+    public CancellationToken CancellationToken { get; set; }
 }

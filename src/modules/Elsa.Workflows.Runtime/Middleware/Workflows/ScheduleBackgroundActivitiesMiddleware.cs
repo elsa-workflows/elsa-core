@@ -39,7 +39,7 @@ public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddlewar
         await Next(context);
         
         var workflowExecutionContext = context;
-        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
+        var cancellationToken = context.CancellationToken;
 
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
