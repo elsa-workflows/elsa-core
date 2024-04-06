@@ -172,7 +172,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             InstanceId = workflowInstanceId,
             CorrelationId = options?.CorrelationId.EmptyIfNull(),
             BookmarkId = options?.BookmarkId.EmptyIfNull(),
-            ActivityId = options?.ActivityId.EmptyIfNull(),
+            ActivityId = options?.ActivityHandle?.ActivityId.EmptyIfNull(),
             Input = options?.Input?.SerializeInput(),
             Properties = options?.Properties?.SerializeProperties(),
         };
@@ -334,10 +334,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 Input = runtimeParams.Input,
                 Properties = runtimeParams.Properties,
                 BookmarkId = bookmark.BookmarkId,
-                ActivityId = runtimeParams.ActivityId,
-                ActivityNodeId = runtimeParams.ActivityNodeId,
-                ActivityInstanceId = runtimeParams.ActivityInstanceId,
-                ActivityHash = runtimeParams.ActivityHash,
+                ActivityHandle = runtimeParams.ActivityHandle,
                 CancellationToken = runtimeParams.CancellationToken
             };
 

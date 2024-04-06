@@ -5,6 +5,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -246,10 +247,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             {
                 CorrelationId = options?.CorrelationId,
                 BookmarkId = options?.BookmarkId,
-                ActivityId = options?.ActivityId,
-                ActivityNodeId = options?.ActivityNodeId,
-                ActivityInstanceId = options?.ActivityInstanceId,
-                ActivityHash = options?.ActivityHash,
+                ActivityHandle = options?.ActivityHandle,
                 Input = options?.Input,
                 Properties = options?.Properties,
                 CancellationToken = options?.CancellationToken ?? default
@@ -439,7 +437,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     Properties = runtimeParams.Properties,
                     CancellationToken = runtimeParams.CancellationToken,
                     BookmarkId = bookmark.BookmarkId,
-                    ActivityInstanceId = bookmark.ActivityInstanceId
+                    ActivityHandle = bookmark.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(bookmark.ActivityInstanceId) : null
                 });
 
             if (resumeResult != null)

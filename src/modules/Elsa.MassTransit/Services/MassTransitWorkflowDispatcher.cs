@@ -51,10 +51,7 @@ public class MassTransitWorkflowDispatcher : IWorkflowDispatcher
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
         {
             BookmarkId = request.BookmarkId,
-            ActivityId = request.ActivityId,
-            ActivityNodeId = request.ActivityNodeId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            ActivityHash = request.ActivityHash,
+            ActivityHandle = request.ActivityHandle,
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId

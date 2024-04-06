@@ -54,10 +54,7 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
         {
             CorrelationId = command.CorrelationId,
             BookmarkId = command.BookmarkId,
-            ActivityId = command.ActivityId,
-            ActivityNodeId = command.ActivityNodeId,
-            ActivityInstanceId = command.ActivityInstanceId,
-            ActivityHash = command.ActivityHash,
+            ActivityHandle = command.ActivityHandle,
             Input = command.Input,
             Properties = command.Properties,
             CancellationToken = cancellationToken

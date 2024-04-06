@@ -20,6 +20,7 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Workflows.Models;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -183,8 +184,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
-
-        var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);
@@ -192,7 +192,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             {
                 Input = input,
                 CorrelationId = correlationId,
-                ActivityInstanceId = bookmark.ActivityInstanceId,
+                ActivityHandle = bookmark.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(bookmark.ActivityInstanceId) : null,
                 BookmarkId = bookmark.BookmarkId,
                 CancellationToken = ct
             };

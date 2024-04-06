@@ -57,10 +57,7 @@ public class DispatchWorkflowRequestConsumer :
         {
             CorrelationId = message.CorrelationId,
             BookmarkId = message.BookmarkId,
-            ActivityId = message.ActivityId,
-            ActivityNodeId = message.ActivityNodeId,
-            ActivityInstanceId = message.ActivityInstanceId,
-            ActivityHash = message.ActivityHash,
+            ActivityHandle = message.ActivityHandle,
             Input = message.Input,
             Properties = message.Properties,
             CancellationToken = cancellationToken

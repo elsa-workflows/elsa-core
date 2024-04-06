@@ -144,11 +144,8 @@ public class WorkflowRunner : IWorkflowRunner
             options?.CancellationToken ?? cancellationToken);
 
         var bookmarkId = options?.BookmarkId;
-        var activityNodeId = options?.ActivityNodeId;
-        var activityId = options?.ActivityId;
-        var activityInstanceId = options?.ActivityInstanceId;
-        var activityHash = options?.ActivityHash;
-
+        var activityHandle = options?.ActivityHandle;
+        
         if (bookmarkId != null)
         {
             var bookmark = workflowState.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
@@ -156,25 +153,19 @@ public class WorkflowRunner : IWorkflowRunner
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);
         }
-        else if (activityNodeId != null)
+        else if (activityHandle != null)
         {
-            var activity = workflowExecutionContext.FindActivityByNodeId(activityNodeId);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityHash != null)
-        {
-            var activity = workflowExecutionContext.FindActivityByHash(activityHash);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityId != null)
-        {
-            var activity = workflowExecutionContext.FindActivityById(activityId);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityInstanceId != null)
-        {
-            var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
-            workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
+            if (activityHandle.ActivityInstanceId != null)
+            {
+                var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
+                workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
+            }
+            else
+            {
+                var activity = workflowExecutionContext.FindActivity(activityHandle);
+                if (activity != null) workflowExecutionContext.ScheduleActivity(activity);    
+            }
+            
         }
         else if (workflowExecutionContext.Scheduler.HasAny)
         {

@@ -480,6 +480,24 @@ public partial class WorkflowExecutionContext : IExecutionContext
     }
 
     /// <summary>
+    /// Finds the activity based on the provided <paramref name="handle"/>.
+    /// </summary>
+    /// <param name="handle">The handle containing the identification parameters for the activity.</param>
+    /// <returns>The activity found based on the handle, or null if no activity is found.</returns>
+    public IActivity? FindActivity(ActivityHandle handle)
+    {
+        return handle.ActivityId != null
+            ? FindActivityById(handle.ActivityId)
+            : handle.ActivityNodeId != null
+                ? FindActivityByNodeId(handle.ActivityNodeId)
+                : handle.ActivityInstanceId != null
+                    ? FindActivityByInstanceId(handle.ActivityInstanceId)
+                    : handle.ActivityHash != null
+                        ? FindActivityByHash(handle.ActivityHash)
+                        : default;
+    }
+
+    /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
     public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : default;
@@ -520,6 +538,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <param name="hash">The hash of the activity node ID.</param>
     /// <returns>The <see cref="IActivity"/> with the specified hash of the activity node ID.</returns>
     public IActivity? FindActivityByHash(string hash) => FindNodeByHash(hash)?.Activity;
+
+    /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> with the specified activity instance ID.
+    /// </summary>
+    public IActivity? FindActivityByInstanceId(string activityInstanceId) => ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId)?.Activity;
 
     /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.

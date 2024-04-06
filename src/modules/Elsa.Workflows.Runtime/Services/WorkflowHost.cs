@@ -120,10 +120,7 @@ public class WorkflowHost : IWorkflowHost
             WorkflowInstanceId = instanceId,
             CorrelationId = @params?.CorrelationId,
             BookmarkId = @params?.BookmarkId,
-            ActivityId = @params?.ActivityId,
-            ActivityNodeId = @params?.ActivityNodeId,
-            ActivityInstanceId = @params?.ActivityInstanceId,
-            ActivityHash = @params?.ActivityHash,
+            ActivityHandle = @params?.ActivityHandle,
             Input = input,
             Properties = @params?.Properties,
             CancellationToken = @params?.CancellationToken ?? cancellationToken

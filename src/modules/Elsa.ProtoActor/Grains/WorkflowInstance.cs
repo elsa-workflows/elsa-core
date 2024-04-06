@@ -9,6 +9,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
+using RunWorkflowResult = Elsa.ProtoActor.ProtoBuf.RunWorkflowResult;
 using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 using WorkflowSubStatus = Elsa.Workflows.WorkflowSubStatus;
 
@@ -258,6 +260,13 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var activityNodeId = request.ActivityNodeId.NullIfEmpty();
         var activityInstanceId = request.ActivityInstanceId.NullIfEmpty();
         var activityHash = request.ActivityHash.NullIfEmpty();
+        var activityHandle = new ActivityHandle
+        {
+            ActivityId = activityId,
+            ActivityNodeId = activityNodeId,
+            ActivityInstanceId = activityInstanceId,
+            ActivityHash = activityHash
+        };
         var cancellationToken = Context.CancellationToken;
 
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -268,10 +277,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         {
             CorrelationId = correlationId,
             BookmarkId = bookmarkId,
-            ActivityId = activityId,
-            ActivityNodeId = activityNodeId,
-            ActivityInstanceId = activityInstanceId,
-            ActivityHash = activityHash,
+            ActivityHandle = activityHandle,
             Input = _input,
             Properties = _properties,
             CancellationToken = cancellationToken
