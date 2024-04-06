@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Services;
 /// <inheritdoc />
 public class WorkflowRunner : IWorkflowRunner
 {
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
@@ -25,15 +25,14 @@ public class WorkflowRunner : IWorkflowRunner
     /// Constructor.
     /// </summary>
     public WorkflowRunner(
-        IServiceScopeFactory serviceScopeFactory,
+        IServiceProvider serviceProvider,
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateExtractor workflowStateExtractor,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
-        ISystemClock systemClock,
         INotificationSender notificationSender)
     {
-        _serviceScopeFactory = serviceScopeFactory;
+        _serviceProvider = serviceProvider;
         _pipeline = pipeline;
         _workflowStateExtractor = workflowStateExtractor;
         _workflowBuilderFactory = workflowBuilderFactory;
@@ -87,9 +86,6 @@ public class WorkflowRunner : IWorkflowRunner
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // Create a child scope.
-        using var scope = _serviceScopeFactory.CreateScope();
-
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
@@ -97,9 +93,8 @@ public class WorkflowRunner : IWorkflowRunner
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
-        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            scope.ServiceProvider,
+            _serviceProvider,
             workflow,
             instanceId,
             correlationId,
@@ -108,8 +103,7 @@ public class WorkflowRunner : IWorkflowRunner
             properties,
             default,
             triggerActivityId,
-            statusUpdatedCallback,
-            options?.CancellationToken ?? cancellationToken);
+            cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -120,18 +114,14 @@ public class WorkflowRunner : IWorkflowRunner
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // Create a child scope.
-        using var scope = _serviceScopeFactory.CreateScope();
-
         // Create workflow execution context.
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
-        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            scope.ServiceProvider,
+            _serviceProvider,
             workflow,
             workflowState,
             correlationId,
@@ -140,8 +130,7 @@ public class WorkflowRunner : IWorkflowRunner
             properties,
             default,
             triggerActivityId,
-            statusUpdatedCallback,
-            options?.CancellationToken ?? cancellationToken);
+            cancellationToken);
 
         var bookmarkId = options?.BookmarkId;
         var activityHandle = options?.ActivityHandle;
@@ -179,6 +168,7 @@ public class WorkflowRunner : IWorkflowRunner
 
         return await RunAsync(workflowExecutionContext);
     }
+    
 
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)

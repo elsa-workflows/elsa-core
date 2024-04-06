@@ -7,4 +7,4 @@ namespace Elsa.Workflows.Runtime.Results;
 /// </summary>
 /// <param name="Success">True if the operation was successful; otherwise, false.</param>
 /// <param name="Reason">The reason for the failure, if any.</param>
-public record CancellationResult(bool Success, FailureReason? Reason = default);
+public record CancellationResult(bool Success, CancellationFailureReason? Reason = default);

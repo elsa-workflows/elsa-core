@@ -46,7 +46,13 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     /// </summary>
+    [Obsolete]
     public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowRuntime>(sp);
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowClient"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowClient> WorkflowClient { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalWorkflowClient>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
@@ -201,6 +207,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
+            .AddScoped(WorkflowClient)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(WorkflowExecutionContextStore)

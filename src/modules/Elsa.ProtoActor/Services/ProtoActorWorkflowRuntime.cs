@@ -214,8 +214,13 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         return new TriggerWorkflowsResult(results);
     }
 
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, CancellationToken cancellationToken = default)
+    {
+        return await ExecuteWorkflowAsync(match, new ExecuteWorkflowParams(), cancellationToken);
+    }
+
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams options, CancellationToken cancellationToken = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
@@ -227,7 +232,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
                 VersionOptions = VersionOptions.Published,
                 TriggerActivityId = collectedStartableWorkflow.ActivityId,
                 InstanceId = collectedStartableWorkflow.WorkflowInstanceId,
-                CancellationToken = options?.CancellationToken ?? default
+                CancellationToken = cancellationToken
             };
             return await StartWorkflowAsync(collectedStartableWorkflow.DefinitionId!, startOptions);
         }
@@ -239,7 +244,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Input = options?.Input,
             Properties = options?.Properties,
             BookmarkId = collectedResumableWorkflow.BookmarkId,
-            CancellationToken = options?.CancellationToken ?? default
+            CancellationToken = cancellationToken
         };
         var result = await ResumeWorkflowAsync(match.WorkflowInstanceId, runtimeOptions);
 
@@ -256,7 +261,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
         var instance = await _workflowInstanceStore.FindAsync(filter, cancellationToken);
         if (instance is null)
-            return new CancellationResult(false, FailureReason.NotFound);
+            return new CancellationResult(false, CancellationFailureReason.NotFound);
         
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
         var result = await client.Cancel(cancellationToken);

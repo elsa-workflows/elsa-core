@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowRuntime
 {
     /// <summary>
-    /// Returns a value whether or not the specified workflow definition can create a new instance.
+    /// Returns a value whether the specified workflow definition can create a new instance.
     /// </summary>
     Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? @params = default);
 
@@ -59,7 +59,15 @@ public interface IWorkflowRuntime
     /// </summary>
     /// <param name="match">A workflow match to execute.</param>
     /// <param name="options">Options for executing the workflow.</param>
-    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default);
+    /// <param name="cancellationToken"></param>
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams options, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes a pending workflow.
+    /// </summary>
+    /// <param name="match">A workflow match to execute.</param>
+    /// <param name="cancellationToken"></param>
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels the execution of a workflow.

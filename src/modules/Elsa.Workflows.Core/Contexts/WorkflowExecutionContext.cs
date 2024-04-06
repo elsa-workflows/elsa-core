@@ -37,7 +37,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
-    private readonly Action<WorkflowExecutionContext>? _statusUpdatedCallback;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
@@ -53,7 +52,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback,
         CancellationToken cancellationToken)
     {
         ServiceProvider = serviceProvider;
@@ -94,7 +92,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
         CancellationToken cancellationToken = default)
     {
         var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
@@ -111,7 +108,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
-            statusUpdatedCallback,
             cancellationToken
         );
     }
@@ -129,7 +125,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
         CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await CreateAsync(
@@ -144,7 +139,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
-            statusUpdatedCallback,
             cancellationToken);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
@@ -168,7 +162,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = default,
         ExecuteActivityDelegate? executeDelegate = default,
         string? triggerActivityId = default,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = default,
         CancellationToken cancellationToken = default)
     {
         // Setup a workflow execution context.
@@ -183,7 +176,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
             triggerActivityId,
             incidents,
             createdAt,
-            statusUpdatedCallback,
             cancellationToken)
         {
             MemoryRegister = workflow.CreateRegister()
@@ -582,19 +574,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         if (Status == WorkflowStatus.Finished)
             FinishedAt = UpdatedAt;
-
-        //For now only trigger on Cancelled, since the other statuses are handling via the host/runner
-        if (SubStatus == WorkflowSubStatus.Cancelled
-            && _statusUpdatedCallback is not null)
-            _statusUpdatedCallback(this);
-
-        if (Status == WorkflowStatus.Finished
-            || SubStatus == WorkflowSubStatus.Suspended)
+        
+        if (Status == WorkflowStatus.Finished || SubStatus == WorkflowSubStatus.Suspended)
         {
-            foreach (var registration in _cancellationRegistrations)
-            {
+            foreach (var registration in _cancellationRegistrations) 
                 registration.Dispose();
-            }
         }
     }
 

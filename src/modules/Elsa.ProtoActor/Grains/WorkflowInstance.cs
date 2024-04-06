@@ -113,16 +113,15 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var properties = request.Properties?.Deserialize();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
-        var startWorkflowOptions = new StartWorkflowHostParams
+        var startWorkflowOptions = new StartWorkflowParams
         {
-            InstanceId = instanceId,
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
             TriggerActivityId = request.TriggerActivityId
         };
 
-        _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+        _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, instanceId, cancellationToken);
         _version = _workflowHost.Workflow.Identity.Version;
         _definitionId = definitionId;
         _instanceId = instanceId;
@@ -160,29 +159,26 @@ internal class WorkflowInstance : WorkflowInstanceBase
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
-            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, instanceId, cancellationToken);
             _version = _workflowHost.Workflow.Identity.Version;
             _definitionId = definitionId;
             _instanceId = instanceId;
             _input = input;
         }
 
-        var startWorkflowOptions = new StartWorkflowHostParams
+        var startWorkflowOptions = new StartWorkflowParams
         {
-            InstanceId = instanceId,
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
             TriggerActivityId = request.TriggerActivityId,
-            StatusUpdatedCallback = StatusUpdated,
-            CancellationToken = cancellationToken
         };
 
-        var task = _workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationToken);
+        var task = _workflowHost.ExecuteWorkflowAsync(startWorkflowOptions, cancellationToken);
 
         Context.ReenterAfter(task, async startWorkflowResultTask =>
         {
-            var startWorkflowResult = await startWorkflowResultTask;
+            await startWorkflowResultTask;
             var workflowState = _workflowHost.WorkflowState;
             var result = workflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
 
@@ -208,36 +204,6 @@ internal class WorkflowInstance : WorkflowInstanceBase
                 WorkflowInstanceId = instanceId
             });
         });
-    }
-
-    private void StatusUpdated(WorkflowExecutionContext context)
-    {
-        if (context.Status == WorkflowStatus.Finished)
-        {
-            _cancellationTokenSources.Clear();
-            return;
-        }
-
-        if (context.SubStatus == WorkflowSubStatus.Cancelled)
-            _ = Task.Run(async () => await Update(context));
-    }
-
-    private async Task Update(WorkflowExecutionContext context)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var extractor = scope.ServiceProvider.GetRequiredService<IWorkflowStateExtractor>();
-        var bookmarksPersister = scope.ServiceProvider.GetRequiredService<IBookmarksPersister>();
-        var workflowState = extractor.Extract(context);
-        var originalBookmarks = _workflowHost.WorkflowState.Bookmarks;
-
-        _workflowState = workflowState;
-
-        await SaveSnapshotAsync();
-        SaveWorkflowInstance(workflowState);
-        var newBookmarks = workflowState.Bookmarks;
-        var diff = Diff.For(originalBookmarks, newBookmarks);
-        var bookmarkRequest = new UpdateBookmarksRequest(workflowState.DefinitionId, diff, workflowState.CorrelationId);
-        await bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
     }
 
     /// <inheritdoc />
@@ -273,27 +239,27 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _cancellationTokenSources.Add(cancellationTokenSource);
         cancellationToken = cancellationTokenSource.Token;
 
-        var resumeWorkflowHostOptions = new ResumeWorkflowHostParams
+        var resumeWorkflowHostOptions = new ResumeWorkflowParams
         {
             CorrelationId = correlationId,
             BookmarkId = bookmarkId,
             ActivityHandle = activityHandle,
             Input = _input,
-            Properties = _properties,
-            CancellationToken = cancellationToken
+            Properties = _properties
         };
 
         var definitionId = _definitionId;
+        var instanceId = request.InstanceId;
         var versionOptions = VersionOptions.SpecificVersion(_version);
 
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
-            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, instanceId, cancellationToken);
             _version = _workflowHost.Workflow.Identity.Version;
         }
 
-        var task = _workflowHost.ResumeWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
+        var task = _workflowHost.ExecuteWorkflowAsync(resumeWorkflowHostOptions, cancellationToken);
 
         async void Action()
         {
@@ -398,7 +364,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     private object GetState() => new WorkflowInstanceSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
 
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, string? instanceId, CancellationToken cancellationToken)
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
@@ -408,7 +374,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             throw new Exception("Specified workflow definition and version does not exist");
 
         var workflowHostFactory = scope.ServiceProvider.GetRequiredService<IWorkflowHostFactory>();
-        return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
+        return await workflowHostFactory.CreateAsync(workflow, instanceId, cancellationToken);
     }
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowState workflowState, CancellationToken cancellationToken)

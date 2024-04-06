@@ -89,14 +89,13 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             }
             
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-            var options = new ResumeWorkflowHostParams
+            var options = new ResumeWorkflowParams
             {
                 CorrelationId = correlationId,
                 BookmarkId = result.BookmarkId,
-                Input = input,
-                CancellationToken = cancellationToken
+                Input = input
             };
-            await workflowHost.ResumeWorkflowAsync(options, cancellationToken);
+            await workflowHost.ExecuteWorkflowAsync(options, cancellationToken);
 
             // Import the updated workflow state into the runtime.
             workflowState = workflowHost.WorkflowState;

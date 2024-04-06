@@ -32,7 +32,6 @@
         <ProjectReference Include="..\..\modules\Elsa.MongoDb\Elsa.MongoDb.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>

@@ -134,23 +134,22 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
         var workflowHostFactory = serviceProvider.GetRequiredService<IWorkflowHostFactory>();
-        var workflowHost = await workflowHostFactory.CreateAsync(workflow, cancellationToken);
+        var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
+        var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowInstanceId, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
 
         await ExecuteWithinTimeoutAsync(async ct =>
         {
-            var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, httpContext.RequestAborted);
-            var startParams = new StartWorkflowHostParams
+
+            var startParams = new StartWorkflowParams
             {
                 Input = input,
-                InstanceId = workflowInstanceId,
                 CorrelationId = correlationId,
-                TriggerActivityId = trigger.ActivityId,
-                CancellationToken = ct
+                TriggerActivityId = trigger.ActivityId
             };
-            await workflowHost.StartWorkflowAsync(startParams, ct);
+            await workflowHost.ExecuteWorkflowAsync(startParams, ct);
             await workflowHost.PersistStateAsync(ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);
@@ -184,19 +183,18 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
-        
+
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);
-            var resumeParams = new ResumeWorkflowHostParams
+            var resumeParams = new ResumeWorkflowParams
             {
                 Input = input,
                 CorrelationId = correlationId,
                 ActivityHandle = bookmark.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(bookmark.ActivityInstanceId) : null,
-                BookmarkId = bookmark.BookmarkId,
-                CancellationToken = ct
+                BookmarkId = bookmark.BookmarkId
             };
-            await workflowHost.ResumeWorkflowAsync(resumeParams, ct);
+            await workflowHost.ExecuteWorkflowAsync(resumeParams, ct);
             await workflowHost.PersistStateAsync(ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);

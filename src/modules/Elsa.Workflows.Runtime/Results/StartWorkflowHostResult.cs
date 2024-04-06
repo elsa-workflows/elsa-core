@@ -3,4 +3,4 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Results;
 
-public record StartWorkflowHostResult(Diff<Bookmark> BookmarksDiff);
+public record ExecuteWorkflowResult(Diff<Bookmark> BookmarksDiff);

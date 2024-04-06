@@ -39,6 +39,7 @@ public class ProtoActorFeature : FeatureBase
     {
         // Configure runtime with ProtoActor workflow runtime.
         Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowClient = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowClient>(sp);
     }
 
     /// <summary>

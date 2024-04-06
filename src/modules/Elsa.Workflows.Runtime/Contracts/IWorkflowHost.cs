@@ -23,17 +23,27 @@ public interface IWorkflowHost
     /// <summary>
     /// Returns a value indicating whether the specified workflow can start a new instance or not.
     /// </summary>
-    Task<bool> CanStartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
-
+    Task<bool> CanStartWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default);
+    
     /// <summary>
-    /// Start a new workflow instance and execute it.
+    /// Executes the workflow instance.
     /// </summary>
-    Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default);
 
+    // /// <summary>
+    // /// Start a new workflow instance and execute it.
+    // /// </summary>
+    // Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    //
+    // /// <summary>
+    // /// Resume an existing workflow instance.
+    // /// </summary>
+    // Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    
     /// <summary>
-    /// Resume an existing workflow instance.
+    /// Cancel the workflow instance.
     /// </summary>
-    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    Task CancelWorkflowAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Persist the workflow state.

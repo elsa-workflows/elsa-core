@@ -19,7 +19,6 @@ namespace Elsa.Workflows.Runtime.Services;
 public class WorkflowHost : IWorkflowHost
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly IIdentityGenerator _identityGenerator;
     private readonly ILogger<WorkflowHost> _logger;
 
     /// <summary>
@@ -29,13 +28,11 @@ public class WorkflowHost : IWorkflowHost
         IServiceScopeFactory serviceScopeFactory,
         Workflow workflow,
         WorkflowState workflowState,
-        IIdentityGenerator identityGenerator,
         ILogger<WorkflowHost> logger)
     {
         Workflow = workflow;
         WorkflowState = workflowState;
         _serviceScopeFactory = serviceScopeFactory;
-        _identityGenerator = identityGenerator;
         _logger = logger;
     }
 
@@ -46,7 +43,7 @@ public class WorkflowHost : IWorkflowHost
     public WorkflowState WorkflowState { get; set; }
 
     /// <inheritdoc />
-    public async Task<bool> CanStartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<bool> CanStartWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
     {
         var strategyType = Workflow.Options.ActivationStrategyType;
 
@@ -66,80 +63,57 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public async Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
-    {
-        var parentWorkflowInstanceId = @params?.ParentWorkflowInstanceId;
-        var correlationId = @params?.CorrelationId;
-        var instanceId = @params?.InstanceId ?? _identityGenerator.GenerateId();
-        var originalBookmarks = WorkflowState.Bookmarks.ToList();
-        var input = @params?.Input;
-        var properties = @params?.Properties;
-
-        var runOptions = new RunWorkflowOptions
-        {
-            WorkflowInstanceId = instanceId,
-            ParentWorkflowInstanceId = parentWorkflowInstanceId,
-            CorrelationId = correlationId,
-            Input = input,
-            Properties = properties,
-            TriggerActivityId = @params?.TriggerActivityId,
-            StatusUpdatedCallback = @params?.StatusUpdatedCallback,
-            CancellationToken = @params?.CancellationToken ?? cancellationToken
-        };
-
-        using var scope = _serviceScopeFactory.CreateScope();
-        var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-        var workflowResult = await workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
-
-        WorkflowState = workflowResult.WorkflowState;
-
-        var updatedBookmarks = WorkflowState.Bookmarks;
-        var diff = Diff.For(originalBookmarks, updatedBookmarks);
-
-        return new StartWorkflowHostResult(diff);
-    }
-
-    /// <summary>
-    /// Resumes the <see cref="Workflow"/>.
-    /// </summary>
-    public async Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
     {
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
 
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, new List<Bookmark>()));
+            return new ExecuteWorkflowResult(Diff.For(originalBookmarks, new List<Bookmark>()));
         }
-
-        var instanceId = WorkflowState.Id;
-        var input = @params?.Input;
-
-        var runOptions = new RunWorkflowOptions
-        {
-            WorkflowInstanceId = instanceId,
-            CorrelationId = @params?.CorrelationId,
-            BookmarkId = @params?.BookmarkId,
-            ActivityHandle = @params?.ActivityHandle,
-            Input = input,
-            Properties = @params?.Properties,
-            CancellationToken = @params?.CancellationToken ?? cancellationToken
-        };
 
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+        var runOptions = new RunWorkflowOptions
+        {
+            WorkflowInstanceId = WorkflowState.Id,
+            CorrelationId = @params?.CorrelationId,
+            Input = @params?.Input,
+            Properties = @params?.Properties,
+            ActivityHandle = @params?.ActivityHandle,
+            BookmarkId = @params?.BookmarkId,
+            TriggerActivityId = @params?.TriggerActivityId,
+            ParentWorkflowInstanceId = @params?.ParentWorkflowInstanceId
+        };
         var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
+        await PersistStateAsync(scope, cancellationToken);
 
         var updatedBookmarks = WorkflowState.Bookmarks;
-        return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, updatedBookmarks));
+        return new ExecuteWorkflowResult(Diff.For(originalBookmarks, updatedBookmarks));
+    }
+
+    /// <inheritdoc />
+    public async Task CancelWorkflowAsync(CancellationToken cancellationToken = default)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var serviceProvider = scope.ServiceProvider;
+        var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
+        WorkflowState = await workflowCanceler.CancelWorkflowAsync(Workflow, WorkflowState, cancellationToken);
+        await PersistStateAsync(scope, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task PersistStateAsync(CancellationToken cancellationToken = default)
     {
         using var scope = _serviceScopeFactory.CreateScope();
+        await PersistStateAsync(scope, cancellationToken);
+    }
+
+    private async Task PersistStateAsync(IServiceScope scope, CancellationToken cancellationToken = default)
+    {
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
         await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
     }

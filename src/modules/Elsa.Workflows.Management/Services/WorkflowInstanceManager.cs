@@ -34,7 +34,13 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
         _workflowStateExtractor = workflowStateExtractor;
         _workflowStateSerializer = workflowStateSerializer;
     }
-    
+
+    /// <inheritdoc />
+    public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.FindAsync(filter, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {
