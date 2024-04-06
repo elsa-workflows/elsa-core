@@ -1,6 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
@@ -136,5 +137,13 @@ public class WorkflowHost : IWorkflowHost
 
         var updatedBookmarks = WorkflowState.Bookmarks;
         return new ResumeWorkflowHostResult(Diff.For(originalBookmarks, updatedBookmarks));
+    }
+
+    /// <inheritdoc />
+    public async Task PersistStateAsync(CancellationToken cancellationToken = default)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
     }
 }

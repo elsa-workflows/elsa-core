@@ -257,13 +257,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             };
 
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, applicationCancellationToken);
-
+            await workflowHost.PersistStateAsync(systemCancellationToken);
             workflowState = workflowHost.WorkflowState;
-
-            await SaveWorkflowStateAsync(workflowState, systemCancellationToken);
-
-            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus,
-                workflowState.Bookmarks, workflowState.Incidents);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents);
         }
     }
 

@@ -34,4 +34,9 @@ public interface IWorkflowHost
     /// Resume an existing workflow instance.
     /// </summary>
     Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Persist the workflow state.
+    /// </summary>
+    Task PersistStateAsync(CancellationToken cancellationToken = default);
 }

@@ -138,7 +138,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
 
-        var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var cancellationTokens = new CancellationTokens(ct, ct);
@@ -153,7 +152,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 CancellationTokens = cancellationTokens
             };
             await workflowHost.StartWorkflowAsync(startParams, ct);
-            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, ct);
+            await workflowHost.PersistStateAsync(ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);
     }
@@ -201,7 +200,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 CancellationTokens = cancellationTokens
             };
             await workflowHost.ResumeWorkflowAsync(resumeParams, ct);
-            await workflowInstanceManager.SaveAsync(workflowHost.WorkflowState, ct);
+            await workflowHost.PersistStateAsync(ct);
         }, bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, workflowHost.WorkflowState, cancellationToken);
     }
