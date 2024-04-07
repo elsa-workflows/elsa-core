@@ -53,8 +53,6 @@ message ProtoActivityHandle {
   optional string ActivityHash = 4;
 }
 
-message ProtoExportWorkflowStateRequest {}
-
 message ProtoExportWorkflowStateResponse {
   ProtoJson SerializedWorkflowState = 1;
 }
@@ -62,5 +60,3 @@ message ProtoExportWorkflowStateResponse {
 message ProtoImportWorkflowStateRequest {
   ProtoJson SerializedWorkflowState = 1;
 }
-
-message ProtoImportWorkflowStateResponse {}

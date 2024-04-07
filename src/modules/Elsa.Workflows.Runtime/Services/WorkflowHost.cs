@@ -5,6 +5,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
@@ -65,12 +66,12 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
     {
-        var originalBookmarks = WorkflowState.Bookmarks.ToList();
+        var originalBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
 
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<Bookmark>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
+            return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<BookmarkInfo>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
         }
 
         using var scope = _serviceScopeFactory.CreateScope();
@@ -91,7 +92,7 @@ public class WorkflowHost : IWorkflowHost
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
 
-        var updatedBookmarks = WorkflowState.Bookmarks;
+        var updatedBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
         return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
     }
 

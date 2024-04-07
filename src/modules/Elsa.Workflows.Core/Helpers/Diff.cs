@@ -34,6 +34,11 @@ public class Diff<T>
 public static class Diff
 {
     /// <summary>
+    /// Creates a new diff.
+    /// </summary>
+    public static Diff<T> From<T>(ICollection<T> added, ICollection<T> removed, ICollection<T> unchanged) => new(added, removed, unchanged);
+    
+    /// <summary>
     /// Returns an empty diff.
     /// </summary>
     public static Diff<T> Empty<T>() => new(Array.Empty<T>(), Array.Empty<T>(), Array.Empty<T>());

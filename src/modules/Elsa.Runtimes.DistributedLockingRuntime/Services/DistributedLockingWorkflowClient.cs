@@ -5,8 +5,6 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Medallion.Threading;
@@ -26,24 +24,27 @@ public class DistributedLockingWorkflowClient(
     ICommandSender commandSender) : IWorkflowClient
 {
     /// <inheritdoc />
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
+
+    /// <inheritdoc />
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = null, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
-        return await workflowHost.ExecuteWorkflowAsync(@params, cancellationToken);
+        return await workflowHost.ExecuteWorkflowAsync(request, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        var command = new ExecuteWorkflowCommand(@params);
+        var command = new ExecuteWorkflowCommand(request);
         await commandSender.SendAsync(command, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<CancellationResult> CancelAsync(CancellationToken cancellationToken = default)
+    public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await workflowExecutionContextStore.FindAsync(WorkflowInstanceId);
         var isRunningLocally = workflowExecutionContext != null;
@@ -56,26 +57,25 @@ public class DistributedLockingWorkflowClient(
                 : await distributedLockProvider.TryAcquireLockAsync(cancellationLockKey, cancellationToken: cancellationToken);
 
         if (cancellationLock == null)
-            return new CancellationResult(false, CancellationFailureReason.CancellationAlreadyInProgress);
+            return;
 
         if (!isRunningLocally)
         {
             // The execution context is not running on this instance, but we did acquire the cancellation lock. Which means no other instance is currently cancelling the workflow.
             var workflowInstance = await FindWorkflowInstanceAsync(cancellationToken);
             if (workflowInstance is null)
-                return new CancellationResult(false, CancellationFailureReason.NotFound);
+                return;
             if (workflowInstance.Status == WorkflowStatus.Finished)
-                return new CancellationResult(false, CancellationFailureReason.AlreadyCancelled);
+                return;
             
             var workflowHost = await CreateWorkflowHostAsync(workflowInstance, cancellationToken);
             await workflowHost.CancelWorkflowAsync(cancellationToken);
 
-            return new CancellationResult(true);
+            return;
         }
 
         // The execution context is running on this instance. Cancel the workflow.
         await workflowCanceler.CancelWorkflowAsync(workflowExecutionContext!, cancellationToken);
-        return new CancellationResult(true);
     }
 
     /// <inheritdoc />

@@ -4,7 +4,6 @@ namespace Elsa.Workflows.Runtime.Contracts;
 
 public interface IExecuteWorkflowRequest
 {
-    string DefinitionVersionId { get; set; }
     string? CorrelationId { get; set; }
     string? BookmarkId { get; set; }
     ActivityHandle? ActivityHandle { get; set; }

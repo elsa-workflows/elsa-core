@@ -85,7 +85,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             TriggerActivityId = @params?.TriggerActivityId.EmptyIfNull(),
         };
 
-        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
         var response = await client.CanStart(request, @params?.CancellationToken ?? default);
 
         return new CanStartWorkflowResult(workflowInstanceId, response!.CanStart);
@@ -122,7 +122,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             TriggerActivityId = @params?.TriggerActivityId.WithDefault("")
         };
 
-        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
         var response = await client.Start(request, @params?.CancellationToken ?? default);
 
         return _workflowExecutionResultMapper.Map(response!);
@@ -178,7 +178,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Properties = options?.Properties?.SerializeProperties(),
         };
 
-        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
         var response = await client.Resume(request, options?.CancellationToken ?? default);
 
         return _workflowExecutionResultMapper.Map(response!);
@@ -264,7 +264,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         if (instance is null)
             return new CancellationResult(false, CancellationFailureReason.NotFound);
         
-        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
         var result = await client.Cancel(cancellationToken);
         return new CancellationResult(result?.Result ?? false);
     }
@@ -282,7 +282,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
         var response = await client.ExportState(new ProtoExportWorkflowStateRequest(), cancellationToken);
         var json = response!.SerializedWorkflowState.Text;
         var workflowState = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
@@ -293,7 +293,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);
+        var client = _cluster.GetNamedWorkflowInstanceGrain(workflowState.Id);
         var json = await _workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
 
         var request = new ProtoImportWorkflowStateRequest

@@ -126,12 +126,19 @@ public class ProtoActorFeature : FeatureBase
 
         // Mappers.
         services
-            .AddScoped<BookmarkMapper>()
+            .AddSingleton<Mappers.Mappers>()
+            .AddSingleton<BookmarkMapper>()
+            .AddSingleton<BookmarkInfoMapper>()
+            .AddSingleton<BookmarkDiffMapper>()
+            .AddSingleton<ActivityHandleMapper>()
+            .AddSingleton<ActivityIncidentMapper>()
             .AddSingleton<ExceptionMapper>()
-            .AddScoped<WorkflowExecutionResultMapper>()
+            .AddSingleton<WorkflowExecutionResultMapper>()
             .AddSingleton<ActivityIncidentStateMapper>()
             .AddSingleton<WorkflowStatusMapper>()
-            .AddSingleton<WorkflowSubStatusMapper>();
+            .AddSingleton<WorkflowSubStatusMapper>()
+            .AddSingleton<ExecuteWorkflowRequestMapper>()
+            .AddSingleton<WorkflowStatusMapper>();
 
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();

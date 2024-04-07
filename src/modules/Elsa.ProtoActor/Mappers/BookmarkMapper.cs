@@ -8,7 +8,7 @@ namespace Elsa.ProtoActor.Mappers;
 /// <summary>
 /// Maps between <see cref="Bookmark"/> and <see cref="ProtoBookmark"/>.
 /// </summary>
-internal class BookmarkMapper
+public class BookmarkMapper
 {
     private readonly IBookmarkPayloadSerializer _bookmarkPayloadSerializer;
 
@@ -21,8 +21,9 @@ internal class BookmarkMapper
     }
 
 
-    public IEnumerable<ProtoBookmark> Map(IEnumerable<Bookmark> source) =>
-        source.Select(bookmark =>
+    public IEnumerable<ProtoBookmark> Map(IEnumerable<Bookmark> source)
+    {
+        return source.Select(bookmark =>
             new ProtoBookmark
             {
                 Id = bookmark.Id,
@@ -36,11 +37,16 @@ internal class BookmarkMapper
                 CallbackMethodName = bookmark.CallbackMethodName.EmptyIfNull(),
                 AutoComplete = bookmark.AutoComplete,
                 CreatedAt = bookmark.CreatedAt.ToString("O"),
-                Metadata = { bookmark.Metadata ?? new Dictionary<string, string>() }
+                Metadata =
+                {
+                    bookmark.Metadata ?? new Dictionary<string, string>()
+                }
             });
+    }
 
-    public IEnumerable<Bookmark> Map(IEnumerable<ProtoBookmark> source) =>
-        source.Select(bookmark =>
+    public IEnumerable<Bookmark> Map(IEnumerable<ProtoBookmark> source)
+    {
+        return source.Select(bookmark =>
             new Bookmark(
                 bookmark.Id,
                 bookmark.Name,
@@ -54,4 +60,5 @@ internal class BookmarkMapper
                 bookmark.CallbackMethodName.NullIfEmpty(),
                 bookmark.AutoComplete,
                 bookmark.Metadata.ToDictionary(x => x.Key, x => x.Value)));
+    }
 }

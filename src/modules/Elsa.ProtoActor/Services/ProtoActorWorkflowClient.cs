@@ -1,7 +1,5 @@
 using Elsa.Extensions;
-using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
@@ -9,67 +7,76 @@ using Proto.Cluster;
 
 namespace Elsa.ProtoActor.Services;
 
-public class ProtoActorWorkflowClient(Cluster cluster) : IWorkflowClient
+/// <summary>
+/// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
+/// </summary>
+public class ProtoActorWorkflowClient : IWorkflowClient
 {
+    private readonly Mappers.Mappers _mappers;
+    private readonly WorkflowClient _grain;
+
+    /// <summary>
+    /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
+    /// </summary>
+    public ProtoActorWorkflowClient(Cluster cluster, Mappers.Mappers mappers)
+    {
+        _mappers = mappers;
+        _grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
+    }
+
     /// <inheritdoc />
-    public string WorkflowInstanceId { get; set; }
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = null, CancellationToken cancellationToken = default)
-    {
-        var grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
-        var request = new ProtoExecuteWorkflowRequest
-        {
-            
-        };
-        //var response = await client.Start(request, @params?.CancellationToken ?? default);
+    public string WorkflowInstanceId { get; set; } = default!;
 
-        throw new NotImplementedException();
+    /// <inheritdoc />
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default)
+    {
+        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, request);
+        var response = await _grain.ExecuteAndWait(protoRequest, cancellationToken);
+        return Map(response!);
     }
 
-    public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, request);
+        await _grain.ExecuteAndForget(protoRequest, cancellationToken);
     }
 
-    public async Task<CancellationResult> CancelAsync(CancellationToken cancellationToken = default)
+    /// <inheritdoc />
+    public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await _grain.Cancel(cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var response = await _grain.ExportState(cancellationToken);
+        return await _mappers.WorkflowStateJsonMapper.MapAsync(response!.SerializedWorkflowState, cancellationToken);
     }
 
+    /// <inheritdoc />
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
-    }
-
-    private ProtoExecuteWorkflowRequest Map(IExecuteWorkflowRequest request)
-    {
-        return new()
+        var protoJson = await _mappers.WorkflowStateJsonMapper.MapAsync(workflowState, cancellationToken);
+        var request = new ProtoImportWorkflowStateRequest
         {
-            DefinitionVersionId = request.DefinitionVersionId,
-            ActivityHandle = Map(request.ActivityHandle),
-            BookmarkId = request.BookmarkId,
-            ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
-            TriggerActivityId = request.TriggerActivityId,
-            Input = request.Input?.SerializeInput(),
-            CorrelationId = request.CorrelationId,
-            Properties = request.Properties?.SerializeProperties(),
+            SerializedWorkflowState = protoJson
         };
+        await _grain.ImportState(request, cancellationToken);
     }
     
-    private ProtoActivityHandle Map(ActivityHandle source)
+    private ExecuteWorkflowResult Map(ProtoExecuteWorkflowResponse source)
     {
-        return new()
-        {
-            ActivityId = source.ActivityId,
-            ActivityHash = source.ActivityHash,
-            ActivityInstanceId = source.ActivityInstanceId,
-            ActivityNodeId = source.ActivityNodeId,
-        };
+        return new ExecuteWorkflowResult(
+            source.WorkflowInstanceId,
+            _mappers.BookmarkDiffMapper.Map(source.BookmarkDiff),
+            _mappers.WorkflowStatusMapper.Map(source.Status),
+            _mappers.WorkflowSubStatusMapper.Map(source.SubStatus),
+            _mappers.ActivityIncidentMapper.Map(source.Incidents).ToList()
+        );
     }
 }

@@ -10,6 +10,11 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowClient
 {
     /// <summary>
+    /// The ID of the workflow definition version this client is associated with.
+    /// </summary>
+    string WorkflowDefinitionVersionId { get; set; }
+    
+    /// <summary>
     /// The ID of the workflow instance this client is associated with.
     /// </summary>
     string WorkflowInstanceId { get; set; }
@@ -17,17 +22,17 @@ public interface IWorkflowClient
     /// <summary>
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
-    Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = null, CancellationToken cancellationToken = default);
+    Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Executes the workflow instance and returns immediately.
     /// </summary>
-    Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
+    Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Cancels the execution of a workflow instance.
     /// </summary>
-    Task<CancellationResult> CancelAsync(CancellationToken cancellationToken = default);
+    Task CancelAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Exports the <see cref="WorkflowState"/> of the specified workflow instance.

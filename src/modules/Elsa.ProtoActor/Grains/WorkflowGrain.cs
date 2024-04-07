@@ -25,12 +25,12 @@ internal class WorkflowGrain(IContext context) : WorkflowBase(context)
         throw new NotImplementedException();
     }
 
-    public override async Task<ProtoExportWorkflowStateResponse> ExportState(ProtoExportWorkflowStateRequest request)
+    public override async Task<ProtoExportWorkflowStateResponse> ExportState()
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<ProtoImportWorkflowStateResponse> ImportState(ProtoImportWorkflowStateRequest request)
+    public override async Task ImportState(ProtoImportWorkflowStateRequest request)
     {
         throw new NotImplementedException();
     }

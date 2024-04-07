@@ -3,7 +3,7 @@ using Elsa.Workflows;
 
 namespace Elsa.ProtoActor.Mappers;
 
-internal class WorkflowSubStatusMapper
+public class WorkflowSubStatusMapper
 {
     public WorkflowSubStatus Map(ProtoWorkflowSubStatus subStatus)
     {
@@ -18,8 +18,9 @@ internal class WorkflowSubStatusMapper
         };
     }
 
-    public ProtoWorkflowSubStatus Map(WorkflowSubStatus subStatus) =>
-        subStatus switch
+    public ProtoWorkflowSubStatus Map(WorkflowSubStatus subStatus)
+    {
+        return subStatus switch
         {
             WorkflowSubStatus.Faulted => ProtoWorkflowSubStatus.WorkflowSubStatusFaulted,
             WorkflowSubStatus.Finished => ProtoWorkflowSubStatus.WorkflowSubStatusFinished,
@@ -28,4 +29,5 @@ internal class WorkflowSubStatusMapper
             WorkflowSubStatus.Suspended => ProtoWorkflowSubStatus.WorkflowSubStatusSuspended,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
+    }
 }

@@ -7,7 +7,7 @@ import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
 message ProtoExecuteWorkflowRequest{
-  string DefinitionVersionId = 1;
+  string WorkflowDefinitionVersionId = 1;
   optional string CorrelationId = 3;
   optional string BookmarkId = 4;
   optional ProtoActivityHandle ActivityHandle = 5;
@@ -28,6 +28,7 @@ message ProtoExecuteWorkflowResponse {
 message ProtoBookmarkDiff {
   repeated ProtoBookmarkInfo Added = 1;
   repeated ProtoBookmarkInfo Removed = 2;
+  repeated ProtoBookmarkInfo Unchanged = 3;
 }
 
 message ProtoBookmarkInfo {

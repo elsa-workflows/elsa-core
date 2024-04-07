@@ -17,28 +17,30 @@ public class LocalWorkflowClient(
     IWorkflowHostFactory workflowHostFactory) : IWorkflowClient
 {
     /// <inheritdoc />
+    public string WorkflowDefinitionVersionId { get; set; } = default!;
+
+    /// <inheritdoc />
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
-        return await workflowHost.ExecuteWorkflowAsync(@params, cancellationToken);
+        return await workflowHost.ExecuteWorkflowAsync(request, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    public Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        _ = ExecuteAndWaitAsync(@params, cancellationToken);
+        _ = ExecuteAndWaitAsync(request, cancellationToken);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async Task<CancellationResult> CancelAsync(CancellationToken cancellationToken = default)
+    public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
         await workflowHost.CancelWorkflowAsync(cancellationToken);
-        return new CancellationResult(true);
     }
 
     /// <inheritdoc />

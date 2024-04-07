@@ -26,7 +26,7 @@ internal class StopRunningWorkflows : INotificationHandler<WorkflowInstancesDele
     {
         foreach (var workflowInstanceId in notification.Ids)
         {
-            var workflowGrainClient = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
+            var workflowGrainClient = _cluster.GetNamedWorkflowInstanceGrain(workflowInstanceId);
             await workflowGrainClient.Stop(cancellationToken);
         }
     }

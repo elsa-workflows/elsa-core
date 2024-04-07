@@ -132,7 +132,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IHasher, Hasher>()
             .AddScoped<IBookmarkHasher, BookmarkHasher>()
             .AddSingleton(IdentityGenerator)
-            .AddScoped<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
+            .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()

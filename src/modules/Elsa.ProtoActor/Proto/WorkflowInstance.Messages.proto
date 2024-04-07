@@ -65,3 +65,6 @@ message ProtoBookmark {
   optional bool AutoComplete = 11;
   string CreatedAt = 12; // ISO 8601
 }
+
+message ProtoExportWorkflowStateRequest {}
+message ProtoImportWorkflowStateResponse {}
