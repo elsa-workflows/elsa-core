@@ -1,6 +1,6 @@
 using Elsa.ProtoActor.Extensions;
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Runtime.Results;
-using ProtoWorkflowExecutionResponse = Elsa.ProtoActor.ProtoBuf.WorkflowExecutionResponse;
 
 namespace Elsa.ProtoActor.Mappers;
 

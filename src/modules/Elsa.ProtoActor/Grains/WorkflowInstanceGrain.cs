@@ -6,28 +6,23 @@ using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Parameters;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
-using RunWorkflowResult = Elsa.ProtoActor.ProtoBuf.RunWorkflowResult;
-using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
-using WorkflowSubStatus = Elsa.Workflows.WorkflowSubStatus;
 
 namespace Elsa.ProtoActor.Grains;
 
 /// <summary>
 /// Executes a workflow.
 /// </summary>
-internal class WorkflowInstance : WorkflowInstanceBase
+internal class WorkflowInstanceGrain : WorkflowInstanceBase
 {
     private const int MaxSnapshotsToKeep = 5;
 
@@ -49,7 +44,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private readonly ICollection<CancellationTokenSource> _cancellationTokenSources = new List<CancellationTokenSource>();
 
     /// <inheritdoc />
-    public WorkflowInstance(
+    public WorkflowInstanceGrain(
         IServiceScopeFactory scopeFactory,
         IWorkflowHostFactory workflowHostFactory,
         IProvider provider,
@@ -101,10 +96,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
     }
 
     /// <inheritdoc />
-    public override Task<CanStartWorkflowResponse> CanStart(StartWorkflowRequest request) => Task.FromResult(new CanStartWorkflowResponse());
+    public override Task<ProtoCanStartWorkflowResponse> CanStart(ProtoStartWorkflowRequest request) => Task.FromResult(new ProtoCanStartWorkflowResponse());
 
     /// <inheritdoc />
-    public override async Task CanStart(StartWorkflowRequest request, Action<CanStartWorkflowResponse> respond, Action<string> onError)
+    public override async Task CanStart(ProtoStartWorkflowRequest request, Action<ProtoCanStartWorkflowResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
@@ -131,7 +126,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
         Context.ReenterAfter(task, async canStart =>
         {
-            respond(new CanStartWorkflowResponse
+            respond(new ProtoCanStartWorkflowResponse
             {
                 CanStart = await canStart
             });
@@ -139,10 +134,10 @@ internal class WorkflowInstance : WorkflowInstanceBase
     }
 
     /// <inheritdoc />
-    public override Task<WorkflowExecutionResponse> Start(StartWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
+    public override Task<ProtoWorkflowExecutionResponse> Start(ProtoStartWorkflowRequest request) => Task.FromResult(new ProtoWorkflowExecutionResponse());
 
     /// <inheritdoc />
-    public override async Task Start(StartWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
+    public override async Task Start(ProtoStartWorkflowRequest request, Action<ProtoWorkflowExecutionResponse> respond, Action<string> onError)
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
@@ -180,7 +175,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         {
             await startWorkflowResultTask;
             var workflowState = _workflowHost.WorkflowState;
-            var result = workflowState.Status == WorkflowStatus.Finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended;
+            var result = workflowState.Status == WorkflowStatus.Finished ? ProtoRunWorkflowResult.RunWorkflowResultFinished : ProtoRunWorkflowResult.RunWorkflowResultSuspended;
 
             _workflowState = workflowState;
 
@@ -191,7 +186,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
             var bookmarkMapper = scope.ServiceProvider.GetRequiredService<BookmarkMapper>();
             var mappedBookmarks = bookmarkMapper.Map(workflowState.Bookmarks).ToList();
 
-            respond(new WorkflowExecutionResponse
+            respond(new ProtoWorkflowExecutionResponse
             {
                 Result = result,
                 Bookmarks =
@@ -216,7 +211,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         return Task.CompletedTask;
     }
 
-    public override async Task Resume(ResumeWorkflowRequest request, Action<WorkflowExecutionResponse> respond, Action<string> onError)
+    public override async Task Resume(ProtoResumeWorkflowRequest request, Action<ProtoWorkflowExecutionResponse> respond, Action<string> onError)
     {
         _input = request.Input?.Deserialize();
         _properties = request.Properties?.Deserialize();
@@ -271,9 +266,9 @@ internal class WorkflowInstance : WorkflowInstanceBase
             await SaveWorkflowInstanceCoreAsync(scope.ServiceProvider, _workflowState);
             var bookmarkMapper = scope.ServiceProvider.GetRequiredService<BookmarkMapper>();
 
-            var response = new WorkflowExecutionResponse
+            var response = new ProtoWorkflowExecutionResponse
             {
-                Result = finished ? RunWorkflowResult.Finished : RunWorkflowResult.Suspended,
+                Result = finished ? ProtoRunWorkflowResult.RunWorkflowResultFinished : ProtoRunWorkflowResult.RunWorkflowResultSuspended,
                 Bookmarks =
                 {
                     bookmarkMapper.Map(_workflowHost.WorkflowState.Bookmarks).ToList()
@@ -291,12 +286,12 @@ internal class WorkflowInstance : WorkflowInstanceBase
     }
 
     /// <inheritdoc />
-    public override Task<WorkflowExecutionResponse> Resume(ResumeWorkflowRequest request) => Task.FromResult(new WorkflowExecutionResponse());
+    public override Task<ProtoWorkflowExecutionResponse> Resume(ProtoResumeWorkflowRequest request) => Task.FromResult(new ProtoWorkflowExecutionResponse());
 
-    public override Task<WorkflowInstanceCancellationResponse> Cancel()
+    public override Task<ProtoWorkflowInstanceCancellationResponse> Cancel()
     {
         if (_workflowState.Status == WorkflowStatus.Finished)
-            return Task.FromResult(new WorkflowInstanceCancellationResponse
+            return Task.FromResult(new ProtoWorkflowInstanceCancellationResponse
             {
                 Result = false
             });
@@ -307,7 +302,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         foreach (var source in _cancellationTokenSources)
             source.Cancel();
 
-        return Task.FromResult(new WorkflowInstanceCancellationResponse
+        return Task.FromResult(new ProtoWorkflowInstanceCancellationResponse
         {
             Result = true
         });
@@ -315,14 +310,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
-    public override async Task<ExportWorkflowStateResponse> ExportState(ExportWorkflowStateRequest request)
+    public override async Task<ProtoExportWorkflowStateResponse> ExportState(ProtoExportWorkflowStateRequest request)
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowStateSerializer = scope.ServiceProvider.GetRequiredService<IWorkflowStateSerializer>();
         var json = await workflowStateSerializer.SerializeAsync(_workflowHost.WorkflowState);
-        var response = new ExportWorkflowStateResponse
+        var response = new ProtoExportWorkflowStateResponse
         {
-            SerializedWorkflowState = new Json
+            SerializedWorkflowState = new ProtoJson
             {
                 Text = json
             }
@@ -333,7 +328,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
-    public override async Task<ImportWorkflowStateResponse> ImportState(ImportWorkflowStateRequest request)
+    public override async Task<ProtoImportWorkflowStateResponse> ImportState(ProtoImportWorkflowStateRequest request)
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowStateSerializer = scope.ServiceProvider.GetRequiredService<IWorkflowStateSerializer>();
@@ -347,7 +342,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _workflowHost = await CreateWorkflowHostAsync(workflowState, Context.CancellationToken);
 
         await SaveWorkflowInstanceCoreAsync(scope.ServiceProvider, workflowState);
-        return new ImportWorkflowStateResponse();
+        return new ProtoImportWorkflowStateResponse();
     }
 
     private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowInstanceSnapshot)snapshot.State;

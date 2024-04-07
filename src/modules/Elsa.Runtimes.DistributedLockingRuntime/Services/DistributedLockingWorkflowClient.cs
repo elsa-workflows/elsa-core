@@ -29,10 +29,10 @@ public class DistributedLockingWorkflowClient(
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public async Task ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = null, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
-        await workflowHost.ExecuteWorkflowAsync(@params, cancellationToken);
+        return await workflowHost.ExecuteWorkflowAsync(@params, cancellationToken);
     }
 
     /// <inheritdoc />

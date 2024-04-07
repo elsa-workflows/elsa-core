@@ -13,10 +13,12 @@ public class ProtoActorWorkflowClient(Cluster cluster) : IWorkflowClient
     public string WorkflowInstanceId { get; set; }
 
     /// <inheritdoc />
-    public async Task ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = null, CancellationToken cancellationToken = default)
     {
-        var client = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
+        var grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
         //var response = await client.Start(request, @params?.CancellationToken ?? default);
+
+        throw new NotImplementedException();
     }
 
     public async Task ExecuteAndForgetAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)

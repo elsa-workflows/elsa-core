@@ -70,7 +70,7 @@ public class WorkflowHost : IWorkflowHost
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ExecuteWorkflowResult(Diff.For(originalBookmarks, new List<Bookmark>()));
+            return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<Bookmark>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
         }
 
         using var scope = _serviceScopeFactory.CreateScope();
@@ -92,7 +92,7 @@ public class WorkflowHost : IWorkflowHost
         await PersistStateAsync(scope, cancellationToken);
 
         var updatedBookmarks = WorkflowState.Bookmarks;
-        return new ExecuteWorkflowResult(Diff.For(originalBookmarks, updatedBookmarks));
+        return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
     }
 
     /// <inheritdoc />

@@ -92,7 +92,8 @@ public class ProtoActorFeature : FeatureBase
 
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
-            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
+            var workflowInstanceGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
+            var workflowGrainProps = system.DI().PropsFor<WorkflowActor>();
 
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
@@ -101,7 +102,8 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
-                    .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
+                    .WithClusterKind(WorkflowInstanceActor.Kind, workflowInstanceGrainProps)
+                    .WithClusterKind(WorkflowActor.Kind, workflowGrainProps)
                 ;
 
             ActorSystemConfig(sp, systemConfig);
@@ -139,7 +141,8 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstance>(sp, context)))
+            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)))
+            .AddTransient(sp => new WorkflowActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)));
             ;
     }
 

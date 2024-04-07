@@ -9,6 +9,6 @@ internal static class ClusterExtensions
 {
     public static WorkflowInstanceClient GetNamedWorkflowGrain(this Cluster cluster, string workflowInstanceId)
     {
-        return cluster.GetWorkflowInstance($"{nameof(WorkflowInstance)}-{workflowInstanceId}");
+        return cluster.GetWorkflowInstance($"{nameof(WorkflowInstanceGrain)}-{workflowInstanceId}");
     }
 }

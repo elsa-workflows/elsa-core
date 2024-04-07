@@ -1,14 +1,16 @@
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.State;
-using ProtoException = Elsa.ProtoActor.ProtoBuf.ExceptionState;
 
 namespace Elsa.ProtoActor.Mappers;
 
 internal class ExceptionMapper
 {
-    public ExceptionState Map(ProtoException exception) =>
-        new(Type.GetType(exception.Type)!, exception.Message, exception.StackTrace, exception.InnerException != null ? Map(exception.InnerException) : null);
-    
-    public ProtoException Map(ExceptionState exception) =>
+    public ExceptionState Map(ProtoExceptionState exception)
+    {
+        return new ExceptionState(Type.GetType(exception.Type)!, exception.Message, exception.StackTrace, exception.InnerException != null ? Map(exception.InnerException) : null);
+    }
+
+    public ProtoExceptionState Map(ExceptionState exception) =>
         new()
         {
             Type = exception.Type.AssemblyQualifiedName,

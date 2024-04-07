@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
+using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -14,11 +15,10 @@ using Elsa.Workflows.Runtime.Matches;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Proto.Cluster;
-using CountRunningWorkflowsRequest = Elsa.Workflows.Runtime.Requests.CountRunningWorkflowsRequest;
-using WorkflowStatus = Elsa.Workflows.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Services;
 
@@ -73,7 +73,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var input = @params?.Input;
         var workflowInstanceId = _identityGenerator.GenerateId();
 
-        var request = new StartWorkflowRequest
+        var request = new ProtoStartWorkflowRequest
         {
             DefinitionId = definitionId,
             InstanceId = workflowInstanceId,
@@ -110,7 +110,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var workflowInstanceId = @params?.InstanceId ?? _identityGenerator.GenerateId();
         var input = @params?.Input;
 
-        var request = new StartWorkflowRequest
+        var request = new ProtoStartWorkflowRequest
         {
             DefinitionId = definitionId,
             InstanceId = workflowInstanceId,
@@ -167,7 +167,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<WorkflowExecutionResult?> ResumeWorkflowAsync(string workflowInstanceId, ResumeWorkflowRuntimeParams? options = default)
     {
-        var request = new ResumeWorkflowRequest
+        var request = new ProtoResumeWorkflowRequest
         {
             InstanceId = workflowInstanceId,
             CorrelationId = options?.CorrelationId.EmptyIfNull(),
@@ -282,7 +282,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
-        var response = await client.ExportState(new ExportWorkflowStateRequest(), cancellationToken);
+        var response = await client.ExportState(new ProtoExportWorkflowStateRequest(), cancellationToken);
         var json = response!.SerializedWorkflowState.Text;
         var workflowState = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
         return workflowState;
@@ -295,9 +295,9 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);
         var json = await _workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
 
-        var request = new ImportWorkflowStateRequest
+        var request = new ProtoImportWorkflowStateRequest
         {
-            SerializedWorkflowState = new Json
+            SerializedWorkflowState = new ProtoJson
             {
                 Text = json
             }

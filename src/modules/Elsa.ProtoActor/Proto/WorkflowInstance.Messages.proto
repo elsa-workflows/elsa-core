@@ -6,59 +6,31 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
-message CanStartWorkflowResponse {
+message ProtoCanStartWorkflowResponse {
   bool CanStart = 1;
 }
 
-message StartWorkflowRequest {
+message ProtoStartWorkflowRequest {
   string DefinitionId = 1;
   string InstanceId = 2;
   string VersionOptions = 3;
   optional string CorrelationId = 4;
-  optional Input input = 5;
-  optional Properties properties = 6;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
   optional string TriggerActivityId = 7;
 }
 
-message WorkflowExecutionResponse {
+message ProtoWorkflowExecutionResponse {
   string WorkflowInstanceId = 1;
-  RunWorkflowResult Result = 2;
-  WorkflowStatus Status = 3;
-  WorkflowSubStatus SubStatus = 4;
-  repeated Bookmark Bookmarks = 5;
-  repeated ActivityIncident Incidents = 6;
+  ProtoRunWorkflowResult Result = 2;
+  ProtoWorkflowStatus Status = 3;
+  ProtoWorkflowSubStatus SubStatus = 4;
+  repeated ProtoBookmark Bookmarks = 5;
+  repeated ProtoActivityIncident Incidents = 6;
   optional string TriggeredActivityId = 7;
 }
 
-message ActivityIncident {
-  string ActivityId = 1;
-  string ActivityType = 2;
-  string Message = 3;
-  optional ExceptionState Exception = 4;
-  string Timestamp = 5; // ISO 8601
-}
-
-message ExceptionState {
-  string Type = 1;
-  string Message = 2;
-  optional string StackTrace = 3;
-  optional ExceptionState InnerException = 4;
-}
-
-enum WorkflowStatus {
-  WorkflowStatusRunning = 0;
-  WorkflowStatusFinished = 1;
-}
-
-enum WorkflowSubStatus {
-  WorkflowSubStatusExecuting = 0;
-  WorkflowSubStatusSuspended = 1;
-  WorkflowSubStatusFinished = 2;
-  WorkflowSubStatusCancelled = 3;
-  WorkflowSubStatusFaulted = 4;
-}
-
-message ResumeWorkflowRequest {
+message ProtoResumeWorkflowRequest {
   string InstanceId = 1;
   optional string CorrelationId = 2;
   optional string BookmarkId = 3;
@@ -66,32 +38,20 @@ message ResumeWorkflowRequest {
   optional string ActivityNodeId = 5;
   optional string ActivityInstanceId = 6;
   optional string ActivityHash = 7;
-  optional Input Input = 8;
-  optional Properties Properties = 9;
+  optional ProtoInput Input = 8;
+  optional ProtoProperties Properties = 9;
 }
 
-message ExportWorkflowStateRequest {}
-
-message ExportWorkflowStateResponse {
-  Json SerializedWorkflowState = 1;
-}
-
-message ImportWorkflowStateRequest {
-  Json SerializedWorkflowState = 1;
-}
-
-message ImportWorkflowStateResponse {}
-
-message WorkflowInstanceCancellationResponse{
+message ProtoWorkflowInstanceCancellationResponse{
   bool Result = 1;
 }
 
-enum RunWorkflowResult {
+enum ProtoRunWorkflowResult {
   RunWorkflowResultFinished = 0;
   RunWorkflowResultSuspended = 1;
 }
 
-message Bookmark {
+message ProtoBookmark {
   string Id = 1;
   string Name = 2;
   string Hash = 3;

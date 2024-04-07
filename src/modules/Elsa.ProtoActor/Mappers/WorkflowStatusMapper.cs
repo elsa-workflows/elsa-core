@@ -1,5 +1,5 @@
+using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows;
-using ProtoWorkflowStatus = Elsa.ProtoActor.ProtoBuf.WorkflowStatus;
 
 namespace Elsa.ProtoActor.Mappers;
 
@@ -8,16 +8,16 @@ internal class WorkflowStatusMapper
     public WorkflowStatus Map(ProtoWorkflowStatus status) =>
         status switch
         {
-            ProtoWorkflowStatus.Finished => WorkflowStatus.Finished,
-            ProtoWorkflowStatus.Running => WorkflowStatus.Running,
+            ProtoWorkflowStatus.WorkflowStatusFinished => WorkflowStatus.Finished,
+            ProtoWorkflowStatus.WorkflowStatusRunning => WorkflowStatus.Running,
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
         };
     
     public ProtoWorkflowStatus Map(WorkflowStatus status) =>
         status switch
         {
-            WorkflowStatus.Finished => ProtoWorkflowStatus.Finished,
-            WorkflowStatus.Running => ProtoWorkflowStatus.Running,
+            WorkflowStatus.Finished => ProtoWorkflowStatus.WorkflowStatusFinished,
+            WorkflowStatus.Running => ProtoWorkflowStatus.WorkflowStatusRunning,
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
         };
 }

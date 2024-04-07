@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -33,6 +34,12 @@ public class WorkflowInstanceManager : IWorkflowInstanceManager
         _workflowStateMapper = workflowStateMapper;
         _workflowStateExtractor = workflowStateExtractor;
         _workflowStateSerializer = workflowStateSerializer;
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowInstance?> FindByIdAsync(string instanceId, CancellationToken cancellationToken = default)
+    {
+        return await _store.FindAsync(instanceId, cancellationToken);
     }
 
     /// <inheritdoc />
