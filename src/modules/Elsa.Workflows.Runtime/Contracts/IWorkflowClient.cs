@@ -17,12 +17,12 @@ public interface IWorkflowClient
     /// <summary>
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
-    Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = null, CancellationToken cancellationToken = default);
+    Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Executes the workflow instance and returns immediately.
     /// </summary>
-    Task ExecuteAndForgetAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default);
+    Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Cancels the execution of a workflow instance.

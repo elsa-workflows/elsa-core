@@ -23,12 +23,12 @@ public interface IWorkflowHost
     /// <summary>
     /// Returns a value indicating whether the specified workflow can start a new instance or not.
     /// </summary>
-    Task<bool> CanStartWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default);
+    Task<bool> CanStartWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Executes the workflow instance.
     /// </summary>
-    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default);
+    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
 
     // /// <summary>
     // /// Start a new workflow instance and execute it.

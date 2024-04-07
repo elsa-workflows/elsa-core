@@ -25,6 +25,7 @@ namespace Elsa.ProtoActor.Services;
 /// <summary>
 /// A Proto.Actor implementation of <see cref="IWorkflowRuntime"/>.
 /// </summary>
+[Obsolete]
 internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 {
     private readonly Cluster _cluster;
@@ -216,11 +217,11 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
 
     public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, CancellationToken cancellationToken = default)
     {
-        return await ExecuteWorkflowAsync(match, new ExecuteWorkflowParams(), cancellationToken);
+        return await ExecuteWorkflowAsync(match, new ExecuteWorkflowRequest(), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams options, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowRequest options, CancellationToken cancellationToken = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {

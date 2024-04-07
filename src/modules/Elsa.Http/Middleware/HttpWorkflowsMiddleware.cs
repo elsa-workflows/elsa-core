@@ -21,6 +21,7 @@ using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Open.Linq.AsyncExtensions;
 
@@ -156,7 +157,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var bookmarkPayload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
 
-        var startParams = new StartWorkflowParams
+        var startParams = new StartWorkflowRequest
         {
             Input = input,
             CorrelationId = correlationId,
@@ -190,7 +191,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         }
         
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
-        var resumeParams = new ResumeWorkflowParams
+        var resumeParams = new ResumeWorkflowRequest
         {
             Input = input,
             CorrelationId = correlationId,
@@ -201,7 +202,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         await ExecuteWorkflowAsync(httpContext, resumeParams, bookmarkPayload, workflow, input);
     }
     
-    private async Task ExecuteWorkflowAsync(HttpContext httpContext, IExecuteWorkflowParams @params, HttpEndpointBookmarkPayload bookmarkPayload, Workflow workflow, IDictionary<string, object> input)
+    private async Task ExecuteWorkflowAsync(HttpContext httpContext, IExecuteWorkflowRequest request, HttpEndpointBookmarkPayload bookmarkPayload, Workflow workflow, IDictionary<string, object> input)
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
@@ -212,7 +213,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted) ?? serviceProvider.GetRequiredService<IIdentityGenerator>().GenerateId();
         var workflowClientFactory = serviceProvider.GetRequiredService<IWorkflowClientFactory>();
         var workflowClient = workflowClientFactory.CreateClient(workflowInstanceId);
-        var result = await ExecuteWithinTimeoutAsync(async ct => await workflowClient.ExecuteAndWaitAsync(@params, ct), bookmarkPayload.RequestTimeout, httpContext);
+        var result = await ExecuteWithinTimeoutAsync(async ct => await workflowClient.ExecuteAndWaitAsync(request, ct), bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }
 

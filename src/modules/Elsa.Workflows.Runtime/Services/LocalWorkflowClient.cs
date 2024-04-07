@@ -20,14 +20,14 @@ public class LocalWorkflowClient(
     public string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
         return await workflowHost.ExecuteWorkflowAsync(@params, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task ExecuteAndForgetAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
     {
         _ = ExecuteAndWaitAsync(@params, cancellationToken);
         return Task.CompletedTask;

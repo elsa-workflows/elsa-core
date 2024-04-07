@@ -7,15 +7,14 @@ import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
 message ProtoExecuteWorkflowRequest{
-  string DefinitionId = 1;
-  string InstanceId = 2;
-  string VersionOptions = 3;
-  optional string CorrelationId = 4;
-  optional string BookmarkId = 5;
-  optional ProtoActivityHandle ActivityHandle = 6;
-  optional ProtoInput input = 7;
-  optional ProtoProperties properties = 8;
-  optional string TriggerActivityId = 9;
+  string DefinitionVersionId = 1;
+  optional string CorrelationId = 3;
+  optional string BookmarkId = 4;
+  optional ProtoActivityHandle ActivityHandle = 5;
+  optional ProtoInput input = 6;
+  optional ProtoProperties properties = 7;
+  optional string TriggerActivityId = 8;
+  optional string ParentWorkflowInstanceId = 9;
 }
 
 message ProtoExecuteWorkflowResponse {

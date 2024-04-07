@@ -43,7 +43,7 @@ public class WorkflowHost : IWorkflowHost
     public WorkflowState WorkflowState { get; set; }
 
     /// <inheritdoc />
-    public async Task<bool> CanStartWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<bool> CanStartWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
     {
         var strategyType = Workflow.Options.ActivationStrategyType;
 
@@ -63,7 +63,7 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
     {
         var originalBookmarks = WorkflowState.Bookmarks.ToList();
 

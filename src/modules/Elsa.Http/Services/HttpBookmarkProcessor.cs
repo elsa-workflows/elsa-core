@@ -4,6 +4,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
@@ -89,7 +90,7 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
             }
             
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
-            var options = new ResumeWorkflowParams
+            var options = new ResumeWorkflowRequest
             {
                 CorrelationId = correlationId,
                 BookmarkId = result.BookmarkId,

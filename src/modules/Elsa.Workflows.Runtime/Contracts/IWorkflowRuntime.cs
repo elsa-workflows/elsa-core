@@ -60,7 +60,7 @@ public interface IWorkflowRuntime
     /// <param name="match">A workflow match to execute.</param>
     /// <param name="options">Options for executing the workflow.</param>
     /// <param name="cancellationToken"></param>
-    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams options, CancellationToken cancellationToken = default);
+    Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowRequest options, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Executes a pending workflow.

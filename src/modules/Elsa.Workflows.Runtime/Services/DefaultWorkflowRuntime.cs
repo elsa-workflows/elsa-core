@@ -81,7 +81,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         var input = @params?.Input;
         var correlationId = @params?.CorrelationId;
         var workflowHost = await CreateWorkflowHostAsync(definitionId, @params, @params?.CancellationToken ?? default);
-        var startWorkflowOptions = new StartWorkflowParams
+        var startWorkflowOptions = new StartWorkflowRequest
         {
             CorrelationId = correlationId,
             Input = input,
@@ -243,7 +243,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var workflowState = _workflowStateMapper.Map(workflowInstance)!;
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
 
-            var resumeWorkflowOptions = new ResumeWorkflowParams
+            var resumeWorkflowOptions = new ResumeWorkflowRequest
             {
                 CorrelationId = options?.CorrelationId,
                 BookmarkId = options?.BookmarkId,
@@ -300,7 +300,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowParams? options = default, CancellationToken cancellationToken = default)
+    public async Task<WorkflowExecutionResult> ExecuteWorkflowAsync(WorkflowMatch match, ExecuteWorkflowRequest? options = default, CancellationToken cancellationToken = default)
     {
         if (match is StartableWorkflowMatch collectedStartableWorkflow)
         {
@@ -389,7 +389,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         {
             var input = @params?.Input;
             var correlationId = @params?.CorrelationId;
-            var startWorkflowOptions = new StartWorkflowParams
+            var startWorkflowOptions = new StartWorkflowRequest
             {
                 ParentWorkflowInstanceId = @params?.ParentWorkflowInstanceId,
                 CorrelationId = correlationId,
