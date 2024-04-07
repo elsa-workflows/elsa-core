@@ -16,11 +16,16 @@ public class LocalWorkflowClient(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowHostFactory workflowHostFactory) : IWorkflowClient
 {
-    /// <inheritdoc />
-    public string WorkflowDefinitionVersionId { get; set; } = default!;
+    private string WorkflowDefinitionVersionId { get; set; } = default!;
+    private string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public string WorkflowInstanceId { get; set; } = default!;
+    public ValueTask InitializeAsync(string workflowDefinitionVersionId, string workflowInstanceId, CancellationToken cancellationToken = default)
+    {
+        WorkflowDefinitionVersionId = workflowDefinitionVersionId;
+        WorkflowInstanceId = workflowInstanceId;
+        return ValueTask.CompletedTask;
+    }
 
     /// <inheritdoc />
     public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
@@ -65,9 +70,9 @@ public class LocalWorkflowClient(
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(bool isNewInstance, CancellationToken cancellationToken)
     {
-        if(isNewInstance)
+        if (isNewInstance)
             return await CreateWorkflowHostAsync(WorkflowDefinitionVersionId, cancellationToken);
-        
+
         var workflowInstance = await FindWorkflowInstanceAsync(cancellationToken);
 
         if (workflowInstance == null)
@@ -77,12 +82,12 @@ public class LocalWorkflowClient(
 
         return await CreateWorkflowHostAsync(workflowInstance, cancellationToken);
     }
-    
+
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
         return await CreateWorkflowHostAsync(workflowInstance.DefinitionVersionId, cancellationToken);
     }
-    
+
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken)
     {
         var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
@@ -92,12 +97,7 @@ public class LocalWorkflowClient(
 
         return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
-    
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(Workflow workflow, CancellationToken cancellationToken)
-    {
-        return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
-    }
-    
+
     private async Task<WorkflowInstance?> FindWorkflowInstanceAsync(CancellationToken cancellationToken)
     {
         var filter = new WorkflowInstanceFilter

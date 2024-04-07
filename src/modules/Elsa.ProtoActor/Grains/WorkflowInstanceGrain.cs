@@ -10,7 +10,6 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -105,8 +104,8 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
-        var input = request.Input?.Deserialize();
-        var properties = request.Properties?.Deserialize();
+        var input = request.Input?.DeserializeInput();
+        var properties = request.Properties?.DeserializeProperties();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
         var startWorkflowOptions = new StartWorkflowRequest
@@ -143,8 +142,8 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
         var correlationId = request.CorrelationId.NullIfEmpty();
-        var input = request.Input?.Deserialize();
-        var properties = request.Properties?.Deserialize();
+        var input = request.Input?.DeserializeInput();
+        var properties = request.Properties?.DeserializeProperties();
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
 
@@ -214,8 +213,8 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
 
     public override async Task Resume(ProtoResumeWorkflowRequest request, Action<ProtoWorkflowExecutionResponse> respond, Action<string> onError)
     {
-        _input = request.Input?.Deserialize();
-        _properties = request.Properties?.Deserialize();
+        _input = request.Input?.DeserializeInput();
+        _properties = request.Properties?.DeserializeProperties();
         var correlationId = request.CorrelationId;
         var bookmarkId = request.BookmarkId.NullIfEmpty();
         var activityId = request.ActivityId.NullIfEmpty();
@@ -346,7 +345,7 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
         return new ProtoImportWorkflowStateResponse();
     }
 
-    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowInstanceSnapshot)snapshot.State;
+    private void ApplySnapshot(Snapshot snapshot) => (_definitionId, _instanceId, _version, _workflowState, _input) = (WorkflowInstanceGrainSnapshot)snapshot.State;
 
     private async Task SaveSnapshotAsync()
     {
@@ -358,7 +357,7 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
             await _persistence.PersistRollingSnapshotAsync(GetState(), MaxSnapshotsToKeep);
     }
 
-    private object GetState() => new WorkflowInstanceSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
+    private object GetState() => new WorkflowInstanceGrainSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, string? instanceId, CancellationToken cancellationToken)
     {

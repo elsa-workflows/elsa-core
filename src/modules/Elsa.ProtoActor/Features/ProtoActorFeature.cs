@@ -138,7 +138,8 @@ public class ProtoActorFeature : FeatureBase
             .AddSingleton<WorkflowStatusMapper>()
             .AddSingleton<WorkflowSubStatusMapper>()
             .AddSingleton<ExecuteWorkflowRequestMapper>()
-            .AddSingleton<WorkflowStatusMapper>();
+            .AddSingleton<ExecuteWorkflowResponseMapper>()
+            .AddSingleton<WorkflowStateJsonMapper>();
 
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();

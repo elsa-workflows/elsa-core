@@ -9,11 +9,16 @@ namespace Elsa.Workflows.Runtime.Services;
 public class WorkflowClientFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider) : IWorkflowClientFactory
 {
     /// <inheritdoc />
-    public IWorkflowClient CreateClient([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]Type clientType, string workflowDefinitionVersionId, string? workflowInstanceId = null)
+    public async Task<IWorkflowClient> CreateClientAsync(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type clientType,
+        string workflowDefinitionVersionId,
+        string? workflowInstanceId = null,
+        CancellationToken cancellationToken = default)
     {
         var client = (IWorkflowClient)ActivatorUtilities.CreateInstance(serviceProvider, clientType);
-        client.WorkflowDefinitionVersionId = workflowDefinitionVersionId;
-        client.WorkflowInstanceId = workflowInstanceId ?? identityGenerator.GenerateId();
+        workflowInstanceId ??= identityGenerator.GenerateId();
+        await client.InitializeAsync(workflowDefinitionVersionId, workflowInstanceId, cancellationToken);
         return client;
     }
 }

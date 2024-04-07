@@ -8,6 +8,7 @@ import "Shared.proto";
 
 message ProtoExecuteWorkflowRequest{
   string WorkflowDefinitionVersionId = 1;
+  string WorkflowInstanceId = 2;
   optional string CorrelationId = 3;
   optional string BookmarkId = 4;
   optional ProtoActivityHandle ActivityHandle = 5;
@@ -15,6 +16,7 @@ message ProtoExecuteWorkflowRequest{
   optional ProtoProperties properties = 7;
   optional string TriggerActivityId = 8;
   optional string ParentWorkflowInstanceId = 9;
+  optional bool IsNewInstance = 10;
 }
 
 message ProtoExecuteWorkflowResponse {

@@ -12,28 +12,35 @@ namespace Elsa.ProtoActor.Services;
 /// </summary>
 public class ProtoActorWorkflowClient : IWorkflowClient
 {
+    private readonly Cluster _cluster;
     private readonly Mappers.Mappers _mappers;
-    private readonly WorkflowClient _grain;
+    private WorkflowClient _grain = default!;
 
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
     /// </summary>
     public ProtoActorWorkflowClient(Cluster cluster, Mappers.Mappers mappers)
     {
+        _cluster = cluster;
         _mappers = mappers;
-        _grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
     }
 
-    /// <inheritdoc />
-    public string WorkflowDefinitionVersionId { get; set; } = default!;
+    private string WorkflowDefinitionVersionId { get; set; } = default!;
+    private string WorkflowInstanceId { get; set; } = default!;
 
     /// <inheritdoc />
-    public string WorkflowInstanceId { get; set; } = default!;
+    public ValueTask InitializeAsync(string workflowDefinitionVersionId, string workflowInstanceId, CancellationToken cancellationToken = default)
+    {
+        WorkflowDefinitionVersionId = workflowDefinitionVersionId;
+        WorkflowInstanceId = workflowInstanceId;
+        _grain = _cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
+        return ValueTask.CompletedTask;
+    }
 
     /// <inheritdoc />
     public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default)
     {
-        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, request);
+        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, WorkflowInstanceId, request);
         var response = await _grain.ExecuteAndWait(protoRequest, cancellationToken);
         return Map(response!);
     }
@@ -41,7 +48,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     /// <inheritdoc />
     public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, request);
+        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, WorkflowInstanceId, request);
         await _grain.ExecuteAndForget(protoRequest, cancellationToken);
     }
 
@@ -68,7 +75,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         };
         await _grain.ImportState(request, cancellationToken);
     }
-    
+
     private ExecuteWorkflowResult Map(ProtoExecuteWorkflowResponse source)
     {
         return new ExecuteWorkflowResult(

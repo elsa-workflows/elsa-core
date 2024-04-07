@@ -20,6 +20,7 @@ public class WorkflowHost : IWorkflowHost
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<WorkflowHost> _logger;
+    private CancellationTokenSource? _linkedTokenSource;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
@@ -86,18 +87,31 @@ public class WorkflowHost : IWorkflowHost
             TriggerActivityId = @params?.TriggerActivityId,
             ParentWorkflowInstanceId = @params?.ParentWorkflowInstanceId
         };
-        var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
+        _linkedTokenSource = new CancellationTokenSource();
+        var linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _linkedTokenSource.Token).Token;
+        var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, linkedCancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
 
         var updatedBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
+        _linkedTokenSource.Dispose();
+        _linkedTokenSource = null;
+        
         return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
     }
 
     /// <inheritdoc />
     public async Task CancelWorkflowAsync(CancellationToken cancellationToken = default)
     {
+        // If the workflow is currently executing, cancel it. This will cause the workflow to be cancelled gracefully.
+        if (_linkedTokenSource != null)
+        {
+            _linkedTokenSource.Cancel();
+            return;
+        }
+        
+        // Otherwise, cancel the workflow by executing the canceler. This will setup a workflow execution pipeline that will cancel the workflow.
         using var scope = _serviceScopeFactory.CreateScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();

@@ -9,14 +9,9 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowClient
 {
     /// <summary>
-    /// The ID of the workflow definition version this client is associated with.
+    /// Called by the factory to initialize the client.
     /// </summary>
-    string WorkflowDefinitionVersionId { get; set; }
-    
-    /// <summary>
-    /// The ID of the workflow instance this client is associated with.
-    /// </summary>
-    string WorkflowInstanceId { get; set; }
+    ValueTask InitializeAsync(string workflowDefinitionVersionId, string workflowInstanceId, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.

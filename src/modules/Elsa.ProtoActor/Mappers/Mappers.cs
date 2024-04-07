@@ -20,6 +20,7 @@ public class Mappers(
     WorkflowStatusMapper workflowStatusMapper,
     WorkflowSubStatusMapper workflowSubStatusMapper,
     ExecuteWorkflowRequestMapper executeWorkflowRequestMapper,
+    ExecuteWorkflowResponseMapper executeWorkflowResponseMapper,
     WorkflowStateJsonMapper workflowStateJsonMapper)
 {
     /// <summary>
@@ -66,6 +67,11 @@ public class Mappers(
     /// Maps between <see cref="IExecuteWorkflowRequest"/> and <see cref="ProtoExecuteWorkflowRequest"/>.
     /// </summary>
     public ExecuteWorkflowRequestMapper ExecuteWorkflowRequestMapper { get; } = executeWorkflowRequestMapper;
+
+    /// <summary>
+    /// Maps between <see cref="IExecuteWorkflowRequest"/> and <see cref="ProtoExecuteWorkflowRequest"/>.
+    /// </summary>
+    public ExecuteWorkflowResponseMapper ExecuteWorkflowResponseMapper { get; set; } = executeWorkflowResponseMapper;
 
     /// <summary>
     /// Maps between <see cref="WorkflowState"/> and <see cref="ProtoJson"/>.

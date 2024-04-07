@@ -13,16 +13,24 @@ public static class WorkflowClientFactoryExtensions
     /// <summary>
     /// Creates a new <see cref="IWorkflowClient"/> for the specified workflow.
     /// </summary>
-    public static IWorkflowClient CreateClient(this IWorkflowClientFactory factory, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type clientType, Workflow workflow, string? workflowInstanceId = null)
+    public static Task<IWorkflowClient> CreateClientAsync(this IWorkflowClientFactory factory,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        Type clientType,
+        Workflow workflow,
+        string? workflowInstanceId = null,
+        CancellationToken cancellationToken = default)
     {
-        return factory.CreateClient(clientType, workflow.Identity.Id, workflowInstanceId);
+        return factory.CreateClientAsync(clientType, workflow.Identity.Id, workflowInstanceId, cancellationToken);
     }
 
     /// <summary>
     /// Creates a new <see cref="IWorkflowClient"/> for the specified workflow.
     /// </summary>
-    public static IWorkflowClient CreateClient<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IWorkflowClientFactory factory, Workflow workflow, string? workflowInstanceId = null) where T : IWorkflowClient
+    public static Task<IWorkflowClient> CreateClientAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IWorkflowClientFactory factory,
+        Workflow workflow,
+        string? workflowInstanceId = null,
+        CancellationToken cancellationToken = default) where T : IWorkflowClient
     {
-        return factory.CreateClient(typeof(T), workflow, workflowInstanceId);
+        return factory.CreateClientAsync(typeof(T), workflow, workflowInstanceId, cancellationToken);
     }
 }

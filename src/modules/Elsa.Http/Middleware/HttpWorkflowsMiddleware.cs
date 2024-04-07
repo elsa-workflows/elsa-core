@@ -19,6 +19,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Parameters;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.ProtoActor.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Requests;
@@ -160,6 +161,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         var startParams = new StartWorkflowRequest
         {
+            DefinitionVersionId = workflow.Identity.Id,
             Input = input,
             CorrelationId = correlationId,
             TriggerActivityId = trigger.ActivityId,
@@ -214,7 +216,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted) ?? serviceProvider.GetRequiredService<IIdentityGenerator>().GenerateId();
         var workflowClientFactory = serviceProvider.GetRequiredService<IWorkflowClientFactory>();
-        var workflowClient = workflowClientFactory.CreateClient<LocalWorkflowClient>(workflow, workflowInstanceId);
+        //var workflowClient = workflowClientFactory.CreateClient<LocalWorkflowClient>(workflow, workflowInstanceId);
+        var workflowClient = await workflowClientFactory.CreateClientAsync<ProtoActorWorkflowClient>(workflow, workflowInstanceId, cancellationToken: cancellationToken);
         var result = await ExecuteWithinTimeoutAsync(async ct => await workflowClient.ExecuteAndWaitAsync(request, ct), bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }
