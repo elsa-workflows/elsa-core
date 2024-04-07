@@ -205,6 +205,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
+            .AddScoped<IWorkflowClientFactory, WorkflowClientFactory>()
             .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowClient)
@@ -280,5 +281,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+        
     }
 }

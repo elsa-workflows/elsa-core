@@ -161,7 +161,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         {
             Input = input,
             CorrelationId = correlationId,
-            TriggerActivityId = trigger.ActivityId
+            TriggerActivityId = trigger.ActivityId,
+            IsNewInstance = true
         };
         
         await ExecuteWorkflowAsync(httpContext, startParams, bookmarkPayload, workflow, input);
@@ -212,7 +213,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted) ?? serviceProvider.GetRequiredService<IIdentityGenerator>().GenerateId();
         var workflowClientFactory = serviceProvider.GetRequiredService<IWorkflowClientFactory>();
-        var workflowClient = workflowClientFactory.CreateClient(workflowInstanceId);
+        var workflowClient = workflowClientFactory.CreateClient(workflow, workflowInstanceId);
         var result = await ExecuteWithinTimeoutAsync(async ct => await workflowClient.ExecuteAndWaitAsync(request, ct), bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }

@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 

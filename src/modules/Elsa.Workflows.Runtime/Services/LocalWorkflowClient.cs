@@ -1,8 +1,8 @@
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
@@ -25,7 +25,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
+        var workflowHost = await CreateWorkflowHostAsync(request?.IsNewInstance ?? false, cancellationToken);
         return await workflowHost.ExecuteWorkflowAsync(request, cancellationToken);
     }
 
@@ -60,22 +60,42 @@ public class LocalWorkflowClient(
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(CancellationToken cancellationToken)
     {
+        return await CreateWorkflowHostAsync(false, cancellationToken);
+    }
+
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(bool isNewInstance, CancellationToken cancellationToken)
+    {
+        if(isNewInstance)
+            return await CreateWorkflowHostAsync(WorkflowDefinitionVersionId, cancellationToken);
+        
         var workflowInstance = await FindWorkflowInstanceAsync(cancellationToken);
 
         if (workflowInstance == null)
+        {
             throw new InvalidOperationException($"Workflow instance {WorkflowInstanceId} not found.");
+        }
 
         return await CreateWorkflowHostAsync(workflowInstance, cancellationToken);
     }
     
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+        return await CreateWorkflowHostAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+    }
+    
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken)
+    {
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
 
         if (workflow == null)
-            throw new InvalidOperationException($"Workflow {workflowInstance.DefinitionId} not found.");
+            throw new InvalidOperationException($"Workflow {workflowDefinitionVersionId} not found.");
 
-        return await workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
+        return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
+    }
+    
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(Workflow workflow, CancellationToken cancellationToken)
+    {
+        return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
     
     private async Task<WorkflowInstance?> FindWorkflowInstanceAsync(CancellationToken cancellationToken)

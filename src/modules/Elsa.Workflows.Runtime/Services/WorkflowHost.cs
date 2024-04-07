@@ -6,7 +6,6 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
