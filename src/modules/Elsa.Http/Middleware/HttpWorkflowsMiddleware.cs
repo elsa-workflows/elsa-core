@@ -23,6 +23,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Runtime.Services;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -213,7 +214,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted) ?? serviceProvider.GetRequiredService<IIdentityGenerator>().GenerateId();
         var workflowClientFactory = serviceProvider.GetRequiredService<IWorkflowClientFactory>();
-        var workflowClient = workflowClientFactory.CreateClient(workflow, workflowInstanceId);
+        var workflowClient = workflowClientFactory.CreateClient<LocalWorkflowClient>(workflow, workflowInstanceId);
         var result = await ExecuteWithinTimeoutAsync(async ct => await workflowClient.ExecuteAndWaitAsync(request, ct), bookmarkPayload.RequestTimeout, httpContext);
         await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }

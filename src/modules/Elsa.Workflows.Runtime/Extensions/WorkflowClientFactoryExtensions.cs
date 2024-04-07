@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Contracts;
 
@@ -12,8 +13,16 @@ public static class WorkflowClientFactoryExtensions
     /// <summary>
     /// Creates a new <see cref="IWorkflowClient"/> for the specified workflow.
     /// </summary>
-    public static IWorkflowClient CreateClient(this IWorkflowClientFactory factory, Workflow workflow, string? workflowInstanceId = null)
+    public static IWorkflowClient CreateClient(this IWorkflowClientFactory factory, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] Type clientType, Workflow workflow, string? workflowInstanceId = null)
     {
-        return factory.CreateClient(workflow.Identity.Id, workflowInstanceId);
+        return factory.CreateClient(clientType, workflow.Identity.Id, workflowInstanceId);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="IWorkflowClient"/> for the specified workflow.
+    /// </summary>
+    public static IWorkflowClient CreateClient<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(this IWorkflowClientFactory factory, Workflow workflow, string? workflowInstanceId = null) where T : IWorkflowClient
+    {
+        return factory.CreateClient(typeof(T), workflow, workflowInstanceId);
     }
 }
