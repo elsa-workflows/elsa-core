@@ -110,11 +110,8 @@ internal class WorkflowGrain : WorkflowBase
 
     private async Task SaveSnapshotAsync()
     {
-        if (_workflowHost == null)
-            return;
-
-        var workflowState = _workflowHost.WorkflowState;
-        if (workflowState.Status == WorkflowStatus.Finished)
+        var workflowState = _workflowHost?.WorkflowState;
+        if (workflowState?.Status == WorkflowStatus.Finished)
             await _persistence.DeleteSnapshotsAsync(_persistence.Index);
         else
             await _persistence.PersistSnapshotAsync(GetState());
