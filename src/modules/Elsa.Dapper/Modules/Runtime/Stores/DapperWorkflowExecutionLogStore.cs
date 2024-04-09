@@ -20,7 +20,6 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 {
     private const string TableName = "WorkflowExecutionLogRecords";
-    private const string PrimaryKeyName = "Id";
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly Store<WorkflowExecutionLogRecordRecord> _store;
 
@@ -30,7 +29,7 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public DapperWorkflowExecutionLogStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
     {
         _payloadSerializer = payloadSerializer;
-        _store = new Store<WorkflowExecutionLogRecordRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<WorkflowExecutionLogRecordRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
