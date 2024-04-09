@@ -22,6 +22,7 @@ using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
+using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -30,7 +31,7 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options, ILogger<HttpWorkflowsMiddleware> logger)
 {
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -168,6 +169,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         if (workflowInstance == null)
         {
+            logger.LogWarning("Bookmark {BookmarkId} references workflow instance {WorkflowInstanceId}, but no such workflow instance was found", bookmark.BookmarkId, bookmark.WorkflowInstanceId);
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
@@ -177,6 +179,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         if (workflow == null)
         {
+            logger.LogWarning("Workflow instance {WorkflowInstanceId} references workflow definition version {WorkflowDefinitionVersionId}, but no such workflow definition version was found", workflowInstance.DefinitionVersionId, workflowInstance.DefinitionVersionId);
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
@@ -186,8 +189,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
-
-        var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);
