@@ -36,7 +36,7 @@ public static class WebApplicationExtensions
     /// </summary>
     /// <param name="routes">The <see cref="IEndpointRouteBuilder"/> to register the endpoints with.</param>
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
-    /// /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
+    /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IEndpointRouteBuilder MapWorkflowsApi(this IEndpointRouteBuilder routes, string routePrefix = "elsa/api") =>
         routes.MapFastEndpoints(config =>
         {

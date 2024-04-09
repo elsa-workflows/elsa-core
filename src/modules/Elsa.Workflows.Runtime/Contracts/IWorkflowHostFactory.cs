@@ -15,7 +15,7 @@ public interface IWorkflowHostFactory
     /// </summary>
     /// <param name="versionOptions">The version options.</param>
     /// <param name="definitionId">The workflow definition ID.</param>
-    /// /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
     Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
 
     /// <summary>

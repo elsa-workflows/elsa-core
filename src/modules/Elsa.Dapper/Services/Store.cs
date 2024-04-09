@@ -148,7 +148,7 @@ public class Store<T> where T : notnull
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <typeparam name="TShape">The shape type.</typeparam>
+    /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
