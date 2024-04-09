@@ -6,6 +6,5 @@ namespace Elsa.Server.Web;
 public enum DistributedCachingTransport
 {
     Memory,
-    Redis,
     MassTransit
 }
