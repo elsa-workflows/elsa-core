@@ -1,4 +1,4 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching.Distributed.Contracts;
 using Elsa.Caching.Distributed.MassTransit.Messages;
 using JetBrains.Annotations;
 using MassTransit;
@@ -9,13 +9,13 @@ namespace Elsa.Caching.Distributed.MassTransit.Consumers;
 /// Consumes <see cref="TriggerChangeTokenSignal"/> messages and triggers the change token signal.
 /// </summary>
 [UsedImplicitly]
-public class TriggerChangeTokenSignalConsumer(IDistributedChangeTokenSignaler changeTokenSignaler) : IConsumer<TriggerChangeTokenSignal>
+public class TriggerChangeTokenSignalConsumer(IChangeTokenSignalInvoker changeTokenSignalInvoker) : IConsumer<TriggerChangeTokenSignal>
 {
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<TriggerChangeTokenSignal> context)
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        await changeTokenSignaler.TriggerTokenLocalAsync(message.Key, cancellationToken);
+        await changeTokenSignalInvoker.InvokeAsync(message.Key, cancellationToken);
     }
 }

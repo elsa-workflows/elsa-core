@@ -1,4 +1,4 @@
-namespace Elsa.Caching.Contracts;
+namespace Elsa.Caching.Distributed.Contracts;
 
 /// <summary>
 /// Represents a service that can publish change token signals.

@@ -1,3 +1,4 @@
+using Elsa.Caching.Distributed.Features;
 using Elsa.Caching.Distributed.MassTransit.Features;
 using Elsa.Caching.Features;
 

@@ -1,6 +1,7 @@
 using Elsa.Caching.Contracts;
+using Elsa.Caching.Distributed.Contracts;
 
-namespace Elsa.Caching.Services;
+namespace Elsa.Caching.Distributed.Services;
 
 /// <summary>
 /// A no-op implementation of <see cref="IChangeTokenSignalPublisher"/>.

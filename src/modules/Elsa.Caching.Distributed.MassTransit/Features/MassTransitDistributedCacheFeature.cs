@@ -1,6 +1,6 @@
+using Elsa.Caching.Distributed.Features;
 using Elsa.Caching.Distributed.MassTransit.Consumers;
 using Elsa.Caching.Distributed.MassTransit.Services;
-using Elsa.Caching.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;

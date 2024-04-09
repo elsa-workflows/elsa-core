@@ -1,12 +1,14 @@
 ﻿using Elsa.Caching.Contracts;
+using Elsa.Caching.Distributed.Contracts;
+using Elsa.Caching.Distributed.Services;
+using Elsa.Caching.Features;
 using Elsa.Caching.Options;
-using Elsa.Caching.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Caching.Features;
+namespace Elsa.Caching.Distributed.Features;
 
 /// <summary>
 /// Configures distributed cache management.
@@ -33,6 +35,6 @@ public class DistributedCacheFeature(IModule module) : FeatureBase(module)
     {
         Services.AddSingleton(ChangeTokenSignalPublisherFactory);
         Services.Decorate<IChangeTokenSignaler, DistributedChangeTokenSignaler>();
-        Services.AddSingleton<IDistributedChangeTokenSignaler>(sp => (DistributedChangeTokenSignaler)sp.GetRequiredService<IChangeTokenSignaler>());
+        Services.AddSingleton<IChangeTokenSignalInvoker>(sp => (DistributedChangeTokenSignaler)sp.GetRequiredService<IChangeTokenSignaler>());
     }
 }
