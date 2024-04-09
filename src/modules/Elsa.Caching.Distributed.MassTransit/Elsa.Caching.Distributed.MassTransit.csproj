@@ -4,7 +4,7 @@
         <Description>
             Provides distributed caching services leveraging MassTransit for transport of signals.
         </Description>
-        <PackageTags>elsa module distributed caching mass-transit</PackageTags>
+        <PackageTags>elsa module distributed caching masstransit</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
