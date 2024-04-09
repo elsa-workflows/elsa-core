@@ -6,15 +6,11 @@ using MongoDB.Driver;
 
 namespace Elsa.MongoDb.Modules.Management;
 
-internal class CreateIndices : IHostedService
+internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    public CreateIndices(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = serviceProvider.CreateScope();
         return Task.WhenAll(
             CreateWorkflowDefinitionIndices(scope, cancellationToken),
             CreateWorkflowInstanceIndices(scope, cancellationToken));
