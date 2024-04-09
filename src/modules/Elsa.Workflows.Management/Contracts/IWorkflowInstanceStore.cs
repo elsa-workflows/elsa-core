@@ -144,7 +144,7 @@ public interface IWorkflowInstanceStore
     /// </summary>
     /// <param name="instances">The workflow instances.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <remarks>
+    /// <remarks>
     /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
     /// </remarks>
     ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default);
