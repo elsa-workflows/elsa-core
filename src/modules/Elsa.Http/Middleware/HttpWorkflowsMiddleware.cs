@@ -21,6 +21,7 @@ using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Workflows.Contracts;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Http.Middleware;
@@ -66,7 +67,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
         var httpEndpointCacheManager = serviceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
-        var bookmarkHash = httpEndpointCacheManager.ComputeBookmarkHash(matchingPath, method);
+        var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);
         var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
         if (cachedWorkflowAndTriggers != null)
@@ -371,5 +372,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 
         return !authorized;
+    }
+
+    private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
+    {
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+        var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
     }
 }

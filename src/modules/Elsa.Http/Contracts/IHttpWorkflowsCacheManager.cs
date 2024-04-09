@@ -9,11 +9,6 @@ namespace Elsa.Http.Contracts;
 public interface IHttpWorkflowsCacheManager
 {
     /// <summary>
-    /// Computes a bookmark hash for a given path and method.
-    /// </summary>
-    string ComputeBookmarkHash(string path, string method);
-    
-    /// <summary>
     /// Finds a cached entry by bookmark hash.
     /// </summary>
     Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default);
