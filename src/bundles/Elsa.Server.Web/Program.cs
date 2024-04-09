@@ -43,7 +43,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = true;
 const bool useCachingStores = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
