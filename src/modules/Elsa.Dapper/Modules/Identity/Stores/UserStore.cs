@@ -14,7 +14,8 @@ namespace Elsa.Dapper.Modules.Identity.Stores;
 /// </summary>
 public class DapperUserStore : IUserStore
 {
-    private const string TableName = "Users";    private readonly Store<UserRecord> _store;
+    private const string TableName = "Users";
+    private readonly Store<UserRecord> _store;
 
     /// <summary>
     /// Initializes a new instance of <see cref="DapperUserStore"/>.
