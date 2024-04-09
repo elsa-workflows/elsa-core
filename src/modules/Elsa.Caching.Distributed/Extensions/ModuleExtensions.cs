@@ -1,5 +1,4 @@
 using Elsa.Caching.Distributed.Features;
-using Elsa.Caching.Features;
 using Elsa.Features.Services;
 
 // ReSharper disable once CheckNamespace
@@ -10,22 +9,6 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class ModuleExtensions
 {
-    /// <summary>
-    /// Adds the <see cref="DistributedCacheFeature"/> feature to the system.
-    /// </summary>
-    public static MemoryCacheFeature UseMemoryCache(this IModule module, Action<MemoryCacheFeature>? configure = default)
-    {
-        return module.Configure(configure);
-    }
-    
-    /// <summary>
-    /// Adds the <see cref="DistributedCacheFeature"/> feature to the system.
-    /// </summary>
-    public static DistributedCacheFeature UseDistributedCache(this MemoryCacheFeature memoryCacheFeature, Action<DistributedCacheFeature>? configure = default)
-    {
-        return memoryCacheFeature.Module.Configure(configure);
-    }
-    
     /// <summary>
     /// Adds the <see cref="DistributedCacheFeature"/> feature to the system.
     /// </summary>
