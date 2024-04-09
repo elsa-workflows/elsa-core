@@ -22,7 +22,10 @@ public class RefreshActivityRegistryHandler(IActivityRegistryPopulator activityR
     INotificationHandler<WorkflowDefinitionVersionsDeleted>
 {
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
+    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    {
+        await activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id);
+    }
 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
