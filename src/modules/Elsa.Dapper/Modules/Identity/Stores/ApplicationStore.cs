@@ -15,7 +15,6 @@ namespace Elsa.Dapper.Modules.Identity.Stores;
 public class DapperApplicationStore : IApplicationStore
 {
     private const string TableName = "Applications";
-    private const string PrimaryKeyName = "Id";
     private readonly Store<ApplicationRecord> _store;
 
     /// <summary>
@@ -23,14 +22,14 @@ public class DapperApplicationStore : IApplicationStore
     /// </summary>
     public DapperApplicationStore(IDbConnectionProvider dbConnectionProvider)
     {
-        _store = new Store<ApplicationRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<ApplicationRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(Application application, CancellationToken cancellationToken = default)
     {
         var record = Map(application);
-        await _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
+        await _store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
