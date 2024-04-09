@@ -31,72 +31,53 @@ public class CachingWorkflowDefinitionService(
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionId, versionOptions);
-        return await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            var definition = await decoratedService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
 
-            if (definition == null)
-                return null;
-            
-            var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definition.DefinitionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
-            return definition;
-        });
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken),
+            x => x.DefinitionId);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionVersionId);
-        return await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            var definition = await decoratedService.FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
-            
-            if (definition == null)
-                return null;
-
-            var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definition.DefinitionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
-            return definition;
-        });
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken),
+            x => x.DefinitionId);
     }
 
     /// <inheritdoc />
     public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions);
-        return await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
-        {
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            var workflow = await decoratedService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
-
-            if (workflow == null)
-                return null;
-
-            var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(workflow.Identity.DefinitionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
-            return workflow;
-        });
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken),
+            x => x.Identity.DefinitionId);
     }
 
     /// <inheritdoc />
     public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken),
+            x => x.Identity.DefinitionId);
+    }
+
+    private async Task<T?> GetFromCacheAsync<T>(string cacheKey, Func<Task<T?>> getObjectFunc, Func<T, string> getChangeTokenKeyFunc)
+    {
         return await memoryCache.GetOrCreateAsync(cacheKey, async entry =>
         {
             entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
-            var definition = await decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken);
+            var obj = await getObjectFunc();
 
-            if (definition == null)
-                return null;
+            if (obj == null)
+                return default;
 
-            var definitionChangeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(definition.Identity.DefinitionId);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(definitionChangeTokenKey));
-
-            return definition;
+            var changeTokenKeyInput = getChangeTokenKeyFunc(obj);
+            var changeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(changeTokenKeyInput);
+            entry.AddExpirationToken(changeTokenSignaler.GetToken(changeTokenKey));
+            return obj;
         });
     }
 }
