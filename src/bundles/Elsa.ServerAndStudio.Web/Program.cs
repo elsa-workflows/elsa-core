@@ -26,7 +26,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
 var massTransitDispatcherSection = configuration.GetSection("MassTransit.Dispatcher");
 var heartbeatSection = configuration.GetSection("Heartbeat");
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 services.Configure<MassTransitOptions>(massTransitSection);
 services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
@@ -59,7 +59,12 @@ services
             .UseWorkflowRuntime(runtime =>
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-                runtime.UseMassTransitDispatcher();
+                
+                if (useMassTransit)
+                {
+                    runtime.UseMassTransitDispatcher();
+                }
+                
                 if (useProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
