@@ -1,5 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Features;
+using Elsa.Caching.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -21,7 +20,6 @@ using Elsa.Http.UIHints;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
-using Elsa.Workflows.Serialization.Configurators;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -153,18 +151,20 @@ public class HttpFeature : FeatureBase
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
+            .AddScoped<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
 
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
+            .AddNotificationHandler<InvalidateHttpWorkflowsCache>()
 
-            // Content parsers.            
+            // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
-            
+
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
             .AddScoped<IHttpContentFactory, JsonContentFactory>()

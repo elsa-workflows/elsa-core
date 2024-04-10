@@ -9,12 +9,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Hosting.Management.Features;
 
 /// <summary>
-/// Installs and configures instance management features.
+/// Installs and configures the clustering feature.
 /// </summary>
-public class InstanceManagementFeature : FeatureBase
+public class ClusteringFeature : FeatureBase
 {
     /// <inheritdoc />
-    public InstanceManagementFeature(IModule module) : base(module)
+    public ClusteringFeature(IModule module) : base(module)
     {
     }
 

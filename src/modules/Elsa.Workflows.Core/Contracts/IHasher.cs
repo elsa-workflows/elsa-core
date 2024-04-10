@@ -8,5 +8,10 @@ public interface IHasher
     /// <summary>
     /// Produces a hash from the specified string.
     /// </summary>
-    public string Hash(string value);
+    string Hash(string value);
+
+    /// <summary>
+    /// Produces a hash from the specified values.
+    /// </summary>
+    string Hash(params object?[] values);
 }

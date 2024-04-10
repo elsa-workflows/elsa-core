@@ -23,7 +23,7 @@ namespace Elsa.MassTransit.AzureServiceBus.Features;
 /// Configures MassTransit to use the Azure Service Bus transport.
 /// See https://masstransit.io/documentation/configuration/transports/azure-service-bus
 [DependsOn(typeof(MassTransitFeature))]
-[DependsOn(typeof(InstanceManagementFeature))]
+[DependsOn(typeof(ClusteringFeature))]
 public class AzureServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -88,7 +88,8 @@ public class AzureServiceBusFeature : FeatureBase
                     
                     foreach (var consumer in temporaryConsumers)
                     {
-                        configurator.ReceiveEndpoint($"Elsa-{instanceNameProvider.GetName()}-{consumer.Name}", endpointConfigurator =>
+                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                        configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
                         {
                             endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
                             endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;

@@ -18,6 +18,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
         <ProjectReference Include="..\Elsa.Dsl\Elsa.Dsl.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>

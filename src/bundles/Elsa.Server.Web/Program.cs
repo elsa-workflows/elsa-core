@@ -19,7 +19,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Workflows.Management.Compression;
-using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -39,9 +39,11 @@ const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool runEFCoreMigrations = true;
-const bool useMemoryStores = false;
+const bool useMemoryStores = true;
+const bool useCachingStores = true;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -149,6 +151,9 @@ services
 
                 if (useMassTransit)
                     management.UseMassTransitDispatcher();
+
+                if (useCachingStores)
+                    management.UseCachingStores();
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -183,9 +188,7 @@ services
                 }
 
                 if (useMassTransit)
-                {
                     runtime.UseMassTransitDispatcher();
-                }
 
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
@@ -196,6 +199,9 @@ services
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
                     runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
+
+                if (useCachingStores)
+                    runtime.UseCachingStores();
 
                 runtime.DistributedLockProvider = _ =>
                 {
@@ -327,6 +333,14 @@ services
                         // etc.
                     });
                 }
+            });
+        }
+
+        if (distributedCachingTransport != DistributedCachingTransport.None)
+        {
+            elsa.UseDistributedCache(distributedCaching =>
+            {
+                if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
             });
         }
 

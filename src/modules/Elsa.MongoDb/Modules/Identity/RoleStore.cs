@@ -2,6 +2,7 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.MongoDb.Common;
+using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Identity;
@@ -9,37 +10,41 @@ namespace Elsa.MongoDb.Modules.Identity;
 /// <summary>
 /// A MongoDb implementation of <see cref="IRoleStore"/>.
 /// </summary>
-public class MongoRoleStore : IRoleStore
+[UsedImplicitly]
+public class MongoRoleStore(MongoDbStore<Role> roleMongoDbStore) : IRoleStore
 {
-    private readonly MongoDbStore<Role> _roleMongoDbStore;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="MongoRoleStore"/>.
-    /// </summary>
-    public MongoRoleStore(MongoDbStore<Role> roleMongoDbStore)
+    /// <inheritdoc />
+    public Task SaveAsync(Role application, CancellationToken cancellationToken = default)
     {
-        _roleMongoDbStore = roleMongoDbStore;
+        return roleMongoDbStore.SaveAsync(application, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(Role application, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.SaveAsync(application, cancellationToken);
+    public Task AddAsync(Role role, CancellationToken cancellationToken = default)
+    {
+        return roleMongoDbStore.SaveAsync(role, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task AddAsync(Role role, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.SaveAsync(role, cancellationToken);
+    public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    {
+        return roleMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    {
+        return roleMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    public Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    {
+        return roleMongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
+    }
 
-    /// <inheritdoc />
-    public async Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default) => 
-        await _roleMongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
-
-    private static IMongoQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter) => (filter.Apply(query) as IMongoQueryable<Role>)!;
+    private static IMongoQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter)
+    {
+        return (filter.Apply(query) as IMongoQueryable<Role>)!;
+    }
 }

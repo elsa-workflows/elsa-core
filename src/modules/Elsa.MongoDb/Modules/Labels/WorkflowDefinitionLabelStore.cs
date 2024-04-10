@@ -1,62 +1,69 @@
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.MongoDb.Common;
+using JetBrains.Annotations;
 
 namespace Elsa.MongoDb.Modules.Labels;
 
 /// <inheritdoc />
-public class MongoWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
+[UsedImplicitly]
+public class MongoWorkflowDefinitionLabelStore(MongoDbStore<WorkflowDefinitionLabel> mongoDbStore) : IWorkflowDefinitionLabelStore
 {
-    private readonly MongoDbStore<WorkflowDefinitionLabel> _mongoDbStore;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MongoWorkflowDefinitionLabelStore"/> class.
-    /// </summary>
-    public MongoWorkflowDefinitionLabelStore(MongoDbStore<WorkflowDefinitionLabel> mongoDbStore) => _mongoDbStore = mongoDbStore;
+    /// <inheritdoc />
+    public Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.SaveAsync(record, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.SaveAsync(record, cancellationToken);
+    public Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.SaveManyAsync(records, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.SaveManyAsync(records, cancellationToken);
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
+    }
 
     /// <inheritdoc />
-    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.DeleteWhereAsync(x => x.Id == id, cancellationToken) > 0;
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.FindManyAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+    public Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.FindManyAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
     {
         var idList = removed.Select(r => r.Id);
-        await _mongoDbStore.DeleteWhereAsync(w => idList.Contains(w.Id), cancellationToken);
-        await _mongoDbStore.SaveManyAsync(added, cancellationToken);
+        await mongoDbStore.DeleteWhereAsync(w => idList.Contains(w.Id), cancellationToken);
+        await mongoDbStore.SaveManyAsync(added, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == workflowDefinitionId, cancellationToken);
+    public Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionId == workflowDefinitionId, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+    public Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        return mongoDbStore.DeleteWhereAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
-        return await _mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionId), cancellationToken);
+        return mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionId), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
+    public Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();
-        return await _mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionVersionId), cancellationToken);
+        return mongoDbStore.DeleteWhereAsync(x => ids.Contains(x.WorkflowDefinitionVersionId), cancellationToken);
     }
 }

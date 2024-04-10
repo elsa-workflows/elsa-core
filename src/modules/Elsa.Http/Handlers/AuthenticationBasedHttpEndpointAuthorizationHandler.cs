@@ -12,7 +12,7 @@ namespace Elsa.Http.Handlers;
 public class AuthenticationBasedHttpEndpointAuthorizationHandler : IHttpEndpointAuthorizationHandler
 {
     private readonly IAuthorizationService _authorizationService;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="AuthenticationBasedHttpEndpointAuthorizationHandler"/> class.
     /// </summary>
@@ -34,8 +34,12 @@ public class AuthenticationBasedHttpEndpointAuthorizationHandler : IHttpEndpoint
         if (string.IsNullOrWhiteSpace(context.Policy))
             return identity.IsAuthenticated;
 
-        var authorizationResult = await _authorizationService.AuthorizeAsync(user,
-            new { workflowInstanceId = context.WorkflowInstanceId }, context.Policy!);
+        var protectedResource = new
+        {
+            context.Workflow
+        };
+
+        var authorizationResult = await _authorizationService.AuthorizeAsync(user, protectedResource, context.Policy!);
 
         return authorizationResult.Succeeded;
     }

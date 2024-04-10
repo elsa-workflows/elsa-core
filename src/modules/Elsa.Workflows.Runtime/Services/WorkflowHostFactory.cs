@@ -31,23 +31,14 @@ public class WorkflowHostFactory : IWorkflowHostFactory
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
         
-        if(workflowDefinition == null)
+        if(workflow == null)
             return default;
         
-        return await CreateAsync(workflowDefinition, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<IWorkflowHost> CreateAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
-    {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         return await CreateAsync(workflow, cancellationToken);
     }
-
+    
     /// <inheritdoc />
     public Task<IWorkflowHost> CreateAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {

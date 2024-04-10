@@ -15,7 +15,7 @@ public static class QueryableExtensions
     /// <summary>
     /// Inserts or updates a list of entities in bulk.
     /// </summary>
-    public static async Task BulkUpsertAsync<TDbContext, TEntity>(this TDbContext dbContext, IList<TEntity> entities, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) where TDbContext : DbContext where TEntity : class
+    public static async Task BulkUpsertAsync<TDbContext, TEntity>(this TDbContext dbContext, IList<TEntity> entities, Expression<Func<TEntity, string>> keySelector, CancellationToken cancellationToken = default) where TDbContext : DbContext where TEntity : class, new()
     {
         var set = dbContext.Set<TEntity>();
         var compiledKeySelector = keySelector.Compile();
@@ -37,6 +37,19 @@ public static class QueryableExtensions
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Inserts a list of entities in bulk.
+    /// </summary>
+    public static async Task BulkInsertAsync<TDbContext, TEntity>(this TDbContext dbContext, IList<TEntity> entities, CancellationToken cancellationToken = default) where TDbContext : DbContext where TEntity : class, new()
+    {
+        var set = dbContext.Set<TEntity>();
+
+        if (entities.Any())
+            await set.AddRangeAsync(entities, cancellationToken);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+    
     /// <summary>
     /// Returns a paged result from the specified query.
     /// </summary>

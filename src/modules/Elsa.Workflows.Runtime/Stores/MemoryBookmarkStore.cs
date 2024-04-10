@@ -2,10 +2,12 @@ using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
+[UsedImplicitly]
 public class MemoryBookmarkStore : IBookmarkStore
 {
     private readonly MemoryStore<StoredBookmark> _store;
@@ -30,6 +32,13 @@ public class MemoryBookmarkStore : IBookmarkStore
     {
         _store.SaveMany(records, x => x.BookmarkId);
         return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return new(entity);
     }
 
     /// <inheritdoc />

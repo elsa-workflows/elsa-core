@@ -16,7 +16,6 @@ namespace Elsa.Dapper.Modules.Identity.Stores;
 public class DapperRoleStore : IRoleStore
 {
     private const string TableName = "Roles";
-    private const string PrimaryKeyName = "Id";
     private readonly Store<RoleRecord> _store;
 
     /// <summary>
@@ -24,14 +23,14 @@ public class DapperRoleStore : IRoleStore
     /// </summary>
     public DapperRoleStore(IDbConnectionProvider dbConnectionProvider)
     {
-        _store = new Store<RoleRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<RoleRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(Role application, CancellationToken cancellationToken = default)
     {
         var record = Map(application);
-        await _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
+        await _store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />

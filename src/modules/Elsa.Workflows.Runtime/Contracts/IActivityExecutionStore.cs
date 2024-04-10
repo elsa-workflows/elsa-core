@@ -10,17 +10,23 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IActivityExecutionStore
 {
     /// <summary>
-    /// Saves the specified activity execution record.
+    /// Adds or updates the specified <see cref="ActivityExecutionRecord"/> in the persistence store.
     /// </summary>
     /// <param name="record">The activity execution record.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     Task SaveAsync(ActivityExecutionRecord record, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the specified activity execution records.
+    /// Adds or updates the specified set of <see cref="ActivityExecutionRecord"/> objects in the persistence store.
     /// </summary>
     /// <param name="records">The activity execution records.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <remarks>
+    /// If a record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     Task SaveManyAsync(IEnumerable<ActivityExecutionRecord> records, CancellationToken cancellationToken = default);
 
     /// <summary>

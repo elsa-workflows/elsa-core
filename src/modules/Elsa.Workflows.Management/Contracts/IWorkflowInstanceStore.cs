@@ -90,7 +90,7 @@ public interface IWorkflowInstanceStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of workflow instance IDs.</returns>
     ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns a paginated list of workflow instance IDs matching the specified filter.
     /// </summary>
@@ -119,7 +119,6 @@ public interface IWorkflowInstanceStore
     /// <returns>A list of workflow instance summaries.</returns>
     ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default);
     
-
     /// <summary>
     /// Returns a list of workflow instance summaries matching the specified filter and order.
     /// </summary>
@@ -131,17 +130,23 @@ public interface IWorkflowInstanceStore
     ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrder>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrder> order, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the specified workflow instance.
+    /// Adds or updates the specified <see cref="WorkflowInstance"/> in the persistence store.
     /// </summary>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     /// <param name="instance">The workflow instance.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the specified workflow instances.
+    /// Adds or updates the specified set of <see cref="WorkflowInstance"/> objects in the persistence store.
     /// </summary>
     /// <param name="instances">The workflow instances.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default);
 
     /// <summary>

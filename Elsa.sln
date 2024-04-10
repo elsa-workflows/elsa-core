@@ -330,6 +330,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.Unit
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.LoadBalancer", "src\bundles\Elsa.Server.LoadBalancer\Elsa.Server.LoadBalancer.csproj", "{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "src\modules\Elsa.Caching\Elsa.Caching.csproj", "{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{EB3A7401-0DE3-476F-9E6F-057F1F4590FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.MassTransit", "src\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj", "{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed", "src\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{7EB0CFB8-B668-4F3F-898D-80411095BC2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -798,6 +806,18 @@ Global
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -938,6 +958,10 @@ Global
 		{086A7E2A-6CE7-41DA-927B-C033638060B1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{B0946844-DE0E-4C59-9391-C0EB649DBF4E} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{EB3A7401-0DE3-476F-9E6F-057F1F4590FB} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

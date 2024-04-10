@@ -3,10 +3,12 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <inheritdoc />
+[UsedImplicitly]
 public class EFCoreTriggerStore : ITriggerStore
 {
     private readonly EntityStore<RuntimeElsaDbContext, StoredTrigger> _store;
@@ -26,6 +28,12 @@ public class EFCoreTriggerStore : ITriggerStore
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);

@@ -16,7 +16,6 @@
     <ItemGroup>
         <PackageReference Include="DistributedLock.Core" />
         <PackageReference Include="LinqKit.Core" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
