@@ -12,7 +12,7 @@ This issue offers a bounty for the first eligible contributor who successfully r
 
 To announce your intention to claim this bounty, please comment below. You can use this template:
 
-```markdown
+\`\`\`markdown
 ## Bounty Candidacy Announcement
 
 I am announcing my intention to tackle this bounty issue. Below is my acknowledgment of the key eligibility requirements and rules of the Elsa Workflows Bounty Hunting Program:
@@ -30,6 +30,6 @@ I am announcing my intention to tackle this bounty issue. Below is my acknowledg
 **Notes/Comments**: `Any additional comments or notes you wish to add`
 
 By checking the boxes above, I signify my understanding and acceptance of the program rules and confirm my intent to proceed with resolving this issue as per the guidelines of the Elsa Workflows Bounty Hunting Program.
-```
+\`\`\`
 
 We value your contributions to Elsa Workflows and are excited to see the innovative solutions you bring. Let's enhance Elsa Workflows together!
