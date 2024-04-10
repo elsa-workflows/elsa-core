@@ -1,0 +1,30 @@
+name: Append Footer to Issue with Bounty Label
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  append-footer:
+    if: github.event.label.name == 'bounty'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Read Footer Content
+        id: footer
+        run: echo "::set-output name=content::$(cat docs/bounty-footer.md)"
+
+      - name: Append Footer to Issue
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const issueComment = `${{ steps.footer.outputs.content }}`;
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              body: issueComment
+            });
