@@ -59,7 +59,12 @@ services
             .UseWorkflowRuntime(runtime =>
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-                runtime.UseMassTransitDispatcher();
+                
+                if (useMassTransit)
+                {
+                    runtime.UseMassTransitDispatcher();
+                }
+                
                 if (useProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
