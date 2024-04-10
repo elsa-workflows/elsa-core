@@ -23,7 +23,7 @@ jobs:
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
-            const issueComment = "${{ steps.footer.outputs.content }}";
+            const issueComment = `${{ steps.footer.outputs.content }}`;
             await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
