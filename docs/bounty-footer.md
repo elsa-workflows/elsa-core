@@ -23,11 +23,11 @@ I am announcing my intention to tackle this bounty issue. Below is my acknowledg
 - [ ] I understand that I must first describe my proposed solution in a comment on this issue or via a discussion linked to this bounty, before starting my work.
 - [ ] I have reviewed the [Bounty Hunting Program Guidelines](#5211) in detail.
 
-**GitHub Username**: `YourGitHubUsernameHere`
+**GitHub Username**: \`YourGitHubUsernameHere\`
 
-**Estimated Start Date**: `YYYY-MM-DD`
+**Estimated Start Date**: \`YYYY-MM-DD\`
 
-**Notes/Comments**: `Any additional comments or notes you wish to add`
+**Notes/Comments**: \`Any additional comments or notes you wish to add\`
 
 By checking the boxes above, I signify my understanding and acceptance of the program rules and confirm my intent to proceed with resolving this issue as per the guidelines of the Elsa Workflows Bounty Hunting Program.
 \`\`\`
