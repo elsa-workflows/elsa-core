@@ -42,7 +42,6 @@ const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = true;
 const bool useCachingStores = true;
-const bool useDistributedCaching = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -337,7 +336,7 @@ services
             });
         }
 
-        if (useDistributedCaching)
+        if (distributedCachingTransport != DistributedCachingTransport.None)
         {
             elsa.UseDistributedCache(distributedCaching =>
             {

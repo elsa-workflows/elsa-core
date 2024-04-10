@@ -10,12 +10,14 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents the context of an activity execution.
 /// </summary>
+[PublicAPI]
 public partial class ActivityExecutionContext : IExecutionContext
 {
     private readonly ISystemClock _systemClock;

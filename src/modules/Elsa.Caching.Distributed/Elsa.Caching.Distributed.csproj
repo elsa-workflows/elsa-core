@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides distributed caching services and utility functions common to Elsa modules.
+        </Description>
+        <PackageTags>elsa module caching distributed</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
+    </ItemGroup>
+
+</Project>

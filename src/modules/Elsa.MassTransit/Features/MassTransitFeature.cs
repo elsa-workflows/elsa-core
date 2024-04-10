@@ -135,7 +135,7 @@ public class MassTransitFeature : FeatureBase
                 busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
                 {
                     endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                    endpoint.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                    endpoint.ConfigureConsumer(context, consumer.ConsumerType);
                 });
             }
 

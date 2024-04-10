@@ -1,15 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
             Provides distributed caching services leveraging MassTransit for transport of signals.
         </Description>
-        <PackageTags>elsa module distributed caching mass-transit</PackageTags>
+        <PackageTags>elsa module distributed caching masstransit</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
-        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
+        <ProjectReference Include="..\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
         <ProjectReference Include="..\Elsa.MassTransit\Elsa.MassTransit.csproj" />
     </ItemGroup>
 

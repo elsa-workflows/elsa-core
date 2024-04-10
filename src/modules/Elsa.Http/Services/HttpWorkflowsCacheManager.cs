@@ -20,19 +20,9 @@ public class HttpWorkflowsCacheManager(
     IMemoryCache memoryCache,
     ITriggerStore triggerStore,
     IWorkflowDefinitionService workflowDefinitionService,
-    IBookmarkHasher bookmarkHasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IHttpWorkflowsCacheManager
 {
-    private static readonly string HttpEndpointActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-    
-    /// <inheritdoc />
-    public string ComputeBookmarkHash(string path, string method)
-    {
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        return bookmarkHasher.Hash(HttpEndpointActivityTypeName, bookmarkPayload);
-    }
-
     /// <inheritdoc />
     public async Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {

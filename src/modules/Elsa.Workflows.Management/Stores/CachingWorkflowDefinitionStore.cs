@@ -15,9 +15,9 @@ namespace Elsa.Workflows.Management.Stores;
 /// A decorator for <see cref="IWorkflowDefinitionStore"/> that caches workflow definitions.
 /// </summary>
 public class CachingWorkflowDefinitionStore(
-    IWorkflowDefinitionStore decoratedStore, 
-    IMemoryCache cache, 
-    IHasher hasher, 
+    IWorkflowDefinitionStore decoratedStore,
+    IMemoryCache cache,
+    IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IWorkflowDefinitionStore
 {
@@ -27,77 +27,77 @@ public class CachingWorkflowDefinitionStore(
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        return await GetOrCreateAsync(() => decoratedStore.FindAsync(filter, cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.FindAsync(filter, cancellationToken));
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order);
-        return await GetOrCreateAsync(() => decoratedStore.FindAsync(filter, order, cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.FindAsync(filter, order, cancellationToken));
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, pageArgs);
-        return (await GetOrCreateAsync(() => decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order, pageArgs);
-        return (await GetOrCreateAsync(() => decoratedStore.FindManyAsync(filter, order, pageArgs, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, order, pageArgs, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        return (await GetOrCreateAsync(() => decoratedStore.FindManyAsync(filter, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order);
-        return (await GetOrCreateAsync(() => decoratedStore.FindManyAsync(filter, order, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, order, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, pageArgs);
-        return (await GetOrCreateAsync(() => decoratedStore.FindSummariesAsync(filter, pageArgs, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindSummariesAsync(filter, pageArgs, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order, pageArgs);
-        return (await GetOrCreateAsync(() => decoratedStore.FindSummariesAsync(filter, order, pageArgs, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindSummariesAsync(filter, order, pageArgs, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        return (await GetOrCreateAsync(() => decoratedStore.FindSummariesAsync(filter, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindSummariesAsync(filter, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order);
-        return (await GetOrCreateAsync(() => decoratedStore.FindSummariesAsync(filter, order, cancellationToken), cacheKey))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindSummariesAsync(filter, order, cancellationToken)))!;
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
     {
         var cacheKey = hasher.Hash(filter);
-        return await GetOrCreateAsync(() => decoratedStore.FindLastVersionAsync(filter, cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.FindLastVersionAsync(filter, cancellationToken));
     }
 
     /// <inheritdoc />
@@ -126,24 +126,24 @@ public class CachingWorkflowDefinitionStore(
     public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(nameof(AnyAsync), filter);
-        return await GetOrCreateAsync(() => decoratedStore.AnyAsync(filter, cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.AnyAsync(filter, cancellationToken));
     }
 
     /// <inheritdoc />
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(nameof(CountDistinctAsync));
-        return await GetOrCreateAsync(() => decoratedStore.CountDistinctAsync(cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.CountDistinctAsync(cancellationToken));
     }
 
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(nameof(GetIsNameUnique), name, definitionId);
-        return await GetOrCreateAsync(() => decoratedStore.GetIsNameUnique(name, definitionId, cancellationToken), cacheKey);
+        return await GetOrCreateAsync(cacheKey, () => decoratedStore.GetIsNameUnique(name, definitionId, cancellationToken));
     }
-    
-    private async Task<T?> GetOrCreateAsync<T>(Func<Task<T>> factory, string key)
+
+    private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
         var internalKey = $"{typeof(T).Name}:{key}";
         return await cache.GetOrCreateAsync(internalKey, async entry =>

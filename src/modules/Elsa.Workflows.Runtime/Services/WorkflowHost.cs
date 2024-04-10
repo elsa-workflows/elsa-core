@@ -131,4 +131,12 @@ public class WorkflowHost : IWorkflowHost
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
         await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task PersistStateAsync(CancellationToken cancellationToken = default)
+    {
+        using var scope = _serviceScopeFactory.CreateScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
+    }
 }

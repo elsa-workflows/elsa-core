@@ -148,7 +148,7 @@ public class Store<T> where T : notnull
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <typeparam name="TShape">The shape type.</typeparam>
+    /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
@@ -187,7 +187,17 @@ public class Store<T> where T : notnull
     }
 
     /// <summary>
-    /// Saves the specified record.
+    /// Adds or updates the specified record.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task SaveAsync(T record, CancellationToken cancellationToken = default)
+    {
+        return SaveAsync(record, PrimaryKey, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds or updates the specified record.
     /// </summary>
     /// <param name="record">The record.</param>
     /// <param name="primaryKey">The primary key.</param>
@@ -200,7 +210,17 @@ public class Store<T> where T : notnull
     }
 
     /// <summary>
-    /// Saves the specified records.
+    /// Adds or updates the specified records.
+    /// </summary>
+    /// <param name="records">The records.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
+    {
+        return SaveManyAsync(records, PrimaryKey, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds or updates the specified records.
     /// </summary>
     /// <param name="records">The records.</param>
     /// <param name="primaryKey">The primary key.</param>
