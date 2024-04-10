@@ -18,7 +18,6 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.0"/>
         <PackageVersion Include="Cronos" Version="0.7.1"/>
         <PackageVersion Include="Dapper" Version="2.1.24"/>
-        <PackageVersion Include="Datadog.Trace" Version="2.49.0"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.5"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.1"/>
         <PackageVersion Include="DistributedLock.Postgres" Version="1.0.5"/>
