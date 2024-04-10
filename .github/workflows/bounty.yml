@@ -14,8 +14,10 @@ jobs:
 
       - name: Read Footer Content
         id: footer
-        run: echo "::set-output name=content::$(cat docs/bounty-footer.md)"
-
+        run: |
+          content=$(cat .github/bounty-footer.md | jq -Rs .)
+          echo "::set-output name=content::$content"
+      
       - name: Append Footer to Issue
         uses: actions/github-script@v7
         with:
