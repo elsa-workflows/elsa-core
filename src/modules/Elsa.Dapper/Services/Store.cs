@@ -47,11 +47,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <returns>The record, if found.</returns>
     public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        var query = dbConnectionProvider.CreateQuery().From(TableName);
-        await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
-        filter(query);
-        using var connection = dbConnectionProvider.GetConnection();
-        return await query.FirstOrDefaultAsync<T>(connection);
+        return await FindAsync(filter, null, null, tenantAgnostic, cancellationToken);
     }
 
     /// <summary>
@@ -76,13 +72,16 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The record, if found.</returns>
-    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
+    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string? orderKey = null, OrderDirection? orderDirection = null, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnectionProvider.GetConnection();
         var query = dbConnectionProvider.CreateQuery().From(TableName);
         await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
         filter(query);
-        query = query.OrderBy(orderKey, orderDirection);
+        
+        if (orderKey != null && orderDirection != null)
+            query = query.OrderBy(orderKey, orderDirection.Value);
+        
+        using var connection = dbConnectionProvider.GetConnection();
         return await query.FirstOrDefaultAsync<T>(connection);
     }
 
@@ -202,8 +201,6 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <returns>A page of records.</returns>
     public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnectionProvider.GetConnection();
-
         var query = dbConnectionProvider.CreateQuery().From(TableName);
         await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
         filter(query);
@@ -212,6 +209,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         var countQuery = dbConnectionProvider.CreateQuery().Count(TableName);
         filter(countQuery);
 
+        using var connection = dbConnectionProvider.GetConnection();
         var records = (await query.QueryAsync<TShape>(connection)).ToList();
         var totalCount = await countQuery.SingleAsync<long>(connection);
         return Page.Of(records, totalCount);

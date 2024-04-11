@@ -21,7 +21,6 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
-using Elsa.Tenants.Resolvers;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.Stores;
@@ -32,13 +31,9 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
-using StackExchange.Redis;
 
-const bool useMongoDb = true;
-const bool useSqlServer = false;
-const bool usePostgres = false;
-const bool useCockroachDb = false;
-const bool useDapper = false;
+const PersistenceProvider persistenceProvider = PersistenceProvider.Dapper;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
@@ -68,22 +63,22 @@ var distributedLockProviderName = configuration["DistributedLockProvider"];
 services
     .AddElsa(elsa =>
     {
-        if (useMongoDb)
+        if (persistenceProvider == PersistenceProvider.MongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
 
-        if (useDapper)
+        if (persistenceProvider == PersistenceProvider.Dapper)
             elsa.UseDapper(dapper =>
             {
                 dapper.UseMigrations(feature =>
                 {
-                    if (useSqlServer)
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         feature.UseSqlServer();
                     else
                         feature.UseSqlite();
                 });
                 dapper.DbConnectionProvider = sp =>
                 {
-                    if (useSqlServer)
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
                     else
                         return new SqliteDbConnectionProvider(sqliteConnectionString);
@@ -100,18 +95,18 @@ services
             .UseFileStorage()
             .UseIdentity(identity =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     identity.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     identity.UseDapper();
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -127,18 +122,18 @@ services
             .UseDefaultAuthentication()
             .UseWorkflowManagement(management =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     management.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     management.UseDapper();
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -157,18 +152,18 @@ services
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     runtime.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     runtime.UseDapper();
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -180,7 +175,7 @@ services
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                         else
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
@@ -268,11 +263,11 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                 {
                     // TODO: alterations.UseMongoDb();
                 }
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                 {
                     // TODO: alterations.UseDapper();
                 }
@@ -280,11 +275,11 @@ services
                 {
                     alterations.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);

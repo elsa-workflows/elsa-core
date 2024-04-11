@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.Tenants.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
@@ -71,11 +70,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
             if (!Database.IsSqlite())
                 modelBuilder.HasDefaultSchema(Schema);
         }
-   
-        var modelHandlers = ServiceProvider.GetServices<IModelCreatingHandler>();
-        
-        foreach (var handler in modelHandlers) 
-            handler.Handle(this, modelBuilder);
         
         var entityTypeHandlers = ServiceProvider.GetServices<IEntityModelCreatingHandler>().ToList();
 
