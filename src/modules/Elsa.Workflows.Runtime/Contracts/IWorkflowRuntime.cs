@@ -48,6 +48,13 @@ public interface IWorkflowRuntime
     /// Resumes all workflows that are bookmarked on the specified activity type. 
     /// </summary>
     Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options = default);
+    
+    // /// <summary>
+    // /// Starts a workflow instance.
+    // /// </summary>
+    // /// <param name="workflowInstanceId">The ID of the workflow instance to start.</param>
+    // /// <param name="params">Options for starting the workflow instance.</param>
+    // Task<WorkflowExecutionResult?> StartWorkflowInstanceAsync(string workflowInstanceId, StartWorkflowInstanceRuntimeParams? @params = default);
 
     /// <summary>
     /// Starts all workflows and resumes existing workflow instances based on the specified activity type and bookmark payload.

@@ -10,6 +10,11 @@ public class StartWorkflowHostParams
     /// <summary>An optional workflow instance ID. If not specified, a new ID will be generated.</summary>
     public string? InstanceId { get; set; }
 
+    /// <summary>
+    /// Indicates whether the workflow instance is a new instance or an existing one.
+    /// </summary>
+    public bool IsExistingInstance { get; set; }
+
     /// <summary>An optional correlation ID.</summary>
     public string? CorrelationId { get; set; }
 
