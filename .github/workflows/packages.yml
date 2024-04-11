@@ -16,6 +16,17 @@ env:
   nuget_feed_source: 'https://api.nuget.org/v3/index.json'
 
 jobs:
+  sonarcloud:
+    name: SonarCloud
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env: 
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build:
     name: Build packages
     runs-on: ubuntu-latest
