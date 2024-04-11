@@ -24,7 +24,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
             Input = request.Input ?? new Dictionary<string, object>(),
             Properties = request.Properties ?? new Dictionary<string, object>(),
             Status = WorkflowStatus.Running,
-            SubStatus = WorkflowSubStatus.Executing,
+            SubStatus = WorkflowSubStatus.Pending,
             CreatedAt = now,
             UpdatedAt = now,
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
