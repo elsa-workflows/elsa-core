@@ -3,6 +3,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
@@ -29,6 +30,12 @@ public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> sto
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+
+    /// <inheritdoc />
+    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {

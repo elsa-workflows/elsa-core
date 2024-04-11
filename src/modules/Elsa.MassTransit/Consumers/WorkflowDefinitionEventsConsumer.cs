@@ -26,7 +26,10 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context) => RefreshAsync();
 
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context) => RefreshAsync();
+    public async Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
+    {
+        await activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+    }
 
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context) => RefreshAsync();

@@ -9,6 +9,7 @@ public class ParentWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
+        builder.WithDefinitionId("CustomId");
         var childOutput = builder.WithVariable<IDictionary<string, object>>();
 
         builder.Root = new Sequence

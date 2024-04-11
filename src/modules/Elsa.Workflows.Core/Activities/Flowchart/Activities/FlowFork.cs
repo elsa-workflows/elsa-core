@@ -33,6 +33,6 @@ public class FlowFork : Activity
     {
         var outcomes = Branches.GetOrDefault(context)?.ToArray() ?? ["Done"];
 
-        await context.ScheduleOutcomesAsync(outcomes);
+        await context.CompleteActivityWithOutcomesAsync(outcomes);
     }
 }

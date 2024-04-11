@@ -25,6 +25,13 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store) : IBookmarkS
     }
 
     /// <inheritdoc />
+    public ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        return new(entity);
+    }
+
+    /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = store.Query(query => Filter(query, filter)).AsEnumerable();

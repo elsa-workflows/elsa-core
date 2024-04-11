@@ -1,4 +1,4 @@
-﻿using Elsa.Dapper.Contracts;
+using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -28,6 +28,13 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     {
         var mappedRecords = records.Select(Map);
         await store.SaveManyAsync(mappedRecords, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return record != null ? Map(record) : default;
     }
 
     /// <inheritdoc />

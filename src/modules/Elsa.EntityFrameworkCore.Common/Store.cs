@@ -16,7 +16,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
 [PublicAPI]
-public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : class
+public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : class, new()
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -63,13 +63,51 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     /// <param name="entity">The entity to add.</param>
     /// <param name="onAdding">The callback to invoke before adding the entity.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task AddAsync(TEntity entity, Func<TDbContext, TEntity, CancellationToken, ValueTask<TEntity>>? onAdding, CancellationToken cancellationToken = default)
+    public async Task AddAsync(TEntity entity, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onAdding, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        entity = onAdding != null ? await onAdding(dbContext, entity, cancellationToken) : entity;
+
+        if (onAdding != null)
+            await onAdding(dbContext, entity, cancellationToken);
+                
         var set = dbContext.Set<TEntity>();
         await set.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds the specified entities.
+    /// </summary>
+    /// <param name="entities">The entities to save.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddManyAsync(
+        IEnumerable<TEntity> entities,
+        CancellationToken cancellationToken = default)
+    {
+        await AddManyAsync(entities, null, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds the specified entities.
+    /// </summary>
+    /// <param name="entities">The entities to save.</param>
+    /// <param name="onSaving">The callback to invoke before saving the entity.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddManyAsync(
+        IEnumerable<TEntity> entities,
+        Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving = default,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var entityList = entities.ToList();
+
+        if (onSaving != null)
+        {
+            var savingTasks = entityList.Select(entity => onSaving(dbContext, entity, cancellationToken).AsTask()).ToList();
+            await Task.WhenAll(savingTasks);
+        }
+
+        await dbContext.BulkInsertAsync(entityList, cancellationToken);
     }
 
     /// <summary>

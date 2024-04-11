@@ -21,6 +21,20 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
     : IWorkflowExecutionLogStore
 {
     /// <inheritdoc />
+    public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
+    {
+        var mappedRecord = Map(record);
+        await _store.AddAsync(mappedRecord, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
+    {
+        var mappedRecords = records.Select(Map);
+        await _store.AddManyAsync(mappedRecords, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);

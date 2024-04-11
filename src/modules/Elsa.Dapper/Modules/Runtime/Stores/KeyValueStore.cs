@@ -28,6 +28,7 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
         return record == null ? null : Map(record);
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
         var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);

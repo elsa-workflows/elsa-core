@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
@@ -92,9 +93,8 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<WorkflowExecutionResult?> TryStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
-        // Load the workflow definition.
         var versionOptions = options?.VersionOptions ?? VersionOptions.Published;
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
+        var workflowDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, options?.CancellationTokens.SystemCancellationToken ?? default);
 
         if (workflowDefinition == null)
             return null;
@@ -254,7 +254,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             Id = workflowInstanceId
         };
 
-        var instance = await _workflowInstanceStore.FindAsync(filter);
+        var instance = await _workflowInstanceStore.FindAsync(filter, cancellationToken);
         if (instance is null)
             return new CancellationResult(false, FailureReason.NotFound);
         
@@ -271,8 +271,9 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
         var results = startableWorkflows.Concat(resumableWorkflows).ToList();
         return results;
     }
-    
+
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedWorkflowGrain(workflowInstanceId);
@@ -283,6 +284,7 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var client = _cluster.GetNamedWorkflowGrain(workflowState.Id);

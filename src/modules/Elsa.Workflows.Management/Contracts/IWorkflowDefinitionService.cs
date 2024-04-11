@@ -17,20 +17,20 @@ public interface IWorkflowDefinitionService
     /// <summary>
     /// Looks for a <see cref="WorkflowDefinition"/> by the specified definition ID and <see cref="VersionOptions"/>.
     /// </summary>
-    Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Looks for a <see cref="WorkflowDefinition"/> by the specified definition ID and <see cref="VersionOptions"/>.
+    /// Looks for a <see cref="WorkflowDefinition"/> by the specified version ID.
     /// </summary>
-    Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Looks for a <see cref="WorkflowDefinition"/> by the specified ID.
+    /// Looks for a <see cref="Workflow"/> by the specified definition ID and <see cref="VersionOptions"/>.
     /// </summary>
-    Task<WorkflowDefinition?> FindAsync(string definitionVersionId, CancellationToken cancellationToken = default);
+    Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Looks for a <see cref="WorkflowDefinition"/> by the specified ID.
+    /// Looks for a <see cref="Workflow"/> by the specified version ID.
     /// </summary>
-    Task<WorkflowDefinition?> FindAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default);
+    Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default);
 }

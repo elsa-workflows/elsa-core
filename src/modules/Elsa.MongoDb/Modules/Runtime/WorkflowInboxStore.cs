@@ -5,6 +5,7 @@ using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;
@@ -12,6 +13,7 @@ namespace Elsa.MongoDb.Modules.Runtime;
 /// <summary>
 /// A MongoDb implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
+[UsedImplicitly]
 public class MongoWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 {
     private readonly MongoDbStore<WorkflowInboxMessage> _mongoDbStore;
@@ -27,8 +29,10 @@ public class MongoWorkflowInboxMessageStore : IWorkflowInboxMessageStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default) =>
+    public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default)
+    {
         await _mongoDbStore.SaveAsync(record, s => s.Id, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInboxMessage>> FindManyAsync(WorkflowInboxMessageFilter filter, CancellationToken cancellationToken = default)
@@ -43,8 +47,10 @@ public class MongoWorkflowInboxMessageStore : IWorkflowInboxMessageStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync<string>(query => Paginate(Filter(query, filter), pageArgs), x => x.Id, cancellationToken);
+    public async ValueTask<long> DeleteManyAsync(WorkflowInboxMessageFilter filter, PageArgs? pageArgs = default, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.DeleteWhereAsync<string>(query => Paginate(Filter(query, filter), pageArgs), x => x.Id, cancellationToken);
+    }
 
     private IMongoQueryable<WorkflowInboxMessage> Filter(IMongoQueryable<WorkflowInboxMessage> queryable, params WorkflowInboxMessageFilter[] filters)
     {
@@ -52,5 +58,8 @@ public class MongoWorkflowInboxMessageStore : IWorkflowInboxMessageStore
         return queryable;
     }
 
-    private IMongoQueryable<WorkflowInboxMessage> Paginate(IMongoQueryable<WorkflowInboxMessage> queryable, PageArgs? pageArgs) => (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInboxMessage>)!;
+    private IMongoQueryable<WorkflowInboxMessage> Paginate(IMongoQueryable<WorkflowInboxMessage> queryable, PageArgs? pageArgs)
+    {
+        return (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInboxMessage>)!;
+    }
 }

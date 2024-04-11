@@ -18,15 +18,14 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.0"/>
         <PackageVersion Include="Cronos" Version="0.7.1"/>
         <PackageVersion Include="Dapper" Version="2.1.24"/>
-        <PackageVersion Include="Datadog.Trace" Version="2.49.0"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.5"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.1"/>
         <PackageVersion Include="DistributedLock.Postgres" Version="1.0.5"/>
         <PackageVersion Include="DistributedLock.Redis" Version="1.0.2"/>
         <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.11.0"/>
-        <PackageVersion Include="Elsa.Studio" Version="3.0.4"/>
-        <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.4"/>
-        <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.4"/>
+        <PackageVersion Include="Elsa.Studio" Version="3.2.0-preview.307"/>
+        <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.2.0-preview.307"/>
+        <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.2.0-preview.307"/>
         <PackageVersion Include="FastEndpoints" Version="5.21.2"/>
         <PackageVersion Include="FastEndpoints.Security" Version="5.21.2"/>
         <PackageVersion Include="FastEndpoints.Swagger" Version="5.21.2"/>
@@ -82,6 +81,7 @@
         <PackageVersion Include="Quartz.Serialization.Json" Version="3.8.0"/>
         <PackageVersion Include="Refit" Version="7.0.0"/>
         <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0"/>
+        <PackageVersion Include="Scrutor" Version="4.2.2"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.7.4"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1"/>

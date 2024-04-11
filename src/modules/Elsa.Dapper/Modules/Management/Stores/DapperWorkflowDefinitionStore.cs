@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Entities;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;

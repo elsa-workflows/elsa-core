@@ -243,7 +243,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <typeparam name="TShape">The shape type.</typeparam>
+    /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
@@ -327,7 +327,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     }
 
     /// <summary>
-    /// Saves the specified record.
+    /// Adds or updates the specified record.
     /// </summary>
     /// <param name="record">The record.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -340,7 +340,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     }
 
     /// <summary>
-    /// Saves the specified records.
+    /// Adds or updates the specified records.
     /// </summary>
     /// <param name="records">The records.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -376,6 +376,32 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         using var connection = dbConnectionProvider.GetConnection();
         await SetTenantIdAsync(record, cancellationToken);
         var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Insert(TableName, record);
+        await query.ExecuteAsync(connection);
+    }
+
+    /// <summary>
+    /// Adds the specified records.
+    /// </summary>
+    /// <param name="records">The records.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
+    {
+        var recordsList = records.ToList();
+
+        if (!recordsList.Any())
+            return;
+
+        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
+        var currentIndex = 0;
+
+        foreach (var record in recordsList)
+        {
+            var index = currentIndex;
+            query.Insert(TableName, record, field => $"{field}_{index}");
+            currentIndex++;
+        }
+
+        using var connection = _dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
 

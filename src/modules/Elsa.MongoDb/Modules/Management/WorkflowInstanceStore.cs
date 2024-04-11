@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using JetBrains.Annotations;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Open.Linq.AsyncExtensions;
@@ -16,6 +17,7 @@ namespace Elsa.MongoDb.Modules.Management;
 /// <summary>
 /// A MongoDb implementation of <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
+[UsedImplicitly]
 public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbStore) : IWorkflowInstanceStore
 {
     /// <inheritdoc />

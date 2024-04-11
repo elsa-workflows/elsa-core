@@ -139,13 +139,11 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             if (workflowState == null)
                 throw new Exception("Workflow state not found");
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId,
-                VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+            var workflow = await _workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
-            if (workflowDefinition == null)
+            if (workflow == null)
                 throw new Exception("Workflow definition not found");
 
-            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
             workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
 
             if (!cancellationToken.IsCancellationRequested)
@@ -247,18 +245,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var definitionId = workflowInstance.DefinitionId;
             var version = workflowInstance.Version;
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+            var workflow = await _workflowDefinitionService.FindWorkflowAsync(
                 definitionId,
                 VersionOptions.SpecificVersion(version),
                 systemCancellationToken);
 
-            if (workflowDefinition == null)
-            {
+            if (workflow == null)
                 throw new Exception($"The workflow definition {definitionId} version {version} was not found");
-            }
 
-            var workflow =
-                await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, systemCancellationToken);
             var workflowState = _workflowStateMapper.Map(workflowInstance)!;
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, systemCancellationToken);
 
@@ -276,13 +270,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             };
 
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, applicationCancellationToken);
-
+            await workflowHost.PersistStateAsync(systemCancellationToken);
             workflowState = workflowHost.WorkflowState;
-
-            await SaveWorkflowStateAsync(workflowState, systemCancellationToken);
-
-            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus,
-                workflowState.Bookmarks, workflowState.Incidents);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents);
         }
     }
 
@@ -420,10 +410,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 TriggerActivityId = options?.TriggerActivityId,
                 CancellationTokens = cancellationTokens
             };
-            await workflowHost.StartWorkflowAsync(startWorkflowOptions,
-                cancellationTokens.ApplicationCancellationToken);
+            await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationTokens.ApplicationCancellationToken);
             var workflowState = workflowHost.WorkflowState;
-
             await SaveWorkflowStateAsync(workflowState, cancellationTokens.SystemCancellationToken);
 
             return new WorkflowExecutionResult(

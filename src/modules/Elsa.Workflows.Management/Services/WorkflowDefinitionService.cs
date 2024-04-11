@@ -43,20 +43,13 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
         var workflow = await materializer.MaterializeAsync(definition, cancellationToken);
         var graph = (await _activityVisitor.VisitAsync(workflow, cancellationToken)).Flatten().ToList();
 
-        // Assign identities.
         _identityGraphService.AssignIdentities(graph);
 
         return workflow;
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
-    {
-        return await FindAsync(definitionId, versionOptions, false, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter
         {
@@ -68,13 +61,7 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, CancellationToken cancellationToken = default)
-    {
-        return await FindAsync(definitionVersionId, false, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter
         {
@@ -82,5 +69,27 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
             TenantAgnostic = tenantAgnostic
         };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    {
+        var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
+
+        if (definition == null)
+            return null;
+
+        return await MaterializeWorkflowAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var definition = await FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
+
+        if (definition == null)
+            return null;
+
+        return await MaterializeWorkflowAsync(definition, cancellationToken);
     }
 }
