@@ -20,6 +20,6 @@ public static class HttpContextTenantExtensions
     /// </summary>
     public static string? GetTenantId(this HttpContext httpContext)
     {
-        return httpContext.Items["TenantId"] as string;
+        return httpContext.Items.TryGetValue("TenantId", out var tenantId) ? tenantId as string : null;
     }
 }
