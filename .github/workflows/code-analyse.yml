@@ -24,6 +24,24 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be avoided for SonarCloud analysis; depth 0 ensures the full history is fetched
 
+      - name: Extract branch name
+        run: |
+          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
+          BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
+          # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
+          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
+          
+          # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
+          if [[ "${BRANCH_NAME}" == "main" ]]; then
+              PACKAGE_PREFIX="preview"
+          fi
+          
+          echo "Ref: ${{ github.ref }}"
+          echo "Branch name: ${BRANCH_NAME}"
+          echo "Package prefix: ${PACKAGE_PREFIX}"
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
+          
       - name: Set VERSION variable
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
