@@ -48,7 +48,6 @@ public class MassTransitWorkflowDispatcher(
         var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
 
         // The workflow instance is then dispatched for execution.
-        // We attach a version header to the message for the consumer to know whether it needs to create a new instance (backward compatibility) or use one created by the dispatcher.
         var sendEndpoint = await GetSendEndpointAsync(options);
         var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, request.TriggerActivityId);
         await sendEndpoint.Send(message, cancellationToken);
