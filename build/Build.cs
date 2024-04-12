@@ -8,6 +8,7 @@ using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
+using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
@@ -73,10 +74,8 @@ partial class Build : NukeBuild, ITest, IPack
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
-        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false")
-        .When(AnalyseCode, settings => settings.SetProcessArgumentConfigurator(arguments => arguments
-            .Add("/p:CollectCoverage=true")
-            .Add("/p:CoverletOutputFormat=opencover")
-            // Specify the output path for the coverage results if needed
-            .Add("/p:CoverletOutput={0}/coverage.opencover.xml", project.Directory))));
+        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
+        .When(AnalyseCode, settings => settings.SetCoverletOutputFormat("opencover"))
+        .When(AnalyseCode, settings => settings.EnableCollectCoverage())
+        .When(AnalyseCode, settings => settings.SetCoverletOutput($"{project.Directory}/coverage.opencover.xml"));
 }
