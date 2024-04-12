@@ -18,6 +18,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
@@ -154,6 +155,8 @@ services
 
                 if (useCachingStores)
                     management.UseCachingStores();
+                
+                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Default);
             })
             .UseWorkflowRuntime(runtime =>
             {
