@@ -10,6 +10,7 @@ using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.SonarScanner;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 using Serilog;
@@ -27,6 +28,7 @@ partial class Build : NukeBuild, ITest, IPack
     AbsolutePath SourceDirectory => RootDirectory / "src";
 
     public AbsolutePath PackagesDirectory => RootDirectory / "packages";
+    public AbsolutePath TestResultDirectory => RootDirectory / "testresults";
 
     string TagVersion => GitRepository.Tags.SingleOrDefault(x => "v".StartsWith(x))?[1..];
     bool IsTaggedBuild => !string.IsNullOrWhiteSpace(TagVersion);
@@ -62,7 +64,10 @@ partial class Build : NukeBuild, ITest, IPack
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
             ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
+            
+            TestResultDirectory.CreateOrCleanDirectory();
         });
+    
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
         // ensure we don't generate too much output in CI run
@@ -73,9 +78,13 @@ partial class Build : NukeBuild, ITest, IPack
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
+    public Configure<SonarScannerBeginSettings> SonarSettings => _ => _
+        .SetOpenCoverPaths($"{TestResultDirectory}/*.xml");
+    
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
         .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
-        .When(AnalyseCode, settings => settings.SetCoverletOutputFormat("opencover"))
+        .When(AnalyseCode, settings => settings.SetCoverletOutputFormat(CoverletOutputFormat.opencover))
         .When(AnalyseCode, settings => settings.EnableCollectCoverage())
-        .When(AnalyseCode, settings => settings.SetCoverletOutput($"{project.Directory}/coverage.opencover.xml"));
+        .When(AnalyseCode, settings =>  settings.SetCoverletOutput($"{TestResultDirectory}/{project.Name}.xml"));
+    
 }
