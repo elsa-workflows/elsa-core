@@ -78,9 +78,6 @@ partial class Build : NukeBuild, ITest, IPack
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
-    public Configure<SonarScannerBeginSettings> SonarSettings => _ => _
-        .SetOpenCoverPaths($"{TestResultDirectory}/*.xml");
-    
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
         .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
         .When(AnalyseCode, settings => settings.SetCoverletOutputFormat(CoverletOutputFormat.opencover))

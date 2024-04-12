@@ -7,6 +7,10 @@
     <ItemGroup>
         <PackageReference Include="Testcontainers" />
         <PackageReference Include="Testcontainers.Redis" />
+        <PackageReference Include="coverlet.collector" Version="6.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
