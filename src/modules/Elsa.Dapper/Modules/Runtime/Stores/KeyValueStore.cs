@@ -1,4 +1,3 @@
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -6,12 +5,14 @@ using Elsa.Dapper.Services;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// A Dapper implementation of <see cref="IKeyValueStore"/>.
 /// </summary>
+[UsedImplicitly]
 internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueStore
 {
     /// <inheritdoc />

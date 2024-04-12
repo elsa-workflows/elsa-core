@@ -1,18 +1,18 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Elsa.Dapper.Modules.Management.Stores;
@@ -20,6 +20,7 @@ namespace Elsa.Dapper.Modules.Management.Stores;
 /// <summary>
 /// Provides a Dapper implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
+[UsedImplicitly]
 internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer)
     : IWorkflowDefinitionStore
 {

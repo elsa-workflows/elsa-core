@@ -7,7 +7,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;

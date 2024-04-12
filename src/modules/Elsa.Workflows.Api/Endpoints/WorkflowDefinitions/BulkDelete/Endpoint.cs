@@ -1,19 +1,12 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
 [UsedImplicitly]
-internal class BulkDelete : ElsaEndpoint<Request, Response>
+internal class BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager) : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-
-    public BulkDelete(IWorkflowDefinitionManager workflowDefinitionManager)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-    }
-
     public override void Configure()
     {
         Post("/bulk-actions/delete/workflow-definitions/by-definition-id");
@@ -22,7 +15,7 @@ internal class BulkDelete : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var count = await _workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(request.DefinitionIds, cancellationToken);
+        var count = await workflowDefinitionManager.BulkDeleteByDefinitionIdsAsync(request.DefinitionIds, cancellationToken);
         return new Response(count);
     }
 }

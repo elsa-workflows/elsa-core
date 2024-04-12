@@ -1,11 +1,10 @@
 using Elastic.Clients.Elasticsearch;
-using Elastic.Clients.Elasticsearch.Fluent;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;

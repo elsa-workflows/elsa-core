@@ -8,7 +8,6 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
@@ -68,11 +67,6 @@ public class MongoActivityExecutionLogStore(MongoDbStore<ActivityExecutionRecord
     public Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
     {
         return mongoDbStore.DeleteWhereAsync<string>(queryable => Filter(queryable, filter), x => x.Id, cancellationToken);
-    }
-
-    private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter)
-    {
-        return (filter.Apply(queryable) as IMongoQueryable<ActivityExecutionRecord>)!;
     }
 
     private IMongoQueryable<ActivityExecutionRecord> Filter(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordFilter filter)

@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Activities;

@@ -1,5 +1,3 @@
-using Elsa.Workflows.Management.Contracts;
-
 namespace Elsa.Workflows.Management.Compression;
 
 /// <summary>

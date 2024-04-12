@@ -1,5 +1,4 @@
 using System.Text;
-using Elsa.Workflows.Management.Contracts;
 using IronCompress;
 
 namespace Elsa.Workflows.Management.Compression;

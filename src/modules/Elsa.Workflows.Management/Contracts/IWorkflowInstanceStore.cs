@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Represents a store of workflow instances.

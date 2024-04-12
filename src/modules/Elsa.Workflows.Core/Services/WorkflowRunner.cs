@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;

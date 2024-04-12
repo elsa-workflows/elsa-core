@@ -2,7 +2,6 @@ using Elsa.Caching.Contracts;
 using Elsa.Caching.Options;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
@@ -28,39 +27,39 @@ public class CachingWorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionId, versionOptions);
+        var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionId, versionOptions, tenantAgnostic);
 
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken),
+            () => decoratedService.FindWorkflowDefinitionAsync(definitionId, versionOptions, tenantAgnostic, cancellationToken),
             x => x.DefinitionId);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionVersionId);
+        var cacheKey = cacheManager.CreateWorkflowDefinitionVersionCacheKey(definitionVersionId, tenantAgnostic);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken),
+            () => decoratedService.FindWorkflowDefinitionAsync(definitionVersionId, tenantAgnostic, cancellationToken),
             x => x.DefinitionId);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions);
+        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions, tenantAgnostic);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken),
+            () => decoratedService.FindWorkflowAsync(definitionId, versionOptions, tenantAgnostic, cancellationToken),
             x => x.Identity.DefinitionId);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
+        var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId, tenantAgnostic);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken),
+            () => decoratedService.FindWorkflowAsync(definitionVersionId, tenantAgnostic, cancellationToken),
             x => x.Identity.DefinitionId);
     }
 

@@ -1,6 +1,5 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -11,27 +10,28 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// Implements the <see cref="IWorkflowExecutionLogStore"/> using Dapper.
 /// </summary>
-internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordRecord> store, IPayloadSerializer payloadSerializer)
-    : IWorkflowExecutionLogStore
+[UsedImplicitly]
+internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordRecord> store, IPayloadSerializer payloadSerializer) : IWorkflowExecutionLogStore
 {
     /// <inheritdoc />
     public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.AddAsync(mappedRecord, cancellationToken);
+        await store.AddAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
         var mappedRecords = records.Select(Map);
-        await _store.AddManyAsync(mappedRecords, cancellationToken);
+        await store.AddManyAsync(mappedRecords, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -45,7 +45,7 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
     {
         var mappedRecords = records.Select(Map);
-        await store.SaveManyAsync(mappedRecords,  cancellationToken);
+        await store.SaveManyAsync(mappedRecords, cancellationToken);
     }
 
     /// <inheritdoc />

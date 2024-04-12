@@ -7,10 +7,9 @@ using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
@@ -415,7 +414,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
         if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
-        return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+        var workflowHostFactory = scope.ServiceProvider.GetRequiredService<IWorkflowHostFactory>();
+        return await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
     }
 
     /// <summary>

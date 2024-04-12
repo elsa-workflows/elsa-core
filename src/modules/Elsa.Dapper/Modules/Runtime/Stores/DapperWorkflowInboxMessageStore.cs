@@ -1,7 +1,5 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -10,12 +8,14 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// A Dapper-based <see cref="IBookmarkStore"/> implementation.
 /// </summary>
+[UsedImplicitly]
 internal class DapperWorkflowInboxMessageStore(Store<WorkflowInboxMessageRecord> store, IPayloadSerializer payloadSerializer)
     : IWorkflowInboxMessageStore
 {

@@ -1,4 +1,3 @@
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
@@ -11,12 +10,14 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// Implements the <see cref="IActivityExecutionStore"/> using Dapper.
 /// </summary>
+[UsedImplicitly]
 internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordRecord> store, IPayloadSerializer payloadSerializer, ISafeSerializer safeSerializer)
     : IActivityExecutionStore
 {

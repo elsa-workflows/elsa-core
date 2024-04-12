@@ -14,7 +14,6 @@ using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Parameters;
@@ -22,6 +21,7 @@ using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -169,7 +169,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         if (workflowInstance == null)
         {
-            logger.LogWarning("Bookmark {BookmarkId} references workflow instance {WorkflowInstanceId}, but no such workflow instance was found", bookmark.BookmarkId, bookmark.WorkflowInstanceId);
+            logger.LogWarning("Bookmark {BookmarkId} references workflow instance {WorkflowInstanceId}, but no such workflow instance was found", bookmark.Id, bookmark.WorkflowInstanceId);
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
@@ -199,7 +199,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 Input = input,
                 CorrelationId = correlationId,
                 ActivityInstanceId = bookmark.ActivityInstanceId,
-                BookmarkId = bookmark.BookmarkId,
+                BookmarkId = bookmark.Id,
                 CancellationTokens = cancellationTokens
             };
             await workflowHost.ResumeWorkflowAsync(resumeParams, ct);

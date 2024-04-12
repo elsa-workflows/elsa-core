@@ -6,7 +6,6 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.MultiTenancy;
 using Elsa.Tenants.Extensions;
-using Elsa.Tenants.Resolvers;
 using FastEndpoints.Swagger;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);

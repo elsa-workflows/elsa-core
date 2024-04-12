@@ -7,7 +7,6 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.MultiTenancy;
 using Elsa.Tenants.Extensions;
-using Elsa.Tenants.Resolvers;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using NSwag;

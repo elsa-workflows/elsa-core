@@ -1,7 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.RunTaskIntegration.Workflows;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 

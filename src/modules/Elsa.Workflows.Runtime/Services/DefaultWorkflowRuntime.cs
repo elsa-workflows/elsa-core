@@ -1,8 +1,9 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
@@ -78,19 +79,19 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     /// <inheritdoc />
     public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
-        var definition = await _workflowDefinitionService.FindAsync(definitionId, options?.VersionOptions ?? VersionOptions.Published, options?.TenantAgnostic ?? false);
+        var workflow = await _workflowDefinitionService.FindWorkflowAsync(definitionId, options?.VersionOptions ?? VersionOptions.Published, options?.TenantAgnostic ?? false);
 
-        if (definition == null)
+        if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
-        return await CanStartWorkflowAsync(definition, options);
+        return await CanStartWorkflowAsync(workflow, options);
     }
 
-    private async Task<CanStartWorkflowResult> CanStartWorkflowAsync(WorkflowDefinition definition, StartWorkflowRuntimeParams? options = default)
+    private async Task<CanStartWorkflowResult> CanStartWorkflowAsync(Workflow workflow, StartWorkflowRuntimeParams? options = default)
     {
         var input = options?.Input;
         var correlationId = options?.CorrelationId;
-        var workflowHost = await CreateWorkflowHostAsync(definition, options?.CancellationTokens.SystemCancellationToken ?? default);
+        var workflowHost = await CreateWorkflowHostAsync(workflow, options?.CancellationTokens.SystemCancellationToken ?? default);
         var startWorkflowOptions = new StartWorkflowHostParams
         {
             CorrelationId = correlationId,
@@ -391,9 +392,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeParams? options = default)
     {
-        var workflowInstanceId = string.IsNullOrEmpty(options?.InstanceId)
-            ? _identityGenerator.GenerateId()
-            : options?.InstanceId;
+        var workflowInstanceId = string.IsNullOrEmpty(options?.InstanceId) ? _identityGenerator.GenerateId() : options?.InstanceId;
         var cancellationTokens = options?.CancellationTokens ?? default;
 
         await using (await AcquireLockAsync(workflowInstanceId!, cancellationTokens.SystemCancellationToken))
@@ -427,17 +426,17 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeParams? options, CancellationToken cancellationToken)
     {
         var versionOptions = options?.VersionOptions;
-        var definition = await _workflowDefinitionService.FindAsync(definitionId, versionOptions ?? VersionOptions.Published, options?.TenantAgnostic ?? false, cancellationToken);
+        var workflow = await _workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions ?? VersionOptions.Published, options?.TenantAgnostic ?? false, cancellationToken);
 
-        if (definition == null)
+        if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
-        return await CreateWorkflowHostAsync(definition, cancellationToken);
+        return await CreateWorkflowHostAsync(workflow, cancellationToken);
     }
 
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(Workflow workflow, CancellationToken cancellationToken)
     {
-        return await _workflowHostFactory.CreateAsync(definition, cancellationToken);
+        return await _workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeParams runtimeParams)
@@ -502,13 +501,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     TenantAgnostic = workflowsFilter.Options.TenantAgnostic
                 };
 
-                var definition = await _workflowDefinitionService.FindAsync(definitionId, startOptions.VersionOptions, startOptions.TenantAgnostic, cancellationToken);
+                var workflow = await _workflowDefinitionService.FindWorkflowAsync(definitionId, startOptions.VersionOptions, startOptions.TenantAgnostic, cancellationToken);
 
-                if (definition == null)
+                if (workflow == null)
                     throw new Exception("Specified workflow definition and version does not exist");
 
-                var canStartResult = await CanStartWorkflowAsync(definition, startOptions);
-                var workflowInstance = await _workflowInstanceFactory.CreateAsync(definition, workflowsFilter.Options.CorrelationId, cancellationToken);
+                var canStartResult = await CanStartWorkflowAsync(workflow, startOptions);
+                var workflowInstance = _workflowInstanceFactory.Create(workflow, workflowsFilter.Options.CorrelationId);
 
                 if (canStartResult.CanStart)
                 {

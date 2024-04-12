@@ -2,7 +2,7 @@ using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using FastEndpoints;
 using JetBrains.Annotations;

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;

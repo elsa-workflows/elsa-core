@@ -2,7 +2,6 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 
 namespace Elsa.Server.Web.Endpoints.DynamicWorkflows.Post;

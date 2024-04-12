@@ -77,10 +77,10 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         var query = dbConnectionProvider.CreateQuery().From(TableName);
         await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
         filter(query);
-        
+
         if (orderKey != null && orderDirection != null)
             query = query.OrderBy(orderKey, orderDirection.Value);
-        
+
         using var connection = dbConnectionProvider.GetConnection();
         return await query.FirstOrDefaultAsync<T>(connection);
     }
@@ -391,7 +391,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         if (!recordsList.Any())
             return;
 
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect);
         var currentIndex = 0;
 
         foreach (var record in recordsList)
@@ -401,7 +401,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
             currentIndex++;
         }
 
-        using var connection = _dbConnectionProvider.GetConnection();
+        using var connection = dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
 
@@ -418,10 +418,10 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         // If there are no conditions, we don't want to delete all records.
         if (!query.Parameters.ParameterNames.Any())
             return 0;
-        
+
         await ApplyTenantFilterAsync(query, false, cancellationToken);
         filter(query);
-        
+
         using var connection = dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
     }
@@ -438,11 +438,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     public async Task<long> DeleteAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, string primaryKey = "Id", CancellationToken cancellationToken = default)
     {
         var selectQuery = dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
-        
+
         // If there are no conditions, we don't want to delete all records.
         if (!selectQuery.Parameters.ParameterNames.Any())
             return 0;
-        
+
         await ApplyTenantFilterAsync(selectQuery, false, cancellationToken);
         filter(selectQuery);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
@@ -491,7 +491,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         var tenantId = tenant?.Id;
         query.Is(nameof(Record.TenantId), tenantId);
     }
-    
+
     private async Task SetTenantIdAsync(T record, CancellationToken cancellationToken)
     {
         if (record is not Record recordWithTenant)

@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Management.Records;
@@ -9,16 +8,18 @@ using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Management.Stores;
 
 /// <summary>
 /// Provides a Dapper implementation of <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
+[UsedImplicitly]
 internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, IWorkflowStateSerializer workflowStateSerializer)
     : IWorkflowInstanceStore
 {

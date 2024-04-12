@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;

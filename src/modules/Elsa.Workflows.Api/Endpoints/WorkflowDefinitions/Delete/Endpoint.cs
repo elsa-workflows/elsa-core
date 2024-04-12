@@ -1,5 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 

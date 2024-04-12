@@ -1,5 +1,4 @@
-using Elsa.Dapper.Contracts;
-using Elsa.Dapper.Extensions;
+﻿using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
@@ -7,14 +6,15 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// Provides a Dapper implementation of <see cref="ITriggerStore"/>.
 /// </summary>
-internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSerializer payloadSerializer)
-    : ITriggerStore
+[UsedImplicitly]
+internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSerializer payloadSerializer) : ITriggerStore
 {
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
@@ -33,7 +33,7 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     /// <inheritdoc />
     public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record != null ? Map(record) : default;
     }
 
@@ -47,7 +47,10 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
-        var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
+        var filter = new TriggerFilter
+        {
+            Ids = removed.Select(r => r.Id).ToList()
+        };
         await DeleteManyAsync(filter, cancellationToken);
         await SaveManyAsync(added, cancellationToken);
     }

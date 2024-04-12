@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;

@@ -1,11 +1,8 @@
 using Elsa.Caching.Contracts;
 using Elsa.Caching.Options;
-using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -73,7 +70,8 @@ public class HttpWorkflowsCacheManager(
     {
         var triggerFilter = new TriggerFilter
         {
-            Hash = bookmarkHash
+            Hash = bookmarkHash,
+            TenantAgnostic = true
         };
         return await triggerStore.FindManyAsync(triggerFilter, cancellationToken);
     }
@@ -81,7 +79,7 @@ public class HttpWorkflowsCacheManager(
     private async Task<Workflow?> FindWorkflowAsync(StoredTrigger trigger, CancellationToken cancellationToken)
     {
         var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
-        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, false, cancellationToken);
     }
 
     private string GetWorkflowChangeTokenKey(string workflowDefinitionId) => $"{GetType().FullName}:workflow:{workflowDefinitionId}:changeToken";

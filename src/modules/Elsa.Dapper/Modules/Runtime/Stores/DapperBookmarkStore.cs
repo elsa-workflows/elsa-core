@@ -6,14 +6,15 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Modules.Runtime.Stores;
 
 /// <summary>
 /// A Dapper-based <see cref="IBookmarkStore"/> implementation.
 /// </summary>
-internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSerializer payloadSerializer)
-    : IBookmarkStore
+[UsedImplicitly]
+internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSerializer payloadSerializer) : IBookmarkStore
 {
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
@@ -32,7 +33,7 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
     /// <inheritdoc />
     public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record != null ? Map(record) : default;
     }
 

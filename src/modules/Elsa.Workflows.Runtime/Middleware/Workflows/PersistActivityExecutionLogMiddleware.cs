@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;

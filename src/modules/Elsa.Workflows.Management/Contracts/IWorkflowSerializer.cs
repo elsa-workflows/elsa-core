@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Serializes and deserializes workflows.

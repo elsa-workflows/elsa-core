@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Common;
 

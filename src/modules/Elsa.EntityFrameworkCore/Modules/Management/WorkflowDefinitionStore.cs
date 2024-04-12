@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -12,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;

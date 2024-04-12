@@ -2,7 +2,7 @@ using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

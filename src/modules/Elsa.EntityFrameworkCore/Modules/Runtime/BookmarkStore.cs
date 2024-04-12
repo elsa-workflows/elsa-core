@@ -10,8 +10,8 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// <summary>
 /// An EF Core implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
-public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> store, IPayloadSerializer serializer)
-    : IBookmarkStore
+[UsedImplicitly]
+public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> store, IPayloadSerializer serializer) : IBookmarkStore
 {
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
@@ -26,15 +26,21 @@ public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> sto
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.FindAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+        return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
     }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)

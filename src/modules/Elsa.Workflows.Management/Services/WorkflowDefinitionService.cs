@@ -2,7 +2,6 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 
@@ -72,9 +71,9 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
+        var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, tenantAgnostic, cancellationToken);
 
         if (definition == null)
             return null;
@@ -83,9 +82,9 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
-        var definition = await FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
+        var definition = await FindWorkflowDefinitionAsync(definitionVersionId, tenantAgnostic, cancellationToken);
 
         if (definition == null)
             return null;

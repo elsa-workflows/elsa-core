@@ -1,13 +1,13 @@
 using Elsa.Common.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 public interface IWorkflowDefinitionCacheManager
 {
-    string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions);
-    string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions);
-    string CreateWorkflowVersionCacheKey(string definitionVersionId);
-    string CreateWorkflowDefinitionVersionCacheKey(string definitionVersionId);
+    string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic);
+    string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic);
+    string CreateWorkflowVersionCacheKey(string definitionVersionId, bool tenantAgnostic);
+    string CreateWorkflowDefinitionVersionCacheKey(string definitionVersionId, bool tenantAgnostic);
     string CreateWorkflowDefinitionChangeTokenKey(string definitionId);
     Task EvictWorkflowDefinitionAsync(string definitionId, CancellationToken cancellationToken = default);
 }

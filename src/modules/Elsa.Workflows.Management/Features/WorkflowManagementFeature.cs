@@ -14,7 +14,6 @@ using Elsa.Workflows.Enums;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Mappers;

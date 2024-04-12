@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Manages materialization of <see cref="WorkflowDefinition"/> to <see cref="Workflow"/> objects. 
@@ -17,20 +17,20 @@ public interface IWorkflowDefinitionService
     /// <summary>
     /// Looks for a <see cref="WorkflowDefinition"/> by the specified definition ID and <see cref="VersionOptions"/>.
     /// </summary>
-    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Looks for a <see cref="WorkflowDefinition"/> by the specified version ID.
     /// </summary>
-    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Looks for a <see cref="Workflow"/> by the specified definition ID and <see cref="VersionOptions"/>.
     /// </summary>
-    Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
+    Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Looks for a <see cref="Workflow"/> by the specified version ID.
     /// </summary>
-    Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default);
+    Task<Workflow?> FindWorkflowAsync(string definitionVersionId, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
 }

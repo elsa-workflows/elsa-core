@@ -1,6 +1,6 @@
 ﻿using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Imports a workflow definition.

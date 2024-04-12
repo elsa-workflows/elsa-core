@@ -1,6 +1,5 @@
 using Elsa.Caching.Contracts;
 using Elsa.Common.Models;
-using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -8,16 +7,16 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSignaler) : IWorkflowDefinitionCacheManager
 {
     /// <inheritdoc />
-    public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"WorkflowDefinition:{definitionId}:{versionOptions}";
+    public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic) => $"WorkflowDefinition:{definitionId}:{versionOptions}:{tenantAgnostic}";
 
     /// <inheritdoc />
-    public string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"Workflow:{definitionId}:{versionOptions}";
+    public string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic) => $"Workflow:{definitionId}:{versionOptions}:{tenantAgnostic}";
 
     /// <inheritdoc />
-    public string CreateWorkflowVersionCacheKey(string definitionVersionId) => $"Workflow:{definitionVersionId}";
+    public string CreateWorkflowVersionCacheKey(string definitionVersionId, bool tenantAgnostic) => $"Workflow:{definitionVersionId}:{tenantAgnostic}";
 
     /// <inheritdoc />
-    public string CreateWorkflowDefinitionVersionCacheKey(string definitionVersionId) => $"WorkflowDefinition:{definitionVersionId}";
+    public string CreateWorkflowDefinitionVersionCacheKey(string definitionVersionId, bool tenantAgnostic) => $"WorkflowDefinition:{definitionVersionId}:{tenantAgnostic}";
 
     /// <inheritdoc />
     public string CreateWorkflowDefinitionChangeTokenKey(string definitionId) => $"WorkflowChangeToken:{definitionId}";
