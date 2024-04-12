@@ -16,9 +16,10 @@ using Serilog;
 [ShutdownDotNetAfterServerBuild]
 partial class Build : NukeBuild, ITest, IPack
 {
-    public static int Main() => Execute<Build>(x => ((ICompile) x).Compile);
+    public static int Main() => Execute<Build>(x => ((ICompile)x).Compile);
 
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")] readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
+    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [GitRepository] readonly GitRepository GitRepository;
 
@@ -31,8 +32,9 @@ partial class Build : NukeBuild, ITest, IPack
 
     string VersionSuffix;
 
-    [Parameter]
-    string Version;
+    [Parameter] string Version;
+
+    [Parameter] bool AnalyseCode;
 
     protected override void OnBuildInitialized()
     {
@@ -50,6 +52,7 @@ partial class Build : NukeBuild, ITest, IPack
         Log.Information("Version suffix:\t{VersionSuffix}", VersionSuffix);
         Log.Information("Version:\t\t{Version}", Version);
         Log.Information("Tagged build:\t{IsTaggedBuild}", IsTaggedBuild);
+        Log.Information("AnalyseCode:\t\t{AnalyseCode}", AnalyseCode);
     }
 
     Target Clean => _ => _
@@ -57,7 +60,7 @@ partial class Build : NukeBuild, ITest, IPack
         .Executes(() =>
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
-            ((IHazArtifacts) this).ArtifactsDirectory.CreateOrCleanDirectory();
+            ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
         });
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
@@ -66,9 +69,14 @@ partial class Build : NukeBuild, ITest, IPack
         // 1  Displays severe warning messages
         .SetWarningLevel(IsServerBuild ? 0 : 1);
 
-    public IEnumerable<Project> TestProjects => ((IHazSolution) this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
+    public IEnumerable<Project> TestProjects =>
+        ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
-    public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, _) => testSettings
-        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"));
-
+    public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
+        .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false")
+        .When(AnalyseCode, settings => settings.SetProcessArgumentConfigurator(arguments => arguments
+            .Add("/p:CollectCoverage=true")
+            .Add("/p:CoverletOutputFormat=opencover")
+            // Specify the output path for the coverage results if needed
+            .Add("/p:CoverletOutput={0}/coverage.opencover.xml", project.Directory))));
 }
