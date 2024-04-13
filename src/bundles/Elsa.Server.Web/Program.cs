@@ -42,7 +42,7 @@ const bool useMassTransit = true;
 const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
-const bool useCaching = false;
+const bool useCaching = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -154,8 +154,8 @@ services
                     management.UseMassTransitDispatcher();
 
                 if (useCaching)
-                    management.UseCachingStores();
-                
+                    management.UseCache();
+
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Default);
             })
             .UseWorkflowRuntime(runtime =>
@@ -204,7 +204,7 @@ services
                 }
 
                 if (useCaching)
-                    runtime.UseCachingStores();
+                    runtime.UseCache();
 
                 runtime.DistributedLockProvider = _ =>
                 {
@@ -268,7 +268,9 @@ services
             .UseHttp(http =>
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
-                http.UseCaching();
+
+                if (useCaching)
+                    http.UseCaching();
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
