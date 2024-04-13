@@ -1,5 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
@@ -8,39 +6,35 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class WorkflowRunner : IWorkflowRunner
 {
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IServiceProvider _serviceProvider;
     private readonly IWorkflowExecutionPipeline _pipeline;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISystemClock _systemClock;
     private readonly INotificationSender _notificationSender;
 
     /// <summary>
     /// Constructor.
     /// </summary>
     public WorkflowRunner(
-        IServiceScopeFactory serviceScopeFactory,
+        IServiceProvider serviceProvider,
         IWorkflowExecutionPipeline pipeline,
         IWorkflowStateExtractor workflowStateExtractor,
         IWorkflowBuilderFactory workflowBuilderFactory,
         IIdentityGenerator identityGenerator,
-        ISystemClock systemClock,
         INotificationSender notificationSender)
     {
-        _serviceScopeFactory = serviceScopeFactory;
+        _serviceProvider = serviceProvider;
         _pipeline = pipeline;
         _workflowStateExtractor = workflowStateExtractor;
         _workflowBuilderFactory = workflowBuilderFactory;
         _identityGenerator = identityGenerator;
-        _systemClock = systemClock;
         _notificationSender = notificationSender;
     }
 
@@ -90,9 +84,6 @@ public class WorkflowRunner : IWorkflowRunner
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // Create a child scope.
-        using var scope = _serviceScopeFactory.CreateScope();
-
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
         var input = options?.Input;
@@ -102,7 +93,7 @@ public class WorkflowRunner : IWorkflowRunner
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            scope.ServiceProvider,
+            _serviceProvider,
             workflow,
             instanceId,
             correlationId,
@@ -123,9 +114,6 @@ public class WorkflowRunner : IWorkflowRunner
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // Create a child scope.
-        using var scope = _serviceScopeFactory.CreateScope();
-
         // Create workflow execution context.
         var input = options?.Input;
         var properties = options?.Properties;
@@ -134,7 +122,7 @@ public class WorkflowRunner : IWorkflowRunner
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            scope.ServiceProvider,
+            _serviceProvider,
             workflow,
             workflowState,
             correlationId,
