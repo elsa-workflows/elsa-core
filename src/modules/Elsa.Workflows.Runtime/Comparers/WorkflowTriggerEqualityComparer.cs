@@ -50,6 +50,7 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
             storedTrigger.Name,
             storedTrigger.ActivityId,
             storedTrigger.WorkflowDefinitionId,
+            storedTrigger.WorkflowDefinitionVersionId,
             storedTrigger.Hash
         };
         return JsonSerializer.Serialize(input, _settings);
