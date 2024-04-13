@@ -139,9 +139,9 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private async Task<Workflow?> FindWorkflowAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var workflowDefinitionStore = serviceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var filter = new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId };
 
         if (!string.IsNullOrWhiteSpace(WorkflowDefinitionVersionId))
@@ -149,32 +149,28 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         else
             filter.VersionOptions = VersionOptions.SpecificVersion(Version);
 
-        var workflowDefinition =
-            await workflowDefinitionStore.FindAsync(filter, cancellationToken)
-            ?? (await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken)
-                ?? await workflowDefinitionStore.FindAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken));
+        var workflow =
+            await workflowDefinitionService.FindWorkflowAsync(filter, cancellationToken)
+            ?? (await workflowDefinitionService.FindWorkflowAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Published }, cancellationToken)
+                ?? await workflowDefinitionService.FindWorkflowAsync(new WorkflowDefinitionFilter { DefinitionId = WorkflowDefinitionId, VersionOptions = VersionOptions.Latest }, cancellationToken));
 
-        return workflowDefinition;
+        return workflow;
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
     {
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
-        var workflowDefinition = await FindWorkflowDefinitionAsync(serviceProvider, cancellationToken);
+        var workflow = await FindWorkflowAsync(serviceProvider, cancellationToken);
 
-        if (workflowDefinition == null)
+        if (workflow == null)
             throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
-        // Construct the root activity stored in the activity definitions.
-        var materializer = serviceProvider.GetRequiredService<IWorkflowMaterializer>();
-        var root = await materializer.MaterializeAsync(workflowDefinition, cancellationToken);
-
         // Declare input and output variables.
-        DeclareInputAsVariables(serviceProvider, (inputDescriptor, variable) => Variables.Declare(variable));
-        DeclareOutputAsVariables(serviceProvider, (outputDescriptor, variable) => Variables.Declare(variable));
+        DeclareInputAsVariables(serviceProvider, (_, variable) => Variables.Declare(variable));
+        DeclareOutputAsVariables(serviceProvider, (_, variable) => Variables.Declare(variable));
 
         // Set the root activity.
-        Root = root;
+        Root = workflow;
     }
 }
