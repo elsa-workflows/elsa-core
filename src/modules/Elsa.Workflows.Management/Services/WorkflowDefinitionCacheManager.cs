@@ -1,20 +1,36 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Common.Models;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
-public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSignaler) : IWorkflowDefinitionCacheManager
+public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSignaler, IHasher hasher) : IWorkflowDefinitionCacheManager
 {
     /// <inheritdoc />
     public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"WorkflowDefinition:{definitionId}:{versionOptions}";
+
+    /// <inheritdoc />
+    public string CreateWorkflowDefinitionFilterCacheKey(WorkflowDefinitionFilter filter)
+    {
+        var hash = hasher.Hash(filter);
+        return $"WorkflowDefinition:{hash}";
+    }
 
     /// <inheritdoc />
     public string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"Workflow:{definitionId}:{versionOptions}";
 
     /// <inheritdoc />
     public string CreateWorkflowVersionCacheKey(string definitionVersionId) => $"Workflow:{definitionVersionId}";
+
+    /// <inheritdoc />
+    public string CreateWorkflowFilterCacheKey(WorkflowDefinitionFilter filter)
+    {
+        var hash = hasher.Hash(filter);
+        return $"Workflow:{hash}";
+    }
 
     /// <inheritdoc />
     public string CreateWorkflowDefinitionVersionCacheKey(string definitionVersionId) => $"WorkflowDefinition:{definitionVersionId}";
