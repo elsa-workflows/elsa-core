@@ -15,10 +15,10 @@ namespace Elsa.Workflows.Management.Services;
 /// Decorates an <see cref="IWorkflowDefinitionService"/> with caching capabilities.
 /// </summary>
 [UsedImplicitly]
-internal class CachingWorkflowDefinitionService(
+public class CachingWorkflowDefinitionService(
     IWorkflowDefinitionService decoratedService,
     IWorkflowDefinitionCacheManager cacheManager,
-    IMemoryCache memoryCache,
+    ICacheManager memoryCache,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IWorkflowDefinitionService
 {

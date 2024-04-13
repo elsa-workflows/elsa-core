@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// </summary>
 public class CachingBookmarkStore(
     IBookmarkStore decoratedStore,
-    IMemoryCache memoryCache,
+    ICacheManager memoryCache,
     IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IBookmarkStore

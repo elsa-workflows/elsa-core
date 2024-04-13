@@ -16,7 +16,7 @@ namespace Elsa.Workflows.Management.Stores;
 /// </summary>
 public class CachingWorkflowDefinitionStore(
     IWorkflowDefinitionStore decoratedStore,
-    IMemoryCache memoryCache,
+    ICacheManager memoryCache,
     IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IWorkflowDefinitionStore

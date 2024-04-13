@@ -21,6 +21,7 @@ public class MemoryCacheFeature(IModule module) : FeatureBase(module)
     {
         Services.Configure(CachingOptions);
         Services.AddMemoryCache();
+        Services.AddSingleton<ICacheManager, CacheManager>();
         Services.AddSingleton<IChangeTokenSignaler, ChangeTokenSignaler>();
     }
 }

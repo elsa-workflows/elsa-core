@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.Workflows.Management.Contracts;
 
-internal interface IWorkflowDefinitionCacheManager
+public interface IWorkflowDefinitionCacheManager
 {
     string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions);
     string CreateWorkflowDefinitionFilterCacheKey(WorkflowDefinitionFilter filter);

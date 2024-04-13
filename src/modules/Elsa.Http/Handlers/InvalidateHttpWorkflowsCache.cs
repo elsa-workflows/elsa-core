@@ -10,7 +10,7 @@ namespace Elsa.Http.Handlers;
 /// A handler that invalidates the HTTP workflows cache when a workflow definition is published, retracted, or deleted or when triggers are indexed.
 /// </summary>
 [UsedImplicitly]
-public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager) :
+public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheInvalidationManager httpWorkflowsCacheInvalidationManager) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
@@ -42,13 +42,13 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
         hashes.AddRange(notification.IndexedWorkflowTriggers.AddedTriggers.Select(x => x.Hash)!);
 
         foreach (string hash in hashes)
-            await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);
+            await httpWorkflowsCacheInvalidationManager.EvictTriggerAsync(hash, cancellationToken);
 
         await InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
     }
 
     private async Task InvalidateCacheAsync(string workflowDefinitionId)
     {
-        await httpWorkflowsCacheManager.EvictWorkflowAsync(workflowDefinitionId);
+        await httpWorkflowsCacheInvalidationManager.EvictWorkflowAsync(workflowDefinitionId);
     }
 }
