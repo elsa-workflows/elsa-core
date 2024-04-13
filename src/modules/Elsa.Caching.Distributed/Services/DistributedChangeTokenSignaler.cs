@@ -1,4 +1,3 @@
-using Elsa.Caching.Contracts;
 using Elsa.Caching.Distributed.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Primitives;

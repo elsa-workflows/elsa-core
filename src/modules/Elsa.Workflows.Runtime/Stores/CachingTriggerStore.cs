@@ -1,4 +1,4 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Caching.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// </summary>
 public class CachingTriggerStore(
     ITriggerStore decoratedStore,
-    IMemoryCache cache,
+    IMemoryCache memoryCache,
     IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : ITriggerStore
@@ -66,7 +66,7 @@ public class CachingTriggerStore(
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
         var internalKey = $"{typeof(T).Name}:{key}";
-        return await cache.GetOrCreateAsync(internalKey, async entry =>
+        return await memoryCache.GetOrCreateAsync(internalKey, async entry =>
         {
             var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);

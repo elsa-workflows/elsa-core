@@ -1,4 +1,4 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Caching.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 /// </summary>
 public class CachingBookmarkStore(
     IBookmarkStore decoratedStore,
-    IMemoryCache cache,
+    IMemoryCache memoryCache,
     IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IBookmarkStore
@@ -58,7 +58,7 @@ public class CachingBookmarkStore(
 
     private async ValueTask<T?> GetOrCreateAsync<T>(string key, Func<Task<T?>> factory)
     {
-        var cacheEntry = await cache.GetOrCreateAsync(key, async entry =>
+        var cacheEntry = await memoryCache.GetOrCreateAsync(key, async entry =>
         {
             var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);

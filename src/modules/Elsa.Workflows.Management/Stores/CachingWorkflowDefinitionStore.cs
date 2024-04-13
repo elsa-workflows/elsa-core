@@ -1,4 +1,4 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Caching.Options;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Management.Stores;
 
@@ -16,7 +17,7 @@ namespace Elsa.Workflows.Management.Stores;
 /// </summary>
 public class CachingWorkflowDefinitionStore(
     IWorkflowDefinitionStore decoratedStore,
-    IMemoryCache cache,
+    IMemoryCache memoryCache,
     IHasher hasher,
     IChangeTokenSignaler changeTokenSignaler,
     IOptions<CachingOptions> cachingOptions) : IWorkflowDefinitionStore
@@ -55,14 +56,14 @@ public class CachingWorkflowDefinitionStore(
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter);
-        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, cancellationToken)))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, cancellationToken).ToList()))!;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var cacheKey = hasher.Hash(filter, order);
-        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, order, cancellationToken)))!;
+        return (await GetOrCreateAsync(cacheKey, () => decoratedStore.FindManyAsync(filter, order, cancellationToken).ToList()))!;
     }
 
     /// <inheritdoc />
@@ -146,7 +147,7 @@ public class CachingWorkflowDefinitionStore(
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
         var internalKey = $"{typeof(T).Name}:{key}";
-        return await cache.GetOrCreateAsync(internalKey, async entry =>
+        return await memoryCache.GetOrCreateAsync(internalKey, async entry =>
         {
             var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);

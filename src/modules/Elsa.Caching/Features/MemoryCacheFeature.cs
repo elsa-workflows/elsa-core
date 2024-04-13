@@ -1,5 +1,4 @@
-﻿using Elsa.Caching.Contracts;
-using Elsa.Caching.Options;
+﻿using Elsa.Caching.Options;
 using Elsa.Caching.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;

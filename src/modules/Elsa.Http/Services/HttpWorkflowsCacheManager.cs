@@ -1,10 +1,7 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Caching.Options;
-using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -31,7 +28,7 @@ public class HttpWorkflowsCacheManager(
         {
             entry.SetSlidingExpiration(cachingOptions.Value.CacheDuration);
             entry.AddExpirationToken(changeTokenSignaler.GetToken(GetTriggerChangeTokenKey(bookmarkHash)));
-            
+
             var triggers = await FindTriggersAsync(bookmarkHash, cancellationToken).ToList();
 
             if (triggers.Count > 1)
@@ -50,7 +47,7 @@ public class HttpWorkflowsCacheManager(
             var changeTokenKey = GetWorkflowChangeTokenKey(workflow.Identity.DefinitionId);
             var changeToken = changeTokenSignaler.GetToken(changeTokenKey);
             entry.AddExpirationToken(changeToken);
-            
+
             return (workflow, triggers);
         });
     }
