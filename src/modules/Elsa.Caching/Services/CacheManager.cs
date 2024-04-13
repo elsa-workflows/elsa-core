@@ -1,6 +1,7 @@
 using Elsa.Caching.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching.Services;
 
@@ -11,8 +12,17 @@ public class CacheManager(IMemoryCache memoryCache, IChangeTokenSignaler changeT
     public IOptions<CachingOptions> CachingOptions => options;
 
     /// <inheritdoc />
-    public IChangeTokenSignaler ChangeTokenSignaler => changeTokenSignaler;
+    public IChangeToken GetToken(string key)
+    {
+        return changeTokenSignaler.GetToken(key);
+    }
 
+    /// <inheritdoc />
+    public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
+    {
+        return changeTokenSignaler.TriggerTokenAsync(key, cancellationToken);
+    }
+    
     /// <inheritdoc />
     public async Task<TItem?> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
     {

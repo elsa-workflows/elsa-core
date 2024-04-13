@@ -1,4 +1,3 @@
-using Elsa.Caching;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using JetBrains.Annotations;
@@ -12,19 +11,18 @@ namespace Elsa.Http.Services;
 [UsedImplicitly]
 public class CachingHttpWorkflowLookupService(
     IHttpWorkflowLookupService decoratedService,
-    IHttpWorkflowsCacheInvalidationManager cacheInvalidationManager,
-    ICacheManager cacheManager) : IHttpWorkflowLookupService
+    IHttpWorkflowsCacheManager cacheManager) : IHttpWorkflowLookupService
 {
     /// <inheritdoc />
     public async Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
         var key = $"http-workflow:{bookmarkHash}";
-        return await cacheManager.GetOrCreateAsync(key, async entry =>
+        var cache = cacheManager.Cache;
+        return await cache.GetOrCreateAsync(key, async entry =>
         {
-            var cachingOptions = cacheManager.CachingOptions.Value;
-            var changeTokenSignaler = cacheManager.ChangeTokenSignaler;
+            var cachingOptions = cache.CachingOptions.Value;
             entry.SetSlidingExpiration(cachingOptions.CacheDuration);
-            entry.AddExpirationToken(changeTokenSignaler.GetToken(cacheInvalidationManager.GetTriggerChangeTokenKey(bookmarkHash)));
+            entry.AddExpirationToken(cache.GetToken(cacheManager.GetTriggerChangeTokenKey(bookmarkHash)));
 
             var result = await decoratedService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
@@ -32,8 +30,8 @@ public class CachingHttpWorkflowLookupService(
                 return null;
 
             var workflow = result.Workflow!;
-            var changeTokenKey = cacheInvalidationManager.GetWorkflowChangeTokenKey(workflow.Identity.DefinitionId);
-            var changeToken = changeTokenSignaler.GetToken(changeTokenKey);
+            var changeTokenKey = cacheManager.GetWorkflowChangeTokenKey(workflow.Identity.DefinitionId);
+            var changeToken = cache.GetToken(changeTokenKey);
             entry.AddExpirationToken(changeToken);
 
             return result;

@@ -1,5 +1,4 @@
 using Elsa.Caching;
-using Elsa.Caching.Options;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -7,19 +6,13 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Stores;
 
 /// <summary>
 /// A decorator for <see cref="IWorkflowDefinitionStore"/> that caches workflow definitions.
 /// </summary>
-public class CachingWorkflowDefinitionStore(
-    IWorkflowDefinitionStore decoratedStore,
-    ICacheManager memoryCache,
-    IHasher hasher,
-    IChangeTokenSignaler changeTokenSignaler,
-    IOptions<CachingOptions> cachingOptions) : IWorkflowDefinitionStore
+public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedStore, ICacheManager cacheManager, IHasher hasher) : IWorkflowDefinitionStore
 {
     private static readonly string CacheInvalidationTokenKey = typeof(CachingWorkflowDefinitionStore).FullName!;
 
@@ -104,21 +97,21 @@ public class CachingWorkflowDefinitionStore(
     public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         await decoratedStore.SaveAsync(definition, cancellationToken);
-        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await decoratedStore.SaveManyAsync(definitions, cancellationToken);
-        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var result = await decoratedStore.DeleteAsync(filter, cancellationToken);
-        await changeTokenSignaler.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+        await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
         return result;
     }
 
@@ -146,11 +139,11 @@ public class CachingWorkflowDefinitionStore(
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
         var internalKey = $"{typeof(T).Name}:{key}";
-        return await memoryCache.GetOrCreateAsync(internalKey, async entry =>
+        return await cacheManager.GetOrCreateAsync(internalKey, async entry =>
         {
-            var invalidationRequestToken = changeTokenSignaler.GetToken(CacheInvalidationTokenKey);
+            var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);
             entry.AddExpirationToken(invalidationRequestToken);
-            entry.SetAbsoluteExpiration(cachingOptions.Value.CacheDuration);
+            entry.SetAbsoluteExpiration(cacheManager.CachingOptions.Value.CacheDuration);
             return await factory();
         });
     }

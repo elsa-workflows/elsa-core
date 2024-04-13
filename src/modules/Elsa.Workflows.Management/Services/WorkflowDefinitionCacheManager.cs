@@ -7,8 +7,11 @@ using Elsa.Workflows.Management.Filters;
 namespace Elsa.Workflows.Management.Services;
 
 /// <inheritdoc />
-public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSignaler, IHasher hasher) : IWorkflowDefinitionCacheManager
+public class WorkflowDefinitionCacheManager(ICacheManager cache, IHasher hasher) : IWorkflowDefinitionCacheManager
 {
+    /// <inheritdoc />
+    public ICacheManager Cache => cache;
+
     /// <inheritdoc />
     public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"WorkflowDefinition:{definitionId}:{versionOptions}";
 
@@ -42,6 +45,6 @@ public class WorkflowDefinitionCacheManager(IChangeTokenSignaler changeTokenSign
     public async Task EvictWorkflowDefinitionAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var changeTokenKey = CreateWorkflowDefinitionChangeTokenKey(definitionId);
-        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
+        await cache.TriggerTokenAsync(changeTokenKey, cancellationToken);
     }
 }

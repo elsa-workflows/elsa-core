@@ -30,7 +30,7 @@ public class HttpCacheFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<IHttpWorkflowsCacheInvalidationManager, HttpWorkflowsCacheInvalidationManager>()
+            .AddSingleton<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
             .Decorate<IHttpWorkflowLookupService, CachingHttpWorkflowLookupService>()
             .AddNotificationHandler<InvalidateHttpWorkflowsCache>();
     }

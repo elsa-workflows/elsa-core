@@ -4,20 +4,23 @@ using Elsa.Http.Contracts;
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class HttpWorkflowsCacheInvalidationManager(IChangeTokenSignaler changeTokenSignaler) : IHttpWorkflowsCacheInvalidationManager
+public class HttpWorkflowsCacheManager(ICacheManager cache) : IHttpWorkflowsCacheManager
 {
+    /// <inheritdoc />
+    public ICacheManager Cache => cache;
+
     /// <inheritdoc />
     public async Task EvictWorkflowAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
         var changeTokenKey = GetWorkflowChangeTokenKey(workflowDefinitionId);
-        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
+        await cache.TriggerTokenAsync(changeTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task EvictTriggerAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
         var changeTokenKey = GetTriggerChangeTokenKey(bookmarkHash);
-        await changeTokenSignaler.TriggerTokenAsync(changeTokenKey, cancellationToken);
+        await cache.TriggerTokenAsync(changeTokenKey, cancellationToken);
     }
 
     /// <inheritdoc />

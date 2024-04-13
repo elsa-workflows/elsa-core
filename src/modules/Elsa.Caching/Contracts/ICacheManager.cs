@@ -1,6 +1,7 @@
 using Elsa.Caching.Options;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching;
 
@@ -15,9 +16,14 @@ public interface ICacheManager
     IOptions<CachingOptions> CachingOptions { get; }
 
     /// <summary>
-    /// Provides a mechanism for signaling changes to cache entries, allowing code to evict cache entries by triggering a signal.
+    /// Gets a change token for the specified key.
     /// </summary>
-    IChangeTokenSignaler ChangeTokenSignaler { get; }
+    IChangeToken GetToken(string key);
+
+    /// <summary>
+    /// Triggers the change token for the specified key.
+    /// </summary>
+    ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets an item from the cache, or creates it if it doesn't exist.
