@@ -270,7 +270,7 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
 
                 if (useCaching)
-                    http.UseCaching();
+                    http.UseCache();
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
