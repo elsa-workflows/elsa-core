@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Http.Features;
 
 /// <summary>
-/// Installs services related to HTTP services and activities.
+/// Installs services related to HTTP caching.
 /// </summary>
 [DependsOn(typeof(HttpFeature))]
 [DependsOn(typeof(CachingWorkflowDefinitionsFeature))]
