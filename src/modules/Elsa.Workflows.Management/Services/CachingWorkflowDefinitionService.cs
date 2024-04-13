@@ -1,9 +1,10 @@
-using Elsa.Caching.Contracts;
+using Elsa.Caching;
 using Elsa.Caching.Options;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -14,7 +15,7 @@ namespace Elsa.Workflows.Management.Services;
 /// Decorates an <see cref="IWorkflowDefinitionService"/> with caching capabilities.
 /// </summary>
 [UsedImplicitly]
-public class CachingWorkflowDefinitionService(
+internal class CachingWorkflowDefinitionService(
     IWorkflowDefinitionService decoratedService,
     IWorkflowDefinitionCacheManager cacheManager,
     IMemoryCache memoryCache,
@@ -47,6 +48,15 @@ public class CachingWorkflowDefinitionService(
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter);
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowDefinitionAsync(filter, cancellationToken),
+            x => x.DefinitionId);
+    }
+
+    /// <inheritdoc />
     public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions);
@@ -61,6 +71,15 @@ public class CachingWorkflowDefinitionService(
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
         return await GetFromCacheAsync(cacheKey,
             () => decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken),
+            x => x.Identity.DefinitionId);
+    }
+
+    /// <inheritdoc />
+    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var cacheKey = cacheManager.CreateWorkflowFilterCacheKey(filter);
+        return await GetFromCacheAsync(cacheKey,
+            () => decoratedService.FindWorkflowAsync(filter, cancellationToken),
             x => x.Identity.DefinitionId);
     }
 
