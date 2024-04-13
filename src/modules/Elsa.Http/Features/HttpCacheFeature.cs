@@ -22,11 +22,6 @@ public class HttpCacheFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Configure()
-    {
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         Services
