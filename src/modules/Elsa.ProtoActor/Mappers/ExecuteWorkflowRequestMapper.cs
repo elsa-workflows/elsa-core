@@ -26,7 +26,7 @@ public class ExecuteWorkflowRequestMapper(ActivityHandleMapper activityHandleMap
             Input = source?.Input?.SerializeInput(),
             CorrelationId = source?.CorrelationId.EmptyIfNull(),
             Properties = source?.Properties?.SerializeProperties(),
-            IsNewInstance = source?.IsNewInstance ?? false,
+            IsNewInstance = source?.IsExistingInstance ?? false,
         };
     }
     
@@ -44,7 +44,7 @@ public class ExecuteWorkflowRequestMapper(ActivityHandleMapper activityHandleMap
             Input = source.Input?.DeserializeInput(),
             CorrelationId = source.CorrelationId,
             Properties = source.Properties?.DeserializeProperties(),
-            IsNewInstance = source.IsNewInstance,
+            IsExistingInstance = source.IsNewInstance,
         };
     }
 }

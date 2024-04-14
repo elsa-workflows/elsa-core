@@ -50,13 +50,6 @@ public class DapperTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
-    {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return record != null ? Map(record) : default;
-    }
-
-    /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);

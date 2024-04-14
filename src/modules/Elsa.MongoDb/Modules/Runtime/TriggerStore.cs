@@ -36,12 +36,6 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
-    }
-
-    /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
         var removedTriggers = removed.ToList();

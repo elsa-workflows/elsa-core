@@ -30,7 +30,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
     {
-        var workflowHost = await CreateWorkflowHostAsync(request?.IsNewInstance ?? false, cancellationToken);
+        var workflowHost = await CreateWorkflowHostAsync(request?.IsExistingInstance ?? false, cancellationToken);
         return await workflowHost.ExecuteWorkflowAsync(request, cancellationToken);
     }
 

@@ -70,7 +70,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
         var httpEndpointCacheManager = serviceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
-        var bookmarkHash = httpEndpointCacheManager.ComputeBookmarkHash(matchingPath, method);
+        var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);
         var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
         if (cachedWorkflowAndTriggers != null)
@@ -151,7 +151,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
-    
+
     private async Task StartWorkflowAsync(HttpContext httpContext, StoredTrigger trigger, Workflow workflow, IDictionary<string, object> input)
     {
         var serviceProvider = httpContext.RequestServices;
@@ -164,10 +164,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             DefinitionVersionId = workflow.Identity.Id,
             Input = input,
             CorrelationId = correlationId,
-            TriggerActivityId = trigger.ActivityId,
-            IsNewInstance = true
+            TriggerActivityId = trigger.ActivityId
         };
-        
+
         await ExecuteWorkflowAsync(httpContext, startParams, bookmarkPayload, workflow, input);
     }
 
@@ -193,7 +192,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
             return;
         }
-        
+
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
         var resumeParams = new ResumeWorkflowRequest
         {
@@ -202,18 +201,18 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             ActivityHandle = bookmark.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(bookmark.ActivityInstanceId) : null,
             BookmarkId = bookmark.BookmarkId
         };
-        
+
         await ExecuteWorkflowAsync(httpContext, resumeParams, bookmarkPayload, workflow, input);
     }
-    
+
     private async Task ExecuteWorkflowAsync(HttpContext httpContext, IExecuteWorkflowRequest request, HttpEndpointBookmarkPayload bookmarkPayload, Workflow workflow, IDictionary<string, object> input)
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
-        
+
         if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
             return;
-        
+
         var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, httpContext.RequestAborted) ?? serviceProvider.GetRequiredService<IIdentityGenerator>().GenerateId();
         var workflowClientFactory = serviceProvider.GetRequiredService<IWorkflowClientFactory>();
         //var workflowClient = workflowClientFactory.CreateClient<LocalWorkflowClient>(workflow, workflowInstanceId);
@@ -242,7 +241,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         // Restore the original cancellation token.
         httpContext.RequestAborted = originalCancellationToken;
-        
+
         return result;
     }
 
@@ -369,5 +368,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 
         return !authorized;
+    }
+
+    private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
+    {
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+        var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
     }
 }

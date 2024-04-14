@@ -16,5 +16,6 @@ public class ExecuteWorkflowRequest : IExecuteWorkflowRequest
     public IDictionary<string, object>? Properties { get; set; }
     public string? TriggerActivityId { get; set; }
     public string? ParentWorkflowInstanceId { get; set; }
-    public bool? IsNewInstance { get; set; }
+    public string? InstanceId { get; set; }
+    public bool? IsExistingInstance { get; set; }
 }

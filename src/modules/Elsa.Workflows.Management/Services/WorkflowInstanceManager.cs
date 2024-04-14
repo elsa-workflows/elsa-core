@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -24,13 +25,13 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindByIdAsync(string instanceId, CancellationToken cancellationToken = default)
     {
-        return await _store.FindAsync(instanceId, cancellationToken);
+        return await store.FindAsync(instanceId, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.FindAsync(filter, cancellationToken);
+        return await store.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

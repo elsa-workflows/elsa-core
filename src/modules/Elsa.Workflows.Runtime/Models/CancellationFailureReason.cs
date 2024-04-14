@@ -17,5 +17,5 @@ public enum CancellationFailureReason
     /// <summary>
     /// The workflow instance is already canceled.
     /// </summary>
-    AlreadyCancelled,
+    AlreadyFinished,
 }

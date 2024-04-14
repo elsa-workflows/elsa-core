@@ -110,8 +110,8 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
         var isExistingInstance = request.IsExistingInstance;
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var correlationId = request.CorrelationId.NullIfEmpty();
-        var input = request.Input?.Deserialize();
-        var properties = request.Properties?.Deserialize();
+        var input = request.Input?.DeserializeInput();
+        var properties = request.Properties?.DeserializeProperties();
         var cancellationToken = Context.CancellationToken;
         var startWorkflowOptions = new StartWorkflowRequest
         {
@@ -157,8 +157,8 @@ internal class WorkflowInstanceGrain : WorkflowInstanceBase
         var isExistingInstance = request.IsExistingInstance;
         var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var correlationId = request.CorrelationId.NullIfEmpty();
-        var input = request.Input?.Deserialize();
-        var properties = request.Properties?.Deserialize();
+        var input = request.Input?.DeserializeInput();
+        var properties = request.Properties?.DeserializeProperties();
         var cancellationToken = Context.CancellationToken;
 
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

@@ -11,5 +11,6 @@ public interface IExecuteWorkflowRequest
     IDictionary<string, object>? Properties { get; set; }
     string? TriggerActivityId { get; set; }
     string? ParentWorkflowInstanceId { get; set; }
-    bool? IsNewInstance { get; set; }
+    public string? InstanceId { get; set; }
+    bool? IsExistingInstance { get; set; }
 }

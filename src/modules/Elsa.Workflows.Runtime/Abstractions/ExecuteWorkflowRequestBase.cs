@@ -6,5 +6,6 @@ public abstract class ExecuteWorkflowRequestBase
     public string? CorrelationId { get; set; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
-    public bool? IsNewInstance { get; set; }
+    public string? InstanceId { get; set; }
+    public bool? IsExistingInstance { get; set; }
 }

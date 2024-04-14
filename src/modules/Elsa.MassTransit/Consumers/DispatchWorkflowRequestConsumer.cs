@@ -90,7 +90,7 @@ public class DispatchWorkflowRequestConsumer :
 
         await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
-    
+
     private async Task DispatchNewWorkflowInstanceAsync(DispatchWorkflowDefinition message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(message.DefinitionId)) throw new ArgumentException("The definition ID is required when dispatching a workflow definition.");
@@ -105,7 +105,7 @@ public class DispatchWorkflowRequestConsumer :
             VersionOptions = message.VersionOptions.Value,
             TriggerActivityId = message.TriggerActivityId,
             InstanceId = message.InstanceId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
@@ -120,7 +120,7 @@ public class DispatchWorkflowRequestConsumer :
             TriggerActivityId = message.TriggerActivityId,
             IsExistingInstance = true,
             InstanceId = message.InstanceId,
-            CancellationTokens = cancellationToken
+            CancellationToken = cancellationToken
         };
 
         await _workflowRuntime.StartWorkflowAsync(message.InstanceId, options);

@@ -50,13 +50,6 @@ public class DapperBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
-    {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
-        return record != null ? Map(record) : default;
-    }
-
-    /// <inheritdoc />
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
