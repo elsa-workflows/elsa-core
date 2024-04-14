@@ -149,7 +149,6 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteMatcher, RouteMatcher>()
             .AddScoped<IRouteTable, RouteTable>()
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-            .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
             .AddScoped(ContentTypeProvider)

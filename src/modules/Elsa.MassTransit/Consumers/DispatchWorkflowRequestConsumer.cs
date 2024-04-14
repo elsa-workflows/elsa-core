@@ -118,7 +118,6 @@ public class DispatchWorkflowRequestConsumer :
         var options = new StartWorkflowRuntimeParams
         {
             TriggerActivityId = message.TriggerActivityId,
-            IsExistingInstance = true,
             InstanceId = message.InstanceId,
             CancellationToken = cancellationToken
         };

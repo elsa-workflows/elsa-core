@@ -21,7 +21,6 @@ internal class Execute : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
     private IApiSerializer _apiSerializer;
     private readonly IIdentityGenerator _identityGenerator;
 
@@ -29,13 +28,11 @@ internal class Execute : ElsaEndpoint<Request, Response>
     public Execute(
         IWorkflowDefinitionStore store,
         IWorkflowRuntime workflowRuntime,
-        IHttpBookmarkProcessor httpBookmarkProcessor,
         IApiSerializer apiSerializer,
         IIdentityGenerator identityGenerator)
     {
         _store = store;
         _workflowRuntime = workflowRuntime;
-        _httpBookmarkProcessor = httpBookmarkProcessor;
         _apiSerializer = apiSerializer;
         _identityGenerator = identityGenerator;
     }
@@ -88,9 +85,6 @@ internal class Execute : ElsaEndpoint<Request, Response>
         }
         else
         {
-            // Resume any HTTP bookmarks.
-            await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
-
             var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
 
             if (workflowState!.SubStatus == WorkflowSubStatus.Faulted)

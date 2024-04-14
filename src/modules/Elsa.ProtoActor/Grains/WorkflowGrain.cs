@@ -5,6 +5,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Params;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
@@ -17,22 +18,24 @@ namespace Elsa.ProtoActor.Grains;
 internal class WorkflowGrain : WorkflowBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IWorkflowInstanceManager _workflowInstanceManager;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly Mappers.Mappers _mappers;
     private readonly Persistence _persistence;
-    private string _workflowDefinitionVersionId = default!;
-    private string _workflowInstanceId = default!;
+    private string? _workflowInstanceId;
     private IWorkflowHost? _workflowHost;
 
     /// <inheritdoc />
     public WorkflowGrain(
         IContext context,
         IServiceScopeFactory scopeFactory,
+        IWorkflowInstanceManager workflowInstanceManager,
         IWorkflowHostFactory workflowHostFactory,
         IProvider provider,
         Mappers.Mappers mappers) : base(context)
     {
         _scopeFactory = scopeFactory;
+        _workflowInstanceManager = workflowInstanceManager;
         _workflowHostFactory = workflowHostFactory;
         _mappers = mappers;
         _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
@@ -43,31 +46,41 @@ internal class WorkflowGrain : WorkflowBase
         await _persistence.RecoverStateAsync();
     }
 
-    public override Task<ProtoExecuteWorkflowResponse> ExecuteAndWait(ProtoExecuteWorkflowRequest request) => throw new NotImplementedException();
+    public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
 
-    public override Task ExecuteAndWait(ProtoExecuteWorkflowRequest request, Action<ProtoExecuteWorkflowResponse> respond, Action<string> onError)
+    public override Task Create(ProtoCreateWorkflowInstanceRequest request, Action<ProtoCreateWorkflowInstanceResponse> respond, Action<string> onError)
     {
-        var task = ExecuteAndWaitAsync(request);
+        var task = CreateAsync(request);
         Context.ReenterAfter(task, async executeTask =>
         {
-            var result = await executeTask;
-            respond(result);
+            await executeTask;
+            respond(new ProtoCreateWorkflowInstanceResponse());
         });
         return Task.CompletedTask;
     }
 
-    public override Task ExecuteAndForget(ProtoExecuteWorkflowRequest request) => throw new NotImplementedException();
-
-    public override Task ExecuteAndForget(ProtoExecuteWorkflowRequest request, Action respond, Action<string> onError)
+    private async Task CreateAsync(ProtoCreateWorkflowInstanceRequest request)
     {
-        var task = ExecuteAndWaitAsync(request);
-        Context.ReenterAfter(task, async executeTask =>
-        {
-            await executeTask;
-            respond();
-        });
+        if(_workflowInstanceId != null)
+            throw new InvalidOperationException("Workflow instance already exists.");
+        
+        _workflowHost = await CreateNewWorkflowHostAsync(request, Context.CancellationToken);
+        _workflowInstanceId = _workflowHost.WorkflowState.Id;
+    }
 
-        return Task.CompletedTask;
+    public override Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request) => throw new NotImplementedException();
+
+    public override Task Run(ProtoRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        return Reenter(RunAsync(request), respond, onError);
+    }
+
+    private async Task<ProtoRunWorkflowInstanceResponse> RunAsync(ProtoRunWorkflowInstanceRequest request)
+    {
+        var workflowHost = await GetWorkflowHostAsync();
+        var mappedRequest = _mappers.RunWorkflowParamsMapper.Map(request);
+        var result = await workflowHost.RunWorkflowAsync(mappedRequest, Context.CancellationToken);
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
     }
 
     public override Task Stop()
@@ -80,13 +93,20 @@ internal class WorkflowGrain : WorkflowBase
 
     public override async Task Cancel()
     {
-        var workflowHost = GetWorkflowHost();
+        var workflowHost = await GetWorkflowHostAsync();
         await workflowHost.CancelWorkflowAsync(Context.CancellationToken);
     }
 
-    public override async Task<ProtoExportWorkflowStateResponse> ExportState()
+    public override Task<ProtoExportWorkflowStateResponse> ExportState() => throw new NotImplementedException();
+
+    public override Task ExportState(Action<ProtoExportWorkflowStateResponse> respond, Action<string> onError)
     {
-        var workflowHost = GetWorkflowHost();
+        return Reenter(ExportStateAsync(), respond, onError);
+    }
+    
+    private async Task<ProtoExportWorkflowStateResponse> ExportStateAsync()
+    {
+        var workflowHost = await GetWorkflowHostAsync();
         var workflowState = workflowHost.WorkflowState;
         var json = await _mappers.WorkflowStateJsonMapper.MapAsync(workflowState, Context.CancellationToken);
         return new ProtoExportWorkflowStateResponse
@@ -95,17 +115,19 @@ internal class WorkflowGrain : WorkflowBase
         };
     }
 
-    public override async Task ImportState(ProtoImportWorkflowStateRequest request)
+    public override Task ImportState(ProtoImportWorkflowStateRequest request) => throw new NotImplementedException();
+
+    public override Task ImportState(ProtoImportWorkflowStateRequest request, Action respond, Action<string> onError)
+    {
+        return Reenter(ImportStateAsync(request), respond, onError);
+    }
+    
+    private async Task ImportStateAsync(ProtoImportWorkflowStateRequest request)
     {
         var workflowState = await _mappers.WorkflowStateJsonMapper.MapAsync(request.SerializedWorkflowState, Context.CancellationToken);
-        var workflowHost = GetWorkflowHost();
+        var workflowHost = await GetWorkflowHostAsync();
         workflowHost.WorkflowState = workflowState;
         await workflowHost.PersistStateAsync(Context.CancellationToken);
-    }
-
-    private void ApplySnapshot(Snapshot snapshot)
-    {
-        (_workflowDefinitionVersionId, _workflowInstanceId) = (WorkflowGrainSnapshot)snapshot.State;
     }
 
     private async Task SaveSnapshotAsync()
@@ -117,35 +139,56 @@ internal class WorkflowGrain : WorkflowBase
             await _persistence.PersistSnapshotAsync(GetState());
     }
 
-    private object GetState() => new WorkflowGrainSnapshot(_workflowDefinitionVersionId, _workflowInstanceId);
-
-    private async Task<IWorkflowHost> GetOrCreateWorkflowHostAsync(ProtoExecuteWorkflowRequest request, CancellationToken cancellationToken)
+    private void ApplySnapshot(Snapshot snapshot)
     {
-        if (_workflowHost == null)
-        {
-            var workflowHost = await CreateWorkflowHostAsync(request, cancellationToken);
-            _workflowHost = workflowHost;
-            _workflowDefinitionVersionId = workflowHost.Workflow.Identity.Id;
-            _workflowInstanceId = workflowHost.WorkflowState.Id;
-        }
+        _workflowInstanceId = ((WorkflowGrainSnapshot)snapshot.State).WorkflowInstanceId;
+    }
+    
+    private object GetState()
+    {
+        return new WorkflowGrainSnapshot(_workflowInstanceId ?? throw new InvalidOperationException("Workflow instance ID is null."));
+    }
 
+    private async Task<IWorkflowHost> GetWorkflowHostAsync()
+    {
+        if(_workflowHost != null)
+            return _workflowHost;
+        
+        if(_workflowInstanceId == null)
+            throw new InvalidOperationException("Workflow instance ID is null.");
+
+        _workflowHost = await CreateExistingWorkflowHostAsync(_workflowInstanceId, Context.CancellationToken);
         return _workflowHost;
     }
 
-    private IWorkflowHost GetWorkflowHost()
+    private async Task<IWorkflowHost> CreateNewWorkflowHostAsync(ProtoCreateWorkflowInstanceRequest request, CancellationToken cancellationToken)
     {
-        return _workflowHost ?? throw new InvalidOperationException("Workflow host not initialized.");
+        var workflowDefinitionVersionId = request.WorkflowDefinitionVersionId;
+        var workflowInstanceId = request.WorkflowInstanceId;
+        var workflow = await FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        var createWorkflowInstanceParams = new CreateWorkflowInstanceParams
+        {
+            WorkflowInstanceId = workflowInstanceId,
+            Workflow = workflow,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input.DeserializeInput(),
+            Properties = request.Properties.DeserializeProperties(),
+            ParentId = request.ParentId
+        };
+        
+        var workflowInstance = await _workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceParams, cancellationToken);
+        var host = await _workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
+        _workflowInstanceId = host.WorkflowState.Id;
+        await SaveSnapshotAsync();
+        return host;
     }
-
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(ProtoExecuteWorkflowRequest request, CancellationToken cancellationToken)
+    
+    private async Task<IWorkflowHost> CreateExistingWorkflowHostAsync(string instanceId, CancellationToken cancellationToken)
     {
-        if (request.IsNewInstance)
-            return await CreateWorkflowHostAsync(request.WorkflowDefinitionVersionId, request.WorkflowInstanceId.NullIfEmpty(), cancellationToken);
-
-        var workflowInstance = await FindWorkflowInstanceAsync(request.WorkflowInstanceId, cancellationToken);
+        var workflowInstance = await FindWorkflowInstanceAsync(instanceId, cancellationToken);
 
         if (workflowInstance == null)
-            throw new InvalidOperationException($"Workflow instance {request.WorkflowInstanceId} not found.");
+            throw new InvalidOperationException($"Workflow instance {instanceId} not found.");
 
         return await CreateWorkflowHostAsync(workflowInstance, cancellationToken);
     }
@@ -154,28 +197,7 @@ internal class WorkflowGrain : WorkflowBase
     {
         var workflowDefinitionVersionId = workflowInstance.DefinitionVersionId;
         var workflow = await FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
-
-        if (workflow == null)
-            throw new InvalidOperationException($"Workflow {workflowDefinitionVersionId} not found.");
-
         return await _workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
-    }
-
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string workflowDefinitionVersionId, string? workflowInstanceId, CancellationToken cancellationToken)
-    {
-        var workflow = await FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
-
-        if (workflow == null)
-            throw new InvalidOperationException($"Workflow {workflowDefinitionVersionId} not found.");
-
-        var host = await _workflowHostFactory.CreateAsync(workflow, workflowInstanceId, cancellationToken);
-
-        // Save a snapshot of the workflow host. This ensures that the workflow host can be restored in case of a crash.
-        _workflowDefinitionVersionId = host.Workflow.Identity.Id;
-        _workflowInstanceId = host.WorkflowState.Id;
-        await SaveSnapshotAsync();
-
-        return host;
     }
 
     private async Task<WorkflowInstance?> FindWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
@@ -185,18 +207,35 @@ internal class WorkflowGrain : WorkflowBase
         return await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
     }
 
-    private async Task<Workflow?> FindWorkflowAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken)
+    private async Task<Workflow> FindWorkflowAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken)
     {
         var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        
+        if (workflow == null)
+            throw new InvalidOperationException($"Workflow {workflowDefinitionVersionId} not found.");
+        
+        return workflow;
     }
     
-    private async Task<ProtoExecuteWorkflowResponse> ExecuteAndWaitAsync(ProtoExecuteWorkflowRequest request)
+    private Task Reenter<TResponse>(Task<TResponse> action, Action<TResponse> respond, Action<string> onError)
     {
-        var workflowHost = await GetOrCreateWorkflowHostAsync(request, Context.CancellationToken);
-        var mappedRequest = _mappers.ExecuteWorkflowRequestMapper.Map(request);
-        var result = await workflowHost.ExecuteWorkflowAsync(mappedRequest, Context.CancellationToken);
-        return _mappers.ExecuteWorkflowResponseMapper.Map(result);
+        Context.ReenterAfter(action, async executeTask =>
+        {
+            var result = await executeTask;
+            respond(result);
+        });
+        return Task.CompletedTask;
+    }
+    
+    private Task Reenter(Task action, Action respond, Action<string> onError)
+    {
+        Context.ReenterAfter(action, async executeTask =>
+        {
+            await executeTask;
+            respond();
+        });
+        return Task.CompletedTask;
     }
 }

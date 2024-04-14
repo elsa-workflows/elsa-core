@@ -52,11 +52,3 @@ message ProtoActivityHandle {
   optional string ActivityInstanceId = 3;
   optional string ActivityHash = 4;
 }
-
-message ProtoExportWorkflowStateResponse {
-  ProtoJson SerializedWorkflowState = 1;
-}
-
-message ProtoImportWorkflowStateRequest {
-  ProtoJson SerializedWorkflowState = 1;
-}

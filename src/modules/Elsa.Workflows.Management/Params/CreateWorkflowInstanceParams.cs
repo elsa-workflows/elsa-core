@@ -1,11 +1,11 @@
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Requests;
+namespace Elsa.Workflows.Management.Params;
 
 /// Represents parameters for creating a workflow instance.
 [UsedImplicitly]
-public class CreateWorkflowInstanceRequest
+public class CreateWorkflowInstanceParams
 {
     /// The workflow definition to create an instance of.
     public Workflow Workflow { get; set; } = default!;
@@ -23,5 +23,5 @@ public class CreateWorkflowInstanceRequest
     public string? WorkflowInstanceId { get; set; }
 
     /// The ID of the parent workflow instance, if any.
-    public string? ParentWorkflowInstanceId { get; set; }
+    public string? ParentId { get; set; }
 }

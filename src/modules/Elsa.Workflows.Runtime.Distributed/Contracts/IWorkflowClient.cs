@@ -1,7 +1,8 @@
-using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Distributed.Messages;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime.Distributed.Contracts;
 
 /// <summary>
 /// Represents a client that can interact with a workflow instance.
@@ -9,19 +10,19 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowClient
 {
     /// <summary>
-    /// Called by the factory to initialize the client.
+    /// Gets the ID of the workflow instance.
     /// </summary>
-    ValueTask InitializeAsync(string workflowDefinitionVersionId, string workflowInstanceId, CancellationToken cancellationToken = default);
+    string WorkflowInstanceId { get; }
+    
+    /// <summary>
+    /// Creates a new workflow instance for the specified workflow definition version.
+    /// </summary>
+    Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
-    Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Executes the workflow instance and returns immediately.
-    /// </summary>
-    Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default);
+    Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Cancels the execution of a workflow instance.

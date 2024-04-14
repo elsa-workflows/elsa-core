@@ -1,8 +1,8 @@
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Distributed.Messages;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 
 namespace Elsa.ProtoActor.Mappers;
@@ -13,14 +13,14 @@ namespace Elsa.ProtoActor.Mappers;
 public class Mappers(
     ActivityHandleMapper activityHandleMapper,
     ActivityIncidentMapper activityIncidentMapper,
-    BookmarkMapper bookmarkMapper,
-    BookmarkInfoMapper bookmarkInfoMapper,
-    BookmarkDiffMapper bookmarkDiffMapper,
     ExceptionMapper exceptionMapper,
     WorkflowStatusMapper workflowStatusMapper,
     WorkflowSubStatusMapper workflowSubStatusMapper,
-    ExecuteWorkflowRequestMapper executeWorkflowRequestMapper,
-    ExecuteWorkflowResponseMapper executeWorkflowResponseMapper,
+    CreateWorkflowInstanceRequestMapper createWorkflowInstanceRequestMapper,
+    CreateWorkflowInstanceResponseMapper createWorkflowInstanceResponseMapper,
+    RunWorkflowInstanceRequestMapper runWorkflowInstanceRequestMapper,
+    RunWorkflowInstanceResponseMapper runWorkflowInstanceResponseMapper,
+    RunWorkflowParamsMapper runWorkflowParamsMapper,
     WorkflowStateJsonMapper workflowStateJsonMapper)
 {
     /// <summary>
@@ -32,21 +32,6 @@ public class Mappers(
     /// Maps between <see cref="ActivityIncident"/> and <see cref="ProtoActivityIncident"/>.
     /// </summary>
     public ActivityIncidentMapper ActivityIncidentMapper { get; } = activityIncidentMapper;
-
-    /// <summary>
-    /// Maps between <see cref="Bookmark"/> and <see cref="ProtoBookmark"/>.
-    /// </summary>
-    public BookmarkMapper BookmarkMapper { get; } = bookmarkMapper;
-
-    /// <summary>
-    /// Maps between <see cref="BookmarkInfo"/> and <see cref="ProtoBookmarkInfo"/>.
-    /// </summary>
-    public BookmarkInfoMapper BookmarkInfoMapper { get; } = bookmarkInfoMapper;
-
-    /// <summary>
-    /// Maps between <see cref="Diff{T}"/> and <see cref="ProtoBookmarkDiff"/>.
-    /// </summary>
-    public BookmarkDiffMapper BookmarkDiffMapper { get; } = bookmarkDiffMapper;
 
     /// <summary>
     /// Maps between <see cref="ExceptionState"/> and <see cref="ProtoExceptionState"/>.
@@ -64,14 +49,29 @@ public class Mappers(
     public WorkflowSubStatusMapper WorkflowSubStatusMapper { get; } = workflowSubStatusMapper;
 
     /// <summary>
-    /// Maps between <see cref="IExecuteWorkflowRequest"/> and <see cref="ProtoExecuteWorkflowRequest"/>.
+    /// Maps between <see cref="CreateWorkflowInstanceRequest"/> and <see cref="ProtoCreateWorkflowInstanceRequest"/>.
     /// </summary>
-    public ExecuteWorkflowRequestMapper ExecuteWorkflowRequestMapper { get; } = executeWorkflowRequestMapper;
+    public CreateWorkflowInstanceRequestMapper CreateWorkflowInstanceRequestMapper { get; } = createWorkflowInstanceRequestMapper;
 
     /// <summary>
-    /// Maps between <see cref="IExecuteWorkflowRequest"/> and <see cref="ProtoExecuteWorkflowRequest"/>.
+    /// Maps between <see cref="CreateWorkflowInstanceResponse"/> and <see cref="ProtoCreateWorkflowInstanceResponse"/>.
     /// </summary>
-    public ExecuteWorkflowResponseMapper ExecuteWorkflowResponseMapper { get; set; } = executeWorkflowResponseMapper;
+    public CreateWorkflowInstanceResponseMapper CreateWorkflowInstanceResponseMapper { get; } = createWorkflowInstanceResponseMapper;
+
+    /// <summary>
+    /// Maps between <see cref="RunWorkflowInstanceRequest"/> and <see cref="ProtoRunWorkflowInstanceRequest"/>.
+    /// </summary>
+    public RunWorkflowInstanceRequestMapper RunWorkflowInstanceRequestMapper { get; } = runWorkflowInstanceRequestMapper;
+
+    /// <summary>
+    /// Maps between <see cref="RunWorkflowResult"/> and <see cref="ProtoRunWorkflowInstanceResponse"/>.
+    /// </summary>
+    public RunWorkflowInstanceResponseMapper RunWorkflowInstanceResponseMapper { get; set; } = runWorkflowInstanceResponseMapper;
+
+    /// <summary>
+    /// Maps between <see cref="RunWorkflowParams"/> and <see cref="ProtoRunWorkflowInstanceRequest"/>.
+    /// </summary>
+    public RunWorkflowParamsMapper RunWorkflowParamsMapper { get; } = runWorkflowParamsMapper;
 
     /// <summary>
     /// Maps between <see cref="WorkflowState"/> and <see cref="ProtoJson"/>.

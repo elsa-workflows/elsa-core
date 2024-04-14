@@ -1,8 +1,10 @@
 using Elsa.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Distributed.Contracts;
+using Elsa.Workflows.Runtime.Distributed.Messages;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
+using JetBrains.Annotations;
 using Proto.Cluster;
 
 namespace Elsa.ProtoActor.Services;
@@ -10,46 +12,39 @@ namespace Elsa.ProtoActor.Services;
 /// <summary>
 /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
 /// </summary>
+[UsedImplicitly]
 public class ProtoActorWorkflowClient : IWorkflowClient
 {
-    private readonly Cluster _cluster;
     private readonly Mappers.Mappers _mappers;
-    private WorkflowClient _grain = default!;
+    private readonly WorkflowClient _grain;
 
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
     /// </summary>
-    public ProtoActorWorkflowClient(Cluster cluster, Mappers.Mappers mappers)
+    public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers)
     {
-        _cluster = cluster;
-        _mappers = mappers;
-    }
-
-    private string WorkflowDefinitionVersionId { get; set; } = default!;
-    private string WorkflowInstanceId { get; set; } = default!;
-
-    /// <inheritdoc />
-    public ValueTask InitializeAsync(string workflowDefinitionVersionId, string workflowInstanceId, CancellationToken cancellationToken = default)
-    {
-        WorkflowDefinitionVersionId = workflowDefinitionVersionId;
         WorkflowInstanceId = workflowInstanceId;
-        _grain = _cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
-        return ValueTask.CompletedTask;
+        _mappers = mappers;
+        _grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
     }
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteAndWaitAsync(IExecuteWorkflowRequest? request = null, CancellationToken cancellationToken = default)
+    public string WorkflowInstanceId { get; }
+
+    /// <inheritdoc />
+    public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, WorkflowInstanceId, request);
-        var response = await _grain.ExecuteAndWait(protoRequest, cancellationToken);
-        return Map(response!);
+        var protoRequest = _mappers.CreateWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
+        var response = await _grain.Create(protoRequest, cancellationToken);
+        return _mappers.CreateWorkflowInstanceResponseMapper.Map(response!);
     }
 
     /// <inheritdoc />
-    public async Task ExecuteAndForgetAsync(IExecuteWorkflowRequest? request = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var protoRequest = _mappers.ExecuteWorkflowRequestMapper.Map(WorkflowDefinitionVersionId, WorkflowInstanceId, request);
-        await _grain.ExecuteAndForget(protoRequest, cancellationToken);
+        var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
+        var response = await _grain.Run(protoRequest, cancellationToken);
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
     }
 
     /// <inheritdoc />
@@ -74,16 +69,5 @@ public class ProtoActorWorkflowClient : IWorkflowClient
             SerializedWorkflowState = protoJson
         };
         await _grain.ImportState(request, cancellationToken);
-    }
-
-    private ExecuteWorkflowResult Map(ProtoExecuteWorkflowResponse source)
-    {
-        return new ExecuteWorkflowResult(
-            source.WorkflowInstanceId,
-            _mappers.BookmarkDiffMapper.Map(source.BookmarkDiff),
-            _mappers.WorkflowStatusMapper.Map(source.Status),
-            _mappers.WorkflowSubStatusMapper.Map(source.SubStatus),
-            _mappers.ActivityIncidentMapper.Map(source.Incidents).ToList()
-        );
     }
 }

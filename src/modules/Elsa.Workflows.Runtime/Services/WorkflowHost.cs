@@ -6,10 +6,11 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Extensions;
-using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using RunWorkflowResult = Elsa.Workflows.Runtime.Results.RunWorkflowResult;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -44,7 +45,7 @@ public class WorkflowHost : IWorkflowHost
     public WorkflowState WorkflowState { get; set; }
 
     /// <inheritdoc />
-    public async Task<bool> CanStartWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    public async Task<bool> CanStartWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default)
     {
         var strategyType = Workflow.Options.ActivationStrategyType;
 
@@ -64,14 +65,14 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public async Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default)
     {
         var originalBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
 
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<BookmarkInfo>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
+            return new RunWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<BookmarkInfo>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
         }
         
         var runOptions = new RunWorkflowOptions
@@ -90,9 +91,7 @@ public class WorkflowHost : IWorkflowHost
 
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-        var workflowResult = @params?.IsExistingInstance == true
-            ? await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, linkedCancellationToken)
-            : await workflowRunner.RunAsync(Workflow, runOptions, linkedCancellationToken);
+        var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, linkedCancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
@@ -101,7 +100,7 @@ public class WorkflowHost : IWorkflowHost
         _linkedTokenSource.Dispose();
         _linkedTokenSource = null;
         
-        return new ExecuteWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
+        return new RunWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
     }
 
     /// <inheritdoc />
@@ -114,7 +113,7 @@ public class WorkflowHost : IWorkflowHost
             return;
         }
         
-        // Otherwise, cancel the workflow by executing the canceler. This will setup a workflow execution pipeline that will cancel the workflow.
+        // Otherwise, cancel the workflow by executing the canceler. This will set up a workflow execution pipeline that will cancel the workflow.
         using var scope = _serviceScopeFactory.CreateScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();

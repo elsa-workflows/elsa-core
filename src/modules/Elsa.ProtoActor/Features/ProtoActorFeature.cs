@@ -7,6 +7,7 @@ using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.Runtime.Distributed.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,8 +39,7 @@ public class ProtoActorFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowClient = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowClient>(sp);
+        Module.Configure<DistributedRuntimeFeature>().DistributedRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorDistributedRuntime>(sp);
     }
 
     /// <summary>
@@ -92,7 +92,6 @@ public class ProtoActorFeature : FeatureBase
 
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
-            var workflowInstanceGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
             var workflowGrainProps = system.DI().PropsFor<WorkflowActor>();
 
             var clusterConfig = ClusterConfig
@@ -102,7 +101,6 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
-                    .WithClusterKind(WorkflowInstanceActor.Kind, workflowInstanceGrainProps)
                     .WithClusterKind(WorkflowActor.Kind, workflowGrainProps)
                 ;
 
@@ -127,18 +125,17 @@ public class ProtoActorFeature : FeatureBase
         // Mappers.
         services
             .AddSingleton<Mappers.Mappers>()
-            .AddSingleton<BookmarkMapper>()
-            .AddSingleton<BookmarkInfoMapper>()
-            .AddSingleton<BookmarkDiffMapper>()
             .AddSingleton<ActivityHandleMapper>()
             .AddSingleton<ActivityIncidentMapper>()
             .AddSingleton<ExceptionMapper>()
-            .AddSingleton<WorkflowExecutionResultMapper>()
             .AddSingleton<ActivityIncidentStateMapper>()
             .AddSingleton<WorkflowStatusMapper>()
             .AddSingleton<WorkflowSubStatusMapper>()
-            .AddSingleton<ExecuteWorkflowRequestMapper>()
-            .AddSingleton<ExecuteWorkflowResponseMapper>()
+            .AddSingleton<CreateWorkflowInstanceRequestMapper>()
+            .AddSingleton<CreateWorkflowInstanceResponseMapper>()
+            .AddSingleton<RunWorkflowInstanceRequestMapper>()
+            .AddSingleton<RunWorkflowInstanceResponseMapper>()
+            .AddSingleton<RunWorkflowParamsMapper>()
             .AddSingleton<WorkflowStateJsonMapper>();
 
         // Mediator handlers.
@@ -149,9 +146,10 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceGrain>(sp, context)))
             .AddTransient(sp => new WorkflowActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)));
-            ;
+            
+        // Distributed runtime.
+        services.AddSingleton<ProtoActorDistributedRuntime>();
     }
 
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)

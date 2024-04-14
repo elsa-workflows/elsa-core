@@ -1,4 +1,5 @@
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Params;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
 
@@ -12,10 +13,10 @@ public interface IWorkflowInstanceFactory
     /// <summary>
     /// Creates a new <see cref="WorkflowState"/> object.
     /// </summary>
-    WorkflowState CreateWorkflowState(CreateWorkflowInstanceRequest request);
+    WorkflowState CreateWorkflowState(CreateWorkflowInstanceParams @params);
 
     /// <summary>
     /// Creates a new <see cref="WorkflowInstance"/> object.
     /// </summary>
-    WorkflowInstance CreateWorkflowInstance(CreateWorkflowInstanceRequest request);
+    WorkflowInstance CreateWorkflowInstance(CreateWorkflowInstanceParams @params);
 }

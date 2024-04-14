@@ -1,6 +1,7 @@
 using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Params;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
@@ -34,11 +35,11 @@ public class MassTransitWorkflowDispatcher(
         if (workflow == null)
             throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
 
-        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+        var createWorkflowInstanceRequest = new CreateWorkflowInstanceParams
         {
             Workflow = workflow,
             WorkflowInstanceId = request.InstanceId,
-            ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
+            ParentId = request.ParentWorkflowInstanceId,
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId

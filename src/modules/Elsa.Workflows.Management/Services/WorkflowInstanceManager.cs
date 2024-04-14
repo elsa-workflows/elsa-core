@@ -7,6 +7,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Management.Params;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
 
@@ -98,9 +99,9 @@ public class WorkflowInstanceManager(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceParams @params, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(request);
+        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(@params);
         await SaveAsync(workflowInstance, cancellationToken);
         return workflowInstance;
     }

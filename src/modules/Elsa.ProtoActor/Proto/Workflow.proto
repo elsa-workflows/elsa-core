@@ -8,8 +8,8 @@ import "Shared.proto";
 import "Workflow.Messages.proto";
 
 service Workflow {
-  rpc ExecuteAndWait (ProtoExecuteWorkflowRequest) returns (ProtoExecuteWorkflowResponse);
-  rpc ExecuteAndForget (ProtoExecuteWorkflowRequest) returns (Empty);
+  rpc Create (ProtoCreateWorkflowInstanceRequest) returns (ProtoCreateWorkflowInstanceResponse);
+  rpc Run (ProtoRunWorkflowInstanceRequest) returns (ProtoRunWorkflowInstanceResponse);
   rpc Stop (Empty) returns (Empty);
   rpc Cancel (Empty) returns (Empty);
   rpc ExportState(Empty) returns (ProtoExportWorkflowStateResponse);

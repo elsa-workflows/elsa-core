@@ -1,4 +1,5 @@
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
@@ -10,42 +11,32 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowHost
 {
     /// <summary>
-    /// The workflow definition.
+    /// Gets or sets the workflow definition.
     /// </summary>
     Workflow Workflow { get; set; }
 
     /// <summary>
-    /// The workflow state.
+    /// Gets or sets the workflow state.
     /// </summary>
     WorkflowState WorkflowState { get; set; }
 
     /// <summary>
     /// Returns a value indicating whether the specified workflow can start a new instance or not.
     /// </summary>
-    Task<bool> CanStartWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
+    Task<bool> CanStartWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Executes the workflow instance.
+    /// Starts a new workflow instance.
     /// </summary>
-    Task<ExecuteWorkflowResult> ExecuteWorkflowAsync(IExecuteWorkflowRequest? @params = default, CancellationToken cancellationToken = default);
-
-    // /// <summary>
-    // /// Start a new workflow instance and execute it.
-    // /// </summary>
-    // Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
-    //
-    // /// <summary>
-    // /// Resume an existing workflow instance.
-    // /// </summary>
-    // Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Cancel the workflow instance.
+    /// Cancels the workflow instance.
     /// </summary>
     Task CancelWorkflowAsync(CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Persist the workflow state.
+    /// Persists the workflow state.
     /// </summary>
     Task PersistStateAsync(CancellationToken cancellationToken = default);
 }

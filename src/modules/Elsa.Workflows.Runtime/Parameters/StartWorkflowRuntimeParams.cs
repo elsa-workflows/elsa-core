@@ -18,7 +18,6 @@ public class StartWorkflowRuntimeParams
     public string? TriggerActivityId { get; set; }
 
     public string? InstanceId { get; set; }
-    public bool IsExistingInstance { get; set; }
 
     public CancellationToken CancellationToken { get; set; }
     
