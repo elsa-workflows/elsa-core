@@ -18,6 +18,7 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
@@ -40,7 +41,7 @@ const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
-const bool useMemoryStores = true;
+const bool useMemoryStores = false;
 const bool useCachingStores = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
@@ -154,6 +155,8 @@ services
 
                 if (useCachingStores)
                     management.UseCachingStores();
+                
+                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Default);
             })
             .UseWorkflowRuntime(runtime =>
             {

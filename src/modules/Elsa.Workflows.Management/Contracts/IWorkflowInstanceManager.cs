@@ -1,5 +1,6 @@
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management.Contracts;
@@ -65,4 +66,9 @@ public interface IWorkflowInstanceManager
     /// Serializes the specified workflow state.
     /// </summary>
     Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Instantiates and saves a new workflow instance.
+    /// </summary>
+    Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
 }

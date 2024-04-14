@@ -3,7 +3,7 @@ using Elsa.Common.Models;
 namespace Elsa.Workflows.Runtime.Parameters;
 
 /// <summary>
-/// Represents options for starting a workflow.
+/// Represents parameters for starting a workflow.
 /// </summary>
 public class StartWorkflowRuntimeParams
 {
@@ -18,6 +18,7 @@ public class StartWorkflowRuntimeParams
     public string? TriggerActivityId { get; set; }
 
     public string? InstanceId { get; set; }
+    public bool IsExistingInstance { get; set; }
 
     public CancellationToken CancellationToken { get; set; }
     

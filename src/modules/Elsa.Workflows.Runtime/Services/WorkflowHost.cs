@@ -91,6 +91,12 @@ public class WorkflowHost : IWorkflowHost
         var linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _linkedTokenSource.Token).Token;
         var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, linkedCancellationToken);
 
+        using var scope = _serviceScopeFactory.CreateScope();
+        var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+        var workflowResult = @params?.IsExistingInstance == true
+            ? await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken)
+            : await workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
+
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
 

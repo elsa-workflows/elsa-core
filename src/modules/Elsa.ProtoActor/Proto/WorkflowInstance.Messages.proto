@@ -18,6 +18,7 @@ message ProtoStartWorkflowRequest {
   optional ProtoInput input = 5;
   optional ProtoProperties properties = 6;
   optional string TriggerActivityId = 7;
+  optional bool IsExistingInstance = 8;
 }
 
 message ProtoWorkflowExecutionResponse {
