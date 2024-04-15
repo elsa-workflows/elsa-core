@@ -67,7 +67,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds caching stores feature to the workflow runtime feature.
     /// </summary>
-    public static WorkflowRuntimeFeature UseCachingStores(this WorkflowRuntimeFeature feature, Action<CachingWorkflowRuntimeFeature>? configure = default)
+    public static WorkflowRuntimeFeature UseCache(this WorkflowRuntimeFeature feature, Action<CachingWorkflowRuntimeFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

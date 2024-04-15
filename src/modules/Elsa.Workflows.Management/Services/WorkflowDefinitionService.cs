@@ -70,6 +70,12 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
@@ -84,6 +90,17 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var definition = await FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
+
+        if (definition == null)
+            return null;
+
+        return await MaterializeWorkflowAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var definition = await FindWorkflowDefinitionAsync(filter, cancellationToken);
 
         if (definition == null)
             return null;

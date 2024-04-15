@@ -15,7 +15,15 @@ public static class ModuleExtensions
     public static IModule UseHttp(this IModule module, Action<HttpFeature>? configure = default)
     {
         module.Configure(configure);
-        module.Use<HttpJavaScriptFeature>();
         return module;
+    }
+    
+    /// <summary>
+    /// Install the <see cref="HttpCacheFeature"/> feature to speed up HTTP workflows. Like, a lot.
+    /// </summary>
+    public static HttpFeature UseCache(this HttpFeature feature, Action<HttpCacheFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
     }
 }

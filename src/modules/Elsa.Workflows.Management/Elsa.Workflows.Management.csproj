@@ -10,11 +10,12 @@
     <ItemGroup>
         <PackageReference Include="Humanizer.Core" />
         <PackageReference Include="IronCompress" />
+        <PackageReference Include="System.Linq.Dynamic.Core" />
         <PackageReference Include="PolySharp">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="System.Linq.Dynamic.Core" />
+        
     </ItemGroup>
 
     <ItemGroup>
