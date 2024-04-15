@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
@@ -10,7 +11,6 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
@@ -36,6 +36,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     private readonly WorkflowStateMapper _workflowStateMapper;
     private readonly WorkflowStatusMapper _workflowStatusMapper;
     private readonly WorkflowSubStatusMapper _workflowSubStatusMapper;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly Persistence _persistence;
 
     private string _definitionId = default!;
@@ -56,7 +57,8 @@ internal class WorkflowInstance : WorkflowInstanceBase
         IContext context,
         WorkflowStateMapper workflowStateMapper,
         WorkflowStatusMapper workflowStatusMapper,
-        WorkflowSubStatusMapper workflowSubStatusMapper
+        WorkflowSubStatusMapper workflowSubStatusMapper,
+        IWorkflowInstanceStore workflowInstanceStore
     ) : base(context)
     {
         _scopeFactory = scopeFactory;
@@ -64,6 +66,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         _workflowStateMapper = workflowStateMapper;
         _workflowStatusMapper = workflowStatusMapper;
         _workflowSubStatusMapper = workflowSubStatusMapper;
+        _workflowInstanceStore = workflowInstanceStore;
         _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
@@ -108,21 +111,29 @@ internal class WorkflowInstance : WorkflowInstanceBase
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
+        var isExistingInstance = request.IsExistingInstance;
+        var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
         var properties = request.Properties?.Deserialize();
-        var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
         var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
+            IsExistingInstance = request.IsExistingInstance,
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
             TriggerActivityId = request.TriggerActivityId
         };
 
-        _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+        _workflowHost = await CreateWorkflowHostAsync(
+            definitionId,
+            versionOptions,
+            request.InstanceId,
+            isExistingInstance,
+            cancellationToken);
+
         _version = _workflowHost.Workflow.Identity.Version;
         _definitionId = definitionId;
         _instanceId = instanceId;
@@ -147,10 +158,11 @@ internal class WorkflowInstance : WorkflowInstanceBase
     {
         var definitionId = request.DefinitionId;
         var instanceId = request.InstanceId;
+        var isExistingInstance = request.IsExistingInstance;
+        var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var correlationId = request.CorrelationId.NullIfEmpty();
         var input = request.Input?.Deserialize();
         var properties = request.Properties?.Deserialize();
-        var versionOptions = VersionOptions.FromString(request.VersionOptions);
         var cancellationToken = Context.CancellationToken;
 
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -160,7 +172,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
-            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, instanceId, isExistingInstance, cancellationToken);
             _version = _workflowHost.Workflow.Identity.Version;
             _definitionId = definitionId;
             _instanceId = instanceId;
@@ -170,6 +182,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var startWorkflowOptions = new StartWorkflowHostParams
         {
             InstanceId = instanceId,
+            IsExistingInstance = request.IsExistingInstance,
             CorrelationId = correlationId,
             Input = input,
             Properties = properties,
@@ -285,7 +298,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         // Only need to reconstruct a workflow host if not already done so during CanStart.
         if (_workflowHost == null!)
         {
-            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken);
+            _workflowHost = await CreateWorkflowHostAsync(definitionId, versionOptions, cancellationToken: cancellationToken);
             _version = _workflowHost.Workflow.Identity.Version;
         }
 
@@ -394,7 +407,12 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
     private object GetState() => new WorkflowInstanceSnapshot(_definitionId, _instanceId, _version, _workflowState, _input?.ToDictionary(x => x.Key, x => x.Value));
 
-    private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken)
+    private async Task<IWorkflowHost> CreateWorkflowHostAsync(
+        string definitionId,
+        VersionOptions versionOptions,
+        string? instanceId = null,
+        bool isExistingInstance = false,
+        CancellationToken cancellationToken = default)
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
@@ -404,6 +422,13 @@ internal class WorkflowInstance : WorkflowInstanceBase
             throw new Exception("Specified workflow definition and version does not exist");
 
         var workflowHostFactory = scope.ServiceProvider.GetRequiredService<IWorkflowHostFactory>();
+
+        if (isExistingInstance)
+        {
+            var workflowState = await LoadWorkflowStateAsync(instanceId!, cancellationToken);
+            return await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+        }
+
         return await workflowHostFactory.CreateAsync(workflow, cancellationToken);
     }
 
@@ -419,6 +444,12 @@ internal class WorkflowInstance : WorkflowInstanceBase
             throw new Exception("Specified workflow definition and version does not exist");
 
         return await _workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+    }
+
+    private async Task<WorkflowState> LoadWorkflowStateAsync(string instanceId, CancellationToken cancellationToken)
+    {
+        var workflowInstance = await _workflowInstanceStore.FindAsync(instanceId, cancellationToken) ?? throw new Exception($"Workflow instance {instanceId} not found");
+        return _workflowStateMapper.Map(workflowInstance)!;
     }
 
     /// <summary>
