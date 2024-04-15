@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'feature/*'
       - 'issue/*'
+      - 'bug/*'
       - 'enhancement/*'
       - 'patch/*'
       - 'fix/*'

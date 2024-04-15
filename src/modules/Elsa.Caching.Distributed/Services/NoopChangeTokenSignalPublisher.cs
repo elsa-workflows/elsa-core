@@ -1,4 +1,3 @@
-using Elsa.Caching.Contracts;
 using Elsa.Caching.Distributed.Contracts;
 
 namespace Elsa.Caching.Distributed.Services;

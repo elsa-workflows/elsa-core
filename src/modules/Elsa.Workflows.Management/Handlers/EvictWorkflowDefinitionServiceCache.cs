@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Management.Handlers;
 /// This service listens for specific notifications and triggers cache invalidation operations accordingly.
 /// </remarks>
 [UsedImplicitly]
-public class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManager workflowDefinitionCacheManager) :
+internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManager workflowDefinitionCacheManager) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,

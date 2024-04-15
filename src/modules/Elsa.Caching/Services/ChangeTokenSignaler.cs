@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using Elsa.Caching.Contracts;
 using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching.Services;

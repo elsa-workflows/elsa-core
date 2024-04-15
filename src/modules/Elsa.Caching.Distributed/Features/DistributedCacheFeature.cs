@@ -1,5 +1,4 @@
-﻿using Elsa.Caching.Contracts;
-using Elsa.Caching.Distributed.Contracts;
+﻿using Elsa.Caching.Distributed.Contracts;
 using Elsa.Caching.Distributed.Services;
 using Elsa.Caching.Features;
 using Elsa.Caching.Options;

@@ -1,4 +1,3 @@
-using Elsa.Caching.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -32,7 +31,7 @@ namespace Elsa.Http.Features;
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
-[DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(HttpJavaScriptFeature))]
 public class HttpFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -150,14 +149,13 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteTable, RouteTable>()
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
-            .AddScoped<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
+            .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
 
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
-            .AddNotificationHandler<InvalidateHttpWorkflowsCache>()
 
             // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()

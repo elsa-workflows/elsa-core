@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
@@ -7,7 +6,6 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Services;
 
