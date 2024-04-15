@@ -71,7 +71,7 @@ jobs:
       - name: Begin SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions="build/**;samples/**" /d:sonar.cs.opencover.reportsPaths="**/testresults/opencoverCoverage.xml"
+        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions="build/**;samples/**" /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths="**/opencoverCoverage.xml"
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
       - name: Upload artifact
