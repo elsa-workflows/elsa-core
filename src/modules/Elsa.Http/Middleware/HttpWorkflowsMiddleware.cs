@@ -67,13 +67,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
-        var httpEndpointCacheManager = serviceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
+        var httpWorkflowLookupService = serviceProvider.GetRequiredService<IHttpWorkflowLookupService>();
         var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);
-        var cachedWorkflowAndTriggers = await httpEndpointCacheManager.FindWorkflowAsync(bookmarkHash, cancellationToken);
+        var lookupResult = await httpWorkflowLookupService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
-        if (cachedWorkflowAndTriggers != null)
+        if (lookupResult != null)
         {
-            var triggers = cachedWorkflowAndTriggers.Value.Triggers;
+            var triggers = lookupResult.Triggers;
 
             if (triggers?.Count > 1)
             {
@@ -87,7 +87,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             var trigger = triggers?.FirstOrDefault();
             if (trigger != null)
             {
-                var workflow = cachedWorkflowAndTriggers.Value.Workflow!;
+                var workflow = lookupResult.Workflow!;
                 await StartWorkflowAsync(httpContext, trigger, workflow, input);
                 return;
             }
@@ -189,7 +189,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         if (await AuthorizeAsync(serviceProvider, httpContext, workflowHost.Workflow, bookmarkPayload, cancellationToken))
             return;
-        
+
         await ExecuteWithinTimeoutAsync(async ct =>
         {
             var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, ct);

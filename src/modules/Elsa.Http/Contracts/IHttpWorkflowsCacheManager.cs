@@ -1,5 +1,4 @@
-using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Entities;
+using Elsa.Caching;
 
 namespace Elsa.Http.Contracts;
 
@@ -9,17 +8,27 @@ namespace Elsa.Http.Contracts;
 public interface IHttpWorkflowsCacheManager
 {
     /// <summary>
-    /// Finds a cached entry by bookmark hash.
+    /// Gets the cache manager.
     /// </summary>
-    Task<(Workflow? Workflow, ICollection<StoredTrigger> Triggers)?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default);
+    public ICacheManager Cache { get; }
     
     /// <summary>
     /// Evicts a cached entry by its definition ID.
     /// </summary>
     Task EvictWorkflowAsync(string workflowDefinitionId, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Evicts a cached entry by its bookmark hash.
     /// </summary>
     Task EvictTriggerAsync(string bookmarkHash, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the key for a workflow change token.
+    /// </summary>
+    string GetWorkflowChangeTokenKey(string workflowDefinitionId);
+
+    /// <summary>
+    /// Gets the key for a trigger change token.
+    /// </summary>
+    string GetTriggerChangeTokenKey(string bookmarkHash);
 }

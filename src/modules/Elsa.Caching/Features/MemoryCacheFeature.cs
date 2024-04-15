@@ -1,5 +1,4 @@
-﻿using Elsa.Caching.Contracts;
-using Elsa.Caching.Options;
+﻿using Elsa.Caching.Options;
 using Elsa.Caching.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -22,6 +21,7 @@ public class MemoryCacheFeature(IModule module) : FeatureBase(module)
     {
         Services.Configure(CachingOptions);
         Services.AddMemoryCache();
+        Services.AddSingleton<ICacheManager, CacheManager>();
         Services.AddSingleton<IChangeTokenSignaler, ChangeTokenSignaler>();
     }
 }
