@@ -82,7 +82,12 @@ partial class Build : NukeBuild, ITest, IPack
         .When(GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
         .When(AnalyseCode, settings => settings.SetCoverletOutputFormat(CoverletOutputFormat.opencover))
         .When(AnalyseCode, settings => settings.EnableCollectCoverage())
+        .When(AnalyseCode, settings => settings.SetResultsDirectory(TestResultDirectory))
         .When(AnalyseCode, settings =>  settings.SetCoverletOutput($"{TestResultDirectory}/opencoverCoverage.xml"))
-        .When(AnalyseCode, settings =>  settings.SetProcessArgumentConfigurator(args => args.Add($"/p:MergeWith={TestResultDirectory}/")))
+        .When(AnalyseCode, settings =>  settings.SetProcessArgumentConfigurator(args =>
+        {
+            return args.Add($"/p:MergeWith={TestResultDirectory}/")
+                .Add("--collect \"Code Coverage\"");
+        }))
     ;
 }
