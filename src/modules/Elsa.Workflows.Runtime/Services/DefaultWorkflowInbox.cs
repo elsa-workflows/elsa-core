@@ -23,7 +23,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
     private readonly INotificationSender _notificationSender;
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly IBookmarkHasher _bookmarkHasher;
+    private readonly IStimulusHasher _stimulusHasher;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultWorkflowInbox"/> class.
@@ -35,7 +35,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         INotificationSender notificationSender,
         ISystemClock systemClock,
         IIdentityGenerator identityGenerator,
-        IBookmarkHasher bookmarkHasher)
+        IStimulusHasher stimulusHasher)
     {
         _workflowDispatcher = workflowDispatcher;
         _workflowRuntime = workflowRuntime;
@@ -43,7 +43,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
         _notificationSender = notificationSender;
         _systemClock = systemClock;
         _identityGenerator = identityGenerator;
-        _bookmarkHasher = bookmarkHasher;
+        _stimulusHasher = stimulusHasher;
     }
 
     /// <inheritdoc />
@@ -70,7 +70,7 @@ public class DefaultWorkflowInbox : IWorkflowInbox
             ActivityTypeName = newMessage.ActivityTypeName,
             BookmarkPayload = newMessage.BookmarkPayload,
             Input = newMessage.Input,
-            Hash = _bookmarkHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload, newMessage.ActivityInstanceId),
+            Hash = _stimulusHasher.Hash(newMessage.ActivityTypeName, newMessage.BookmarkPayload, newMessage.ActivityInstanceId),
         };
 
         // Store the message.

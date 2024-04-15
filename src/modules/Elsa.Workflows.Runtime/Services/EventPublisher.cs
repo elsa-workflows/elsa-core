@@ -32,18 +32,6 @@ public class EventPublisher : IEventPublisher
         return await PublishInternalAsync(eventName, false, correlationId, workflowInstanceId, activityInstanceId, payload, cancellationToken);
     }
 
-    /// <inheritdoc />
-    public async Task DispatchAsync(
-        string eventName,
-        string? correlationId = default,
-        string? workflowInstanceId = default,
-        string? activityInstanceId = default,
-        object? payload = default,
-        CancellationToken cancellationToken = default)
-    {
-        await PublishInternalAsync(eventName, true, correlationId, workflowInstanceId, activityInstanceId, payload, cancellationToken);
-    }
-
     private async Task<ICollection<WorkflowExecutionResult>> PublishInternalAsync(
         string eventName,
         bool dispatchAsynchronously,

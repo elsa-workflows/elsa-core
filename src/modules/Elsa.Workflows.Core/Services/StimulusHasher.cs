@@ -4,7 +4,7 @@ using Elsa.Workflows.Contracts;
 namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
-public class BookmarkHasher(IHasher hasher) : IBookmarkHasher
+public class StimulusHasher(IHasher hasher) : IStimulusHasher
 {
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]

@@ -9,6 +9,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 /// <summary>
 /// An inbox for delivering messages to workflow instances.
 /// </summary>
+[Obsolete]
 public interface IWorkflowInbox
 {
     /// <summary>

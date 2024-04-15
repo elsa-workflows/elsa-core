@@ -31,7 +31,7 @@ public class DefaultWorkflowRuntime(
     IWorkflowInstanceManager workflowInstanceManager,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
-    IBookmarkHasher hasher,
+    IStimulusHasher hasher,
     IDistributedLockProvider distributedLockProvider,
     IWorkflowInstanceFactory workflowInstanceFactory,
     WorkflowStateMapper workflowStateMapper,

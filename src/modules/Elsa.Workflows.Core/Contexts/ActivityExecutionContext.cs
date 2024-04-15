@@ -432,7 +432,7 @@ public partial class ActivityExecutionContext : IExecutionContext
         var payload = options?.Payload;
         var callback = options?.Callback;
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
-        var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
+        var bookmarkHasher = GetRequiredService<IStimulusHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var includeActivityInstanceId = options?.IncludeActivityInstanceId ?? true;
         var hash = bookmarkHasher.Hash(bookmarkName, payload, includeActivityInstanceId ? Id : null);

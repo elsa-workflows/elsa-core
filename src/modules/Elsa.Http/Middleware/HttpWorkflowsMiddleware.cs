@@ -368,7 +368,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)
     {
         var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        var bookmarkHasher = serviceProvider.GetRequiredService<IBookmarkHasher>();
+        var bookmarkHasher = serviceProvider.GetRequiredService<IStimulusHasher>();
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
     }

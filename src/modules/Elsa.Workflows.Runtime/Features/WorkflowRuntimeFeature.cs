@@ -216,6 +216,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
+            .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()

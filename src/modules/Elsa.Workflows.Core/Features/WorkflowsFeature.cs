@@ -130,7 +130,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddScoped<IHasher, Hasher>()
-            .AddScoped<IBookmarkHasher, BookmarkHasher>()
+            .AddScoped<IStimulusHasher, StimulusHasher>()
             .AddSingleton(IdentityGenerator)
             .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
             .AddSingleton<IActivityDescriber, ActivityDescriber>()

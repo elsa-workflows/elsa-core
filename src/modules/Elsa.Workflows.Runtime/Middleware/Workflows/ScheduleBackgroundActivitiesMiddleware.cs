@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddleware
 {
     private readonly IBackgroundActivityScheduler _backgroundActivityScheduler;
-    private readonly IBookmarkHasher _bookmarkHasher;
+    private readonly IStimulusHasher _stimulusHasher;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowStateExtractor _workflowStateExtractor;
     
@@ -23,12 +23,12 @@ public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddlewar
     public ScheduleBackgroundActivitiesMiddleware(
         WorkflowMiddlewareDelegate next,
         IBackgroundActivityScheduler backgroundActivityScheduler,
-        IBookmarkHasher bookmarkHasher,
+        IStimulusHasher stimulusHasher,
         IWorkflowRuntime workflowRuntime, 
         IWorkflowStateExtractor workflowStateExtractor) : base(next)
     {
         _backgroundActivityScheduler = backgroundActivityScheduler;
-        _bookmarkHasher = bookmarkHasher;
+        _stimulusHasher = stimulusHasher;
         _workflowRuntime = workflowRuntime;
         _workflowStateExtractor = workflowStateExtractor;
     }
@@ -66,7 +66,7 @@ public class ScheduleBackgroundActivitiesMiddleware : WorkflowExecutionMiddlewar
             bookmark = bookmark with
             {
                 Payload = bookmark.Payload,
-                Hash = _bookmarkHasher.Hash(bookmark.Name, payload)
+                Hash = _stimulusHasher.Hash(bookmark.Name, payload)
             };
             workflowExecutionContext.Bookmarks.Add(bookmark);
             

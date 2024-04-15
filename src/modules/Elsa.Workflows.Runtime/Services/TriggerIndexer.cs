@@ -27,7 +27,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly ITriggerStore _triggerStore;
     private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IBookmarkHasher _hasher;
+    private readonly IStimulusHasher _hasher;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -41,7 +41,7 @@ public class TriggerIndexer : ITriggerIndexer
         ITriggerStore triggerStore,
         INotificationSender notificationSender,
         IServiceProvider serviceProvider,
-        IBookmarkHasher hasher,
+        IStimulusHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
