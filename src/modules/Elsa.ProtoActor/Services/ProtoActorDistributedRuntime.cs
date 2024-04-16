@@ -1,5 +1,3 @@
-using Elsa.Workflows.Runtime.Distributed.Contracts;
-using Elsa.Workflows.Runtime.Distributed.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ProtoActor.Services;

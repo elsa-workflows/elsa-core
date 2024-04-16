@@ -4,7 +4,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Extracts triggers from workflow definitions.

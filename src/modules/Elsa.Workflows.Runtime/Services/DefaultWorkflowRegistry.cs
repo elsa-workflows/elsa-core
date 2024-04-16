@@ -1,7 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 
 namespace Elsa.Workflows.Runtime.Services;
 

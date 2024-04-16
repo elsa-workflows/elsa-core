@@ -6,10 +6,10 @@ namespace Elsa.Workflows.Runtime.Commands;
 /// <summary>
 /// Represents a command that dispatches a workflow instance.
 /// </summary>
-public class DispatchTriggerWorkflowsCommand(string activityTypeName, object bookmarkPayload) : ICommand<Unit>
+public class DispatchTriggerWorkflowsCommand(string activityTypeName, object stimulus) : ICommand<Unit>
 {
     public string ActivityTypeName { get; init; } = activityTypeName;
-    public object BookmarkPayload { get; init; } = bookmarkPayload;
+    public object Stimulus { get; init; } = stimulus;
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }
     public string? ActivityInstanceId { get; set; }

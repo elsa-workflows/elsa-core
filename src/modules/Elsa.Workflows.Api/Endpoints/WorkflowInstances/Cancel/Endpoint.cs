@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;

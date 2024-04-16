@@ -1,14 +1,14 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Workflows.Runtime.Commands;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime.Messages;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
 // ReSharper disable once UnusedType.Global
-internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) :
+[UsedImplicitly]
+internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IWorkflowRuntime workflowRuntime) :
     ICommandHandler<DispatchTriggerWorkflowsCommand>,
     ICommandHandler<DispatchWorkflowDefinitionCommand>,
     ICommandHandler<DispatchWorkflowInstanceCommand>,
@@ -16,68 +16,71 @@ internal class DispatchWorkflowCommandHandler(IWorkflowRuntime workflowRuntime) 
 {
     public async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
     {
-        var options = new TriggerWorkflowsOptions
+        var activityTypeName = command.ActivityTypeName;
+        var stimulus = command.Stimulus;
+        var metadata = new StimulusMetadata
         {
             CorrelationId = command.CorrelationId,
-            WorkflowInstanceId = command.WorkflowInstanceId,
             ActivityInstanceId = command.ActivityInstanceId,
+            WorkflowInstanceId = command.WorkflowInstanceId,
             Input = command.Input,
             Properties = command.Properties,
-            CancellationToken = cancellationToken
         };
-        await workflowRuntime.TriggerWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options);
+        await stimulusSender.SendAsync(activityTypeName, stimulus, metadata, cancellationToken);
 
         return Unit.Instance;
     }
 
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
-        var options = new StartWorkflowRuntimeParams
+        var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
+        var createRequest = new CreateWorkflowInstanceRequest
         {
             CorrelationId = command.CorrelationId,
             Input = command.Input,
             Properties = command.Properties,
-            VersionOptions = command.VersionOptions,
-            InstanceId = command.InstanceId,
-            TriggerActivityId = command.TriggerActivityId,
-            CancellationToken = cancellationToken
+            ParentId = command.ParentWorkflowInstanceId,
+            DefinitionVersionId = command.DefinitionVersionId
+        };
+        await client.CreateInstanceAsync(createRequest, cancellationToken);
+
+        var runRequest = new RunWorkflowInstanceRequest
+        {
+            TriggerActivityId = command.TriggerActivityId
         };
 
-        await workflowRuntime.TryStartWorkflowAsync(command.DefinitionId, options);
-
+        await client.RunAsync(runRequest, cancellationToken);
         return Unit.Instance;
     }
 
     public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
-        var options = new ResumeWorkflowRuntimeParams
+        var runRequest = new RunWorkflowInstanceRequest
         {
-            CorrelationId = command.CorrelationId,
             BookmarkId = command.BookmarkId,
             ActivityHandle = command.ActivityHandle,
             Input = command.Input,
-            Properties = command.Properties,
-            CancellationToken = cancellationToken
+            Properties = command.Properties
         };
-
-        await workflowRuntime.ResumeWorkflowAsync(command.InstanceId, options);
+        var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
+        await client.RunAsync(runRequest, cancellationToken);
 
         return Unit.Instance;
     }
 
     public async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
     {
-        var options = new TriggerWorkflowsOptions
+        var activityTypeName = command.ActivityTypeName;
+        var stimulus = command.Stimulus;
+        var metadata = new StimulusMetadata
         {
             CorrelationId = command.CorrelationId,
-            Input = command.Input,
-            Properties = command.Properties,
             WorkflowInstanceId = command.WorkflowInstanceId,
             ActivityInstanceId = command.ActivityInstanceId,
-            CancellationToken = cancellationToken
+            Properties = command.Properties,
+            Input = command.Input
         };
-
-        await workflowRuntime.ResumeWorkflowsAsync(command.ActivityTypeName, command.BookmarkPayload, options);
+        await stimulusSender.SendAsync(activityTypeName, stimulus, metadata, cancellationToken);
 
         return Unit.Instance;
     }

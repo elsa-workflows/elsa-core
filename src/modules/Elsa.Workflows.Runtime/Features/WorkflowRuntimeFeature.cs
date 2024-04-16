@@ -14,7 +14,6 @@ using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -47,8 +46,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     /// </summary>
-    [Obsolete]
-    public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowRuntime>(sp);
+    public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalWorkflowRuntime>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
@@ -83,11 +81,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     /// </summary>
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
-
-    /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowInboxMessageStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
@@ -180,7 +173,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     public override void ConfigureHostedServices()
     {
         Module.ConfigureHostedService<PopulateRegistriesHostedService>();
-        Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
     }
 
     /// <inheritdoc />
@@ -201,7 +193,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
-            .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
+            .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
@@ -221,7 +213,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
             .AddScoped<IEventPublisher, EventPublisher>()
-            .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
@@ -231,7 +222,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
-            .AddScoped(WorkflowInboxStore)
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
@@ -246,7 +236,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
-            .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxMessageStore>()
             .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
@@ -265,8 +254,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteTriggers>()
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
-            .AddNotificationHandler<ReadWorkflowInboxMessage>()
-            .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 

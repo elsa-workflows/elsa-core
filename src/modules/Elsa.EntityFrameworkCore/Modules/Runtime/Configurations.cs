@@ -13,7 +13,6 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
-    IEntityTypeConfiguration<WorkflowInboxMessage>,
     IEntityTypeConfiguration<SerializedKeyValuePair>
 {
     /// <inheritdoc />
@@ -97,22 +96,6 @@ public class Configurations :
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.CreatedAt)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash, x.WorkflowInstanceId }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
-    }
-
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<WorkflowInboxMessage> builder)
-    {
-        builder.Ignore(x => x.Input);
-        builder.Ignore(x => x.BookmarkPayload);
-        builder.Property<string>("SerializedInput");
-        builder.Property<string>("SerializedBookmarkPayload");
-        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityTypeName)}");
-        builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
-        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
-        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CorrelationId)}");
-        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
-        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
-        builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
     }
 
     /// <inheritdoc />

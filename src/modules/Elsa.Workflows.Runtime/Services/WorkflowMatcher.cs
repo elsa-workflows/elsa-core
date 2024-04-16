@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
@@ -14,11 +13,11 @@ public class WorkflowMatcher(IStimulusHasher stimulusHasher, ITriggerStore trigg
     public Task<IEnumerable<StoredTrigger>> FindTriggersAsync(string activityTypeName, object stimulus, CancellationToken cancellationToken = default)
     {
         var hash = stimulusHasher.Hash(activityTypeName, stimulus);
-        return FindTriggersAsync(activityTypeName, hash, cancellationToken);
+        return FindTriggersAsync(hash, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<StoredTrigger>> FindTriggersAsync(string activityTypeName, string stimulusHash, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<StoredTrigger>> FindTriggersAsync(string stimulusHash, CancellationToken cancellationToken = default)
     {
         return await triggerStore.FindManyByStimulusHashAsync(stimulusHash, cancellationToken);
     }
@@ -27,11 +26,11 @@ public class WorkflowMatcher(IStimulusHasher stimulusHasher, ITriggerStore trigg
     public Task<IEnumerable<StoredBookmark>> FindBookmarksAsync(string activityTypeName, object stimulus, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var hash = stimulusHasher.Hash(activityTypeName, stimulus, options?.ActivityInstanceId);
-        return FindBookmarksAsync(activityTypeName, hash, options, cancellationToken);
+        return FindBookmarksAsync(hash, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<StoredBookmark>> FindBookmarksAsync(string activityTypeName, string stimulusHash, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<StoredBookmark>> FindBookmarksAsync(string stimulusHash, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var correlationId = options?.CorrelationId;
         var workflowInstanceId = options?.WorkflowInstanceId;
@@ -41,7 +40,8 @@ public class WorkflowMatcher(IStimulusHasher stimulusHasher, ITriggerStore trigg
             Hash = stimulusHash,
             CorrelationId = correlationId,
             WorkflowInstanceId = workflowInstanceId,
-            ActivityInstanceId = activityInstanceId
+            ActivityInstanceId = activityInstanceId,
+            BookmarkId = options?.BookmarkId
         };
         return await bookmarkStore.FindManyAsync(filter, cancellationToken);
     }

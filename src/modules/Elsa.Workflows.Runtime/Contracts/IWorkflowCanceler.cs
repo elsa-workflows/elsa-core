@@ -1,7 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a workflow canceler.

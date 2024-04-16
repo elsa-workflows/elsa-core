@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Bookmarks;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -16,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 [UsedImplicitly]
 public class Event : Trigger<object?>
 {
-    internal const string EventPayloadWorkflowInputKey = "__EventPayloadWorkflowInput";
+    internal const string EventInputWorkflowInputKey = "__EventPayloadWorkflowInput";
     
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -62,7 +61,7 @@ public class Event : Trigger<object?>
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
         var eventName = EventName.Get(context.ExpressionExecutionContext);
-        return new EventBookmarkPayload(eventName);
+        return new EventStimulus(eventName);
     }
 
     /// <inheritdoc />
@@ -74,14 +73,14 @@ public class Event : Trigger<object?>
         {
             var options = new CreateBookmarkArgs
             {
-                Payload = new EventBookmarkPayload(eventName),
+                Payload = new EventStimulus(eventName),
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(options);
             return;
         }
 
-        var input = context.GetWorkflowInput<object?>(EventPayloadWorkflowInputKey);
+        var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
         context.SetResult(input);
         await context.CompleteActivityAsync();
     }

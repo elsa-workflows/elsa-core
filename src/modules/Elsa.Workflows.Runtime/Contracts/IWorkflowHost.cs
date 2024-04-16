@@ -3,7 +3,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a single workflow instance that can be executed and takes care of publishing various lifecycle events.

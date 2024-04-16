@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a reason for a cancellation failure.

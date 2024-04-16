@@ -7,8 +7,8 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -41,7 +41,7 @@ internal class TriggerWebhookActivities : INotificationHandler<TelnyxWebhookRece
 
         var workflowInstanceId = ((Payload)webhook.Data.Payload).GetClientStatePayload()?.WorkflowInstanceId;
         var callControlId = (webhook.Data.Payload as CallPayload)?.CallControlId;
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
+        var bookmarkPayloadWithCallControl = new WebhookEventStimulus(eventType, callControlId);
         var input = new Dictionary<string, object>().AddInput(webhook);
         
         await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage

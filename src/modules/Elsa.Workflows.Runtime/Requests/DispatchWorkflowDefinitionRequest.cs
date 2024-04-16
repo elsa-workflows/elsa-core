@@ -8,6 +8,8 @@ namespace Elsa.Workflows.Runtime.Requests;
 /// </summary>
 public class DispatchWorkflowDefinitionRequest
 {
+    public string DefinitionVersionId { get; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DispatchWorkflowDefinitionRequest"/> class.
     /// </summary>
@@ -15,28 +17,16 @@ public class DispatchWorkflowDefinitionRequest
     public DispatchWorkflowDefinitionRequest()
     {
     }
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DispatchWorkflowDefinitionRequest"/> class.
     /// </summary>
-    /// <param name="definitionId">The ID of the workflow definition to dispatch.</param>
-    /// <param name="versionOptions">The version options to use when dispatching the workflow definition.</param>
-    public DispatchWorkflowDefinitionRequest(string definitionId, VersionOptions versionOptions)
+    /// <param name="definitionVersionId">The ID of the workflow definition version to dispatch.</param>
+    public DispatchWorkflowDefinitionRequest(string definitionVersionId)
     {
-        DefinitionId = definitionId;
-        VersionOptions = versionOptions;
+        DefinitionVersionId = definitionVersionId;
     }
-
-    /// <summary>
-    /// The ID of the workflow definition to dispatch.
-    /// </summary>
-    public string DefinitionId { get; init; } = default!;
     
-    /// <summary>
-    /// The version options to use when dispatching the workflow definition.
-    /// </summary>
-    public VersionOptions VersionOptions { get; init; }
-
     /// <summary>
     /// The ID of the parent workflow instance.
     /// </summary>

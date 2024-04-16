@@ -1,7 +1,6 @@
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Runtime.Models;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Populates the <see cref="IWorkflowDefinitionStore"/> with workflow definitions provided from <see cref="IWorkflowProvider"/> implementations.

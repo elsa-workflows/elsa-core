@@ -6,6 +6,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Params;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;

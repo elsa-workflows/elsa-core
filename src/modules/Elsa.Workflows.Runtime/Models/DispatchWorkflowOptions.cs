@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime;
 
 public class DispatchWorkflowOptions
 {

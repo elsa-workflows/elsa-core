@@ -5,6 +5,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;

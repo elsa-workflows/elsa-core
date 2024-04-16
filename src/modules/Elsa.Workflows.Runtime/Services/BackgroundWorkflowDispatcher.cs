@@ -2,7 +2,6 @@ using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 
@@ -26,7 +25,7 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionId, request.VersionOptions)
+        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionVersionId)
         {
             Input = request.Input,
             Properties = request.Properties,

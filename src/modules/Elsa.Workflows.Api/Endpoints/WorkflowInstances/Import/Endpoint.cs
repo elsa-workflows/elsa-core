@@ -4,6 +4,7 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;

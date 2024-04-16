@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Http.Models;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 

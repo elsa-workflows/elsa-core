@@ -4,9 +4,8 @@ using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
@@ -79,7 +78,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var scheduledBackgroundActivities = context.WorkflowExecutionContext.TransientProperties.GetOrAdd(BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
-        var bookmarkPayload = new BackgroundActivityBookmark();
+        var bookmarkPayload = new BackgroundActivityStimulus();
         var bookmarkOptions = new CreateBookmarkArgs
         {
             BookmarkName = BackgroundActivityBookmarkName,

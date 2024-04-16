@@ -171,7 +171,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
             await telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
             
             // Create a bookmark so we can resume this activity when the call.gather.ended webhook comes back.
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync, true);
+            context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync, true);
         }
         catch (ApiException e)
         {

@@ -1,3 +1,5 @@
+using Elsa.Workflows.Models;
+
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Elsa.Workflows.Runtime.Options;
 /// </summary>
 public class FindBookmarkOptions
 {
+    public string? BookmarkId { get; set; }
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }
     public string? ActivityInstanceId { get; set; }

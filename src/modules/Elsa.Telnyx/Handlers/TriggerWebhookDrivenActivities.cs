@@ -7,8 +7,8 @@ using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Handlers;
@@ -40,7 +40,7 @@ internal class TriggerWebhookDrivenActivities : INotificationHandler<TelnyxWebho
         var clientStatePayload = ((Payload)webhook.Data.Payload).GetClientStatePayload();
         var activityInstanceId = clientStatePayload?.ActivityInstanceId;
         var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
-        var bookmarkPayloadWithCallControl = new WebhookEventBookmarkPayload(eventType, callControlId);
+        var bookmarkPayloadWithCallControl = new WebhookEventStimulus(eventType, callControlId);
 
         foreach (var activityDescriptor in activityDescriptors)
         {

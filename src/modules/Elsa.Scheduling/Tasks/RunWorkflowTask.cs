@@ -1,5 +1,6 @@
 using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;

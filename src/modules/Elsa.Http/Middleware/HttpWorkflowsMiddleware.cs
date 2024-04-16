@@ -20,6 +20,7 @@ using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
 using Open.Linq.AsyncExtensions;
 using RunWorkflowResult = Elsa.Workflows.Runtime.Results.RunWorkflowResult;

@@ -2,8 +2,8 @@ using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;

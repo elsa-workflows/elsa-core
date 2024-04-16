@@ -1,7 +1,6 @@
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Distributed.Messages;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 

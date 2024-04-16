@@ -1,5 +1,4 @@
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Runtime.Distributed.Messages;
 
 namespace Elsa.ProtoActor.Mappers;
 

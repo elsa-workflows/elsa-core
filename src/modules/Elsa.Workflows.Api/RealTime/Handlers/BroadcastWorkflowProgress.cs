@@ -3,6 +3,7 @@ using Elsa.Workflows.Api.RealTime.Contracts;
 using Elsa.Workflows.Api.RealTime.Hubs;
 using Elsa.Workflows.Api.RealTime.Messages;
 using Elsa.Workflows.Management.Notifications;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.AspNetCore.SignalR;
