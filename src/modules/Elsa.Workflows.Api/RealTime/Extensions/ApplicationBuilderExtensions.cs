@@ -12,5 +12,5 @@ public static class RealTimeApplicationBuilderExtensions
     /// <summary>
     /// Adds SignalR hubs for receiving workflow events on the client.
     /// </summary>
-    public static IApplicationBuilder UseWorkflowsSignalRHubs(this IApplicationBuilder app) => app.UseEndpoints(endpoints => endpoints.MapHub<WorkflowInstanceHub>("/elsa/hubs/workflow-instance"));
+    public static IApplicationBuilder UseWorkflowsSignalRHubs(this IApplicationBuilder app) => app.UseEndpoints(endpoints => endpoints.MapHub<WorkflowInstanceHub>("/hubs/workflow-instance"));
 }
