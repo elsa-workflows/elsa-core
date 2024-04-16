@@ -50,12 +50,8 @@ partial class Build : NukeBuild, ITest, IPack
             VersionSuffix = $"dev-{DateTime.UtcNow:yyyyMMdd-HHmm}";
         }
 
-        Log.Information("BUILD SETUP");
-        Log.Information("Configuration:\t{Configuration}", Configuration);
-        Log.Information("Version suffix:\t{VersionSuffix}", VersionSuffix);
-        Log.Information("Version:\t\t{Version}", Version);
-        Log.Information("Tagged build:\t{IsTaggedBuild}", IsTaggedBuild);
-        Log.Information("AnalyseCode:\t\t{AnalyseCode}", AnalyseCode);
+        Log.Information("BUILD SETUP:\nConfiguration: {Configuration}\nVersion Suffix: {VersionSuffix}\nVersion: {Version}\nTagged Build: {IsTaggedBuild}\nAnalyse Code: {AnalyseCode}",
+            Configuration, VersionSuffix, Version, IsTaggedBuild, AnalyseCode);
     }
 
     Target Clean => _ => _
