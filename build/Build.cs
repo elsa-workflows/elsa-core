@@ -84,10 +84,6 @@ partial class Build : NukeBuild, ITest, IPack
         .When(AnalyseCode, settings => settings.EnableCollectCoverage())
         .When(AnalyseCode, settings => settings.SetResultsDirectory(TestResultDirectory))
         .When(AnalyseCode, settings =>  settings.SetCoverletOutput($"{TestResultDirectory}/opencoverCoverage.xml"))
-        .When(AnalyseCode, settings =>  settings.SetProcessArgumentConfigurator(args =>
-        {
-            return args.Add($"/p:MergeWith={TestResultDirectory}/")
-                .Add("--collect \"Code Coverage\"");
-        }))
-    ;
+        .When(AnalyseCode, settings =>  settings.SetProcessArgumentConfigurator(args => 
+            args.Add("--collect:\"XPlat Code Coverage;Format=opencover\"")));
 }

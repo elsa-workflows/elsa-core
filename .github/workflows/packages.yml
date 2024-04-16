@@ -71,19 +71,22 @@ jobs:
       - name: Begin SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions="build/**;samples/**" /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=sonar.cs.opencover.reportsPaths=**/testresults/opencoverCoverage.xml
+        run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions="build/**;samples/**" /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=**/testresults/**/coverage.opencover.xml
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
+      - name: End SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+      - name: List contents of a directory
+        run: |
+          ls -alh ./testresults
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
         if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-      - name: End SonarCloud analysis
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
   
   publish_preview_feedz:
     name: Publish to feedz.io
