@@ -2,6 +2,7 @@ using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;
@@ -9,6 +10,7 @@ namespace Elsa.MongoDb.Modules.Runtime;
 /// <summary>
 /// A MongoDb implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
+[UsedImplicitly]
 public class MongoBookmarkStore : IBookmarkStore
 {
     private readonly MongoDbStore<StoredBookmark> _mongoDbStore;
@@ -31,6 +33,12 @@ public class MongoBookmarkStore : IBookmarkStore
     public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
         await _mongoDbStore.SaveManyAsync(records, nameof(StoredBookmark.BookmarkId), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
     }
 
     /// <inheritdoc />

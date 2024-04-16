@@ -2,10 +2,12 @@ using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
+[UsedImplicitly]
 public class MemoryTriggerStore : ITriggerStore
 {
     private readonly MemoryStore<StoredTrigger> _store;
@@ -30,6 +32,13 @@ public class MemoryTriggerStore : ITriggerStore
     {
         _store.SaveMany(records, x => x.Id);
         return new();
+    }
+
+    /// <inheritdoc />
+    public ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entity = _store.Query(filter.Apply).FirstOrDefault();
+        return new(entity);
     }
 
     /// <inheritdoc />

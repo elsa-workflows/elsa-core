@@ -104,7 +104,10 @@ public class Store<T> where T : notnull
     /// <returns>A page of records.</returns>
     public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
-        return await FindManyAsync<TShape>(filter, pageArgs, new[] { new OrderField(orderKey, orderDirection) }, cancellationToken);
+        return await FindManyAsync<TShape>(filter, pageArgs, new[]
+        {
+            new OrderField(orderKey, orderDirection)
+        }, cancellationToken);
     }
 
     /// <summary>
@@ -145,7 +148,7 @@ public class Store<T> where T : notnull
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// /// <typeparam name="TShape">The shape type.</typeparam>
+    /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A set of records.</returns>
     public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
@@ -184,7 +187,17 @@ public class Store<T> where T : notnull
     }
 
     /// <summary>
-    /// Saves the specified record.
+    /// Adds or updates the specified record.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task SaveAsync(T record, CancellationToken cancellationToken = default)
+    {
+        return SaveAsync(record, PrimaryKey, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds or updates the specified record.
     /// </summary>
     /// <param name="record">The record.</param>
     /// <param name="primaryKey">The primary key.</param>
@@ -197,7 +210,17 @@ public class Store<T> where T : notnull
     }
 
     /// <summary>
-    /// Saves the specified records.
+    /// Adds or updates the specified records.
+    /// </summary>
+    /// <param name="records">The records.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
+    {
+        return SaveManyAsync(records, PrimaryKey, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Adds or updates the specified records.
     /// </summary>
     /// <param name="records">The records.</param>
     /// <param name="primaryKey">The primary key.</param>
@@ -236,6 +259,32 @@ public class Store<T> where T : notnull
     }
 
     /// <summary>
+    /// Adds the specified records.
+    /// </summary>
+    /// <param name="records">The records.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task AddManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
+    {
+        var recordsList = records.ToList();
+
+        if (!recordsList.Any())
+            return;
+
+        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect);
+        var currentIndex = 0;
+
+        foreach (var record in recordsList)
+        {
+            var index = currentIndex;
+            query.Insert(TableName, record, field => $"{field}_{index}");
+            currentIndex++;
+        }
+
+        using var connection = _dbConnectionProvider.GetConnection();
+        await query.ExecuteAsync(connection);
+    }
+
+    /// <summary>
     /// Deletes all records matching the specified query.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
@@ -245,11 +294,11 @@ public class Store<T> where T : notnull
     {
         var query = _dbConnectionProvider.CreateQuery().Delete(TableName);
         filter(query);
-        
+
         // If there are no conditions, we don't want to delete all records.
         if (!query.Parameters.ParameterNames.Any())
             return 0;
-        
+
         using var connection = _dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
     }
@@ -267,11 +316,11 @@ public class Store<T> where T : notnull
     {
         var selectQuery = _dbConnectionProvider.CreateQuery().From(TableName, primaryKey);
         filter(selectQuery);
-        
+
         // If there are no conditions, we don't want to delete all records.
         if (!selectQuery.Parameters.ParameterNames.Any())
             return 0;
-        
+
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var deleteQuery = _dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);

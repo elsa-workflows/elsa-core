@@ -23,7 +23,7 @@ public class SlowActivity : CodeActivity, IActivityPropertyDefaultValueProvider
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var delay = Delay.Get(context);
-        await Task.Delay(delay);
+        await Task.Delay(delay, context.CancellationToken);
     }
 
     object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property)

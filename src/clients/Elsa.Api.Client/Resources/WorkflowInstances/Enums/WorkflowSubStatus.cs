@@ -6,6 +6,11 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Enums;
 public enum WorkflowSubStatus
 {
     /// <summary>
+    /// The workflow is pending execution.
+    /// </summary>
+    Pending,
+    
+    /// <summary>
     /// The workflow is currently executing.   
     /// </summary>
     Executing,

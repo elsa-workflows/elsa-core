@@ -1,9 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Unicode;
 
 namespace Elsa.Http.ContentWriters;
 

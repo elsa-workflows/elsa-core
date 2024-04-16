@@ -10,14 +10,16 @@
     <ItemGroup>
         <PackageReference Include="Humanizer.Core" />
         <PackageReference Include="IronCompress" />
+        <PackageReference Include="System.Linq.Dynamic.Core" />
         <PackageReference Include="PolySharp">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="System.Linq.Dynamic.Core" />
+        
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
         <ProjectReference Include="..\Elsa.Dsl\Elsa.Dsl.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>

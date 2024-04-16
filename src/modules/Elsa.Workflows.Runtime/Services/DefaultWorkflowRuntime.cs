@@ -5,6 +5,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -16,64 +17,31 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <summary>
 /// A default implementation of <see cref="IWorkflowRuntime"/> that relies on persistent storage and distributed locking for workflow execution.
 /// </summary>
-public class DefaultWorkflowRuntime : IWorkflowRuntime
+public class DefaultWorkflowRuntime(
+    IWorkflowHostFactory workflowHostFactory,
+    IWorkflowDefinitionService workflowDefinitionService,
+    IWorkflowInstanceStore workflowInstanceStore,
+    IWorkflowInstanceManager workflowInstanceManager,
+    ITriggerStore triggerStore,
+    IBookmarkStore bookmarkStore,
+    IBookmarkHasher hasher,
+    IDistributedLockProvider distributedLockProvider,
+    IWorkflowInstanceFactory workflowInstanceFactory,
+    WorkflowStateMapper workflowStateMapper,
+    IIdentityGenerator identityGenerator,
+    IWorkflowExecutionContextStore workflowExecutionContextStore,
+    IServiceProvider serviceProvider,
+    IBookmarksPersister bookmarksPersister,
+    ILogger<DefaultWorkflowRuntime> logger)
+    : IWorkflowRuntime
 {
-    private readonly IWorkflowHostFactory _workflowHostFactory;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IWorkflowInstanceManager _workflowInstanceManager;
-    private readonly ITriggerStore _triggerStore;
-    private readonly IBookmarkStore _bookmarkStore;
-    private readonly IBookmarkHasher _hasher;
-    private readonly IDistributedLockProvider _distributedLockProvider;
-    private readonly IWorkflowInstanceFactory _workflowInstanceFactory;
-    private readonly WorkflowStateMapper _workflowStateMapper;
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly IWorkflowExecutionContextStore _workflowExecutionContextStore;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IBookmarksPersister _bookmarksPersister;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public DefaultWorkflowRuntime(
-        IWorkflowHostFactory workflowHostFactory,
-        IWorkflowDefinitionService workflowDefinitionService,
-        IWorkflowInstanceStore workflowInstanceStore,
-        IWorkflowInstanceManager workflowInstanceManager,
-        ITriggerStore triggerStore,
-        IBookmarkStore bookmarkStore,
-        IBookmarkHasher hasher,
-        IDistributedLockProvider distributedLockProvider,
-        IWorkflowInstanceFactory workflowInstanceFactory,
-        WorkflowStateMapper workflowStateMapper,
-        IIdentityGenerator identityGenerator,
-        IWorkflowExecutionContextStore workflowExecutionContextStore,
-        IServiceProvider serviceProvider,
-        IBookmarksPersister bookmarksPersister)
-    {
-        _workflowHostFactory = workflowHostFactory;
-        _workflowDefinitionService = workflowDefinitionService;
-        _workflowInstanceStore = workflowInstanceStore;
-        _workflowInstanceManager = workflowInstanceManager;
-        _triggerStore = triggerStore;
-        _bookmarkStore = bookmarkStore;
-        _hasher = hasher;
-        _distributedLockProvider = distributedLockProvider;
-        _workflowInstanceFactory = workflowInstanceFactory;
-        _workflowStateMapper = workflowStateMapper;
-        _identityGenerator = identityGenerator;
-        _workflowExecutionContextStore = workflowExecutionContextStore;
-        _serviceProvider = serviceProvider;
-        _bookmarksPersister = bookmarksPersister;
-    }
-
     /// <inheritdoc />
     public async Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default)
     {
@@ -104,75 +72,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
-    {
-        var workflowExecutionContext = await _workflowExecutionContextStore.FindAsync(workflowInstanceId);
-
-        if (workflowExecutionContext is null)
-        {
-            // The execution context is not running on this instance.
-            // It might not be running on any instance, so check the db and update the record.
-            // Use lock to prevent race conditions and other instances from updating the workflow context
-            await using var cancelLock = await _distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel", cancellationToken: cancellationToken);
-            if (cancelLock == null)
-                return new CancellationResult(false, FailureReason.Locked);
-
-            var workflowInstance = await _workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
-            if (workflowInstance is null)
-                return new CancellationResult(false, FailureReason.NotFound);
-            if (workflowInstance.Status == WorkflowStatus.Finished)
-                return new CancellationResult(false, FailureReason.InvalidState);
-
-            var workflowState = await ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
-
-            if (workflowState == null)
-                throw new Exception("Workflow state not found");
-
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionId,
-                VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
-
-            if (workflowDefinition == null)
-                throw new Exception("Workflow definition not found");
-
-            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-            workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
-
-            if (!cancellationToken.IsCancellationRequested)
-                await CancelWorkflowExecutionContextAsync();
-
-            return new CancellationResult(true);
-        }
-
-        await using var mainCancelLock = await _distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1), cancellationToken: cancellationToken);
-        await CancelWorkflowExecutionContextAsync();
-        return new CancellationResult(true);
-
-        async Task CancelWorkflowExecutionContextAsync()
-        {
-            var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
-
-            workflowExecutionContext.Cancel();
-
-            var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
-            var diff = Diff.For(originalBookmarks, newBookmarks);
-            var bookmarkRequest = new UpdateBookmarksRequest(workflowExecutionContext.Id,
-                diff,
-                workflowExecutionContext.CorrelationId);
-            await _bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
-
-            var instance = await _workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
-            await _workflowInstanceStore.SaveAsync(instance, cancellationToken);
-        }
-    }
-
-    /// <inheritdoc />
     public async Task<ICollection<WorkflowExecutionResult>> StartWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options)
     {
         var results = new List<WorkflowExecutionResult>();
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload);
+        var hash = hasher.Hash(activityTypeName, bookmarkPayload);
         var systemCancellationToken = options?.CancellationTokens.SystemCancellationToken ?? default;
 
-        // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances from being created. 
+        // Start new workflows. This happens in a process-synchronized fashion to avoid multiple instances from being created. 
         var sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows__{hash}";
 
         await using (await AcquireLockAsync(sharedResource, systemCancellationToken))
@@ -181,7 +87,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             {
                 Hash = hash
             };
-            var triggers = await _triggerStore.FindManyAsync(filter, systemCancellationToken);
+            var triggers = await triggerStore.FindManyAsync(filter, systemCancellationToken);
 
             foreach (var trigger in triggers)
             {
@@ -223,7 +129,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
         await using (await AcquireLockAsync(workflowInstanceId, systemCancellationToken))
         {
-            var workflowInstance = await _workflowInstanceStore.FindAsync(new WorkflowInstanceFilter
+            var workflowInstance = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter
             {
                 Id = workflowInstanceId
             }, systemCancellationToken);
@@ -234,20 +140,16 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var definitionId = workflowInstance.DefinitionId;
             var version = workflowInstance.Version;
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+            var workflow = await workflowDefinitionService.FindWorkflowAsync(
                 definitionId,
                 VersionOptions.SpecificVersion(version),
                 systemCancellationToken);
 
-            if (workflowDefinition == null)
-            {
+            if (workflow == null)
                 throw new Exception($"The workflow definition {definitionId} version {version} was not found");
-            }
 
-            var workflow =
-                await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, systemCancellationToken);
-            var workflowState = _workflowStateMapper.Map(workflowInstance)!;
-            var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, systemCancellationToken);
+            var workflowState = workflowStateMapper.Map(workflowInstance)!;
+            var workflowHost = await workflowHostFactory.CreateAsync(workflow, workflowState, systemCancellationToken);
 
             var resumeWorkflowOptions = new ResumeWorkflowHostParams
             {
@@ -263,20 +165,16 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             };
 
             await workflowHost.ResumeWorkflowAsync(resumeWorkflowOptions, applicationCancellationToken);
-
+            await workflowHost.PersistStateAsync(systemCancellationToken);
             workflowState = workflowHost.WorkflowState;
-
-            await SaveWorkflowStateAsync(workflowState, systemCancellationToken);
-
-            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus,
-                workflowState.Bookmarks, workflowState.Incidents);
+            return new WorkflowExecutionResult(workflowState.Id, workflowState.Status, workflowState.SubStatus, workflowState.Bookmarks, workflowState.Incidents);
         }
     }
 
     /// <inheritdoc />
     public async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(string activityTypeName, object bookmarkPayload, TriggerWorkflowsOptions? options)
     {
-        var hash = _hasher.Hash(activityTypeName, bookmarkPayload, options?.ActivityInstanceId);
+        var hash = hasher.Hash(activityTypeName, bookmarkPayload, options?.ActivityInstanceId);
         var correlationId = options?.CorrelationId;
         var workflowInstanceId = options?.WorkflowInstanceId;
         var activityInstanceId = options?.ActivityInstanceId;
@@ -287,7 +185,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId
         };
-        var bookmarks = await _bookmarkStore.FindManyAsync(filter, options?.CancellationTokens.SystemCancellationToken ?? default);
+        var bookmarks = await bookmarkStore.FindManyAsync(filter, options?.CancellationTokens.SystemCancellationToken ?? default);
 
         return await ResumeWorkflowsAsync(
             bookmarks,
@@ -345,8 +243,67 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter,
-        CancellationToken cancellationToken = default)
+    public async Task<CancellationResult> CancelWorkflowAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    {
+        var workflowExecutionContext = await workflowExecutionContextStore.FindAsync(workflowInstanceId);
+
+        if (workflowExecutionContext is null)
+        {
+            // The execution context is not running on this instance.
+            // It might not be running on any instance, so check the db and update the record.
+            // Use lock to prevent race conditions and other instances from updating the workflow context
+            await using var cancelLock = await distributedLockProvider.TryAcquireLockAsync($"{workflowInstanceId}-cancel", cancellationToken: cancellationToken);
+            if (cancelLock == null)
+                return new CancellationResult(false, FailureReason.Locked);
+
+            var workflowInstance = await workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
+            if (workflowInstance is null)
+                return new CancellationResult(false, FailureReason.NotFound);
+            if (workflowInstance.Status == WorkflowStatus.Finished)
+                return new CancellationResult(false, FailureReason.InvalidState);
+
+            var workflowState = await ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
+
+            if (workflowState == null)
+                throw new Exception("Workflow state not found");
+
+            var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+
+            if (workflow == null)
+                throw new Exception("Workflow definition not found");
+
+            workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+
+            if (!cancellationToken.IsCancellationRequested)
+                await CancelWorkflowExecutionContextAsync();
+
+            return new CancellationResult(true);
+        }
+
+        await using var mainCancelLock = await distributedLockProvider.AcquireLockAsync($"{workflowInstanceId}-cancel", TimeSpan.FromMinutes(1), cancellationToken: cancellationToken);
+        await CancelWorkflowExecutionContextAsync();
+        return new CancellationResult(true);
+
+        async Task CancelWorkflowExecutionContextAsync()
+        {
+            var originalBookmarks = workflowExecutionContext.Bookmarks.ToList();
+
+            workflowExecutionContext.Cancel();
+
+            var newBookmarks = workflowExecutionContext.Bookmarks.ToList();
+            var diff = Diff.For(originalBookmarks, newBookmarks);
+            var bookmarkRequest = new UpdateBookmarksRequest(workflowExecutionContext.Id,
+                diff,
+                workflowExecutionContext.CorrelationId);
+            await bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
+
+            var instance = await workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
+            await workflowInstanceStore.SaveAsync(instance, cancellationToken);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowMatch>> FindWorkflowsAsync(WorkflowsFilter filter, CancellationToken cancellationToken = default)
     {
         var startableWorkflows = await FindStartableWorkflowsAsync(filter, cancellationToken);
         var resumableWorkflows = await FindResumableWorkflowsAsync(filter, cancellationToken);
@@ -355,30 +312,27 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId,
-        CancellationToken cancellationToken = default)
+    public async Task<WorkflowState?> ExportWorkflowStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await _workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
-        return _workflowStateMapper.Map(workflowInstance);
+        var workflowInstance = await workflowInstanceStore.FindAsync(workflowInstanceId, cancellationToken);
+        return workflowStateMapper.Map(workflowInstance);
     }
 
     /// <inheritdoc />
-    public async Task ImportWorkflowStateAsync(WorkflowState workflowState,
-        CancellationToken cancellationToken = default)
+    public async Task ImportWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = _workflowStateMapper.Map(workflowState)!;
-        await _workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
+        var workflowInstance = workflowStateMapper.Map(workflowState)!;
+        await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task UpdateBookmarkAsync(StoredBookmark bookmark, CancellationToken cancellationToken = default)
     {
-        await _bookmarkStore.SaveAsync(bookmark, cancellationToken);
+        await bookmarkStore.SaveAsync(bookmark, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<long> CountRunningWorkflowsAsync(CountRunningWorkflowsRequest request, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowInstanceFilter
         {
@@ -387,13 +341,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             CorrelationId = request.CorrelationId,
             WorkflowStatus = WorkflowStatus.Running
         };
-        return await _workflowInstanceStore.CountAsync(filter, cancellationToken);
+        return await workflowInstanceStore.CountAsync(filter, cancellationToken);
     }
 
     private async Task<WorkflowExecutionResult> StartWorkflowAsync(IWorkflowHost workflowHost, StartWorkflowRuntimeParams? options = default)
     {
         var workflowInstanceId = string.IsNullOrEmpty(options?.InstanceId)
-            ? _identityGenerator.GenerateId()
+            ? identityGenerator.GenerateId()
             : options?.InstanceId;
         var cancellationTokens = options?.CancellationTokens ?? default;
 
@@ -404,6 +358,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             var startWorkflowOptions = new StartWorkflowHostParams
             {
                 InstanceId = workflowInstanceId,
+                IsExistingInstance = options?.IsExistingInstance == true,
                 ParentWorkflowInstanceId = options?.ParentWorkflowInstanceId,
                 CorrelationId = correlationId,
                 Input = input,
@@ -411,10 +366,8 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                 TriggerActivityId = options?.TriggerActivityId,
                 CancellationTokens = cancellationTokens
             };
-            await workflowHost.StartWorkflowAsync(startWorkflowOptions,
-                cancellationTokens.ApplicationCancellationToken);
+            await workflowHost.StartWorkflowAsync(startWorkflowOptions, cancellationTokens.ApplicationCancellationToken);
             var workflowState = workflowHost.WorkflowState;
-
             await SaveWorkflowStateAsync(workflowState, cancellationTokens.SystemCancellationToken);
 
             return new WorkflowExecutionResult(
@@ -429,14 +382,26 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(string definitionId, StartWorkflowRuntimeParams? options, CancellationToken cancellationToken)
     {
+        if (options?.IsExistingInstance == true)
+        {
+            var workflowState = await LoadWorkflowStateAsync(options.InstanceId!, cancellationToken);
+            var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionVersionId, cancellationToken) ?? throw new Exception("Specified workflow definition and version does not exist");
+            return await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
+        }
+
         var versionOptions = options?.VersionOptions;
-        var host = await _workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published,
-            cancellationToken);
+        var host = await workflowHostFactory.CreateAsync(definitionId, versionOptions ?? VersionOptions.Published, cancellationToken);
 
         if (host == null)
             throw new Exception("Specified workflow definition and version does not exist");
 
         return host;
+    }
+
+    private async Task<WorkflowState> LoadWorkflowStateAsync(string instanceId, CancellationToken cancellationToken)
+    {
+        var workflowInstance = await workflowInstanceStore.FindAsync(instanceId, cancellationToken) ?? throw new Exception($"Workflow instance {instanceId} not found");
+        return workflowStateMapper.Map(workflowInstance)!;
     }
 
     private async Task<ICollection<WorkflowExecutionResult>> ResumeWorkflowsAsync(IEnumerable<StoredBookmark> bookmarks, ResumeWorkflowRuntimeParams runtimeParams)
@@ -469,14 +434,13 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
 
     private async Task SaveWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
+        await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
     }
 
-    private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter,
-        CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<WorkflowMatch>> FindStartableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken = default)
     {
         var results = new List<WorkflowMatch>();
-        var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
+        var hash = hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
 
         // Start new workflows. Notice that this happens in a process-synchronized fashion to avoid multiple instances from being created. 
         var sharedResource = $"{nameof(DefaultWorkflowRuntime)}__StartTriggeredWorkflows__{hash}";
@@ -486,7 +450,7 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             {
                 Hash = hash
             };
-            var triggers = await _triggerStore.FindManyAsync(filter, cancellationToken);
+            var triggers = await triggerStore.FindManyAsync(filter, cancellationToken);
 
             foreach (var trigger in triggers)
             {
@@ -497,16 +461,34 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
                     Input = workflowsFilter.Options.Input,
                     Properties = workflowsFilter.Options.Properties,
                     VersionOptions = VersionOptions.Published,
-                    TriggerActivityId = trigger.ActivityId
+                    TriggerActivityId = trigger.ActivityId,
+                    InstanceId = workflowsFilter.Options.WorkflowInstanceId
                 };
                 var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
-                var workflowInstance = await _workflowInstanceFactory.CreateAsync(definitionId,
-                    workflowsFilter.Options.CorrelationId, cancellationToken);
+                var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, startOptions.VersionOptions, cancellationToken);
+
+                if (workflow == null)
+                    throw new Exception($"The workflow definition {definitionId} was not found");
+
+                var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+                {
+                    Workflow = workflow,
+                    CorrelationId = workflowsFilter.Options.CorrelationId,
+                    Properties = workflowsFilter.Options.Properties,
+                    Input = workflowsFilter.Options.Input,
+                    WorkflowInstanceId = workflowsFilter.Options.WorkflowInstanceId
+                };
+                var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(createWorkflowInstanceRequest);
 
                 if (canStartResult.CanStart)
                 {
-                    results.Add(new StartableWorkflowMatch(workflowInstance.Id, workflowInstance,
-                        workflowsFilter.Options.CorrelationId, trigger.ActivityId, definitionId, trigger.Payload));
+                    results.Add(new StartableWorkflowMatch(
+                        workflowInstance.Id,
+                        workflowInstance,
+                        workflowsFilter.Options.CorrelationId,
+                        trigger.ActivityId,
+                        definitionId,
+                        trigger.Payload));
                 }
             }
         }
@@ -514,10 +496,9 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
         return results;
     }
 
-    private async Task<IEnumerable<WorkflowMatch>> FindResumableWorkflowsAsync(WorkflowsFilter workflowsFilter,
-        CancellationToken cancellationToken = default)
+    private async Task<IEnumerable<WorkflowMatch>> FindResumableWorkflowsAsync(WorkflowsFilter workflowsFilter, CancellationToken cancellationToken = default)
     {
-        var hash = _hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
+        var hash = hasher.Hash(workflowsFilter.ActivityTypeName, workflowsFilter.BookmarkPayload);
         var correlationId = workflowsFilter.Options.CorrelationId;
         var workflowInstanceId = workflowsFilter.Options.WorkflowInstanceId;
         var filter = new BookmarkFilter
@@ -526,15 +507,14 @@ public class DefaultWorkflowRuntime : IWorkflowRuntime
             CorrelationId = correlationId,
             WorkflowInstanceId = workflowInstanceId
         };
-        var bookmarks = await _bookmarkStore.FindManyAsync(filter, cancellationToken);
+        var bookmarks = await bookmarkStore.FindManyAsync(filter, cancellationToken);
         var collectedWorkflows = bookmarks.Select(b =>
             new ResumableWorkflowMatch(b.WorkflowInstanceId, default, correlationId, b.BookmarkId, b.Payload)).ToList();
         return collectedWorkflows;
     }
 
-    private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource,
-        CancellationToken cancellationToken)
+    private async Task<IDistributedSynchronizationHandle> AcquireLockAsync(string resource, CancellationToken cancellationToken)
     {
-        return await _distributedLockProvider.AcquireLockAsync(resource, TimeSpan.FromMinutes(2), cancellationToken);
+        return await distributedLockProvider.AcquireLockAsync(resource, TimeSpan.FromMinutes(2), cancellationToken);
     }
 }

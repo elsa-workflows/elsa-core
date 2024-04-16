@@ -2,34 +2,38 @@ using Elsa.MongoDb.Common;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
 /// <inheritdoc />
-public class MongoTriggerStore : ITriggerStore
+[UsedImplicitly]
+public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITriggerStore
 {
-    private readonly MongoDbStore<StoredTrigger> _mongoDbStore;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MongoTriggerStore"/> class.
-    /// </summary>
-    public MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore)
+    /// <inheritdoc />
+    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
-        _mongoDbStore = mongoDbStore;
+        await mongoDbStore.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.SaveAsync(record, cancellationToken);
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    {
+        await mongoDbStore.SaveManyAsync(records, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.SaveManyAsync(records, cancellationToken);
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => 
-        await _mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
@@ -44,13 +48,17 @@ public class MongoTriggerStore : ITriggerStore
         }
 
         if(addedTriggers.Any())
-            await _mongoDbStore.SaveManyAsync(addedTriggers, cancellationToken);
+            await mongoDbStore.SaveManyAsync(addedTriggers, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
-        await _mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
-    
-    private static IMongoQueryable<StoredTrigger> Filter(IMongoQueryable<StoredTrigger> queryable, TriggerFilter filter) => 
-        (filter.Apply(queryable) as IMongoQueryable<StoredTrigger>)!;
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    }
+
+    private static IMongoQueryable<StoredTrigger> Filter(IMongoQueryable<StoredTrigger> queryable, TriggerFilter filter)
+    {
+        return (filter.Apply(queryable) as IMongoQueryable<StoredTrigger>)!;
+    }
 }

@@ -80,21 +80,17 @@ public class HttpBookmarkProcessor : IHttpBookmarkProcessor
                 continue;
             }
 
-            var workflowDefinition = await _workflowDefinitionService.FindAsync(
+            var workflow = await _workflowDefinitionService.FindWorkflowAsync(
                 workflowState.DefinitionId,
                 VersionOptions.SpecificVersion(workflowState.DefinitionVersion),
                 systemCancellationToken);
 
-            if (workflowDefinition == null)
+            if (workflow == null)
             {
                 // TODO: Log this, shouldn't normally happen.
                 continue;
             }
-
-            var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(
-                workflowDefinition,
-                systemCancellationToken);
-
+            
             var workflowHost = await _workflowHostFactory.CreateAsync(workflow, workflowState, applicationCancellationToken);
             var options = new ResumeWorkflowHostParams
             {

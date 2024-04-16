@@ -1,6 +1,7 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Contracts;
@@ -11,9 +12,14 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface ITriggerIndexer
 {
     /// <summary>
-    /// Indexes triggers of the deleted workflow definitions.
+    /// Removes triggers for the specified workflow.
     /// </summary>
-    Task<IndexedWorkflowTriggers> IndexTriggersDeleteWorkflowAsync(ICollection<string> workflowDefinitionIds, CancellationToken cancellationToken = default);
+    Task<IndexedWorkflowTriggers> DeleteTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Removes triggers matching the specified filter.
+    /// </summary>
+    Task DeleteTriggersAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Indexes triggers of the specified workflow.

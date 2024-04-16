@@ -101,8 +101,16 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return parsedModel.Deserialize(targetType, newOptions)!;
         }
 
+        var isCollection = typeof(ICollection).IsAssignableFrom(targetType);
+
         // Otherwise, deserialize the object as an array.
-        var elementType = targetType.IsArray ? targetType.GetElementType() : targetType.GenericTypeArguments.FirstOrDefault() ?? typeof(object);
+        var elementType = targetType.IsArray
+            ? targetType.GetElementType()
+            : targetType.GenericTypeArguments.FirstOrDefault() ??
+              (isCollection // Could be a class derived from Collection<T> or List<T>.
+                  ? targetType.BaseType?.GenericTypeArguments[0]
+                  : targetType.GenericTypeArguments.FirstOrDefault()
+                    ?? typeof(object));
         if (elementType == null)
             throw new InvalidOperationException($"Cannot determine the element type of array '{targetType}'.");
 
@@ -124,7 +132,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             referenceResolver?.AddReference(id, collection);
 
         var isHashSet = targetType.GenericTypeArguments.Length == 1 && typeof(ISet<>).MakeGenericType(targetType.GenericTypeArguments[0]).IsAssignableFrom(targetType);
-        var addSetMethod = targetType.GetMethod("Add", new[] { elementType })!;
+        var addSetMethod = targetType.GetMethod("Add", [elementType])!;
 
         foreach (var element in values)
         {
@@ -135,7 +143,10 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             }
             else if (isHashSet)
             {
-                addSetMethod.Invoke(collection, new[] { deserializedElement });
+                addSetMethod.Invoke(collection, new[]
+                {
+                    deserializedElement
+                });
             }
             else if (collection is IList list)
             {
@@ -308,23 +319,23 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         switch (reader.TokenType)
         {
             case JsonTokenType.StartArray:
-            {
-                var list = new List<object>();
-                while (reader.Read())
                 {
-                    switch (reader.TokenType)
+                    var list = new List<object>();
+                    while (reader.Read())
                     {
-                        default:
-                            list.Add(Read(ref reader, typeof(object), options));
-                            break;
+                        switch (reader.TokenType)
+                        {
+                            default:
+                                list.Add(Read(ref reader, typeof(object), options));
+                                break;
 
-                        case JsonTokenType.EndArray:
-                            return list;
+                            case JsonTokenType.EndArray:
+                                return list;
+                        }
                     }
-                }
 
-                throw new JsonException();
-            }
+                    throw new JsonException();
+                }
             case JsonTokenType.StartObject:
                 var dict = new ExpandoObject() as IDictionary<string, object>;
                 var referenceResolver = (CustomPreserveReferenceResolver)(options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver()!;
@@ -350,7 +361,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
                             else if (key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
-                                
+
                                 // Attempt to add the reference; if not found, we can ignore it and assume that the user is using the $id property for something else, such as in JSON $schema. 
                                 referenceResolver.TryAddReference(referenceId, dict);
                             }

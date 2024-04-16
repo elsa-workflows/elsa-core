@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Elsa.Extensions;
 using Elsa.Http.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;

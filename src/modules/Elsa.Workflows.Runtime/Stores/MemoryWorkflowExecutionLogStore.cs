@@ -22,6 +22,20 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
+    public Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
+    {
+        _store.Add(record, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
+    {
+        _store.AddMany(records, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
     {
         _store.Save(record, x => x.Id);

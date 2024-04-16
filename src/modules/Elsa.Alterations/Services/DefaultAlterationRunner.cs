@@ -1,10 +1,8 @@
-using Elsa.Alterations.Core.Contexts;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
 using Elsa.Alterations.Middleware.Workflows;
 using Elsa.Common.Contracts;
-using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -75,18 +73,15 @@ public class DefaultAlterationRunner : IAlterationRunner
         }
 
         // Load workflow definition.
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowState.DefinitionVersionId, cancellationToken);
+        var workflow = await _workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionVersionId, cancellationToken);
 
         // If the workflow definition is not found, log an error and continue.
-        if (workflowDefinition == null)
+        if (workflow == null)
         {
             log.Add($"Workflow definition with ID '{workflowState.DefinitionVersionId}' not found.", LogLevel.Error);
             return result;
         }
-
-        // Materialize workflow.
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-
+        
         // Create workflow execution context.
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsPropertyKey, alterations);

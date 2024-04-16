@@ -23,7 +23,6 @@ namespace Elsa.Dapper.Modules.Management.Stores;
 public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
 {
     private const string TableName = "WorkflowDefinitions";
-    private const string PrimaryKeyName = "Id";
     private readonly IPayloadSerializer _payloadSerializer;
     private readonly Store<WorkflowDefinitionRecord> _store;
 
@@ -33,7 +32,7 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
     public DapperWorkflowDefinitionStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
     {
         _payloadSerializer = payloadSerializer;
-        _store = new Store<WorkflowDefinitionRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<WorkflowDefinitionRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />

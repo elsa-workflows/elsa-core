@@ -18,7 +18,7 @@ namespace Elsa.MassTransit.RabbitMq.Features;
 /// Configures MassTransit to use the RabbitMQ transport.
 /// </summary>
 [DependsOn(typeof(MassTransitFeature))]
-[DependsOn(typeof(InstanceManagementFeature))]
+[DependsOn(typeof(ClusteringFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />

@@ -1,5 +1,9 @@
+using Elsa.Workflows.Activities;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Models;
 
-public record AuthorizeHttpEndpointContext(HttpContext HttpContext, string WorkflowInstanceId, string? Policy = default);
+/// <summary>
+/// Represents the context for authorizing an HTTP endpoint.
+/// </summary>
+public record AuthorizeHttpEndpointContext(HttpContext HttpContext, Workflow Workflow, string? Policy = default);

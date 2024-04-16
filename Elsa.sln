@@ -26,6 +26,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
+	ProjectSection(SolutionItems) = preProject
+		docs\bounty-footer.md = docs\bounty-footer.md
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "console", "console", "{873BFC3E-63C2-4495-A503-5EC05DCD84E4}"
 EndProject
@@ -117,8 +120,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql", "samples\aspnet\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql\Elsa.Samples.AspNet.EntityFrameworkCore.PostgresSql.csproj", "{F363BE0D-7DD0-4613-BB90-3245E23F35F9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServer", "samples\aspnet\Elsa.Samples.AspNet.WorkflowServer\Elsa.Samples.AspNet.WorkflowServer.csproj", "{89157FB8-A25B-42EC-A91F-37DFEE274C8C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.WorkflowServerAndDesigner", "samples\aspnet\Elsa.Samples.AspNet.WorkflowServerAndDesigner\Elsa.Samples.AspNet.WorkflowServerAndDesigner.csproj", "{34FBB2D3-4E2B-4411-95F2-C6B56899826A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
 	ProjectSection(SolutionItems) = preProject
@@ -298,6 +299,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
 		build.sh = build.sh
+		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
@@ -331,6 +333,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.UnitTests", "test\unit\Elsa.Workflows.Runtime.UnitTests\Elsa.Workflows.Runtime.UnitTests.csproj", "{B0946844-DE0E-4C59-9391-C0EB649DBF4E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.LoadBalancer", "src\bundles\Elsa.Server.LoadBalancer\Elsa.Server.LoadBalancer.csproj", "{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching", "src\modules\Elsa.Caching\Elsa.Caching.csproj", "{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "caching", "caching", "{EB3A7401-0DE3-476F-9E6F-057F1F4590FB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.MassTransit", "src\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj", "{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed", "src\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{7EB0CFB8-B668-4F3F-898D-80411095BC2F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -494,10 +504,6 @@ Global
 		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{89157FB8-A25B-42EC-A91F-37DFEE274C8C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{34FBB2D3-4E2B-4411-95F2-C6B56899826A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51050209-EC2F-4DC7-8F46-07E22B7811CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -804,6 +810,18 @@ Global
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -853,7 +871,6 @@ Global
 		{1A37795B-EBAB-4A9F-8CF0-373DA3D4C64A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{F363BE0D-7DD0-4613-BB90-3245E23F35F9} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{89157FB8-A25B-42EC-A91F-37DFEE274C8C} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
-		{34FBB2D3-4E2B-4411-95F2-C6B56899826A} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{51050209-EC2F-4DC7-8F46-07E22B7811CD} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{3246883E-2FA7-4B4A-BDC5-99039A2869BC} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
@@ -945,6 +962,10 @@ Global
 		{086A7E2A-6CE7-41DA-927B-C033638060B1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{B0946844-DE0E-4C59-9391-C0EB649DBF4E} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{7C1E6DD9-C7DE-4686-AA73-D67A15D005A1} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{EB3A7401-0DE3-476F-9E6F-057F1F4590FB} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{7EB0CFB8-B668-4F3F-898D-80411095BC2F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

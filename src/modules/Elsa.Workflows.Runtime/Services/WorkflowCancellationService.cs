@@ -58,7 +58,7 @@ public class WorkflowCancellationService(
     public async Task<int> CancelWorkflowByDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         // Shouldn't we get possible multiple definitions here?
-        var workflowDefinition = await workflowDefinitionService.FindAsync(definitionId, versionOptions, cancellationToken);
+        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
         if (workflowDefinition is null)
             return 0;
 

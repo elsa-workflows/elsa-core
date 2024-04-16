@@ -106,6 +106,8 @@ public class BulkDispatchWorkflows : Activity
     /// </summary>
     [Port]
     public IActivity? ChildFaulted { get; set; }
+    
+    private List<string> _errors = new List<string>();
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -116,8 +118,16 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
-            await ProcessItem(context, item);
-            dispatchedInstancesCount++;
+            var dispatchedSuccessful = await ProcessItem(context, item);
+            if (dispatchedSuccessful)
+            {
+                dispatchedInstancesCount++;
+            }
+        }
+
+        if (_errors.Count > 1)
+        {
+            context.JournalData.Add("Error", _errors);
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -141,23 +151,26 @@ public class BulkDispatchWorkflows : Activity
         else
         {
             // Otherwise, we can complete immediately.
-            await context.CompleteActivityAsync();
+            await context.CompleteActivityWithOutcomesAsync("Done");
         }
     }
 
-    private async Task ProcessItem(ActivityExecutionContext context, object item)
+    private async Task<bool> ProcessItem(ActivityExecutionContext context, object item)
     {
         try
         {
             await DispatchChildWorkflowAsync(context, item);
+            return true;
         }
         catch (TaskCanceledException)
         {
             await context.CompleteActivityWithOutcomesAsync("Canceled");
+            return false;
         }
         catch (Exception ex)
         {
-            context.JournalData.Add("Error", ex.Message);
+            _errors.Add(ex.Message);
+            return false;
         }
     }
 
@@ -173,18 +186,19 @@ public class BulkDispatchWorkflows : Activity
             ["ParentInstanceId"] = parentInstanceId
         };
 
-        var itemAsInputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>
+        var itemDictionary = new Dictionary<string, object>
         {
             [defaultInputItemKey] = item
         };
 
         var evaluatorOptions = new ExpressionEvaluatorOptions
         {
-            Arguments = itemAsInputDictionary
+            Arguments = itemDictionary
         };
 
+        var inputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>();
         input["ParentInstanceId"] = parentInstanceId;
-        input.Merge(itemAsInputDictionary);
+        input.Merge(inputDictionary);
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();

@@ -30,7 +30,19 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.AddAsync(record, OnSaveAsync, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
+    {
+        await _store.AddManyAsync(records, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
+using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
@@ -15,12 +16,14 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +35,7 @@ namespace Elsa.Workflows.Management.Features;
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(MemoryCacheFeature))]
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
@@ -211,7 +215,10 @@ public class WorkflowManagementFeature : FeatureBase
             .AddSingleton<ICompressionCodec, Zstd>()
             ;
 
-        Services.AddNotificationHandlersFrom(GetType());
+        Services
+            .AddNotificationHandler<DeleteWorkflowInstances>()
+            .AddNotificationHandler<RefreshActivityRegistry>()
+            ;
 
         Services.Configure<ManagementOptions>(options =>
         {

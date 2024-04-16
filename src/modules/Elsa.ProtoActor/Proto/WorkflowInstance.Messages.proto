@@ -18,6 +18,7 @@ message StartWorkflowRequest {
   optional Input input = 5;
   optional Properties properties = 6;
   optional string TriggerActivityId = 7;
+  optional bool IsExistingInstance = 8;
 }
 
 message WorkflowExecutionResponse {

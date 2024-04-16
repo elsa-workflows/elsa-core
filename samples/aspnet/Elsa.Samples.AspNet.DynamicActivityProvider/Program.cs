@@ -22,15 +22,12 @@ services.AddElsa(elsa => elsa
         identity.UseEntityFrameworkCore();
         identity.TokenOptions = options =>
         {
-            options.SigningKey = "secret-token-signing-key";
+            options.SigningKey = "secret-token-signing-key-with-a-minimum-length-of-256-bits";
             options.AccessTokenLifetime = TimeSpan.FromDays(1);
         };
     })
-
-    // HTTP workflows.
+    .UseJavaScript()
     .UseHttp()
-
-    // Use default authentication (JWT).
     .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
 );
 
