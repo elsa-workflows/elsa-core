@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
@@ -12,8 +13,8 @@ public class ActivityRegistry : IActivityRegistry
     private readonly IEnumerable<IActivityDescriptorModifier> _modifiers;
     private readonly ILogger _logger;
     private readonly ISet<ActivityDescriptor> _manualActivityDescriptors = new HashSet<ActivityDescriptor>();
-    private readonly IDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new Dictionary<Type, ICollection<ActivityDescriptor>>();
-    private readonly IDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new Dictionary<(string Type, int Version), ActivityDescriptor>();
+    private readonly ConcurrentDictionary<Type, ICollection<ActivityDescriptor>> _providedActivityDescriptors = new();
+    private readonly ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> _activityDescriptors = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityRegistry"/> class.
@@ -50,9 +51,9 @@ public class ActivityRegistry : IActivityRegistry
         var descriptors = ListByProvider(providerType).ToList();
 
         foreach (var descriptor in descriptors)
-            _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version));
+            _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version), out _);
 
-        _providedActivityDescriptors.Remove(providerType);
+        _providedActivityDescriptors.Remove(providerType, out _);
     }
 
     /// <inheritdoc />
@@ -124,7 +125,7 @@ public class ActivityRegistry : IActivityRegistry
             return descriptors;
 
         descriptors = new List<ActivityDescriptor>();
-        _providedActivityDescriptors.Add(provider, descriptors);
+        _providedActivityDescriptors[provider]= descriptors;
 
         return descriptors;
     }

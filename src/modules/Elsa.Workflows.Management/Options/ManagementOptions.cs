@@ -1,3 +1,4 @@
+using Elsa.Workflows.Enums;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Options;
@@ -21,4 +22,9 @@ public class ManagementOptions
     /// The format to use for compressing workflow state.
     /// </summary>
     public string? CompressionAlgorithm { get; set; }
+
+    /// <summary>
+    /// The default Log Persistence Mode to use for all the system
+    /// </summary>
+    public LogPersistenceMode LogPersistenceMode { get; set; }
 }

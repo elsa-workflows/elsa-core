@@ -10,5 +10,9 @@
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" />
+    </ItemGroup>
+
     
 </Project>

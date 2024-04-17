@@ -22,7 +22,6 @@ namespace Elsa.Dapper.Modules.Management.Stores;
 public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private const string TableName = "WorkflowInstances";
-    private const string PrimaryKeyName = "Id";
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
     private readonly Store<WorkflowInstanceRecord> _store;
 
@@ -32,7 +31,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     public DapperWorkflowInstanceStore(IDbConnectionProvider dbConnectionProvider, IWorkflowStateSerializer workflowStateSerializer)
     {
         _workflowStateSerializer = workflowStateSerializer;
-        _store = new Store<WorkflowInstanceRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<WorkflowInstanceRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
@@ -137,7 +136,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = await MapAsync(instance);
-        await _store.SaveAsync(record, PrimaryKeyName, cancellationToken);
+        await _store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -145,7 +144,7 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         var records = await MapAsync(instances);
-        await _store.SaveManyAsync(records, PrimaryKeyName, cancellationToken);
+        await _store.SaveManyAsync(records, cancellationToken);
     }
 
     /// <inheritdoc />

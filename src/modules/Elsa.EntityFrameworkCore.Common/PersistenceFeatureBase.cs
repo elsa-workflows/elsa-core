@@ -36,6 +36,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// Gets or sets the callback used to configure the <see cref="DbContextOptionsBuilder"/>.
     /// </summary>
     public Action<IServiceProvider, DbContextOptionsBuilder> DbContextOptionsBuilder = (_, options) => options
+        .UseElsaDbContextOptions(default)
         .UseSqlite("Data Source=elsa.sqlite.db;Cache=Shared;", sqlite => sqlite
             .MigrationsAssembly("Elsa.EntityFrameworkCore.Sqlite")
             .MigrationsHistoryTable(ElsaDbContextBase.MigrationsHistoryTable, ElsaDbContextBase.ElsaSchema));
@@ -61,7 +62,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// </summary>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <typeparam name="TStore">The type of the store.</typeparam>
-    protected void AddStore<TEntity, TStore>() where TEntity : class where TStore : class
+    protected void AddStore<TEntity, TStore>() where TEntity : class, new() where TStore : class
     {
         Services
             .AddScoped<Store<TDbContext, TEntity>>()
@@ -74,7 +75,7 @@ public abstract class PersistenceFeatureBase<TDbContext> : FeatureBase where TDb
     /// </summary>
     /// <typeparam name="TEntity">The type of the entity.</typeparam>
     /// <typeparam name="TStore">The type of the store.</typeparam>
-    protected void AddEntityStore<TEntity, TStore>() where TEntity : Entity where TStore : class
+    protected void AddEntityStore<TEntity, TStore>() where TEntity : Entity, new() where TStore : class
     {
         Services
             .AddScoped<EntityStore<TDbContext, TEntity>>()

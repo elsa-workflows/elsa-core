@@ -4,8 +4,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.ConsumerDefinitions;
 using Elsa.MassTransit.Consumers;
-using Elsa.MassTransit.Contracts;
-using Elsa.MassTransit.Formatters;
 using Elsa.MassTransit.Options;
 using Elsa.MassTransit.Services;
 using Elsa.Workflows.Runtime.Contracts;
@@ -31,21 +29,22 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// Configures the MassTransit workflow dispatcher.
     /// </summary>
     public Action<MassTransitWorkflowDispatcherOptions>? ConfigureDispatcherOptions { get; set; }
-
-    /// <summary>
-    /// A factory that creates a <see cref="IEndpointChannelFormatter"/>.
-    /// </summary>
-    public Func<IServiceProvider, IEndpointChannelFormatter> ChannelQueueFormatterFactory { get; set; } = _ => new DefaultEndpointChannelFormatter();
+    
 
     /// <inheritdoc />
     public override void Configure()
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
         Module.AddMassTransitConsumer<DispatchCancelWorkflowsRequestConsumer>("elsa-dispatch-cancel-workflow", true);
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp =>
+        Module.Configure<WorkflowRuntimeFeature>(f =>
         {
-            var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
-            return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            f.WorkflowDispatcher = sp =>
+            {
+                var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
+                return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            };
+
+            f.WorkflowCancellationDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowCancellationDispatcher>();
         });
     }
 
@@ -57,6 +56,6 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         if (ConfigureDispatcherOptions != null)
             options.Configure(ConfigureDispatcherOptions);
         
-        Services.AddSingleton(ChannelQueueFormatterFactory);
+        Services.AddScoped<MassTransitWorkflowCancellationDispatcher>();
     }
 }

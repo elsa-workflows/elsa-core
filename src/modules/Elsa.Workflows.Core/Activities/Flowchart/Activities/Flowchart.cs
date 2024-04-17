@@ -27,6 +27,7 @@ public class Flowchart : Container
     {
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
         OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
+        OnSignalReceived<CancelSignal>(OnActivityCanceledAsync);
     }
 
     /// <summary>
@@ -172,7 +173,12 @@ public class Flowchart : Container
 
         // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
-        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : new[] { default(string), "Done" };
+        var outcomeNames = result is Outcomes outcomes
+            ? outcomes.Names
+            : new[]
+            {
+                default(string), "Done"
+            };
 
         // Only query the outbound connections if the completed activity wasn't already completed.
         var outboundConnections = Connections.Where(connection => connection.Source.Activity == completedActivity && outcomeNames.Contains(connection.Source.Port)).ToList();
@@ -248,26 +254,30 @@ public class Flowchart : Container
             if (!children.Any())
             {
                 logger.LogDebug("No children found for activity {ActivityId}", completedActivity.Id);
-
-                // If there is no pending work, complete the flowchart activity.
-                var hasPendingWork = HasPendingWork(flowchartContext);
-
-                if (!hasPendingWork)
-                {
-                    logger.LogDebug("No pending work found");
-                    var hasFaultedActivities = flowchartContext.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
-
-                    if (!hasFaultedActivities)
-                    {
-                        logger.LogDebug("No faulted activities found");
-                        logger.LogDebug("Completing flowchart");
-                        await flowchartContext.CompleteActivityAsync();
-                    }
-                }
+                await CompleteIfNoPendingWorkAsync(flowchartContext);
             }
         }
 
         flowchartContext.SetProperty(ScopeProperty, scope);
+    }
+
+    private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
+    {
+        var logger = context.GetRequiredService<ILogger<Flowchart>>();
+        var hasPendingWork = HasPendingWork(context);
+
+        if (!hasPendingWork)
+        {
+            logger.LogDebug("No pending work found");
+            var hasFaultedActivities = context.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
+
+            if (!hasFaultedActivities)
+            {
+                logger.LogDebug("No faulted activities found");
+                logger.LogDebug("Completing flowchart");
+                await context.CompleteActivityAsync();
+            }
+        }
     }
 
     private async ValueTask OnScheduleOutcomesAsync(ScheduleActivityOutcomes signal, SignalContext context)
@@ -309,5 +319,10 @@ public class Flowchart : Container
                 Input = signal.Input
             });
         }
+    }
+
+    private async ValueTask OnActivityCanceledAsync(CancelSignal signal, SignalContext context)
+    {
+        await CompleteIfNoPendingWorkAsync(context.ReceiverActivityExecutionContext);
     }
 }

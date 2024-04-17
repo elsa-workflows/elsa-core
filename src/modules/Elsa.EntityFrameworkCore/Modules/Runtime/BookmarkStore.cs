@@ -3,12 +3,14 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <summary>
 /// An EF Core implementation of <see cref="IBookmarkStore"/>.
 /// </summary>
+[UsedImplicitly]
 public class EFCoreBookmarkStore : IBookmarkStore
 {
     private readonly Store<RuntimeElsaDbContext, StoredBookmark> _store;
@@ -36,10 +38,22 @@ public class EFCoreBookmarkStore : IBookmarkStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {

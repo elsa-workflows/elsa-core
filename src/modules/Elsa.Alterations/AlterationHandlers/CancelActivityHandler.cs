@@ -1,9 +1,8 @@
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
+using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationHandlers;
@@ -14,20 +13,6 @@ namespace Elsa.Alterations.AlterationHandlers;
 [UsedImplicitly]
 public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
 {
-    private readonly IBookmarkManager _bookmarkManager;
-    private readonly IActivityExecutionManager _activityExecutionManager;
-    private readonly IActivityExecutionMapper _activityExecutionMapper;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CancelActivityHandler"/> class.
-    /// </summary>
-    public CancelActivityHandler(IBookmarkManager bookmarkManager, IActivityExecutionManager activityExecutionManager, IActivityExecutionMapper activityExecutionMapper)
-    {
-        _bookmarkManager = bookmarkManager;
-        _activityExecutionManager = activityExecutionManager;
-        _activityExecutionMapper = activityExecutionMapper;
-    }
-
     /// <inheritdoc />
     protected override ValueTask HandleAsync(AlterationContext context, CancelActivity alteration)
     {
@@ -49,32 +34,19 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
             return ValueTask.CompletedTask;
         }
 
-        context.Succeed(() => CleanupAsync(activityExecutionContexts));
+        context.Succeed(() => CancelAsync(activityExecutionContexts));
         return ValueTask.CompletedTask;
     }
 
-    private async Task CleanupAsync(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
+    private async Task CancelAsync(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
     {
-        foreach (var activityExecutionContext in activityExecutionContexts) 
-            await CleanupAsync(activityExecutionContext);
-    }
-    
-    private async Task CleanupAsync(ActivityExecutionContext activityExecutionContext)
-    {
-        await RemoveBookmarksAsync(activityExecutionContext);
-        await SaveActivityExecutionRecordAsync(activityExecutionContext);
+        foreach (var activityExecutionContext in activityExecutionContexts)
+            await CancelAsync(activityExecutionContext);
     }
 
-    private async Task RemoveBookmarksAsync(ActivityExecutionContext activityExecutionContext)
+    private async Task CancelAsync(ActivityExecutionContext activityExecutionContext)
     {
-        var filter = new BookmarkFilter { ActivityInstanceId = activityExecutionContext.Id };
-        await _bookmarkManager.DeleteManyAsync(filter, activityExecutionContext.CancellationToken);
-    }
-
-    private async Task SaveActivityExecutionRecordAsync(ActivityExecutionContext activityExecutionContext)
-    {
-        var activityExecutionRecord = _activityExecutionMapper.Map(activityExecutionContext);
-        await _activityExecutionManager.SaveAsync(activityExecutionRecord, CancellationToken.None);
+        await activityExecutionContext.CancelActivityAsync();
     }
 
     private static IEnumerable<ActivityExecutionContext> GetActivityExecutionContexts(AlterationContext context, CancelActivity alteration)

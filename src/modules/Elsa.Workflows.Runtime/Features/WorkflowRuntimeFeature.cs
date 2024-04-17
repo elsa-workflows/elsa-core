@@ -8,6 +8,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
+using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -203,13 +204,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
-            .AddScoped(BookmarkStore)
-            .AddScoped(TriggerStore)
-            .AddScoped(WorkflowExecutionLogStore)
-            .AddScoped(ActivityExecutionLogStore)
-            .AddScoped(WorkflowInboxStore)
             .AddScoped(WorkflowExecutionContextStore)
-            .AddSingleton(RunTaskDispatcher)
+            .AddScoped(RunTaskDispatcher)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
@@ -227,6 +223,13 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            
+            // Stores.
+            .AddScoped(BookmarkStore)
+            .AddScoped(TriggerStore)
+            .AddScoped(WorkflowExecutionLogStore)
+            .AddScoped(ActivityExecutionLogStore)
+            .AddScoped(WorkflowInboxStore)
 
             // Lazy services.
             .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
@@ -255,7 +258,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
-            .AddNotificationHandler<IndexWorkflowTriggersHandler>()
+            .AddNotificationHandler<IndexTriggers>()
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()

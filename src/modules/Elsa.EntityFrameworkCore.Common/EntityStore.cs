@@ -8,7 +8,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// </summary>
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
-public class EntityStore<TDbContext, TEntity> : Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : Entity
+public class EntityStore<TDbContext, TEntity> : Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : Entity, new()
 {
     /// <inheritdoc />
     public EntityStore(IDbContextFactory<TDbContext> dbContextFactory) : base(dbContextFactory)

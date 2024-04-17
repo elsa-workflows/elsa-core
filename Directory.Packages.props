@@ -18,15 +18,14 @@
         <PackageVersion Include="coverlet.collector" Version="6.0.0"/>
         <PackageVersion Include="Cronos" Version="0.7.1"/>
         <PackageVersion Include="Dapper" Version="2.1.24"/>
-        <PackageVersion Include="Datadog.Trace" Version="2.49.0"/>
         <PackageVersion Include="DistributedLock.Core" Version="1.0.5"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.1"/>
         <PackageVersion Include="DistributedLock.Postgres" Version="1.0.5"/>
         <PackageVersion Include="DistributedLock.Redis" Version="1.0.2"/>
         <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.11.0"/>
-        <PackageVersion Include="Elsa.Studio" Version="3.0.4"/>
-        <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.4"/>
-        <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.4"/>
+        <PackageVersion Include="Elsa.Studio" Version="3.2.0-preview.307"/>
+        <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.2.0-preview.307"/>
+        <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.2.0-preview.307"/>
         <PackageVersion Include="FastEndpoints" Version="5.21.2"/>
         <PackageVersion Include="FastEndpoints.Security" Version="5.21.2"/>
         <PackageVersion Include="FastEndpoints.Swagger" Version="5.21.2"/>
@@ -52,10 +51,6 @@
         <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.1.2"/>
         <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
         <PackageVersion Include="MassTransit.RabbitMQ" Version="8.1.2"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Http" Version="2.2.2"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Http.Extensions" Version="2.2.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Routing" Version="2.2.2"/>
         <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.8.0"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.6"/>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
@@ -70,6 +65,7 @@
         <PackageVersion Include="Nuke.Components" Version="8.0.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
         <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0"/>
+        <PackageVersion Include="PolySharp" Version="1.14.1"/>
         <PackageVersion Include="Proto.Actor" Version="1.5.0"/>
         <PackageVersion Include="Proto.Cluster" Version="1.5.0"/>
         <PackageVersion Include="Proto.Cluster.CodeGen" Version="1.5.0"/>
@@ -85,10 +81,10 @@
         <PackageVersion Include="Quartz.Serialization.Json" Version="3.8.0"/>
         <PackageVersion Include="Refit" Version="7.0.0"/>
         <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0"/>
+        <PackageVersion Include="Scrutor" Version="4.2.2"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.7.4"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1"/>
-        <PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0"/>
         <PackageVersion Include="System.Data.SqlClient" Version="4.8.6"/>
         <PackageVersion Include="System.Linq.Async" Version="6.0.1"/>
         <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.3.8"/>
@@ -108,7 +104,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0"/>
-        <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="7.16.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="7.0.14"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.14"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.14"/>
@@ -140,7 +135,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.0"/>
-        <PackageVersion Include="EFCore.BulkExtensions.MIT" Version="8.16.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0"/>
@@ -168,6 +162,5 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0"/>
         <PackageVersion Include="Polly" Version="8.2.0"/>
         <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0"/>
-        <PackageVersion Include="System.Text.Json" Version="8.0.0"/>
     </ItemGroup>
 </Project>

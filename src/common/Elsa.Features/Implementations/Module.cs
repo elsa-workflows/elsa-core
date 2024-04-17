@@ -35,6 +35,18 @@ public class Module : IModule
     public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
     /// <inheritdoc />
+    public bool HasFeature<T>() where T : class, IFeature
+    {
+        return HasFeature(typeof(T));
+    }
+
+    /// <inheritdoc />
+    public bool HasFeature(Type featureType)
+    {
+        return _features.ContainsKey(featureType);
+    }
+
+    /// <inheritdoc />
     public T Configure<T>(Action<T>? configure = default) where T : class, IFeature
         => Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
 

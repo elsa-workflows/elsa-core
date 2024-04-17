@@ -1,51 +1,15 @@
-using System.Text.Json;
-using Elsa.Expressions.Contracts;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
-public class BookmarkHasher : IBookmarkHasher
+public class BookmarkHasher(IHasher hasher) : IBookmarkHasher
 {
-    private readonly IHasher _hasher;
-    private readonly JsonSerializerOptions _settings;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BookmarkHasher"/> class.
-    /// </summary>
-    public BookmarkHasher(IHasher hasher, IWellKnownTypeRegistry wellKnownTypeRegistry)
-    {
-        _hasher = hasher;
-        
-        _settings = new JsonSerializerOptions
-        {
-            // Enables serialization of ValueTuples, which use fields instead of properties.
-            IncludeFields = true,
-            PropertyNameCaseInsensitive = true
-        };
-        
-        _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));
-        _settings.Converters.Add(new ExcludeFromHashConverterFactory());
-    }
-
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]
     public string Hash(string activityTypeName, object? payload, string? activityInstanceId = default)
     {
-        var json = payload != null ? Serialize(payload) : null;
-        var inputSource = new List<string> { activityTypeName};
-        
-        if (!string.IsNullOrWhiteSpace(json))
-            inputSource.Add(json);
-        
-        if (!string.IsNullOrWhiteSpace(activityInstanceId))
-            inputSource.Add(activityInstanceId);
-        
-        var input = string.Join("|", inputSource);
-        var hash = _hasher.Hash(input);
-
-        return hash;
+        return hasher.Hash(activityTypeName, payload, activityInstanceId);
     }
-
-    private string Serialize(object payload) => JsonSerializer.Serialize(payload, payload.GetType(), _settings);
 }

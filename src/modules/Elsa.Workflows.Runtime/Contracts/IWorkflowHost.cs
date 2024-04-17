@@ -21,7 +21,7 @@ public interface IWorkflowHost
     WorkflowState WorkflowState { get; set; }
 
     /// <summary>
-    /// Returns a value indicating whether or not the specified workflow can start a new instance or not.
+    /// Returns a value indicating whether the specified workflow can start a new instance or not.
     /// </summary>
     Task<bool> CanStartWorkflowAsync(StartWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
 
@@ -34,4 +34,9 @@ public interface IWorkflowHost
     /// Resume an existing workflow instance.
     /// </summary>
     Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostParams? @params = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Persist the workflow state.
+    /// </summary>
+    Task PersistStateAsync(CancellationToken cancellationToken = default);
 }

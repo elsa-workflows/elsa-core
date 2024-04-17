@@ -6,6 +6,7 @@ on:
       - 'main'
       - 'feature/*'
       - 'issue/*'
+      - 'bug/*'
       - 'enhancement/*'
       - 'patch/*'
       - 'fix/*'
@@ -42,8 +43,13 @@ jobs:
         uses: actions/checkout@v3
       - name: Verify commit exists in branch
         run: |
-          git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-          git branch --remote --contains | grep origin/${BRANCH_NAME}
+          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
+            git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+            git branch --remote --contains | grep origin/patch/3.1.2
+          else
+            git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+            git branch --remote --contains | grep origin/${BRANCH_NAME}
+          fi
       - name: Set VERSION variable
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
@@ -51,7 +57,7 @@ jobs:
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
             echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
           else
-            echo "VERSION=3.1.0-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
+            echo "VERSION=3.2.0-${PACKAGE_PREFIX}.${{github.run_number}}" >> $GITHUB_ENV
           fi
       - name: Compile+Test+Pack
         run: ./build.sh Compile+Test+Pack --version ${VERSION}

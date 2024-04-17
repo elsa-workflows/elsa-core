@@ -37,6 +37,18 @@ public class ActivityRegistryPopulator : IActivityRegistryPopulator
         await PopulateRegistryAsync(provider, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task AddToRegistry(Type providerType, string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var provider = _providers.First(x => x.GetType() == providerType);
+        var descriptors = await provider.GetDescriptorsAsync(cancellationToken);
+        var descriptorToAdd = descriptors
+            .SingleOrDefault(d => d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) && val.ToString() == workflowDefinitionVersionId);
+        
+        if (descriptorToAdd is not null)
+            _registry.Add(providerType, descriptorToAdd!);
+    }
+
     private async Task PopulateRegistryAsync(IActivityProvider provider, CancellationToken cancellationToken = default)
     {
         var descriptors = await provider.GetDescriptorsAsync(cancellationToken);

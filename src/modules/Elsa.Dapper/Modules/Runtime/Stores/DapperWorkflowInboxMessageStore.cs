@@ -19,26 +19,23 @@ namespace Elsa.Dapper.Modules.Runtime.Stores;
 public class DapperWorkflowInboxMessageStore : IWorkflowInboxMessageStore
 {
     private readonly IPayloadSerializer _payloadSerializer;
-    private readonly ISystemClock _systemClock;
     private const string TableName = "WorkflowInboxMessages";
-    private const string PrimaryKeyName = "Id";
     private readonly Store<WorkflowInboxMessageRecord> _store;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DapperWorkflowInboxMessageStore"/> class.
     /// </summary>
-    public DapperWorkflowInboxMessageStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer, ISystemClock systemClock)
+    public DapperWorkflowInboxMessageStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
     {
         _payloadSerializer = payloadSerializer;
-        _systemClock = systemClock;
-        _store = new Store<WorkflowInboxMessageRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<WorkflowInboxMessageRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveAsync(WorkflowInboxMessage record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
+        await _store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />

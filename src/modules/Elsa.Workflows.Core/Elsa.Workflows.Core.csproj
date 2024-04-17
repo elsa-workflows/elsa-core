@@ -19,7 +19,6 @@
         <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="Newtonsoft.Json" />
         <PackageReference Include="ShortGuid" />
-        <PackageReference Include="System.ComponentModel.Annotations" />
         <PackageReference Include="System.Linq.Async" />
     </ItemGroup>
 

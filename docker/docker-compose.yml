@@ -13,6 +13,13 @@ services:
     ports:
       - "5432:5432"
   
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  
   cockroachdb:
     image: cockroachdb/cockroach:v22.1.0
     command: start-single-node --insecure
@@ -67,3 +74,4 @@ services:
 volumes:
   postgres-data:
   cockroachdb-data:
+  mongodb_data:

@@ -1,3 +1,4 @@
+using Elsa.Common.DistributedLocks.Noop;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -23,10 +24,12 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
+var massTransitDispatcherSection = configuration.GetSection("MassTransit.Dispatcher");
 var heartbeatSection = configuration.GetSection("Heartbeat");
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
-services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitSection);
+services.Configure<MassTransitOptions>(massTransitSection);
+services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
 
 // Add Elsa services.
 services
@@ -43,7 +46,7 @@ services
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
             .UseDefaultAuthentication()
-            .UseInstanceManagement(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
+            .UseApplicationCluster(x => x.HeartbeatOptions = settings => heartbeatSection.Bind(settings))
             .UseWorkflowManagement(management =>
             {
                 if (useMassTransit)
@@ -56,7 +59,12 @@ services
             .UseWorkflowRuntime(runtime =>
             {
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-                runtime.UseMassTransitDispatcher();
+                
+                if (useMassTransit)
+                {
+                    runtime.UseMassTransitDispatcher();
+                }
+                
                 if (useProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
@@ -65,6 +73,7 @@ services
                     });
                 }
 
+                runtime.DistributedLockProvider = _ => new NoopDistributedSynchronizationProvider();
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
@@ -85,28 +94,14 @@ services
         {
             elsa.UseMassTransit(massTransit =>
                 {
-                    if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                    switch (useMassTransitBroker)
                     {
-                        massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
-                        {
-                            bus.PrefetchCount = 4;
-                            bus.LockDuration = TimeSpan.FromMinutes(5);
-                            bus.MaxConcurrentCalls = 32;
-                            bus.MaxDeliveryCount = 8;
-                            // etc.
-                        });
-                    }
-
-                    if (useMassTransitBroker == MassTransitBroker.RabbitMq)
-                    {
-                        massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
-                        {
-                            bus.PrefetchCount = 4;
-                            bus.Durable = true;
-                            bus.AutoDelete = false;
-                            bus.ConcurrentMessageLimit = 32;
-                            // etc.
-                        });
+                        case MassTransitBroker.AzureServiceBus:
+                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                            break;
+                        case MassTransitBroker.RabbitMq:
+                            massTransit.UseRabbitMq(rabbitMqConnectionString);
+                            break;
                     }
                 }
             );

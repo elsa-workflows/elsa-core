@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace Elsa.Features.Services;
@@ -17,7 +16,6 @@ public interface IFeature
     /// <summary>
     /// Configures the feature.
     /// </summary>
-    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     void Configure();
     
     /// <summary>

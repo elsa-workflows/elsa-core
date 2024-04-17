@@ -13,6 +13,11 @@ public interface IWorkflowExecutionPipelineBuilder
     public IDictionary<object, object?> Properties { get; }
     
     /// <summary>
+    /// The middleware components that have been installed.
+    /// </summary>
+    public IEnumerable<Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate>> Components { get; }
+    
+    /// <summary>
     /// The current service provider to resolve services from.
     /// </summary>
     IServiceProvider ServiceProvider { get; }
@@ -31,4 +36,12 @@ public interface IWorkflowExecutionPipelineBuilder
     /// Clears the current pipeline.
     /// </summary>
     IWorkflowExecutionPipelineBuilder Reset();
+
+    /// <summary>
+    /// Replaces the middleware component at the specified index with the specified delegate.
+    /// </summary>
+    /// <param name="index">The index of the middleware component to replace.</param>
+    /// <param name="middleware">The delegate to use as the new middleware component.</param>
+    /// <returns>A new instance of <see cref="IWorkflowExecutionPipelineBuilder"/> with the middleware component replaced.</returns>
+    IWorkflowExecutionPipelineBuilder Replace(int index, Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate> middleware);
 }

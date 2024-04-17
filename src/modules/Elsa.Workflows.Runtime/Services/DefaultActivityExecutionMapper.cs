@@ -1,17 +1,37 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Enums;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
+using Humanizer;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options) : IActivityExecutionMapper
 {
+    private const string LogPersistenceModeKey = "logPersistenceMode";
+
     /// <inheritdoc />
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
+        /*
+         * {
+         *      "logPersistenceMode": {
+         *          "default": "default",
+         *          "inputs": { k : v },
+         *          "outputs": { k: v }
+         *          }
+         *  }
+         */
+
+        var workflowPersistenceProperty = GetDefaultPersistenceMode(source.WorkflowExecutionContext.Workflow.CustomProperties, () => options.Value.LogPersistenceMode);
+        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
+        var activityPersistencePropertyDefault = GetDefaultPersistenceMode(source.Activity.CustomProperties, () => workflowPersistenceProperty);
+
         // Get any outcomes that were added to the activity execution context.
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
         var payload = new Dictionary<string, object>();
@@ -41,6 +61,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return default;
         });
 
+        outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+        var activityState = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+
         return new ActivityExecutionRecord
         {
             Id = source.Id,
@@ -49,7 +72,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
             ActivityType = source.Activity.Type,
             ActivityName = source.Activity.Name,
-            ActivityState = source.ActivityState,
+            ActivityState = activityState,
             Outputs = outputs,
             Properties = source.Properties,
             Payload = payload,
@@ -60,6 +83,33 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             Status = GetAggregateStatus(source),
             CompletedAt = source.CompletedAt
         };
+    }
+
+    private static LogPersistenceMode GetDefaultPersistenceMode(IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory)
+    {
+        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
+        var persistencePropertyDefault = properties!.GetValueOrDefault("default", defaultFactory);
+
+        if (persistencePropertyDefault == LogPersistenceMode.Default)
+            return defaultFactory();
+        return persistencePropertyDefault;
+    }
+
+    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> inputs,
+        IDictionary<string, object> persistenceModeConfiguration,
+        LogPersistenceMode defaultLogPersistenceMode)
+    {
+        var result = new Dictionary<string, object?>();
+
+        foreach (var input in inputs)
+        {
+            var persistence = persistenceModeConfiguration.GetValueOrDefault(input.Key.Camelize(), () => defaultLogPersistenceMode);
+            if (persistence.Equals(LogPersistenceMode.Include)
+                || (persistence.Equals(LogPersistenceMode.Default) && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Default))
+                result.Add(input.Key, input.Value);
+        }
+
+        return result;
     }
 
     private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)

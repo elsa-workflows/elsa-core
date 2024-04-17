@@ -17,9 +17,9 @@ public static class WorkflowBuilderExtensions
     /// <param name="builder">The <see cref="IWorkflowBuilder"/> instance to build the workflow.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation that returns the built <see cref="Workflow"/>.</returns>
-    public static Task<Workflow> BuildWorkflowAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] T>(
+    public static Task<Workflow> BuildWorkflowAsync<T>(
         this IWorkflowBuilder builder, 
-        CancellationToken cancellationToken = default) where T : IWorkflow
+        CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
         return builder.BuildWorkflowAsync(Activator.CreateInstance<T>(), cancellationToken);
     }

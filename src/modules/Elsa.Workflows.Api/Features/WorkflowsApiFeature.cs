@@ -1,4 +1,3 @@
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -6,10 +5,8 @@ using Elsa.Features.Services;
 using Elsa.Http.Features;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Serialization;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Features;
-using Elsa.Workflows.Services;
-using Microsoft.Extensions.DependencyInjection;
+using Elsa.Workflows.Runtime.Features;
 
 namespace Elsa.Workflows.Api.Features;
 
@@ -18,6 +15,7 @@ namespace Elsa.Workflows.Api.Features;
 /// </summary>
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowManagementFeature))]
+[DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(HttpFeature))]
 [DependsOn(typeof(SasTokensFeature))]
 public class WorkflowsApiFeature : FeatureBase

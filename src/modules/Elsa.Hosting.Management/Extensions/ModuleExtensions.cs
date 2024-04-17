@@ -6,9 +6,9 @@ namespace Elsa.Extensions;
 
 public static class ModuleExtensions
 {
-    public static IModule UseInstanceManagement(this IModule module, Action<InstanceManagementFeature>? configure = default)
+    public static IModule UseApplicationCluster(this IModule module, Action<ClusteringFeature>? configure = default)
     {
-        module.Configure<InstanceManagementFeature>(management =>
+        module.Configure<ClusteringFeature>(management =>
         {
             configure?.Invoke(management);
         });

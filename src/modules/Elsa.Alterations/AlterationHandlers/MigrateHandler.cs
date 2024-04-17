@@ -21,7 +21,7 @@ public class MigrateHandler : AlterationHandlerBase<Migrate>
         var definitionId = context.Workflow.Identity.DefinitionId;
         var targetVersion = alteration.TargetVersion;
         var cancellationToken = context.CancellationToken;
-        var targetWorkflowDefinition = await workflowDefinitionService.FindAsync(definitionId, VersionOptions.SpecificVersion(targetVersion), cancellationToken);
+        var targetWorkflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.SpecificVersion(targetVersion), cancellationToken);
         
         if (targetWorkflowDefinition == null)
         {

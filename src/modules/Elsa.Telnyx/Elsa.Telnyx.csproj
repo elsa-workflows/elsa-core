@@ -13,8 +13,6 @@
 
     <ItemGroup>
         <PackageReference Include="Humanizer.Core" />
-        <PackageReference Include="Microsoft.AspNetCore.Http" />
-        <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
         <PackageReference Include="Refit" />
         <PackageReference Include="Refit.HttpClientFactory" />
     </ItemGroup>

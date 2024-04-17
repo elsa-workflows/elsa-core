@@ -18,7 +18,7 @@ namespace Elsa.MassTransit.RabbitMq.Features;
 /// Configures MassTransit to use the RabbitMQ transport.
 /// </summary>
 [DependsOn(typeof(MassTransitFeature))]
-[DependsOn(typeof(InstanceManagementFeature))]
+[DependsOn(typeof(ClusteringFeature))]
 public class RabbitMqServiceBusFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -29,7 +29,9 @@ public class RabbitMqServiceBusFeature : FeatureBase
     /// A RabbitMQ connection string.
     public string? ConnectionString { get; set; }
 
+    /// <summary>
     /// Configures the RabbitMQ transport options.
+    /// </summary>
     public Action<RabbitMqTransportOptions>? TransportOptions { get; set; }
 
     /// <summary>
@@ -44,34 +46,45 @@ public class RabbitMqServiceBusFeature : FeatureBase
         {
             massTransitFeature.BusConfigurator = configure =>
             {
-                var tempConsumers = massTransitFeature.GetConsumers()
+                var temporaryConsumers = massTransitFeature.GetConsumers()
                     .Where(c => c.IsTemporary)
                     .ToList();
-
-                configure.AddConsumers(tempConsumers.Select(c => c.ConsumerType).ToArray());
-
+                
+                // Consumers need to be added before the UsingRabbitMq statement to prevent exceptions.
+                foreach (var consumer in temporaryConsumers)
+                    configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
+                
                 configure.UsingRabbitMq((context, configurator) =>
                 {
-                    var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
+                    var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
                     if (!string.IsNullOrEmpty(ConnectionString))
                         configurator.Host(ConnectionString);
 
+                    if (options.PrefetchCount is not null)
+                        configurator.PrefetchCount = options.PrefetchCount.Value;
+                    configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    
                     ConfigureServiceBus?.Invoke(configurator);
 
-                    foreach (var consumer in tempConsumers)
+                    foreach (var consumer in temporaryConsumers)
                     {
                         configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
-                            configurator =>
+                            endpointConfigurator =>
                             {
-                                configurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                configurator.ConfigureConsumer<DispatchCancelWorkflowsRequestConsumer>(context);
+                                endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                endpointConfigurator.Durable = false;
+                                endpointConfigurator.AutoDelete = true;
+                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                     }
 
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
+                    // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                    if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                        configurator.SetupWorkflowDispatcherEndpoints(context);
+                    
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };

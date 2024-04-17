@@ -17,7 +17,6 @@ public class DapperBookmarkStore : IBookmarkStore
 {
     private readonly IPayloadSerializer _payloadSerializer;
     private const string TableName = "Bookmarks";
-    private const string PrimaryKeyName = "Id";
     private readonly Store<StoredBookmarkRecord> _store;
 
     /// <summary>
@@ -26,21 +25,28 @@ public class DapperBookmarkStore : IBookmarkStore
     public DapperBookmarkStore(IDbConnectionProvider dbConnectionProvider, IPayloadSerializer payloadSerializer)
     {
         _payloadSerializer = payloadSerializer;
-        _store = new Store<StoredBookmarkRecord>(dbConnectionProvider, TableName, PrimaryKeyName);
+        _store = new Store<StoredBookmarkRecord>(dbConnectionProvider, TableName);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
         var mappedRecord = Map(record);
-        await _store.SaveAsync(mappedRecord, PrimaryKeyName, cancellationToken);
+        await _store.SaveAsync(mappedRecord, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
         var mappedRecords = Map(records);
-        await _store.SaveManyAsync(mappedRecords, PrimaryKeyName, cancellationToken);
+        await _store.SaveManyAsync(mappedRecords, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
+    {
+        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return record != null ? Map(record) : default;
     }
 
     /// <inheritdoc />

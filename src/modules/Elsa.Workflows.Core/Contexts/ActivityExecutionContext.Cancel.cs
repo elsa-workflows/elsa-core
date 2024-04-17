@@ -19,9 +19,17 @@ public partial class ActivityExecutionContext
 
         _ = Task.Run(async () => await CancelActivityAsync());
     }
+    
+    private bool CanCancelActivity()
+    {
+        return Status is not ActivityStatus.Canceled and not ActivityStatus.Completed;
+    }
 
     private async Task CancelActivityAsync()
     {
+        if(!CanCancelActivity())
+            return;
+        
         // Select all child contexts.
         var childContexts = WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == this).ToList();
 
