@@ -1,12 +1,11 @@
 using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Http.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
@@ -18,26 +17,13 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 /// An API endpoint that executes a given workflow definition.
 /// </summary>
 [PublicAPI]
-internal class Execute : ElsaEndpoint<Request, Response>
+internal class Execute(
+    IWorkflowDefinitionService workflowDefinitionService,
+    IWorkflowRuntime workflowRuntime,
+    IApiSerializer apiSerializer,
+    IIdentityGenerator identityGenerator)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowRuntime _workflowRuntime;
-    private IApiSerializer _apiSerializer;
-    private readonly IIdentityGenerator _identityGenerator;
-
-    /// <inheritdoc />
-    public Execute(
-        IWorkflowDefinitionStore store,
-        IWorkflowRuntime workflowRuntime,
-        IApiSerializer apiSerializer,
-        IIdentityGenerator identityGenerator)
-    {
-        _store = store;
-        _workflowRuntime = workflowRuntime;
-        _apiSerializer = apiSerializer;
-        _identityGenerator = identityGenerator;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -51,64 +37,64 @@ internal class Execute : ElsaEndpoint<Request, Response>
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-        var exists = await _store.AnyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions }, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
 
-        if (!exists)
+        if (workflow == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-
-        var correlationId = request.CorrelationId;
-        var input = (IDictionary<string, object>?)request.Input;
-        var instanceId = _identityGenerator.GenerateId();
-        var startWorkflowOptions = new StartWorkflowRuntimeParams
+        
+        var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
+        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
-            CorrelationId = correlationId,
-            Input = input,
-            VersionOptions = versionOptions,
-            TriggerActivityId = request.TriggerActivityId,
-            InstanceId = instanceId,
-            CancellationToken = cancellationToken
+            DefinitionVersionId = workflow.Identity.Id,
+            CorrelationId = request.CorrelationId,
+            Input = (IDictionary<string, object>?)request.Input
         };
-
-        // Write the workflow instance ID to the response header. This allows clients to read the header even if the workflow writes a response body. 
+        await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+        var instanceId = workflowClient.WorkflowInstanceId;
+        
+        // Write the workflow instance ID to the response header.
+        // This allows clients to read the header even if the workflow writes a response body
+        // (in which case, we can't transmit a JSON body that includes the instance ID). 
         HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
-
+        
+        var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest
+        {
+            TriggerActivityId = request.TriggerActivityId
+        };
+        
         // Start the workflow.
-        var result = await _workflowRuntime.StartWorkflowAsync(definitionId, startWorkflowOptions);
+        var runWorkflowInstanceResponse = await workflowClient.RunAsync(runWorkflowInstanceRequest, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
-        if (result.SubStatus == WorkflowSubStatus.Faulted)
+        if (runWorkflowInstanceResponse.SubStatus == WorkflowSubStatus.Faulted)
         {
-            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
-            await HandleFaultAsync(workflowState!, cancellationToken);
+            var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
+            await HandleFaultAsync(workflowState, cancellationToken);
         }
         else
         {
-            var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId, cancellationToken);
-
-            if (workflowState!.SubStatus == WorkflowSubStatus.Faulted)
-            {
-                await HandleFaultAsync(workflowState, cancellationToken);
-                return;
-            }
-
             if (!HttpContext.Response.HasStarted)
             {
                 // Write a response header to indicate that the response is a workflow state response.
+                // This is used by tools like Elsa Studio to determine if the response is in response to a workflow execution manually triggered by the user.
                 HttpContext.Response.Headers.Append("x-elsa-response", "true");
 
-                // Only write a response if the status code wasn't changed by the workflow.
+                // Only write a response if the workflow didn't change the HTTP status code.
                 if (HttpContext.Response.StatusCode == StatusCodes.Status200OK)
+                {
+                    var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
                     await SendOkAsync(new Response(workflowState), cancellationToken);
+                }
             }
         }
     }
 
     private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
-        var faultedResponse = _apiSerializer.Serialize(new Response(workflowState));
+        var faultedResponse = apiSerializer.Serialize(new Response(workflowState));
 
         HttpContext.Response.ContentType = MediaTypeNames.Application.Json;
         HttpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;

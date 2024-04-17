@@ -158,7 +158,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
         var runWorkflowParams = new RunWorkflowParams
         {
-            DefinitionVersionId = workflow.Identity.Id,
             Input = input,
             CorrelationId = correlationId,
             TriggerActivityId = trigger.ActivityId

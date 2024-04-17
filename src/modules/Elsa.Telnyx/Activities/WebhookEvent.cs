@@ -50,7 +50,7 @@ public class WebhookEvent : Activity<Payload>
 
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type
             });

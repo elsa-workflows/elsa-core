@@ -2,9 +2,7 @@ using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Params;
-using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
@@ -30,10 +28,10 @@ public class MassTransitWorkflowDispatcher(
         // 2. Performance: A smaller message size means less information needs to be processed and transferred, optimizing speed and efficiency.
 
         // To create the instance, we need to find the workflow definition first.
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(request.DefinitionVersionId, cancellationToken);
 
         if (workflow == null)
-            throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
+            throw new Exception($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
 
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceParams
         {

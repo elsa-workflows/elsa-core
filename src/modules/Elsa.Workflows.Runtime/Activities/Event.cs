@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -73,7 +74,7 @@ public class Event : Trigger<object?>
         {
             var options = new CreateBookmarkArgs
             {
-                Payload = new EventStimulus(eventName),
+                Stimulus = new EventStimulus(eventName),
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(options);

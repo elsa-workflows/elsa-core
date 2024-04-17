@@ -8,8 +8,6 @@ namespace Elsa.Workflows.Runtime.Requests;
 /// </summary>
 public class DispatchWorkflowDefinitionRequest
 {
-    public string DefinitionVersionId { get; }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DispatchWorkflowDefinitionRequest"/> class.
     /// </summary>
@@ -26,6 +24,11 @@ public class DispatchWorkflowDefinitionRequest
     {
         DefinitionVersionId = definitionVersionId;
     }
+
+    /// <summary>
+    /// The ID of the workflow definition version to dispatch.
+    /// </summary>
+    public string DefinitionVersionId { get; } = default!;
     
     /// <summary>
     /// The ID of the parent workflow instance.

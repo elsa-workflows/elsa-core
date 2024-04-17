@@ -5,7 +5,7 @@ namespace Elsa.AzureServiceBus.Models;
 /// <summary>
 /// A bookmark payload model for triggering workflows when messages come in at a given queue or topic and subscription. 
 /// </summary>
-public record MessageReceivedTriggerPayload
+public record MessageReceivedStimulus
 {
     private readonly string _queueOrTopic = default!;
     private readonly string? _subscription;
@@ -14,14 +14,14 @@ public record MessageReceivedTriggerPayload
     /// Constructor.
     /// </summary>
     [JsonConstructor]
-    public MessageReceivedTriggerPayload()
+    public MessageReceivedStimulus()
     {
     }
     
     /// <summary>
     /// Constructor.
     /// </summary>
-    public MessageReceivedTriggerPayload(string queueOrTopic, string? subscription)
+    public MessageReceivedStimulus(string queueOrTopic, string? subscription)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription;

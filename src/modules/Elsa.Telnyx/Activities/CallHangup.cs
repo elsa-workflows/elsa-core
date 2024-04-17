@@ -37,7 +37,7 @@ public class CallHangup : Activity<CallHangupPayload>
             var payload = new CallHangupStimulus(callControlId);
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type,
                 IncludeActivityInstanceId = false

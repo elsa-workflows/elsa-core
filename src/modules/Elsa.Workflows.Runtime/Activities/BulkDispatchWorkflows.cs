@@ -18,6 +18,8 @@ using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -137,7 +139,7 @@ public class BulkDispatchWorkflows : Activity
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new BulkDispatchWorkflowsBookmark(workflowInstanceId)
+                Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
@@ -200,13 +202,17 @@ public class BulkDispatchWorkflows : Activity
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var instanceId = identityGenerator.GenerateId();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, VersionOptions.Published);
+        
+        if (workflow == null)
+            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+        
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
-        var request = new DispatchWorkflowDefinitionRequest
+        var instanceId = identityGenerator.GenerateId();
+        var request = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
             ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
@@ -225,8 +231,7 @@ public class BulkDispatchWorkflows : Activity
 
         return instanceId;
     }
-
-    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
+    
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;

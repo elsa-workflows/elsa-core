@@ -11,5 +11,5 @@ public interface IWorkflowCancellationDispatcher
     /// <summary>
     /// Cancels the specified workflow instances.
     /// </summary>
-    Task<DispatchCancelWorkflowsResponse> DispatchAsync(DispatchCancelWorkflowsRequest request, CancellationToken cancellationToken = default);
+    Task<DispatchCancelWorkflowsResponse> DispatchAsync(DispatchCancelWorkflowRequest request, CancellationToken cancellationToken = default);
 }

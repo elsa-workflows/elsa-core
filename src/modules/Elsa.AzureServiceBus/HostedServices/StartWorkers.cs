@@ -34,9 +34,9 @@ public class StartWorkers : IHostedService
     {
         var activityType = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
         var triggerFilter = new TriggerFilter { Name = activityType};
-        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
+        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedStimulus>()).ToList();
         var bookmarkFilter = new BookmarkFilter { ActivityTypeName = activityType };
-        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedTriggerPayload>()).ToList();
+        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).Select(x => x.GetPayload<MessageReceivedStimulus>()).ToList();
         var payloads = triggers.Concat(bookmarks).ToList();
 
         await EnsureWorkersAsync(payloads, cancellationToken);
@@ -45,7 +45,7 @@ public class StartWorkers : IHostedService
     /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
+    private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedStimulus> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.EnsureWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }

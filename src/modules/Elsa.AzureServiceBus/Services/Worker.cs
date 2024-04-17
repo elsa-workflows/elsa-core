@@ -9,24 +9,24 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.AzureServiceBus.Services;
 
 /// <summary>
-/// Processes messages received via a queue specified through the <see cref="MessageReceivedTriggerPayload"/>.
+/// Processes messages received via a queue specified through the <see cref="MessageReceivedStimulus"/>.
 /// When a message is received, the appropriate workflows are executed.
 /// </summary>
 public class Worker : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
-    private readonly IWorkflowInbox _workflowInbox;
+    private readonly IStimulusSender _stimulusSender;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IStimulusSender stimulusSender, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
-        _workflowInbox = workflowInbox;
+        _stimulusSender = stimulusSender;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -93,21 +93,20 @@ public class Worker : IAsyncDisposable
 
     private async Task InvokeWorkflowsAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
     {
-        var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
-        var correlationId = message.CorrelationId;
-        var messageModel = CreateMessageModel(message);
-        var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
-
-        var results = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var input = new Dictionary<string, object>
         {
-            ActivityTypeName = activityTypeName,
-            BookmarkPayload = payload,
-            Input = input,
-            CorrelationId = correlationId
-        }, cancellationToken);
+            [MessageReceived.InputKey] = CreateMessageModel(message)
+        };
 
-        _logger.LogDebug("{Count} workflow triggered by the service bus message", results.WorkflowExecutionResults.Count);
+        var metadata = new StimulusMetadata
+        {
+            CorrelationId = message.CorrelationId,
+            Input = input,
+        };
+        var stimulus = new MessageReceivedStimulus(QueueOrTopic, Subscription);
+        var result = await _stimulusSender.SendAsync<MessageReceived>(stimulus, metadata, cancellationToken);
+
+        _logger.LogDebug("{Count} workflow triggered by the service bus message", result.WorkflowInstanceResponses.Count);
     }
 
     private static ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message)

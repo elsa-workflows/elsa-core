@@ -68,7 +68,7 @@ public class WorkflowCancellationService(
     private async Task<int> CancelWorkflows(IList<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
     {
         var tasks = workflowInstances.Where(i => i.Status != WorkflowStatus.Finished)
-            .Select(i => dispatcher.DispatchAsync(new DispatchCancelWorkflowsRequest
+            .Select(i => dispatcher.DispatchAsync(new DispatchCancelWorkflowRequest
             {
                 WorkflowInstanceId = i.Id
             }, cancellationToken)).ToList();

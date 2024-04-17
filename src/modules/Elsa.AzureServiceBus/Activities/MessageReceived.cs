@@ -121,6 +121,6 @@ public class MessageReceived : Trigger
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
         var subscription = context.Get(Subscription);
-        return new MessageReceivedTriggerPayload(queueOrTopic, subscription);
+        return new MessageReceivedStimulus(queueOrTopic, subscription);
     }
 }

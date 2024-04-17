@@ -82,7 +82,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var bookmarkOptions = new CreateBookmarkArgs
         {
             BookmarkName = BackgroundActivityBookmarkName,
-            Payload = bookmarkPayload,
+            Stimulus = bookmarkPayload,
             AutoComplete = false
         };
         var bookmark = context.CreateBookmark(bookmarkOptions);

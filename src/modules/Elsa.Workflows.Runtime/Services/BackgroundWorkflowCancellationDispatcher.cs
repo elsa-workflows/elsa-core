@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Runtime.Services;
 public class BackgroundWorkflowCancellationDispatcher(ICommandSender commandSender) : IWorkflowCancellationDispatcher
 {
     /// <inheritdoc />
-    public async Task<DispatchCancelWorkflowsResponse> DispatchAsync(DispatchCancelWorkflowsRequest request, CancellationToken cancellationToken = default)
+    public async Task<DispatchCancelWorkflowsResponse> DispatchAsync(DispatchCancelWorkflowRequest request, CancellationToken cancellationToken = default)
     {
         var command = new CancelWorkflowsCommand(request);
         await commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);

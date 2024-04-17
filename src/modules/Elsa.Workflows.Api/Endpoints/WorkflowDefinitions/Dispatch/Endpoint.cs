@@ -11,7 +11,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Dispatch;
 
 [UsedImplicitly]
-internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, Response>
+internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -23,16 +23,9 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
 
-        var exists = await store.AnyAsync(
-            new WorkflowDefinitionFilter
-            {
-                DefinitionId = definitionId,
-                VersionOptions = versionOptions
-            },
-            cancellationToken);
-
-        if (!exists)
+        if(workflow == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -48,10 +41,8 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
         }
 
         var instanceId = request.InstanceId ?? identityGenerator.GenerateId();
-        var dispatchRequest = new DispatchWorkflowDefinitionRequest
+        var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
         {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions,
             Input = input as IDictionary<string, object>,
             InstanceId = instanceId,
             CorrelationId = request.CorrelationId,

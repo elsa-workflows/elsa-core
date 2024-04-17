@@ -339,7 +339,7 @@ public partial class ActivityExecutionContext : IExecutionContext
         foreach (var payload in payloads)
             CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = callback,
                 IncludeActivityInstanceId = includeActivityInstanceId
             });
@@ -384,7 +384,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = payload,
             Callback = callback,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
@@ -402,7 +402,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = payload,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
         });
@@ -418,7 +418,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = payload,
             Metadata = metadata
         });
     }
@@ -429,7 +429,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public Bookmark CreateBookmark(CreateBookmarkArgs? options = default)
     {
-        var payload = options?.Payload;
+        var payload = options?.Stimulus;
         var callback = options?.Callback;
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
         var bookmarkHasher = GetRequiredService<IStimulusHasher>();

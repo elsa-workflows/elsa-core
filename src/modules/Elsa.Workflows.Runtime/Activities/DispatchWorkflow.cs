@@ -4,10 +4,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
 using JetBrains.Annotations;
 
@@ -81,7 +83,7 @@ public class DispatchWorkflow : Activity<object>
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new DispatchWorkflowBookmark(instanceId),
+                Stimulus = new DispatchWorkflowStimulus(instanceId),
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(bookmarkOptions);
@@ -104,11 +106,15 @@ public class DispatchWorkflow : Activity<object>
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
+        
+        if (workflow == null)
+            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+        
         var instanceId = identityGenerator.GenerateId();
-        var request = new DispatchWorkflowDefinitionRequest
+        var request = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
             ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,
             CorrelationId = correlationId,

@@ -27,9 +27,9 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
-        var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
-        var unchanged = notification.IndexedWorkflowTriggers.UnchangedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
+        var added = notification.IndexedWorkflowTriggers.AddedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
+        var removed = notification.IndexedWorkflowTriggers.RemovedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
+        var unchanged = notification.IndexedWorkflowTriggers.UnchangedTriggers.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);
@@ -41,26 +41,26 @@ public class UpdateWorkers : INotificationHandler<WorkflowTriggersIndexed>, INot
     /// </summary>
     public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
-        var added = notification.IndexedWorkflowBookmarks.AddedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
-        var removed = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
-        var unchanged = notification.IndexedWorkflowBookmarks.UnchangedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedTriggerPayload>());
+        var added = notification.IndexedWorkflowBookmarks.AddedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
+        var removed = notification.IndexedWorkflowBookmarks.RemovedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
+        var unchanged = notification.IndexedWorkflowBookmarks.UnchangedBookmarks.Filter<MessageReceived>().Select(x => x.GetPayload<MessageReceivedStimulus>());
 
         await StopWorkersAsync(removed, cancellationToken);
         await StartWorkersAsync(added, cancellationToken);
         await EnsureWorkersAsync(unchanged, cancellationToken);
     }
     
-    private async Task StartWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
+    private async Task StartWorkersAsync(IEnumerable<MessageReceivedStimulus> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.StartWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }
 
-    private async Task StopWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
+    private async Task StopWorkersAsync(IEnumerable<MessageReceivedStimulus> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.StopWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }
 
-    private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedTriggerPayload> payloads, CancellationToken cancellationToken)
+    private async Task EnsureWorkersAsync(IEnumerable<MessageReceivedStimulus> payloads, CancellationToken cancellationToken)
     {
         foreach (var payload in payloads) await _workerManager.EnsureWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }

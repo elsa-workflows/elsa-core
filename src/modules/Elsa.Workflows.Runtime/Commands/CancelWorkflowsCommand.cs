@@ -18,7 +18,7 @@ public class CancelWorkflowsCommand : ICommand
     /// <summary>
     /// Initializes a new instance of the <see cref="CancelWorkflowsCommand"/> class.
     /// </summary>
-    public CancelWorkflowsCommand(DispatchCancelWorkflowsRequest request)
+    public CancelWorkflowsCommand(DispatchCancelWorkflowRequest request)
     {
         Request = request;
     }
@@ -26,5 +26,5 @@ public class CancelWorkflowsCommand : ICommand
     /// <summary>
     /// Gets or sets the request.
     /// </summary>
-    public DispatchCancelWorkflowsRequest Request { get; set; } = default!;
+    public DispatchCancelWorkflowRequest Request { get; set; } = default!;
 }

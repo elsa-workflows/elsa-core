@@ -39,7 +39,7 @@ public class ProtoActorFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<DistributedRuntimeFeature>().DistributedRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorDistributedRuntime>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorDistributedRuntime>(sp);
     }
 
     /// <summary>

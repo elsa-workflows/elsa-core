@@ -37,7 +37,7 @@ public class CallAnswered : Activity<CallAnsweredPayload>
             var payload = new CallAnsweredStimulus(callControlId);
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type,
                 IncludeActivityInstanceId = false

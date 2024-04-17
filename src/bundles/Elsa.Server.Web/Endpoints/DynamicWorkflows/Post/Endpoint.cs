@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Parameters;
 
 namespace Elsa.Server.Web.Endpoints.DynamicWorkflows.Post;
 
-public class Post(IWorkflowRegistry workflowRegistry, IWorkflowRuntime workflowRuntime) : ElsaEndpointWithoutRequest
+public class Post(IWorkflowRegistry workflowRegistry, IWorkflowRuntime workflowRuntime, ) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -32,6 +32,7 @@ public class Post(IWorkflowRegistry workflowRegistry, IWorkflowRuntime workflowR
         };
 
         await workflowRegistry.RegisterAsync(workflow, ct);
+        
         await workflowRuntime.StartWorkflowAsync("DynamicWorkflow1", new StartWorkflowRuntimeParams());
     }
 }
