@@ -147,23 +147,29 @@ public class MassTransitWorkflowDispatcher(
     {
         foreach (var bookmark in bookmarks)
         {
-            if (input != null || properties != null)
+           var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+
+            if (workflow == null)
             {
-                var workflowInstance = await workflowInstanceManager.FindByIdAsync(bookmark.WorkflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null)
-                {
-                    logger.LogWarning("Workflow instance with ID '{WorkflowInstanceId}' not found", bookmark.WorkflowInstanceId);
-                    continue;
-                }
-
-                if (input != null) workflowInstance.WorkflowState.Input.Merge(input);
-                if (properties != null) workflowInstance.WorkflowState.Properties.Merge(properties);
-
-                await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
+                logger.LogWarning("Workflow definition with ID '{WorkflowDefinitionId}' not found", trigger.WorkflowDefinitionVersionId);
+                continue;
             }
 
-            var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(bookmark.BookmarkId) { BookmarkId = bookmark.BookmarkId, CorrelationId = bookmark.CorrelationId };
+            var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+            {
+                Workflow = workflow,
+                WorkflowInstanceId = request.WorkflowInstanceId,
+                Input = request.Input,
+                Properties = request.Properties,
+                CorrelationId = request.CorrelationId
+            };
+
+            // The workflow instance is created and persisted in the database.
+            var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+
+            // The workflow instance is then dispatched for execution.
+            var sendEndpoint = await GetSendEndpointAsync(options);
+            var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, trigger.ActivityId);
             await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
         }
     }
