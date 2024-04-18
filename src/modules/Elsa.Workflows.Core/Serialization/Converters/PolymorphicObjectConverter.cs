@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Dynamic;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -47,7 +48,11 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
             }
-            catch (NotSupportedException e)
+            catch (NotSupportedException)
+            {
+                return default!;
+            }
+            catch (TargetException)
             {
                 return default!;
             }
@@ -143,10 +148,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             }
             else if (isHashSet)
             {
-                addSetMethod.Invoke(collection, new[]
-                {
-                    deserializedElement
-                });
+                addSetMethod.Invoke(collection, new[] { deserializedElement });
             }
             else if (collection is IList list)
             {
