@@ -1,5 +1,5 @@
 ---
-name: Feature Enhancement
+name: Enhancement
 about: Suggest an enhancement to an existing feature for this project
 title: "[ENH] "
 labels: enhancement
@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-## Feature Enhancement Request
+## Enhancement Request
 
 ### Enhancement Overview
 **Is your enhancement request related to a problem? Please describe.**
