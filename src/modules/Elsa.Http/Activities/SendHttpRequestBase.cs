@@ -6,6 +6,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.Logging;
 using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
@@ -119,6 +120,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
         var request = PrepareRequest(context);
+        var logger = (ILogger)context.GetRequiredService(typeof(ILogger<>).MakeGenericType(GetType()));
         var httpClientFactory = context.GetRequiredService<IHttpClientFactory>();
         var httpClient = httpClientFactory.CreateClient(nameof(SendHttpRequestBase));
         var cancellationToken = context.CancellationToken;
@@ -139,12 +141,14 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         }
         catch (HttpRequestException e)
         {
+            logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Error", e.Message);
             await HandleRequestExceptionAsync(context, e);
         }
         catch (TaskCanceledException e)
         {
+            logger.LogWarning(e, "An error occurred while sending an HTTP request");
             context.AddExecutionLogEntry("Error", e.Message, payload: new { StackTrace = e.StackTrace });
             context.JournalData.Add("Cancelled", true);
             await HandleTaskCanceledExceptionAsync(context, e);
