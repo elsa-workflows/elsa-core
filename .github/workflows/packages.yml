@@ -5,11 +5,16 @@ on:
     branches:
       - 'main'
       - 'feature/*'
+      - 'feat/*'
       - 'issue/*'
       - 'bug/*'
       - 'enhancement/*'
+      - 'enh/*'
       - 'patch/*'
       - 'fix/*'
+      - 'perf/*'
+      - 'hotfix/*'
+      - 'chore/*'
   release:
     types: [ prereleased, published ]
 env:

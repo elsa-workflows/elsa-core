@@ -49,23 +49,37 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public async Task PopulateStoreAsync(CancellationToken cancellationToken = default)
+    public Task PopulateStoreAsync(CancellationToken cancellationToken = default)
+    {
+        return PopulateStoreAsync(true, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
     {
         var providers = _workflowDefinitionProviders();
         foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
-            foreach (var result in results) await AddAsync(result, cancellationToken);
+            foreach (var result in results) await AddAsync(result, indexTriggers, cancellationToken);
         }
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    public Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    {
+        return AddAsync(materializedWorkflow, true, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
     {
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
         await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
-        await IndexTriggersAsync(materializedWorkflow, cancellationToken);
+
+        if (indexTriggers)
+            await IndexTriggersAsync(materializedWorkflow, cancellationToken);
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
@@ -145,33 +159,32 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.ProviderName = materializedWorkflow.ProviderName;
         workflowDefinition.MaterializerContext = materializerContextJson;
         workflowDefinition.MaterializerName = materializedWorkflow.MaterializerName;
-        
-        if (existingDefinitionVersion is null
-            && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
+
+        if (existingDefinitionVersion is null && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
         {
-            _logger.LogError("Trying to create a new workflow with existing id {workflowId}", workflowDefinition.Id);
+            _logger.LogInformation("Workflow with ID {WorkflowId} already exists", workflowDefinition.Id);
             return;
         }
-        
+
         workflowDefinitionsToSave.Add(workflowDefinition);
-        
+
         var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
             .ToList();
-        
+
         if (duplicates.Any())
         {
             throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
         }
-        
+
         await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
         return;
 
         async Task UpdateIsLatest()
         {
             // Always try to update the IsLatest property based on the VersionNumber
-        
+
             // Reset current latest definitions.
             var filter = new WorkflowDefinitionFilter
             {

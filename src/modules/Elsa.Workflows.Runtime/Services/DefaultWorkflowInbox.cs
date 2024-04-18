@@ -127,15 +127,15 @@ public class DefaultWorkflowInbox : IWorkflowInbox
 
             return new DeliverWorkflowInboxMessageResult(results.TriggeredWorkflows);
         }
-
-        await _workflowDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(activityTypeName, bookmarkPayload)
+        
+        var dispatchRequest = new DispatchTriggerWorkflowsRequest(activityTypeName, bookmarkPayload)
         {
             CorrelationId = correlationId,
             WorkflowInstanceId = workflowInstanceId,
             ActivityInstanceId = activityInstanceId,
             Input = input
-        }, cancellationToken: cancellationToken);
-
+        };
+        await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken);
         return new DeliverWorkflowInboxMessageResult(new List<WorkflowExecutionResult>());
     }
 

@@ -51,21 +51,14 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions
-        };
+        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
-        {
-            Id = definitionVersionId
-        };
+        var filter = new WorkflowDefinitionFilter { Id = definitionVersionId };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
