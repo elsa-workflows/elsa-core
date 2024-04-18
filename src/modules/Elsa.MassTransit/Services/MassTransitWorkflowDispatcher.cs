@@ -46,7 +46,7 @@ public class MassTransitWorkflowDispatcher(
             Properties = request.Properties,
             CorrelationId = request.CorrelationId
         };
-        
+
         await DispatchWorkflowAsync(createWorkflowInstanceRequest, request.TriggerActivityId, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -83,7 +83,13 @@ public class MassTransitWorkflowDispatcher(
         var correlationId = request.CorrelationId;
         var workflowInstanceId = request.WorkflowInstanceId;
         var activityInstanceId = request.ActivityInstanceId;
-        var filter = new BookmarkFilter { Hash = hash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
+        var filter = new BookmarkFilter
+        {
+            Hash = hash,
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId
+        };
         var bookmarks = await bookmarkStore.FindManyAsync(filter, cancellationToken);
         await DispatchBookmarksAsync(bookmarks, request.Input, null, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
@@ -92,7 +98,10 @@ public class MassTransitWorkflowDispatcher(
     private async Task DispatchTriggersAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var triggerHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload);
-        var triggerFilter = new TriggerFilter { Hash = triggerHash };
+        var triggerFilter = new TriggerFilter
+        {
+            Hash = triggerHash
+        };
         var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
 
         foreach (var trigger in triggers)
@@ -133,7 +142,13 @@ public class MassTransitWorkflowDispatcher(
         var activityInstanceId = request.ActivityInstanceId;
         var bookmarkHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, activityInstanceId);
 
-        var filter = new BookmarkFilter { Hash = bookmarkHash, CorrelationId = correlationId, WorkflowInstanceId = workflowInstanceId, ActivityInstanceId = activityInstanceId };
+        var filter = new BookmarkFilter
+        {
+            Hash = bookmarkHash,
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId
+        };
         var bookmarks = (await bookmarkStore.FindManyAsync(filter, cancellationToken)).ToList();
 
         await DispatchBookmarksAsync(bookmarks, request.Input, request.Properties, options, cancellationToken);
@@ -143,29 +158,29 @@ public class MassTransitWorkflowDispatcher(
     {
         foreach (var bookmark in bookmarks)
         {
-           var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+            var workflowInstanceId = bookmark.WorkflowInstanceId;
 
-            if (workflow == null)
+            if (input != null || properties != null)
             {
-                logger.LogWarning("Workflow definition with ID '{WorkflowDefinitionId}' not found", trigger.WorkflowDefinitionVersionId);
-                continue;
+                var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
+
+                if (workflowInstance == null)
+                {
+                    logger.LogWarning("Workflow instance with ID '{WorkflowInstanceId}' not found", workflowInstanceId);
+                    continue;
+                }
+
+                if (input != null) workflowInstance.WorkflowState.Input.Merge(input);
+                if (properties != null) workflowInstance.WorkflowState.Properties.Merge(properties);
+
+                await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
             }
 
-            var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+            var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
             {
-                Workflow = workflow,
-                WorkflowInstanceId = request.WorkflowInstanceId,
-                Input = request.Input,
-                Properties = request.Properties,
-                CorrelationId = request.CorrelationId
+                BookmarkId = bookmark.BookmarkId,
+                CorrelationId = bookmark.CorrelationId
             };
-
-            // The workflow instance is created and persisted in the database.
-            var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-
-            // The workflow instance is then dispatched for execution.
-            var sendEndpoint = await GetSendEndpointAsync(options);
-            var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, trigger.ActivityId);
             await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
         }
     }
