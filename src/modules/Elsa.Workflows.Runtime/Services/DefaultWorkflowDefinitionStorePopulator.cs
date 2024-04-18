@@ -49,23 +49,25 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public async Task PopulateStoreAsync(CancellationToken cancellationToken = default)
+    public async Task PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
     {
         var providers = _workflowDefinitionProviders();
         foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
-            foreach (var result in results) await AddAsync(result, cancellationToken);
+            foreach (var result in results) await AddAsync(indexTriggers, result, cancellationToken);
         }
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    public async Task AddAsync(bool indexTriggers, MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
         await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
-        await IndexTriggersAsync(materializedWorkflow, cancellationToken);
+
+        if (indexTriggers)
+            await IndexTriggersAsync(materializedWorkflow, cancellationToken);
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
@@ -103,11 +105,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var workflowJson = _activitySerializer.Serialize(workflow.Root);
 
         // Check if there's already a workflow definition stored with this definition ID and version.
-        var specificVersionFilter = new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId,
-            VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version)
-        };
+        var specificVersionFilter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version) };
 
         var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
 
@@ -120,12 +118,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await UpdateIsLatest();
         await UpdateIsPublished();
 
-        var workflowDefinition = existingDefinitionVersion ?? new WorkflowDefinition
-        {
-            DefinitionId = workflow.Identity.DefinitionId,
-            Id = workflow.Identity.Id,
-            Version = workflow.Identity.Version
-        };
+        var workflowDefinition = existingDefinitionVersion ?? new WorkflowDefinition { DefinitionId = workflow.Identity.DefinitionId, Id = workflow.Identity.Id, Version = workflow.Identity.Version };
 
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;
         workflowDefinition.Name = workflow.WorkflowMetadata.Name;
@@ -145,39 +138,34 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         workflowDefinition.ProviderName = materializedWorkflow.ProviderName;
         workflowDefinition.MaterializerContext = materializerContextJson;
         workflowDefinition.MaterializerName = materializedWorkflow.MaterializerName;
-        
-        if (existingDefinitionVersion is null
-            && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
+
+        if (existingDefinitionVersion is null && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
         {
-            _logger.LogError("Trying to create a new workflow with existing id {workflowId}", workflowDefinition.Id);
+            _logger.LogInformation("Workflow with ID {WorkflowId} already exists", workflowDefinition.Id);
             return;
         }
-        
+
         workflowDefinitionsToSave.Add(workflowDefinition);
-        
+
         var duplicates = workflowDefinitionsToSave.GroupBy(wd => wd.Id)
             .Where(g => g.Count() > 1)
             .Select(g => g.Key)
             .ToList();
-        
+
         if (duplicates.Any())
         {
             throw new Exception($"Unable to update WorkflowDefinition with ids {string.Join(',', duplicates)} multiple times.");
         }
-        
+
         await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
         return;
 
         async Task UpdateIsLatest()
         {
             // Always try to update the IsLatest property based on the VersionNumber
-        
+
             // Reset current latest definitions.
-            var filter = new WorkflowDefinitionFilter
-            {
-                DefinitionId = definitionId,
-                VersionOptions = VersionOptions.Latest
-            };
+            var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
             var latestWorkflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken)).ToList();
 
             // If the latest definitions contains definitions with the same ID then we need to replace them with the latest workflow definitions.
@@ -203,11 +191,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             if (workflow.Publication.IsPublished)
             {
                 // Reset current published definitions.
-                var filter = new WorkflowDefinitionFilter
-                {
-                    DefinitionId = definitionId,
-                    VersionOptions = VersionOptions.Published
-                };
+                var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Published };
                 var publishedWorkflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(filter, cancellationToken)).ToList();
 
                 // If the published workflow definitions contains definitions with the same ID as definitions in the latest workflow definitions, then we need to replace them with the latest workflow definitions.
