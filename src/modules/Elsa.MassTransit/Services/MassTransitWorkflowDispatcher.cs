@@ -46,14 +46,8 @@ public class MassTransitWorkflowDispatcher(
             Properties = request.Properties,
             CorrelationId = request.CorrelationId
         };
-
-        // The workflow instance is created and persisted in the database.
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-
-        // The workflow instance is then dispatched for execution.
-        var sendEndpoint = await GetSendEndpointAsync(options);
-        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, request.TriggerActivityId);
-        await sendEndpoint.Send(message, cancellationToken);
+        
+        await DispatchWorkflowAsync(createWorkflowInstanceRequest, request.TriggerActivityId, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -120,14 +114,16 @@ public class MassTransitWorkflowDispatcher(
                 CorrelationId = request.CorrelationId
             };
 
-            // The workflow instance is created and persisted in the database.
-            var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-
-            // The workflow instance is then dispatched for execution.
-            var sendEndpoint = await GetSendEndpointAsync(options);
-            var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, trigger.ActivityId);
-            await sendEndpoint.Send(message, cancellationToken);
+            await DispatchWorkflowAsync(createWorkflowInstanceRequest, trigger.ActivityId, options, cancellationToken);
         }
+    }
+
+    private async Task DispatchWorkflowAsync(CreateWorkflowInstanceRequest createWorkflowInstanceRequest, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
+    {
+        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+        var sendEndpoint = await GetSendEndpointAsync(options);
+        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
+        await sendEndpoint.Send(message, cancellationToken);
     }
 
     private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
