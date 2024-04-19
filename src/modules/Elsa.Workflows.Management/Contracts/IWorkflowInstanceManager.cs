@@ -11,6 +11,11 @@ namespace Elsa.Workflows.Management.Contracts;
 public interface IWorkflowInstanceManager
 {
     /// <summary>
+    /// Retrieves the workflow instance with the specified ID.
+    /// </summary>
+    Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Saves the specified workflow instance.
     /// </summary>
     Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);

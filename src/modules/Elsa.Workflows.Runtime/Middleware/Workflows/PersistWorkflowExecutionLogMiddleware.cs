@@ -59,7 +59,7 @@ public class PersistWorkflowExecutionLogMiddleware : WorkflowExecutionMiddleware
         }).ToList();
         
         await _workflowExecutionLogStore.AddManyAsync(entries, context.CancellationTokens.SystemCancellationToken);
-        
+
         // Publish notification.
         await _notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationTokens.SystemCancellationToken);
     }

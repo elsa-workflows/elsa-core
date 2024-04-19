@@ -85,8 +85,9 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     private void CopyInputOutputToVariables(ActivityExecutionContext context)
     {
         var serviceProvider = context.GetRequiredService<IServiceProvider>();
+        var activityDescriptor = FindActivityDescriptor(serviceProvider);
 
-        DeclareInputAsVariables(serviceProvider, (descriptor, variable) =>
+        DeclareInputAsVariables(activityDescriptor, (descriptor, variable) =>
         {
             var inputName = descriptor.Name;
             var input = SyntheticProperties.TryGetValue(inputName, out var inputValue) ? (Input?)inputValue : default;
@@ -96,14 +97,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             variable.Set(context, evaluatedExpression);
         });
 
-        DeclareOutputAsVariables(serviceProvider, (descriptor, variable) => context.ExpressionExecutionContext.Memory.Declare(variable));
+        DeclareOutputAsVariables(activityDescriptor, (descriptor, variable) => context.ExpressionExecutionContext.Memory.Declare(variable));
     }
 
-    private void DeclareInputAsVariables(IServiceProvider serviceProvider, Action<InputDescriptor, Variable> configureVariable)
+    private void DeclareInputAsVariables(ActivityDescriptor activityDescriptor, Action<InputDescriptor, Variable> configureVariable)
     {
-        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(Type, Version)!;
-
         foreach (var inputDescriptor in activityDescriptor.Inputs)
         {
             var inputName = inputDescriptor.Name;
@@ -119,11 +117,8 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private void DeclareOutputAsVariables(IServiceProvider serviceProvider, Action<OutputDescriptor, Variable> configureVariable)
+    private void DeclareOutputAsVariables(ActivityDescriptor activityDescriptor, Action<OutputDescriptor, Variable> configureVariable)
     {
-        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(Type, Version)!;
-
         foreach (var outputDescriptor in activityDescriptor.Outputs)
         {
             var outputName = outputDescriptor.Name;
@@ -156,6 +151,12 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
         return workflow;
     }
+    
+    private ActivityDescriptor FindActivityDescriptor(IServiceProvider serviceProvider)
+    {
+        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        return activityRegistry.Find(Type, Version) ?? activityRegistry.Find(Type) ?? throw new Exception($"Could not find activity descriptor for {Type}.");
+    }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
     {
@@ -166,9 +167,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         if (workflow == null)
             throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
+        var activityDescriptor = FindActivityDescriptor(serviceProvider);
+        
         // Declare input and output variables.
-        DeclareInputAsVariables(serviceProvider, (_, variable) => Variables.Declare(variable));
-        DeclareOutputAsVariables(serviceProvider, (_, variable) => Variables.Declare(variable));
+        DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+        DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
 
         // Set the root activity.
         Root = workflow;
