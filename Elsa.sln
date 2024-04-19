@@ -342,6 +342,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.Ma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed", "src\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{7EB0CFB8-B668-4F3F-898D-80411095BC2F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Api.ComponentTests", "test\component\Elsa.Workflows.Api.ComponentTests\Elsa.Workflows.Api.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -822,6 +824,10 @@ Global
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -966,6 +972,7 @@ Global
 		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528} = {08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

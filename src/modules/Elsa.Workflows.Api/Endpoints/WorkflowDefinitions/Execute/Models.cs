@@ -5,7 +5,7 @@ using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-internal class Request
+public class Request
 {
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
@@ -17,7 +17,7 @@ internal class Request
     public object? Input { get; set; }
 }
 
-internal class Response
+public class Response
 {
     public Response(WorkflowState workflowState)
     {
