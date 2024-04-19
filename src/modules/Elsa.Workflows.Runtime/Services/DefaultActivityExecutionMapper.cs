@@ -1,4 +1,5 @@
 using Elsa.Extensions;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Enums;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
@@ -28,7 +29,8 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
          *  }
          */
 
-        var workflowPersistenceProperty = GetDefaultPersistenceMode(source.WorkflowExecutionContext.Workflow.CustomProperties, () => options.Value.LogPersistenceMode);
+        var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
+        var workflowPersistenceProperty = GetDefaultPersistenceMode(workflow.CustomProperties, () => options.Value.LogPersistenceMode);
         var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistencePropertyDefault = GetDefaultPersistenceMode(source.Activity.CustomProperties, () => workflowPersistenceProperty);
 
