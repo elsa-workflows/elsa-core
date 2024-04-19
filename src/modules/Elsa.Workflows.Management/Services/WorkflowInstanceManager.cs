@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -8,6 +8,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
+using Exception = System.Exception;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -21,6 +22,12 @@ public class WorkflowInstanceManager(
     IWorkflowStateSerializer workflowStateSerializer)
     : IWorkflowInstanceManager
 {
+    /// <inheritdoc />
+    public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return await store.FindAsync(id, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {

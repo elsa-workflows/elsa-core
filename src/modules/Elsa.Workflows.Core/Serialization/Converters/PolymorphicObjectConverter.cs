@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Dynamic;
+using System.Reflection;
+using System.Runtime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -47,7 +49,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
             }
-            catch (NotSupportedException e)
+            catch (Exception e) when (e is NotSupportedException or TargetException)
             {
                 return default!;
             }
