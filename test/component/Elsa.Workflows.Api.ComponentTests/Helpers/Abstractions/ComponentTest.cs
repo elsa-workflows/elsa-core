@@ -1,18 +1,18 @@
-﻿using Elsa.Workflows.Api.ComponentTests.Helpers;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Api.ComponentTests.Helpers;
+namespace Elsa.Workflows.Api.ComponentTests;
 
-public abstract class ComponentTest : IClassFixture<WorkflowServerTestWebAppFactory>
+[Collection(nameof(WebAppCollection))]
+public abstract class ComponentTest
 {
-    protected ComponentTest(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactory factory)
+    protected ComponentTest(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactoryFixture factoryFixture)
     {
-        factory.TestOutputHelper = testOutputHelper;
-        Factory = factory;
-        Scope = factory.Services.CreateScope();
+        factoryFixture.TestOutputHelper = testOutputHelper;
+        FactoryFixture = factoryFixture;
+        Scope = factoryFixture.Services.CreateScope();
     }
 
-    protected WorkflowServerTestWebAppFactory Factory { get; }
+    protected WorkflowServerTestWebAppFactoryFixture FactoryFixture { get; }
     protected IServiceScope Scope { get; }
 }

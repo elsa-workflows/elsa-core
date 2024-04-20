@@ -1,14 +1,13 @@
-﻿using Elsa.Workflows.Api.ComponentTests.Helpers;
-using Xunit.Abstractions;
+﻿using Xunit.Abstractions;
 
 namespace Elsa.Workflows.Api.ComponentTests.Scenarios.HttpWorkflows;
 
-public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactory factory) : ComponentTest(testOutputHelper, factory)
+public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {
     [Fact]
     public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
     {
-        var client = Factory.CreateHttpWorkflowClient();
+        var client = FactoryFixture.CreateHttpWorkflowClient();
         var response = await client.GetStringAsync("hello-world");
         Assert.Equal("Hello World!", response);
     }

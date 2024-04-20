@@ -1,0 +1,189 @@
+{
+  "id": "5590069018aa4f0e",
+  "definitionId": "fork-1",
+  "name": "Fork",
+  "createdAt": "2024-04-20T20:52:32.29327+00:00",
+  "version": 2,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "c74056c7f1f4a3",
+    "nodeId": "Workflow1:c74056c7f1f4a3",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "branches": {
+          "typeName": "String[]",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022One\u0022,\u0022Two\u0022,\u0022Three\u0022]"
+          }
+        },
+        "id": "c0e09e3ac3cfdba7",
+        "nodeId": "Workflow1:c74056c7f1f4a3:c0e09e3ac3cfdba7",
+        "name": "FlowFork1",
+        "type": "Elsa.FlowFork",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -340,
+              "y": -197
+            },
+            "size": {
+              "width": 145.5625,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "One"
+          }
+        },
+        "id": "e6f0cddb1cdbdd7c",
+        "nodeId": "Workflow1:c74056c7f1f4a3:e6f0cddb1cdbdd7c",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -80,
+              "y": -300
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Two"
+          }
+        },
+        "id": "3ece093dfc20c752",
+        "nodeId": "Workflow1:c74056c7f1f4a3:3ece093dfc20c752",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -80,
+              "y": -197
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Three"
+          }
+        },
+        "id": "ca9fcd1d6069df9",
+        "nodeId": "Workflow1:c74056c7f1f4a3:ca9fcd1d6069df9",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -80,
+              "y": -102
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "c0e09e3ac3cfdba7",
+          "port": "One"
+        },
+        "target": {
+          "activity": "e6f0cddb1cdbdd7c",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "c0e09e3ac3cfdba7",
+          "port": "Two"
+        },
+        "target": {
+          "activity": "3ece093dfc20c752",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "c0e09e3ac3cfdba7",
+          "port": "Three"
+        },
+        "target": {
+          "activity": "ca9fcd1d6069df9",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

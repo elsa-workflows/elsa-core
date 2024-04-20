@@ -17,10 +17,10 @@ using Testcontainers.PostgreSql;
 using Xunit.Abstractions;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.Api.ComponentTests.Helpers;
+namespace Elsa.Workflows.Api.ComponentTests;
 
 [UsedImplicitly]
-public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class WorkflowServerTestWebAppFactoryFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:13.3-alpine")
@@ -49,7 +49,7 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
     {
         var dbConnectionString = _dbContainer.GetConnectionString();
 
-        Program.ConfigureForTest += elsa =>
+        Program.ConfigureForTest = elsa =>
         {
             elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
             elsa.UseFluentStorageProvider(sp =>
