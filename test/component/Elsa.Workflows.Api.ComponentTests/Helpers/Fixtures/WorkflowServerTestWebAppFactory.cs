@@ -1,18 +1,23 @@
 ﻿using System.Net.Http.Headers;
-using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
+using Elsa.Testing.Shared;
+using Elsa.Workflows.Services;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Refit;
 using Testcontainers.PostgreSql;
+using Xunit.Abstractions;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.Api.ComponentTests;
+namespace Elsa.Workflows.Api.ComponentTests.Helpers;
 
 [UsedImplicitly]
 public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
@@ -24,6 +29,8 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
         .WithPassword("postgres")
         .Build();
 
+    public ITestOutputHelper? TestOutputHelper { get; set; }
+
     public TClient CreateApiClient<TClient>()
     {
         var client = CreateClient();
@@ -34,7 +41,7 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var dbConnectionString = _dbContainer.GetConnectionString();
-        
+
         Program.ConfigureForTest += elsa =>
         {
             elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
@@ -53,9 +60,20 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
             {
                 management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
             });
+            elsa.UseWorkflows(workflows =>
+            {
+                if (TestOutputHelper != null)
+                    workflows.WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(TestOutputHelper)));
+            });
         };
+
+        builder.ConfigureTestServices(services =>
+        {
+            if (TestOutputHelper != null)
+                services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(TestOutputHelper)).SetMinimumLevel(LogLevel.Debug));
+        });
     }
-    
+
     protected override void ConfigureClient(HttpClient client)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);

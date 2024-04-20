@@ -3,17 +3,15 @@ using Xunit.Abstractions;
 
 namespace Elsa.Testing.Shared;
 
-public class XunitLoggerProvider : ILoggerProvider
+/// <summary>
+/// Provides an <see cref="ILoggerProvider"/> implementation that writes log messages to xUnit's <see cref="ITestOutputHelper"/>.
+/// </summary>
+public class XunitLoggerProvider(ITestOutputHelper testOutputHelper) : ILoggerProvider
 {
-    private readonly ITestOutputHelper _testOutputHelper;
+    /// <inheritdoc />
+    public ILogger CreateLogger(string categoryName) => new XunitLogger(testOutputHelper, categoryName);
 
-    public XunitLoggerProvider(ITestOutputHelper testOutputHelper)
-    {
-        _testOutputHelper = testOutputHelper;
-    }
-
-    public ILogger CreateLogger(string categoryName) => new XunitLogger(_testOutputHelper, categoryName);
-
+    /// <inheritdoc />
     public void Dispose()
     {
     }

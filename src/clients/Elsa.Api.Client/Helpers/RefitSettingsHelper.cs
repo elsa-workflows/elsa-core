@@ -8,26 +8,39 @@ namespace Elsa.Api.Client;
 /// <summary>
 /// Contains helper methods for configuring Refit settings.
 /// </summary>
-public class RefitSettingsHelper
+public static class RefitSettingsHelper
 {
+    private static JsonSerializerOptions? _jsonSerializerOptions;
+
     /// <summary>
     /// Creates a <see cref="RefitSettings"/> instance configured for Elsa. 
     /// </summary>
     public static RefitSettings CreateRefitSettings()
     {
-        JsonSerializerOptions serializerOptions = new()
+        var settings = new RefitSettings
+        {
+            ContentSerializer = new SystemTextJsonContentSerializer(CreateJsonSerializerOptions())
+        };
+
+        return settings;
+    }
+
+    /// <summary>
+    /// Creates a <see cref="JsonSerializerOptions"/> instance configured for Elsa.
+    /// </summary>
+    public static JsonSerializerOptions CreateJsonSerializerOptions()
+    {
+        if (_jsonSerializerOptions != null)
+            return _jsonSerializerOptions;
+
+        var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
+        options.Converters.Add(new JsonStringEnumConverter());
+        options.Converters.Add(new VersionOptionsJsonConverter());
 
-        var settings = new RefitSettings
-        {
-            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
-        };
-
-        return settings;
+        return _jsonSerializerOptions = options;
     }
 }

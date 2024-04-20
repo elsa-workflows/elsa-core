@@ -1,0 +1,160 @@
+{
+  "id": "a86a9f668817dcb6",
+  "definitionId": "f926beb0afc8505e",
+  "name": "HTTP Hello World",
+  "createdAt": "2024-04-20T17:14:34.118307+00:00",
+  "version": 2,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "95a12c8ee4e8c5fc",
+    "nodeId": "Workflow1:95a12c8ee4e8c5fc",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "hello-world"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "String[]",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022GET\u0022]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": null,
+        "files": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "90c3d3b2ea1f6ddc",
+        "nodeId": "Workflow1:95a12c8ee4e8c5fc:90c3d3b2ea1f6ddc",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -262.796875,
+              "y": 264
+            },
+            "size": {
+              "width": 176.390625,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "statusCode": {
+          "typeName": "System.Net.HttpStatusCode, System.Net.Primitives",
+          "expression": {
+            "type": "Literal",
+            "value": "OK"
+          }
+        },
+        "content": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Hello World!"
+          }
+        },
+        "contentType": null,
+        "responseHeaders": {
+          "typeName": "Elsa.Http.Models.HttpHeaders, Elsa.Http",
+          "expression": {
+            "type": "Literal",
+            "value": "{}"
+          }
+        },
+        "id": "3048105347912af5",
+        "nodeId": "Workflow1:95a12c8ee4e8c5fc:3048105347912af5",
+        "name": "WriteHttpResponse1",
+        "type": "Elsa.WriteHttpResponse",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 35.203125,
+              "y": 264
+            },
+            "size": {
+              "width": 183.640625,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "90c3d3b2ea1f6ddc",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "3048105347912af5",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}
