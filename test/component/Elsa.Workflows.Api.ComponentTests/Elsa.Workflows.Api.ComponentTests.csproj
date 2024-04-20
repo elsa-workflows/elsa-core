@@ -23,11 +23,13 @@
       <None Update="Workflows\hello-world.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Workflows\http-hello-world.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="Helpers\" />
-      <Folder Include="Scenarios\HttpWorkflows\" />
     </ItemGroup>
 
 </Project>

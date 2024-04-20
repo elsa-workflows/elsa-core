@@ -38,6 +38,13 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
         return RestService.For<TClient>(client, CreateRefitSettings());
     }
 
+    public HttpClient CreateHttpWorkflowClient()
+    {
+        var client = CreateClient();
+        client.BaseAddress = new Uri(client.BaseAddress!, "/workflows/");
+        return client;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var dbConnectionString = _dbContainer.GetConnectionString();
