@@ -1,36 +1,14 @@
 {
-  "id": "d97168e948a04a1e",
+  "id": "hello-world-v1",
   "definitionId": "hello-world",
   "name": "Hello World",
-  "createdAt": "2024-04-19T20:48:21.332332+00:00",
-  "version": 2,
-  "toolVersion": "3.2.0.0",
-  "variables": [],
-  "inputs": [],
-  "outputs": [],
-  "outcomes": [],
-  "customProperties": {
-    "Elsa:WorkflowContextProviderTypes": []
-  },
-  "isReadonly": false,
-  "isSystem": false,
   "isLatest": true,
   "isPublished": true,
-  "options": {
-    "autoUpdateConsumingWorkflows": false
-  },
   "root": {
     "type": "Elsa.Flowchart",
     "version": 1,
     "id": "969b0703a9379c3b",
     "nodeId": "Workflow1:969b0703a9379c3b",
-    "metadata": {},
-    "customProperties": {
-      "source": "FlowchartJsonConverter.cs:45",
-      "notFoundConnections": [],
-      "canStartWorkflow": false,
-      "runAsynchronously": false
-    },
     "activities": [
       {
         "text": {
@@ -45,10 +23,6 @@
         "name": "WriteLine1",
         "type": "Elsa.WriteLine",
         "version": 1,
-        "customProperties": {
-          "canStartWorkflow": false,
-          "runAsynchronously": false
-        },
         "metadata": {
           "designer": {
             "position": {

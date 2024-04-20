@@ -20,6 +20,7 @@ public static class ModuleExtensions
         var module = services.GetOrCreateModule();
         module.Configure<AppFeature>(app => app.Configurator = configure);
         module.Apply();
+        
         return module;
     }
     

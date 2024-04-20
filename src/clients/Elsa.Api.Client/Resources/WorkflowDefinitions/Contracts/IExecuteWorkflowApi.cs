@@ -18,7 +18,7 @@ public interface IExecuteWorkflowApi
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A response containing information about the workflow instance that was created.</returns>
     [Post("/workflow-definitions/{definitionId}/execute")]
-    Task<HttpResponseMessage> ExecuteAsync(string definitionId, ExecuteWorkflowDefinitionRequest? request, CancellationToken cancellationToken = default);
+    Task<HttpResponseMessage> ExecuteAsync(string definitionId, ExecuteWorkflowDefinitionRequest? request = null , CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Dispatches a request to execute the specified workflow definition.
@@ -28,5 +28,5 @@ public interface IExecuteWorkflowApi
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>A response containing information about the workflow instance that was created.</returns>
     [Post("/workflow-definitions/{definitionId}/dispatch")]
-    Task<HttpResponseMessage> DispatchAsync(string definitionId, DispatchWorkflowDefinitionRequest? request, CancellationToken cancellationToken = default);
+    Task<HttpResponseMessage> DispatchAsync(string definitionId, DispatchWorkflowDefinitionRequest? request = null, CancellationToken cancellationToken = default);
 }

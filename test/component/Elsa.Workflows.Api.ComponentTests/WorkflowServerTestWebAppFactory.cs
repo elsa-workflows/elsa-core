@@ -1,19 +1,20 @@
-﻿using Elsa.EntityFrameworkCore.Extensions;
+﻿using System.Net.Http.Headers;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
-using Elsa.WorkflowProviders.BlobStorage.Contracts;
-using Elsa.WorkflowProviders.BlobStorage.Providers;
+using Elsa.Identity.Providers;
 using FluentStorage;
+using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
+using Refit;
 using Testcontainers.PostgreSql;
+using static Elsa.Api.Client.RefitSettingsHelper;
 
 namespace Elsa.Workflows.Api.ComponentTests;
 
+[UsedImplicitly]
 public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
@@ -22,34 +23,42 @@ public class WorkflowServerTestWebAppFactory : WebApplicationFactory<Program>, I
         .WithUsername("postgres")
         .WithPassword("postgres")
         .Build();
-    
+
+    public TClient CreateApiClient<TClient>()
+    {
+        var client = CreateClient();
+        client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
+        return RestService.For<TClient>(client, CreateRefitSettings());
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var dbConnectionString = _dbContainer.GetConnectionString();
         
-        builder.ConfigureTestServices(services =>
+        Program.ConfigureForTest += elsa =>
         {
-            var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
-            var workflowsDirectory = new[]
+            elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
+            elsa.UseFluentStorageProvider(sp =>
             {
-                assemblyDirectory, "Workflows"
-            };
-            services.RemoveWhere(x => x.ServiceType == typeof(IBlobStorageProvider));
-            services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(StorageFactory.Blobs.DirectoryFiles(Path.Combine(workflowsDirectory))));
-            
-            // services.ConfigureElsa(elsa =>
-            // {
-            //     
-            //     
-            //     elsa.UseWorkflowManagement(management =>
-            //     {
-            //         management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
-            //     });
-            // });
-        });
-        
-        base.ConfigureWebHost(builder);
+                var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
+                var workflowsDirectorySegments = new[]
+                {
+                    assemblyDirectory, "Workflows"
+                };
+                var workflowsDirectory = Path.Join(workflowsDirectorySegments);
+                return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
+            });
+            elsa.UseWorkflowManagement(management =>
+            {
+                management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+            });
+        };
+    }
+    
+    protected override void ConfigureClient(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
     }
 
     Task IAsyncLifetime.InitializeAsync()
