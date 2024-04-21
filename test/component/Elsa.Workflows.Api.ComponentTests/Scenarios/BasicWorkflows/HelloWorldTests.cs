@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace Elsa.Workflows.Api.ComponentTests.Scenarios.BasicWorkflows;
 
-public class HelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class HelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {
     [Fact]
     public async Task HelloWorldWorkflow_ShouldReturnOk()

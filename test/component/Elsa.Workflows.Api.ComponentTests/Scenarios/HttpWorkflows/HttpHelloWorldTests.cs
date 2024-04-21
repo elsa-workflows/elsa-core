@@ -2,7 +2,7 @@
 
 namespace Elsa.Workflows.Api.ComponentTests.Scenarios.HttpWorkflows;
 
-public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {
     [Fact]
     public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
