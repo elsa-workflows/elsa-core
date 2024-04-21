@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace Elsa.Workflows.Api.ComponentTests.Scenarios.WorkflowCompletion;
 
-public class WorkflowCompletionTests(ITestOutputHelper testOutputHelper, WorkflowServerTestWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class WorkflowCompletionTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {
     [Theory]
     [InlineData("hello-world")]

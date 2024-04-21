@@ -20,7 +20,7 @@ using static Elsa.Api.Client.RefitSettingsHelper;
 namespace Elsa.Workflows.Api.ComponentTests;
 
 [UsedImplicitly]
-public class WorkflowServerTestWebAppFactoryFixture : WebApplicationFactory<Program>, IAsyncLifetime
+public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
         .WithImage("postgres:13.3-alpine")
@@ -58,7 +58,7 @@ public class WorkflowServerTestWebAppFactoryFixture : WebApplicationFactory<Prog
                 var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
                 var workflowsDirectorySegments = new[]
                 {
-                    assemblyDirectory, "Workflows"
+                    assemblyDirectory, "Scenarios"
                 };
                 var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                 return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
