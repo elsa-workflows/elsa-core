@@ -3,7 +3,10 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
+using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Services;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -51,6 +54,8 @@ public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>
 
         Program.ConfigureForTest = elsa =>
         {
+            elsa.AddWorkflowsFrom<WorkflowServerWebAppFactoryFixture>();
+            elsa.AddActivitiesFrom<WorkflowServerWebAppFactoryFixture>();
             elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
             elsa.UseFluentStorageProvider(sp =>
             {
@@ -78,6 +83,11 @@ public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>
         {
             if (TestOutputHelper != null)
                 services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(TestOutputHelper)).SetMinimumLevel(LogLevel.Debug));
+            
+            services.AddSingleton<ISignalManager, SignalManager>();
+            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddNotificationHandlersFrom<WorkflowServerWebAppFactoryFixture>();
+
         });
     }
 
