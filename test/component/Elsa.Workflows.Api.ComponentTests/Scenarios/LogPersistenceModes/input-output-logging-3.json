@@ -1,0 +1,65 @@
+{
+  "id": "6da18530316aee2e",
+  "definitionId": "input-output-logging-3",
+  "name": "Input Output Logging 3",
+  "createdAt": "2024-04-21T20:08:17.495551+00:00",
+  "version": 1,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "9aec3fea5a39cccd",
+    "nodeId": "Workflow2:9aec3fea5a39cccd",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "input-output-logging-3-child",
+        "workflowDefinitionVersionId": "4cf7c10c7a2901d6",
+        "latestAvailablePublishedVersion": 4,
+        "latestAvailablePublishedVersionId": "4cf7c10c7a2901d6",
+        "id": "6bf4016d6074831f",
+        "nodeId": "Workflow2:9aec3fea5a39cccd:6bf4016d6074831f",
+        "name": "InputOutputLogging3-Child1",
+        "type": "InputOutputLogging3-Child",
+        "version": 4,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -360,
+              "y": -320
+            },
+            "size": {
+              "width": 246.375,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

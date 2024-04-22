@@ -38,6 +38,12 @@
       <None Update="Scenarios\LogPersistenceModes\input-output-logging-2.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Update="Scenarios\LogPersistenceModes\input-output-logging-3.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Scenarios\LogPersistenceModes\input-output-logging-3-child.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>

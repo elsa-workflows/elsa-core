@@ -8,7 +8,7 @@ public enum LogPersistenceMode
     /// <summary>
     /// Persist using the Parent mode
     /// </summary>
-    Default,
+    Inherit,
 
     /// <summary>
     /// Include property to store
