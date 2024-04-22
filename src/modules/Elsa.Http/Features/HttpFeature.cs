@@ -55,7 +55,7 @@ public class HttpFeature : FeatureBase
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
 
     /// <summary>
-    /// A delegate that is invoked when an HTTP workflow faults. 
+    /// A delegate that is invoked when an HTTP workflow faults.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
 
@@ -190,6 +190,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IDownloadableContentHandler, FormFileDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
 
             // File caches.
             .AddScoped(FileCache)
