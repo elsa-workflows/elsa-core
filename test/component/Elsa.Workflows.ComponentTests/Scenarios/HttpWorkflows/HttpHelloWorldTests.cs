@@ -1,6 +1,6 @@
 ﻿using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Api.ComponentTests.Scenarios.HttpWorkflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
 public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {

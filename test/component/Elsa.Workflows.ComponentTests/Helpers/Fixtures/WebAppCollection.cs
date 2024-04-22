@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Api.ComponentTests;
+namespace Elsa.Workflows.ComponentTests;
 
 [CollectionDefinition(nameof(WebAppCollection))]
 public class WebAppCollection : ICollectionFixture<WorkflowServerWebAppFactoryFixture>

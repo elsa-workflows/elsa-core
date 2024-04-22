@@ -3,7 +3,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Api.ComponentTests.Scenarios.BasicWorkflows;
+namespace Elsa.Workflows.ComponentTests.Scenarios.BasicWorkflows;
 
 public class HelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {

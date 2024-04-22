@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Api.ComponentTests;
+namespace Elsa.Workflows.ComponentTests;
 
 [Collection(nameof(WebAppCollection))]
 public abstract class ComponentTest

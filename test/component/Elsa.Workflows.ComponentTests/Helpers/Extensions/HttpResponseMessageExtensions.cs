@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.Api.Client;
 
-namespace Elsa.Workflows.Api.ComponentTests;
+namespace Elsa.Workflows.ComponentTests;
 
 public static class HttpResponseMessageExtensions
 {

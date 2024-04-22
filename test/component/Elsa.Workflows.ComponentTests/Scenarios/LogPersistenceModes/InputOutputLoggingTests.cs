@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.Api.ComponentTests.Scenarios.LogPersistenceModes;
+namespace Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes;
 
 public class InputOutputLoggingTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
 {

@@ -17,7 +17,7 @@ using Testcontainers.PostgreSql;
 using Xunit.Abstractions;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.Api.ComponentTests;
+namespace Elsa.Workflows.ComponentTests;
 
 [UsedImplicitly]
 public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>, IAsyncLifetime

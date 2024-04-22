@@ -234,8 +234,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator", "src\common
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTests", "test\unit\Elsa.Workflows.Core.UnitTests\Elsa.Workflows.Core.UnitTests.csproj", "{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoCluster.ComponentTests", "test\component\Elsa.ProtoCluster.ComponentTests\Elsa.ProtoCluster.ComponentTests.csproj", "{B99B23D4-6D36-4A31-BE92-DE2415514C79}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ChildWorkflows", "samples\aspnet\Elsa.Samples.AspNet.ChildWorkflows\Elsa.Samples.AspNet.ChildWorkflows.csproj", "{2EA47068-6079-4276-8776-F67DE99B568D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.DocumentApproval", "samples\aspnet\Elsa.Samples.AspNet.DocumentApproval\Elsa.Samples.AspNet.DocumentApproval.csproj", "{CA9391E3-FA3F-4F96-B6DF-25309BFE7D05}"
@@ -342,7 +340,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.Ma
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed", "src\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{7EB0CFB8-B668-4F3F-898D-80411095BC2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Api.ComponentTests", "test\component\Elsa.Workflows.Api.ComponentTests\Elsa.Workflows.Api.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.ComponentTests", "test\component\Elsa.Workflows.ComponentTests\Elsa.Workflows.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -662,10 +660,6 @@ Global
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -927,7 +921,6 @@ Global
 		{85E13383-7C39-4719-AAC0-0B357C3A97C7} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{28818676-F6AF-4203-8B65-BD33A50CB9A2} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79} = {08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}
 		{2EA47068-6079-4276-8776-F67DE99B568D} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{CA9391E3-FA3F-4F96-B6DF-25309BFE7D05} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{1B794B9C-9B8A-4D5A-9848-B51274BD1FC5} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
