@@ -10,11 +10,10 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes;
 
-public class InputOutputLoggingTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class InputOutputLoggingTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
 {
     [Theory]
     [InlineData("input-output-logging-1", true, false, true, false)]

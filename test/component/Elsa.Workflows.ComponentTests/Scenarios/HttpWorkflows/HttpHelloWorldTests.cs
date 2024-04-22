@@ -1,8 +1,6 @@
-﻿using Xunit.Abstractions;
+﻿namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
-namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
-
-public class HttpHelloWorldTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class HttpHelloWorldTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
 {
     [Fact]
     public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()

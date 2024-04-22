@@ -1,11 +1,10 @@
 ﻿using System.Net;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowCompletion;
 
-public class WorkflowCompletionTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(testOutputHelper, factoryFixture)
+public class WorkflowCompletionTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
 {
     [Theory]
     [InlineData("hello-world")]

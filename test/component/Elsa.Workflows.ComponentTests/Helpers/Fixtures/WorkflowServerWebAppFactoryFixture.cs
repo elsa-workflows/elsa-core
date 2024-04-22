@@ -3,21 +3,15 @@ using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
-using Elsa.Mediator.Contracts;
-using Elsa.Testing.Shared;
 using Elsa.Workflows.ComponentTests.Services;
-using Elsa.Workflows.Notifications;
-using Elsa.Workflows.Services;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Refit;
 using Testcontainers.PostgreSql;
-using Xunit.Abstractions;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
 namespace Elsa.Workflows.ComponentTests;
@@ -31,9 +25,7 @@ public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>
         .WithUsername("postgres")
         .WithPassword("postgres")
         .Build();
-
-    public ITestOutputHelper? TestOutputHelper { get; set; }
-
+    
     public TClient CreateApiClient<TClient>()
     {
         var client = CreateClient();
@@ -72,18 +64,10 @@ public class WorkflowServerWebAppFactoryFixture : WebApplicationFactory<Program>
             {
                 management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
             });
-            elsa.UseWorkflows(workflows =>
-            {
-                if (TestOutputHelper != null)
-                    workflows.WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(TestOutputHelper)));
-            });
         };
 
         builder.ConfigureTestServices(services =>
         {
-            if (TestOutputHelper != null)
-                services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(TestOutputHelper)).SetMinimumLevel(LogLevel.Debug));
-            
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
             services.AddNotificationHandlersFrom<WorkflowServerWebAppFactoryFixture>();

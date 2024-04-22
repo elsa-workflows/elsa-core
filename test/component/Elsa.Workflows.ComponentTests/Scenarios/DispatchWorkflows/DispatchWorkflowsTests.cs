@@ -1,7 +1,6 @@
 ﻿using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows;
 
@@ -14,7 +13,7 @@ public class DispatchWorkflowsTests : ComponentTest
     private static readonly object ChildWorkflowCompletedSignal = new();
     private static readonly object ParentWorkflowCompletedSignal = new();
 
-    public DispatchWorkflowsTests(ITestOutputHelper testOutputHelper, WorkflowServerWebAppFactoryFixture factoryFixture) : base(testOutputHelper, factoryFixture)
+    public DispatchWorkflowsTests(WorkflowServerWebAppFactoryFixture factoryFixture) : base(factoryFixture)
     {
         _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
         _workflowEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowEvents>();
