@@ -13,7 +13,7 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes;
 
-public class InputOutputLoggingTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
+public class InputOutputLoggingTests(App app) : AppComponentTest(app)
 {
     [Theory]
     [InlineData("input-output-logging-1", true, false, true, false)]
@@ -61,7 +61,7 @@ public class InputOutputLoggingTests(WorkflowServerWebAppFactoryFixture factoryF
 
     private async Task<WorkflowState> ExecuteWorkflowAsync(string workflowDefinitionId)
     {
-        var client = FactoryFixture.CreateApiClient<IExecuteWorkflowApi>();
+        var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync(workflowDefinitionId);
         var model = await response.ReadAsJsonAsync<Response>();
         return model.WorkflowState;

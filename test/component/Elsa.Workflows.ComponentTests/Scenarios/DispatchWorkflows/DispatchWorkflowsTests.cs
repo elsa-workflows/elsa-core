@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows;
 
-public class DispatchWorkflowsTests : ComponentTest
+public class DispatchWorkflowsTests : AppComponentTest
 {
     private readonly IWorkflowEvents _workflowEvents;
     private readonly ISignalManager _signalManager;
@@ -13,7 +13,7 @@ public class DispatchWorkflowsTests : ComponentTest
     private static readonly object ChildWorkflowCompletedSignal = new();
     private static readonly object ParentWorkflowCompletedSignal = new();
 
-    public DispatchWorkflowsTests(WorkflowServerWebAppFactoryFixture factoryFixture) : base(factoryFixture)
+    public DispatchWorkflowsTests(App app) : base(app)
     {
         _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
         _workflowEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowEvents>();

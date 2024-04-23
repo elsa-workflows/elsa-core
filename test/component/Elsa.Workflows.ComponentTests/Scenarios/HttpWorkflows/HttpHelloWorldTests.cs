@@ -1,11 +1,11 @@
 ﻿namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
-public class HttpHelloWorldTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
+public class HttpHelloWorldTests(App app) : AppComponentTest(app)
 {
     [Fact]
     public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
     {
-        var client = FactoryFixture.CreateHttpWorkflowClient();
+        var client = WorkflowServer.CreateHttpWorkflowClient();
         var response = await client.GetStringAsync("hello-world");
         Assert.Equal("Hello World!", response);
     }
