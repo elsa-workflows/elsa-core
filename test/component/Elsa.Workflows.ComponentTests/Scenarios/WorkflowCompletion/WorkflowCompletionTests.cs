@@ -7,8 +7,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowCompletion;
 public class WorkflowCompletionTests(WorkflowServerWebAppFactoryFixture factoryFixture) : ComponentTest(factoryFixture)
 {
     [Theory]
-    [InlineData("hello-world")]
-    [InlineData("fork-1")]
+    [InlineData("2630068018ac1f0a")]
+    [InlineData("5590069018aa4f0e")]
     public async Task Workflow_ShouldComplete(string workflowDefinitionId)
     {
         var client = FactoryFixture.CreateApiClient<IExecuteWorkflowApi>();

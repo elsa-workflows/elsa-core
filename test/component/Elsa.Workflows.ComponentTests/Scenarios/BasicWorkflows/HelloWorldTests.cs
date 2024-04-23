@@ -10,7 +10,7 @@ public class HelloWorldTests(WorkflowServerWebAppFactoryFixture factoryFixture) 
     public async Task HelloWorldWorkflow_ShouldReturnOk()
     {
         var client = FactoryFixture.CreateApiClient<IExecuteWorkflowApi>();
-        using var response = await client.ExecuteAsync("hello-world");
+        using var response = await client.ExecuteAsync("1590068018aa4f0a");
         var model = await response.ReadAsJsonAsync<Response>();
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
