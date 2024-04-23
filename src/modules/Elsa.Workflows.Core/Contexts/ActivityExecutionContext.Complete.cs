@@ -41,29 +41,6 @@ public partial class ActivityExecutionContext
         if (outcomes != null)
             JournalData["Outcomes"] = outcomes.Names;
 
-        // Record the output, if any.
-        var activity = Activity;
-        var expressionExecutionContext = ExpressionExecutionContext;
-        var activityDescriptor = ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
-        var serializer = GetRequiredService<ISafeSerializer>();
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            if (outputDescriptor.IsSerializable == false)
-                continue;
-
-            var outputName = outputDescriptor.Name;
-            var outputValue = outputs[outputName];
-
-            if (outputValue == null!)
-                continue;
-
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue, CancellationToken);
-            JournalData[outputName] = serializedOutputValue;
-        }
-
         // Add an execution log entry.
         AddExecutionLogEntry("Completed", payload: JournalData);
 
