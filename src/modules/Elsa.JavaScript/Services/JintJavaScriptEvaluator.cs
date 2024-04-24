@@ -201,7 +201,10 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private static string Serialize(object value)
     {
-        var options = new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+        var options = new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
         options.Converters.Add(new JsonStringEnumConverter());
 
         return JsonSerializer.Serialize(value, options);
