@@ -23,6 +23,15 @@ public class JintOptions
     public bool AllowConfigurationAccess { get; set; }
 
     /// <summary>
+    /// The timeout for script caching.
+    /// </summary>
+    /// <remarks>
+    /// The <c>ScriptCacheTimeout</c> property specifies the duration for which the scripts are cached in the Jint JavaScript engine. When a script is executed, it is compiled and cached for future use. This caching improves performance by avoiding repetitive compilation of the same script.
+    /// If the value of <c>ScriptCacheTimeout</c> is <c>null</c>, the scripts are cached indefinitely. If a time value is specified, the scripts will be recompiled after the specified duration has elapsed.
+    /// </remarks>
+    public TimeSpan? ScriptCacheTimeout { get; set; }
+
+    /// <summary>
     /// A list of callbacks that are invoked when the Jint engine is created. Use this to configure the engine.
     /// </summary>
     public Action<Engine, ExpressionExecutionContext> ConfigureEngineCallback = (_, _) => { };
