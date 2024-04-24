@@ -133,6 +133,7 @@ public class WriteHttpResponse : Activity
                     await response.WriteAsync("The response includes a type that cannot be serialized.");
                 }
             }
+            await response.CompleteAsync();
         }
 
         // Complete activity.
