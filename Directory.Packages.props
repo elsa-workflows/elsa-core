@@ -13,6 +13,7 @@
     <PackageVersion Include="Azure.ResourceManager.AppContainers" Version="1.1.0" />
     <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.7.0" />
     <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.0.0" />
+    <PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageVersion Include="Bogus" Version="35.4.0" />
     <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0" />

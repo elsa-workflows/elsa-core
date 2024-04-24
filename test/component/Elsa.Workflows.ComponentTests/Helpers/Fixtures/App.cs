@@ -9,7 +9,7 @@ public class App : IAsyncLifetime
     {
         Infrastructure = new();
         Cluster = new(Infrastructure);
-        WorkflowServer = new(Infrastructure, "http://localhost:5000");
+        WorkflowServer = Cluster.Pod1;
     }
 
     public Infrastructure Infrastructure { get; set; }
@@ -23,7 +23,6 @@ public class App : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        await WorkflowServer.DisposeAsync();
         await Cluster.DisposeAsync();
         await Infrastructure.DisposeAsync();
     }

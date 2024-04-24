@@ -11,6 +11,8 @@ public class Infrastructure : IAsyncLifetime
         .WithPassword("postgres")
         .Build();
     
+        
+    
     public Task InitializeAsync()
     {
         return DbContainer.StartAsync();
