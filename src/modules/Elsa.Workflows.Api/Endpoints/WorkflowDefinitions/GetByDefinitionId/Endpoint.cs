@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -51,7 +52,7 @@ internal class GetByDefinitionId : ElsaEndpoint<Request>
         }
         
         var model = await _mapper.MapAsync(definition, cancellationToken);
-        var serializerOptions = _apiSerializer.CreateOptions();
+        var serializerOptions = _apiSerializer.CreateOptions().Clone();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
