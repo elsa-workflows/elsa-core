@@ -36,7 +36,7 @@ public class WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinition
         if(_writeOptions != null)
             return _writeOptions;
         
-        var options = apiSerializer.CreateOptions().Clone();
+        var options = apiSerializer.GetOptions().Clone();
         options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
         return _writeOptions = options;
     }

@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -112,7 +113,7 @@ internal class Export : ElsaEndpoint<Request>
 
     private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
     {
-        var serializerOptions = _serializer.CreateOptions();
+        var serializerOptions = _serializer.GetOptions().Clone();
 
         // Exclude composite activities from being serialized.
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
