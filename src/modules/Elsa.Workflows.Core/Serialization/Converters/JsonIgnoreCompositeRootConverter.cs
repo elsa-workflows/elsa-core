@@ -12,8 +12,6 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
 {
-    private JsonSerializerOptions? _options;
-    
     /// <inheritdoc />
     public override IActivity Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -27,7 +25,6 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
         writer.WriteStartObject();
 
         var properties = value?.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? Array.Empty<PropertyInfo>();
-        var newOptions = GetClonedOptions(options);
         
         foreach (var property in properties)
         {
@@ -47,19 +44,9 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
                 continue;
             }
             
-            JsonSerializer.Serialize(writer, input, newOptions);
+            JsonSerializer.Serialize(writer, input, options);
         }
 
         writer.WriteEndObject();
-    }
-    
-    private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
-    {
-        // if(_options != null)
-        //     return _options;
-        //
-        // var newOptions = new JsonSerializerOptions(options);
-        // _options = newOptions;
-        return options;
     }
 }

@@ -55,6 +55,7 @@ public static class ObjectConverter
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
     
     private static JsonSerializerOptions? _defaultSerializerOptions;
+    private static JsonSerializerOptions? _internalSerializerOptions;
     
     private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
     {
@@ -62,6 +63,11 @@ public static class ObjectConverter
         PropertyNameCaseInsensitive = true,
         ReferenceHandler = ReferenceHandler.Preserve,
         Converters = { new JsonStringEnumConverter() },
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
+    
+    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
+    {
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
 
@@ -80,17 +86,6 @@ public static class ObjectConverter
             return value;
 
         var serializerOptions = converterOptions?.SerializerOptions ?? DefaultSerializerOptions;
-        // serializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        // serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-        // serializerOptions.PropertyNameCaseInsensitive = true;
-        // serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        // serializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
-
-        var internalSerializerOptions = new JsonSerializerOptions
-        {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), 
-        };
-
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
         var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
@@ -144,6 +139,8 @@ public static class ObjectConverter
         if (IsDateType(underlyingSourceType) && IsDateType(underlyingTargetType))
             return ConvertAnyDateType(value, underlyingTargetType);
 
+        var internalSerializerOptions = InternalSerializerOptions;
+        
         if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
