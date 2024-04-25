@@ -1,4 +1,8 @@
 using System.Collections;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -350,6 +354,19 @@ public static class ExpressionExecutionContextExtensions
     {
         return context.GetInput<T>(inputDefinition.Name);
     }
+    
+    private static JsonSerializerOptions? _serializerOptions;
+
+    private static JsonSerializerOptions GetSerializerOptions(ExpressionExecutionContext context)
+    {
+        if(_serializerOptions != null)
+            return _serializerOptions;
+        
+        var serializerOptions = context.GetRequiredService<IJsonSerializer>().GetOptions().Clone();
+        serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+        _serializerOptions = serializerOptions;
+        return serializerOptions;
+    }
 
     /// <summary>
     /// Returns the value of the specified input.
@@ -361,7 +378,7 @@ public static class ExpressionExecutionContextExtensions
     public static T? GetInput<T>(this ExpressionExecutionContext context, string name)
     {
         var value = context.GetInput(name);
-        var serializerOptions = context.GetRequiredService<IJsonSerializer>().CreateOptions();
+        var serializerOptions = GetSerializerOptions(context);
         var converterOptions = new ObjectConverterOptions(serializerOptions);
         return value.ConvertTo<T>(converterOptions);
     }
@@ -432,7 +449,6 @@ public static class ExpressionExecutionContextExtensions
         {
             var activity = activityWithOutput.Activity;
             var activityDescriptor = activityWithOutput.ActivityDescriptor;
-
             var activityIdentifier = useActivityName ? activity.Name : activity.Id;
             var activityIdPascalName = activityIdentifier.Pascalize();
 

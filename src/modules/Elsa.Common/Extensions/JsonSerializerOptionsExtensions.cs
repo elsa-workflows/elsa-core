@@ -19,4 +19,12 @@ public static class JsonSerializerOptionsExtensions
 
         return options;
     }
+
+    /// <summary>
+    /// Clones the options.
+    /// </summary>
+    public static JsonSerializerOptions Clone(this JsonSerializerOptions options)
+    {
+        return new JsonSerializerOptions(options);
+    }
 }

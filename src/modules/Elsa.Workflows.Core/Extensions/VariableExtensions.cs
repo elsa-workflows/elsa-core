@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
@@ -55,9 +58,16 @@ public static class VariableExtensions
     public static object? ParseValue(this Variable variable, object? value)
     {
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
-        var jsonSerializerOptions = new JsonSerializerOptions();
-        jsonSerializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
-        var converterOptions = new ObjectConverterOptions(jsonSerializerOptions);
+        var serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
+        serializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
+        var converterOptions = new ObjectConverterOptions(serializerOptions);
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
 
