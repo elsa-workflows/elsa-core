@@ -44,7 +44,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
     }
 
-    JsonSerializerOptions IApiSerializer.CreateOptions() => GetOptions();
+    JsonSerializerOptions IApiSerializer.GetOptions() => GetOptions();
 
     JsonSerializerOptions IApiSerializer.ApplyOptions(JsonSerializerOptions options)
     {

@@ -41,7 +41,7 @@ internal class GetManyById : ElsaEndpoint<Request>
 
         var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
         var models = (await _mapper.MapAsync(definitions, cancellationToken)).ToList();
-        var serializerOptions = _apiSerializer.CreateOptions().Clone();
+        var serializerOptions = _apiSerializer.GetOptions().Clone();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)

@@ -113,7 +113,7 @@ internal class Export : ElsaEndpoint<Request>
 
     private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
     {
-        var serializerOptions = _serializer.CreateOptions().Clone();
+        var serializerOptions = _serializer.GetOptions().Clone();
 
         // Exclude composite activities from being serialized.
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());

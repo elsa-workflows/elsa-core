@@ -48,7 +48,7 @@ public static class WebApplicationExtensions
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
         var serializer = httpRequest.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
-        var options = serializer.CreateOptions();
+        var options = serializer.GetOptions();
 
         return serializerContext == null
             ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
@@ -58,7 +58,7 @@ public static class WebApplicationExtensions
     private static Task SerializeRequestAsync(HttpResponse httpResponse, object? dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
         var serializer = httpResponse.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
-        var options = serializer.CreateOptions();
+        var options = serializer.GetOptions();
 
         httpResponse.ContentType = contentType;
         return serializerContext == null

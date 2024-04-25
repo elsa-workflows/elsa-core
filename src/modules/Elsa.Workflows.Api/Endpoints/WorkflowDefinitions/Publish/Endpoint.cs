@@ -62,7 +62,7 @@ internal class Publish : ElsaEndpoint<Request, WorkflowDefinitionModel>
         var response = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
 
         // We do not want to include composite root activities in the response.
-        var serializerOptions = _serializer.CreateOptions().Clone();
+        var serializerOptions = _serializer.GetOptions().Clone();
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);

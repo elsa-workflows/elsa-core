@@ -52,11 +52,14 @@ internal class GetByDefinitionId : ElsaEndpoint<Request>
         }
         
         var model = await _mapper.MapAsync(definition, cancellationToken);
-        var serializerOptions = _apiSerializer.CreateOptions().Clone();
+        var serializerOptions = _apiSerializer.GetOptions();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
+        {
+            serializerOptions = serializerOptions.Clone();
             serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        }
 
         await HttpContext.Response.WriteAsJsonAsync(model, serializerOptions, cancellationToken);
     }
