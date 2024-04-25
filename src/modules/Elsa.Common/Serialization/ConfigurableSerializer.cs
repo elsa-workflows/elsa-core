@@ -14,6 +14,8 @@ namespace Elsa.Common.Serialization;
 /// </summary>
 public abstract class ConfigurableSerializer
 {
+    private JsonSerializerOptions? _options;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurableSerializer"/> class.
     /// </summary>
@@ -21,7 +23,7 @@ public abstract class ConfigurableSerializer
     {
         ServiceProvider = serviceProvider;
     }
-    
+
     /// <summary>
     /// Gets the service provider.
     /// </summary>
@@ -30,13 +32,17 @@ public abstract class ConfigurableSerializer
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/> with the configured options. 
     /// </summary>
-    public virtual JsonSerializerOptions CreateOptions()
+    public virtual JsonSerializerOptions GetOptions()
     {
+        if (_options != null)
+            return _options;
+
         var options = CreateOptionsInternal();
         ApplyOptions(options);
+        _options = options;
         return options;
     }
-    
+
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/> with the configured options. 
     /// </summary>
@@ -45,6 +51,17 @@ public abstract class ConfigurableSerializer
         Configure(options);
         AddConverters(options);
         RunConfigurators(options);
+    }
+    
+    /// <summary>
+    /// Creates a new instance of <see cref="JsonSerializerOptions"/>.
+    /// </summary>
+    protected JsonSerializerOptions GetOptionsInternal()
+    {
+        var options = CreateOptionsInternal();
+        ApplyOptions(options);
+        _options = options;
+        return options;
     }
 
     /// <summary>
@@ -59,7 +76,7 @@ public abstract class ConfigurableSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         };
-        
+
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
         options.Converters.Add(new IntegerJsonConverter());
@@ -89,14 +106,14 @@ public abstract class ConfigurableSerializer
     {
         var configurators = ServiceProvider.GetServices<ISerializationOptionsConfigurator>();
         var modifiers = new List<Action<JsonTypeInfo>>();
-        
+
         foreach (var configurator in configurators)
         {
             configurator.Configure(options);
             var modifiersToAdd = configurator.GetModifiers();
             modifiers.AddRange(modifiersToAdd);
         }
-        
+
         options.TypeInfoResolver = new ModifiableJsonTypeInfoResolver(modifiers);
     }
 

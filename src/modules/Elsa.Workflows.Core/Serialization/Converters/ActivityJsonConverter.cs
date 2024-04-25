@@ -22,6 +22,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ActivityJsonConverter> _logger;
+    private JsonSerializerOptions? _options;
 
     /// <inheritdoc />
     public ActivityJsonConverter(
@@ -55,9 +56,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
         }
 
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
-        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        var newOptions = GetClonedOptions(options);
 
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
@@ -84,10 +83,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
-        var newOptions = new JsonSerializerOptions(options);
-
-        newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
-        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        var newOptions = GetClonedOptions(options);
 
         // Write to a JsonObject so that we can add additional information.
         var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
@@ -211,5 +207,16 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         }
 
         return activityTypeName;
+    }
+    
+    private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
+    {
+        if(_options != null)
+            return _options;
+        
+        var newOptions = new JsonSerializerOptions(options);
+        newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        return _options = newOptions;
     }
 }
