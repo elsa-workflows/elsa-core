@@ -1,5 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Common.Converters;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
@@ -23,9 +26,16 @@ public class ObjectExpressionHandler : IExpressionHandler
         if (string.IsNullOrWhiteSpace(value))
             return ValueTask.FromResult(default(object?));
 
-        var serializerOptions = new JsonSerializerOptions();
+        var serializerOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        };
         serializerOptions.Converters.Add(new IntegerJsonConverter());
         serializerOptions.Converters.Add(new DecimalJsonConverter());
+        serializerOptions.Converters.Add(new JsonStringEnumConverter());
         
         var converterOptions = new ObjectConverterOptions(serializerOptions);
         var model = value.ConvertTo(returnType, converterOptions);

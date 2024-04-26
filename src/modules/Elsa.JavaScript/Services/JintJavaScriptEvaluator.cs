@@ -12,14 +12,16 @@ using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
+using Esprima;
+using Esprima.Ast;
 using Humanizer;
 using Jint;
 using Jint.Runtime.Interop;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
-
 namespace Elsa.JavaScript.Services;
 
 /// <summary>
@@ -28,15 +30,17 @@ namespace Elsa.JavaScript.Services;
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly INotificationSender _mediator;
+    private readonly IMemoryCache _memoryCache;
     private readonly JintOptions _jintOptions;
     private readonly IConfiguration _configuration;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
     {
         _mediator = mediator;
+        _memoryCache = memoryCache;
         _jintOptions = scriptOptions.Value;
         _configuration = configuration;
     }
@@ -176,9 +180,21 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
 
-    private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
+    private object? ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
-        var result = engine.Evaluate(expression);
+        var cacheKey = "jint:script:" + expression.GetHashCode(StringComparison.Ordinal);
+
+        var parsedScript = _memoryCache.GetOrCreate(cacheKey, entry =>
+        {
+            if (_jintOptions.ScriptCacheTimeout.HasValue)
+                entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
+
+            var parser = new JavaScriptParser(new ParserOptions { AllowReturnOutsideFunction = true });
+            var script = parser.ParseScript(expression);
+            return script;
+        })!;
+
+        var result = engine.Evaluate(parsedScript);
         return result.ToObject();
     }
 

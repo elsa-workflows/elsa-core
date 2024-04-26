@@ -14,6 +14,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 public class VariableConverter : JsonConverter<Variable>
 {
     private readonly VariableMapper _mapper;
+    private JsonSerializerOptions? _options;
 
     /// <inheritdoc />
     // ReSharper disable once ContextualLoggerProblem
@@ -25,8 +26,7 @@ public class VariableConverter : JsonConverter<Variable>
     /// <inheritdoc />
     public override Variable Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.Add(new JsonPrimitiveToStringConverter());
+        var newOptions = GetClonedOptions(options);
         var model = JsonSerializer.Deserialize<VariableModel>(ref reader, newOptions)!;
         var variable = _mapper.Map(model);
 
@@ -38,5 +38,16 @@ public class VariableConverter : JsonConverter<Variable>
     {
         var model = _mapper.Map(value);
         JsonSerializer.Serialize(writer, model, options);
+    }
+    
+    private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
+    {
+        if(_options != null)
+            return _options;
+        
+        var newOptions = new JsonSerializerOptions(options);
+        newOptions.Converters.Add(new JsonPrimitiveToStringConverter());
+        _options = newOptions;
+        return newOptions;
     }
 }
