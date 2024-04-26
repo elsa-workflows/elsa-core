@@ -17,6 +17,19 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class VariableExtensions
 {
+    private static JsonSerializerOptions? _serializerOptions;
+
+    private static JsonSerializerOptions SerializerOptions =>
+        _serializerOptions ??= new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        }.WithConverters(
+            new JsonStringEnumConverter(),
+            new ExpandoObjectConverterFactory());
+
     /// <summary>
     /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
     /// </summary>
@@ -58,16 +71,7 @@ public static class VariableExtensions
     public static object? ParseValue(this Variable variable, object? value)
     {
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
-        var serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            ReferenceHandler = ReferenceHandler.Preserve,
-            PropertyNameCaseInsensitive = true,
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-        };
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        serializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
-        var converterOptions = new ObjectConverterOptions(serializerOptions);
+        var converterOptions = new ObjectConverterOptions(SerializerOptions);
         return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
 
