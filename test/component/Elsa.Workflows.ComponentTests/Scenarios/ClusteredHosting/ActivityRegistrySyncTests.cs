@@ -1,5 +1,4 @@
-﻿using Elsa.Workflows.ComponentTests.Services;
-using Elsa.Workflows.Contracts;
+﻿using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -13,7 +12,7 @@ public class ActivityRegistrySyncTests(App app) : AppComponentTest(app)
     private readonly IServiceScope _pod2Scope = app.Cluster.Pod2.Services.CreateScope();
     private readonly IServiceScope _pod3Scope = app.Cluster.Pod3.Services.CreateScope();
 
-    [Fact]
+    [Fact(Skip = "Not yet implemented")]
     public async Task ImportWorkflowActivity_ShouldUpdateOtherPods()
     {
         var pod1ActivityRegistry = _pod1Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();

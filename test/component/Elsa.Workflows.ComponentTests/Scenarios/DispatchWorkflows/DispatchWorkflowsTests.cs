@@ -25,8 +25,8 @@ public class DispatchWorkflowsTests : AppComponentTest
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         await _workflowRuntime.StartWorkflowAsync(DispatchAndWaitWorkflow.DefinitionId);
-        var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ChildWorkflowCompletedSignal, 50000);
-        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal, 50000);
+        var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ChildWorkflowCompletedSignal);
+        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
         
         Assert.Equal(WorkflowStatus.Finished, childWorkflowInstanceArgs.WorkflowInstance.Status);
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);

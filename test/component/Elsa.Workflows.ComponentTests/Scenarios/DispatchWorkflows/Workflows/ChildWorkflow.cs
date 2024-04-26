@@ -16,7 +16,7 @@ public class ChildWorkflow : WorkflowBase
         {
             Activities =
             {
-                new Delay(TimeSpan.FromSeconds(1)),
+                new Delay(TimeSpan.FromMilliseconds(250)),
                 new WriteLine("Hello from Child!")
             }
         };

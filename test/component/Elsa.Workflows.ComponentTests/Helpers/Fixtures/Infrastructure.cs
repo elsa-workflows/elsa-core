@@ -5,7 +5,7 @@ namespace Elsa.Workflows.ComponentTests;
 public class Infrastructure : IAsyncLifetime
 {
     public readonly PostgreSqlContainer DbContainer = new PostgreSqlBuilder()
-        .WithImage("postgres:13.3-alpine")
+        .WithImage("postgres:latest")
         .WithDatabase("elsa")
         .WithUsername("postgres")
         .WithPassword("postgres")
