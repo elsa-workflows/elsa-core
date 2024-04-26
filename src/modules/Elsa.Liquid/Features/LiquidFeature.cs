@@ -11,6 +11,7 @@ using Elsa.Liquid.Handlers;
 using Elsa.Liquid.Options;
 using Elsa.Liquid.Providers;
 using Elsa.Liquid.Services;
+using Fluid.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Features;
@@ -31,21 +32,27 @@ public class LiquidFeature : FeatureBase
     /// <summary>
     /// Configures the Fluid options.
     /// </summary>
-    public Action<FluidOptions> FluidOptions { get; set; } = _ => { };
+    public Action<FluidOptions> FluidOptions { get; set; } = options =>
+    {
+        options.FluidFiltersDelegate = context => context.Options.Filters
+            .WithArrayFilters()
+            .WithStringFilters()
+            .WithNumberFilters()
+            .WithMiscFilters();
+    };
 
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(FluidOptions);
-        
+
         Services
             .AddHandlersFrom<ConfigureLiquidEngine>()
             .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
             .AddScoped<LiquidParser>()
             .AddExpressionDescriptorProvider<LiquidExpressionDescriptorProvider>()
-            .AddLiquidFilter<JsonFilter>("json")
             .AddLiquidFilter<Base64Filter>("base64")
             .AddLiquidFilter<DictionaryKeysFilter>("keys")
-            ;
+        ;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Elsa.Liquid.Contracts;
 using Elsa.Liquid.Options;
 using Fluid;
+using Fluid.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -18,5 +19,6 @@ internal static class TemplateContextExtensions
                 return filter.ProcessAsync(input, arguments, ctx);
             });
         }
+        options.FluidFiltersDelegate(templateContext);
     }
 }
