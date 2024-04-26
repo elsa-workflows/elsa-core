@@ -11,6 +11,8 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class ExcludeFromHashConverter : JsonConverter<object>
 {
+    private JsonSerializerOptions? _options;
+    
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -21,8 +23,7 @@ public class ExcludeFromHashConverter : JsonConverter<object>
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
-        var newOptions = new JsonSerializerOptions(options);
-        newOptions.Converters.RemoveWhere(x => x is ExcludeFromHashConverterFactory);
+        var newOptions = GetClonedOptions(options);
 
         foreach (var property in value.GetType().GetProperties())
         {
@@ -38,6 +39,16 @@ public class ExcludeFromHashConverter : JsonConverter<object>
         }
 
         writer.WriteEndObject();
+    }
+    
+    private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
+    {
+        if(_options != null)
+            return _options;
+        
+        var newOptions = new JsonSerializerOptions(options);
+        newOptions.Converters.RemoveWhere(x => x is ExcludeFromHashConverterFactory);
+        return _options = newOptions;
     }
 }
 
