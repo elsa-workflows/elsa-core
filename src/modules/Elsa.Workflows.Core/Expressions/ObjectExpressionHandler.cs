@@ -7,6 +7,7 @@ using Elsa.Common.Converters;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Expressions;
@@ -17,6 +18,20 @@ namespace Elsa.Workflows.Expressions;
 [UsedImplicitly]
 public class ObjectExpressionHandler : IExpressionHandler
 {
+    private JsonSerializerOptions? _serializerOptions;
+
+    private JsonSerializerOptions SerializerOptions =>
+        _serializerOptions ??= new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        }.WithConverters(
+            new IntegerJsonConverter(),
+            new DecimalJsonConverter(),
+            new JsonStringEnumConverter());
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public ValueTask<object?> EvaluateAsync(Expression expression, Type returnType, ExpressionExecutionContext context, ExpressionEvaluatorOptions options)
@@ -26,18 +41,7 @@ public class ObjectExpressionHandler : IExpressionHandler
         if (string.IsNullOrWhiteSpace(value))
             return ValueTask.FromResult(default(object?));
 
-        var serializerOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            ReferenceHandler = ReferenceHandler.Preserve,
-            PropertyNameCaseInsensitive = true,
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
-        };
-        serializerOptions.Converters.Add(new IntegerJsonConverter());
-        serializerOptions.Converters.Add(new DecimalJsonConverter());
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        
-        var converterOptions = new ObjectConverterOptions(serializerOptions);
+        var converterOptions = new ObjectConverterOptions(SerializerOptions);
         var model = value.ConvertTo(returnType, converterOptions);
         return ValueTask.FromResult(model);
     }
