@@ -1,4 +1,5 @@
-﻿using Elsa.Workflows.Contracts;
+﻿using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -38,7 +39,7 @@ public class ActivityRegistrySyncTests(App app) : AppComponentTest(app)
             Publish = true
         };
         await importer.ImportAsync(request);
-        
+
         sub1Descriptor = pod1ActivityRegistry.Find("Sub");
         Assert.NotNull(sub1Descriptor);
         
