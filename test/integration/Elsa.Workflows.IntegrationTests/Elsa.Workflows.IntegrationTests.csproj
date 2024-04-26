@@ -1,11 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
+    
+    <PropertyGroup>
+        <ProjectGuid>{ca65b7d5-57e8-4932-b8b8-732d040c9b3a}</ProjectGuid>
+    </PropertyGroup>
+    
     <ItemGroup>
         <PackageReference Include="Proto.Persistence.Sqlite" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />

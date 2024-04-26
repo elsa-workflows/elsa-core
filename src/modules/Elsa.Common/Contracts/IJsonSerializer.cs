@@ -11,7 +11,7 @@ public interface IJsonSerializer
     /// <summary>
     /// Returns the serializer options.
     /// </summary>
-    JsonSerializerOptions CreateOptions();
+    JsonSerializerOptions GetOptions();
 
     /// <summary>
     /// Applies the specified options.

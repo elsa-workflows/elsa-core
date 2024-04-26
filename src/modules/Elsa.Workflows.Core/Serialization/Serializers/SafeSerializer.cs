@@ -20,7 +20,7 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<string> SerializeAsync(object? value, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return ValueTask.FromResult(JsonSerializer.Serialize(value, options));
     }
 
@@ -28,7 +28,7 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<JsonElement> SerializeToElementAsync(object? value, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return new(JsonSerializer.SerializeToElement(value, options));
     }
 
@@ -36,7 +36,7 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return new(JsonSerializer.Deserialize<T>(json, options)!);
     }
 
@@ -44,7 +44,7 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return new(element.Deserialize<T>(options)!);
     }
 

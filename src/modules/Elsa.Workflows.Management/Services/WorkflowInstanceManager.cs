@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Params;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
+using Exception = System.Exception;
 
 namespace Elsa.Workflows.Management.Services;
 

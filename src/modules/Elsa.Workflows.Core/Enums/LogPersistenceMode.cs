@@ -1,13 +1,17 @@
-﻿namespace Elsa.Workflows.Enums;
+using JetBrains.Annotations;
+
+namespace Elsa.Workflows;
+
 /// <summary>
 /// Define the Log Persistence mode to store information
 /// </summary>
+[UsedImplicitly]
 public enum LogPersistenceMode
 {
     /// <summary>
     /// Persist using the Parent mode
     /// </summary>
-    Default,
+    Inherit,
 
     /// <summary>
     /// Include property to store
@@ -18,5 +22,4 @@ public enum LogPersistenceMode
     /// Exclude Property to store
     /// </summary>
     Exclude
-
 }

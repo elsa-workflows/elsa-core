@@ -29,17 +29,17 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
+    public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value.TryConvertTo(typeof(T), converterOptions);
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
     [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
-    public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
+    public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         try
         {
-            var convertedValue = value.ConvertTo(targetType, serializerOptions);
+            var convertedValue = value.ConvertTo(targetType, converterOptions);
             return new Result(true, convertedValue, null);
         }
         catch (Exception e)
@@ -52,7 +52,24 @@ public static class ObjectConverter
     /// Attempts to convert the source value into the destination type.
     /// </summary>
     [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
-    public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
+    public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
+    
+    private static JsonSerializerOptions? _defaultSerializerOptions;
+    private static JsonSerializerOptions? _internalSerializerOptions;
+    
+    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        ReferenceHandler = ReferenceHandler.Preserve,
+        Converters = { new JsonStringEnumConverter() },
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
+    
+    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
+    {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.
@@ -68,18 +85,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var serializerOptions = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
-        serializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-        serializerOptions.PropertyNameCaseInsensitive = true;
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        serializerOptions.Encoder = JavaScriptEncoder.Create(UnicodeRanges.All);
-
-        var internalSerializerOptions = new JsonSerializerOptions
-        {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All), 
-        };
-
+        var serializerOptions = converterOptions?.SerializerOptions ?? DefaultSerializerOptions;
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
         var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
@@ -133,6 +139,8 @@ public static class ObjectConverter
         if (IsDateType(underlyingSourceType) && IsDateType(underlyingTargetType))
             return ConvertAnyDateType(value, underlyingTargetType);
 
+        var internalSerializerOptions = InternalSerializerOptions;
+        
         if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
             if (typeof(ExpandoObject) == underlyingTargetType)

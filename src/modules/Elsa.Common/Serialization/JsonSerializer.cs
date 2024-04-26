@@ -18,7 +18,7 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public string Serialize(object value)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(value, options);
     }
 
@@ -26,7 +26,7 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public string Serialize(object value, Type type)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(value, type, options);
     }
 
@@ -40,7 +40,7 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public object Deserialize(string json)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<object>(json, options)!;
     }
 
@@ -48,7 +48,7 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public object Deserialize(string json, Type type)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize(json, type, options)!;
     }
 

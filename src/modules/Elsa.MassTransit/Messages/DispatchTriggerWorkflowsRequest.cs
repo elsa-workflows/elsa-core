@@ -3,7 +3,8 @@ using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 
-public class DispatchTriggerWorkflows(string activityTypeName, object stimulus)
+[Obsolete("This is no longer used and will be removed in a future version.")]
+public class DispatchTriggerWorkflows(string activityTypeName, object bookmarkPayload)
 {
     public string ActivityTypeName { get; init; } = activityTypeName;
 

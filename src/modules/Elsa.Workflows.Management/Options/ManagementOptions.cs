@@ -1,4 +1,3 @@
-using Elsa.Workflows.Enums;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Options;
