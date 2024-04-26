@@ -410,7 +410,7 @@ app.UseWorkflowsSignalRHubs();
 app.Run();
 
 /// <summary>
-/// The main entry point for the application.made public for end to end testing.
+/// The main entry point for the application made public for end to end testing.
 /// </summary>
 [UsedImplicitly]
 public partial class Program
