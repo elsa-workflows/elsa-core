@@ -33,7 +33,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
     public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return Task.FromResult(JsonSerializer.Serialize(workflowState, options));
     }
 
@@ -41,7 +41,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
     public Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return Task.FromResult(JsonSerializer.SerializeToUtf8Bytes(workflowState, options));
     }
 
@@ -49,7 +49,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
     public Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return Task.FromResult(JsonSerializer.SerializeToElement(workflowState, options));
     }
 
@@ -57,7 +57,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
     public Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         var json = JsonSerializer.Serialize(workflowState, workflowState.GetType(), options);
         return Task.FromResult(json);
     }
@@ -66,7 +66,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
     public Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         var workflowState = JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
         return Task.FromResult(workflowState);
     }
@@ -75,7 +75,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
     public Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         var workflowState = serializedState.Deserialize<WorkflowState>(options)!;
         return Task.FromResult(workflowState);
     }
@@ -84,9 +84,16 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
     public Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         var workflowState = JsonSerializer.Deserialize<T>(serializedState, options)!;
         return Task.FromResult(workflowState);
+    }
+
+    /// <inheritdoc />
+    public override JsonSerializerOptions GetOptions()
+    {
+        // Bypass cached options to ensure that the reference handler is always fresh.
+        return GetOptionsInternal();
     }
 
     /// <inheritdoc />
