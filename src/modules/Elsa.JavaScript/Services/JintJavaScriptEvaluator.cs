@@ -189,9 +189,14 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             if (_jintOptions.ScriptCacheTimeout.HasValue)
                 entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
 
-            var parser = new JavaScriptParser(new ParserOptions { AllowReturnOutsideFunction = true });
-            var script = parser.ParseScript(expression);
-            return script;
+            var prepareOptions = new ScriptPreparationOptions
+            {
+                ParsingOptions = new ScriptParsingOptions
+                {
+                    AllowReturnOutsideFunction = true
+                }
+            };
+            return Engine.PrepareScript(expression, options: prepareOptions);
         })!;
 
         var result = engine.Evaluate(parsedScript);
