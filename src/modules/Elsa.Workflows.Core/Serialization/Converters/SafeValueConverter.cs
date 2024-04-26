@@ -10,10 +10,12 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class SafeValueConverter : JsonConverter<object>
 {
+    private JsonSerializerOptions? _options;
+    
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var newOptions = CreateNewOptions(options);
+        var newOptions = GetClonedOptions(options);
         return JsonSerializer.Deserialize(ref reader, typeToConvert, newOptions)!;
     }
 
@@ -22,7 +24,7 @@ public class SafeValueConverter : JsonConverter<object>
     {
         try
         {
-            var newOptions = CreateNewOptions(options);
+            var newOptions = GetClonedOptions(options);
             
             // Serialize the value to a temporary string.
             var serializedValue = JsonSerializer.Serialize(value, newOptions);
@@ -40,10 +42,14 @@ public class SafeValueConverter : JsonConverter<object>
         }
     }
 
-    private JsonSerializerOptions CreateNewOptions(JsonSerializerOptions options)
+    private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)
     {
+        if(_options != null)
+            return _options;
+        
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.RemoveWhere(x => x is SafeValueConverterFactory);
+        _options = newOptions;
         return newOptions;
     }
 }

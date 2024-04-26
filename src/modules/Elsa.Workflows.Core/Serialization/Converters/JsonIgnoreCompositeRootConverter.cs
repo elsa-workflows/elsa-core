@@ -25,7 +25,6 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
         writer.WriteStartObject();
 
         var properties = value?.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance) ?? Array.Empty<PropertyInfo>();
-        var newOptions = new JsonSerializerOptions(options);
         
         foreach (var property in properties)
         {
@@ -45,7 +44,7 @@ public class JsonIgnoreCompositeRootConverter : JsonConverter<IActivity>
                 continue;
             }
             
-            JsonSerializer.Serialize(writer, input, newOptions);
+            JsonSerializer.Serialize(writer, input, options);
         }
 
         writer.WriteEndObject();
