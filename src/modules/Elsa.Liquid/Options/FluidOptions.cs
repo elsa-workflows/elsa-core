@@ -32,5 +32,5 @@ public class FluidOptions
     /// <summary>
     /// Get or set the fluid filters enabled in Elsa.
     /// </summary>
-    public Action<TemplateContext> FluidFiltersDelegate { get; set; } = _ => { };
+    public Action<TemplateContext> ConfigureFilters { get; set; } = _ => { };
 }

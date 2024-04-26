@@ -34,7 +34,7 @@ public class LiquidFeature : FeatureBase
     /// </summary>
     public Action<FluidOptions> FluidOptions { get; set; } = options =>
     {
-        options.FluidFiltersDelegate = context => context.Options.Filters
+        options.ConfigureFilters = context => context.Options.Filters
             .WithArrayFilters()
             .WithStringFilters()
             .WithNumberFilters()
