@@ -14,6 +14,8 @@ public class PythonGlobalInterpreterManager : IHostedService
     private readonly IOptions<PythonOptions> _options;
     private readonly ILogger _logger;
     private IntPtr _mainThreadState;
+    private static bool _initialized;
+
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PythonGlobalInterpreterManager"/> class.
@@ -27,7 +29,10 @@ public class PythonGlobalInterpreterManager : IHostedService
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrEmpty(_options.Value.PythonDllPath)) 
+        if (_initialized)
+            return Task.CompletedTask;
+
+        if (!string.IsNullOrEmpty(_options.Value.PythonDllPath))
             Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", _options.Value.PythonDllPath);
 
         try
@@ -39,7 +44,8 @@ public class PythonGlobalInterpreterManager : IHostedService
         {
             _logger.LogWarning(e, "Failed to initialize Python engine");
         }
-        
+
+        _initialized = true;
         return Task.CompletedTask;
     }
 

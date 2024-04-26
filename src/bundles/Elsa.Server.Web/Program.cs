@@ -11,6 +11,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Features.Services;
 using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
@@ -18,10 +19,11 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Workflows.Enums;
+using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
+using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
@@ -156,7 +158,7 @@ services
                 if (useCaching)
                     management.UseCache();
 
-                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Default);
+                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -353,6 +355,7 @@ services
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
         elsa.AddFastEndpointsAssembly<Program>();
+        ConfigureForTest?.Invoke(elsa);
     });
 
 services.AddHealthChecks();
@@ -405,3 +408,15 @@ app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();
+
+/// <summary>
+/// The main entry point for the application made public for end to end testing.
+/// </summary>
+[UsedImplicitly]
+public partial class Program
+{
+    /// <summary>
+    /// Set by the test runner to configure the module for testing.
+    /// </summary>
+    public static Action<IModule>? ConfigureForTest { get; set; }
+}
