@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Proto.Cluster;

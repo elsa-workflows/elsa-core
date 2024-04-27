@@ -3,6 +3,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -40,6 +41,17 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
     }
 
     /// <inheritdoc />
+    public Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = handle
+        };
+        
+        return FindWorkflowDefinitionAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter);
@@ -64,6 +76,17 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
         return await GetFromCacheAsync(cacheKey,
             () => decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken),
             x => x.Identity.DefinitionId);
+    }
+
+    /// <inheritdoc />
+    public Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = definitionHandle
+        };
+        
+        return FindWorkflowAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

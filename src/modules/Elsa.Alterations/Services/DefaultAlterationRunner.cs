@@ -8,7 +8,6 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Services;
@@ -43,9 +42,10 @@ public class DefaultAlterationRunner(
     {
         var log = new AlterationLog(systemClock);
         var result = new RunAlterationsResult(workflowInstanceId, log);
+        var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken: cancellationToken);
 
         // Load workflow instance.
-        var workflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
+        var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
 
         // If the workflow instance is not found, log an error and continue.
         if (workflowState == null)
@@ -86,7 +86,7 @@ public class DefaultAlterationRunner(
         workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
         // Apply updated workflow state.
-        await workflowRuntime.ImportWorkflowStateAsync(workflowState, cancellationToken);
+        await workflowClient.ImportStateAsync(workflowState, cancellationToken);
 
         // Check if the workflow has scheduled work.
         result.WorkflowHasScheduledWork = workflowExecutionContext.Scheduler.HasAny;

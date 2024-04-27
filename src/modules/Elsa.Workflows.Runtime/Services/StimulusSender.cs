@@ -1,4 +1,6 @@
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
@@ -56,7 +58,7 @@ public class StimulusSender(
                 Input = input,
                 Properties = properties,
                 ParentId = parentId,
-                DefinitionVersionId = triggerBoundWorkflow.Workflow.Identity.Id,
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(triggerBoundWorkflow.Workflow.Identity.Id)
             };
             await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
 

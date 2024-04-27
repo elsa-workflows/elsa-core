@@ -7,6 +7,7 @@ using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
@@ -126,6 +127,7 @@ public class ProtoActorFeature : FeatureBase
         services
             .AddSingleton<Mappers.Mappers>()
             .AddSingleton<ActivityHandleMapper>()
+            .AddSingleton<WorkflowDefinitionHandleMapper>()
             .AddSingleton<ActivityIncidentMapper>()
             .AddSingleton<ExceptionMapper>()
             .AddSingleton<ActivityIncidentStateMapper>()

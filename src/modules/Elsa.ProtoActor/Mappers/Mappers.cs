@@ -1,6 +1,8 @@
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 
@@ -11,6 +13,7 @@ namespace Elsa.ProtoActor.Mappers;
 /// </summary>
 public class Mappers(
     ActivityHandleMapper activityHandleMapper,
+    WorkflowDefinitionHandleMapper workflowDefinitionHandleMapper,
     ActivityIncidentMapper activityIncidentMapper,
     ExceptionMapper exceptionMapper,
     WorkflowStatusMapper workflowStatusMapper,
@@ -26,6 +29,11 @@ public class Mappers(
     /// Maps between <see cref="ActivityHandle"/> and <see cref="ProtoActivityHandle"/>.
     /// </summary>
     public ActivityHandleMapper ActivityHandleMapper { get; } = activityHandleMapper;
+
+    /// <summary>
+    /// Maps between <see cref="WorkflowDefinitionHandle"/> and <see cref="ProtoWorkflowDefinitionHandle"/>.
+    /// </summary>
+    public WorkflowDefinitionHandleMapper WorkflowDefinitionHandleMapper { get; } = workflowDefinitionHandleMapper;
 
     /// <summary>
     /// Maps between <see cref="ActivityIncident"/> and <see cref="ProtoActivityIncident"/>.

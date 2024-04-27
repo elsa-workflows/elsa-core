@@ -1,15 +1,11 @@
-using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Params;
+namespace Elsa.Workflows.Management.Options;
 
 /// Represents parameters for creating a workflow instance.
 [UsedImplicitly]
-public class CreateWorkflowInstanceParams
+public class WorkflowInstanceOptions
 {
-    /// The workflow definition to create an instance of.
-    public Workflow Workflow { get; set; } = default!;
-
     /// The correlation ID of the workflow, if any.
     public string? CorrelationId { get; set; }
 
@@ -23,5 +19,5 @@ public class CreateWorkflowInstanceParams
     public string? WorkflowInstanceId { get; set; }
 
     /// The ID of the parent workflow instance, if any.
-    public string? ParentId { get; set; }
+    public string? ParentWorkflowInstanceId { get; set; }
 }

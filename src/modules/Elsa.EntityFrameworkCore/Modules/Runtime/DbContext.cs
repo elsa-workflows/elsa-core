@@ -70,9 +70,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.Entity<StoredBookmark>().Property("SerializedPayload").HasColumnType("NCLOB");
         modelBuilder.Entity<StoredBookmark>().Property("SerializedMetadata").HasColumnType("NCLOB");
 
-        modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedInput").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedBookmarkPayload").HasColumnType("NCLOB");
-
         modelBuilder.Entity<SerializedKeyValuePair>().Property("SerializedValue").HasColumnType("NCLOB");
     }
 }

@@ -1,6 +1,6 @@
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Params;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
@@ -22,21 +22,20 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionVersionId = request.DefinitionVersionId;
+        var workflowDefinitionVersionId = request.WorkflowDefinitionHandle;
         var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
         if (workflow == null) throw new InvalidOperationException($"Workflow with version ID {workflowDefinitionVersionId} not found.");
 
-        var @params = new CreateWorkflowInstanceParams
+        var options = new WorkflowInstanceOptions
         {
-            Workflow = workflow,
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
-            ParentId = request.ParentId,
+            ParentWorkflowInstanceId = request.ParentId,
             Input = request.Input,
             Properties = request.Properties
         };
 
-        await workflowInstanceManager.CreateWorkflowInstanceAsync(@params, cancellationToken);
+        await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, options, cancellationToken);
         return new CreateWorkflowInstanceResponse();
     }
 

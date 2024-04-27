@@ -1,5 +1,10 @@
-﻿using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
+﻿using Elsa.Common.Models;
+using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows;
@@ -24,23 +29,28 @@ public class DispatchWorkflowsTests : AppComponentTest
     [Fact]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
-        await _workflowRuntime.StartWorkflowAsync(DispatchAndWaitWorkflow.DefinitionId);
+        var workflowClient = await _workflowRuntime.CreateClientAsync();
+        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
+        });
+        await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
         var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ChildWorkflowCompletedSignal);
         var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
-        
+
         Assert.Equal(WorkflowStatus.Finished, childWorkflowInstanceArgs.WorkflowInstance.Status);
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);
     }
 
     private void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs e)
     {
-        if(e.WorkflowInstance.Status != WorkflowStatus.Finished)
+        if (e.WorkflowInstance.Status != WorkflowStatus.Finished)
             return;
-        
-        if(e.WorkflowInstance.DefinitionId == ChildWorkflow.DefinitionId)
+
+        if (e.WorkflowInstance.DefinitionId == ChildWorkflow.DefinitionId)
             _signalManager.Trigger(ChildWorkflowCompletedSignal, e);
-        
-        if(e.WorkflowInstance.DefinitionId == DispatchAndWaitWorkflow.DefinitionId)
+
+        if (e.WorkflowInstance.DefinitionId == DispatchAndWaitWorkflow.DefinitionId)
             _signalManager.Trigger(ParentWorkflowCompletedSignal, e);
     }
 

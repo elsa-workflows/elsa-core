@@ -7,5 +7,5 @@ public class InvokeWorkflowOptions
     public IDictionary<string, object>? Properties { get; set; }
     public string? TriggerActivityId { get; set; }
     public string? ParentWorkflowInstanceId { get; set; }
-    public string? InstanceId { get; set; }
+    public string? WorkflowInstanceId { get; set; }
 }

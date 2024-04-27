@@ -23,4 +23,9 @@ public class RunWorkflowInstanceRequest
     
     /// The input to the workflow instance, if any.
     public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
+    /// Represents an empty <see cref="RunWorkflowInstanceRequest"/> object used as a default value.
+    /// </summary>
+    public static RunWorkflowInstanceRequest Empty => new();
 }

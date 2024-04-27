@@ -1,6 +1,7 @@
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Params;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
 
@@ -71,5 +72,5 @@ public interface IWorkflowInstanceManager
     /// <summary>
     /// Instantiates and saves a new workflow instance.
     /// </summary>
-    Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceParams @params, CancellationToken cancellationToken = default);
+    Task<WorkflowInstance> CreateWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default);
 }

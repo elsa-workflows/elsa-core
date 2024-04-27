@@ -1,14 +1,15 @@
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,32 +63,47 @@ public static class ServiceProviderExtensions
     /// <param name="input">An optional dictionary of input values.</param>
     /// <param name="versionOptions">An optional set of options to specify the version of the workflow definition to retrieve.</param>
     /// <returns>The workflow state.</returns>
-    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services, 
-        string workflowDefinitionId, 
-        IDictionary<string, object>? input = default, 
+    public static async Task<WorkflowState> RunWorkflowUntilEndAsync(this IServiceProvider services,
+        string workflowDefinitionId,
+        IDictionary<string, object>? input = default,
         VersionOptions? versionOptions = default)
     {
-        var startWorkflowOptions = new StartWorkflowRuntimeParams
-        {
-            Input = input,
-            VersionOptions = versionOptions ?? VersionOptions.Published
-        };
+        var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
+        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
-        var result = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
-        var bookmarks = new Stack<Bookmark>(result.Bookmarks);
+        var workflowClient = await workflowRuntime.CreateClientAsync();
+        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow!.Identity.Id),
+            Input = input
+        });
+        var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest
+        {
+            Input = input
+        };
+        var response = await workflowClient.RunAsync(runWorkflowInstanceRequest);
+        var bookmarkStore = services.GetRequiredService<IBookmarkStore>();
 
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
-        while (result.Status != WorkflowStatus.Finished && bookmarks.TryPop(out var bookmark))
+        while (response.Status != WorkflowStatus.Finished)
         {
-            var resumeOptions = new ResumeWorkflowRuntimeParams { BookmarkId = bookmark.Id };
-            var resumeResult = await workflowRuntime.ResumeWorkflowAsync(result.WorkflowInstanceId, resumeOptions);
+            var bookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            {
+                WorkflowInstanceId = response.WorkflowInstanceId
+            });
 
-            foreach (var newBookmark in resumeResult!.Bookmarks)
-                bookmarks.Push(newBookmark);
+            foreach (var bookmark in bookmarks)
+            {
+                var runRequest = new RunWorkflowInstanceRequest
+                {
+                    BookmarkId = bookmark.BookmarkId
+                };
+                response = await workflowClient.RunAsync(runRequest);
+            }
         }
 
         // Return the workflow state.
-        return (await workflowRuntime.ExportWorkflowStateAsync(result.WorkflowInstanceId))!;
+        return await workflowClient.ExportStateAsync();
     }
 
     /// <summary>

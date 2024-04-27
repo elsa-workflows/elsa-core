@@ -1,3 +1,4 @@
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Messages;
@@ -9,7 +10,7 @@ namespace Elsa.Workflows.Runtime.Messages;
 public class CreateWorkflowInstanceRequest
 {
     /// The ID of the workflow definition version to create an instance of.
-    public string DefinitionVersionId { get; set; } = default!;
+    public WorkflowDefinitionHandle WorkflowDefinitionHandle { get; set; } = default!;
 
     /// The correlation ID of the workflow, if any.
     public string? CorrelationId { get; set; }

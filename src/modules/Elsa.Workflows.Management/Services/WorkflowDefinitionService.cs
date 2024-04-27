@@ -5,6 +5,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -51,14 +52,31 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = versionOptions };
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = versionOptions
+        };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter { Id = definitionVersionId };
+        var filter = new WorkflowDefinitionFilter
+        {
+            Id = definitionVersionId
+        };
+        return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = handle
+        };
         return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
@@ -88,6 +106,17 @@ public class WorkflowDefinitionService : IWorkflowDefinitionService
             return null;
 
         return await MaterializeWorkflowAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = definitionHandle
+        };
+
+        return await FindWorkflowAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

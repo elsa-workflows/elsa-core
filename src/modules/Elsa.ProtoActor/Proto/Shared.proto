@@ -52,3 +52,9 @@ message ProtoActivityHandle {
   optional string ActivityInstanceId = 3;
   optional string ActivityHash = 4;
 }
+
+message ProtoWorkflowDefinitionHandle {
+  optional string DefinitionId = 1;
+  optional string VersionOptions = 2;
+  optional string DefinitionVersionId = 3;
+}

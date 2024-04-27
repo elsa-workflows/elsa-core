@@ -28,33 +28,33 @@ public class DispatchWorkflowDefinitionRequest
     /// <summary>
     /// The ID of the workflow definition version to dispatch.
     /// </summary>
-    public string DefinitionVersionId { get; } = default!;
-    
+    public string DefinitionVersionId { get; set; } = default!;
+
     /// <summary>
     /// The ID of the parent workflow instance.
     /// </summary>
     public string? ParentWorkflowInstanceId { get; set; }
-    
+
     /// <summary>
     /// Any input to pass to the workflow.
     /// </summary>
     public IDictionary<string, object>? Input { get; set; }
-    
+
     /// <summary>
     /// Any properties to attach to the workflow.
     /// </summary>
     public IDictionary<string, object>? Properties { get; set; }
-    
+
     /// <summary>
     /// The correlation ID to use when dispatching the workflow.
     /// </summary>
     public string? CorrelationId { get; set; }
-    
+
     /// <summary>
     /// The ID to use when creating an instance of the workflow to dispatch.
     /// </summary>
     public string? InstanceId { get; set; }
-    
+
     /// <summary>
     /// The ID of the activity that triggered the workflow.
     /// </summary>

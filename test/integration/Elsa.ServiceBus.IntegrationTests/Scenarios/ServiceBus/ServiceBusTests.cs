@@ -1,6 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Contracts;
 using Elsa.AzureServiceBus.Services;
+using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -10,7 +11,11 @@ using Elsa.ServiceBus.IntegrationTests.Contracts;
 using Elsa.ServiceBus.IntegrationTests.Helpers;
 using Elsa.ServiceBus.IntegrationTests.Scenarios.Workflows;
 using Elsa.Workflows;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Parameters;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -82,20 +87,16 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams
-        {
-            VersionOptions = Common.Models.VersionOptions.Published
-        };
-        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
-        var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+        var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
+        var response = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
-         * Workflow don't receive any message so it should be
+         * The workflow doesn't receive any messages, so it should be
          * Running
          * Suspended
          */
-        Assert.Equal(WorkflowStatus.Running, workflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Suspended, workflowState.SubStatus);
+        Assert.Equal(WorkflowStatus.Running, response.Status);
+        Assert.Equal(WorkflowSubStatus.Suspended, response.SubStatus);
 
         // Start Worker to send Message on topicName/subscriptionName
         await _worker.StartWorkerAsync("topicName", "subscriptionName");
@@ -103,7 +104,7 @@ public class ServiceBusTest : IDisposable
             .Get("topicName", "subscriptionName")
             .SendMessage<dynamic>(new { hello = "world" }, null!);
 
-        // Wait for receiving first message
+        // Wait for receiving the first message.
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
@@ -112,7 +113,7 @@ public class ServiceBusTest : IDisposable
         _testOutputHelper.WriteLine($"wait2 : {wait2}");
 
         await Task.Delay(500); // Todo find how to remove delay
-        var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+        var lastWorkflowState = await workflowClient.ExportStateAsync();
         /*
          * We don't send 2 messages so Workflow must be
          * Running
@@ -125,16 +126,6 @@ public class ServiceBusTest : IDisposable
         Assert.Equal(WorkflowSubStatus.Suspended, lastWorkflowState.SubStatus);
         Assert.True(wait1);
         Assert.False(wait2);
-    }
-
-    private async Task InitRegistryAndBackGroundServiceWorkerAsync()
-    {
-        // Init Registries to use StartWorkflow
-        await _services.PopulateRegistriesAsync();
-
-        // Start background services for CommandHandler
-        await _backgroundCommandSenderHostedService.StartAsync(CancellationToken.None);
-        await _backgroundEventPublisherHostedService.StartAsync(CancellationToken.None);
     }
 
     [Fact(DisplayName = "1 Receive - Sending 1 message - Should Finished")]
@@ -150,9 +141,8 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
-        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
-        var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+        var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
+        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -173,7 +163,7 @@ public class ServiceBusTest : IDisposable
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
         await Task.Delay(500); //Todo find how to remove delay
-        var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+        var lastWorkflowState = await workflowClient.ExportStateAsync();
         /*
          * We sent 1 message so Workflow must be
          * Finished
@@ -221,9 +211,8 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         const string workflowDefinitionId = nameof(SendOneMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
-        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
-        var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+        var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
+        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -238,7 +227,7 @@ public class ServiceBusTest : IDisposable
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
         await Task.Delay(500); //Todo find how to remove delay
-        var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+        var lastWorkflowState = await workflowClient.ExportStateAsync();
         /*
          * We sent 1 message so Workflow must be
          * Finished
@@ -278,7 +267,7 @@ public class ServiceBusTest : IDisposable
 
                 _testOutputHelper.WriteLine("Sending Message from activity");
 
-                await _worker.StartWorkerAsync("topicName", "subscriptionName");
+                await _worker.StartWorkerAsync("topicName", "subscriptionName", c);
                 await _sbProcessorManager
                     .Get("topicName", "subscriptionName")
                     .SendMessage<dynamic>(new { hello = "world" }, correlationId);
@@ -286,9 +275,8 @@ public class ServiceBusTest : IDisposable
 
         //Start Workflow
         var workflowDefinitionId = nameof(SendOneMessageWithCorrelationIdWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
-        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
-        var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+        var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
+        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -303,7 +291,7 @@ public class ServiceBusTest : IDisposable
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
         await Task.Delay(500); // Todo find how to remove delay
-        var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+        var lastWorkflowState = await workflowClient.ExportStateAsync();
         /*
          * We sent 1 message so Workflow must be
          * Finished
@@ -332,9 +320,8 @@ public class ServiceBusTest : IDisposable
 
         // Start Workflow
         var workflowDefinitionId = nameof(ReceiveMessageWorkflow);
-        var startWorkflowOptions = new StartWorkflowRuntimeParams { VersionOptions = Common.Models.VersionOptions.Published };
-        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
-        var workflowState = await workflowRuntime.StartWorkflowAsync(workflowDefinitionId, startWorkflowOptions);
+        var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
+        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow doesn't receive any message so it should be
@@ -354,7 +341,7 @@ public class ServiceBusTest : IDisposable
         var wait1 = _resetEventManager.Get("receive1").WaitOne(TimeSpan.FromSeconds(5));
         _testOutputHelper.WriteLine($"wait1 : {wait1}");
 
-        var lastWorkflowState = await workflowRuntime.ExportWorkflowStateAsync(workflowState.WorkflowInstanceId);
+        var lastWorkflowState = await workflowClient.ExportStateAsync();
         /*
          * We don't send 2 messages so Workflow must be
          * Running
@@ -366,6 +353,28 @@ public class ServiceBusTest : IDisposable
         Assert.Equal(WorkflowStatus.Running, lastWorkflowState.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, lastWorkflowState.SubStatus);
         Assert.False(wait1);
+    }
+    
+    private async Task InitRegistryAndBackGroundServiceWorkerAsync()
+    {
+        // Init Registries to use StartWorkflow
+        await _services.PopulateRegistriesAsync();
+
+        // Start background services for CommandHandler
+        await _backgroundCommandSenderHostedService.StartAsync(CancellationToken.None);
+        await _backgroundEventPublisherHostedService.StartAsync(CancellationToken.None);
+    }
+    
+    private async Task<IWorkflowClient> CreateWorkflowClientAsync(string definitionId)
+    {
+        var workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
+        var workflowClient = await workflowRuntime.CreateClientAsync();
+        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published)
+        };
+        await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest);
+        return workflowClient;
     }
 
     void IDisposable.Dispose()

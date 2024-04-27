@@ -2,11 +2,11 @@ using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -20,8 +20,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 internal class Execute(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
-    IApiSerializer apiSerializer,
-    IIdentityGenerator identityGenerator)
+    IApiSerializer apiSerializer)
     : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
@@ -48,7 +47,7 @@ internal class Execute(
         var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
-            DefinitionVersionId = workflow.Identity.Id,
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
             Input = (IDictionary<string, object>?)request.Input
         };

@@ -11,7 +11,7 @@ public class WorkflowInvoker(IWorkflowHostFactory workflowHostFactory) : IWorkfl
     /// <inheritdoc />
     public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, InvokeWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var instanceId = options?.InstanceId;
+        var instanceId = options?.WorkflowInstanceId;
         var workflowHost = await workflowHostFactory.CreateAsync(workflow, instanceId, cancellationToken);
         var runWorkflowParams = new RunWorkflowParams
         {

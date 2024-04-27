@@ -1,13 +1,13 @@
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Messages;
 
 namespace Elsa.ProtoActor.Mappers;
 
 /// <summary>
 /// Maps <see cref="CreateWorkflowInstanceRequest"/> to <see cref="ProtoCreateWorkflowInstanceRequest"/> and vice versa.
 /// </summary>
-public class CreateWorkflowInstanceRequestMapper
+public class CreateWorkflowInstanceRequestMapper(WorkflowDefinitionHandleMapper workflowDefinitionHandleMapper)
 {
     /// <summary>
     /// Maps <see cref="CreateWorkflowInstanceRequest"/> to <see cref="ProtoCreateWorkflowInstanceRequest"/>.
@@ -19,7 +19,7 @@ public class CreateWorkflowInstanceRequestMapper
         
         return new()
         {
-            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
+            WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
             WorkflowInstanceId = workflowInstanceId,
             CorrelationId = source.CorrelationId,
             ParentId = source.ParentId,
@@ -37,7 +37,7 @@ public class CreateWorkflowInstanceRequestMapper
     {
         return new()
         {
-            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
+            WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
             CorrelationId = source.CorrelationId,
             ParentId = source.ParentId,
             Input = source.Input?.DeserializeInput(),

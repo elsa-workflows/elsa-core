@@ -1,5 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;
@@ -40,7 +42,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
             Input = command.Input,
             Properties = command.Properties,
             ParentId = command.ParentWorkflowInstanceId,
-            DefinitionVersionId = command.DefinitionVersionId
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(command.DefinitionVersionId)
         };
         await client.CreateInstanceAsync(createRequest, cancellationToken);
 

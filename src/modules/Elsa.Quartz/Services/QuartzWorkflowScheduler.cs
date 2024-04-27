@@ -113,8 +113,7 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
         return new JobDataMap()
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.InstanceId), request.InstanceId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.CorrelationId), request.CorrelationId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.DefinitionId), request.DefinitionId)
-            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.VersionOptions), request.VersionOptions.ToString())
+            .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.DefinitionVersionId), request.DefinitionVersionId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.TriggerActivityId), request.TriggerActivityId)
             .AddIfNotEmpty(nameof(DispatchWorkflowDefinitionRequest.Input), request.Input);
     }

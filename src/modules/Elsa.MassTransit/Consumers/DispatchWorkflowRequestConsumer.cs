@@ -1,9 +1,8 @@
 using Elsa.MassTransit.Messages;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Parameters;
 using JetBrains.Annotations;
 using MassTransit;
 
@@ -97,7 +96,7 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
-            DefinitionVersionId = workflow.Identity.Id,
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow.Identity.Id),
             Properties = message.Properties,
             CorrelationId = message.CorrelationId,
             Input = message.Input,

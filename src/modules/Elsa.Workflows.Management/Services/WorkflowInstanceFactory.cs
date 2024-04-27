@@ -1,9 +1,9 @@
 using Elsa.Common.Contracts;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Params;
-using Elsa.Workflows.Management.Requests;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management.Services;
@@ -12,31 +12,31 @@ namespace Elsa.Workflows.Management.Services;
 public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISystemClock systemClock) : IWorkflowInstanceFactory
 {
     /// <inheritdoc />
-    public WorkflowState CreateWorkflowState(CreateWorkflowInstanceParams @params)
+    public WorkflowState CreateWorkflowState(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
         var now = systemClock.UtcNow;
         return new WorkflowState
         {
-            Id = @params.WorkflowInstanceId ?? identityGenerator.GenerateId(),
-            DefinitionId = @params.Workflow.Identity.DefinitionId,
-            DefinitionVersionId = @params.Workflow.Identity.Id,
-            DefinitionVersion = @params.Workflow.Identity.Version,
-            CorrelationId = @params.CorrelationId,
-            Input = @params.Input ?? new Dictionary<string, object>(),
-            Properties = @params.Properties ?? new Dictionary<string, object>(),
+            Id = options?.WorkflowInstanceId ?? identityGenerator.GenerateId(),
+            DefinitionId = workflow.Identity.DefinitionId,
+            DefinitionVersionId = workflow.Identity.Id,
+            DefinitionVersion = workflow.Identity.Version,
+            CorrelationId = options?.CorrelationId,
+            Input = options?.Input ?? new Dictionary<string, object>(),
+            Properties = options?.Properties ?? new Dictionary<string, object>(),
             Status = WorkflowStatus.Running,
             SubStatus = WorkflowSubStatus.Pending,
             CreatedAt = now,
             UpdatedAt = now,
-            ParentWorkflowInstanceId = @params.ParentId,
-            IsSystem = @params.Workflow.IsSystem
+            ParentWorkflowInstanceId = options?.ParentWorkflowInstanceId,
+            IsSystem = workflow.IsSystem
         };
     }
 
     /// <inheritdoc />
-    public WorkflowInstance CreateWorkflowInstance(CreateWorkflowInstanceParams @params)
+    public WorkflowInstance CreateWorkflowInstance(Workflow workflow, WorkflowInstanceOptions? options = null)
     {
-        var workflowState = CreateWorkflowState(@params);
+        var workflowState = CreateWorkflowState(workflow, options);
         return new WorkflowInstance
         {
             Id = workflowState.Id,

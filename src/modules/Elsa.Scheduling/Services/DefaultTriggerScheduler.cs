@@ -42,8 +42,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             var input = new { StartAt = startAt, Interval = interval }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                DefinitionVersionId = trigger.WorkflowDefinitionVersionId,
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -57,8 +56,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                DefinitionVersionId = trigger.WorkflowDefinitionVersionId,
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -74,8 +72,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             var input = new { CronExpression = cronExpression }.ToDictionary();
             var request = new DispatchWorkflowDefinitionRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                DefinitionVersionId = trigger.WorkflowDefinitionVersionId,
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -85,7 +82,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             }
             catch (FormatException ex)
             {
-                _logger.LogWarning($"Cron expression format error: {ex.Message}. CronExpression: {cronExpression}");
+                _logger.LogWarning("Cron expression format error: {ExMessage}. CronExpression: {CronExpression}", ex.Message, cronExpression);
             }
         }
     }

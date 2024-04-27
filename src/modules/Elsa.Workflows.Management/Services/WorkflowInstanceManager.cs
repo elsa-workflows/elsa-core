@@ -1,16 +1,14 @@
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Management.Params;
-using Elsa.Workflows.Management.Requests;
+using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.State;
-using Exception = System.Exception;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -100,9 +98,9 @@ public class WorkflowInstanceManager(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(CreateWorkflowInstanceParams @params, CancellationToken cancellationToken = default)
+    public async Task<WorkflowInstance> CreateWorkflowInstanceAsync(Workflow workflow, WorkflowInstanceOptions? options = null, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(@params);
+        var workflowInstance = workflowInstanceFactory.CreateWorkflowInstance(workflow, options);
         await SaveAsync(workflowInstance, cancellationToken);
         return workflowInstance;
     }
