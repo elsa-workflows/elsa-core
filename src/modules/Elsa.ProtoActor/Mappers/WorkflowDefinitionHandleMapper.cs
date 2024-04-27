@@ -20,9 +20,9 @@ public class WorkflowDefinitionHandleMapper
         
         return new()
         {
-            DefinitionId = source.DefinitionId.NullIfEmpty(),
-            VersionOptions = source.VersionOptions?.ToString().NullIfEmpty(),
-            DefinitionVersionId = source.DefinitionVersionId.NullIfEmpty()
+            DefinitionId = source.DefinitionId.EmptyIfNull(),
+            VersionOptions = source.VersionOptions == null ? "" : source.VersionOptions.ToString(),
+            DefinitionVersionId = source.DefinitionVersionId.EmptyIfNull()
         };
     }
     
@@ -33,9 +33,9 @@ public class WorkflowDefinitionHandleMapper
     {
         return new()
         {
-            DefinitionId = source.DefinitionId.EmptyIfNull(),
+            DefinitionId = source.DefinitionId.NullIfEmpty(),
             VersionOptions = source.VersionOptions != "" ?  VersionOptions.FromString(source.VersionOptions) : null,
-            DefinitionVersionId = source.DefinitionVersionId.EmptyIfNull()
+            DefinitionVersionId = source.DefinitionVersionId.NullIfEmpty()
         };
         
     }

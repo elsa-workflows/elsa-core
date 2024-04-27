@@ -1,6 +1,5 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
@@ -89,22 +88,25 @@ public class StimulusSender(
         var input = metadata?.Input;
         var properties = metadata?.Properties;
         var activityHandle = metadata?.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(metadata.ActivityInstanceId) : null;
-        var bookmarkId = metadata?.BookmarkId;
         var responses = new List<RunWorkflowInstanceResponse>();
 
-        foreach (BookmarkBoundWorkflow bookmarkBoundWorkflow in bookmarkBoundWorkflows)
+        foreach (var bookmarkBoundWorkflow in bookmarkBoundWorkflows)
         {
             var workflowInstanceId = bookmarkBoundWorkflow.WorkflowInstanceId;
             var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
-            var request = new RunWorkflowInstanceRequest
+
+            foreach (var storedBookmark in bookmarkBoundWorkflow.Bookmarks)
             {
-                Input = input,
-                Properties = properties,
-                ActivityHandle = activityHandle,
-                BookmarkId = bookmarkId,
-            };
-            var response = await workflowClient.RunAsync(request, cancellationToken);
-            responses.Add(response);
+                var request = new RunWorkflowInstanceRequest
+                {
+                    Input = input,
+                    Properties = properties,
+                    ActivityHandle = activityHandle,
+                    BookmarkId = storedBookmark.BookmarkId,
+                };
+                var response = await workflowClient.RunAsync(request, cancellationToken);
+                responses.Add(response);
+            }
         }
 
         return responses;

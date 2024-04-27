@@ -37,14 +37,14 @@ const bool useSqlServer = false;
 const bool usePostgres = false;
 const bool useCockroachDb = false;
 const bool useDapper = false;
-const bool useProtoActor = true;
+const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
-const bool useCaching = true;
+const bool useCaching = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 

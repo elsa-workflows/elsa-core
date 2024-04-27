@@ -209,6 +209,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
+            .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
             .AddScoped<IStimulusSender, StimulusSender>()
             .AddScoped<ITriggerBoundWorkflowService, TriggerBoundWorkflowService>()
             .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()

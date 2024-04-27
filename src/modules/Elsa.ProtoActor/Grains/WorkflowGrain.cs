@@ -19,7 +19,6 @@ namespace Elsa.ProtoActor.Grains;
 internal class WorkflowGrain : WorkflowBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IWorkflowInstanceManager _workflowInstanceManager;
     private readonly IWorkflowHostFactory _workflowHostFactory;
     private readonly Mappers.Mappers _mappers;
     private readonly Persistence _persistence;
@@ -30,13 +29,11 @@ internal class WorkflowGrain : WorkflowBase
     public WorkflowGrain(
         IContext context,
         IServiceScopeFactory scopeFactory,
-        IWorkflowInstanceManager workflowInstanceManager,
         IWorkflowHostFactory workflowHostFactory,
         IProvider provider,
         Mappers.Mappers mappers) : base(context)
     {
         _scopeFactory = scopeFactory;
-        _workflowInstanceManager = workflowInstanceManager;
         _workflowHostFactory = workflowHostFactory;
         _mappers = mappers;
         _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
@@ -176,7 +173,9 @@ internal class WorkflowGrain : WorkflowBase
             ParentWorkflowInstanceId = request.ParentId
         };
         
-        var workflowInstance = await _workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
+        using var scope = _scopeFactory.CreateScope();
+        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
+        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
         var host = await _workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
         _workflowInstanceId = host.WorkflowState.Id;
         await SaveSnapshotAsync();

@@ -1,14 +1,13 @@
 ﻿using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
-using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Open.Linq.AsyncExtensions;
 
@@ -64,7 +63,7 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
     {
         var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync(workflowDefinitionId);
-        var model = await response.ReadAsJsonAsync<Response>();
+        var model = await response.ReadAsJsonAsync<ExecuteResponse>();
         return model.WorkflowState;
     }
 

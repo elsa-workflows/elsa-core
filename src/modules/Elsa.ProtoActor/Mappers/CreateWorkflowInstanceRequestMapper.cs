@@ -21,10 +21,10 @@ public class CreateWorkflowInstanceRequestMapper(WorkflowDefinitionHandleMapper 
         {
             WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
             WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = source.CorrelationId,
-            ParentId = source.ParentId,
-            Input = source.Input?.SerializeInput(),
-            Properties = source.Properties?.SerializeProperties()
+            CorrelationId = source.CorrelationId.EmptyIfNull(),
+            ParentId = source.ParentId.EmptyIfNull(),
+            Input = source.Input?.SerializeInput() ?? new ProtoInput(),
+            Properties = source.Properties?.SerializeProperties() ?? new ProtoProperties()
         };
     }
     

@@ -56,10 +56,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
-                elsa.UseWorkflowManagement(management =>
-                {
-                    management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
-                });
+                // elsa.UseWorkflowManagement(management =>
+                // {
+                //     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                // });
             };
         }
 
