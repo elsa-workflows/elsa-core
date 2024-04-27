@@ -87,10 +87,13 @@ public static class ServiceProviderExtensions
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
         while (response.Status != WorkflowStatus.Finished)
         {
-            var bookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            var bookmarks = (await bookmarkStore.FindManyAsync(new BookmarkFilter
             {
                 WorkflowInstanceId = response.WorkflowInstanceId
-            });
+            })).ToList();
+
+            if (!bookmarks.Any())
+                break;
 
             foreach (var bookmark in bookmarks)
             {

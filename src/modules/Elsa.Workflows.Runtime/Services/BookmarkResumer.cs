@@ -10,13 +10,13 @@ namespace Elsa.Workflows.Runtime.Services;
 public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bookmarkStore, IStimulusHasher stimulusHasher) : IBookmarkResumer
 {
     /// <inheritdoc />
-    public Task<RunWorkflowInstanceResponse> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
+    public Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
     {
         return ResumeAsync<TActivity>(stimulus, null, options, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowInstanceResponse> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
+    public async Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity
     {
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<TActivity>();
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
@@ -30,12 +30,12 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowInstanceResponse> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
+    public async Task<ResumeBookmarkResult> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var bookmark = await bookmarkStore.FindAsync(filter, cancellationToken);
 
         if (bookmark == null)
-            throw new Exception($"No bookmark matching the specified filter was found.");
+            return ResumeBookmarkResult.NotFound();
 
         var workflowClient = await workflowRuntime.CreateClientAsync(bookmark.WorkflowInstanceId, cancellationToken);
         var runRequest = new RunWorkflowInstanceRequest
@@ -44,6 +44,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
             Properties = options?.Properties,
             BookmarkId = bookmark.BookmarkId
         };
-        return await workflowClient.RunAsync(runRequest, cancellationToken);
+        var response = await workflowClient.RunAsync(runRequest, cancellationToken);
+        return ResumeBookmarkResult.Found(response);
     }
 }

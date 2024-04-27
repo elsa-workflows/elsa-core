@@ -12,17 +12,17 @@ public class BookmarkBoundWorkflowService(IWorkflowMatcher workflowMatcher, IWor
     public async Task<IEnumerable<BookmarkBoundWorkflow>> FindManyAsync(string activityTypeName, object stimulus, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var bookmarks = await workflowMatcher.FindBookmarksAsync(activityTypeName, stimulus, options, cancellationToken);
-        return await FindManyAsync(bookmarks, cancellationToken);
+        return Map(bookmarks);
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<BookmarkBoundWorkflow>> FindManyAsync(string stimulusHash, FindBookmarkOptions? options = null, CancellationToken cancellationToken = default)
     {
         var bookmarks = await workflowMatcher.FindBookmarksAsync(stimulusHash, options, cancellationToken);
-        return await FindManyAsync(bookmarks, cancellationToken);
+        return Map(bookmarks);
     }
 
-    private async Task<IEnumerable<BookmarkBoundWorkflow>> FindManyAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    private IEnumerable<BookmarkBoundWorkflow> Map(IEnumerable<StoredBookmark> bookmarks)
     {
         var groupedBookmarks = bookmarks.GroupBy(x => x.WorkflowInstanceId);
         var bookmarkBoundWorkflows = new List<BookmarkBoundWorkflow>();

@@ -209,12 +209,17 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
+            .AddScoped<IStimulusSender, StimulusSender>()
+            .AddScoped<ITriggerBoundWorkflowService, TriggerBoundWorkflowService>()
+            .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
+            .AddScoped<IBookmarkResumer, BookmarkResumer>()
+            .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             
             // Stores.

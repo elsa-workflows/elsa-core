@@ -4,7 +4,6 @@ using Elsa.Mediator.Options;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation.Workflows;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;

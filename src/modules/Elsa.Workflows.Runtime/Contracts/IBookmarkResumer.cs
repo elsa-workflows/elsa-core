@@ -13,15 +13,15 @@ public interface IBookmarkResumer
     /// <summary>
     /// Resumes the bookmark.
     /// </summary>
-    Task<RunWorkflowInstanceResponse> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity;
+    Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity;
     
     /// <summary>
     /// Resumes the bookmark.
     /// </summary>
-    Task<RunWorkflowInstanceResponse> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity;
+    Task<ResumeBookmarkResult> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default) where TActivity : IActivity;
     
     /// <summary>
     /// Resumes the bookmark.
     /// </summary>
-    Task<RunWorkflowInstanceResponse> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default);
+    Task<ResumeBookmarkResult> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options, CancellationToken cancellationToken = default);
 }
