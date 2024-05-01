@@ -5,6 +5,8 @@ using Xunit.Abstractions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.CachingAndWorkflowDefinitionActivity;
 
+// Tests the behavior of the WorkflowDefinitionActivity.
+// See https://github.com/elsa-workflows/elsa-core/issues/5314
 public class WorkflowDefinitionActivityTests : AppComponentTest
 {
     private readonly ITestOutputHelper _testOutputHelper;
