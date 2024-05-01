@@ -32,11 +32,12 @@ public class MassTransitWorkflowDispatcher(
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
 
+        var workflow = workflowGraph.Workflow;
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
             Workflow = workflow,
@@ -106,9 +107,9 @@ public class MassTransitWorkflowDispatcher(
 
         foreach (var trigger in triggers)
         {
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
-            if (workflow == null)
+            if (workflowGraph == null)
             {
                 logger.LogWarning("Workflow definition with ID '{WorkflowDefinitionId}' not found", trigger.WorkflowDefinitionVersionId);
                 continue;
@@ -116,7 +117,7 @@ public class MassTransitWorkflowDispatcher(
 
             var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
             {
-                Workflow = workflow,
+                Workflow = workflowGraph.Workflow,
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
                 Properties = request.Properties,

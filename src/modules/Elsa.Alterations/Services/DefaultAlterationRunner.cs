@@ -61,29 +61,24 @@ public class DefaultAlterationRunner : IAlterationRunner
     {
         var log = new AlterationLog(_systemClock);
         var result = new RunAlterationsResult(workflowInstanceId, log);
-
-        // Load workflow instance.
         var workflowState = await _workflowRuntime.ExportWorkflowStateAsync(workflowInstanceId, cancellationToken);
 
-        // If the workflow instance is not found, log an error and continue.
         if (workflowState == null)
         {
             log.Add($"Workflow instance with ID '{workflowInstanceId}' not found.", LogLevel.Error);
             return result;
         }
 
-        // Load workflow definition.
-        var workflow = await _workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionVersionId, cancellationToken);
+        var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowState.DefinitionVersionId, cancellationToken);
 
-        // If the workflow definition is not found, log an error and continue.
-        if (workflow == null)
+        if (workflowGraph == null)
         {
             log.Add($"Workflow definition with ID '{workflowState.DefinitionVersionId}' not found.", LogLevel.Error);
             return result;
         }
-        
+
         // Create workflow execution context.
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflowGraph, workflowState, cancellationTokens: cancellationToken);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsPropertyKey, alterations);
         workflowExecutionContext.TransientProperties.Add(RunAlterationsMiddleware.AlterationsLogPropertyKey, log);
 

@@ -30,7 +30,7 @@ public class MigrateHandler : AlterationHandlerBase<Migrate>
         }
         
         var targetWorkflow = await workflowDefinitionService.MaterializeWorkflowAsync(targetWorkflowDefinition, cancellationToken);
-        await context.WorkflowExecutionContext.SetWorkflowAsync(targetWorkflow);
+        await context.WorkflowExecutionContext.SetWorkflowGraphAsync(targetWorkflow);
         
         context.Succeed();
     }

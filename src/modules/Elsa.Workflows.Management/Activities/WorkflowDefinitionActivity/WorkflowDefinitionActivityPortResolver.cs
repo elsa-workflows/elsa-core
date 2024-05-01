@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Returns the root activity for a given <see cref="WorkflowDefinitionActivity"/>.
 /// </summary>
-public class WorkflowDefinitionActivityResolver : IActivityResolver
+public class WorkflowDefinitionActivityResolver() : IActivityResolver
 {
     /// <inheritdoc />
     public int Priority => 0;
@@ -19,6 +19,6 @@ public class WorkflowDefinitionActivityResolver : IActivityResolver
         var definitionActivity = (WorkflowDefinitionActivity)activity;
         var root = definitionActivity.Root;
 
-        return new(new[] { root });
+        return new([root]);
     }
 }

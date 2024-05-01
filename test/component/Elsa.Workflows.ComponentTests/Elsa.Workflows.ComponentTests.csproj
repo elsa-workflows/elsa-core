@@ -47,6 +47,15 @@
         <None Update="Scenarios\WorkflowCompletion\hello-world.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\CachingAndWorkflowDefinitionActivity\Workflows\workflow-definition-child.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\CachingAndWorkflowDefinitionActivity\Workflows\workflow-definition-grand-child.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\CachingAndWorkflowDefinitionActivity\Workflows\workflow-definition-parent.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 </Project>

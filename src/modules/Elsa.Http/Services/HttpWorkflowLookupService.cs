@@ -1,7 +1,7 @@
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -25,12 +25,12 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
         if (trigger == null)
             return default;
 
-        var workflow = await FindWorkflowAsync(trigger, cancellationToken);
+        var workflowGraph = await FindWorkflowGraphAsync(trigger, cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
             return default;
 
-        return new(workflow, triggers);
+        return new(workflowGraph, triggers);
     }
 
     private async Task<IEnumerable<StoredTrigger>> FindTriggersAsync(string bookmarkHash, CancellationToken cancellationToken)
@@ -42,9 +42,9 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
         return await triggerStore.FindManyAsync(triggerFilter, cancellationToken);
     }
 
-    private async Task<Workflow?> FindWorkflowAsync(StoredTrigger trigger, CancellationToken cancellationToken)
+    private async Task<WorkflowGraph?> FindWorkflowGraphAsync(StoredTrigger trigger, CancellationToken cancellationToken)
     {
         var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
-        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        return await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
     }
 }

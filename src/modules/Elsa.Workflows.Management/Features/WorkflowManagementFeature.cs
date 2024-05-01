@@ -206,6 +206,7 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
             .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddScoped<WorkflowDefinitionMapper>()
+            .AddScoped<ScopedWorkflowDefinitionLookup>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
             .AddSingleton<ICompressionCodecResolver, CompressionCodecResolver>()

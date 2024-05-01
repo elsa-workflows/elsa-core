@@ -85,8 +85,8 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     /// <inheritdoc />
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(workflow), cancellationToken);
+        var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var responses = await _requestSender.SendAsync(new ValidateWorkflowRequest(workflowGraph.Workflow), cancellationToken);
         var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
 
         if (validationErrors.Any())
