@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -12,8 +14,6 @@ using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Esprima;
-using Esprima.Ast;
 using Humanizer;
 using Jint;
 using Jint.Runtime.Interop;
@@ -182,7 +182,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
     private object? ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
-        var cacheKey = "jint:script:" + expression.GetHashCode(StringComparison.Ordinal);
+        var cacheKey = "jint:script:" + Hash(expression);
 
         var parsedScript = _memoryCache.GetOrCreate(cacheKey, entry =>
         {
@@ -213,5 +213,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         options.Converters.Add(new JsonStringEnumConverter());
 
         return JsonSerializer.Serialize(value, options);
+    }
+    
+    private string Hash(string input)
+    {
+        var bytes = Encoding.UTF8.GetBytes(input);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash);
     }
 }

@@ -140,7 +140,7 @@ public class DefaultWorkflowRuntime(
             var definitionId = workflowInstance.DefinitionId;
             var version = workflowInstance.Version;
 
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(
+            var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(
                 definitionId,
                 VersionOptions.SpecificVersion(version),
                 systemCancellationToken);
@@ -267,7 +267,7 @@ public class DefaultWorkflowRuntime(
             if (workflowState == null)
                 throw new Exception("Workflow state not found");
 
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+            var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
             if (workflow == null)
                 throw new Exception("Workflow definition not found");
@@ -385,7 +385,7 @@ public class DefaultWorkflowRuntime(
         if (options?.IsExistingInstance == true)
         {
             var workflowState = await LoadWorkflowStateAsync(options.InstanceId!, cancellationToken);
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionVersionId, cancellationToken) ?? throw new Exception("Specified workflow definition and version does not exist");
+            var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowState.DefinitionVersionId, cancellationToken) ?? throw new Exception("Specified workflow definition and version does not exist");
             return await workflowHostFactory.CreateAsync(workflow, workflowState, cancellationToken);
         }
 
@@ -465,14 +465,14 @@ public class DefaultWorkflowRuntime(
                     InstanceId = workflowsFilter.Options.WorkflowInstanceId
                 };
                 var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
-                var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, startOptions.VersionOptions, cancellationToken);
+                var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, startOptions.VersionOptions, cancellationToken);
 
-                if (workflow == null)
+                if (workflowGraph == null)
                     throw new Exception($"The workflow definition {definitionId} was not found");
 
                 var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
                 {
-                    Workflow = workflow,
+                    Workflow = workflowGraph.Workflow,
                     CorrelationId = workflowsFilter.Options.CorrelationId,
                     Properties = workflowsFilter.Options.Properties,
                     Input = workflowsFilter.Options.Input,

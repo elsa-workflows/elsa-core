@@ -33,8 +33,8 @@ public class Hasher : IHasher
     /// <inheritdoc />
     public string Hash(string value)
     {
-        using var sha = SHA256.Create();
-        return Hash(sha, value);
+        var data = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(data);
     }
 
     /// <inheritdoc />
@@ -44,12 +44,6 @@ public class Hasher : IHasher
         var strings = values.Select(Serialize).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
         var input = string.Join("|", strings);
         return Hash(input);
-    }
-
-    private static string Hash(HashAlgorithm hashAlgorithm, string input)
-    {
-        var data = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(input));
-        return Convert.ToHexString(data);
     }
     
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]
