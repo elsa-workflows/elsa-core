@@ -224,8 +224,7 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ScheduleWorkOptions? options = default)
     {
-        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
-        await ScheduleActivityAsync(activityNode, this, options);
+        await ScheduleActivityAsync(activity, this, options);
     }
 
     /// <summary>
@@ -236,7 +235,9 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext? owner, ScheduleWorkOptions? options = default)
     {
-        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
+        var activityNode = activity != null
+            ? WorkflowExecutionContext.FindNodeByActivity(activity) ?? throw new InvalidOperationException("The specified activity is not part of the workflow.")
+            : null;
         await ScheduleActivityAsync(activityNode, owner, options);
     }
 
@@ -250,6 +251,10 @@ public partial class ActivityExecutionContext : IExecutionContext
     {
         if (this.GetIsBackgroundExecution())
         {
+            // Validate that the specified activity is part of the workflow.
+            if (activityNode != null && !WorkflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))
+                throw new InvalidOperationException("The specified activity is not part of the workflow.");
+
             var scheduledActivity = new ScheduledActivity
             {
                 ActivityNodeId = activityNode?.NodeId,
