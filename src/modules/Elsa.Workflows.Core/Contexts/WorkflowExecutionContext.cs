@@ -43,6 +43,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     private WorkflowExecutionContext(
         IServiceProvider serviceProvider,
+        WorkflowGraph workflowGraph,
         string id,
         string? correlationId,
         string? parentWorkflowInstanceId,
@@ -73,7 +74,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         UpdatedAt = createdAt;
         CancellationToken = cancellationToken;
         Incidents = incidents.ToList();
-
+        WorkflowGraph = workflowGraph;
         var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _cancellationTokenSources.Add(linkedCancellationTokenSource);
         _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
@@ -84,7 +85,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
-        Workflow workflow,
+        WorkflowGraph workflowGraph,
         string id,
         string? correlationId,
         string? parentWorkflowInstanceId = default,
@@ -98,7 +99,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         return await CreateAsync(
             serviceProvider,
-            workflow,
+            workflowGraph,
             id,
             new List<ActivityIncident>(),
             systemClock.UtcNow,
@@ -117,7 +118,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
-        Workflow workflow,
+        WorkflowGraph workflowGraph,
         WorkflowState workflowState,
         string? correlationId = default,
         string? parentWorkflowInstanceId = default,
@@ -129,7 +130,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     {
         var workflowExecutionContext = await CreateAsync(
             serviceProvider,
-            workflow,
+            workflowGraph,
             workflowState.Id,
             workflowState.Incidents,
             workflowState.CreatedAt,
@@ -152,7 +153,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public static async Task<WorkflowExecutionContext> CreateAsync(
         IServiceProvider serviceProvider,
-        Workflow workflow,
+        WorkflowGraph workflowGraph,
         string id,
         IEnumerable<ActivityIncident> incidents,
         DateTimeOffset createdAt,
@@ -167,6 +168,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         // Setup a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
+            workflowGraph,
             id,
             correlationId,
             parentWorkflowInstanceId,
@@ -178,47 +180,31 @@ public partial class WorkflowExecutionContext : IExecutionContext
             createdAt,
             cancellationToken)
         {
-            MemoryRegister = workflow.CreateRegister()
+            MemoryRegister = workflowGraph.Workflow.CreateRegister()
         };
 
         workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
-        await workflowExecutionContext.SetWorkflowAsync(workflow);
+        await workflowExecutionContext.SetWorkflowGraphAsync(workflowGraph);
         return workflowExecutionContext;
     }
 
     /// <summary>
     /// Assigns the specified workflow to this workflow execution context.
     /// </summary>
-    /// <param name="workflow">The workflow to assign.</param>
-    public async Task SetWorkflowAsync(Workflow workflow)
+    /// <param name="workflowGraph">The workflow graph to assign.</param>
+    public async Task SetWorkflowGraphAsync(WorkflowGraph workflowGraph)
     {
-        var activityVisitor = GetRequiredService<IActivityVisitor>();
-        var root = workflow;
-        var graph = await activityVisitor.VisitAsync(root, CancellationToken);
-        var nodes = graph.Flatten().ToList();
+        WorkflowGraph = workflowGraph;
+        var nodes = workflowGraph.Nodes;
 
         // Register activity types.
         var activityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
         await ActivityRegistry.RegisterAsync(activityTypes, CancellationToken);
 
-        var needsIdentityAssignment = nodes.Any(x => string.IsNullOrEmpty(x.Activity.Id));
-
-        if (needsIdentityAssignment)
-        {
-            var identityGraphService = GetRequiredService<IIdentityGraphService>();
-            identityGraphService.AssignIdentities(nodes);
-        }
-
-        Workflow = workflow;
-        Graph = graph;
-        Nodes = nodes;
-        NodeIdLookup = nodes.ToDictionary(x => x.NodeId);
-        NodeHashLookup = nodes.ToDictionary(x => Hash(x.NodeId));
-        NodeActivityLookup = nodes.ToDictionary(x => x.Activity);
-
+        // Update the activity execution contexts with the actual activity instances.
         foreach (var activityExecutionContext in ActivityExecutionContexts)
-            activityExecutionContext.Activity = NodeIdLookup[activityExecutionContext.Activity.NodeId].Activity;
+            activityExecutionContext.Activity = workflowGraph.NodeIdLookup[activityExecutionContext.Activity.NodeId].Activity;
     }
 
     /// <summary>
@@ -232,14 +218,19 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public IActivityRegistry ActivityRegistry { get; }
 
     /// <summary>
+    /// Gets the workflow graph.
+    /// </summary>
+    public WorkflowGraph WorkflowGraph { get; private set; }
+
+    /// <summary>
     /// The <see cref="Workflow"/> associated with the execution context.
     /// </summary>
-    public Workflow Workflow { get; private set; } = default!;
+    public Workflow Workflow => WorkflowGraph.Workflow;
 
     /// <summary>
     /// A graph of the workflow structure.
     /// </summary>
-    public ActivityNode Graph { get; private set; } = default!;
+    public ActivityNode Graph => WorkflowGraph.Root;
 
     /// <summary>
     /// The current status of the workflow. 
@@ -297,22 +288,22 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A flattened list of <see cref="ActivityNode"/>s from the <see cref="Graph"/>. 
     /// </summary>
-    public IReadOnlyCollection<ActivityNode> Nodes { get; private set; } = default!;
+    public IReadOnlyCollection<ActivityNode> Nodes => WorkflowGraph.Nodes.ToList();
 
     /// <summary>
     /// A map between activity IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<string, ActivityNode> NodeIdLookup { get; private set; } = default!;
+    public IDictionary<string, ActivityNode> NodeIdLookup => WorkflowGraph.NodeIdLookup;
 
     /// <summary>
     /// A map between hashed activity node IDs and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<string, ActivityNode> NodeHashLookup { get; private set; } = default!;
+    public IDictionary<string, ActivityNode> NodeHashLookup => WorkflowGraph.NodeHashLookup;
 
     /// <summary>
     /// A map between <see cref="IActivity"/>s and <see cref="ActivityNode"/>s in the workflow graph.
     /// </summary>
-    public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; private set; } = default!;
+    public IDictionary<IActivity, ActivityNode> NodeActivityLookup => WorkflowGraph.NodeActivityLookup;
 
     /// <summary>
     /// The <see cref="IActivityScheduler"/> for the execution context.
@@ -681,7 +672,4 @@ public partial class WorkflowExecutionContext : IExecutionContext
         var currentMainStatus = GetMainStatus(SubStatus);
         return currentMainStatus != WorkflowStatus.Finished;
     }
-
-
-    private string Hash(string nodeId) => _hasher.Hash(nodeId);
 }

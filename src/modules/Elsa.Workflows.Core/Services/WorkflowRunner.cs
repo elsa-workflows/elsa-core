@@ -10,45 +10,28 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
-public class WorkflowRunner : IWorkflowRunner
+public class WorkflowRunner(
+    IServiceProvider serviceProvider,
+    IWorkflowExecutionPipeline pipeline,
+    IWorkflowStateExtractor workflowStateExtractor,
+    IWorkflowBuilderFactory workflowBuilderFactory,
+    IWorkflowGraphBuilder workflowGraphBuilder,
+    IIdentityGenerator identityGenerator,
+    INotificationSender notificationSender)
+    : IWorkflowRunner
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IWorkflowExecutionPipeline _pipeline;
-    private readonly IWorkflowStateExtractor _workflowStateExtractor;
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly INotificationSender _notificationSender;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WorkflowRunner(
-        IServiceProvider serviceProvider,
-        IWorkflowExecutionPipeline pipeline,
-        IWorkflowStateExtractor workflowStateExtractor,
-        IWorkflowBuilderFactory workflowBuilderFactory,
-        IIdentityGenerator identityGenerator,
-        INotificationSender notificationSender)
-    {
-        _serviceProvider = serviceProvider;
-        _pipeline = pipeline;
-        _workflowStateExtractor = workflowStateExtractor;
-        _workflowBuilderFactory = workflowBuilderFactory;
-        _identityGenerator = identityGenerator;
-        _notificationSender = notificationSender;
-    }
-
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var workflow = Workflow.FromActivity(activity);
-        return await RunAsync(workflow, options, cancellationToken);
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, options, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var builder = _workflowBuilderFactory.CreateBuilder();
+        var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
         return await RunAsync(workflowDefinition, options, cancellationToken);
     }
@@ -65,7 +48,7 @@ public class WorkflowRunner : IWorkflowRunner
         RunWorkflowOptions? options = default,
         CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
-        var builder = _workflowBuilderFactory.CreateBuilder();
+        var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
         return await RunAsync(workflowDefinition, options, cancellationToken);
     }
@@ -75,25 +58,25 @@ public class WorkflowRunner : IWorkflowRunner
         RunWorkflowOptions? options = default,
         CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
-        var builder = _workflowBuilderFactory.CreateBuilder();
+        var builder = workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
         var result = await RunAsync(workflow, options, cancellationToken);
         return (TResult)result.Result!;
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Set up a workflow execution context.
-        var instanceId = options?.WorkflowInstanceId ?? _identityGenerator.GenerateId();
+        var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            _serviceProvider,
-            workflow,
+            serviceProvider,
+            workflowGraph,
             instanceId,
             correlationId,
             parentWorkflowInstanceId,
@@ -110,7 +93,21 @@ public class WorkflowRunner : IWorkflowRunner
     }
 
     /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, workflowState, options, cancellationToken);
+    }
+    
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         // Create workflow execution context.
         var input = options?.Input;
@@ -119,8 +116,8 @@ public class WorkflowRunner : IWorkflowRunner
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            _serviceProvider,
-            workflow,
+            serviceProvider,
+            workflowGraph,
             workflowState,
             correlationId,
             parentWorkflowInstanceId,
@@ -183,8 +180,8 @@ public class WorkflowRunner : IWorkflowRunner
             await _notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
-        await _pipeline.ExecuteAsync(workflowExecutionContext);
-        var workflowState = _workflowStateExtractor.Extract(workflowExecutionContext);
+        await pipeline.ExecuteAsync(workflowExecutionContext);
+        var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
 
         if (workflowState.Status == WorkflowStatus.Finished)
         {

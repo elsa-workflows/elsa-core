@@ -98,6 +98,10 @@ public static class WorkflowExecutionContextExtensions
         ActivityExecutionContext owner,
         ScheduleWorkOptions? options = default)
     {
+        // Validate that the specified activity is part of the workflow.
+        if (!workflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))
+            throw new InvalidOperationException("The specified activity is not part of the workflow.");
+        
         var scheduler = workflowExecutionContext.Scheduler;
 
         if (options?.PreventDuplicateScheduling == true)

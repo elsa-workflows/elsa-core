@@ -87,8 +87,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             var trigger = triggers?.FirstOrDefault();
             if (trigger != null)
             {
-                var workflow = lookupResult.Workflow!;
-                await StartWorkflowAsync(httpContext, trigger, workflow, input);
+                var workflowGraph = lookupResult.WorkflowGraph!;
+                await StartWorkflowAsync(httpContext, trigger, workflowGraph, input);
                 return;
             }
         }
@@ -123,11 +123,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         await next(httpContext);
     }
 
-    private async Task<Workflow?> FindWorkflowAsync(IServiceProvider serviceProvider, StoredTrigger trigger, CancellationToken cancellationToken)
+    private async Task<WorkflowGraph?> FindWorkflowGraphAsync(IServiceProvider serviceProvider, StoredTrigger trigger, CancellationToken cancellationToken)
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var workflowDefinitionId = trigger.WorkflowDefinitionVersionId;
-        return await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, cancellationToken);
+        return await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, cancellationToken);
     }
 
     private async Task<IEnumerable<StoredTrigger>> FindTriggersAsync(IServiceProvider serviceProvider, string bookmarkHash, CancellationToken cancellationToken)
@@ -181,7 +181,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         }
 
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowInstance.DefinitionVersionId, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowInstance.DefinitionVersionId, cancellationToken);
 
         if (workflow == null)
         {

@@ -28,18 +28,21 @@ public class WorkflowHost : IWorkflowHost
     /// </summary>
     public WorkflowHost(
         IServiceScopeFactory serviceScopeFactory,
-        Workflow workflow,
+        WorkflowGraph workflowGraph,
         WorkflowState workflowState,
         ILogger<WorkflowHost> logger)
     {
-        Workflow = workflow;
+        WorkflowGraph = workflowGraph;
         WorkflowState = workflowState;
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public Workflow Workflow { get; set; }
+    public WorkflowGraph WorkflowGraph { get; }
+
+    /// <inheritdoc />
+    public Workflow Workflow => WorkflowGraph.Workflow;
 
     /// <inheritdoc />
     public WorkflowState WorkflowState { get; set; }

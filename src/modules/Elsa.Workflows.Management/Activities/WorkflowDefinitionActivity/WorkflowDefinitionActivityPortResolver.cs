@@ -19,6 +19,6 @@ public class WorkflowDefinitionActivityResolver : IActivityResolver
         var definitionActivity = (WorkflowDefinitionActivity)activity;
         var root = definitionActivity.Root;
 
-        return new(new[] { root });
+        return new([root]);
     }
 }
