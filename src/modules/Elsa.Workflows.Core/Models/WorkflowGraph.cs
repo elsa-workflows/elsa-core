@@ -6,7 +6,7 @@ using Elsa.Workflows.Contracts;
 namespace Elsa.Workflows.Models;
 
 /// <summary>
-/// Represents a workflow graph, which is a collection of activity nodes that form a directed graph.
+/// Hold a reference to a <see cref="Workflow"/> and a collection of <see cref="ActivityNode"/> instances representing the workflow.
 /// </summary>
 public record WorkflowGraph
 {
@@ -24,11 +24,34 @@ public record WorkflowGraph
         NodeActivityLookup = Nodes.ToDictionary(x => x.Activity);
     }
 
+    /// <summary>
+    /// Gets the workflow.
+    /// </summary>
     public Workflow Workflow { get; }
+
+    /// <summary>
+    /// Gets the root node.
+    /// </summary>
     public ActivityNode Root { get; }
+
+    /// <summary>
+    /// Gets a flat collection of all nodes in the workflow.
+    /// </summary>
     public ICollection<ActivityNode> Nodes { get; }
+
+    /// <summary>
+    /// Gets a lookup of nodes by their activity.
+    /// </summary>
     public IDictionary<IActivity, ActivityNode> NodeActivityLookup { get; }
+
+    /// <summary>
+    /// Gets a lookup of nodes by their hash.
+    /// </summary>
     public IDictionary<string, ActivityNode> NodeHashLookup { get; }
+
+    /// <summary>
+    /// Gets a lookup of nodes by their ID.
+    /// </summary>
     public IDictionary<string, ActivityNode> NodeIdLookup { get; }
 
     private static string Hash(HashAlgorithm hashAlgorithm, string input)
