@@ -3,15 +3,18 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class WorkflowInvoker(IWorkflowHostFactory workflowHostFactory, IWorkflowGraphBuilder workflowGraphBuilder) : IWorkflowInvoker
+public class WorkflowInvoker(IWorkflowHostFactory workflowHostFactory, IServiceScopeFactory scopeFactory) : IWorkflowInvoker
 {
     /// <inheritdoc />
     public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
+        using var scope = scopeFactory.CreateScope();
+        var workflowGraphBuilder = scope.ServiceProvider.GetRequiredService<IWorkflowGraphBuilder>();
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await InvokeAsync(workflowGraph, options, cancellationToken);
     }

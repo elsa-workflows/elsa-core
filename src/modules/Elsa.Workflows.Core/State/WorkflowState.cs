@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.State;
@@ -48,24 +47,12 @@ public class WorkflowState
     /// The sub status of the workflow.
     /// </summary>
     public WorkflowSubStatus SubStatus { get; set; }
-
-    /// <summary>
-    /// Original bookmarks.
-    /// </summary>
-    [NotMapped]
-    public ICollection<Bookmark> OriginalBookmarks { get; set; } = new List<Bookmark>();
-
+    
     /// <summary>
     /// Collected bookmarks.
     /// </summary>
     [NotMapped]
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
-
-    /// <summary>
-    /// A diff between the original bookmarks and the current bookmarks.
-    /// </summary>
-    [NotMapped]
-    public Diff<Bookmark> BookmarksDiff => Diff.For(OriginalBookmarks, Bookmarks);
 
     /// <summary>
     /// A collection of incidents that may have occurred during execution.

@@ -1,4 +1,7 @@
 ﻿using System.Net.Http.Headers;
+using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.Workflows.ComponentTests.Services;
@@ -11,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -56,10 +59,20 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
-                // elsa.UseWorkflowManagement(management =>
-                // {
-                //     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
-                // });
+                elsa.UseWorkflowManagement(management =>
+                {
+                    management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    management.UseCache();
+                });
+                elsa.UseWorkflowRuntime(runtime =>
+                {
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
             };
         }
 
