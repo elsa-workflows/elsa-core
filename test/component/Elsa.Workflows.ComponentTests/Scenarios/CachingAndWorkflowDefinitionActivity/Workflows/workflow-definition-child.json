@@ -1,0 +1,64 @@
+{
+  "id": "26d186d68deb1250",
+  "definitionId": "a3390d1f4c2594a8",
+  "name": "Child",
+  "createdAt": "2024-04-30T08:22:44.543407+00:00",
+  "version": 1,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "e6c941b6f2292fcf",
+    "nodeId": "Workflow2:e6c941b6f2292fcf",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "29595e7b37a4836d",
+        "workflowDefinitionVersionId": "f36dc264f14be3c6",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "f36dc264f14be3c6",
+        "id": "377b23f4235ec26d",
+        "nodeId": "Workflow2:e6c941b6f2292fcf:377b23f4235ec26d",
+        "name": "GrandChild1",
+        "type": "GrandChild",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -193.95703125,
+              "y": 23
+            },
+            "size": {
+              "width": 115.1875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}
