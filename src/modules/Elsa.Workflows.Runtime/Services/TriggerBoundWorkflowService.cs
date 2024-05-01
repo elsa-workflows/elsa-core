@@ -29,15 +29,15 @@ public class TriggerBoundWorkflowService(IWorkflowMatcher workflowMatcher, IWork
         foreach (var triggerGroup in groupedTriggers)
         {
             var workflowDefinitionVersionId = triggerGroup.Key;
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionVersionId, cancellationToken);
 
-            if (workflow == null)
+            if (workflowGraph == null)
             {
                 logger.LogWarning("Workflow definition with ID {WorkflowDefinitionVersionId} not found", workflowDefinitionVersionId);
                 continue;
             }
 
-            var triggerBoundWorkflow = new TriggerBoundWorkflow(workflow, triggerGroup.ToList());
+            var triggerBoundWorkflow = new TriggerBoundWorkflow(workflowGraph, triggerGroup.ToList());
             triggerBoundWorkflows.Add(triggerBoundWorkflow);
         }
 

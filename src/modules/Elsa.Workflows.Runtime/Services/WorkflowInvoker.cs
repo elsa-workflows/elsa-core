@@ -1,30 +1,33 @@
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Requests;
-using Elsa.Workflows.Runtime.Results;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class WorkflowInvoker(IWorkflowHostFactory workflowHostFactory) : IWorkflowInvoker
+public class WorkflowInvoker(IWorkflowHostFactory workflowHostFactory, IWorkflowGraphBuilder workflowGraphBuilder) : IWorkflowInvoker
 {
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, InvokeWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> InvokeAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var instanceId = options?.WorkflowInstanceId;
-        var workflowHost = await workflowHostFactory.CreateAsync(workflow, instanceId, cancellationToken);
-        var runWorkflowParams = new RunWorkflowParams
-        {
-            Input = options?.Input,
-            CorrelationId = options?.CorrelationId,
-            Properties = options?.Properties,
-            ParentWorkflowInstanceId = options?.ParentWorkflowInstanceId,
-            TriggerActivityId = options?.TriggerActivityId
-        };
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await InvokeAsync(workflowGraph, options, cancellationToken);
+    }
 
-        if (!await workflowHost.CanStartWorkflowAsync(runWorkflowParams, cancellationToken))
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> InvokeAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var workflowHostOptions = new WorkflowHostOptions
+        {
+            NewWorkflowInstanceId = options?.WorkflowInstanceId
+        };
+        var workflowHost = await workflowHostFactory.CreateAsync(workflowGraph, workflowHostOptions, cancellationToken);
+
+        if (!await workflowHost.CanStartWorkflowAsync(options, cancellationToken))
             throw new Exception("Workflow cannot be started.");
 
-        return await workflowHost.RunWorkflowAsync(runWorkflowParams, cancellationToken);
+        return await workflowHost.RunWorkflowAsync(options, cancellationToken);
     }
 }

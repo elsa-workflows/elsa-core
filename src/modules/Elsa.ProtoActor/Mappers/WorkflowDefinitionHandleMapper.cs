@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 
 namespace Elsa.ProtoActor.Mappers;
 

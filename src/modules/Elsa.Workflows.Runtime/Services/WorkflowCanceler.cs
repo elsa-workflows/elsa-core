@@ -1,7 +1,6 @@
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.State;
 
@@ -11,9 +10,9 @@ namespace Elsa.Workflows.Runtime.Services;
 public class WorkflowCanceler(IWorkflowExecutionPipeline workflowExecutionPipeline, IWorkflowStateExtractor workflowStateExtractor, IServiceProvider serviceProvider) : IWorkflowCanceler
 {
     /// <inheritdoc />
-    public async Task<WorkflowState> CancelWorkflowAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken = default)
+    public async Task<WorkflowState> CancelWorkflowAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflow, workflowState, cancellationToken: cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowState, cancellationToken: cancellationToken);
 
         // Alter the workflow execution context to cancel the workflow.
         await CancelWorkflowAsync(workflowExecutionContext, cancellationToken);

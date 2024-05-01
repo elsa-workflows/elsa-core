@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -52,6 +53,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
+        IEnumerable<Bookmark> originalBookmarks,
         DateTimeOffset createdAt,
         CancellationToken cancellationToken)
     {
@@ -74,6 +76,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         UpdatedAt = createdAt;
         CancellationToken = cancellationToken;
         Incidents = incidents.ToList();
+        OriginalBookmarks = originalBookmarks.ToList();
         WorkflowGraph = workflowGraph;
         var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         _cancellationTokenSources.Add(linkedCancellationTokenSource);
@@ -87,12 +90,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         string id,
-        string? correlationId,
-        string? parentWorkflowInstanceId = default,
-        IDictionary<string, object>? input = default,
-        IDictionary<string, object>? properties = default,
-        ExecuteActivityDelegate? executeDelegate = default,
-        string? triggerActivityId = default,
+        string? correlationId = null,
+        string? parentWorkflowInstanceId = null,
+        IDictionary<string, object>? input = null,
+        IDictionary<string, object>? properties = null,
+        ExecuteActivityDelegate? executeDelegate = null,
+        string? triggerActivityId = null,
         CancellationToken cancellationToken = default)
     {
         var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
@@ -102,6 +105,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             workflowGraph,
             id,
             new List<ActivityIncident>(),
+            new List<Bookmark>(),
             systemClock.UtcNow,
             correlationId,
             parentWorkflowInstanceId,
@@ -120,12 +124,12 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IServiceProvider serviceProvider,
         WorkflowGraph workflowGraph,
         WorkflowState workflowState,
-        string? correlationId = default,
-        string? parentWorkflowInstanceId = default,
-        IDictionary<string, object>? input = default,
-        IDictionary<string, object>? properties = default,
-        ExecuteActivityDelegate? executeDelegate = default,
-        string? triggerActivityId = default,
+        string? correlationId = null,
+        string? parentWorkflowInstanceId = null,
+        IDictionary<string, object>? input = null,
+        IDictionary<string, object>? properties = null,
+        ExecuteActivityDelegate? executeDelegate = null,
+        string? triggerActivityId = null,
         CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await CreateAsync(
@@ -133,6 +137,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             workflowGraph,
             workflowState.Id,
             workflowState.Incidents,
+            workflowState.Bookmarks,
             workflowState.CreatedAt,
             correlationId,
             parentWorkflowInstanceId,
@@ -156,13 +161,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
         WorkflowGraph workflowGraph,
         string id,
         IEnumerable<ActivityIncident> incidents,
+        IEnumerable<Bookmark> originalBookmarks,
         DateTimeOffset createdAt,
-        string? correlationId = default,
-        string? parentWorkflowInstanceId = default,
-        IDictionary<string, object>? input = default,
-        IDictionary<string, object>? properties = default,
-        ExecuteActivityDelegate? executeDelegate = default,
-        string? triggerActivityId = default,
+        string? correlationId = null,
+        string? parentWorkflowInstanceId = null,
+        IDictionary<string, object>? input = null,
+        IDictionary<string, object>? properties = null,
+        ExecuteActivityDelegate? executeDelegate = null,
+        string? triggerActivityId = null,
         CancellationToken cancellationToken = default)
     {
         // Setup a workflow execution context.
@@ -177,6 +183,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             executeDelegate,
             triggerActivityId,
             incidents,
+            originalBookmarks,
             createdAt,
             cancellationToken)
         {
@@ -316,9 +323,19 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public IIdentityGenerator IdentityGenerator { get; }
 
     /// <summary>
+    /// Gets the collection of original bookmarks associated with the workflow execution context.
+    /// </summary>
+    public ICollection<Bookmark> OriginalBookmarks { get; set; }
+
+    /// <summary>
     /// A collection of collected bookmarks during workflow execution. 
     /// </summary>
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
+    /// <summary>
+    /// A diff between the original bookmarks and the current bookmarks.
+    /// </summary>
+    public Diff<Bookmark> BookmarksDiff => Diff.For(OriginalBookmarks, Bookmarks);
 
     /// <summary>
     /// A dictionary of inputs provided at the start of the current workflow execution. 

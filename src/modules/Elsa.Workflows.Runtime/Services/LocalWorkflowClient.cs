@@ -1,8 +1,9 @@
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -22,9 +23,9 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionVersionId = request.WorkflowDefinitionHandle;
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
-        if (workflow == null) throw new InvalidOperationException($"Workflow with version ID {workflowDefinitionVersionId} not found.");
+        var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
+        if (workflowGraph == null) throw new InvalidOperationException($"Workflow with version ID {workflowDefinitionHandle} not found.");
 
         var options = new WorkflowInstanceOptions
         {
@@ -35,7 +36,7 @@ public class LocalWorkflowClient(
             Properties = request.Properties
         };
 
-        await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, options, cancellationToken);
+        await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, options, cancellationToken);
         return new CreateWorkflowInstanceResponse();
     }
 
@@ -43,7 +44,7 @@ public class LocalWorkflowClient(
     public async Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
-        var startWorkflowRequest = new RunWorkflowParams
+        var startWorkflowRequest = new RunWorkflowOptions
         {
             Input = request.Input,
             Properties = request.Properties,
@@ -94,7 +95,8 @@ public class LocalWorkflowClient(
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
         var workflowDefinitionVersionId = workflowInstance.DefinitionVersionId;
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionVersionId, cancellationToken);
+        var workflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowDefinitionVersionId);
+        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         if (workflow == null) throw new InvalidOperationException($"Workflow {workflowDefinitionVersionId} not found.");
         return await workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
     }

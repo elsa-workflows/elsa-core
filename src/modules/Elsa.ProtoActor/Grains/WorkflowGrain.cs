@@ -2,11 +2,10 @@ using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows;
-using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
@@ -163,7 +162,7 @@ internal class WorkflowGrain : WorkflowBase
     {
         var workflowDefinitionHandle = _mappers.WorkflowDefinitionHandleMapper.Map(request.WorkflowDefinitionHandle);
         var workflowInstanceId = request.WorkflowInstanceId;
-        var workflow = await FindWorkflowAsync(workflowDefinitionHandle, cancellationToken);
+        var workflowGraph = await FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
             WorkflowInstanceId = workflowInstanceId,
@@ -175,8 +174,8 @@ internal class WorkflowGrain : WorkflowBase
         
         using var scope = _scopeFactory.CreateScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
-        var host = await _workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
+        var host = await _workflowHostFactory.CreateAsync(workflowGraph, workflowInstance.WorkflowState, cancellationToken);
         _workflowInstanceId = host.WorkflowState.Id;
         await SaveSnapshotAsync();
         return host;
@@ -195,7 +194,7 @@ internal class WorkflowGrain : WorkflowBase
     private async Task<IWorkflowHost> CreateWorkflowHostAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken)
     {
         var workflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowInstance.DefinitionVersionId);
-        var workflow = await FindWorkflowAsync(workflowDefinitionHandle, cancellationToken);
+        var workflow = await FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         return await _workflowHostFactory.CreateAsync(workflow, workflowInstance.WorkflowState, cancellationToken);
     }
 
@@ -206,11 +205,11 @@ internal class WorkflowGrain : WorkflowBase
         return await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
     }
 
-    private async Task<Workflow> FindWorkflowAsync(WorkflowDefinitionHandle workflowDefinitionHandle, CancellationToken cancellationToken)
+    private async Task<WorkflowGraph> FindWorkflowGraphAsync(WorkflowDefinitionHandle workflowDefinitionHandle, CancellationToken cancellationToken)
     {
         var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionHandle, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         
         if (workflow == null)
             throw new InvalidOperationException($"Workflow {workflowDefinitionHandle} not found.");

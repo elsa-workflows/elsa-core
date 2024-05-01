@@ -1,4 +1,4 @@
-using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Messages;

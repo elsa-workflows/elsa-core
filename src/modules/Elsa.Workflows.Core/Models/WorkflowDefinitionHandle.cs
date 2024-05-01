@@ -1,6 +1,6 @@
 using Elsa.Common.Models;
 
-namespace Elsa.Workflows.Management;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Represents a handle to a workflow definition.

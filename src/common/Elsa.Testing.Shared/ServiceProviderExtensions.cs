@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
@@ -69,12 +68,12 @@ public static class ServiceProviderExtensions
         VersionOptions? versionOptions = default)
     {
         var workflowDefinitionService = services.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var workflowClient = await workflowRuntime.CreateClientAsync();
         await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow!.Identity.Id),
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph!.Workflow.Identity.Id),
             Input = input
         });
         var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest

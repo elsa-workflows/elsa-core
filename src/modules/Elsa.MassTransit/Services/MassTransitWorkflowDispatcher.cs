@@ -46,7 +46,7 @@ public class MassTransitWorkflowDispatcher(
             CorrelationId = request.CorrelationId
         };
 
-        await DispatchWorkflowAsync(workflowGraph, workflowInstanceOptions, request.TriggerActivityId, options, cancellationToken);
+        await DispatchWorkflowAsync(workflowGraph.Workflow, workflowInstanceOptions, request.TriggerActivityId, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -118,7 +118,7 @@ public class MassTransitWorkflowDispatcher(
                 CorrelationId = request.CorrelationId
             };
 
-            await DispatchWorkflowAsync(workflow, workflowInstanceOptions, trigger.ActivityId, options, cancellationToken);
+            await DispatchWorkflowAsync(workflowGraph.Workflow, workflowInstanceOptions, trigger.ActivityId, options, cancellationToken);
         }
     }
 

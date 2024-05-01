@@ -1,6 +1,7 @@
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;
@@ -86,17 +87,17 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         if (definitionId == null && definitionVersionId == null) throw new ArgumentException("The definition ID is required when dispatching a workflow definition.");
         if (versionOptions == null && definitionVersionId == null) throw new ArgumentException("The version options are required when dispatching a workflow definition.");
 
-        var workflow = definitionVersionId != null 
-            ? await workflowDefinitionService.FindWorkflowAsync(definitionVersionId, cancellationToken)
-            : await workflowDefinitionService.FindWorkflowAsync(definitionId!, versionOptions!.Value, cancellationToken);
+        var workflowGraph = definitionVersionId != null 
+            ? await workflowDefinitionService.FindWorkflowGraphAsync(definitionVersionId, cancellationToken)
+            : await workflowDefinitionService.FindWorkflowGraphAsync(definitionId!, versionOptions!.Value, cancellationToken);
         
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"Workflow definition version with ID '{definitionVersionId}' not found");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow.Identity.Id),
+            WorkflowDefinitionHandle = workflowGraph.Workflow.DefinitionHandle,
             Properties = message.Properties,
             CorrelationId = message.CorrelationId,
             Input = message.Input,

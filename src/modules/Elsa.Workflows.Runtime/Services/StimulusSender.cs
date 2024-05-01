@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
@@ -48,8 +47,10 @@ public class StimulusSender(
         var triggerActivityId = metadata?.TriggerActivityId;
         var responses = new List<RunWorkflowInstanceResponse>();
 
-        foreach (TriggerBoundWorkflow triggerBoundWorkflow in triggerBoundWorkflows)
+        foreach (var triggerBoundWorkflow in triggerBoundWorkflows)
         {
+            var workflowGraph = triggerBoundWorkflow.WorkflowGraph;
+            var workflow = workflowGraph.Workflow;
             var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
             var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
             {
@@ -57,7 +58,7 @@ public class StimulusSender(
                 Input = input,
                 Properties = properties,
                 ParentId = parentId,
-                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(triggerBoundWorkflow.Workflow.Identity.Id)
+                WorkflowDefinitionHandle = workflow.DefinitionHandle
             };
             await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
 

@@ -39,13 +39,13 @@ public class DefaultAlterationPlanScheduler : IAlterationPlanScheduler
             planParams.Id = _identityGenerator.GenerateId();
         
         var definitionId = ExecuteAlterationPlanWorkflow.WorkflowDefinitionId;
-        var workflow = await _workflowDefinitionService.FindWorkflowAsync(definitionId, VersionOptions.Published, cancellationToken);
+        var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Published, cancellationToken);
         
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"Workflow definition with ID '{definitionId}' not found");
         
         var serializedPlan = _jsonSerializer.Serialize(planParams);
-        var request = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
             Input = new Dictionary<string, object>
             {

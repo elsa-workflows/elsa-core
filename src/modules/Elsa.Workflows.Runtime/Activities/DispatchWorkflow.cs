@@ -7,7 +7,6 @@ using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
@@ -107,13 +106,13 @@ public class DispatchWorkflow : Activity<object>
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
         
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
         
         var instanceId = identityGenerator.GenerateId();
-        var request = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
             ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,

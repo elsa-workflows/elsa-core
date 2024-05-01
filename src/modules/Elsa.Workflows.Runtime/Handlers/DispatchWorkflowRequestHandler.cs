@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;

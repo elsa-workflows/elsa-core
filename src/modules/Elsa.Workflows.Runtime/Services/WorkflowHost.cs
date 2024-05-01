@@ -1,16 +1,11 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Extensions;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using RunWorkflowResult = Elsa.Workflows.Runtime.Results.RunWorkflowResult;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -48,7 +43,10 @@ public class WorkflowHost : IWorkflowHost
     public WorkflowState WorkflowState { get; set; }
 
     /// <inheritdoc />
-    public async Task<bool> CanStartWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public object? LastResult { get; set; }
+
+    /// <inheritdoc />
+    public async Task<bool> CanStartWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default)
     {
         var strategyType = Workflow.Options.ActivationStrategyType;
 
@@ -68,14 +66,12 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowParams? @params = default, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default)
     {
-        var originalBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
-
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
-            return new RunWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, new List<BookmarkInfo>()), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
+            return new RunWorkflowResult(WorkflowState, Workflow, null);
         }
         
         var runOptions = new RunWorkflowOptions
@@ -98,12 +94,11 @@ public class WorkflowHost : IWorkflowHost
 
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
-
-        var updatedBookmarks = WorkflowState.Bookmarks.ToBookmarkInfos().ToList();
+        
         _linkedTokenSource.Dispose();
         _linkedTokenSource = null;
         
-        return new RunWorkflowResult(WorkflowState.Id, Diff.For(originalBookmarks, updatedBookmarks), WorkflowState.Status, WorkflowState.SubStatus, WorkflowState.Incidents);
+        return workflowResult;
     }
 
     /// <inheritdoc />
@@ -120,7 +115,7 @@ public class WorkflowHost : IWorkflowHost
         using var scope = _serviceScopeFactory.CreateScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
-        WorkflowState = await workflowCanceler.CancelWorkflowAsync(Workflow, WorkflowState, cancellationToken);
+        WorkflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, cancellationToken);
         await PersistStateAsync(scope, cancellationToken);
     }
 

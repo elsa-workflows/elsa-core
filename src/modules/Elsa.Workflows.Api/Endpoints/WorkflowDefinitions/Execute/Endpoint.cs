@@ -5,6 +5,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
@@ -36,9 +37,9 @@ internal class Execute(
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -47,7 +48,7 @@ internal class Execute(
         var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflow.Identity.Id),
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
             Input = (IDictionary<string, object>?)request.Input
         };

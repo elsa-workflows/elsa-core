@@ -1,6 +1,4 @@
 ﻿using System.Net.Http.Headers;
-using Elsa.EntityFrameworkCore.Extensions;
-using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.Workflows.ComponentTests.Services;

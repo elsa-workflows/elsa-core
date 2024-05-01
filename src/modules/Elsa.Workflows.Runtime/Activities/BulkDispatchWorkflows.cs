@@ -12,12 +12,10 @@ using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Stimuli;
 
@@ -204,14 +202,14 @@ public class BulkDispatchWorkflows : Activity
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, VersionOptions.Published);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
         
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
         
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
         var instanceId = identityGenerator.GenerateId();
-        var request = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
             ParentWorkflowInstanceId = parentInstanceId,
             Input = input,

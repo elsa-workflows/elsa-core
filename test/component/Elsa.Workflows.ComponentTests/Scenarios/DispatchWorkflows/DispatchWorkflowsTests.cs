@@ -1,9 +1,7 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 

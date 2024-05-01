@@ -23,9 +23,9 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
         
-        if (workflow == null)
+        if (workflowGraph == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -38,7 +38,7 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
             var instanceId = identityGenerator.GenerateId();
             var triggerActivityId = request.TriggerActivityId;
             var input = (IDictionary<string, object>?)request.Input;
-            var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflow.Identity.Id)
+            var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
             {
                 Input = input,
                 InstanceId = instanceId,

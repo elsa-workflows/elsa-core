@@ -1,5 +1,6 @@
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.ProtoActor.Mappers;
@@ -14,7 +15,7 @@ public class RunWorkflowParamsMapper(ActivityHandleMapper activityHandleMapper)
     /// </summary>
     /// <param name="source"></param>
     /// <returns></returns>
-    public RunWorkflowParams Map(ProtoRunWorkflowInstanceRequest source)
+    public RunWorkflowOptions Map(ProtoRunWorkflowInstanceRequest source)
     {
         return new()
         {
@@ -22,7 +23,7 @@ public class RunWorkflowParamsMapper(ActivityHandleMapper activityHandleMapper)
             BookmarkId = source.BookmarkId,
             TriggerActivityId = source.TriggerActivityId,
             Input = source.Input?.DeserializeInput(),
-            Properties = source.Properties?.DeserializeProperties(),
+            Properties = source.Properties?.DeserializeProperties()
         };
     }
 }

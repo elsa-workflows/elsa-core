@@ -55,7 +55,7 @@ public class WorkflowDefinitionService(
         {
             DefinitionHandle = handle
         };
-        return await _workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -87,18 +87,18 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionHandle = definitionHandle
         };
 
-        return await FindWorkflowAsync(filter, cancellationToken);
+        return await FindWorkflowGraphAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var definition = await FindWorkflowDefinitionAsync(filter, cancellationToken);
 

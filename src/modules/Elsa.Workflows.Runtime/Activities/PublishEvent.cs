@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Attributes;

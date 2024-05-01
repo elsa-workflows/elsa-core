@@ -1,4 +1,4 @@
-using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime;
@@ -11,10 +11,10 @@ public interface IWorkflowCanceler
     /// <summary>
     /// Cancels the specified workflow.
     /// </summary>
-    /// <param name="workflow">The workflow definition.</param>
+    /// <param name="workflowGraph">The workflow graph.</param>
     /// <param name="workflowState">The workflow state to cancel.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<WorkflowState> CancelWorkflowAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken = default);
+    Task<WorkflowState> CancelWorkflowAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cancels the specified workflow execution context.

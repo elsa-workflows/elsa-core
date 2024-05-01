@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Filters;

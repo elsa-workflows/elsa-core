@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -12,5 +12,10 @@ public interface IWorkflowInvoker
     /// <summary>
     /// Invokes the workflow.
     /// </summary>
-    Task<RunWorkflowResult> InvokeAsync(Workflow workflow, InvokeWorkflowOptions? options = default, CancellationToken cancellationToken = default);
+    Task<RunWorkflowResult> InvokeAsync(Workflow workflow, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Invokes the workflow.
+    /// </summary>
+    Task<RunWorkflowResult> InvokeAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default);
 }
