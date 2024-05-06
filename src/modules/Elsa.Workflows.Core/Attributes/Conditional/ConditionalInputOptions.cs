@@ -1,5 +1,4 @@
-﻿namespace Workflows.Activities.Shared.Inputs.Generics;
-
+﻿namespace Elsa.Workflows.Attributes.Conditional;
 public static class ConditionalInputOptions
 {
     //

@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 
 
-namespace Workflows.Activities.Shared.Inputs;
+namespace Elsa.Workflows.Attributes.Conditional;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class ConditionalInput : Input

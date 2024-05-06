@@ -1,7 +1,8 @@
 ﻿using Elsa.Workflows.Attributes.Conditional;
 using Elsa.Workflows.UIHints;
 using Newtonsoft.Json;
-using Workflows.Activities.Shared.Inputs.Generics;
+
+namespace Elsa.Workflows.Attributes.Conditional;
 
 [AttributeUsage(AttributeTargets.Property)]
 public class StateDropdownInput : Input
