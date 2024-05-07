@@ -17,13 +17,7 @@ public class CleanupOptions
     /// The maximum age a workflow instance is allowed to exist before being removed.
     /// </summary>
     public TimeSpan TimeToLive { get; set; }
-
-    /// <summary>
-    /// The maximum number of workflow instances to process at the same time.
-    /// </summary>
-    public int BatchSize { get; set; } = 100;
-
-
+    
     /// <summary>
     /// The workflow instance filter. Defaults to all finished workflows.
     /// </summary>
