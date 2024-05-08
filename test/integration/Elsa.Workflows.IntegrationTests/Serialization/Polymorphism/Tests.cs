@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
@@ -13,20 +15,47 @@ public class Tests
     [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be serialized")]
     public void Test1()
     {
+        var serviceProvider = Substitute.For<IServiceProvider>();
         var model = CreateModel();
         var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json");
-        var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
+        var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions(serviceProvider));
         Assert.Equal(expectedJson, actualJson);
     }
 
     [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be round-tripped")]
     public void Test2()
     {
+        var serviceProvider = Substitute.For<IServiceProvider>();
         var model = CreateModel();
-        var json = JsonSerializer.Serialize(model, GetSerializerOptions());
-        var deserializedModel = JsonSerializer.Deserialize<Model>(json, GetSerializerOptions());
-        var roundTrippedJson = JsonSerializer.Serialize(deserializedModel, GetSerializerOptions());
+        var json = JsonSerializer.Serialize(model, GetSerializerOptions(serviceProvider));
+        var deserializedModel = JsonSerializer.Deserialize<Model>(json, GetSerializerOptions(serviceProvider));
+        var roundTrippedJson = JsonSerializer.Serialize(deserializedModel, GetSerializerOptions(serviceProvider));
         Assert.Equal(json, roundTrippedJson);
+    }
+
+    [Fact(DisplayName = "Object with unknown typ will be deserialized as ExpandoObject")]
+    public void Test3()
+    {
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        var expectedJson = File.ReadAllText("Serialization/Polymorphism/dataWithUnknownType.json");
+        var actualType = JsonSerializer.Deserialize<object>(expectedJson, GetSerializerOptions(serviceProvider));
+        Assert.IsAssignableFrom<ExpandoObject>(actualType);
+    }
+
+    [Fact(DisplayName = "Object with unknown typ will be deserialized as real type")]
+    public void Test4()
+    {
+        var dynamicPolymorphicObjectTypeResolver = Substitute.For<IDynamicPolymorphicObjectTypeResolver>();
+        dynamicPolymorphicObjectTypeResolver.GetType("XYZ.Plugin.Payload, PluginActivities")
+                               .Throws(new ResolveTypeException());
+
+        var serviceProvider = Substitute.For<IServiceProvider>();
+        serviceProvider.GetService(typeof(IDynamicPolymorphicObjectTypeResolver))
+                               .Returns(dynamicPolymorphicObjectTypeResolver);
+
+        var expectedJson = File.ReadAllText("Serialization/Polymorphism/dataWithUnknownType.json");
+        var exception = Assert.Throws<ResolveTypeException>(() => JsonSerializer.Deserialize<object>(expectedJson, GetSerializerOptions(serviceProvider)));
+        Assert.NotNull(exception);
     }
 
     private Model CreateModel()
@@ -71,7 +100,7 @@ public class Tests
         );
     }
 
-    private JsonSerializerOptions GetSerializerOptions()
+    private JsonSerializerOptions GetSerializerOptions(IServiceProvider serviceProvider)
     {
         var referenceHandler = new CrossScopedReferenceHandler();
 
@@ -85,7 +114,12 @@ public class Tests
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(new PolymorphicObjectConverterFactory(serviceProvider));
         return options;
+    }
+
+    private class ResolveTypeException : Exception
+    {
+
     }
 }

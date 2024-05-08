@@ -9,6 +9,13 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {
+    private readonly IServiceProvider _serviceProvider;
+
+    public PolymorphicObjectConverterFactory(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
     {
@@ -16,7 +23,7 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
                && typeToConvert == typeof(object)
                || typeToConvert == typeof(ExpandoObject)
                || typeToConvert == typeof(Dictionary<string, object>);
-        
+
         return canConvert;
     }
 
@@ -24,8 +31,8 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         if (typeof(IDictionary<string, object>).IsAssignableFrom(typeToConvert))
-            return new PolymorphicDictionaryConverter(options);
+            return new PolymorphicDictionaryConverter(_serviceProvider, options);
 
-        return new PolymorphicObjectConverter();
+        return new PolymorphicObjectConverter(_serviceProvider);
     }
 }

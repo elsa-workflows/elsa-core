@@ -11,9 +11,9 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     private readonly JsonConverter<object> _objectConverter;
 
     /// <inheritdoc />
-    public PolymorphicDictionaryConverter(JsonSerializerOptions options)
+    public PolymorphicDictionaryConverter(IServiceProvider serviceProvider, JsonSerializerOptions options)
     {
-        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory());
+        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory(serviceProvider));
         _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
     }
 

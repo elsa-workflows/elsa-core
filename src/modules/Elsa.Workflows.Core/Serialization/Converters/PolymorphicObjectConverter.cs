@@ -1,21 +1,28 @@
 using System.Collections;
 using System.Dynamic;
 using System.Reflection;
-using System.Runtime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Serialization.Converters;
+
+public interface IDynamicPolymorphicObjectTypeResolver
+{
+    Type GetType(string typeName);
+}
 
 /// <summary>
 /// Reads objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
 /// </summary>
 public class PolymorphicObjectConverter : JsonConverter<object>
 {
+    private readonly IDynamicPolymorphicObjectTypeResolver _dynamicTypeResolver;
+
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
     private const string IslandPropertyName = "_island";
@@ -24,8 +31,9 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string ValuesPropertyName = "$values";
 
     /// <inheritdoc />
-    public PolymorphicObjectConverter()
+    public PolymorphicObjectConverter(IServiceProvider serviceProvider)
     {
+        _dynamicTypeResolver = serviceProvider.GetService<IDynamicPolymorphicObjectTypeResolver>();
     }
 
     /// <inheritdoc />
@@ -36,7 +44,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (reader.TokenType != JsonTokenType.StartObject && reader.TokenType != JsonTokenType.StartArray)
             return ReadPrimitive(ref reader, newOptions);
 
-        var targetType = ReadType(reader);
+        var targetType = ReadType(reader, _dynamicTypeResolver);
         if (targetType == null)
             return ReadObject(ref reader, newOptions);
 
@@ -256,7 +264,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         writer.WriteEndObject();
     }
 
-    private static Type? ReadType(Utf8JsonReader reader)
+    private static Type? ReadType(Utf8JsonReader reader, IDynamicPolymorphicObjectTypeResolver dynamicTypeResolver)
     {
         reader.Read(); // Move to the first token inside the object.
         string? typeName = null;
@@ -299,6 +307,11 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
         // If we found the _type property, attempt to resolve the type.
         var targetType = typeName != null ? Type.GetType(typeName) : default;
+
+        if (targetType == null && typeName != null)
+            if (dynamicTypeResolver != null)
+                targetType = dynamicTypeResolver.GetType(typeName);
+
         return targetType;
     }
 
