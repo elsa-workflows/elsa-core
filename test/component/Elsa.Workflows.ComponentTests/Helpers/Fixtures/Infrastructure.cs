@@ -1,4 +1,5 @@
 using Testcontainers.PostgreSql;
+using Testcontainers.RabbitMq;
 
 namespace Elsa.Workflows.ComponentTests;
 
@@ -11,13 +12,21 @@ public class Infrastructure : IAsyncLifetime
         .WithPassword("postgres")
         .Build();
 
+    public readonly RabbitMqContainer RabbitMqContainer = new RabbitMqBuilder()
+        .WithImage("rabbitmq:3-management")
+        .Build();
+
     public Task InitializeAsync()
     {
-        return DbContainer.StartAsync();
+        return Task.WhenAll(
+            DbContainer.StartAsync(),
+            RabbitMqContainer.StartAsync());
     }
 
     public Task DisposeAsync()
     {
-        return DbContainer.StopAsync();
+        return Task.WhenAll(
+            DbContainer.StopAsync(),
+            RabbitMqContainer.StopAsync());
     }
 }
