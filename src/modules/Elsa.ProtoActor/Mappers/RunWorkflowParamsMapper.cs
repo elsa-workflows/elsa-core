@@ -20,8 +20,8 @@ public class RunWorkflowParamsMapper(ActivityHandleMapper activityHandleMapper)
         return new()
         {
             ActivityHandle = activityHandleMapper.Map(source.ActivityHandle),
-            BookmarkId = source.BookmarkId,
-            TriggerActivityId = source.TriggerActivityId,
+            BookmarkId = source.BookmarkId?.NullIfEmpty(),
+            TriggerActivityId = source.TriggerActivityId?.NullIfEmpty(),
             Input = source.Input?.DeserializeInput(),
             Properties = source.Properties?.DeserializeProperties()
         };
