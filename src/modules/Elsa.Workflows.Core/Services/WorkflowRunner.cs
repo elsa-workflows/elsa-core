@@ -130,7 +130,7 @@ public class WorkflowRunner(
         var bookmarkId = options?.BookmarkId;
         var activityHandle = options?.ActivityHandle;
 
-        if (bookmarkId != null)
+        if (!string.IsNullOrEmpty(bookmarkId))
         {
             var bookmark = workflowState.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
 
@@ -139,7 +139,7 @@ public class WorkflowRunner(
         }
         else if (activityHandle != null)
         {
-            if (activityHandle.ActivityInstanceId != null)
+            if (!string.IsNullOrEmpty(activityHandle.ActivityInstanceId))
             {
                 var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId)
                                                ?? throw new Exception("No activity execution context found with the specified ID.");

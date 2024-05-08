@@ -150,9 +150,13 @@ internal class WorkflowGrain : WorkflowBase
     {
         if(_workflowHost != null)
             return _workflowHost;
-        
-        if(_workflowInstanceId == null)
-            throw new InvalidOperationException("Workflow instance ID is null.");
+
+        if (_workflowInstanceId == null)
+        {
+            // Parse the cluster identity to get the workflow instance ID.
+            var clusterIdentity = Context.ClusterIdentity()!.Identity;
+            _workflowInstanceId = clusterIdentity.Split('-').Last();
+        }
 
         _workflowHost = await CreateExistingWorkflowHostAsync(_workflowInstanceId, Context.CancellationToken);
         return _workflowHost;

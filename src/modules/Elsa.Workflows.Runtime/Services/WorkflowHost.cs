@@ -90,7 +90,7 @@ public class WorkflowHost : IWorkflowHost
 
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-        var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, linkedCancellationToken);
+        var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, linkedCancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
         await PersistStateAsync(scope, cancellationToken);
