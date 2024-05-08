@@ -1,9 +1,10 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
+using Elsa.MassTransit.Extensions;
 using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -38,6 +39,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var dbConnectionString = infrastructure.DbContainer.GetConnectionString();
+        var rabbitMqConnectionString = infrastructure.RabbitMqContainer.GetConnectionString();
 
         builder.UseUrls(url);
 
@@ -59,15 +61,21 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     var workflowsDirectory = Path.Join(workflowsDirectorySegments);
                     return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
                 });
+                elsa.UseMassTransit(massTransit =>
+                {
+                    massTransit.UseRabbitMq(rabbitMqConnectionString);
+                });
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    management.UseMassTransitDispatcher();
                     management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
+                    runtime.UseMassTransitDispatcher();
                 });
                 elsa.UseHttp(http =>
                 {

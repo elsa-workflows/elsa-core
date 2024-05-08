@@ -16,6 +16,7 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
         var inputAttribute = propertyInfo.GetCustomAttribute<InputAttribute>();
         var inputOptions = inputAttribute?.Options;
         var dictionary = new Dictionary<string, object>();
+        var isNullableEnum = false;
 
         if (inputOptions == null)
         {
@@ -24,11 +25,23 @@ public class StaticDropDownOptionsProvider : IPropertyUIHandler
                 ? propertyInfo.PropertyType.GetGenericArguments()[0]
                 : propertyInfo.PropertyType;
 
-            if (!wrappedPropertyType.IsEnum)
-                return new(dictionary);
+            if (!wrappedPropertyType.IsEnum) {
+
+                // Is the property a nullable enum?
+                var nullablePropertyType = Nullable.GetUnderlyingType(wrappedPropertyType);
+                if (nullablePropertyType == null || !nullablePropertyType.IsEnum) {
+                    return new(dictionary);
+                }
+                else {
+                    wrappedPropertyType = nullablePropertyType;
+                    isNullableEnum = true;
+                }
+            }
 
             var enumValues = Enum.GetValues(wrappedPropertyType).Cast<object>().ToList();
             var enumSelectListItems = enumValues.Select(x => new SelectListItem(x.ToString()!, x.ToString()!)).ToList();
+            if (isNullableEnum)
+                enumSelectListItems.Insert(0, new SelectListItem("-",""));
             var enumProps = new DropDownProps
             {
                 SelectList = new SelectList(enumSelectListItems)

@@ -22,8 +22,6 @@ public class CachingWorkflowRuntimeFeature : FeatureBase
     public override void Apply()
     {
         // Decorators.
-        Services
-            .Decorate<ITriggerStore, CachingTriggerStore>()
-            .Decorate<IBookmarkStore, CachingBookmarkStore>();
+        Services.Decorate<ITriggerStore, CachingTriggerStore>();
     }
 }
