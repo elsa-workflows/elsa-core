@@ -108,7 +108,6 @@ public class AzureServiceBusFeature : FeatureBase
     {
         Services.Configure(AzureServiceBusOptions);
         Services.AddSingleton(ServiceBusAdministrationClientFactory);
-        Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
     }
 
     private static string GetConnectionString(IServiceProvider serviceProvider)
@@ -130,6 +129,7 @@ public class AzureServiceBusFeature : FeatureBase
         ).ToList();
 
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
+        Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
     }
 
 }
