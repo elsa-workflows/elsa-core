@@ -198,8 +198,8 @@ internal class WorkflowGrain : WorkflowBase
         var workflowGraph = await FindWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
-            WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = request.CorrelationId,
+            WorkflowInstanceId = workflowInstanceId.NullIfEmpty(),
+            CorrelationId = request.CorrelationId.NullIfEmpty(),
             Input = request.Input.DeserializeInput(),
             Properties = request.Properties.DeserializeProperties(),
             ParentWorkflowInstanceId = request.ParentId

@@ -14,13 +14,13 @@ public class CreateAndRunWorkflowInstanceRequestMapper(WorkflowDefinitionHandleM
     /// </summary>
     public ProtoCreateAndRunWorkflowInstanceRequest Map(string workflowInstanceId, CreateAndRunWorkflowInstanceRequest? source)
     {
-        if(source == null)
-            return new();   
-        
+        if (source == null)
+            return new();
+
         return new()
         {
             WorkflowDefinitionHandle = workflowDefinitionHandleMapper.Map(source.WorkflowDefinitionHandle),
-            WorkflowInstanceId = workflowInstanceId,
+            WorkflowInstanceId = workflowInstanceId.EmptyIfNull(),
             CorrelationId = source.CorrelationId.EmptyIfNull(),
             ParentId = source.ParentId.EmptyIfNull(),
             Input = source.Input?.SerializeInput() ?? new ProtoInput(),
@@ -29,7 +29,7 @@ public class CreateAndRunWorkflowInstanceRequestMapper(WorkflowDefinitionHandleM
             ActivityHandle = activityHandleMapper.Map(source?.ActivityHandle) ?? new(),
         };
     }
-    
+
     /// <summary>
     /// Maps <see cref="ProtoCreateAndRunWorkflowInstanceRequest"/> to <see cref="CreateAndRunWorkflowInstanceRequestMapper"/>.
     /// </summary>

@@ -17,7 +17,7 @@ public class WorkflowInstanceFactory(IIdentityGenerator identityGenerator, ISyst
         var now = systemClock.UtcNow;
         return new WorkflowState
         {
-            Id = options?.WorkflowInstanceId ?? identityGenerator.GenerateId(),
+            Id = string.IsNullOrEmpty(options?.WorkflowInstanceId) ? identityGenerator.GenerateId() : options.WorkflowInstanceId,
             DefinitionId = workflow.Identity.DefinitionId,
             DefinitionVersionId = workflow.Identity.Id,
             DefinitionVersion = workflow.Identity.Version,
