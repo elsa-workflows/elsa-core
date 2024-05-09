@@ -44,7 +44,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
             Properties = options?.Properties,
             BookmarkId = bookmark.BookmarkId
         };
-        var response = await workflowClient.RunAsync(runRequest, cancellationToken);
+        var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
         return ResumeBookmarkResult.Found(response);
     }
 }

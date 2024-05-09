@@ -41,7 +41,7 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
-        await workflowClient.RunAsync(request, cancellationToken);
+        await workflowClient.RunInstanceAsync(request, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -95,22 +95,16 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             throw new Exception($"Workflow definition version with ID '{definitionVersionId}' not found");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
-        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+        var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = workflowGraph.Workflow.DefinitionHandle,
             Properties = message.Properties,
             CorrelationId = message.CorrelationId,
             Input = message.Input,
-            ParentId = message.ParentWorkflowInstanceId
-        };
-        await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-        
-        var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest
-        {
+            ParentId = message.ParentWorkflowInstanceId,
             TriggerActivityId = message.TriggerActivityId
         };
-        
-        await workflowClient.RunAsync(runWorkflowInstanceRequest, cancellationToken);
+        await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
     }
 
     private async Task DispatchExistingWorkflowInstanceAsync(DispatchWorkflowDefinition message, CancellationToken cancellationToken)
@@ -125,6 +119,6 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         };
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
-        await workflowClient.RunAsync(request, cancellationToken);
+        await workflowClient.RunInstanceAsync(request, cancellationToken);
     }
 }

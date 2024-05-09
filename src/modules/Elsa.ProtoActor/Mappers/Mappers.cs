@@ -1,9 +1,7 @@
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 
 namespace Elsa.ProtoActor.Mappers;
@@ -22,6 +20,7 @@ public class Mappers(
     CreateWorkflowInstanceResponseMapper createWorkflowInstanceResponseMapper,
     RunWorkflowInstanceRequestMapper runWorkflowInstanceRequestMapper,
     RunWorkflowInstanceResponseMapper runWorkflowInstanceResponseMapper,
+    CreateAndRunWorkflowInstanceRequestMapper createAndRunWorkflowInstanceRequestMapper,
     RunWorkflowParamsMapper runWorkflowParamsMapper,
     WorkflowStateJsonMapper workflowStateJsonMapper)
 {
@@ -73,7 +72,12 @@ public class Mappers(
     /// <summary>
     /// Maps between <see cref="RunWorkflowResult"/> and <see cref="ProtoRunWorkflowInstanceResponse"/>.
     /// </summary>
-    public RunWorkflowInstanceResponseMapper RunWorkflowInstanceResponseMapper { get; set; } = runWorkflowInstanceResponseMapper;
+    public RunWorkflowInstanceResponseMapper RunWorkflowInstanceResponseMapper { get; } = runWorkflowInstanceResponseMapper;
+
+    /// <summary>
+    /// Maps between <see cref="CreateAndRunWorkflowInstanceRequest"/> and <see cref="ProtoCreateAndRunWorkflowInstanceRequest"/>.
+    /// </summary>
+    public CreateAndRunWorkflowInstanceRequestMapper CreateAndRunWorkflowInstanceRequestMapper { get; } = createAndRunWorkflowInstanceRequestMapper;
 
     /// <summary>
     /// Maps between <see cref="RunWorkflowParams"/> and <see cref="ProtoRunWorkflowInstanceRequest"/>.

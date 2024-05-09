@@ -32,7 +32,7 @@ public class DispatchWorkflowsTests : AppComponentTest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
         });
-        await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var childWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ChildWorkflowCompletedSignal);
         var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
 

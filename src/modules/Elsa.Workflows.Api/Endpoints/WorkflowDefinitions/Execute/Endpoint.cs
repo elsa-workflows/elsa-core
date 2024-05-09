@@ -66,7 +66,7 @@ internal class Execute(
         };
         
         // Start the workflow.
-        var runWorkflowInstanceResponse = await workflowClient.RunAsync(runWorkflowInstanceRequest, cancellationToken);
+        var runWorkflowInstanceResponse = await workflowClient.RunInstanceAsync(runWorkflowInstanceRequest, cancellationToken);
 
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
         if (runWorkflowInstanceResponse.SubStatus == WorkflowSubStatus.Faulted)

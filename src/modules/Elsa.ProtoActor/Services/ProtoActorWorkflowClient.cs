@@ -39,10 +39,18 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
         var response = await _grain.Run(protoRequest, cancellationToken);
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
+        var response = await _grain.CreateAndRun(protoRequest, cancellationToken);
         return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
     }
 

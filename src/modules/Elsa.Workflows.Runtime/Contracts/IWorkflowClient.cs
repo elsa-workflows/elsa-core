@@ -21,7 +21,12 @@ public interface IWorkflowClient
     /// <summary>
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
-    Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Creates a new workflow instance and executes it.
+    /// </summary>
+    Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Cancels the execution of a workflow instance.

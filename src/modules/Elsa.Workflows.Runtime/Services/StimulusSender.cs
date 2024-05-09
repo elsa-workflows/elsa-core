@@ -68,7 +68,7 @@ public class StimulusSender(
                 Properties = properties,
                 TriggerActivityId = triggerActivityId,
             };
-            var response = await workflowClient.RunAsync(request, cancellationToken);
+            var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
             responses.Add(response);
         }
 
@@ -105,7 +105,7 @@ public class StimulusSender(
                     ActivityHandle = activityHandle,
                     BookmarkId = storedBookmark.BookmarkId,
                 };
-                var response = await workflowClient.RunAsync(request, cancellationToken);
+                var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
                 responses.Add(response);
             }
         }

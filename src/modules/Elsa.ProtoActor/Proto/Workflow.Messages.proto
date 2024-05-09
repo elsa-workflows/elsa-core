@@ -32,6 +32,17 @@ message ProtoRunWorkflowInstanceResponse {
   repeated ProtoActivityIncident Incidents = 3;
 }
 
+message ProtoCreateAndRunWorkflowInstanceRequest{
+  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+  string WorkflowInstanceId = 2;
+  optional string CorrelationId = 3;
+  optional string ParentId = 4;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
+  optional ProtoActivityHandle ActivityHandle = 7;
+  optional string TriggerActivityId = 8;
+}
+
 message ProtoExportWorkflowStateResponse {
   ProtoJson SerializedWorkflowState = 1;
 }

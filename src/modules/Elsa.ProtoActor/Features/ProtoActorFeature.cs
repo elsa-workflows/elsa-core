@@ -137,6 +137,7 @@ public class ProtoActorFeature : FeatureBase
             .AddSingleton<CreateWorkflowInstanceResponseMapper>()
             .AddSingleton<RunWorkflowInstanceRequestMapper>()
             .AddSingleton<RunWorkflowInstanceResponseMapper>()
+            .AddSingleton<CreateAndRunWorkflowInstanceRequestMapper>()
             .AddSingleton<RunWorkflowParamsMapper>()
             .AddSingleton<WorkflowStateJsonMapper>();
 

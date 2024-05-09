@@ -71,16 +71,12 @@ public static class ServiceProviderExtensions
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, versionOptions ?? VersionOptions.Published);
         var workflowRuntime = services.GetRequiredService<IWorkflowRuntime>();
         var workflowClient = await workflowRuntime.CreateClientAsync();
-        await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+        var response = await workflowClient.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph!.Workflow.Identity.Id),
             Input = input
         });
-        var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest
-        {
-            Input = input
-        };
-        var response = await workflowClient.RunAsync(runWorkflowInstanceRequest);
+        
         var bookmarkStore = services.GetRequiredService<IBookmarkStore>();
 
         // Continue resuming the workflow for as long as there are bookmarks to resume and the workflow is not Finished.
@@ -100,7 +96,7 @@ public static class ServiceProviderExtensions
                 {
                     BookmarkId = bookmark.BookmarkId
                 };
-                response = await workflowClient.RunAsync(runRequest);
+                response = await workflowClient.RunInstanceAsync(runRequest);
             }
         }
 

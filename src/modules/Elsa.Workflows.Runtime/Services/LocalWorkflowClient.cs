@@ -41,10 +41,10 @@ public class LocalWorkflowClient(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowInstanceResponse> RunAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var workflowHost = await CreateWorkflowHostAsync(cancellationToken);
-        var startWorkflowRequest = new RunWorkflowOptions
+        var runWorkflowOptions = new RunWorkflowOptions
         {
             Input = request.Input,
             Properties = request.Properties,
@@ -52,7 +52,7 @@ public class LocalWorkflowClient(
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
         };
-        await workflowHost.RunWorkflowAsync(startWorkflowRequest, cancellationToken);
+        await workflowHost.RunWorkflowAsync(runWorkflowOptions, cancellationToken);
         return new RunWorkflowInstanceResponse
         {
             WorkflowInstanceId = WorkflowInstanceId,
@@ -61,7 +61,28 @@ public class LocalWorkflowClient(
             Incidents = workflowHost.WorkflowState.Incidents
         };
     }
-    
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var createRequest = new CreateWorkflowInstanceRequest
+        {
+            Properties = request.Properties,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input,
+            WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
+            ParentId = request.ParentId
+        };
+        await CreateInstanceAsync(createRequest, cancellationToken);
+        return await RunInstanceAsync(new RunWorkflowInstanceRequest
+        {
+            Input = request.Input,
+            Properties = request.Properties,
+            TriggerActivityId = request.TriggerActivityId,
+            ActivityHandle = request.ActivityHandle
+        }, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {

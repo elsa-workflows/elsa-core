@@ -64,7 +64,7 @@ public class DefaultRuntimeTests
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(workflowDefinitionId, VersionOptions.Published)
         });
-        var runWorkflowInstanceResponse = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var runWorkflowInstanceResponse = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         Assert.Equal(WorkflowStatus.Running, runWorkflowInstanceResponse.Status);
         Assert.Equal(WorkflowSubStatus.Suspended, runWorkflowInstanceResponse.SubStatus);

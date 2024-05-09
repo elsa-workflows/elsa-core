@@ -1,8 +1,5 @@
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scheduling.Tasks;
@@ -12,12 +9,12 @@ namespace Elsa.Scheduling.Tasks;
 /// </summary>
 public class RunWorkflowTask : ITask
 {
-    private readonly DispatchWorkflowDefinitionRequest _request;
+    private readonly ScheduleNewWorkflowInstanceRequest _request;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RunWorkflowTask"/> class.
     /// </summary>
-    public RunWorkflowTask(DispatchWorkflowDefinitionRequest request)
+    public RunWorkflowTask(ScheduleNewWorkflowInstanceRequest request)
     {
         _request = request;
     }
@@ -25,7 +22,17 @@ public class RunWorkflowTask : ITask
     /// <inheritdoc />
     public async ValueTask ExecuteAsync(TaskExecutionContext context)
     {
-        var workflowDispatcher = context.ServiceProvider.GetRequiredService<IWorkflowDispatcher>();
-        await workflowDispatcher.DispatchAsync(_request, cancellationToken: context.CancellationToken);
+        var workflowRuntime = context.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var workflowClient = await workflowRuntime.CreateClientAsync();
+        var request = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = _request.WorkflowDefinitionHandle,
+            TriggerActivityId = _request.TriggerActivityId,
+            Input = _request.Input,
+            Properties = _request.Properties,
+            ParentId = _request.ParentId,
+            CorrelationId = _request.CorrelationId
+        };
+        await workflowClient.CreateAndRunInstanceAsync(request);
     }
 }

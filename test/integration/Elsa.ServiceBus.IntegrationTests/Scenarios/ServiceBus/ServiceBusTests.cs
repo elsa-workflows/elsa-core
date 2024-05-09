@@ -89,7 +89,7 @@ public class ServiceBusTest : IDisposable
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveMessageWorkflow);
         var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
-        var response = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var response = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * The workflow doesn't receive any messages, so it should be
@@ -143,7 +143,7 @@ public class ServiceBusTest : IDisposable
         // Start Workflow
         const string workflowDefinitionId = nameof(ReceiveOneMessageWorkflow);
         var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
-        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var workflowState = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -213,7 +213,7 @@ public class ServiceBusTest : IDisposable
         // Start Workflow
         const string workflowDefinitionId = nameof(SendOneMessageWorkflow);
         var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
-        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var workflowState = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -277,7 +277,7 @@ public class ServiceBusTest : IDisposable
         //Start Workflow
         var workflowDefinitionId = nameof(SendOneMessageWithCorrelationIdWorkflow);
         var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
-        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var workflowState = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow don't receive any message so it should be
@@ -322,7 +322,7 @@ public class ServiceBusTest : IDisposable
         // Start Workflow
         var workflowDefinitionId = nameof(ReceiveMessageWorkflow);
         var workflowClient = await CreateWorkflowClientAsync(workflowDefinitionId);
-        var workflowState = await workflowClient.RunAsync(RunWorkflowInstanceRequest.Empty);
+        var workflowState = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
         /*
          * Workflow doesn't receive any message so it should be

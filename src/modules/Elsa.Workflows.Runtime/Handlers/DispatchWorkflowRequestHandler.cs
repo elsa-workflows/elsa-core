@@ -50,7 +50,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
             TriggerActivityId = command.TriggerActivityId
         };
 
-        await client.RunAsync(runRequest, cancellationToken);
+        await client.RunInstanceAsync(runRequest, cancellationToken);
         return Unit.Instance;
     }
 
@@ -64,7 +64,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
             Properties = command.Properties
         };
         var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
-        await client.RunAsync(runRequest, cancellationToken);
+        await client.RunInstanceAsync(runRequest, cancellationToken);
 
         return Unit.Instance;
     }

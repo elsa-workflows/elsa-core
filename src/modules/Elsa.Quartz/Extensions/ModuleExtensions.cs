@@ -1,6 +1,5 @@
 using Elsa.Features.Services;
 using Elsa.Quartz.Features;
-using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Features;
 
 // ReSharper disable once CheckNamespace

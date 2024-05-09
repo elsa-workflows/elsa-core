@@ -1,8 +1,9 @@
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
+using Elsa.Scheduling;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Requests;
 using Quartz;
 
@@ -11,7 +12,7 @@ namespace Elsa.Quartz.Jobs;
 /// <summary>
 /// A job that resumes a workflow.
 /// </summary>
-public class ResumeWorkflowJob(IWorkflowDispatcher workflowDispatcher, IJsonSerializer jsonSerializer) : IJob
+public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer jsonSerializer) : IJob
 {
     /// <summary>
     /// The job key.
@@ -24,14 +25,15 @@ public class ResumeWorkflowJob(IWorkflowDispatcher workflowDispatcher, IJsonSeri
         var map = context.MergedJobDataMap;
         var serializedActivityHandle = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.ActivityHandle));
         var activityHandle = serializedActivityHandle != null ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
-        var request = new DispatchWorkflowInstanceRequest
+        var workflowInstanceId = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.InstanceId));
+        var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, context.CancellationToken);
+        var request = new RunWorkflowInstanceRequest
         {
-            InstanceId = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.InstanceId)),
-            BookmarkId = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.BookmarkId)),
+            BookmarkId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId)),
             ActivityHandle = activityHandle,
-            CorrelationId = (string?)map.Get(nameof(DispatchWorkflowInstanceRequest.CorrelationId)),
-            Input = map.GetDictionary(nameof(DispatchWorkflowInstanceRequest.Input))
+            Input = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Input)),
+            Properties = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Properties)),
         };
-        await workflowDispatcher.DispatchAsync(request, cancellationToken: context.CancellationToken);
+        await workflowClient.RunInstanceAsync(request, cancellationToken: context.CancellationToken);
     }
 }
