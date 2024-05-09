@@ -4,7 +4,6 @@ using Elsa.Scheduling;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Requests;
 using Quartz;
 
 namespace Elsa.Quartz.Jobs;
@@ -23,9 +22,9 @@ public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer
     public async Task Execute(IJobExecutionContext context)
     {
         var map = context.MergedJobDataMap;
-        var serializedActivityHandle = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.ActivityHandle));
+        var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
         var activityHandle = serializedActivityHandle != null ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
-        var workflowInstanceId = (string)map.Get(nameof(DispatchWorkflowInstanceRequest.InstanceId));
+        var workflowInstanceId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId));
         var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, context.CancellationToken);
         var request = new RunWorkflowInstanceRequest
         {
