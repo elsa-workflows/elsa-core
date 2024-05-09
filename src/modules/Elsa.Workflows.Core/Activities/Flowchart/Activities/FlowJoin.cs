@@ -38,7 +38,7 @@ public class FlowJoin : Activity, IJoinNode
         var flowchartContext = context.ParentActivityExecutionContext!;
         var flowchart = (Flowchart)flowchartContext.Activity;
         var inboundActivities = flowchart.Connections.LeftInboundActivities(this).ToList();
-        var flowScope = flowchartContext.GetProperty<FlowScope>(Flowchart.ScopeProperty)!;
+        var flowScope = flowchartContext.GetProperty(Flowchart.ScopeProperty, () => new FlowScope());
         var executionCount = flowScope.GetExecutionCount(this);
         var mode = context.Get(Mode);
 

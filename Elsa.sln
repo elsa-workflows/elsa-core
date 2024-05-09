@@ -355,6 +355,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "retention", "retention", "{3F20899B-C5E1-485F-808B-ADB1877EB3FD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Retention", "src\modules\Elsa.Retention\Elsa.Retention.csproj", "{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDb.UnitTests", "test\unit\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -844,6 +845,10 @@ Global
 		{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -992,6 +997,7 @@ Global
 		{90CD37A9-C866-4D90-A3B1-8C87F53B845E} = {CBB515F3-A0EF-43B5-A907-FD4E652DD66E}
 		{3F20899B-C5E1-485F-808B-ADB1877EB3FD} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{3D42FCA2-5BD0-4624-9FCA-F4BF935B27AE} = {3F20899B-C5E1-485F-808B-ADB1877EB3FD}
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
