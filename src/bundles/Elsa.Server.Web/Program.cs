@@ -46,6 +46,7 @@ const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = false;
+const bool useAzureServiceBusModule = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -349,6 +350,14 @@ services
             elsa.UseDistributedCache(distributedCaching =>
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
+            });
+        }
+
+        if (useAzureServiceBusModule)
+        {
+            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+            {
+                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
             });
         }
 

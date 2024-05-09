@@ -71,13 +71,13 @@ public class AzureServiceBusFeature : FeatureBase
             .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
             .AddSingleton<IWorkerManager, WorkerManager>()
-            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
+            .AddSingleton<IServiceBusInitializer, ServiceBusInitializer>();
 
         // Definition providers.
         Services
-            .AddScoped<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
-            .AddScoped<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
-            .AddScoped<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
+            .AddSingleton<IQueueProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
+            .AddSingleton<ITopicProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>())
+            .AddSingleton<ISubscriptionProvider>(sp => sp.GetRequiredService<ConfigurationQueueTopicAndSubscriptionProvider>());
 
         // Handlers.
         Services.AddHandlersFrom<UpdateWorkers>();
