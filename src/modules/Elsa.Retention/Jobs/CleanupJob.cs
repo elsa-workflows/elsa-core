@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Retention.Options;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -17,19 +18,23 @@ namespace Elsa.Retention.Jobs;
         private readonly IWorkflowInstanceStore _workflowInstanceStore;
         private readonly CleanupOptions _options;
         private readonly ILogger _logger;
+        private readonly ISystemClock _systemClock;
 
         /// <summary>
         /// Creates a new cleanup job
         /// </summary>
         /// <param name="workflowInstanceStore"></param>
         /// <param name="options"></param>
+        /// <param name="systemClock"></param>
         /// <param name="logger"></param>
         public CleanupJob(
             IWorkflowInstanceStore workflowInstanceStore,
             IOptions<CleanupOptions> options,
+            ISystemClock systemClock,
             ILogger<CleanupJob> logger)
         {
             _workflowInstanceStore = workflowInstanceStore;
+            _systemClock = systemClock;
             _options = options.Value;
             _logger = logger;
         }
@@ -40,7 +45,7 @@ namespace Elsa.Retention.Jobs;
         /// <param name="cancellationToken"></param>
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var threshold = DateTimeOffset.Now.Subtract(_options.TimeToLive);
+            var threshold = _systemClock.UtcNow.Subtract(_options.TimeToLive);
             WorkflowInstanceFilter specification = (WorkflowInstanceFilter)_options.WorkflowInstanceFilter.Clone();
 
             specification.TimestampFilters ??= new List<TimestampFilter>();
@@ -50,7 +55,7 @@ namespace Elsa.Retention.Jobs;
                 {
                     Column = nameof(WorkflowInstance.CreatedAt),
                     Operator = TimestampFilterOperator.LessThanOrEqual,
-                    Timestamp = threshold.ToUniversalTime()
+                    Timestamp = threshold
                 }
             );
             
