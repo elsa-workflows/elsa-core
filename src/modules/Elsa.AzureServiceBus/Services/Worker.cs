@@ -4,6 +4,7 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;
@@ -15,18 +16,18 @@ namespace Elsa.AzureServiceBus.Services;
 public class Worker : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
-    private readonly IStimulusSender _stimulusSender;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IStimulusSender stimulusSender, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IServiceScopeFactory serviceScopeFactory, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
-        _stimulusSender = stimulusSender;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -104,7 +105,9 @@ public class Worker : IAsyncDisposable
             Input = input,
         };
         var stimulus = new MessageReceivedStimulus(QueueOrTopic, Subscription);
-        var result = await _stimulusSender.SendAsync<MessageReceived>(stimulus, metadata, cancellationToken);
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
+        var stimulusSender = scope.ServiceProvider.GetRequiredService<IStimulusSender>();
+        var result = await stimulusSender.SendAsync<MessageReceived>(stimulus, metadata, cancellationToken);
 
         _logger.LogDebug("{Count} workflow triggered by the service bus message", result.WorkflowInstanceResponses.Count);
     }

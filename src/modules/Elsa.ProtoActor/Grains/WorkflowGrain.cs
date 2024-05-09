@@ -205,7 +205,7 @@ internal class WorkflowGrain : WorkflowBase
             ParentWorkflowInstanceId = request.ParentId
         };
 
-        using var scope = _scopeFactory.CreateScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
         var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflowGraph.Workflow, workflowInstanceOptions, cancellationToken);
         var host = await _workflowHostFactory.CreateAsync(workflowGraph, workflowInstance.WorkflowState, cancellationToken);

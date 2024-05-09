@@ -53,7 +53,7 @@ public class WorkflowHost : IWorkflowHost
         if (strategyType == null)
             return true;
 
-        using var scope = _serviceScopeFactory.CreateScope();
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var instantiationStrategies = scope.ServiceProvider.GetServices<IWorkflowActivationStrategy>();
         var strategy = instantiationStrategies.FirstOrDefault(x => x.GetType() == strategyType);
 
@@ -88,7 +88,7 @@ public class WorkflowHost : IWorkflowHost
         _linkedTokenSource = new CancellationTokenSource();
         var linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _linkedTokenSource.Token).Token;
 
-        using var scope = _serviceScopeFactory.CreateScope();
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, linkedCancellationToken);
 
@@ -112,7 +112,7 @@ public class WorkflowHost : IWorkflowHost
         }
         
         // Otherwise, cancel the workflow by executing the canceler. This will set up a workflow execution pipeline that will cancel the workflow.
-        using var scope = _serviceScopeFactory.CreateScope();
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
         WorkflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, cancellationToken);
@@ -122,7 +122,7 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task PersistStateAsync(CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
         await PersistStateAsync(scope, cancellationToken);
     }
 
