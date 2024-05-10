@@ -5,7 +5,6 @@
 </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="NSubstitute" />
         <PackageReference Include="Azure.Messaging.ServiceBus" />
         <PackageReference Include="Azure.ResourceManager.ServiceBus" />
     </ItemGroup>

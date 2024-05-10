@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -12,6 +14,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
@@ -89,6 +92,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
+            services.AddSingleton(Substitute.For<ServiceBusClient>());
+            services.AddSingleton(Substitute.For<ServiceBusAdministrationClient>());
         });
     }
 
