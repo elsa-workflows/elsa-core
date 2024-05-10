@@ -223,9 +223,7 @@ public class BulkDispatchWorkflows : Activity
         };
 
         var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
-
-        if (!dispatchResponse.Succeeded)
-            throw new FaultException(dispatchResponse.ErrorMessage);
+        dispatchResponse.ThrowIfFailed();
 
         return instanceId;
     }

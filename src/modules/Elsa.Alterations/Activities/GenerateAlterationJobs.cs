@@ -64,7 +64,7 @@ public class GenerateAlterationJobs : CodeActivity<int>
         var plan = await alterationPlanStore.FindAsync(planFilter, cancellationToken);
 
         if (plan == null)
-            throw new FaultException($"Alteration Plan with ID {planId} not found.");
+            throw new FaultException(AlterationFaultCodes.PlanNotFound, AlterationFaultCategories.Alteration, DefaultFaultTypes.System, $"Alteration Plan with ID {planId} not found.");
 
         return plan;
     }

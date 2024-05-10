@@ -58,7 +58,8 @@ internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IW
         
         if(!result.Succeeded)
         {
-            AddError(result.ErrorMessage!);
+            var fault = result.Fault!;
+            AddError(fault.Message, fault.Code);
             await SendErrorsAsync(cancellation: cancellationToken);
             return;
         }
