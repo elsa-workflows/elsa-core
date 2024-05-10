@@ -16,7 +16,7 @@ public record DispatchWorkflowResponse(FaultException? Fault)
     /// <summary>
     /// Creates a response indicating that the specified channel does not exist.
     /// </summary>
-    public static DispatchWorkflowResponse UnknownChannel() => new(new FaultException(RuntimeFaultCodes.UnknownChannel, RuntimeFaultCategories.Dispatch, DefaultFaultKinds.System, "The specified channel does not exist."));
+    public static DispatchWorkflowResponse UnknownChannel() => new(new FaultException(RuntimeFaultCodes.UnknownChannel, RuntimeFaultCategories.Dispatch, DefaultFaultTypes.System, "The specified channel does not exist."));
 
     /// <summary>
     /// Gets a value indicating whether the dispatch of a workflow definition succeeded.

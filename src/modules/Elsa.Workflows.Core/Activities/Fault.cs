@@ -23,14 +23,14 @@ public class Fault : Activity
     /// <summary>
     /// Creates a fault activity.
     /// </summary>
-    public static Fault Create(string code, string category, string kind, string? message = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
+    public static Fault Create(string code, string category, string type, string? message = null, [CallerFilePath] string? source = null, [CallerLineNumber] int? line = null)
     {
         return new Fault(source, line)
         {
             Code = new(code),
             Message = new(message),
             Category = new(category),
-            Kind = new(kind)
+            FaultType = new(type)
         };
     }
 
@@ -41,16 +41,19 @@ public class Fault : Activity
     public Input<string> Code { get; set; } = default!;
     
     /// <summary>
-    /// Category to categorize the fault.
+    /// Category to categorize the fault. Examples: HTTP, Alteration, Azure, etc.
     /// </summary>
     [Input(Description = "Category to categorize the fault. Examples: HTTP, Alteration, Azure, etc.")]
     public Input<string> Category { get; set; } = default!;
     
     /// <summary>
-    /// The kind of fault.
+    /// The type of fault. Examples: System, Business, Integration, etc.
     /// </summary>
-    [Input(Description = "The kind of fault. Examples: System, Business, Integration, etc.")]
-    public Input<string> Kind { get; set; } = default!;
+    [Input(
+        DisplayName = "Type",
+        Description = "The type of fault. Examples: System, Business, Integration, etc."
+        )]
+    public Input<string> FaultType { get; set; } = default!;
 
     /// <summary>
     /// The message to include with the fault.
@@ -63,8 +66,8 @@ public class Fault : Activity
     {
         var code = Code.GetOrDefault(context) ?? "0";
         var category = Category.GetOrDefault(context) ?? "General";
-        var kind = Kind.GetOrDefault(context) ?? "System";
+        var type = FaultType.GetOrDefault(context) ?? "System";
         var message = Message.GetOrDefault(context);
-        throw new FaultException(code, category, kind, message);
+        throw new FaultException(code, category, type, message);
     }
 }

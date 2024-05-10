@@ -6,11 +6,11 @@ namespace Elsa.Workflows.Exceptions;
 public class FaultException : Exception
 {
     /// <inheritdoc />
-    public FaultException(string code, string category, string kind, string? message) : base(message)
+    public FaultException(string code, string category, string type, string? message) : base(message)
     {
         Code = code;
         Category = category;
-        Kind = kind;
+        Type = type;
     }
 
     /// <summary>
@@ -27,5 +27,5 @@ public class FaultException : Exception
     /// <summary>
     /// Kind of fault. E.g. "System", "Business", "Integration", etc.
     /// </summary>
-    public string Kind { get; }
+    public string Type { get; }
 }

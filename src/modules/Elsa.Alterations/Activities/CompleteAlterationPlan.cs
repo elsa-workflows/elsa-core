@@ -41,7 +41,7 @@ public class CompleteAlterationPlan : CodeActivity
         var plan = await manager.GetPlanAsync(planId, cancellationToken);
 
         if (plan == null)
-            throw new FaultException(AlterationFaultCodes.PlanNotFound, AlterationFaultCategories.Alteration, DefaultFaultKinds.System, $"Alteration Plan with ID {planId} not found.");
+            throw new FaultException(AlterationFaultCodes.PlanNotFound, AlterationFaultCategories.Alteration, DefaultFaultTypes.System, $"Alteration Plan with ID {planId} not found.");
 
         await manager.CompletePlanAsync(plan, cancellationToken);
     }
