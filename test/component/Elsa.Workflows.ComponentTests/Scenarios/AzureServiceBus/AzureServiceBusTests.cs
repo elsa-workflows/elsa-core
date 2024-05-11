@@ -6,13 +6,33 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.AzureServiceBus;
 
-public class AzureServiceBusTests(App app) : AppComponentTest(app)
+public class AzureServiceBusTests : AppComponentTest
 {
+    private static readonly object WorkflowCompletedSignal = new();
+    private readonly IWorkflowEvents _workflowEvents;
+    private readonly ISignalManager _signalManager;
+
+    public AzureServiceBusTests(App app) : base(app)
+    {
+        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
+        _workflowEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowEvents>();
+        _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
+    }
+
+    private void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs e)
+    {
+        if (e.WorkflowInstance.Status != WorkflowStatus.Finished)
+            return;
+
+        if (e.WorkflowInstance.DefinitionId == MessageReceivedTriggerWorkflow.DefinitionId)
+            _signalManager.Trigger(WorkflowCompletedSignal, e);
+    }
+
     [Fact]
     public async Task WorkflowReceivesMessage_WhenSendingMessageToTopic()
     {
         var client = Scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
-        var signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
+        
         var topic = MessageReceivedTriggerWorkflow.Topic;
 
         // Generate a correlation ID so that we can find the workflow instance later.
@@ -27,14 +47,17 @@ public class AzureServiceBusTests(App app) : AppComponentTest(app)
         });
 
         // Wait for the workflow to trigger the first signal.
-        await signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal1, 500000);
+        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal1, 500000);
 
         // Send another message to the topic. This should resume the workflow.
         await sender.SendMessageAsync(new ServiceBusMessage("Message 2"));
 
         // Wait for the workflow to trigger the second signal.
-        await signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal2, 500000);
+        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal2, 500000);
 
+        // Wait for the workflow to complete.
+        await _signalManager.WaitAsync(WorkflowCompletedSignal, 500000);
+        
         // Find the workflow instance by correlation ID.
         var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstanceFilter = new WorkflowInstanceFilter
@@ -48,5 +71,10 @@ public class AzureServiceBusTests(App app) : AppComponentTest(app)
         // Assert that the workflow is finished.
         Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
         Assert.Equal(WorkflowSubStatus.Finished, workflowInstance.SubStatus);
+    }
+    
+    protected override void OnDispose()
+    {
+        _workflowEvents.WorkflowInstanceSaved -= OnWorkflowInstanceSaved;
     }
 }

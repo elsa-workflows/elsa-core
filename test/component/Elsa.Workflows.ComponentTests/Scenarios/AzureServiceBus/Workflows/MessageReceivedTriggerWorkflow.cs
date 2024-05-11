@@ -8,13 +8,14 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.AzureServiceBus.Workflows;
 
 public class MessageReceivedTriggerWorkflow : WorkflowBase
 {
+    public static readonly string DefinitionId = Guid.NewGuid().ToString();
     public static readonly string Topic = nameof(MessageReceivedTriggerWorkflow);
     public static readonly object Signal1 = new();
     public static readonly object Signal2 = new();
 
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.WithDefinitionId(GetType().FullName!);
+        builder.WithDefinitionId(DefinitionId);
         var message = builder.WithVariable<ReceivedServiceBusMessageModel>();
         builder.Root = new Sequence
         {
