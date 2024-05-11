@@ -380,16 +380,16 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Stimulus = payload,
+            Stimulus = stimulus,
             Callback = callback,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
@@ -399,15 +399,15 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark for the current activity execution context.
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="includeActivityInstanceId">Specifies whether to include the activity instance ID in the bookmark information. Defaults to true.</param>
     /// <param name="customProperties">Additional custom properties to associate with the bookmark. Defaults to null.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
+    public Bookmark CreateBookmark(object stimulus, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Stimulus = payload,
+            Stimulus = stimulus,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
         });
@@ -416,14 +416,14 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="metadata">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
+    public Bookmark CreateBookmark(object stimulus, IDictionary<string, string>? metadata = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Stimulus = payload,
+            Stimulus = stimulus,
             Metadata = metadata
         });
     }
