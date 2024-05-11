@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -18,19 +19,25 @@ public class Correlate : CodeActivity
     public Correlate([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <inheritdoc />
     public Correlate(string correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        CorrelationId = new Input<string>(correlationId);
+        CorrelationId = new(correlationId);
     }
-    
+
     /// <inheritdoc />
     public Correlate(Variable<string> correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
-        CorrelationId = new Input<string>(correlationId);
+        CorrelationId = new(correlationId);
     }
-    
+
+    /// <inheritdoc />
+    public Correlate(Func<ExpressionExecutionContext, string> correlationId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
+    {
+        CorrelationId = new(correlationId);
+    }
+
     /// <summary>
     /// The correlation ID to set.
     /// </summary>

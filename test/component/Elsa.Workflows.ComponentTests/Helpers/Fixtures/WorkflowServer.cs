@@ -1,5 +1,4 @@
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
@@ -11,7 +10,6 @@ using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Workflows.ComponentTests.Helpers.Mocks;
 using Elsa.Workflows.ComponentTests.Services;
-using Elsa.Workflows.Runtime.Stores;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -19,7 +17,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using NSubstitute.Extensions;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
@@ -81,16 +78,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
-                    //runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
-                    //runtime.UseCache();
-                    runtime.TriggerStore = sp => sp.GetRequiredService<MemoryTriggerStore>();
-                    runtime.BookmarkStore = sp => sp.GetRequiredService<MemoryBookmarkStore>();
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
                 });
                 elsa.UseHttp(http =>
                 {
                     http.UseCache();
                 });
+                elsa.UseAzureServiceBus();
             };
         }
 
@@ -152,15 +148,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         });
     }
 
-    private ProcessMessageEventArgs CreateMessageArgs(object payload, string? correlationId = null, int deliveryCount = 1)
+    private ProcessMessageEventArgs CreateMessageArgs(ServiceBusMessage transportMessage, int deliveryCount = 1)
     {
-        var payloadJson = JsonSerializer.Serialize(payload);
+        var payloadJson = JsonSerializer.Serialize(transportMessage);
         var props = new Dictionary<string, object>();
 
         var message = ServiceBusModelFactory.ServiceBusReceivedMessage(
             body: BinaryData.FromString(payloadJson),
             deliveryCount: deliveryCount,
-            correlationId: correlationId,
+            correlationId: transportMessage.CorrelationId,
             properties: props
         );
 
