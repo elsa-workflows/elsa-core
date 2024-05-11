@@ -37,9 +37,12 @@ internal class WorkflowGrain : WorkflowBase
         _mappers = mappers;
         _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
+    
+    private string ClusterIdentity => Context.ClusterIdentity()!.Identity;
 
     public override async Task OnStarted()
     {
+        Context.SetReceiveTimeout(TimeSpan.FromHours(1));
         await _persistence.RecoverStateAsync();
     }
 
@@ -91,6 +94,7 @@ internal class WorkflowGrain : WorkflowBase
     {
         var createRequest = new ProtoCreateWorkflowInstanceRequest
         {
+            WorkflowInstanceId = request.WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
             Input = request.Input,
             ParentId = request.ParentId,
@@ -250,23 +254,27 @@ internal class WorkflowGrain : WorkflowBase
         return workflow;
     }
 
-    private Task Reenter<TResponse>(Task<TResponse> action, Action<TResponse> respond, Action<string> onError)
+    private async Task Reenter<TResponse>(Task<TResponse> action, Action<TResponse> respond, Action<string> onError)
     {
-        Context.ReenterAfter(action, async executeTask =>
-        {
-            var result = await executeTask;
-            respond(result);
-        });
-        return Task.CompletedTask;
+        var response = await action;
+        respond(response);
+        // Context.ReenterAfter(action, async executeTask =>
+        // {
+        //     var result = await executeTask;
+        //     respond(result);
+        // });
+        // return Task.CompletedTask;
     }
 
-    private Task Reenter(Task action, Action respond, Action<string> onError)
+    private async Task Reenter(Task action, Action respond, Action<string> onError)
     {
-        Context.ReenterAfter(action, async executeTask =>
-        {
-            await executeTask;
-            respond();
-        });
-        return Task.CompletedTask;
+        await action;
+        respond();
+        // Context.ReenterAfter(action, async executeTask =>
+        // {
+        //     await executeTask;
+        //     respond();
+        // });
+        // return Task.CompletedTask;
     }
 }

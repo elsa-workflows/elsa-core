@@ -32,11 +32,6 @@ public class StimulusMetadata
     /// The ID of the workflow instance that sent the stimulus.
     /// </summary>
     public string? ParentWorkflowInstanceId { get; set; }
-
-    /// <summary>
-    /// The ID of the trigger activity.
-    /// </summary>
-    public string? TriggerActivityId { get; set; }
     
     /// <summary>
     /// Any input that was provided by the sender.

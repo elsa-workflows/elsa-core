@@ -44,7 +44,6 @@ public class StimulusSender(
         var input = metadata?.Input;
         var properties = metadata?.Properties;
         var parentId = metadata?.ParentWorkflowInstanceId;
-        var triggerActivityId = metadata?.TriggerActivityId;
         var responses = new List<RunWorkflowInstanceResponse>();
 
         foreach (var triggerBoundWorkflow in triggerBoundWorkflows)
@@ -52,24 +51,21 @@ public class StimulusSender(
             var workflowGraph = triggerBoundWorkflow.WorkflowGraph;
             var workflow = workflowGraph.Workflow;
             var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
-            var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
-            {
-                CorrelationId = correlationId,
-                Input = input,
-                Properties = properties,
-                ParentId = parentId,
-                WorkflowDefinitionHandle = workflow.DefinitionHandle
-            };
-            await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
 
-            var request = new RunWorkflowInstanceRequest
+            foreach (var trigger in triggerBoundWorkflow.Triggers)
             {
-                Input = input,
-                Properties = properties,
-                TriggerActivityId = triggerActivityId,
-            };
-            var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
-            responses.Add(response);
+                var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
+                {
+                    WorkflowDefinitionHandle = workflow.DefinitionHandle,
+                    TriggerActivityId = trigger.ActivityId,
+                    CorrelationId = correlationId,
+                    Input = input,
+                    Properties = properties,
+                    ParentId = parentId,
+                };
+                var response = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+                responses.Add(response);
+            }
         }
 
         return responses;

@@ -89,6 +89,7 @@ public class ProtoActorFeature : FeatureBase
         {
             var systemConfig = Proto.ActorSystemConfig
                 .Setup()
+                .WithDiagnosticsLogLevel(LogLevel.Debug)
                 .WithMetrics();
 
             var clusterProvider = ClusterProvider(sp);
@@ -102,6 +103,8 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
+                    .WithGossipRequestTimeout(TimeSpan.FromHours(1))
+                    .WithLegacyRequestTimeoutBehavior()
                     .WithClusterKind(WorkflowActor.Kind, workflowGrainProps)
                 ;
 
