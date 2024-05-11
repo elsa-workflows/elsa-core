@@ -18,7 +18,10 @@ public class ReceiveMessageWorkflow : WorkflowBase
         {
             Activities =
             {
-                new MessageReceived(Topic, "subscription1"),
+                new MessageReceived(Topic, "subscription1")
+                {
+                    CanStartWorkflow = true,
+                },
                 new TriggerSignal(Signal1),
                 new MessageReceived(Topic, "subscription2"),
                 new TriggerSignal(Signal2)
