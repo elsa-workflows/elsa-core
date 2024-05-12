@@ -111,7 +111,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
 
     private async Task ImportSingleWorkflowInstanceAsync(ExportedWorkflowState model, CancellationToken cancellationToken)
     {
-        var workflowState = await _workflowStateSerializer.DeserializeAsync(model.WorkflowState, cancellationToken);
+        var workflowState = _workflowStateSerializer.Deserialize(model.WorkflowState);
         await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
 
         if (model.Bookmarks != null)

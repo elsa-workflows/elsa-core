@@ -64,13 +64,13 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default)
     {
         var response = await _grain.ExportState(cancellationToken);
-        return await _mappers.WorkflowStateJsonMapper.MapAsync(response!.SerializedWorkflowState, cancellationToken);
+        return _mappers.WorkflowStateJsonMapper.Map(response!.SerializedWorkflowState);
     }
 
     /// <inheritdoc />
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var protoJson = await _mappers.WorkflowStateJsonMapper.MapAsync(workflowState, cancellationToken);
+        var protoJson = _mappers.WorkflowStateJsonMapper.Map(workflowState);
         var request = new ProtoImportWorkflowStateRequest
         {
             SerializedWorkflowState = protoJson

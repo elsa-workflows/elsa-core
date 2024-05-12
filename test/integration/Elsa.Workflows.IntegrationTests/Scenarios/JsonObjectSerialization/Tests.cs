@@ -36,10 +36,10 @@ public class Tests
         var workflowState = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
         
         // Serialize workflow state.
-        var serializedWorkflowState = await _workflowStateSerializer.SerializeAsync(workflowState);
+        var serializedWorkflowState = _workflowStateSerializer.Serialize(workflowState);
 
         // Attempt to deserialize workflow state.
-        await _workflowStateSerializer.DeserializeAsync<WorkflowState>(serializedWorkflowState);
+        _workflowStateSerializer.Deserialize<WorkflowState>(serializedWorkflowState);
 
         // If we reach this point, the test has passed. Otherwise, an exception would have been thrown.
     }

@@ -13,18 +13,17 @@ public class WorkflowStateJsonMapper(IWorkflowStateSerializer workflowStateSeria
     /// <summary>
     /// Maps the specified <see cref="ProtoJson"/> to a <see cref="WorkflowState"/>.
     /// </summary>
-    public async Task<WorkflowState> MapAsync(ProtoJson source, CancellationToken cancellationToken = default)
+    public WorkflowState Map(ProtoJson source)
     {
-        var workflowState = await workflowStateSerializer.DeserializeAsync(source.Text, cancellationToken);
-        return workflowState;
+        return workflowStateSerializer.Deserialize(source.Text);
     }
 
     /// <summary>
     /// Maps the specified <see cref="WorkflowState"/> to a <see cref="ProtoJson"/>.
     /// </summary>
-    public async Task<ProtoJson> MapAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    public ProtoJson Map(WorkflowState workflowState)
     {
-        var json = await workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
+        var json = workflowStateSerializer.Serialize(workflowState);
 
         return new ProtoJson
         {

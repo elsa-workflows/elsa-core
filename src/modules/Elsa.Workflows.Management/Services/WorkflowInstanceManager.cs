@@ -92,9 +92,9 @@ public class WorkflowInstanceManager(
     }
 
     /// <inheritdoc />
-    public async Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    public string SerializeWorkflowState(WorkflowState workflowState)
     {
-        return await workflowStateSerializer.SerializeAsync(workflowState, cancellationToken);
+        return workflowStateSerializer.Serialize(workflowState);
     }
 
     /// <inheritdoc />

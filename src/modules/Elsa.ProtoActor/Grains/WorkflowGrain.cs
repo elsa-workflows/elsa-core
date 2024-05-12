@@ -59,6 +59,13 @@ internal class WorkflowGrain : WorkflowBase
         var workflowHost = await GetWorkflowHostAsync();
         var mappedRequest = _mappers.RunWorkflowParamsMapper.Map(request);
         var result = await workflowHost.RunWorkflowAsync(mappedRequest, Context.CancellationToken);
+
+        if (result.WorkflowState.Status == WorkflowStatus.Finished)
+        {
+            // ReSharper disable once MethodHasAsyncOverload
+            Context.Poison(Context.Self);
+        }
+        
         return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
     }
 
@@ -102,7 +109,7 @@ internal class WorkflowGrain : WorkflowBase
     {
         var workflowHost = await GetWorkflowHostAsync();
         var workflowState = workflowHost.WorkflowState;
-        var json = await _mappers.WorkflowStateJsonMapper.MapAsync(workflowState, Context.CancellationToken);
+        var json = _mappers.WorkflowStateJsonMapper.Map(workflowState);
         return new ProtoExportWorkflowStateResponse
         {
             SerializedWorkflowState = json
@@ -111,7 +118,7 @@ internal class WorkflowGrain : WorkflowBase
 
     public override async Task ImportState(ProtoImportWorkflowStateRequest request)
     {
-        var workflowState = await _mappers.WorkflowStateJsonMapper.MapAsync(request.SerializedWorkflowState, Context.CancellationToken);
+        var workflowState = _mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         var workflowHost = await GetWorkflowHostAsync();
         workflowHost.WorkflowState = workflowState;
         await workflowHost.PersistStateAsync(Context.CancellationToken);

@@ -42,7 +42,7 @@ public class SerializerUnicodeEncodingTests(ITestOutputHelper testOutputHelper)
     public async Task TestWorkflowStateSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
-        await TestSerializerAsync(input => serializer.SerializeAsync(input));
+        TestSerializer(input => serializer.Serialize(input));
     }
 
     private void TestSerializer(Func<object, string> serialize)

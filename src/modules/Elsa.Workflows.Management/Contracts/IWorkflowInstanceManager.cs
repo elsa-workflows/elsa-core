@@ -67,7 +67,7 @@ public interface IWorkflowInstanceManager
     /// <summary>
     /// Serializes the specified workflow state.
     /// </summary>
-    Task<string> SerializeWorkflowStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+    string SerializeWorkflowState(WorkflowState workflowState);
     
     /// <summary>
     /// Instantiates and saves a new workflow instance.
