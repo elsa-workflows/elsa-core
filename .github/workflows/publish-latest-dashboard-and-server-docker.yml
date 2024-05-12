@@ -1,12 +1,12 @@
 name: Build elsa-dashboard-and-server:latest
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 2.x
-  pull_request:
-    branches:
-      - 2.x
+  #push:
+  #  branches:
+  #    - 2.x
+  #pull_request:
+  #  branches:
+  #   - 2.x
   #release:
   #  types: [published]
 
