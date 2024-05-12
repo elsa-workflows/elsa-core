@@ -115,31 +115,32 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.12.1
-          registry-url: 'https://f.feedz.io/elsa-workflows/elsa-2/npm/'
+          registry-url: 'https://npm/pkg.github.com'
+          scope: '@world-of-workflows'
 
       - run: npm publish *.tgz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_IO_NPM }}
+          NODE_AUTH_TOKEN: ${{ secrets.elsa_publish }}
 
-  publish_npm_release:
-    name: Publish to npm
-    needs: build_and_pack
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
-    steps:
-      - name: Download NPM Package
-        uses: actions/download-artifact@v3
-        with:
-          name: designer-npm-package
+  #publish_npm_release:
+  #  name: Publish to npm
+  #  needs: build_and_pack
+  #  runs-on: ubuntu-latest
+  #  if: ${{ github.event_name == 'release' }}
+  #  steps:
+  #    - name: Download NPM Package
+  #     uses: actions/download-artifact@v3
+  #      with:
+  #       name: designer-npm-package
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18.12.1
-          registry-url: 'https://registry.npmjs.org'
+#      - uses: actions/setup-node@v3
+ #       with:
+  #        node-version: 18.12.1
+   #       registry-url: 'https://registry.npmjs.org'
 
-      - run: npm publish *.tgz
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    #  - run: npm publish *.tgz
+     #   env:
+      #    NODE_AUTH_TOKEN: ${{ secrets.elsa_publish }}
 
   publish_nuget_preview:
     name: Publish Nuget (Preview)
@@ -153,18 +154,18 @@ jobs:
           name: elsa-nuget-package
       
       - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s https://f.feedz.io/elsa-workflows/elsa-2/nuget/index.json --skip-duplicate
+        run: dotnet nuget push *.nupkg -k ${{ secrets.elsa_publish }} -s "https://github.com/world-of-workflows/elsa-workflows" --skip-duplicate
 
-  publish_nuget_release:
-    name: Publish to Nuget
-    needs: build_and_pack
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'release' }}
-    steps:
-      - name: Download Nuget Packages
-        uses: actions/download-artifact@v3
-        with:
-          name: elsa-nuget-package
-      
-      - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+#  publish_nuget_release:
+#    name: Publish to Nuget
+#    needs: build_and_pack
+#    runs-on: ubuntu-latest
+#    if: ${{ github.event_name == 'release' }}
+#    steps:
+#      - name: Download Nuget Packages
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: elsa-nuget-package
+#      
+#      - name: Publish Nuget Packages to MyGet
+#        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
