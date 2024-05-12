@@ -35,22 +35,16 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
     public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
         var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
-        var createRequest = new CreateWorkflowInstanceRequest
+        var createRequest = new CreateAndRunWorkflowInstanceRequest
         {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(command.DefinitionVersionId),
             CorrelationId = command.CorrelationId,
             Input = command.Input,
             Properties = command.Properties,
             ParentId = command.ParentWorkflowInstanceId,
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(command.DefinitionVersionId)
-        };
-        await client.CreateInstanceAsync(createRequest, cancellationToken);
-
-        var runRequest = new RunWorkflowInstanceRequest
-        {
             TriggerActivityId = command.TriggerActivityId
         };
-
-        await client.RunInstanceAsync(runRequest, cancellationToken);
+        await client.CreateAndRunInstanceAsync(createRequest, cancellationToken);
         return Unit.Instance;
     }
 

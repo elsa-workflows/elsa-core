@@ -37,8 +37,6 @@ internal class WorkflowGrain : WorkflowBase
         _mappers = mappers;
         _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
-    
-    private string ClusterIdentity => Context.ClusterIdentity()!.Identity;
 
     public override async Task OnStarted()
     {
@@ -46,36 +44,17 @@ internal class WorkflowGrain : WorkflowBase
         await _persistence.RecoverStateAsync();
     }
 
-    public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
-
-    public override Task Create(ProtoCreateWorkflowInstanceRequest request, Action<ProtoCreateWorkflowInstanceResponse> respond, Action<string> onError)
-    {
-        var task = CreateAsync(request);
-        Context.ReenterAfter(task, async executeTask =>
-        {
-            await executeTask;
-            respond(new ProtoCreateWorkflowInstanceResponse());
-        });
-        return Task.CompletedTask;
-    }
-
-    private async Task CreateAsync(ProtoCreateWorkflowInstanceRequest request)
+    public override async Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request)
     {
         if (_workflowInstanceId != null)
             throw new InvalidOperationException("Workflow instance already exists.");
 
         _workflowHost = await CreateNewWorkflowHostAsync(request, Context.CancellationToken);
         _workflowInstanceId = _workflowHost.WorkflowState.Id;
+        return new ProtoCreateWorkflowInstanceResponse();
     }
 
-    public override Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request) => throw new NotImplementedException();
-
-    public override Task Run(ProtoRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
-    {
-        return Reenter(RunAsync(request), respond, onError);
-    }
-
-    private async Task<ProtoRunWorkflowInstanceResponse> RunAsync(ProtoRunWorkflowInstanceRequest request)
+    public override async Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request)
     {
         var workflowHost = await GetWorkflowHostAsync();
         var mappedRequest = _mappers.RunWorkflowParamsMapper.Map(request);
@@ -83,14 +62,7 @@ internal class WorkflowGrain : WorkflowBase
         return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
     }
 
-    public override Task<ProtoRunWorkflowInstanceResponse> CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request) => throw new NotImplementedException();
-
-    public override Task CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
-    {
-        return Reenter(CreateAndRunAsync(request), respond, onError);
-    }
-
-    private async Task<ProtoRunWorkflowInstanceResponse> CreateAndRunAsync(ProtoCreateAndRunWorkflowInstanceRequest request)
+    public override async Task<ProtoRunWorkflowInstanceResponse> CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request)
     {
         var createRequest = new ProtoCreateWorkflowInstanceRequest
         {
@@ -102,8 +74,8 @@ internal class WorkflowGrain : WorkflowBase
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle
         };
 
-        await CreateAsync(createRequest);
-        return await RunAsync(new ProtoRunWorkflowInstanceRequest
+        await Create(createRequest);
+        return await Run(new ProtoRunWorkflowInstanceRequest
         {
             ActivityHandle = request.ActivityHandle,
             Input = request.Input,
@@ -111,7 +83,6 @@ internal class WorkflowGrain : WorkflowBase
             TriggerActivityId = request.TriggerActivityId
         });
     }
-
 
     public override Task Stop()
     {
@@ -127,14 +98,7 @@ internal class WorkflowGrain : WorkflowBase
         await workflowHost.CancelWorkflowAsync(Context.CancellationToken);
     }
 
-    public override Task<ProtoExportWorkflowStateResponse> ExportState() => throw new NotImplementedException();
-
-    public override Task ExportState(Action<ProtoExportWorkflowStateResponse> respond, Action<string> onError)
-    {
-        return Reenter(ExportStateAsync(), respond, onError);
-    }
-
-    private async Task<ProtoExportWorkflowStateResponse> ExportStateAsync()
+    public override async Task<ProtoExportWorkflowStateResponse> ExportState()
     {
         var workflowHost = await GetWorkflowHostAsync();
         var workflowState = workflowHost.WorkflowState;
@@ -145,14 +109,7 @@ internal class WorkflowGrain : WorkflowBase
         };
     }
 
-    public override Task ImportState(ProtoImportWorkflowStateRequest request) => throw new NotImplementedException();
-
-    public override Task ImportState(ProtoImportWorkflowStateRequest request, Action respond, Action<string> onError)
-    {
-        return Reenter(ImportStateAsync(request), respond, onError);
-    }
-
-    private async Task ImportStateAsync(ProtoImportWorkflowStateRequest request)
+    public override async Task ImportState(ProtoImportWorkflowStateRequest request)
     {
         var workflowState = await _mappers.WorkflowStateJsonMapper.MapAsync(request.SerializedWorkflowState, Context.CancellationToken);
         var workflowHost = await GetWorkflowHostAsync();
@@ -252,29 +209,5 @@ internal class WorkflowGrain : WorkflowBase
             throw new InvalidOperationException($"Workflow {workflowDefinitionHandle} not found.");
 
         return workflow;
-    }
-
-    private async Task Reenter<TResponse>(Task<TResponse> action, Action<TResponse> respond, Action<string> onError)
-    {
-        var response = await action;
-        respond(response);
-        // Context.ReenterAfter(action, async executeTask =>
-        // {
-        //     var result = await executeTask;
-        //     respond(result);
-        // });
-        // return Task.CompletedTask;
-    }
-
-    private async Task Reenter(Task action, Action respond, Action<string> onError)
-    {
-        await action;
-        respond();
-        // Context.ReenterAfter(action, async executeTask =>
-        // {
-        //     await executeTask;
-        //     respond();
-        // });
-        // return Task.CompletedTask;
     }
 }

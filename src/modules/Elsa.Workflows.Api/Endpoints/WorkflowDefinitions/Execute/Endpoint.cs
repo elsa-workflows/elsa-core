@@ -46,13 +46,16 @@ internal class Execute(
         }
         
         var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);
-        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+        var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
-            Input = (IDictionary<string, object>?)request.Input
+            Input = (IDictionary<string, object>?)request.Input,
+            TriggerActivityId = request.TriggerActivityId
         };
-        await workflowClient.CreateInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+        
+        // Create and run the workflow instance.
+        var runWorkflowResponse = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
         var instanceId = workflowClient.WorkflowInstanceId;
         
         // Write the workflow instance ID to the response header.
@@ -60,16 +63,8 @@ internal class Execute(
         // (in which case, we can't transmit a JSON body that includes the instance ID). 
         HttpContext.Response.Headers.Append("x-elsa-workflow-instance-id", instanceId);
         
-        var runWorkflowInstanceRequest = new RunWorkflowInstanceRequest
-        {
-            TriggerActivityId = request.TriggerActivityId
-        };
-        
-        // Start the workflow.
-        var runWorkflowInstanceResponse = await workflowClient.RunInstanceAsync(runWorkflowInstanceRequest, cancellationToken);
-
         // If a workflow fault occurred, respond appropriately with a 500 internal server error.
-        if (runWorkflowInstanceResponse.SubStatus == WorkflowSubStatus.Faulted)
+        if (runWorkflowResponse.SubStatus == WorkflowSubStatus.Faulted)
         {
             var workflowState = await workflowClient.ExportStateAsync(cancellationToken);
             await HandleFaultAsync(workflowState, cancellationToken);
