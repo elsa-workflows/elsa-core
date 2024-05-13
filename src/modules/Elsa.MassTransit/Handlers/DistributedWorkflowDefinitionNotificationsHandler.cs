@@ -16,8 +16,8 @@ namespace Elsa.MassTransit.Handlers
     {
         /// <inheritdoc />
         public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) =>
-            await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionPublished(notification.WorkflowDefinition.Id), cancellationToken);
-
+            await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionPublished(notification.WorkflowDefinition.Id,
+                notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
 
         /// <inheritdoc />
         public async Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => 
@@ -29,7 +29,8 @@ namespace Elsa.MassTransit.Handlers
 
         /// <inheritdoc />
         public async Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken) => 
-            await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionCreated(notification.WorkflowDefinition.Id), cancellationToken);
+            await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionCreated(notification.WorkflowDefinition.Id,
+                notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
 
         /// <inheritdoc />
         public async Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken) => 
