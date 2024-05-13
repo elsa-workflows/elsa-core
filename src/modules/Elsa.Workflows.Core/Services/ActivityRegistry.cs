@@ -39,6 +39,13 @@ public class ActivityRegistry : IActivityRegistry
     }
 
     /// <inheritdoc />
+    public void Remove(Type providerType, ActivityDescriptor descriptor)
+    {
+        _providedActivityDescriptors[providerType].Remove(descriptor);
+        _activityDescriptors.Remove((descriptor.TypeName, descriptor.Version), out _);
+    }
+
+    /// <inheritdoc />
     public void Clear()
     {
         _activityDescriptors.Clear();

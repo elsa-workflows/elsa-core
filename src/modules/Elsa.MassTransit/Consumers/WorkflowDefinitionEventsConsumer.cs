@@ -14,34 +14,55 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     IConsumer<WorkflowDefinitionCreated>,
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
-    IConsumer<WorkflowDefinitionRetracted>,
     IConsumer<WorkflowDefinitionsDeleted>,
     IConsumer<WorkflowDefinitionVersionDeleted>,
     IConsumer<WorkflowDefinitionVersionsDeleted>
 {
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context) => RefreshAsync();
+    public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context)
+    { 
+        return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+    }
     
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context) => RefreshAsync();
-
-    /// <inheritdoc />
-    public async Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
-    {
-        await activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+    public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
+    { 
+        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context) => RefreshAsync();
+    public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
+    {
+        return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+    }
 
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionsDeleted> context) => RefreshAsync();
+    public Task Consume(ConsumeContext<WorkflowDefinitionsDeleted> context)
+    {
+        foreach (var id in context.Message.Ids)
+        {
+            activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        }
+
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionVersionDeleted> context) => RefreshAsync();
+    public Task Consume(ConsumeContext<WorkflowDefinitionVersionDeleted> context)
+    {
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionVersionsDeleted> context) => RefreshAsync();
-    
-    private async Task RefreshAsync() => await activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider));
+    public Task Consume(ConsumeContext<WorkflowDefinitionVersionsDeleted> context)
+    {
+        foreach (var id in context.Message.Ids)
+        {
+            activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        }
+
+        return Task.CompletedTask;
+    }
 }

@@ -13,11 +13,6 @@ public interface IDistributedWorkflowDefinitionEventsDispatcher
     Task DispatchAsync(WorkflowDefinitionPublished request, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Dispatches a workflow definition retracted event.
-    /// </summary>
-    Task DispatchAsync(WorkflowDefinitionRetracted request, CancellationToken cancellationToken);
-
-    /// <summary>
     /// Dispatches a workflow definition deleted event.
     /// </summary>
     Task DispatchAsync(WorkflowDefinitionDeleted request, CancellationToken cancellationToken);
