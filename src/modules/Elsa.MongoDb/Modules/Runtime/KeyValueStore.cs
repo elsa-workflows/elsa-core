@@ -16,7 +16,7 @@ public class MongoKeyValueStore(MongoDbStore<SerializedKeyValuePair> keyValueMon
     /// <inheritdoc />
     public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
     {
-        return keyValueMongoDbStore.SaveAsync(keyValuePair, cancellationToken);
+        return keyValueMongoDbStore.SaveAsync(keyValuePair, x => x.Key, cancellationToken);
     }
 
     /// <inheritdoc />
