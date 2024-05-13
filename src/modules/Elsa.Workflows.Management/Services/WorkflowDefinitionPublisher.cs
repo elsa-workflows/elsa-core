@@ -135,7 +135,6 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             throw new InvalidOperationException("Cannot retract an unpublished workflow definition.");
 
         definition.IsPublished = false;
-        definition = Initialize(definition);
 
         await _notificationSender.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
