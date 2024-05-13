@@ -99,6 +99,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             CustomProperties =
             {
                 ["RootType"] = nameof(WorkflowDefinitionActivity),
+                ["WorkflowDefinitionId"] = definition.DefinitionId,
                 ["WorkflowDefinitionVersionId"] = definition.Id
             },
             ConstructionProperties = new Dictionary<string, object>

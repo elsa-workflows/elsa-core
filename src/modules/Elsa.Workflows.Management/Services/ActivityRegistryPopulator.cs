@@ -1,5 +1,6 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -43,10 +44,42 @@ public class ActivityRegistryPopulator : IActivityRegistryPopulator
         var provider = _providers.First(x => x.GetType() == providerType);
         var descriptors = await provider.GetDescriptorsAsync(cancellationToken);
         var descriptorToAdd = descriptors
-            .SingleOrDefault(d => d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) && val.ToString() == workflowDefinitionVersionId);
+            .SingleOrDefault(d =>
+                d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
+                val.ToString() == workflowDefinitionVersionId);
         
         if (descriptorToAdd is not null)
-            _registry.Add(providerType, descriptorToAdd!);
+            _registry.Add(providerType, descriptorToAdd);
+    }
+
+    /// <inheritdoc />
+    public void RemoveDefinitionFromRegistry(Type providerType, string workflowDefinitionId, CancellationToken cancellationToken = default)
+    {
+        var providerDescriptors = _registry.ListByProvider(providerType);
+        
+        var descriptorsToRemove = providerDescriptors
+            .Where(d =>
+                d.CustomProperties.TryGetValue("WorkflowDefinitionId", out var val) &&
+                val.ToString() == workflowDefinitionId);
+
+        foreach (ActivityDescriptor activityDescriptor in descriptorsToRemove)
+        {
+            _registry.Remove(providerType, activityDescriptor);
+        }
+    }
+
+    /// <inheritdoc />
+    public void RemoveDefinitionVersionFromRegistry(Type providerType, string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    {
+        var providerDescriptors = _registry.ListByProvider(providerType);
+        
+        var descriptorToRemove = providerDescriptors
+            .SingleOrDefault(d =>
+                d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
+                val.ToString() == workflowDefinitionVersionId);
+
+        if (descriptorToRemove is not null)
+            _registry.Remove(providerType, descriptorToRemove);
     }
 
     private async Task PopulateRegistryAsync(IActivityProvider provider, CancellationToken cancellationToken = default)
