@@ -37,7 +37,6 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         await _notificationSender.SendAsync(new WorkflowDefinitionDeleting(definitionId), cancellationToken);
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await EnsureLastVersionIsLatestAsync(definitionId, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }

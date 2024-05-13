@@ -8,7 +8,6 @@ namespace Elsa.MassTransit.Handlers
     /// Represents a handler for distributed workflow definition notifications.
     public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkflowDefinitionEventsDispatcher distributedEventsDispatcher) :
         INotificationHandler<WorkflowDefinitionPublished>,
-        INotificationHandler<WorkflowDefinitionRetracted>,
         INotificationHandler<WorkflowDefinitionDeleted>,
         INotificationHandler<WorkflowDefinitionsDeleted>,
         INotificationHandler<WorkflowDefinitionCreated>,
@@ -19,9 +18,6 @@ namespace Elsa.MassTransit.Handlers
         public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken) =>
             await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionPublished(notification.WorkflowDefinition.Id), cancellationToken);
 
-        /// <inheritdoc />
-        public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => 
-            await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionRetracted(notification.WorkflowDefinition.Id), cancellationToken);
 
         /// <inheritdoc />
         public async Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => 

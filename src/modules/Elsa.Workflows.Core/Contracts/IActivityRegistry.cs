@@ -22,6 +22,13 @@ public interface IActivityRegistry : IActivityProvider
     void AddMany(Type providerType, IEnumerable<ActivityDescriptor> descriptors);
     
     /// <summary>
+    /// Removes an activity descriptor from the registry.
+    /// </summary>
+    /// <param name="providerType">The type of the activity provider.</param>
+    /// <param name="descriptor">The activity descriptor to remove.</param>
+    void Remove(Type providerType, ActivityDescriptor descriptor);
+    
+    /// <summary>
     /// Clears all activity descriptors from the registry.
     /// </summary>
     void Clear();
