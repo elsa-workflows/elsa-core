@@ -20,8 +20,10 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
 {
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context)
-    { 
-        return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+    {
+        return context.Message.UsableAsActivity 
+            ? activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id) 
+            : Task.CompletedTask;
     }
     
     /// <inheritdoc />
@@ -34,7 +36,9 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
     {
-        return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        return context.Message.UsableAsActivity
+            ? activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id)
+            : Task.CompletedTask;
     }
 
     /// <inheritdoc />
