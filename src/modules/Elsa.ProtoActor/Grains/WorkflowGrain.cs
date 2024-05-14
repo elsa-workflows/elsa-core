@@ -44,9 +44,9 @@ internal class WorkflowGrain : WorkflowBase
         await _persistence.RecoverStateAsync();
     }
 
-    public override Task OnStopped()
+    public override async Task OnStopped()
     {
-        return base.OnStopped();
+        await SaveSnapshotAsync();
     }
 
     public override async Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request)
@@ -67,8 +67,7 @@ internal class WorkflowGrain : WorkflowBase
 
         if (result.WorkflowState.Status == WorkflowStatus.Finished)
         {
-            // ReSharper disable once MethodHasAsyncOverload
-            //Context.Poison(Context.Self);
+            await Stop();
         }
         
         return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
@@ -98,9 +97,8 @@ internal class WorkflowGrain : WorkflowBase
 
     public override Task Stop()
     {
-        // Stop after all current messages have been processed.
-        // Calling StopAsync seems to cause a deadlock or some other issue where the call never returns. See also: https://github.com/asynkron/protoactor-dotnet/issues/492
-        Context.Stop(Context.Self);
+        // ReSharper disable once MethodHasAsyncOverload
+        Context.Poison(Context.Self);
         return Task.CompletedTask;
     }
 

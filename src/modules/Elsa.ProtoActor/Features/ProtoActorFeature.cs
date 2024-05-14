@@ -99,12 +99,12 @@ public class ProtoActorFeature : FeatureBase
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
-                    .WithActorRequestTimeout(TimeSpan.FromHours(1))
+                    .WithActorRequestTimeout(TimeSpan.FromSeconds(10))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithGossipRequestTimeout(TimeSpan.FromHours(1))
-                    .WithLegacyRequestTimeoutBehavior()
+                    //.WithLegacyRequestTimeoutBehavior()
                     .WithClusterKind(WorkflowActor.Kind, workflowGrainProps)
                 ;
 
