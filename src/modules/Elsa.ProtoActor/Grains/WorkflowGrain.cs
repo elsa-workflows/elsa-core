@@ -40,8 +40,13 @@ internal class WorkflowGrain : WorkflowBase
 
     public override async Task OnStarted()
     {
-        Context.SetReceiveTimeout(TimeSpan.FromHours(1));
+        Context.SetReceiveTimeout(TimeSpan.FromSeconds(10));
         await _persistence.RecoverStateAsync();
+    }
+
+    public override Task OnStopped()
+    {
+        return base.OnStopped();
     }
 
     public override async Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request)
@@ -63,7 +68,7 @@ internal class WorkflowGrain : WorkflowBase
         if (result.WorkflowState.Status == WorkflowStatus.Finished)
         {
             // ReSharper disable once MethodHasAsyncOverload
-            Context.Poison(Context.Self);
+            //Context.Poison(Context.Self);
         }
         
         return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
