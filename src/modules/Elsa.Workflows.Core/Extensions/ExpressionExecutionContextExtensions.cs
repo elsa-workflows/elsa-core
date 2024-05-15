@@ -434,7 +434,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns all activity outputs.
     /// </summary>
-    public static IEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
+    public static async IAsyncEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
     {
         if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
             yield break;
@@ -445,7 +445,7 @@ public static class ExpressionExecutionContextExtensions
         if (useActivityName)
             activitiesWithOutputs = activitiesWithOutputs.Where(x => !string.IsNullOrWhiteSpace(x.Activity.Name));
 
-        foreach (var activityWithOutput in activitiesWithOutputs)
+        await foreach (var activityWithOutput in activitiesWithOutputs)
         {
             var activity = activityWithOutput.Activity;
             var activityDescriptor = activityWithOutput.ActivityDescriptor;

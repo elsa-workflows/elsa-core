@@ -138,24 +138,24 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
+        var activityDescriptor = await activityRegistryLookup.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
+    public static async IAsyncEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
         var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
@@ -168,28 +168,25 @@ public static class ActivityExecutionContextExtensions
         var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
 
         // Select activities with outputs.
-        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistry>();
+        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistryLookupService>();
         var activitiesWithOutputs = containedNodes.GetActivitiesWithOutputs(activityRegistry);
 
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+        await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistry activityRegistry)
+    public static async IAsyncEnumerable<(IActivity activity, ActivityDescriptor activityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistryLookupService activityRegistryLookup)
     {
-        // Select activities with outputs.
-        var activitiesWithOutputs =
-            from node in nodes
-            let activity = node.Activity
-            let activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)
-            where activityDescriptor.Outputs.Any()
-            select (activity, activityDescriptor);
-
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
-            yield return (activity, activityDescriptor);
+        foreach (var node in nodes)
+        {
+            var activity = node.Activity;
+            var activityDescriptor = await activityRegistryLookup.Find(activity.Type, activity.Version);
+            if (activityDescriptor != null && activityDescriptor.Outputs.Any()) 
+                yield return (activity, activityDescriptor);
+        }
     }
 
     /// <summary>
