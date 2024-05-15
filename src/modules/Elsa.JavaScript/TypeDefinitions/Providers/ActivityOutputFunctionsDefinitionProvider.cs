@@ -12,13 +12,13 @@ namespace Elsa.JavaScript.TypeDefinitions.Providers;
 internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionProvider
 {
     private readonly IActivityVisitor _activityVisitor;
-    private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityRegistryLookupService _activityRegistryLookup;
     private readonly IIdentityGraphService _identityGraphService;
 
-    public ActivityOutputFunctionsDefinitionProvider(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry, IIdentityGraphService identityGraphService)
+    public ActivityOutputFunctionsDefinitionProvider(IActivityVisitor activityVisitor, IActivityRegistryLookupService activityRegistryLookup, IIdentityGraphService identityGraphService)
     {
         _activityVisitor = activityVisitor;
-        _activityRegistry = activityRegistry;
+        _activityRegistryLookup = activityRegistryLookup;
         _identityGraphService = identityGraphService;
     }
 
@@ -29,12 +29,12 @@ internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionPro
         var nodes = (await _activityVisitor.VisitAsync(workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
         
         // Ensure identities.
-        _identityGraphService.AssignIdentities(nodes);
+        await _identityGraphService.AssignIdentities(nodes);
         
-        var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(_activityRegistry);
+        var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(_activityRegistryLookup);
         var definitions = new List<FunctionDefinition>();
 
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+        await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
         {
             definitions.AddRange(from output in activityDescriptor.Outputs
                 select output.Name.Pascalize()

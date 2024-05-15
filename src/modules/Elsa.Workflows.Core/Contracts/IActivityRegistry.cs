@@ -15,29 +15,11 @@ public interface IActivityRegistry : IActivityProvider
     void Add(Type providerType, ActivityDescriptor descriptor);
     
     /// <summary>
-    /// Adds multiple activity descriptors to the registry.
-    /// </summary>
-    /// <param name="providerType">The type of the activity provider.</param>
-    /// <param name="descriptors">The activity descriptors to add.</param>
-    void AddMany(Type providerType, IEnumerable<ActivityDescriptor> descriptors);
-    
-    /// <summary>
     /// Removes an activity descriptor from the registry.
     /// </summary>
     /// <param name="providerType">The type of the activity provider.</param>
     /// <param name="descriptor">The activity descriptor to remove.</param>
     void Remove(Type providerType, ActivityDescriptor descriptor);
-    
-    /// <summary>
-    /// Clears all activity descriptors from the registry.
-    /// </summary>
-    void Clear();
-    
-    /// <summary>
-    /// Clears all activity descriptors provided by the specified provider.
-    /// </summary>
-    /// <param name="providerType">The type of the activity provider.</param>
-    void ClearProvider(Type providerType);
     
     /// <summary>
     /// Returns all activity descriptors in the registry.
@@ -100,4 +82,12 @@ public interface IActivityRegistry : IActivityProvider
     /// <param name="activityTypes">The activity types to register.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     Task RegisterAsync(IEnumerable<Type> activityTypes, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Refreshes the activity descriptors in the registry by querying the specified activity providers.
+    /// </summary>
+    /// <param name="activityProviders">The activity providers used to retrieve the descriptors.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task RefreshDescriptors(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default);
 }

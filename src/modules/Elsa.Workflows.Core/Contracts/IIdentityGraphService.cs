@@ -21,17 +21,17 @@ public interface IIdentityGraphService
     /// <summary>
     /// Assign unique identities tot the specified <see cref="ActivityNode"/> graph.
     /// </summary>
-    void AssignIdentities(ActivityNode root);
+    Task AssignIdentities(ActivityNode root);
     
     /// <summary>
     /// Assign unique identities tot the specified flattened list of <see cref="ActivityNode"/>s.
     /// </summary>
-    void AssignIdentities(ICollection<ActivityNode> flattenedList);    
+    Task AssignIdentities(ICollection<ActivityNode> flattenedList);    
     
     /// <summary>
     /// Assign unique identities to input and output properties of the specified <see cref="IActivity"/> graph.
     /// </summary>
-    void AssignInputOutputs(IActivity activity);
+    Task AssignInputOutputs(IActivity activity);
     
     /// <summary>
     /// Assign unique identities to variables of the specified <see cref="IVariableContainer"/>.

@@ -100,7 +100,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
-        CreateActivityOutputAccessors(engine, context);
+        await CreateActivityOutputAccessors(engine, context);
 
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
@@ -171,11 +171,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    private static async Task CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var activityOutputs = context.GetActivityOutputs();
 
-        foreach (var activityOutput in activityOutputs)
+        await foreach (var activityOutput in activityOutputs)
         foreach (var outputName in activityOutput.OutputNames)
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
