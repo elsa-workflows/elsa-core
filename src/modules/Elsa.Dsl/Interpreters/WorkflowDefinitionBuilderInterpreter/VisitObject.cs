@@ -29,7 +29,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
     /// <inheritdoc />
     public override IWorkflowBuilder VisitObject(ElsaParser.ObjectContext context)
     {
-        var @object = GetObject(context);
+        var @object = GetObject(context).GetAwaiter().GetResult();
 
         _object.Put(context, @object);
         _expressionValue.Put(context, @object);
@@ -38,12 +38,12 @@ public partial class WorkflowDefinitionBuilderInterpreter
         return DefaultResult;
     }
 
-    private object GetObject(ElsaParser.ObjectContext context)
+    private async Task<object> GetObject(ElsaParser.ObjectContext context)
     {
         var objectTypeName = context.ID().GetText();
 
         // First, check if the symbol matches an activity type.
-        var activityDescriptor = _activityRegistry.Find(x => x.Name == objectTypeName);
+        var activityDescriptor = await _activityRegistryLookup.Find(x => x.Name == objectTypeName);
 
         if (activityDescriptor != null)
         {

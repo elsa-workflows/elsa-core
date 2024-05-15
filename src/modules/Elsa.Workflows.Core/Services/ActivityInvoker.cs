@@ -30,7 +30,7 @@ public class ActivityInvoker : IActivityInvoker
         if (activityExecutionContext == null)
         {
             // Create a new activity execution context.
-            activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, options);
+            activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContext(activity, options);
 
             // Add the activity context to the workflow context.
             workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);

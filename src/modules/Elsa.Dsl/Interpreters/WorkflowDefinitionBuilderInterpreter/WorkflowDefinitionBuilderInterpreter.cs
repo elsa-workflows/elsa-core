@@ -9,7 +9,7 @@ namespace Elsa.Dsl.Interpreters;
 public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisitor<IWorkflowBuilder>
 {
     private readonly ITypeSystem _typeSystem;
-    private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityRegistryLookupService _activityRegistryLookup;
     private readonly IFunctionActivityRegistry _functionActivityRegistry;
     private readonly IWorkflowBuilder _workflowBuilder;
     private readonly ParseTreeProperty<object> _object = new();
@@ -22,12 +22,12 @@ public partial class WorkflowDefinitionBuilderInterpreter : ElsaParserBaseVisito
     /// <inheritdoc />
     public WorkflowDefinitionBuilderInterpreter(
         ITypeSystem typeSystem,
-        IActivityRegistry activityRegistry,
+        IActivityRegistryLookupService activityRegistryLookup,
         IFunctionActivityRegistry functionActivityRegistry,
         IWorkflowBuilderFactory workflowBuilderFactory)
     {
         _typeSystem = typeSystem;
-        _activityRegistry = activityRegistry;
+        _activityRegistryLookup = activityRegistryLookup;
         _functionActivityRegistry = functionActivityRegistry;
         _workflowBuilder = workflowBuilderFactory.CreateBuilder();
     }

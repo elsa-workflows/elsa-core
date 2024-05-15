@@ -8,14 +8,14 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;
 internal class Get : ElsaEndpoint<Request, Response>
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IActivityRegistry _registry;
+    private readonly IActivityRegistryLookupService _registryLookup;
     private readonly IPropertyUIHandlerResolver _optionsResolver;
 
     /// <inheritdoc />
-    public Get(IServiceProvider serviceProvider, IActivityRegistry registry, IPropertyUIHandlerResolver optionsResolver)
+    public Get(IServiceProvider serviceProvider, IActivityRegistryLookupService registryLookup, IPropertyUIHandlerResolver optionsResolver)
     {
         _serviceProvider = serviceProvider;
-        _registry = registry;
+        _registryLookup = registryLookup;
         _optionsResolver = optionsResolver;
     }
 
@@ -29,7 +29,7 @@ internal class Get : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var descriptor = request.Version == null ? _registry.Find(request.ActivityTypeName) : _registry.Find(request.ActivityTypeName, request.Version.Value);
+        var descriptor = request.Version == null ? await _registryLookup.Find(request.ActivityTypeName) : await _registryLookup.Find(request.ActivityTypeName, request.Version.Value);
         if (descriptor == null)
             await SendNotFoundAsync(cancellationToken);
 
