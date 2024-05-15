@@ -14,6 +14,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     IConsumer<WorkflowDefinitionCreated>,
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
+    IConsumer<WorkflowDefinitionRetracted>,
     IConsumer<WorkflowDefinitionsDeleted>,
     IConsumer<WorkflowDefinitionVersionDeleted>,
     IConsumer<WorkflowDefinitionVersionsDeleted>
@@ -21,11 +22,9 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context)
     {
-        return context.Message.UsableAsActivity 
-            ? activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id) 
-            : Task.CompletedTask;
+        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
     }
-    
+
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
     { 
@@ -36,9 +35,14 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
     {
-        return context.Message.UsableAsActivity
-            ? activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id)
-            : Task.CompletedTask;
+        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
+    }
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context)
+    {
+        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -67,6 +71,15 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
             activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         }
 
+        return Task.CompletedTask;
+    }
+
+    private Task UpdateDefinition(string id, bool usableAsActivity)
+    {
+        if (usableAsActivity)
+            return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+
+        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         return Task.CompletedTask;
     }
 }
