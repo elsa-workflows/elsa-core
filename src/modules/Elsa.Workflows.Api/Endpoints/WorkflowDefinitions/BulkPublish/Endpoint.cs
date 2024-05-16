@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -22,6 +23,7 @@ internal class BulkPublish : ElsaEndpoint<Request, Response>
     {
         Post("/bulk-actions/publish/workflow-definitions/by-definition-ids");
         ConfigurePermissions("publish:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
@@ -29,17 +31,19 @@ internal class BulkPublish : ElsaEndpoint<Request, Response>
         var published = new List<string>();
         var notFound = new List<string>();
         var alreadyPublished = new List<string>();
+        var skipped = new List<string>();
 
         var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
-            {
-                DefinitionIds = request.DefinitionIds, VersionOptions = VersionOptions.Latest
-            }, cancellationToken: cancellationToken))
+        {
+            DefinitionIds = request.DefinitionIds,
+            VersionOptions = VersionOptions.Latest
+        }, cancellationToken: cancellationToken))
             .DistinctBy(x => x.DefinitionId)
             .ToDictionary(x => x.DefinitionId);
 
         foreach (var definitionId in request.DefinitionIds)
         {
-            if(!definitions.TryGetValue(definitionId, out var definition))
+            if (!definitions.TryGetValue(definitionId, out var definition))
             {
                 notFound.Add(definitionId);
                 continue;
@@ -51,10 +55,16 @@ internal class BulkPublish : ElsaEndpoint<Request, Response>
                 continue;
             }
 
+            if (definition.IsReadonly)
+            {
+                skipped.Add(definitionId);
+                continue;
+            }
+
             await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
         }
 
-        return new Response(published, alreadyPublished, notFound);
+        return new Response(published, alreadyPublished, notFound, skipped);
     }
 }

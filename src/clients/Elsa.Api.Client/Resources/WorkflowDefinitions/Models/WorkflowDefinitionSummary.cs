@@ -1,3 +1,4 @@
+using Elsa.Api.Client.Shared.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -6,4 +7,4 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionSummary(string Id, string DefinitionId, string Name, string? Description, int Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt);
+public record WorkflowDefinitionSummary(string Id, string DefinitionId, string Name, string? Description, int Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt): LinkedEntity;

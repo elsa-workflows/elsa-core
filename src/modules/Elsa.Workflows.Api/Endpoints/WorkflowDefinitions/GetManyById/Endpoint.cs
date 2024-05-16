@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -18,12 +19,14 @@ internal class GetManyById : ElsaEndpoint<Request>
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
     private readonly WorkflowDefinitionMapper _mapper;
+    private readonly IWorkflowDefinitionLinkService _linkService;
 
-    public GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
+    public GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper, IWorkflowDefinitionLinkService linkService)
     {
         _store = store;
         _apiSerializer = apiSerializer;
         _mapper = mapper;
+        _linkService = linkService;
     }
 
     public override void Configure()
@@ -47,7 +50,9 @@ internal class GetManyById : ElsaEndpoint<Request>
         if (!request.IncludeCompositeRoot)
             serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
+        models = _linkService.GenerateLinksForListOfEntries(models);
         var response = new ListResponse<WorkflowDefinitionModel>(models);
+        
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

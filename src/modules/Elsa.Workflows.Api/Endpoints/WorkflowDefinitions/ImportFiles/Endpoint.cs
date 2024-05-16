@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
@@ -39,6 +40,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
         Post("workflow-definitions/import-files");
         ConfigurePermissions("write:workflow-definitions");
         AllowFileUploads();
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     /// <inheritdoc />

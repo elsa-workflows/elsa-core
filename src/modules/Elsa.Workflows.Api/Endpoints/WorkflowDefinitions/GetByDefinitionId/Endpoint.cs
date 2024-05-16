@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -18,12 +19,14 @@ internal class GetByDefinitionId : ElsaEndpoint<Request>
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
     private readonly WorkflowDefinitionMapper _mapper;
+    private readonly IWorkflowDefinitionLinkService _linkService;
 
-    public GetByDefinitionId(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
+    public GetByDefinitionId(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper, IWorkflowDefinitionLinkService linkService)
     {
         _store = store;
         _apiSerializer = apiSerializer;
         _mapper = mapper;
+        _linkService = linkService;
     }
 
     public override void Configure()
@@ -50,8 +53,10 @@ internal class GetByDefinitionId : ElsaEndpoint<Request>
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-        
+
         var model = await _mapper.MapAsync(definition, cancellationToken);
+        model = _linkService.GenerateLinksForSingleEntry(model);
+
         var serializerOptions = _apiSerializer.GetOptions();
 
         // If the root of composite activities is not requested, exclude them from being serialized.

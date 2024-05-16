@@ -1,4 +1,5 @@
 ﻿using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
@@ -19,6 +20,7 @@ internal class RevertVersion : ElsaEndpointWithoutRequest
     {
         Post("workflow-definitions/{definitionId}/revert/{version}");
         ConfigurePermissions("publish:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(CancellationToken ct)
