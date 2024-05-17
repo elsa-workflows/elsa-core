@@ -24,7 +24,6 @@ internal class WorkflowGrain : WorkflowBase
     private readonly Persistence _persistence;
     private string? _workflowInstanceId;
     private IWorkflowHost? _workflowHost;
-    private Queue<Func<Task>> _executionQueue = new();
 
     /// <inheritdoc />
     public WorkflowGrain(
@@ -42,7 +41,6 @@ internal class WorkflowGrain : WorkflowBase
 
     public override async Task OnStarted()
     {
-        Context.SetReceiveTimeout(TimeSpan.FromSeconds(10));
         await _persistence.RecoverStateAsync();
     }
 
