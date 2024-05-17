@@ -30,7 +30,7 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     { 
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
         return Task.CompletedTask;
     }
 
@@ -61,7 +61,7 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
     { 
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
         return Task.CompletedTask;
     }
 
@@ -81,7 +81,7 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
         if (usableAsActivity.GetValueOrDefault())
             return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
 
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         return Task.CompletedTask;
     }
 }

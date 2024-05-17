@@ -41,7 +41,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context)
     {
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
         return Task.CompletedTask;
     }
 
@@ -79,7 +79,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
         if (usableAsActivity)
             return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
 
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         return Task.CompletedTask;
     }
 }
