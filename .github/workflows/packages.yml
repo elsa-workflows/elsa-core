@@ -15,7 +15,6 @@ on:
       - 'perf/*'
       - 'hotfix/*'
       - 'chore/*'
-      - 'MariusVuscanNx/*' 
   release:
     types: [ prereleased, published ]
 env:
