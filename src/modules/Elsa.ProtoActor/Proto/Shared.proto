@@ -39,11 +39,12 @@ enum ProtoWorkflowStatus {
 }
 
 enum ProtoWorkflowSubStatus {
-  WorkflowSubStatusExecuting = 0;
-  WorkflowSubStatusSuspended = 1;
-  WorkflowSubStatusFinished = 2;
-  WorkflowSubStatusCancelled = 3;
-  WorkflowSubStatusFaulted = 4;
+  WorkflowSubStatusPending = 0;
+  WorkflowSubStatusExecuting = 1;
+  WorkflowSubStatusSuspended = 2;
+  WorkflowSubStatusFinished = 3;
+  WorkflowSubStatusCancelled = 4;
+  WorkflowSubStatusFaulted = 5;
 }
 
 message ProtoActivityHandle {

@@ -9,6 +9,7 @@ public class WorkflowSubStatusMapper
     {
         return subStatus switch
         {
+            ProtoWorkflowSubStatus.WorkflowSubStatusPending => WorkflowSubStatus.Pending,
             ProtoWorkflowSubStatus.WorkflowSubStatusFaulted => WorkflowSubStatus.Faulted,
             ProtoWorkflowSubStatus.WorkflowSubStatusFinished => WorkflowSubStatus.Finished,
             ProtoWorkflowSubStatus.WorkflowSubStatusCancelled => WorkflowSubStatus.Cancelled,
@@ -22,6 +23,7 @@ public class WorkflowSubStatusMapper
     {
         return subStatus switch
         {
+            WorkflowSubStatus.Pending => ProtoWorkflowSubStatus.WorkflowSubStatusPending,
             WorkflowSubStatus.Faulted => ProtoWorkflowSubStatus.WorkflowSubStatusFaulted,
             WorkflowSubStatus.Finished => ProtoWorkflowSubStatus.WorkflowSubStatusFinished,
             WorkflowSubStatus.Cancelled => ProtoWorkflowSubStatus.WorkflowSubStatusCancelled,

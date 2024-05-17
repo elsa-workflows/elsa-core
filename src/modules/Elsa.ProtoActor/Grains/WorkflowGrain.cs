@@ -6,6 +6,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
@@ -23,6 +24,7 @@ internal class WorkflowGrain : WorkflowBase
     private readonly Persistence _persistence;
     private string? _workflowInstanceId;
     private IWorkflowHost? _workflowHost;
+    private Queue<Func<Task>> _executionQueue = new();
 
     /// <inheritdoc />
     public WorkflowGrain(
@@ -49,31 +51,73 @@ internal class WorkflowGrain : WorkflowBase
         await SaveSnapshotAsync();
     }
 
-    public override async Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request)
+    public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
+
+    public override Task Create(ProtoCreateWorkflowInstanceRequest request, Action<ProtoCreateWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        Context.ReenterAfter(CreateAsync(request), result =>
+        {
+            if (result.IsFaulted)
+                onError(result.Exception.Message);
+            else
+                respond(new ProtoCreateWorkflowInstanceResponse());
+        });
+
+        return Task.CompletedTask;
+    }
+
+    public override Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request) => throw new NotImplementedException();
+
+    public override Task Run(ProtoRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        var mappedRequest = _mappers.RunWorkflowParamsMapper.Map(request);
+        
+        Context.ReenterAfter(RunAsync(mappedRequest), async completedTask =>
+        {
+            if (completedTask.IsFaulted)
+                onError(completedTask.Exception.Message);
+            else
+            {
+                var result = await completedTask;
+                respond(_mappers.RunWorkflowInstanceResponseMapper.Map(result));
+            }
+        });
+
+        return Task.CompletedTask;
+    }
+
+    public override Task<ProtoRunWorkflowInstanceResponse> CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request) => throw new NotImplementedException();
+
+    public override Task CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
+    {
+        Context.ReenterAfter(CreateAndRunAsync(request), async completedTask =>
+        {
+            if (completedTask.IsFaulted)
+                onError(completedTask.Exception.Message);
+            else
+            {
+                var result = await completedTask;
+                respond(result);
+            }
+        });
+        return Task.CompletedTask;
+    }
+
+    private async Task CreateAsync(ProtoCreateWorkflowInstanceRequest request)
     {
         if (_workflowInstanceId != null)
-            throw new InvalidOperationException("Workflow instance already exists.");
+        {
+            if(_workflowInstanceId == request.WorkflowInstanceId || request.WorkflowInstanceId == null)
+                return;
+            
+            throw new InvalidOperationException($"Attempted to create a new workflow instance with ID {request.WorkflowInstanceId} while an instance with ID {_workflowInstanceId} is already running.");
+        }
 
         _workflowHost = await CreateNewWorkflowHostAsync(request, Context.CancellationToken);
         _workflowInstanceId = _workflowHost.WorkflowState.Id;
-        return new ProtoCreateWorkflowInstanceResponse();
     }
 
-    public override async Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request)
-    {
-        var workflowHost = await GetWorkflowHostAsync();
-        var mappedRequest = _mappers.RunWorkflowParamsMapper.Map(request);
-        var result = await workflowHost.RunWorkflowAsync(mappedRequest, Context.CancellationToken);
-
-        if (result.WorkflowState.Status == WorkflowStatus.Finished)
-        {
-            await Stop();
-        }
-        
-        return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
-    }
-
-    public override async Task<ProtoRunWorkflowInstanceResponse> CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request)
+    private async Task<ProtoRunWorkflowInstanceResponse> CreateAndRunAsync(ProtoCreateAndRunWorkflowInstanceRequest request)
     {
         var createRequest = new ProtoCreateWorkflowInstanceRequest
         {
@@ -85,19 +129,26 @@ internal class WorkflowGrain : WorkflowBase
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle
         };
 
-        await Create(createRequest);
-        return await Run(new ProtoRunWorkflowInstanceRequest
+        await CreateAsync(createRequest);
+
+        var runWorkflowOptions = new RunWorkflowOptions
         {
-            ActivityHandle = request.ActivityHandle,
-            Input = request.Input,
-            Properties = request.Properties,
+            ActivityHandle = _mappers.ActivityHandleMapper.Map(request.ActivityHandle),
+            Properties = request.Properties.DeserializeProperties(),
+            Input = request.Input.DeserializeInput(),
+            CorrelationId = request.CorrelationId,
             TriggerActivityId = request.TriggerActivityId
-        });
+        };
+
+        var result = await RunAsync(runWorkflowOptions);
+
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(result);
     }
 
     public override Task Stop()
     {
         // ReSharper disable once MethodHasAsyncOverload
+        // Don't use PoisonAsync from within the same actor to avoid deadlocks.
         Context.Poison(Context.Self);
         return Task.CompletedTask;
     }
@@ -125,6 +176,13 @@ internal class WorkflowGrain : WorkflowBase
         var workflowHost = await GetWorkflowHostAsync();
         workflowHost.WorkflowState = workflowState;
         await workflowHost.PersistStateAsync(Context.CancellationToken);
+    }
+
+    private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
+    {
+        var workflowHost = await GetWorkflowHostAsync();
+        var result = await workflowHost.RunWorkflowAsync(runWorkflowOptions, Context.CancellationToken);
+        return result;
     }
 
     private async Task SaveSnapshotAsync()
