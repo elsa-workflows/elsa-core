@@ -1,4 +1,3 @@
-using Elsa.Common.DistributedLocks.Noop;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -7,6 +6,7 @@ using Elsa.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.MassTransit.Extensions;
 using Elsa.ServerAndStudio.Web.Enums;
+using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
@@ -73,7 +73,7 @@ services
                     });
                 }
 
-                runtime.DistributedLockProvider = _ => new NoopDistributedSynchronizationProvider();
+                runtime.DistributedLockProvider = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "locks")));
                 runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })

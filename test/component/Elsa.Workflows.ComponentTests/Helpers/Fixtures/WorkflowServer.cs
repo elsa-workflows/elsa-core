@@ -1,9 +1,11 @@
 ﻿using System.Net.Http.Headers;
+using System.Reflection;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
+using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -52,7 +54,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {
-                    var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    var assemblyLocation = Assembly.GetExecutingAssembly().Location;
                     var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
                     var workflowsDirectorySegments = new[]
                     {
@@ -64,6 +66,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseMassTransit(massTransit =>
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.AddConsumer<WorkflowDefinitionEventHandlers>("elsa-test-workflow-definition-updates", true);
                 });
                 elsa.UseWorkflowManagement(management =>
                 {
@@ -82,6 +85,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
         });
     }

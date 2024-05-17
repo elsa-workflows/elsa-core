@@ -37,7 +37,7 @@ public class ActivityRegistryPopulator(IEnumerable<IActivityProvider> providers,
         var descriptorsToRemove = providerDescriptors
             .Where(d =>
                 d.CustomProperties.TryGetValue("WorkflowDefinitionId", out var val) &&
-                val.ToString() == workflowDefinitionId);
+                val.ToString() == workflowDefinitionId).ToList();
 
         foreach (ActivityDescriptor activityDescriptor in descriptorsToRemove)
         {
