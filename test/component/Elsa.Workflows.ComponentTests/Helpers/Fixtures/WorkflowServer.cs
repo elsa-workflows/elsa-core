@@ -81,6 +81,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
+                    runtime.UseProtoActor();
                 });
                 elsa.UseHttp(http =>
                 {
