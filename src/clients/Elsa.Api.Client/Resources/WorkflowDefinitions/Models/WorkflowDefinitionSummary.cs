@@ -7,4 +7,15 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionSummary(string Id, string DefinitionId, string Name, string? Description, int Version, bool IsLatest, bool IsPublished, string MaterializerName, DateTimeOffset CreatedAt): LinkedEntity;
+public record WorkflowDefinitionSummary : LinkedEntity
+{
+    public string Id { get; set; }
+    public string DefinitionId { get; set; }
+    public string Name { get; set; }
+    public string? Description { get; set; }
+    public int Version { get; set; }
+    public bool IsLatest { get; set; }
+    public bool IsPublished { get; set; }
+    public string MaterializerName { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+}
