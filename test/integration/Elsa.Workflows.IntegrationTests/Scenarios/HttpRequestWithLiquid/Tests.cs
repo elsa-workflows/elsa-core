@@ -3,10 +3,9 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.LiquidLists;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.HttpRequestWithLiquid;
 
 public sealed class Tests : IDisposable
 {

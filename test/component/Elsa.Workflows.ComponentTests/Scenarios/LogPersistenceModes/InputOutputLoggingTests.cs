@@ -2,6 +2,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Common.Entities;
+using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowCompletion;

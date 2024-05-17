@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Models;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
