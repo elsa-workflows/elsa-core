@@ -10,6 +10,7 @@ using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
@@ -68,6 +69,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     management.UseMassTransitDispatcher();
+                    management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {

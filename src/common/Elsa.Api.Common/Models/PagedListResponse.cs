@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 
 namespace Elsa.Models;
 
-public class PagedListResponse<T>
+public record PagedListResponse<T>: LinkedResource
 {
     public PagedListResponse()
     {

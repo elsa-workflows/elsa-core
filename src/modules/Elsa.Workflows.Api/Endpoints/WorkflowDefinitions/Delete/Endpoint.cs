@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
@@ -16,6 +17,7 @@ internal class Delete : ElsaEndpoint<Request>
     {
         Delete("/workflow-definitions/{definitionId}");
         ConfigurePermissions("delete:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

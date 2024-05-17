@@ -67,7 +67,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         var definitionIdList = definitionIds.Distinct().ToList();
         await _notificationSender.SendAsync(new WorkflowDefinitionsDeleting(definitionIdList), cancellationToken);
-        var filter = new WorkflowDefinitionFilter { DefinitionIds = definitionIdList };
+        var filter = new WorkflowDefinitionFilter { DefinitionIds = definitionIdList, IsReadonly = false };
         var count = await _store.DeleteAsync(filter, cancellationToken);
         await EnsureLastVersionIsLatestAsync(definitionIdList, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowDefinitionsDeleted(definitionIdList), cancellationToken);
@@ -130,7 +130,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         {
             VersionOptions = VersionOptions.LatestOrPublished
         }, cancellationToken)).ToList();
-        
+
         // Remove the dependency from the list of workflow definitions to consider.
         workflowDefinitions = workflowDefinitions.Where(x => x.DefinitionId != dependency.DefinitionId).ToList();
 

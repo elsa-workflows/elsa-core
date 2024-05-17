@@ -6,7 +6,7 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 /// <summary>
 /// Represents the current state of a workflow. 
 /// </summary>
-public class WorkflowState : Entity
+public record WorkflowState : Entity
 {
     /// <summary>
     /// The workflow definition ID.

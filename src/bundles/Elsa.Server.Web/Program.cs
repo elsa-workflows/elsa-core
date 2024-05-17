@@ -41,12 +41,13 @@ const bool useDapper = false;
 const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
-const bool useMassTransit = true;
+const bool useMassTransit = false;
 const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
-const bool useCaching = true;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const bool useCaching = false;
+const bool useReadOnlyMode = false;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.None;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -242,7 +243,14 @@ services
                 if (useQuartz)
                     scheduling.UseQuartzScheduler();
             })
-            .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
+            .UseWorkflowsApi(api =>
+            {
+                api.AddFastEndpointsAssembly<Program>();
+                if (useReadOnlyMode)
+                {
+                    api.UseReadOnlyMode();
+                }
+            })
             .UseRealTimeWorkflows()
             .UseCSharp(options =>
             {

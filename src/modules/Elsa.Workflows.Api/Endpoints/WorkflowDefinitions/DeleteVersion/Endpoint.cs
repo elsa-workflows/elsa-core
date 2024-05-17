@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 
@@ -18,6 +19,7 @@ internal class DeleteVersion : ElsaEndpoint<Request>
     {
         Delete("/workflow-definition-versions/{id}");
         ConfigurePermissions("delete:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -22,6 +23,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
     {
         Post("/workflow-definitions/{definitionId}/update-references");
         ConfigurePermissions("publish:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

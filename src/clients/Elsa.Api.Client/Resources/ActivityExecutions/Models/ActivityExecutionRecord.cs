@@ -8,7 +8,7 @@ namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
 /// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
 [UsedImplicitly]
-public class ActivityExecutionRecord : Entity
+public record ActivityExecutionRecord : Entity
 {
     /// <summary>
     /// Gets or sets the workflow instance ID.

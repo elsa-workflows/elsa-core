@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Elsa.Models;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 
@@ -8,7 +9,7 @@ namespace Elsa.Workflows.Management.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public class WorkflowDefinitionSummary
+public record WorkflowDefinitionSummary : LinkedResource
 {
     /// <summary>
     /// Creates a new instance of the <see cref="WorkflowDefinitionSummary"/> class from the specified <see cref="WorkflowDefinition"/> instance.
@@ -25,7 +26,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>
@@ -43,7 +45,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>

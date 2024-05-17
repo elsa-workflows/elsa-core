@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Elsa.Api.Client.Shared.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -7,7 +8,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// Represents a serializable workflow definition.
 /// </summary>
 [PublicAPI]
-public class WorkflowDefinitionModel
+public record WorkflowDefinitionModel : LinkedEntity
 {
     /// <summary>
     /// Gets or sets the version ID of the workflow definition.

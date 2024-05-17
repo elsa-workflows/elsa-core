@@ -1,4 +1,6 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
@@ -17,18 +19,21 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IApiSerializer _apiSerializer;
+    private readonly IWorkflowDefinitionLinkService _linkService;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
         WorkflowDefinitionMapper workflowDefinitionMapper,
-        IApiSerializer apiSerializer)
+        IApiSerializer apiSerializer,
+        IWorkflowDefinitionLinkService linkService)
     {
         _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
         _workflowDefinitionMapper = workflowDefinitionMapper;
         _apiSerializer = apiSerializer;
+        _linkService = linkService;
     }
 
     /// <inheritdoc />
@@ -37,6 +42,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
         Verbs(FastEndpoints.Http.POST, FastEndpoints.Http.PUT);
         ConfigurePermissions("write:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     /// <inheritdoc />
@@ -47,6 +53,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
         var definition = result.WorkflowDefinition;
         var updatedModel = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
+        updatedModel = _linkService.GenerateLinksForSingleEntry(updatedModel);
 
         if (result.Succeeded)
         {

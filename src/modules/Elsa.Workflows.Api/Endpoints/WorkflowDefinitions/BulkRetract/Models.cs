@@ -7,16 +7,18 @@ internal class Request
 
 internal class Response
 {
-    public Response(ICollection<string> retracted, ICollection<string> alreadyRetracted, ICollection<string> notFound)
+    public Response(ICollection<string> retracted, ICollection<string> alreadyRetracted, ICollection<string> notFound, ICollection<string> skipped)
     {
         Retracted = retracted;
         AlreadyRetracted = alreadyRetracted;
         NotPublished = alreadyRetracted;
         NotFound = notFound;
+        Skipped = skipped;
     }
 
     public ICollection<string> Retracted { get; }
     public ICollection<string> AlreadyRetracted { get; }
+    public ICollection<string> Skipped { get; }
 
     [Obsolete("Use AlreadyRetracted instead")]
     public ICollection<string> NotPublished { get; }

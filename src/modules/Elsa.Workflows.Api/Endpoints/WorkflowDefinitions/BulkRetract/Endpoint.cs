@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -22,6 +23,7 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
     {
         Post("/bulk-actions/retract/workflow-definitions/by-definition-ids");
         ConfigurePermissions("retract:workflow-definitions");
+        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
@@ -29,6 +31,7 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
         var retracted = new List<string>();
         var notFound = new List<string>();
         var notPublished = new List<string>();
+        var skipped = new List<string>();
 
         foreach (var definitionId in request.DefinitionIds)
         {
@@ -51,10 +54,16 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
                 continue;
             }
 
+            if (published.IsReadonly)
+            {
+                skipped.Add(definitionId);
+                continue;
+            }
+
             await _workflowDefinitionPublisher.RetractAsync(published, cancellationToken);
             retracted.Add(definitionId);
         }
 
-        return new Response(retracted, notPublished, notFound);
+        return new Response(retracted, notPublished, notFound, skipped);
     }
 }
