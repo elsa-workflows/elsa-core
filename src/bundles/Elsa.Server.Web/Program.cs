@@ -23,6 +23,7 @@ using Elsa.Server.Web;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -38,7 +39,6 @@ const bool useSqlServer = false;
 const bool usePostgres = false;
 const bool useCockroachDb = false;
 const bool useDapper = false;
-const bool useProtoActor = true;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -47,8 +47,9 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBusModule = false;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -183,7 +184,12 @@ services
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
-                if (useProtoActor)
+                if (workflowRuntime == WorkflowRuntime.Distributed)
+                {
+                    runtime.UseDistributedRuntime();
+                }
+
+                if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
@@ -319,7 +325,7 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
@@ -331,7 +337,7 @@ services
                     });
                 }
 
-                if (useMassTransitBroker == MassTransitBroker.RabbitMq)
+                if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
