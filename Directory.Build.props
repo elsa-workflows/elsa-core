@@ -18,13 +18,17 @@
     <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
       
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AnalysisModeDocumentation>AllDisabledByDefault</AnalysisModeDocumentation>
+    <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
     <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
 
     <!-- https://github.com/dotnet/sourcelink -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
   </PropertyGroup>
 
 </Project>
