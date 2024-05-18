@@ -1,7 +1,6 @@
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.ProtoActor.Mappers;
 

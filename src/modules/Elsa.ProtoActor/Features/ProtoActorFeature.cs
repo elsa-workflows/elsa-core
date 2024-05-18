@@ -1,14 +1,12 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.ProtoActor.Grains;
+using Elsa.ProtoActor.Actors;
 using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Services;
 using Elsa.Workflows.Features;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Runtime.Distributed.Features;
 using Elsa.Workflows.Runtime.Features;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,7 +38,7 @@ public class ProtoActorFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorDistributedRuntime>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorRuntime>(sp);
     }
 
     /// <summary>
@@ -76,7 +74,7 @@ public class ProtoActorFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<WorkflowServerHost>();
+        Module.ConfigureHostedService<WorkflowSystemHost>();
     }
 
     /// <inheritdoc />
@@ -94,7 +92,7 @@ public class ProtoActorFeature : FeatureBase
 
             var clusterProvider = ClusterProvider(sp);
             var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
-            var workflowGrainProps = system.DI().PropsFor<WorkflowActor>();
+            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
 
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
@@ -105,7 +103,7 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithGossipRequestTimeout(TimeSpan.FromHours(1))
                     //.WithLegacyRequestTimeoutBehavior()
-                    .WithClusterKind(WorkflowActor.Kind, workflowGrainProps)
+                    .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
                 ;
 
             ActorSystemConfig(sp, systemConfig);
@@ -152,10 +150,10 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddTransient(sp => new WorkflowActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowGrain>(sp, context)));
+            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
             
         // Distributed runtime.
-        services.AddSingleton<ProtoActorDistributedRuntime>();
+        services.AddSingleton<ProtoActorRuntime>();
     }
 
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)

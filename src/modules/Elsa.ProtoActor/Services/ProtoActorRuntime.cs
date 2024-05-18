@@ -5,9 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.ProtoActor.Services;
 
 /// <summary>
-/// Represents a Proto.Actor implementation of the distributed runtime for running workflows.
+/// Represents a Proto.Actor implementation of the workflows runtime.
 /// </summary>
-public class ProtoActorDistributedRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator) : IWorkflowRuntime
+public class ProtoActorRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator) : IWorkflowRuntime
 {
     /// <inheritdoc />
     public async ValueTask<IWorkflowClient> CreateClientAsync(CancellationToken cancellationToken = default)

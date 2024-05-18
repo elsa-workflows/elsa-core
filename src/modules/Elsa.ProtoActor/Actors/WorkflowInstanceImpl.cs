@@ -12,11 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
 using Proto.Persistence;
-using WorkflowBase = Elsa.ProtoActor.ProtoBuf.WorkflowBase;
 
-namespace Elsa.ProtoActor.Grains;
+namespace Elsa.ProtoActor.Actors;
 
-internal class WorkflowGrain : WorkflowBase
+internal class WorkflowInstanceImpl : WorkflowInstanceBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IWorkflowHostFactory _workflowHostFactory;
@@ -26,7 +25,7 @@ internal class WorkflowGrain : WorkflowBase
     private IWorkflowHost? _workflowHost;
 
     /// <inheritdoc />
-    public WorkflowGrain(
+    public WorkflowInstanceImpl(
         IContext context,
         IServiceScopeFactory scopeFactory,
         IWorkflowHostFactory workflowHostFactory,
@@ -105,6 +104,8 @@ internal class WorkflowGrain : WorkflowBase
     {
         if (_workflowInstanceId != null)
         {
+            // If a workflow instance ID is already set, this is the cluster trying to repeat this call because it was too slow.
+            // This happens when debugging and the debugger is paused for a long time, for example.
             if(_workflowInstanceId == request.WorkflowInstanceId || request.WorkflowInstanceId == null)
                 return;
             

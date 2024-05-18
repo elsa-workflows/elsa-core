@@ -15,7 +15,7 @@ namespace Elsa.ProtoActor.Services;
 public class ProtoActorWorkflowClient : IWorkflowClient
 {
     private readonly Mappers.Mappers _mappers;
-    private readonly WorkflowClient _grain;
+    private readonly WorkflowInstanceClient _grain;
 
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.

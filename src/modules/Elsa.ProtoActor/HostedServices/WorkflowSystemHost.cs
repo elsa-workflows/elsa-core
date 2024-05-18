@@ -7,15 +7,15 @@ namespace Elsa.ProtoActor.HostedServices;
 /// <summary>
 /// Starts the current member in the cluster.
 /// </summary>
-public class WorkflowServerHost : IHostedService
+public class WorkflowSystemHost : IHostedService
 {
     private readonly ActorSystem _actorSystem;
     
     /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowServerHost"/> class.
+    /// Initializes a new instance of the <see cref="WorkflowSystemHost"/> class.
     /// </summary>
     /// <param name="actorSystem">The actor system to start.</param>
-    public WorkflowServerHost(ActorSystem actorSystem) => _actorSystem = actorSystem;
+    public WorkflowSystemHost(ActorSystem actorSystem) => _actorSystem = actorSystem;
     
     /// <summary>
     /// Starts the current member in the cluster.
