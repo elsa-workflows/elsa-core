@@ -18,7 +18,7 @@
     <PackageIconUrl>https://v3.elsaworkflows.io/nuget-icon.png</PackageIconUrl>
       
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
+    <AnalysisModeDocumentation>AllDisabledByDefault</AnalysisModeDocumentation>
     <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
 
     <!-- https://github.com/dotnet/sourcelink -->
