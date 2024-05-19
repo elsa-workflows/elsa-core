@@ -114,30 +114,32 @@ public class Worker : IAsyncDisposable
 
     private static ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message)
     {
-        return new(
-            message.Body.ToArray(),
-            message.Subject,
-            message.ContentType,
-            message.To,
-            message.CorrelationId,
-            message.DeliveryCount,
-            message.EnqueuedTime,
-            message.ScheduledEnqueueTime,
-            message.ExpiresAt,
-            message.LockedUntil,
-            message.TimeToLive,
-            message.LockToken,
-            message.MessageId,
-            message.PartitionKey,
-            message.TransactionPartitionKey,
-            message.ReplyTo,
-            message.SequenceNumber,
-            message.EnqueuedSequenceNumber,
-            message.SessionId,
-            message.ReplyToSessionId,
-            message.DeadLetterReason,
-            message.DeadLetterSource,
-            message.DeadLetterErrorDescription,
-            message.ApplicationProperties);
+        return new ReceivedServiceBusMessageModel
+        {
+            Body = message.Body.ToArray(),
+            Subject = message.Subject,
+            ContentType = message.ContentType,
+            To = message.To,
+            CorrelationId = message.CorrelationId,
+            DeliveryCount = message.DeliveryCount,
+            EnqueuedTime = message.EnqueuedTime,
+            ScheduledEnqueuedTime = message.ScheduledEnqueueTime,
+            ExpiresAt = message.ExpiresAt,
+            LockedUntil = message.LockedUntil,
+            TimeToLive = message.TimeToLive,
+            LockToken = message.LockToken,
+            MessageId = message.MessageId,
+            PartitionKey = message.PartitionKey,
+            TransactionPartitionKey = message.TransactionPartitionKey,
+            ReplyTo = message.ReplyTo,
+            SequenceNumber = message.SequenceNumber,
+            EnqueuedSequenceNumber = message.EnqueuedSequenceNumber,
+            SessionId = message.SessionId,
+            ReplyToSessionId = message.ReplyToSessionId,
+            DeadLetterReason = message.DeadLetterReason,
+            DeadLetterSource = message.DeadLetterSource,
+            DeadLetterErrorDescription = message.DeadLetterErrorDescription,
+            ApplicationProperties = message.ApplicationProperties
+        };
     }
 }
