@@ -11,6 +11,7 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
+using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
@@ -26,6 +27,7 @@ public class MassTransitWorkflowDispatcher(
     IBookmarkHasher bookmarkHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
+    IDistributedLockProvider distributedLockProvider,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
@@ -163,6 +165,8 @@ public class MassTransitWorkflowDispatcher(
 
             if (input != null || properties != null)
             {
+                // Need to acquire a lock on the workflow instance to prevent concurrent updates.
+                await using var distributedLock = await distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(2), cancellationToken);
                 var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
 
                 if (workflowInstance == null)
