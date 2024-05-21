@@ -1,11 +1,18 @@
 using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.State;
+using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Distributed.Services;
 
-public class DistributedWorkflowClient(string workflowInstanceId, IServiceProvider serviceProvider) : IWorkflowClient
+public class DistributedWorkflowClient(
+    string workflowInstanceId, 
+    IDistributedLockProvider distributedLockProvider, 
+    IOptions<DistributedLockingOptions> distributedLockingOptions, 
+    IServiceProvider serviceProvider) : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
 
@@ -18,12 +25,12 @@ public class DistributedWorkflowClient(string workflowInstanceId, IServiceProvid
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        return await _localWorkflowClient.RunInstanceAsync(request, cancellationToken);
+        return await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken));
     }
 
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        return await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken);
+        return await WithLockAsync(async () => await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken));
     }
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
@@ -39,5 +46,14 @@ public class DistributedWorkflowClient(string workflowInstanceId, IServiceProvid
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         await _localWorkflowClient.ImportStateAsync(workflowState, cancellationToken);
+    }
+    
+    private async Task<R> WithLockAsync<R>(Func<Task<R>> func)
+    {
+        var lockKey = $"workflow-instance:{WorkflowInstanceId}";
+        var lockTimeout = distributedLockingOptions.Value.LockAcquisitionTimeout;
+        await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout);
+        var result = await func();
+        return result;
     }
 }

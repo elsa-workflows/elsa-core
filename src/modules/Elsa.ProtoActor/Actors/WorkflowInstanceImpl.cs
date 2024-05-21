@@ -1,7 +1,7 @@
+using System.Diagnostics;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
-using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -202,7 +202,7 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
         if(_isRunning)
         {
             _queuedRunWorkflowOptions.Enqueue(runWorkflowOptions);
-            return new RunWorkflowResult(WorkflowState, WorkflowGraph.Workflow, null);
+            return new RunWorkflowResult(default, default, null);
         }
         
         _isRunning = true;
@@ -222,21 +222,32 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
     {
         await EnsureStateAsync();
         runWorkflowOptions.WorkflowInstanceId = _workflowInstanceId;
+        
         await using var scope = _scopeFactory.CreateAsyncScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
-        _workflowState = workflowResult.WorkflowState;
+        
+        if(!string.IsNullOrEmpty(runWorkflowOptions.BookmarkId))
+        {
+            if (workflowResult.WorkflowState.Bookmarks.Any())
+            {
+                Debugger.Break();
+            }
+        }
+        
+        WorkflowState = workflowResult.WorkflowState;
+        
         await PersistStateAsync(scope, Context.CancellationToken);
         return workflowResult;
     }
 
     private async Task SaveSnapshotAsync()
     {
-        var workflowState = _workflowState;
-        if (workflowState?.Status == WorkflowStatus.Finished)
-            await _persistence.DeleteSnapshotsAsync(_persistence.Index);
-        else
-            await _persistence.PersistSnapshotAsync(GetState());
+        // var workflowState = _workflowState;
+        // if (workflowState?.Status == WorkflowStatus.Finished)
+        //     await _persistence.DeleteSnapshotsAsync(_persistence.Index);
+        // else
+        //     await _persistence.PersistSnapshotAsync(GetState());
     }
 
     private void ApplySnapshot(Snapshot snapshot)
@@ -325,6 +336,6 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
     private async Task PersistStateAsync(IServiceScope scope, CancellationToken cancellationToken = default)
     {
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        await workflowInstanceManager.SaveAsync(WorkflowState, cancellationToken);
+        await workflowInstanceManager.UpdateAsync(WorkflowState, cancellationToken);
     }
 }

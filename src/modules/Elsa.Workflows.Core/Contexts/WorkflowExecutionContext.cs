@@ -171,7 +171,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         string? triggerActivityId = null,
         CancellationToken cancellationToken = default)
     {
-        // Setup a workflow execution context.
+        // Set up a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
             workflowGraph,

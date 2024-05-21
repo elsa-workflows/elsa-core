@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Management.Services;
 /// <inheritdoc />
 public class WorkflowInstanceManager(
     IWorkflowInstanceStore store,
-    IWorkflowInstanceFactory workflowInstanceFactory, 
+    IWorkflowInstanceFactory workflowInstanceFactory,
     INotificationSender notificationSender,
     WorkflowStateMapper workflowStateMapper,
     IWorkflowStateExtractor workflowStateExtractor,
@@ -54,6 +54,39 @@ public class WorkflowInstanceManager(
     {
         var workflowState = ExtractWorkflowState(workflowExecutionContext);
         return await SaveAsync(workflowState, cancellationToken);
+    }
+
+    public async Task CreateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+    {
+        await store.AddAsync(workflowInstance, cancellationToken);
+        await notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
+    }
+
+    public async Task<WorkflowInstance> CreateAsync(WorkflowState workflowState, CancellationToken cancellationToken)
+    {
+        var workflowInstance = workflowStateMapper.Map(workflowState)!;
+        await CreateAsync(workflowInstance, cancellationToken);
+        return workflowInstance;
+    }
+
+    public async Task<WorkflowInstance> CreateAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+    {
+        var workflowState = ExtractWorkflowState(workflowExecutionContext);
+        return await CreateAsync(workflowState, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
+    {
+        await store.UpdateAsync(workflowInstance, cancellationToken);
+        await notificationSender.SendAsync(new WorkflowInstanceSaved(workflowInstance), cancellationToken);
+    }
+
+    public async Task<WorkflowInstance> UpdateAsync(WorkflowState workflowState, CancellationToken cancellationToken)
+    {
+        var workflowInstance = workflowStateMapper.Map(workflowState)!;
+        await UpdateAsync(workflowInstance, cancellationToken);
+        return workflowInstance;
     }
 
     /// <inheritdoc />

@@ -6,6 +6,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Stimuli;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
@@ -25,7 +26,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
-    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next) : base(next)
+    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<BackgroundActivityInvokerMiddleware> logger) : base(next, logger)
     {
     }
 

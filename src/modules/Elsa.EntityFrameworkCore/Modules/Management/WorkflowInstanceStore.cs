@@ -157,6 +157,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.UpdateAsync(instance, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);

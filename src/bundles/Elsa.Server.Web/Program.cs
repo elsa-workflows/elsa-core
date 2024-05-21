@@ -42,12 +42,12 @@ const bool useDapper = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useZipCompression = true;
+const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
-const bool useAzureServiceBusModule = false;
-const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
+const bool useAzureServiceBusModule = true;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 
@@ -64,7 +64,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
 
 // Add Elsa services.
 services

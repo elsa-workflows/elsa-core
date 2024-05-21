@@ -170,6 +170,24 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
 
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
+    
+    /// <summary>
+    /// Updates the entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="onSaving">The callback to invoke before saving the entity.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public async Task UpdateAsync(TEntity entity, Func<TDbContext, TEntity, CancellationToken, ValueTask>? onSaving, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+
+        if (onSaving != null)
+            await onSaving(dbContext, entity, cancellationToken);
+
+        var set = dbContext.Set<TEntity>();
+        set.Entry(entity).State = EntityState.Modified;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 
     /// <summary>
     /// Finds the entity matching the specified predicate.

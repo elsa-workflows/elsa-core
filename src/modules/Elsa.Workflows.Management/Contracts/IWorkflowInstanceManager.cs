@@ -42,6 +42,40 @@ public interface IWorkflowInstanceManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The workflow instance that was saved.</returns>
     Task<WorkflowInstance> SaveAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Saves the specified workflow instance.
+    /// </summary>
+    Task CreateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Maps the specified workflow state to a workflow instance and saves it.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to map to a workflow instance.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> CreateAsync(WorkflowState workflowState, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Extracts the workflow state from the specified workflow execution context, maps it to a workflow instance and saves it.
+    /// </summary>
+    /// <param name="workflowExecutionContext">The workflow execution context to extract the workflow state from.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> CreateAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates the specified workflow instance.
+    /// </summary>
+    Task UpdateAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Maps the specified workflow state to a workflow instance and updates it.
+    /// </summary>
+    /// <param name="workflowState">The workflow state to map to a workflow instance.</param>
+    /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>The workflow instance that was saved.</returns>
+    Task<WorkflowInstance> UpdateAsync(WorkflowState workflowState, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes the first workflow instance that matches the specified filter.

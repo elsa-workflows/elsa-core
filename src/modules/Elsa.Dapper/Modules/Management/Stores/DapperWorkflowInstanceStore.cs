@@ -140,6 +140,20 @@ public class DapperWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        var record = Map(instance);
+        await _store.AddAsync(record, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        var record = Map(instance);
+        await _store.UpdateAsync(record, cancellationToken);
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
