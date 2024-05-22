@@ -9,9 +9,9 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime.Distributed.Services;
 
 public class DistributedWorkflowClient(
-    string workflowInstanceId, 
-    IDistributedLockProvider distributedLockProvider, 
-    IOptions<DistributedLockingOptions> distributedLockingOptions, 
+    string workflowInstanceId,
+    IDistributedLockProvider distributedLockProvider,
+    IOptions<DistributedLockingOptions> distributedLockingOptions,
     IServiceProvider serviceProvider) : IWorkflowClient
 {
     private readonly LocalWorkflowClient _localWorkflowClient = ActivatorUtilities.CreateInstance<LocalWorkflowClient>(serviceProvider, workflowInstanceId);
@@ -25,12 +25,14 @@ public class DistributedWorkflowClient(
 
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        return await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken));
+        var result = await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(request, cancellationToken));
+        return result;
     }
 
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
-        return await WithLockAsync(async () => await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken));
+        var result = await WithLockAsync(async () => await _localWorkflowClient.CreateAndRunInstanceAsync(request, cancellationToken));
+        return result;
     }
 
     public async Task CancelAsync(CancellationToken cancellationToken = default)
@@ -47,12 +49,12 @@ public class DistributedWorkflowClient(
     {
         await _localWorkflowClient.ImportStateAsync(workflowState, cancellationToken);
     }
-    
+
     private async Task<R> WithLockAsync<R>(Func<Task<R>> func)
     {
         var lockKey = $"workflow-instance:{WorkflowInstanceId}";
         var lockTimeout = distributedLockingOptions.Value.LockAcquisitionTimeout;
-        await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout);
+        await using var @lock = await distributedLockProvider.AcquireLockAsync(lockKey, lockTimeout);
         var result = await func();
         return result;
     }

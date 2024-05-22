@@ -12,12 +12,12 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// Represents a host of a workflow instance to interact with.
 /// </summary>
+[Obsolete("Use IWorkflowRuntime and IWorkflowClient services instead.")]
 public class WorkflowHost : IWorkflowHost
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<WorkflowHost> _logger;
     private CancellationTokenSource? _linkedTokenSource;
-    private Queue<RunWorkflowOptions?> _queuedRunWorkflowOptions = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
@@ -69,13 +69,6 @@ public class WorkflowHost : IWorkflowHost
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default)
     {
-        // Re-entrancy guard. If the workflow is currently executing, queue the request and return immediately.
-        if(_linkedTokenSource != null)
-        {
-            _queuedRunWorkflowOptions.Enqueue(@params);
-            return new RunWorkflowResult(WorkflowState, Workflow, null);
-        }
-        
         if (WorkflowState.Status != WorkflowStatus.Running)
         {
             _logger.LogWarning("Attempt to resume workflow {WorkflowInstanceId} that is not in the Running state. The actual state is {ActualWorkflowStatus}", WorkflowState.Id, WorkflowState.Status);
@@ -105,12 +98,6 @@ public class WorkflowHost : IWorkflowHost
         
         _linkedTokenSource.Dispose();
         _linkedTokenSource = null;
-        
-        if (_queuedRunWorkflowOptions.Count > 0)
-        {
-            var nextRunOptions = _queuedRunWorkflowOptions.Dequeue();
-            return await RunWorkflowAsync(nextRunOptions, cancellationToken);
-        }
         
         return workflowResult;
     }

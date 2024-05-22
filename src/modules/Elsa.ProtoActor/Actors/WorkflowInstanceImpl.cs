@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
 using Elsa.ProtoActor.Snapshots;
@@ -199,21 +198,21 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
 
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
     {
-        if(_isRunning)
+        if (_isRunning)
         {
             _queuedRunWorkflowOptions.Enqueue(runWorkflowOptions);
-            return new RunWorkflowResult(default, default, null);
+            return new RunWorkflowResult(null!, null!, null);
         }
-        
+
         _isRunning = true;
         var workflowResult = await RunInternalAsync(runWorkflowOptions);
         _isRunning = false;
 
-         if (_queuedRunWorkflowOptions.Count > 0)
-         {
-             var nextRunOptions = _queuedRunWorkflowOptions.Dequeue();
-             return await RunAsync(nextRunOptions);
-         }
+        if (_queuedRunWorkflowOptions.Count > 0)
+        {
+            var nextRunOptions = _queuedRunWorkflowOptions.Dequeue();
+            return await RunAsync(nextRunOptions);
+        }
 
         return workflowResult;
     }
@@ -222,32 +221,19 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
     {
         await EnsureStateAsync();
         runWorkflowOptions.WorkflowInstanceId = _workflowInstanceId;
-        
+
         await using var scope = _scopeFactory.CreateAsyncScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
-        
-        if(!string.IsNullOrEmpty(runWorkflowOptions.BookmarkId))
-        {
-            if (workflowResult.WorkflowState.Bookmarks.Any())
-            {
-                Debugger.Break();
-            }
-        }
-        
         WorkflowState = workflowResult.WorkflowState;
-        
         await PersistStateAsync(scope, Context.CancellationToken);
+
         return workflowResult;
     }
 
     private async Task SaveSnapshotAsync()
     {
-        // var workflowState = _workflowState;
-        // if (workflowState?.Status == WorkflowStatus.Finished)
-        //     await _persistence.DeleteSnapshotsAsync(_persistence.Index);
-        // else
-        //     await _persistence.PersistSnapshotAsync(GetState());
+        await _persistence.PersistSnapshotAsync(GetState());
     }
 
     private void ApplySnapshot(Snapshot snapshot)

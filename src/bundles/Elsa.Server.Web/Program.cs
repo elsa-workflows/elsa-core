@@ -47,7 +47,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBusModule = true;
-const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 
