@@ -1,6 +1,5 @@
 using Elsa.ProtoActor.Extensions;
 using Elsa.ProtoActor.ProtoBuf;
-using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -12,7 +11,6 @@ using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
-using Proto.Persistence;
 
 namespace Elsa.ProtoActor.Actors;
 
@@ -20,7 +18,6 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly Mappers.Mappers _mappers;
-    private readonly Persistence _persistence;
     private string? _workflowInstanceId;
     private WorkflowGraph? _workflowGraph;
     private WorkflowState? _workflowState;
@@ -33,12 +30,10 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
     public WorkflowInstanceImpl(
         IContext context,
         IServiceScopeFactory scopeFactory,
-        IProvider provider,
         Mappers.Mappers mappers) : base(context)
     {
         _scopeFactory = scopeFactory;
         _mappers = mappers;
-        _persistence = Persistence.WithSnapshotting(provider, context.ClusterIdentity()!.Identity, ApplySnapshot);
     }
 
     private WorkflowGraph WorkflowGraph
@@ -53,16 +48,11 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
         set => _workflowState = value;
     }
 
-    public override async Task OnStarted()
+    public override Task OnStarted()
     {
         _linkedTokenSource = new CancellationTokenSource();
         _linkedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(Context.CancellationToken, _linkedTokenSource.Token).Token;
-        await _persistence.RecoverStateAsync();
-    }
-
-    public override async Task OnStopped()
-    {
-        await SaveSnapshotAsync();
+        return Task.CompletedTask;
     }
 
     public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
@@ -231,21 +221,6 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
         return workflowResult;
     }
 
-    private async Task SaveSnapshotAsync()
-    {
-        await _persistence.PersistSnapshotAsync(GetState());
-    }
-
-    private void ApplySnapshot(Snapshot snapshot)
-    {
-        _workflowInstanceId = ((WorkflowGrainSnapshot)snapshot.State).WorkflowInstanceId;
-    }
-
-    private object GetState()
-    {
-        return new WorkflowGrainSnapshot(_workflowInstanceId ?? throw new InvalidOperationException("Workflow instance ID is null."));
-    }
-
     private async Task EnsureStateAsync()
     {
         if (_workflowState != null)
@@ -291,7 +266,6 @@ internal class WorkflowInstanceImpl : WorkflowInstanceBase
         _workflowInstanceId = workflowState.Id;
         WorkflowGraph = workflowGraph;
         WorkflowState = workflowInstance.WorkflowState;
-        await SaveSnapshotAsync();
     }
 
     private async Task<WorkflowInstance?> FindWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
