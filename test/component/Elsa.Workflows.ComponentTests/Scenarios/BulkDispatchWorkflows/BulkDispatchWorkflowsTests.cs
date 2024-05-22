@@ -1,7 +1,6 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.ComponentTests.Scenarios.BulkDispatchWorkflows.Workflows;
-using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
@@ -23,17 +22,15 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
-
-    /// <summary>
+    
     /// Dispatches and waits for child workflows to complete.
-    /// </summary>
     [Fact]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();
         await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(DispatchAndWaitWorkflow.DefinitionId, VersionOptions.Published)
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(EmployeeGreetingWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
