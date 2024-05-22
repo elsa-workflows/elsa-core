@@ -104,28 +104,18 @@ public class BulkDispatchWorkflows : Activity
     /// </summary>
     [Port]
     public IActivity? ChildFaulted { get; set; }
-    
-    private List<string> _errors = new List<string>();
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
         var items = context.GetItemSource<object>(Items);
-        var dispatchedInstancesCount = 0L;
+        var dispatchedInstancesCount = 0;
 
         await foreach (var item in items)
         {
-            var dispatchedSuccessful = await ProcessItem(context, item);
-            if (dispatchedSuccessful)
-            {
-                dispatchedInstancesCount++;
-            }
-        }
-
-        if (_errors.Count > 1)
-        {
-            context.JournalData.Add("Error", _errors);
+            context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            dispatchedInstancesCount++;
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -150,25 +140,6 @@ public class BulkDispatchWorkflows : Activity
         {
             // Otherwise, we can complete immediately.
             await context.CompleteActivityWithOutcomesAsync("Done");
-        }
-    }
-
-    private async Task<bool> ProcessItem(ActivityExecutionContext context, object item)
-    {
-        try
-        {
-            await DispatchChildWorkflowAsync(context, item);
-            return true;
-        }
-        catch (TaskCanceledException)
-        {
-            await context.CompleteActivityWithOutcomesAsync("Canceled");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _errors.Add(ex.Message);
-            return false;
         }
     }
 
@@ -203,10 +174,10 @@ public class BulkDispatchWorkflows : Activity
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
         var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
-        
+
         if (workflowGraph == null)
             throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
-        
+
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
         var instanceId = identityGenerator.GenerateId();
         var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
@@ -222,12 +193,10 @@ public class BulkDispatchWorkflows : Activity
             Channel = channelName
         };
 
-        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
-        dispatchResponse.ThrowIfFailed();
-
+        await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
         return instanceId;
     }
-    
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
