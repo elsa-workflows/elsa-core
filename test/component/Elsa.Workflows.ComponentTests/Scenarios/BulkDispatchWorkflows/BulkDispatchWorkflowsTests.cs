@@ -30,7 +30,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         var workflowClient = await _workflowRuntime.CreateClientAsync();
         await workflowClient.CreateInstanceAsync(new CreateWorkflowInstanceRequest
         {
-            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(EmployeeGreetingWorkflow.DefinitionId, VersionOptions.Published)
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(GreetEmployeesWorkflow.DefinitionId, VersionOptions.Published)
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
