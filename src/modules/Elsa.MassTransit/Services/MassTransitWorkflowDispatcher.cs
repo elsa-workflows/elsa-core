@@ -58,12 +58,10 @@ public class MassTransitWorkflowDispatcher(
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
         {
             BookmarkId = request.BookmarkId,
-            ActivityId = request.ActivityId,
-            ActivityNodeId = request.ActivityNodeId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            ActivityHash = request.ActivityHash,
+            ActivityHandle = request.ActivityHandle,
             CorrelationId = request.CorrelationId,
-            Input = request.Input
+            Input = request.Input,
+            Properties = request.Properties
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
