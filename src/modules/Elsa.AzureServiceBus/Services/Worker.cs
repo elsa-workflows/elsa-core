@@ -49,36 +49,11 @@ public class Worker : IAsyncDisposable
     public string? Subscription { get; }
 
     /// <summary>
-    /// Maintains the number of workflows that are relying on this worker. When it goes to zero, the worker will be removed.
-    /// </summary>
-    public int RefCount
-    {
-        get => _refCount;
-        private set
-        {
-            if (value < 0)
-                throw new ArgumentException("RefCount cannot be less than zero");
-
-            _refCount = value;
-        }
-    }
-
-    /// <summary>
     /// Starts the worker.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken = default) => await _processor.StartProcessingAsync(cancellationToken);
-
-    /// <summary>
-    /// Increments the ref count.
-    /// </summary>
-    public void IncrementRefCount() => RefCount++;
-
-    /// <summary>
-    /// Decrements the ref count.
-    /// </summary>
-    public void DecrementRefCount() => RefCount--;
-
+    
     /// <summary>
     /// Disposes the worker.
     /// </summary>

@@ -46,6 +46,6 @@ public class StartWorkers(IServiceScopeFactory scopeFactory) : IHostedService
 
     private async Task EnsureWorkersAsync(IWorkerManager workerManager, IEnumerable<MessageReceivedStimulus> stimuli, CancellationToken cancellationToken)
     {
-        foreach (var payload in stimuli) await workerManager.EnsureWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
+        foreach (var payload in stimuli) await workerManager.StartWorkerAsync(payload.QueueOrTopic, payload.Subscription, cancellationToken);
     }
 }
