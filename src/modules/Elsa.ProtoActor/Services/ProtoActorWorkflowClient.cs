@@ -15,7 +15,7 @@ namespace Elsa.ProtoActor.Services;
 public class ProtoActorWorkflowClient : IWorkflowClient
 {
     private readonly Mappers.Mappers _mappers;
-    private readonly WorkflowInstanceClient _grain;
+    private readonly WorkflowInstanceClient _actorClient;
 
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
@@ -24,7 +24,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     {
         WorkflowInstanceId = workflowInstanceId;
         _mappers = mappers;
-        _grain = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
+        _actorClient = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
     }
 
     /// <inheritdoc />
@@ -34,7 +34,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
-        var response = await _grain.Create(protoRequest, cancellationToken);
+        var response = await _actorClient.Create(protoRequest, cancellationToken);
         return _mappers.CreateWorkflowInstanceResponseMapper.Map(response!);
     }
 
@@ -42,7 +42,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
-        var response = await _grain.Run(protoRequest, cancellationToken);
+        var response = await _actorClient.Run(protoRequest, cancellationToken);
         return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
     }
 
@@ -50,20 +50,20 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
-        var response = await _grain.CreateAndRun(protoRequest, cancellationToken);
+        var response = await _actorClient.CreateAndRun(protoRequest, cancellationToken);
         return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
     }
 
     /// <inheritdoc />
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
-        await _grain.Cancel(cancellationToken);
+        await _actorClient.Cancel(cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default)
     {
-        var response = await _grain.ExportState(cancellationToken);
+        var response = await _actorClient.ExportState(cancellationToken);
         return _mappers.WorkflowStateJsonMapper.Map(response!.SerializedWorkflowState);
     }
 
@@ -75,6 +75,6 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         {
             SerializedWorkflowState = protoJson
         };
-        await _grain.ImportState(request, cancellationToken);
+        await _actorClient.ImportState(request, cancellationToken);
     }
 }

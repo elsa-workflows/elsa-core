@@ -1,6 +1,7 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -19,6 +20,7 @@ public class LocalWorkflowClient(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRunner workflowRunner,
     IWorkflowCanceler workflowCanceler,
+    WorkflowStateMapper workflowStateMapper,
     ILogger<LocalWorkflowClient> logger) : IWorkflowClient
 {
     /// <inheritdoc />
@@ -126,8 +128,7 @@ public class LocalWorkflowClient(
     /// <inheritdoc />
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
-        workflowInstance.WorkflowState = workflowState;
+        var workflowInstance = workflowStateMapper.Map(workflowState)!;
         await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
     }
 
