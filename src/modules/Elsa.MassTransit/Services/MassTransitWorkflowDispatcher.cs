@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Contracts;
@@ -66,7 +65,8 @@ public class MassTransitWorkflowDispatcher(
             ActivityNodeId = request.ActivityNodeId,
             ActivityInstanceId = request.ActivityInstanceId,
             ActivityHash = request.ActivityHash,
-            CorrelationId = request.CorrelationId
+            CorrelationId = request.CorrelationId,
+            Input = request.Input
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -163,28 +163,12 @@ public class MassTransitWorkflowDispatcher(
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
 
-            if (input != null || properties != null)
-            {
-                // Need to acquire a lock on the workflow instance to prevent concurrent updates.
-                await using var distributedLock = await distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(2), cancellationToken);
-                var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null)
-                {
-                    logger.LogWarning("Workflow instance with ID '{WorkflowInstanceId}' not found", workflowInstanceId);
-                    continue;
-                }
-
-                if (input != null) workflowInstance.WorkflowState.Input.Merge(input);
-                if (properties != null) workflowInstance.WorkflowState.Properties.Merge(properties);
-
-                await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
-            }
-
             var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
             {
                 BookmarkId = bookmark.BookmarkId,
-                CorrelationId = bookmark.CorrelationId
+                CorrelationId = bookmark.CorrelationId,
+                Input = input,
+                Properties = properties
             };
             await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
         }
