@@ -47,7 +47,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBusModule = false;
-const WorkflowRuntime workflowRuntime = WorkflowRuntime.Distributed;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 
@@ -64,7 +64,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
 
 // Add Elsa services.
 services
@@ -215,6 +215,8 @@ services
                 if (useCaching)
                     runtime.UseCache();
 
+                runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
+                
                 runtime.DistributedLockProvider = _ =>
                 {
                     switch (distributedLockProviderName)
