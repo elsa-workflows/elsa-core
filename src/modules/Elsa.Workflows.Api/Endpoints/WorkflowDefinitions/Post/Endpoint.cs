@@ -48,7 +48,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
     {
         Post("/workflow-definitions");
         ConfigurePermissions("write:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)

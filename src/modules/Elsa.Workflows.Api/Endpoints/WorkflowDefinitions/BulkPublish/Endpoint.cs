@@ -23,7 +23,7 @@ internal class BulkPublish : ElsaEndpoint<Request, Response>
     {
         Post("/bulk-actions/publish/workflow-definitions/by-definition-ids");
         ConfigurePermissions("publish:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

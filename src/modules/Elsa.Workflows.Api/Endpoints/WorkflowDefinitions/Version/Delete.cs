@@ -25,7 +25,7 @@ public class DeleteVersion : ElsaEndpointWithoutRequest
     {
         Delete("workflow-definitions/{definitionId}/version/{version}");
         ConfigurePermissions("delete:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     /// <inheritdoc />

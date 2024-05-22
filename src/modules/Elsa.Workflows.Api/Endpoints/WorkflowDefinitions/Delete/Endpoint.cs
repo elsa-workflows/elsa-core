@@ -17,7 +17,7 @@ internal class Delete : ElsaEndpoint<Request>
     {
         Delete("/workflow-definitions/{definitionId}");
         ConfigurePermissions("delete:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

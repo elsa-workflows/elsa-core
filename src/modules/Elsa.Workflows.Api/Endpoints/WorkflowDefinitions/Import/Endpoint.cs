@@ -42,7 +42,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
         Verbs(FastEndpoints.Http.POST, FastEndpoints.Http.PUT);
         ConfigurePermissions("write:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     /// <inheritdoc />

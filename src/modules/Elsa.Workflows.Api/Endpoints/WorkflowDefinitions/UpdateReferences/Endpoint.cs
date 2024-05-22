@@ -23,7 +23,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
     {
         Post("/workflow-definitions/{definitionId}/update-references");
         ConfigurePermissions("publish:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

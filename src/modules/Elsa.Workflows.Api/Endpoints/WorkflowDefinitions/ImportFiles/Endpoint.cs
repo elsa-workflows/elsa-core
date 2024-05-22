@@ -40,7 +40,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
         Post("workflow-definitions/import-files");
         ConfigurePermissions("write:workflow-definitions");
         AllowFileUploads();
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     /// <inheritdoc />

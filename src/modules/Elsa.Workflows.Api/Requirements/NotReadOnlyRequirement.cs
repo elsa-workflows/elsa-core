@@ -9,21 +9,21 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Api.Requirements;
 
-public class ReadOnlyRequirement : IAuthorizationRequirement
+public class NotReadOnlyRequirement : IAuthorizationRequirement
 {
 }
 
 
 /// <inheritdoc />
 [PublicAPI]
-public class ReadOnlyRequirementHandler : AuthorizationHandler<ReadOnlyRequirement>
+public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement>
 {
     private readonly IOptions<ApiOptions> _apiOptions;
     private readonly IWorkflowDefinitionStore _store;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     /// <inheritdoc />
-    public ReadOnlyRequirementHandler(
+    public NotReadOnlyRequirementHandler(
         IOptions<ApiOptions> apiOptions,
         IWorkflowDefinitionStore store,
         IHttpContextAccessor httpContextAccessor)
@@ -34,7 +34,7 @@ public class ReadOnlyRequirementHandler : AuthorizationHandler<ReadOnlyRequireme
     }
 
     /// <inheritdoc />
-    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, ReadOnlyRequirement requirement)
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement)
     {
         if (_apiOptions.Value.IsReadOnlyMode)
         {

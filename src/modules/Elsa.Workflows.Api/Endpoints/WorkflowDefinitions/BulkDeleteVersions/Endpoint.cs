@@ -19,7 +19,7 @@ internal class BulkDeleteVersions : ElsaEndpoint<Request, Response>
     {
         Post("/bulk-actions/delete/workflow-definitions/by-id");
         ConfigurePermissions("delete:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

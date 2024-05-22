@@ -34,12 +34,12 @@ public class WorkflowsApiFeature : FeatureBase
     }
 
     /// <summary>
-    /// Enables the read-only mode which does not allow workflow edit.
+    /// Enables or disables read-only mode for resources such as workflow definitions.
     /// </summary>
     /// <returns></returns>
-    public WorkflowsApiFeature UseReadOnlyMode()
+    public WorkflowsApiFeature UseReadOnlyMode(bool enabled)
     {
-        IsReadOnlyMode = true;
+        IsReadOnlyMode = enabled;
         return this;
     }
 
@@ -62,10 +62,10 @@ public class WorkflowsApiFeature : FeatureBase
 
         Services.AddSingleton<IWorkflowDefinitionLinkService, WorkflowDefinitionLinkService>();
 
-        Services.AddScoped<IAuthorizationHandler, ReadOnlyRequirementHandler>();
+        Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>
         {
-            options.AddPolicy(AuthorizationPolicies.ReadOnlyPolicy, policy => policy.AddRequirements(new ReadOnlyRequirement()));
+            options.AddPolicy(AuthorizationPolicies.NotReadOnlyPolicy, policy => policy.AddRequirements(new NotReadOnlyRequirement()));
         });
     }
 }

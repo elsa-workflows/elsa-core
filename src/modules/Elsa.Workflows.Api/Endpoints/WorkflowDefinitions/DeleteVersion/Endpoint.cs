@@ -19,7 +19,7 @@ internal class DeleteVersion : ElsaEndpoint<Request>
     {
         Delete("/workflow-definition-versions/{id}");
         ConfigurePermissions("delete:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

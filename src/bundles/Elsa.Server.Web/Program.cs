@@ -246,10 +246,7 @@ services
             .UseWorkflowsApi(api =>
             {
                 api.AddFastEndpointsAssembly<Program>();
-                if (useReadOnlyMode)
-                {
-                    api.UseReadOnlyMode();
-                }
+                api.UseReadOnlyMode(useReadOnlyMode);
             })
             .UseRealTimeWorkflows()
             .UseCSharp(options =>

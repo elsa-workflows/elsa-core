@@ -20,7 +20,7 @@ internal class RevertVersion : ElsaEndpointWithoutRequest
     {
         Post("workflow-definitions/{definitionId}/revert/{version}");
         ConfigurePermissions("publish:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
+        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(CancellationToken ct)
