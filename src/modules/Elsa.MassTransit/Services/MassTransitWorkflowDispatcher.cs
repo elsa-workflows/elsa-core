@@ -26,7 +26,6 @@ public class MassTransitWorkflowDispatcher(
     IBookmarkHasher bookmarkHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
-    IDistributedLockProvider distributedLockProvider,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
