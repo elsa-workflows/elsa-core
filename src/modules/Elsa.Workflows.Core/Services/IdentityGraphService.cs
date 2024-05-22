@@ -1,3 +1,4 @@
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
@@ -57,31 +58,53 @@ public class IdentityGraphService : IIdentityGraphService
     public void AssignInputOutputs(IActivity activity)
     {
         var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
-        var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
+        var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
         foreach (var (inputName, input) in inputDictionary)
         {
-            var blockReference = input?.MemoryBlockReference();
-
-            if (blockReference == null!) 
-                continue;
-            
-            if (string.IsNullOrEmpty(blockReference.Id))
-                blockReference.Id = $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}";
+            AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}");
         }
-        
-        var outputs = activity.GetOutputs();
 
+        var collectionOfInputDictionary = activityDescriptor.GetCollectionOfInputProperties(activity);
+        foreach (var (inputName, collectionOfInput) in collectionOfInputDictionary)
+        {
+            if (collectionOfInput != null)
+            {
+                int i = 0;
+                foreach (Input? input in collectionOfInput)
+                {
+                    AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{++i}");
+                }
+            }
+        }
+
+        var dictionaryOfInputDictionary = activityDescriptor.GetDictionaryWithValueOfInputProperties(activity);
+        foreach (var (inputName, dictionaryWithValueOfInput) in dictionaryOfInputDictionary)
+        {
+            if (dictionaryWithValueOfInput != null)
+            {
+                int i = 0;
+                foreach (Input? input in dictionaryWithValueOfInput.Values)
+                {
+                    AssignBlockReference(input?.MemoryBlockReference(), () => $"{activity.Id}:input-{inputName.Humanize().Kebaberize()}:{++i}");
+                }
+            }
+        }
+
+        var outputs = activity.GetOutputs();
         foreach (var output in outputs)
         {
-            var blockReference = output.Value.MemoryBlockReference();
-
-            if (blockReference == null!) 
-                continue;
-            
-            if (string.IsNullOrEmpty(blockReference.Id))
-                blockReference.Id = $"{activity.Id}:output-{output.Name.Humanize().Kebaberize()}";
+            AssignBlockReference(output?.Value.MemoryBlockReference(), () => $"{activity.Id}:output-{output!.Name.Humanize().Kebaberize()}");
         }
+    }
+
+    private void AssignBlockReference(MemoryBlockReference? blockReference, Func<string> idFactory)
+    {
+        if (blockReference == null!)
+            return;
+
+        if (string.IsNullOrEmpty(blockReference.Id))
+            blockReference.Id = idFactory();
     }
 
     /// <inheritdoc />

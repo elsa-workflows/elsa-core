@@ -1,3 +1,4 @@
+using System.Collections;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 
@@ -42,7 +43,23 @@ public static class ActivityDescriptorExtensions
         var inputLookup = wrappedInputDescriptors.ToDictionary(x => x.Name, x => (Input?)x.ValueGetter(activity));
         return inputLookup;
     }
-    
+
+    /// <summary>
+    /// Returns each collection of input from the specified activity.
+    /// </summary>
+    public static IDictionary<string, ICollection?> GetCollectionOfInputProperties(this ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        return activityDescriptor.Inputs.Where(x => x.IsCollectionOfInput).ToDictionary(x => x.Name, x => (ICollection?)x.ValueGetter(activity));
+    }
+
+    /// <summary>
+    /// Returns each dictionary with input value from the specified activity.
+    /// </summary>
+    public static IDictionary<string, IDictionary?> GetDictionaryWithValueOfInputProperties(this ActivityDescriptor activityDescriptor, IActivity activity)
+    {
+        return activityDescriptor.Inputs.Where(x => x.IsDictionaryWithValueOfInput).ToDictionary(x => x.Name, x => (IDictionary?)x.ValueGetter(activity));
+    }
+
     /// <summary>
     /// Returns each input descriptor from the specified activity.
     /// </summary>

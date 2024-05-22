@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -245,6 +246,61 @@ public static class ActivityExecutionContextExtensions
             {
                 // Declare the input memory block on the current context. 
                 context.ExpressionExecutionContext.Set(memoryReference, value!);
+            }
+        }
+        else if (inputDescriptor.IsCollectionOfInput)
+        {
+            ICollection? collectionOfInput = input as ICollection;
+            if (collectionOfInput != null)
+            {
+                // create a temporary list of values - this will be serialized and added to context.ActivityState below
+                var listOfValues = new List<object?>();
+                foreach (Input? wrappedInput in collectionOfInput)
+                {
+                    var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                    var expressionExecutionContext = context.ExpressionExecutionContext;
+                    object? currentValue = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
+
+                    var memoryReference = wrappedInput?.MemoryBlockReference();
+
+                    // When input is created from an activity provider, there may be no memory block reference.
+                    if (memoryReference?.Id != null!)
+                    {
+                        // Declare the input memory block on the current context. 
+                        context.ExpressionExecutionContext.Set(memoryReference, currentValue!);
+                    }
+
+                    listOfValues.Add(currentValue);
+                }
+                value = listOfValues;
+            }
+        }
+        else if (inputDescriptor.IsDictionaryWithValueOfInput)
+        {
+            IDictionary? dictionaryWithValueOfInput = input as IDictionary;
+            if (dictionaryWithValueOfInput != null)
+            {
+                // create a temporary dictionary of values - this will be serialized and added to context.ActivityState below
+                var mapOfValues = new Dictionary<object, object?>();
+                foreach (DictionaryEntry entry in dictionaryWithValueOfInput)
+                {
+                    Input? wrappedInput = entry.Value as Input;
+                    var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                    var expressionExecutionContext = context.ExpressionExecutionContext;
+                    object? currentValue = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
+
+                    var memoryReference = wrappedInput?.MemoryBlockReference();
+
+                    // When input is created from an activity provider, there may be no memory block reference.
+                    if (memoryReference?.Id != null!)
+                    {
+                        // Declare the input memory block on the current context. 
+                        context.ExpressionExecutionContext.Set(memoryReference, currentValue!);
+                    }
+
+                    mapOfValues.Add(entry.Key, currentValue);
+                }
+                value = mapOfValues;
             }
         }
         else
