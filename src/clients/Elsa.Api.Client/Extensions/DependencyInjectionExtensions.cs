@@ -1,6 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Options;
 using Elsa.Api.Client.Resources.ActivityDescriptorOptions.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
@@ -18,8 +15,8 @@ using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Polly;
 using Refit;
+using static Elsa.Api.Client.RefitSettingsHelper;
 
 namespace Elsa.Api.Client.Extensions;
 
@@ -72,7 +69,7 @@ public static class DependencyInjectionExtensions
             ConfigureHttpClientBuilder = builderOptions.ConfigureHttpClientBuilder,
             ConfigureRetryPolicy = null
         };
-        
+
         services.AddApi<IWorkflowDefinitionsApi>(builderOptions);
         services.AddApi<IExecuteWorkflowApi>(builderOptionsWithoutRetryPolicy);
         services.AddApi<IWorkflowInstancesApi>(builderOptions);
@@ -99,11 +96,11 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The type representing the API.</typeparam>
     public static void AddApi<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
-        var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        var builder = services.AddRefitClient<T>(_ => CreateRefitSettings(), typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
         httpClientBuilderOptions?.ConfigureRetryPolicy?.Invoke(builder);
     }
-    
+
     /// <summary>
     /// Adds a refit client for the specified API type.
     /// </summary>
@@ -112,7 +109,9 @@ public static class DependencyInjectionExtensions
     /// <typeparam name="T">The type representing the API.</typeparam>
     public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
-        var builder = services.AddRefitClient<T>(CreateRefitSettings, typeof(T).Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        var builder = services
+            .AddRefitClient<T>(_ => CreateRefitSettings(), typeof(T).Name)
+            .ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
     }
 
@@ -132,7 +131,7 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static T CreateApi<T>(this IServiceProvider serviceProvider, HttpClient httpClient) where T : class
     {
-        return RestService.For<T>(httpClient, CreateRefitSettings(serviceProvider));
+        return RestService.For<T>(httpClient, CreateRefitSettings());
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)
@@ -140,26 +139,5 @@ public static class DependencyInjectionExtensions
         var options = serviceProvider.GetRequiredService<IOptions<ElsaClientOptions>>().Value;
         httpClient.BaseAddress = options.BaseAddress;
         options.ConfigureHttpClient?.Invoke(serviceProvider, httpClient);
-    }
-
-    /// <summary>
-    /// Creates a <see cref="RefitSettings"/> instance configured for Elsa. 
-    /// </summary>
-    private static RefitSettings CreateRefitSettings(IServiceProvider serviceProvider)
-    {
-        JsonSerializerOptions serializerOptions = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
-
-        serializerOptions.Converters.Add(new JsonStringEnumConverter());
-        serializerOptions.Converters.Add(new VersionOptionsJsonConverter());
-
-        var settings = new RefitSettings
-        {
-            ContentSerializer = new SystemTextJsonContentSerializer(serializerOptions),
-        };
-
-        return settings;
     }
 }

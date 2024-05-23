@@ -1,8 +1,8 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Management.Services;
 public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decoratedService, IWorkflowDefinitionCacheManager cacheManager) : IWorkflowDefinitionService
 {
     /// <inheritdoc />
-    public async Task<Workflow> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         return await decoratedService.MaterializeWorkflowAsync(definition, cancellationToken);
     }
@@ -49,30 +49,30 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionId, versionOptions);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken),
-            x => x.Identity.DefinitionId);
+            () => decoratedService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken),
+            x => x.Workflow.Identity.DefinitionId);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(string definitionVersionId, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowVersionCacheKey(definitionVersionId);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowAsync(definitionVersionId, cancellationToken),
-            x => x.Identity.DefinitionId);
+            () => decoratedService.FindWorkflowGraphAsync(definitionVersionId, cancellationToken),
+            x => x.Workflow.Identity.DefinitionId);
     }
 
     /// <inheritdoc />
-    public async Task<Workflow?> FindWorkflowAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowFilterCacheKey(filter);
         return await GetFromCacheAsync(cacheKey,
-            () => decoratedService.FindWorkflowAsync(filter, cancellationToken),
-            x => x.Identity.DefinitionId);
+            () => decoratedService.FindWorkflowGraphAsync(filter, cancellationToken),
+            x => x.Workflow.Identity.DefinitionId);
     }
 
     private async Task<T?> GetFromCacheAsync<T>(string cacheKey, Func<Task<T?>> getObjectFunc, Func<T, string> getChangeTokenKeyFunc)

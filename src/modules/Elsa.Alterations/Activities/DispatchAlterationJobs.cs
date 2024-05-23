@@ -23,12 +23,12 @@ public class DispatchAlterationJobs : CodeActivity
     {
         PlanId = new Input<string>(planId);
     }
-    
+
     /// <inheritdoc />
     public DispatchAlterationJobs([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The ID of the alteration plan.
     /// </summary>
@@ -47,7 +47,7 @@ public class DispatchAlterationJobs : CodeActivity
         var plan = await alterationPlanStore.FindAsync(planFilter, cancellationToken);
 
         if (plan == null)
-            throw new FaultException($"Alteration Plan with ID {planId} not found.");
+            throw new FaultException(AlterationFaultCodes.PlanNotFound, AlterationFaultCategories.Alteration, DefaultFaultTypes.System, $"Alteration Plan with ID {planId} not found.");
 
         // Update status.
         plan.Status = AlterationPlanStatus.Dispatching;
@@ -65,7 +65,7 @@ public class DispatchAlterationJobs : CodeActivity
         var alterationJobDispatcher = context.GetRequiredService<IAlterationJobDispatcher>();
         foreach (var jobId in alterationJobIds)
             await alterationJobDispatcher.DispatchAsync(jobId, cancellationToken);
-        
+
         // Update status.
         plan.Status = AlterationPlanStatus.Running;
         await alterationPlanStore.SaveAsync(plan, cancellationToken);

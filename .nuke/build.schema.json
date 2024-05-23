@@ -6,6 +6,9 @@
     "build": {
       "type": "object",
       "properties": {
+        "AnalyseCode": {
+          "type": "boolean"
+        },
         "Configuration": {
           "type": "string",
           "enum": [
@@ -75,6 +78,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "Analyze",
               "Clean",
               "Compile",
               "Pack",
@@ -93,6 +97,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "Analyze",
               "Clean",
               "Compile",
               "Pack",

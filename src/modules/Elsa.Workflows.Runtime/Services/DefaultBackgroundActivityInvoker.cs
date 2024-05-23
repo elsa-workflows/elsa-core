@@ -58,12 +58,12 @@ public class DefaultBackgroundActivityInvoker : IBackgroundActivityInvoker
         if (workflowState == null)
             throw new Exception("Workflow state not found");
 
-        var workflow = await _workflowDefinitionService.FindWorkflowAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
+        var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(workflowState.DefinitionId, VersionOptions.SpecificVersion(workflowState.DefinitionVersion), cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception("Workflow definition not found");
         
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflow, workflowState, cancellationTokens: cancellationToken);
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflowGraph, workflowState, cancellationTokens: cancellationToken);
         var activityNodeId = scheduledBackgroundActivity.ActivityNodeId;
         var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.First(x => x.NodeId == activityNodeId);
 

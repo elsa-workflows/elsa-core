@@ -1,0 +1,142 @@
+{
+  "id": "9178b94f961b1cf",
+  "definitionId": "189be5173f90b1f6",
+  "name": "Parent",
+  "createdAt": "2024-04-30T08:42:17.838484+00:00",
+  "version": 6,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "96f60810318a6a89",
+    "nodeId": "Workflow3:96f60810318a6a89",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "path": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "parent"
+          }
+        },
+        "supportedMethods": {
+          "typeName": "String[]",
+          "expression": {
+            "type": "Object",
+            "value": "[\u0022POST\u0022]"
+          }
+        },
+        "authorize": {
+          "typeName": "Boolean",
+          "expression": {
+            "type": "Literal",
+            "value": false
+          }
+        },
+        "policy": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal"
+          }
+        },
+        "requestTimeout": null,
+        "requestSizeLimit": null,
+        "fileSizeLimit": null,
+        "allowedFileExtensions": null,
+        "blockedFileExtensions": null,
+        "allowedMimeTypes": null,
+        "exposeRequestTooLargeOutcome": false,
+        "exposeFileTooLargeOutcome": false,
+        "exposeInvalidFileExtensionOutcome": false,
+        "exposeInvalidFileMimeTypeOutcome": false,
+        "parsedContent": null,
+        "files": null,
+        "routeData": null,
+        "queryStringData": null,
+        "headers": null,
+        "result": null,
+        "id": "7e20498ffc94dbc6",
+        "nodeId": "Workflow3:96f60810318a6a89:7e20498ffc94dbc6",
+        "name": "HttpEndpoint1",
+        "type": "Elsa.HttpEndpoint",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": true,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -520,
+              "y": -120
+            },
+            "size": {
+              "width": 176.390625,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "a3390d1f4c2594a8",
+        "workflowDefinitionVersionId": "26d186d68deb1250",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "26d186d68deb1250",
+        "id": "ed6a03040f651906",
+        "nodeId": "Workflow3:96f60810318a6a89:ed6a03040f651906",
+        "name": "Child1",
+        "type": "Child",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -236.5810546875,
+              "y": -120
+            },
+            "size": {
+              "width": 67.7734375,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "7e20498ffc94dbc6",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "ed6a03040f651906",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

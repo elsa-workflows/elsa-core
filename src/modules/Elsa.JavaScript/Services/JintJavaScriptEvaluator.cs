@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -15,11 +17,11 @@ using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
 using Jint.Runtime.Interop;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable ConvertClosureToMethodGroup
-
 namespace Elsa.JavaScript.Services;
 
 /// <summary>
@@ -28,15 +30,17 @@ namespace Elsa.JavaScript.Services;
 public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 {
     private readonly INotificationSender _mediator;
+    private readonly IMemoryCache _memoryCache;
     private readonly JintOptions _jintOptions;
     private readonly IConfiguration _configuration;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions)
+    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
     {
         _mediator = mediator;
+        _memoryCache = memoryCache;
         _jintOptions = scriptOptions.Value;
         _configuration = configuration;
     }
@@ -176,9 +180,26 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
 
-    private static object? ExecuteExpressionAndGetResult(Engine engine, string expression)
+    private object? ExecuteExpressionAndGetResult(Engine engine, string expression)
     {
-        var result = engine.Evaluate(expression);
+        var cacheKey = "jint:script:" + Hash(expression);
+
+        var parsedScript = _memoryCache.GetOrCreate(cacheKey, entry =>
+        {
+            if (_jintOptions.ScriptCacheTimeout.HasValue)
+                entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
+
+            var prepareOptions = new ScriptPreparationOptions
+            {
+                ParsingOptions = new ScriptParsingOptions
+                {
+                    AllowReturnOutsideFunction = true
+                }
+            };
+            return Engine.PrepareScript(expression, options: prepareOptions);
+        })!;
+
+        var result = engine.Evaluate(parsedScript);
         return result.ToObject();
     }
 
@@ -192,5 +213,12 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         options.Converters.Add(new JsonStringEnumConverter());
 
         return JsonSerializer.Serialize(value, options);
+    }
+    
+    private string Hash(string input)
+    {
+        var bytes = Encoding.UTF8.GetBytes(input);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash);
     }
 }

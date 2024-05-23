@@ -14,6 +14,13 @@
         <PackageReference Include="Quartz.Serialization.Json" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="7.0.18" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="8.0.4" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Quartz\Elsa.Quartz.csproj" />

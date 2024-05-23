@@ -386,14 +386,15 @@ internal class ProtoActorWorkflowRuntime : IWorkflowRuntime
             };
 
             var canStartResult = await CanStartWorkflowAsync(definitionId, startOptions);
-            var workflow = await _workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+            var workflowGraph = await _workflowDefinitionService.FindWorkflowGraphAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
-            if (workflow == null)
+            if (workflowGraph == null)
             {
                 _logger.LogWarning("Workflow version ID {DefinitionVersionId} not found", trigger.WorkflowDefinitionVersionId);
                 continue;
             }
 
+            var workflow = workflowGraph.Workflow;
             var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
             {
                 Workflow = workflow,

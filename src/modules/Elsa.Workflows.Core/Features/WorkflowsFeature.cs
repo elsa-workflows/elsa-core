@@ -127,6 +127,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowRunner, WorkflowRunner>()
             .AddScoped<IActivityVisitor, ActivityVisitor>()
             .AddScoped<IIdentityGraphService, IdentityGraphService>()
+            .AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>()
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()

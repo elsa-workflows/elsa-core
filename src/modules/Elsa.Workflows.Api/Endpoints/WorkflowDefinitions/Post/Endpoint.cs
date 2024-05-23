@@ -6,12 +6,14 @@ using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Medallion.Threading;
 using System.Text.Json;
+using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.AspNetCore.Http;
+using Elsa.Extensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
@@ -69,7 +71,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
 
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
-        var serializerOptions = _serializer.CreateOptions();
+        var serializerOptions = _serializer.GetOptions().Clone();
         
         // Ignore the root activity when serializing the workflow definition.
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());

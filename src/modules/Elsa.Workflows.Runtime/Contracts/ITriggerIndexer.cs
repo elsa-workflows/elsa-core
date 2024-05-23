@@ -12,11 +12,6 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface ITriggerIndexer
 {
     /// <summary>
-    /// Removes triggers for the specified workflow.
-    /// </summary>
-    Task<IndexedWorkflowTriggers> DeleteTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default);
-    
-    /// <summary>
     /// Removes triggers matching the specified filter.
     /// </summary>
     Task DeleteTriggersAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
@@ -30,14 +25,6 @@ public interface ITriggerIndexer
     /// Indexes triggers of the specified workflow.
     /// </summary>
     Task<IndexedWorkflowTriggers> IndexTriggersAsync(Workflow workflow, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Returns triggers for the specified workflow definition.
-    /// </summary>
-    /// <param name="definition">The workflow definition.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    /// <returns>A collection of triggers.</returns>
-    Task<IEnumerable<StoredTrigger>> GetTriggersAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Returns triggers for the specified workflow definition.

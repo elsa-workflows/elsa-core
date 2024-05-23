@@ -1,4 +1,3 @@
-using Elsa.Extensions;
 using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Contracts;
@@ -11,6 +10,7 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
+using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
@@ -32,11 +32,12 @@ public class MassTransitWorkflowDispatcher(
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
 
+        var workflow = workflowGraph.Workflow;
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
             Workflow = workflow,
@@ -63,7 +64,8 @@ public class MassTransitWorkflowDispatcher(
             ActivityNodeId = request.ActivityNodeId,
             ActivityInstanceId = request.ActivityInstanceId,
             ActivityHash = request.ActivityHash,
-            CorrelationId = request.CorrelationId
+            CorrelationId = request.CorrelationId,
+            Input = request.Input
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -106,9 +108,9 @@ public class MassTransitWorkflowDispatcher(
 
         foreach (var trigger in triggers)
         {
-            var workflow = await workflowDefinitionService.FindWorkflowAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
 
-            if (workflow == null)
+            if (workflowGraph == null)
             {
                 logger.LogWarning("Workflow definition with ID '{WorkflowDefinitionId}' not found", trigger.WorkflowDefinitionVersionId);
                 continue;
@@ -116,7 +118,7 @@ public class MassTransitWorkflowDispatcher(
 
             var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
             {
-                Workflow = workflow,
+                Workflow = workflowGraph.Workflow,
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
                 Properties = request.Properties,
@@ -160,26 +162,12 @@ public class MassTransitWorkflowDispatcher(
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
 
-            if (input != null || properties != null)
-            {
-                var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null)
-                {
-                    logger.LogWarning("Workflow instance with ID '{WorkflowInstanceId}' not found", workflowInstanceId);
-                    continue;
-                }
-
-                if (input != null) workflowInstance.WorkflowState.Input.Merge(input);
-                if (properties != null) workflowInstance.WorkflowState.Properties.Merge(properties);
-
-                await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
-            }
-
             var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
             {
                 BookmarkId = bookmark.BookmarkId,
-                CorrelationId = bookmark.CorrelationId
+                CorrelationId = bookmark.CorrelationId,
+                Input = input,
+                Properties = properties
             };
             await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
         }
