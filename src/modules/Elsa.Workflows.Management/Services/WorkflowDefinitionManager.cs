@@ -185,10 +185,11 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
         if (updatedWorkflowDefinitions.Any())
         {
-            var definitionIdsToUpdate = updatedWorkflowDefinitions.ToDictionary(x => x.Id, x => x.Options.UsableAsActivity.GetValueOrDefault());
-            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionIdsToUpdate), cancellationToken);
+            var definitionVersionsUpdates = updatedWorkflowDefinitions.Select(x => 
+                new WorkflowDefinitionVersionsUpdate(x.Id, x.DefinitionId, x.Options.UsableAsActivity.GetValueOrDefault())).ToList();
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionVersionsUpdates), cancellationToken);
             await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
-            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionIdsToUpdate), cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionVersionsUpdates), cancellationToken);
         }
 
         return updatedWorkflowDefinitions;

@@ -96,6 +96,12 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
     private void Add(ActivityDescriptor descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
     {
+        if (descriptor is null)
+        {
+            logger.LogError("Unable to add a null descriptor");
+            return;
+        }
+        
         foreach (var modifier in modifiers)
             modifier.Modify(descriptor);
 

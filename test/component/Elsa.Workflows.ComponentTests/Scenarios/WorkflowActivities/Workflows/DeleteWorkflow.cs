@@ -8,6 +8,7 @@ public class DeleteWorkflow : WorkflowBase
 {
     public static readonly string DefinitionId = Guid.NewGuid().ToString(); 
     public static readonly string Type = nameof(DeleteWorkflow); 
+    
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Name = Type;

@@ -66,7 +66,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseMassTransit(massTransit =>
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
-                    massTransit.AddConsumer<WorkflowDefinitionEventHandlers>("elsa-test-workflow-definition-updates", true);
+                    massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
+                    massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
                 elsa.UseWorkflowManagement(management =>
                 {
@@ -77,6 +78,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseWorkflowRuntime(runtime =>
                 {
                     runtime.UseMassTransitDispatcher();
+                    runtime.UseCache();
                 });
             };
         }
@@ -86,6 +88,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
             services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
+            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
         });
     }
