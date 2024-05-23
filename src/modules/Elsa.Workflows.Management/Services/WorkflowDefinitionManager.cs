@@ -184,7 +184,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         }
 
         if (updatedWorkflowDefinitions.Any())
+        {
+            var definitionIdsToUpdate = updatedWorkflowDefinitions.ToDictionary(x => x.Id, x => x.Options.UsableAsActivity.GetValueOrDefault());
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionIdsToUpdate), cancellationToken);
             await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionIdsToUpdate), cancellationToken);
+        }
 
         return updatedWorkflowDefinitions;
     }
