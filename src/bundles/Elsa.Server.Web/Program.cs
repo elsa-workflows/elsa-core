@@ -64,7 +64,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
 
 // Add Elsa services.
 services
