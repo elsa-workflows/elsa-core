@@ -17,7 +17,8 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     IConsumer<WorkflowDefinitionRetracted>,
     IConsumer<WorkflowDefinitionsDeleted>,
     IConsumer<WorkflowDefinitionVersionDeleted>,
-    IConsumer<WorkflowDefinitionVersionsDeleted>
+    IConsumer<WorkflowDefinitionVersionsDeleted>,
+    IConsumer<WorkflowDefinitionVersionsUpdated>
 {
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context)
@@ -72,6 +73,15 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task Consume(ConsumeContext<WorkflowDefinitionVersionsUpdated> context)
+    {
+        foreach (KeyValuePair<string,bool> definitionAsActivity in context.Message.DefinitionsAsActivity)
+        {
+            await UpdateDefinition(definitionAsActivity.Key, definitionAsActivity.Value);
+        }
     }
 
     private Task UpdateDefinition(string id, bool usableAsActivity)

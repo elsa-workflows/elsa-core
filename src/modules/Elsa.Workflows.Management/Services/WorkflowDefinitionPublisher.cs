@@ -250,7 +250,12 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         }
 
         if (updatedWorkflowDefinitions.Any())
+        {
+            var definitionIdsToUpdate = updatedWorkflowDefinitions.ToDictionary(x => x.Id, x => x.Options.UsableAsActivity.GetValueOrDefault());
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionIdsToUpdate), cancellationToken);
             await _workflowDefinitionStore.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionIdsToUpdate), cancellationToken);
+        }
 
         return updatedWorkflowDefinitions;
     }

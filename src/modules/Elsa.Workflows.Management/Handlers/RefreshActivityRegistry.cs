@@ -19,7 +19,8 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
     INotificationHandler<WorkflowDefinitionsDeleted>,
     INotificationHandler<WorkflowDefinitionCreated>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
-    INotificationHandler<WorkflowDefinitionVersionsDeleted>
+    INotificationHandler<WorkflowDefinitionVersionsDeleted>,
+    INotificationHandler<WorkflowDefinitionVersionsUpdated>
 {
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
@@ -74,6 +75,15 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
         }
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
+    {
+        foreach (KeyValuePair<string, bool> definitionAsActivity in notification.DefinitionsAsActivity)
+        {
+            await UpdateDefinition(definitionAsActivity.Key, definitionAsActivity.Value);
+        }
     }
 
     private Task UpdateDefinition(string id, bool? usableAsActivity)
