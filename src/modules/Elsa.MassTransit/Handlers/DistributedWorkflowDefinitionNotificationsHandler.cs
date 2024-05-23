@@ -47,6 +47,9 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkf
         distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionsDeleted(notification.Ids), cancellationToken);
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken) => 
-        distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionsUpdated(notification.DefinitionsAsActivity), cancellationToken);
+    public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
+    {
+        var updates = notification.VersionUpdate.ToDictionary(x => x.Id, x => x.UsableAsActivity);
+        await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionsUpdated(updates), cancellationToken);
+    }
 }

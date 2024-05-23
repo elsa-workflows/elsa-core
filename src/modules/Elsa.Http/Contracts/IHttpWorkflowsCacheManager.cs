@@ -31,4 +31,9 @@ public interface IHttpWorkflowsCacheManager
     /// Gets the key for a trigger change token.
     /// </summary>
     string GetTriggerChangeTokenKey(string bookmarkHash);
+    
+    /// <summary>
+    /// Compute the bookmark hash for a given path and method combination.
+    /// </summary>
+    string ComputeBookmarkHash(string path, string method);
 }

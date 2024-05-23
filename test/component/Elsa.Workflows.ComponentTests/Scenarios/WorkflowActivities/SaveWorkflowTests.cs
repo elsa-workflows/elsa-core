@@ -9,22 +9,20 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
 
 public class SaveWorkflowTests(App app) : AppComponentTest(app)
 {
-    private readonly IServiceScope _scope = app.Cluster.Pod1.Services.CreateScope();
-
-    [Theory]
+    [Theory(DisplayName = "Saving workflows updates ActivityRegistry")]
     [InlineData("Save1", true, true, true, true)]
     [InlineData("Save2", true, false, true, false)]
     [InlineData("Save3", false, true, false, false)]
     [InlineData("Save4", false, false, false, false)]
-    private async Task SaveWorkflow(string name, bool usableAsActivity, bool publish, bool expectedInRegistry, bool isBrowsable)
+    public async Task ActivityRegistry(string name, bool usableAsActivity, bool publish, bool expectedInRegistry, bool isBrowsable)
     {
-        var activityRegistry = _scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
+        var activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
         
         var descriptor = activityRegistry.Find(name);
         if (descriptor is not null)
             activityRegistry.Remove(typeof(WorkflowDefinitionActivityProvider), descriptor);
         
-        var importer = _scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionImporter>();
+        var importer = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionImporter>();
         var request = new SaveWorkflowDefinitionRequest
         {
             Model = new WorkflowDefinitionModel
@@ -52,10 +50,5 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
         {
             Assert.Null(descriptor);    
         }
-    }
-
-    protected override void OnDispose()
-    {
-        _scope.Dispose();
     }
 }
