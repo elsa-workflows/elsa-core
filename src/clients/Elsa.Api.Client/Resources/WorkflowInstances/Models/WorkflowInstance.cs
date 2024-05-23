@@ -6,7 +6,7 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 /// <summary>
 /// Represents a workflow instance.
 /// </summary>
-public record WorkflowInstance : Entity
+public class WorkflowInstance : Entity
 {
     /// <summary>
     /// The ID of the workflow definition.

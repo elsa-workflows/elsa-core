@@ -4,6 +4,7 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.UpdateReferences;
 
@@ -12,18 +13,19 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+    private readonly IAuthorizationService _authorizationService;
 
-    public UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionManager workflowDefinitionManager)
+    public UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
     {
         _store = store;
         _workflowDefinitionManager = workflowDefinitionManager;
+        _authorizationService = authorizationService;
     }
 
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/update-references");
         ConfigurePermissions("publish:workflow-definitions");
-        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
@@ -39,6 +41,14 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);
+            return;
+        }
+
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, definition, AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
             return;
         }
 

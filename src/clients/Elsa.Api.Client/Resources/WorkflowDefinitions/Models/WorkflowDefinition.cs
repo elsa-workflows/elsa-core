@@ -6,7 +6,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// <summary>
 /// Represents a linked workflow definition.
 /// </summary>
-public record WorkflowDefinition : LinkedEntity
+public class WorkflowDefinition : LinkedEntity
 {
     /// <summary>
     /// The logical ID of the workflow. This ID is the same across versions. 

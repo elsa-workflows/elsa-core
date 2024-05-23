@@ -24,6 +24,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
+using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -161,6 +162,7 @@ services
                     management.UseCache();
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
+                management.UseReadOnlyMode(useReadOnlyMode);
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -246,7 +248,6 @@ services
             .UseWorkflowsApi(api =>
             {
                 api.AddFastEndpointsAssembly<Program>();
-                api.UseReadOnlyMode(useReadOnlyMode);
             })
             .UseRealTimeWorkflows()
             .UseCSharp(options =>

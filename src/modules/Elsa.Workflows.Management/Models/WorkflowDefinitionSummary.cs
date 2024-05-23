@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Management.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionSummary : LinkedResource
+public class WorkflowDefinitionSummary
 {
     /// <summary>
     /// Creates a new instance of the <see cref="WorkflowDefinitionSummary"/> class from the specified <see cref="WorkflowDefinition"/> instance.

@@ -1,11 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Services;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 
@@ -15,25 +14,19 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 [PublicAPI]
 internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-    private readonly IApiSerializer _apiSerializer;
     private readonly IWorkflowDefinitionLinkService _linkService;
+    private readonly IAuthorizationService _authorizationService;
 
     /// <inheritdoc />
     public Import(
-        IWorkflowDefinitionService workflowDefinitionService,
         IWorkflowDefinitionImporter workflowDefinitionImporter,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
-        IApiSerializer apiSerializer,
-        IWorkflowDefinitionLinkService linkService)
+        IWorkflowDefinitionLinkService linkService,
+        IAuthorizationService authorizationService)
     {
-        _workflowDefinitionService = workflowDefinitionService;
         _workflowDefinitionImporter = workflowDefinitionImporter;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
-        _apiSerializer = apiSerializer;
         _linkService = linkService;
+        _authorizationService = authorizationService;
     }
 
     /// <inheritdoc />
@@ -42,7 +35,6 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
         Verbs(FastEndpoints.Http.POST, FastEndpoints.Http.PUT);
         ConfigurePermissions("write:workflow-definitions");
-        Policies(AuthorizationPolicies.NotReadOnlyPolicy);
     }
 
     /// <inheritdoc />
@@ -52,8 +44,16 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         var isNew = string.IsNullOrWhiteSpace(definitionId);
         var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
         var definition = result.WorkflowDefinition;
-        var updatedModel = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
-        updatedModel = _linkService.GenerateLinksForSingleEntry(updatedModel);
+
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, definition, AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var updatedModel = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(definition, cancellationToken);
 
         if (result.Succeeded)
         {

@@ -1,71 +1,165 @@
 ﻿using Elsa.Models;
-using Elsa.Workflows.Api.Options;
+using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Api.Services;
 
 public class WorkflowDefinitionLinkService : IWorkflowDefinitionLinkService
 {
-    private readonly IOptions<ApiOptions> _apiOptions;
+    private readonly IOptions<ManagementOptions> _managementOptions;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
-    public WorkflowDefinitionLinkService(IOptions<ApiOptions> apiOptions)
+    public WorkflowDefinitionLinkService(
+        IOptions<ManagementOptions> managementOptions,
+        WorkflowDefinitionMapper workflowDefinitionMapper)
     {
-        _apiOptions = apiOptions;
+        _managementOptions = managementOptions;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
-    public WorkflowDefinitionModel GenerateLinksForSingleEntry(WorkflowDefinitionModel response)
+    public async Task<LinkedWorkflowDefinitionModel> MapToLinkedWorkflowDefinitionModelAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
     {
-        response.Links.AddRange(HandleGenerateLinksForSingleEntry(response.DefinitionId, response.IsReadonly));
+        var workflowDefinitionModel = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
 
-        return response;
-    }
-
-    public List<WorkflowDefinitionModel> GenerateLinksForListOfEntries(List<WorkflowDefinitionModel> response)
-    {
-        foreach (var item in response)
+        var linkedModel = new LinkedWorkflowDefinitionModel(
+            GenerateLinksForSingleEntry(definition.DefinitionId, definition.IsReadonly))
         {
-            item.Links.AddRange(HandleGenerateLinksForSingleEntry(item.DefinitionId, item.IsReadonly));
+            Id = workflowDefinitionModel.Id,
+            DefinitionId = workflowDefinitionModel.DefinitionId,
+            Name = workflowDefinitionModel.Name,
+            Description = workflowDefinitionModel.Description,
+            CreatedAt = workflowDefinitionModel.CreatedAt,
+            Version = workflowDefinitionModel.Version,
+            ToolVersion = workflowDefinitionModel.ToolVersion,
+            Variables = workflowDefinitionModel.Variables,
+            Inputs = workflowDefinitionModel.Inputs,
+            Outputs = workflowDefinitionModel.Outputs,
+            Outcomes = workflowDefinitionModel.Outcomes,
+            CustomProperties = workflowDefinitionModel.CustomProperties,
+            IsReadonly = workflowDefinitionModel.IsReadonly,
+            IsSystem = workflowDefinitionModel.IsSystem,
+            IsLatest = workflowDefinitionModel.IsLatest,
+            IsPublished = workflowDefinitionModel.IsPublished,
+            Options = workflowDefinitionModel.Options,
+            UsableAsActivity = workflowDefinitionModel.UsableAsActivity,
+            Root = workflowDefinitionModel.Root
+        };
+
+        return linkedModel;
+    }
+
+    public PagedListResponse<LinkedWorkflowDefinitionSummary> MapToLinkedPagedListAsync(PagedListResponse<WorkflowDefinitionSummary> list)
+    {
+        var items = new List<LinkedWorkflowDefinitionSummary>();
+
+        foreach (var item in list.Items)
+        {
+            items.Add(new LinkedWorkflowDefinitionSummary
+            {
+                Links = GenerateLinksForSingleEntry(item.DefinitionId, item.IsReadonly),
+                Id = item.Id,
+                DefinitionId = item.DefinitionId,
+                Name = item.Name,
+                Description = item.Description,
+                Version = item.Version,
+                ToolVersion = item.ToolVersion,
+                IsLatest = item.IsLatest,
+                IsPublished = item.IsPublished,
+                ProviderName = item.ProviderName,
+                MaterializerName = item.MaterializerName,
+                CreatedAt = item.CreatedAt,
+                IsReadonly = item.IsReadonly
+            });
         }
 
-        return response;
+        return new PagedListResponse<LinkedWorkflowDefinitionSummary>
+        {
+            TotalCount = list.TotalCount,
+            Items = items,
+            Links = GenerateLinksForPagedList().ToArray()
+        };
     }
 
-    public PagedListResponse<WorkflowDefinitionSummary> GenerateLinksForPagedListOfEntries(PagedListResponse<WorkflowDefinitionSummary> response)
+    public async Task<List<LinkedWorkflowDefinitionModel>> MapToLinkedListAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken)
     {
-        response.Links.Add(new Link($"/workflow-definitions", "self", "GET"));
-        response.Links.Add(new Link($"/workflow-definitions/validation/is-name-unique", "is-name-unique", "GET"));
-        response.Links.Add(new Link($"/workflow-definitions/query/count", "count", "GET"));
-        response.Links.Add(new Link($"/workflow-definitions/many-by-id", "many-by-id", "GET"));
+        var models = (await _workflowDefinitionMapper.MapAsync(definitions, cancellationToken)).ToList();
 
-        if (!_apiOptions.Value.IsReadOnlyMode)
+        var result = new List<LinkedWorkflowDefinitionModel>();
+
+        foreach (var item in models)
         {
-            response.Links.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-definition-id", "bulk-delete-by-definition-id", "POST"));
-            response.Links.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-id", "bulk-delete-by-id", "POST"));
-            response.Links.Add(new Link($"/bulk-actions/publish/workflow-definitions/by-definition-ids", "bulk-publish", "POST"));
-            response.Links.Add(new Link($"/bulk-actions/retract/workflow-definitions/by-definition-ids", "bulk-retract", "POST"));
-            response.Links.Add(new Link($"/workflow-definitions/import", "import", "POST"));
-            response.Links.Add(new Link($"/workflow-definitions/import-files", "import-files", "POST"));
-            response.Links.Add(new Link($"/workflow-definitions", "create", "POST"));
+            var linkedModel = new LinkedWorkflowDefinitionModel(
+            GenerateLinksForSingleEntry(item.DefinitionId, item.IsReadonly))
+            {
+                Id = item.Id,
+                DefinitionId = item.DefinitionId,
+                Name = item.Name,
+                Description = item.Description,
+                CreatedAt = item.CreatedAt,
+                Version = item.Version,
+                ToolVersion = item.ToolVersion,
+                Variables = item.Variables,
+                Inputs = item.Inputs,
+                Outputs = item.Outputs,
+                Outcomes = item.Outcomes,
+                CustomProperties = item.CustomProperties,
+                IsReadonly = item.IsReadonly,
+                IsSystem = item.IsSystem,
+                IsLatest = item.IsLatest,
+                IsPublished = item.IsPublished,
+                Options = item.Options,
+                UsableAsActivity = item.UsableAsActivity,
+                Root = item.Root
+            };
+
+            result.Add(linkedModel);
         }
 
-        foreach (var item in response.Items)
-        {
-            item.Links.AddRange(HandleGenerateLinksForSingleEntry(item.DefinitionId, item.IsReadonly));
-        }
-
-        return response;
+        return result;
     }
 
-    private List<Link> HandleGenerateLinksForSingleEntry(string definitionId, bool definitionIsReadonly)
+    private Link[] GenerateLinksForPagedList()
     {
-        var links = new List<Link>();
+        var linksList = new List<Link>
+        {
+            new Link($"/workflow-definitions", "self", "GET"),
+            new Link($"/workflow-definitions/validation/is-name-unique", "is-name-unique", "GET"),
+            new Link($"/workflow-definitions/query/count", "count", "GET"),
+            new Link($"/workflow-definitions/many-by-id", "many-by-id", "GET")
+        };
 
-        links.Add(new Link($"/workflow-definitions/{definitionId}", "self", "GET"));
-        links.Add(new Link($"/workflow-definitions/by-definition-id/{definitionId}", "self", "GET"));
-        links.Add(new Link($"/workflow-definitions/{definitionId}/versions", "versions", "GET"));
+        if (!_managementOptions.Value.IsReadOnlyMode)
+        {
+            linksList.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-definition-id", "bulk-delete-by-definition-id", "POST"));
+            linksList.Add(new Link($"/bulk-actions/delete/workflow-definitions/by-id", "bulk-delete-by-id", "POST"));
+            linksList.Add(new Link($"/bulk-actions/publish/workflow-definitions/by-definition-ids", "bulk-publish", "POST"));
+            linksList.Add(new Link($"/bulk-actions/retract/workflow-definitions/by-definition-ids", "bulk-retract", "POST"));
+            linksList.Add(new Link($"/workflow-definitions/import", "import", "POST"));
+            linksList.Add(new Link($"/workflow-definitions/import-files", "import-files", "POST"));
+            linksList.Add(new Link($"/workflow-definitions", "create", "POST"));
+        }
 
-        if (!_apiOptions.Value.IsReadOnlyMode && !definitionIsReadonly)
+        return linksList.ToArray();
+    }
+
+    private Link[] GenerateLinksForSingleEntry(string definitionId, bool definitionIsReadonly)
+    {
+        var links = new List<Link>
+        {
+            new Link($"/workflow-definitions/{definitionId}", "self", "GET"),
+            new Link($"/workflow-definitions/by-definition-id/{definitionId}", "self", "GET"),
+            new Link($"/workflow-definitions/{definitionId}/versions", "versions", "GET"),
+            new Link($"/workflow-definitions/{definitionId}/bulk-dispatch", "bulk-dispatch", "POST"),
+            new Link($"/workflow-definitions/{definitionId}/dispatch", "dispatch", "POST"),
+            new Link($"/workflow-definitions/{definitionId}/execute", "execute", "POST"),
+            new Link($"/workflow-definitions/{definitionId}/export", "export", "POST")
+        };
+
+        if (!_managementOptions.Value.IsReadOnlyMode && !definitionIsReadonly)
         {
             links.Add(new Link($"/workflow-definitions/{definitionId}/publish", "publish", "POST"));
             links.Add(new Link($"/workflow-definitions/{definitionId}/retract", "retract", "POST"));
@@ -74,11 +168,6 @@ public class WorkflowDefinitionLinkService : IWorkflowDefinitionLinkService
             links.Add(new Link($"/workflow-definitions/{definitionId}/update-references", "update-references", "POST"));
         }
 
-        links.Add(new Link($"/workflow-definitions/{definitionId}/bulk-dispatch", "bulk-dispatch", "POST"));
-        links.Add(new Link($"/workflow-definitions/{definitionId}/dispatch", "dispatch", "POST"));
-        links.Add(new Link($"/workflow-definitions/{definitionId}/execute", "execute", "POST"));
-        links.Add(new Link($"/workflow-definitions/{definitionId}/export", "export", "POST"));
-
-        return links;
+        return links.ToArray();
     }
 }

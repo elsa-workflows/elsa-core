@@ -101,6 +101,28 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     }
 
     /// <inheritdoc />
+    public async Task<bool> DeleteVersionAsync(WorkflowDefinition definitionToDelete, CancellationToken cancellationToken)
+    {
+        if (definitionToDelete.IsPublished)
+        {
+            throw new Exception("Published version cannot be deleted before retracting it");
+        }
+
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
+
+        var filter = new WorkflowDefinitionFilter { Id = definitionToDelete.Id };
+        var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
+
+        if (!isDeleted)
+            return false;
+
+        await EnsureLastVersionIsLatestAsync(definitionToDelete.DefinitionId, cancellationToken);
+        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionToDelete), cancellationToken);
+
+        return isDeleted;
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = VersionOptions.Latest };
@@ -166,27 +188,6 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
             await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
 
         return updatedWorkflowDefinitions;
-    }
-
-    private async Task<bool> DeleteVersionAsync(WorkflowDefinition definitionToDelete, CancellationToken cancellationToken)
-    {
-        if (definitionToDelete.IsPublished)
-        {
-            throw new Exception("Published version cannot be deleted before retracting it");
-        }
-
-        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
-
-        var filter = new WorkflowDefinitionFilter { Id = definitionToDelete.Id };
-        var isDeleted = await _store.DeleteAsync(filter, cancellationToken) > 0;
-
-        if (!isDeleted)
-            return false;
-
-        await EnsureLastVersionIsLatestAsync(definitionToDelete.DefinitionId, cancellationToken);
-        await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleted(definitionToDelete), cancellationToken);
-
-        return isDeleted;
     }
 
     private async Task EnsureLastVersionIsLatestAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken)

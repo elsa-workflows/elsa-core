@@ -5,7 +5,6 @@ using Elsa.Features.Services;
 using Elsa.Http.Features;
 using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Api.Options;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Api.Services;
@@ -26,21 +25,9 @@ namespace Elsa.Workflows.Api.Features;
 [DependsOn(typeof(SasTokensFeature))]
 public class WorkflowsApiFeature : FeatureBase
 {
-    private bool IsReadOnlyMode { get; set; }
-
     /// <inheritdoc />
     public WorkflowsApiFeature(IModule module) : base(module)
     {
-    }
-
-    /// <summary>
-    /// Enables or disables read-only mode for resources such as workflow definitions.
-    /// </summary>
-    /// <returns></returns>
-    public WorkflowsApiFeature UseReadOnlyMode(bool enabled)
-    {
-        IsReadOnlyMode = enabled;
-        return this;
     }
 
     /// <inheritdoc />
@@ -55,12 +42,7 @@ public class WorkflowsApiFeature : FeatureBase
         Services.AddSerializationOptionsConfigurator<SerializationConfigurator>();
         Module.AddFastEndpointsFromModule();
 
-        Services.Configure<ApiOptions>(options =>
-        {
-            options.IsReadOnlyMode = IsReadOnlyMode;
-        });
-
-        Services.AddSingleton<IWorkflowDefinitionLinkService, WorkflowDefinitionLinkService>();
+        Services.AddScoped<IWorkflowDefinitionLinkService, WorkflowDefinitionLinkService>();
 
         Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>

@@ -1,10 +1,7 @@
-﻿using Elsa.Common.Models;
-using Elsa.Workflows.Api.Options;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
+﻿using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Options;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Api.Requirements;
@@ -16,47 +13,28 @@ public class NotReadOnlyRequirement : IAuthorizationRequirement
 
 /// <inheritdoc />
 [PublicAPI]
-public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement>
+public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement, WorkflowDefinition>
 {
-    private readonly IOptions<ApiOptions> _apiOptions;
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IOptions<ManagementOptions> _managementOptions;
 
     /// <inheritdoc />
     public NotReadOnlyRequirementHandler(
-        IOptions<ApiOptions> apiOptions,
-        IWorkflowDefinitionStore store,
-        IHttpContextAccessor httpContextAccessor)
+        IOptions<ManagementOptions> apiOptions)
     {
-        _apiOptions = apiOptions;
-        _store = store;
-        _httpContextAccessor = httpContextAccessor;
+        _managementOptions = apiOptions;
     }
 
     /// <inheritdoc />
-    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement)
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement, WorkflowDefinition resource)
     {
-        if (_apiOptions.Value.IsReadOnlyMode)
+        if (_managementOptions.Value.IsReadOnlyMode)
         {
             context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed when the read-only mode is enabled."));
         }
 
-        var definitionId = _httpContextAccessor.HttpContext?.Request.RouteValues["definitionId"]?.ToString();
-
-        if (definitionId != null)
+        if (resource != null && (resource.IsReadonly || resource.IsSystem))
         {
-            var filter = new WorkflowDefinitionFilter
-            {
-                DefinitionId = definitionId,
-                VersionOptions = VersionOptions.Latest
-            };
-
-            var definition = await _store.FindAsync(filter, _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
-
-            if (definition != null && (definition.IsReadonly || definition.IsSystem))
-            {
-                context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed for a readonly or system workflow."));
-            }
+            context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed for a readonly or system workflow."));
         }
 
         context.Succeed(requirement);
