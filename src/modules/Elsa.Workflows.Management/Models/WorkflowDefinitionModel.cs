@@ -1,4 +1,3 @@
-using Elsa.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -30,7 +29,7 @@ public record WorkflowDefinitionModel(
     [property: Obsolete("Use Options.UsableAsActivity instead")]
     bool? UsableAsActivity,
     IActivity? Root
-) : LinkedResource
+)
 {
     /// <inheritdoc />
     public WorkflowDefinitionModel() : this(

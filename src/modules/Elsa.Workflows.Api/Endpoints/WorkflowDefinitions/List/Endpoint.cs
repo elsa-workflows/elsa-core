@@ -12,7 +12,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinkService linkService) : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinitionSummary>>
+internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinkService linkService) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
 {
     public override void Configure()
     {
@@ -20,13 +20,13 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinkServi
         ConfigurePermissions("read:workflow-definitions");
     }
 
-    public override async Task<PagedListResponse<WorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
         var filter = CreateFilter(request);
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
-        var response = new PagedListResponse<WorkflowDefinitionSummary>(summaries);
-        response = linkService.GenerateLinksForPagedListOfEntries(response);
+        var pagedList = new PagedListResponse<WorkflowDefinitionSummary>(summaries);
+        var response = linkService.MapToLinkedPagedListAsync(pagedList);
         return response;
     }
 

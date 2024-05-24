@@ -1,8 +1,8 @@
 ﻿namespace Elsa.Models;
 
-public record LinkedResource(List<Link> Links)
+public record LinkedResource(Link[] Links)
 {
-    public LinkedResource() : this(new List<Link>()) { }
+    public LinkedResource() : this([]) { }
 }
 
 public record Link(string Href, string Rel, string Method);

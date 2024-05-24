@@ -1,12 +1,11 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -18,14 +17,12 @@ internal class GetManyById : ElsaEndpoint<Request>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _apiSerializer;
-    private readonly WorkflowDefinitionMapper _mapper;
     private readonly IWorkflowDefinitionLinkService _linkService;
 
-    public GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper, IWorkflowDefinitionLinkService linkService)
+    public GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, IWorkflowDefinitionLinkService linkService)
     {
         _store = store;
         _apiSerializer = apiSerializer;
-        _mapper = mapper;
         _linkService = linkService;
     }
 
@@ -43,16 +40,15 @@ internal class GetManyById : ElsaEndpoint<Request>
         };
 
         var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-        var models = (await _mapper.MapAsync(definitions, cancellationToken)).ToList();
         var serializerOptions = _apiSerializer.GetOptions().Clone();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
             serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
-        models = _linkService.GenerateLinksForListOfEntries(models);
-        var response = new ListResponse<WorkflowDefinitionModel>(models);
-        
+        var models = await _linkService.MapToLinkedListAsync(definitions, cancellationToken);
+        var response = new ListResponse<LinkedWorkflowDefinitionModel>(models);
+
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }

@@ -8,7 +8,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// Represents a serializable workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionModel : LinkedEntity
+public class WorkflowDefinitionModel : LinkedEntity
 {
     /// <summary>
     /// Gets or sets the version ID of the workflow definition.

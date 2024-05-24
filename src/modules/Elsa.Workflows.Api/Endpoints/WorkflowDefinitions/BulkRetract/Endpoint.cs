@@ -4,6 +4,7 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkRetract;
 
@@ -12,22 +13,31 @@ internal class BulkRetract : ElsaEndpoint<Request, Response>
 {
     private readonly IWorkflowDefinitionStore _store;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
+    private readonly IAuthorizationService _authorizationService;
 
-    public BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher)
+    public BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IAuthorizationService authorizationService)
     {
         _store = store;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
+        _authorizationService = authorizationService;
     }
 
     public override void Configure()
     {
         Post("/bulk-actions/retract/workflow-definitions/by-definition-ids");
         ConfigurePermissions("retract:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, null, AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
         var retracted = new List<string>();
         var notFound = new List<string>();
         var notPublished = new List<string>();

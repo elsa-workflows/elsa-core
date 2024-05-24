@@ -3,7 +3,7 @@ namespace Elsa.Api.Client.Shared.Models;
 /// <summary>
 /// Represents an entity that is versioned.
 /// </summary>
-public abstract record VersionedEntity : Entity
+public abstract class VersionedEntity : Entity
 {
     /// <summary>
     /// Gets or sets the date and time this entity was created.

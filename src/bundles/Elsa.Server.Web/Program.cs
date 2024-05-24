@@ -24,6 +24,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
+using Google.Protobuf.WellKnownTypes;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -63,7 +64,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
 
 // Add Elsa services.
 services
@@ -161,6 +162,7 @@ services
                     management.UseCache();
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
+                management.UseReadOnlyMode(useReadOnlyMode);
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -246,10 +248,6 @@ services
             .UseWorkflowsApi(api =>
             {
                 api.AddFastEndpointsAssembly<Program>();
-                if (useReadOnlyMode)
-                {
-                    api.UseReadOnlyMode();
-                }
             })
             .UseRealTimeWorkflows()
             .UseCSharp(options =>

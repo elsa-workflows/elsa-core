@@ -4,6 +4,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -14,41 +15,41 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Medallion.Threading;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
 [PublicAPI]
-internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefinitionModel>
+internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflowDefinitionModel>
 {
     private readonly IApiSerializer _serializer;
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly VariableDefinitionMapper _variableDefinitionMapper;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
     private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly IWorkflowDefinitionLinkService _linkService;
+    private readonly IAuthorizationService _authorizationService;
 
     public Post(
         IApiSerializer serializer,
         IWorkflowDefinitionPublisher workflowDefinitionPublisher,
         VariableDefinitionMapper variableDefinitionMapper,
-        WorkflowDefinitionMapper workflowDefinitionMapper,
         IDistributedLockProvider distributedLockProvider,
-        IWorkflowDefinitionLinkService linkService)
+        IWorkflowDefinitionLinkService linkService,
+        IAuthorizationService authorizationService)
     {
         _serializer = serializer;
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
         _variableDefinitionMapper = variableDefinitionMapper;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
         _distributedLockProvider = distributedLockProvider;
         _linkService = linkService;
+        _authorizationService = authorizationService;
     }
 
     public override void Configure()
     {
         Post("/workflow-definitions");
         ConfigurePermissions("write:workflow-definitions");
-        Policies(AuthorizationPolicies.ReadOnlyPolicy);
     }
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)
@@ -72,6 +73,14 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;
+        }
+
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, draft, AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
         }
 
         // Update the draft with the received model.
@@ -117,8 +126,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, WorkflowDefini
             await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }
 
-        var response = await _workflowDefinitionMapper.MapAsync(draft, cancellationToken);
-        response = _linkService.GenerateLinksForSingleEntry(response);
+        var response = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(draft, cancellationToken);
 
         if (isNew)
             await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, response, cancellation: cancellationToken);

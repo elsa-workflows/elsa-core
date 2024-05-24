@@ -26,4 +26,9 @@ public class ManagementOptions
     /// The default Log Persistence Mode to use for all the system
     /// </summary>
     public LogPersistenceMode LogPersistenceMode { get; set; }
+
+    /// <summary>
+    /// A mode that does not allow editing workflows.
+    /// </summary>
+    public bool IsReadOnlyMode { get; set; }
 }

@@ -7,7 +7,7 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// A summary of a workflow definition.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionSummary : LinkedEntity
+public class WorkflowDefinitionSummary : LinkedEntity
 {
     public string Id { get; set; }
     public string DefinitionId { get; set; }

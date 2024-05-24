@@ -122,9 +122,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.IsPublished,
             workflow.Options,
             null,
-            workflow.Root)
-        {
-        };
+            workflow.Root);
     }
 
     /// <summary>
