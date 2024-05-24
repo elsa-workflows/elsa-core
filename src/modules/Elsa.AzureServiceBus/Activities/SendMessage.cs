@@ -61,10 +61,7 @@ public class SendMessage : CodeActivity
     /// </summary>
     [Input(Category = "Advanced",
         DefaultSyntax = "Json",
-        SupportedSyntaxes = new[]
-        {
-            "JavaScript", "Json"
-        },
+        SupportedSyntaxes = ["JavaScript", "Json"],
         UIHint = InputUIHints.MultiLine)
     ]
     public Input<IDictionary<string, object>?> ApplicationProperties { get; set; } = default!;
