@@ -36,4 +36,10 @@ public class HttpActivityOptions
         "text/json", 
         "text/xml",
     };
+
+    /// <summary>
+    /// A boolean to opt-in if you want to call CompleteAsync() in the HttpResponse Activity
+    /// and not waiting for the end of the HttpMiddleware. 
+    /// </summary>
+    public Boolean WriteHttpResponseSynchronously { get; set; } = false;
 }

@@ -10,6 +10,8 @@ using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Elsa.Http.Options;
 
 namespace Elsa.Http;
 
@@ -133,8 +135,12 @@ public class WriteHttpResponse : Activity
                     await response.WriteAsync("The response includes a type that cannot be serialized.");
                 }
             }
-            await response.CompleteAsync();
         }
+
+        //Check if the configuration is set to flush immediatly the response to the caller.
+        var options = context.GetRequiredService<IOptions<HttpActivityOptions>>();
+        if (options.Value.WriteHttpResponseSynchronously)
+            await response.CompleteAsync();
 
         // Complete activity.
         await context.CompleteActivityAsync();
