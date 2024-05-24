@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -26,7 +27,7 @@ internal class BulkDeleteVersions : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, null, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {

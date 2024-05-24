@@ -3,6 +3,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -54,7 +55,7 @@ internal class Publish : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, definition, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {

@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
@@ -49,7 +50,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     /// <inheritdoc />
     public override async Task HandleAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, null, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {

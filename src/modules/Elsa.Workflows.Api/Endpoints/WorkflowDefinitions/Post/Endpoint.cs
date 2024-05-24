@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -75,7 +76,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
                 draft.DefinitionId = definitionId;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, draft, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {

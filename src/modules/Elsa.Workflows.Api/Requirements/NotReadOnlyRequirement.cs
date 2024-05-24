@@ -6,33 +6,34 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Api.Requirements;
 
-public class NotReadOnlyRequirement : IAuthorizationRequirement
-{
-}
+public record NotReadOnlyResource(WorkflowDefinition? WorkflowDefinition = default);
+
+
+public record NotReadOnlyRequirement() : IAuthorizationRequirement;
 
 
 /// <inheritdoc />
 [PublicAPI]
-public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement, WorkflowDefinition>
+public class NotReadOnlyRequirementHandler : AuthorizationHandler<NotReadOnlyRequirement, NotReadOnlyResource>
 {
     private readonly IOptions<ManagementOptions> _managementOptions;
 
     /// <inheritdoc />
     public NotReadOnlyRequirementHandler(
-        IOptions<ManagementOptions> apiOptions)
+        IOptions<ManagementOptions> managementOptions)
     {
-        _managementOptions = apiOptions;
+        _managementOptions = managementOptions;
     }
 
     /// <inheritdoc />
-    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement, WorkflowDefinition resource)
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, NotReadOnlyRequirement requirement, NotReadOnlyResource resource)
     {
         if (_managementOptions.Value.IsReadOnlyMode)
         {
             context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed when the read-only mode is enabled."));
         }
 
-        if (resource != null && (resource.IsReadonly || resource.IsSystem))
+        if (resource.WorkflowDefinition != null && (resource.WorkflowDefinition.IsReadonly || resource.WorkflowDefinition.IsSystem))
         {
             context.Fail(new AuthorizationFailureReason(this, "Workflow edit is not allowed for a readonly or system workflow."));
         }

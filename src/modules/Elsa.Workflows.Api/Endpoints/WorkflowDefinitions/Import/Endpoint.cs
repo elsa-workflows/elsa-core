@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
@@ -45,7 +46,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         var result = await ImportSingleWorkflowDefinitionAsync(model, cancellationToken);
         var definition = result.WorkflowDefinition;
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, definition, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {

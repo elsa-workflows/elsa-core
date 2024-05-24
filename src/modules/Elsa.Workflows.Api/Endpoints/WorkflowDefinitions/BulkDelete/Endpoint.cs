@@ -3,7 +3,8 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
-
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Api.Requirements;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
 [UsedImplicitly]
@@ -26,7 +27,7 @@ internal class BulkDelete : ElsaEndpoint<Request, Response>
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, null, AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
