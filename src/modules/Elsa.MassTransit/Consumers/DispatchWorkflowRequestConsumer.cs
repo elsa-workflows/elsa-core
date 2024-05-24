@@ -58,7 +58,7 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
 
-        var stimulus = message.Stimulus ?? message.BookmarkPayload ?? throw new ArgumentException("The stimulus or bookmark payload is required when triggering workflows.");
+        var stimulus = message.BookmarkPayload;
         await stimulusSender.SendAsync(message.ActivityTypeName, stimulus, options, cancellationToken);
     }
 
@@ -75,7 +75,7 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
 
-        var stimulus = message.Stimulus ?? message.BookmarkPayload ?? throw new ArgumentException("The stimulus or bookmark payload is required when resuming workflows.");
+        var stimulus = message.BookmarkPayload;
         await stimulusSender.SendAsync(message.ActivityTypeName, stimulus, stimulusMetadata, context.CancellationToken);
     }
 

@@ -9,11 +9,7 @@ public class DispatchResumeWorkflows(string activityTypeName, object stimulus)
     public string ActivityTypeName { get; init; } = activityTypeName;
 
     [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
-    [Obsolete("Use Stimulus instead.")]
-    public object? BookmarkPayload { get; init; }
-    
-    [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
-    public object? Stimulus { get; init; } = stimulus;
+    public object BookmarkPayload { get; init; } = stimulus;
 
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }
