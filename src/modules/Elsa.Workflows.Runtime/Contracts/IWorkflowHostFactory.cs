@@ -7,6 +7,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Creates <see cref="IWorkflowHost"/> objects.
 /// </summary>
+[Obsolete("Use IWorkflowRuntime, IWorkflowRunner and IWorkflowInvoker services instead.")]
 public interface IWorkflowHostFactory
 {
     /// <summary>

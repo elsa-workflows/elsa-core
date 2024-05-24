@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
+[Obsolete("Use IWorkflowRuntime, IWorkflowRunner and IWorkflowInvoker services instead.")]
 public class WorkflowHostFactory : IWorkflowHostFactory
 {
     private readonly IIdentityGenerator _identityGenerator;

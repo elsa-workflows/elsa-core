@@ -208,7 +208,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
-            .AddSingleton<IWorkflowInvoker, WorkflowInvoker>()
+            .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
             .AddScoped<IStimulusSender, StimulusSender>()
             .AddScoped<ITriggerBoundWorkflowService, TriggerBoundWorkflowService>()
             .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()
@@ -221,6 +221,9 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            
+            // Deprecated services.
+            .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
             
             // Stores.
             .AddScoped(BookmarkStore)
