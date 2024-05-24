@@ -24,7 +24,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     {
         WorkflowInstanceId = workflowInstanceId;
         _mappers = mappers;
-        _actorClient = cluster.GetNamedWorkflowGrain(WorkflowInstanceId);
+        _actorClient = cluster.GetNamedWorkflowInstanceClient(WorkflowInstanceId);
     }
 
     /// <inheritdoc />
