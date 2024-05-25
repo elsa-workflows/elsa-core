@@ -18,7 +18,6 @@ public class Worker : IAsyncDisposable
     private readonly ServiceBusProcessor _processor;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger _logger;
-    private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
