@@ -1,6 +1,7 @@
 ﻿using Elsa.KeyValues.Entities;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.Tenants.Contracts;
 using MongoDB.Driver;
 using NSubstitute;
 
@@ -13,13 +14,14 @@ public class MongoKeyValueStoreTests
     public MongoKeyValueStoreTests()
     {
         var mongoCollectionMock = Substitute.For<IMongoCollection<SerializedKeyValuePair>>();
+        var tenantResolverMock = Substitute.For<ITenantResolver>();
         mongoCollectionMock.FindOneAndReplaceAsync(
                 Arg.Any<FilterDefinition<SerializedKeyValuePair>>(),
                 Arg.Any<SerializedKeyValuePair>(),
                 Arg.Any<FindOneAndReplaceOptions<SerializedKeyValuePair>>()
             )
             .Returns(new SerializedKeyValuePair());
-        _mongoDbStore = new MongoDbStore<SerializedKeyValuePair>(mongoCollectionMock);
+        _mongoDbStore = new MongoDbStore<SerializedKeyValuePair>(mongoCollectionMock, tenantResolverMock);
     }
 
     [Fact(DisplayName = "When saving a SerializedKeyValuePair document, don't throw an exception of missing ID property")]

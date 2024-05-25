@@ -13,7 +13,7 @@ public class WorkflowDefinitionCacheManager(ICacheManager cache, IHasher hasher)
     public ICacheManager Cache => cache;
 
     /// <inheritdoc />
-    public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false) => $"WorkflowDefinition:{definitionId}:{versionOptions}:{tenantAgnostic}";
+    public string CreateWorkflowDefinitionVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"WorkflowDefinition:{definitionId}:{versionOptions}";
 
     /// <inheritdoc />
     public string CreateWorkflowDefinitionFilterCacheKey(WorkflowDefinitionFilter filter)
@@ -23,10 +23,10 @@ public class WorkflowDefinitionCacheManager(ICacheManager cache, IHasher hasher)
     }
 
     /// <inheritdoc />
-    public string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false) => $"Workflow:{definitionId}:{versionOptions}:{tenantAgnostic}";
+    public string CreateWorkflowVersionCacheKey(string definitionId, VersionOptions versionOptions) => $"Workflow:{definitionId}:{versionOptions}";
 
     /// <inheritdoc />
-    public string CreateWorkflowVersionCacheKey(string definitionVersionId, bool tenantAgnostic) => $"Workflow:{definitionVersionId}:{tenantAgnostic}";
+    public string CreateWorkflowVersionCacheKey(string definitionVersionId) => $"Workflow:{definitionVersionId}";
 
     /// <inheritdoc />
     public string CreateWorkflowFilterCacheKey(WorkflowDefinitionFilter filter)

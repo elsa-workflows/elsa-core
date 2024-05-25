@@ -26,7 +26,6 @@ public class WorkflowHost : IWorkflowHost
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
     /// </summary>
     public WorkflowHost(
-        IServiceScopeFactory serviceScopeFactory,
         WorkflowGraph workflowGraph,
         WorkflowState workflowState,
         IIdentityGenerator identityGenerator,

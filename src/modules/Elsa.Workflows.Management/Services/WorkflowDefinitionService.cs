@@ -27,24 +27,22 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter
         {
             DefinitionId = definitionId,
-            VersionOptions = versionOptions,
-            TenantAgnostic = tenantAgnostic
+            VersionOptions = versionOptions
         };
         return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
         var filter = new WorkflowDefinitionFilter
         {
-            Id = definitionVersionId,
-            TenantAgnostic = tenantAgnostic
+            Id = definitionVersionId
         };
         return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
     }
@@ -56,9 +54,9 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, tenantAgnostic, cancellationToken);
+        var definition = await FindWorkflowDefinitionAsync(definitionId, versionOptions, cancellationToken);
 
         if (definition == null)
             return null;
@@ -67,9 +65,9 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, CancellationToken cancellationToken = default)
     {
-        var definition = await FindWorkflowDefinitionAsync(definitionVersionId, tenantAgnostic, cancellationToken);
+        var definition = await FindWorkflowDefinitionAsync(definitionVersionId, cancellationToken);
 
         if (definition == null)
             return null;
@@ -78,7 +76,7 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var definition = await FindWorkflowDefinitionAsync(filter, cancellationToken);
 

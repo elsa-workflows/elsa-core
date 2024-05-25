@@ -1,6 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.State;
@@ -9,17 +9,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider, IWorkflowDefinitionService workflowDefinitionService)
+public class WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider)
     : IWorkflowHostFactory
 {
     /// <inheritdoc />
     public async Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
-        
-        if(workflow == null)
+
+        if (workflow == null)
             return default;
 
         return await CreateAsync(workflow, cancellationToken);
@@ -28,7 +27,7 @@ public class WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceP
     /// <inheritdoc />
     public Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var workflowHost = (IWorkflowHost)ActivatorUtilities.CreateInstance<WorkflowHost>(_serviceProvider, workflowGraph, workflowState);
+        var workflowHost = (IWorkflowHost)ActivatorUtilities.CreateInstance<WorkflowHost>(serviceProvider, workflowGraph, workflowState);
         return Task.FromResult(workflowHost);
     }
 
@@ -38,8 +37,8 @@ public class WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceP
         var workflow = workflowGraph.Workflow;
         var workflowState = new WorkflowState
         {
-            Id = _identityGenerator.GenerateId(),
-            DefinitionId =workflow.Identity.DefinitionId,
+            Id = identityGenerator.GenerateId(),
+            DefinitionId = workflow.Identity.DefinitionId,
             DefinitionVersion = workflow.Identity.Version
         };
 

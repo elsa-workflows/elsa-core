@@ -15,27 +15,27 @@ public class WorkflowDefinitionFilter
     /// Filter by the ID of the workflow definition.
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// Filter by the IDs of the workflow definitions.
     /// </summary>
     public ICollection<string>? Ids { get; set; }
-    
+
     /// <summary>
     /// Filter by the ID of the workflow definition.
     /// </summary>
     public string? DefinitionId { get; set; }
-    
+
     /// <summary>
     /// Filter by the IDs of the workflow definitions.
     /// </summary>
     public ICollection<string>? DefinitionIds { get; set; }
-    
+
     /// <summary>
     /// Filter by the version options.
     /// </summary>
     public VersionOptions? VersionOptions { get; set; }
-    
+
     /// <summary>
     /// Filter by the name of the workflow definition.
     /// </summary>
@@ -50,12 +50,12 @@ public class WorkflowDefinitionFilter
     /// Filter by the names of the workflow definitions.
     /// </summary>
     public ICollection<string>? Names { get; set; }
-    
+
     /// <summary>
     /// Filter by the name of the workflow definition materializer.
     /// </summary>
     public string? MaterializerName { get; set; }
-    
+
     /// <summary>
     /// Filter on workflows that are usable as activities.
     /// </summary>

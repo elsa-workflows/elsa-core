@@ -16,10 +16,10 @@ public class SetupForOracle : IEntityModelCreatingHandler
     /// <inheritdoc />
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
-        if(!dbContext.Database.IsOracle())
+        if (!dbContext.Database.IsOracle())
             return;
-        
-        // In order to use data more than 2000 char we have to use NCLOB.
+
+        // To use data more than 2000 char we have to use NCLOB.
         // In Oracle, we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
         modelBuilder.Entity<StoredTrigger>().Property("SerializedPayload").HasColumnType("NCLOB");
 
@@ -37,6 +37,6 @@ public class SetupForOracle : IEntityModelCreatingHandler
         modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedInput").HasColumnType("NCLOB");
         modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedBookmarkPayload").HasColumnType("NCLOB");
 
-        modelBuilder.Entity<SerializedKeyValuePair>().Property("Value").HasColumnType("NCLOB");
+        modelBuilder.Entity<SerializedKeyValuePair>().Property("SerializedValue").HasColumnType("NCLOB");
     }
 }

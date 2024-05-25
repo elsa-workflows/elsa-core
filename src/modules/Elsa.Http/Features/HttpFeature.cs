@@ -1,4 +1,3 @@
-using Elsa.Caching.Features;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
