@@ -1,7 +1,7 @@
 ﻿using Elsa.KeyValues.Entities;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Modules.Runtime;
-using Elsa.Tenants.Contracts;
+using Elsa.Tenants;
 using MongoDB.Driver;
 using NSubstitute;
 

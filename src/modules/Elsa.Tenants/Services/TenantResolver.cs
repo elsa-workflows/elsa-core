@@ -1,6 +1,5 @@
 ﻿using Elsa.Common.Contexts;
 using Elsa.Common.Entities;
-using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;
 

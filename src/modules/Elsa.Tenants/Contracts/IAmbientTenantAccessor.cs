@@ -1,4 +1,4 @@
-﻿namespace Elsa.Tenants.Contracts;
+﻿namespace Elsa.Tenants;
 
 /// <summary>
 /// Provides access to the current tenant ID stored in an ambient context.

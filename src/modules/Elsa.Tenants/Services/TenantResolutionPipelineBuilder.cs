@@ -1,5 +1,4 @@
 using Elsa.Common.Contracts;
-using Elsa.Tenants.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Services;

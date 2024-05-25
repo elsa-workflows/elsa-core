@@ -58,4 +58,8 @@
         </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Scenarios\Multitenancy\" />
+    </ItemGroup>
+
 </Project>

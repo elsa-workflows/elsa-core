@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.MongoDb.Extensions;
-using Elsa.Tenants.Contracts;
+using Elsa.Tenants;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;

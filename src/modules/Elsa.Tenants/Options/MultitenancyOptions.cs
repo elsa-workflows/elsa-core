@@ -1,5 +1,4 @@
 using Elsa.Common.Entities;
-using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Resolvers;
 using Elsa.Tenants.Services;

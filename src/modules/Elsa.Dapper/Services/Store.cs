@@ -5,7 +5,7 @@ using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Records;
-using Elsa.Tenants.Contracts;
+using Elsa.Tenants;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;

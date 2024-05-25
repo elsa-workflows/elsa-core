@@ -1,7 +1,6 @@
 using Elsa.Common.Abstractions;
 using Elsa.Common.Contexts;
 using Elsa.Common.Results;
-using Elsa.Tenants.Contracts;
 
 namespace Elsa.Tenants.Resolvers;
 

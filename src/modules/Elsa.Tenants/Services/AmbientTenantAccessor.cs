@@ -1,6 +1,4 @@
-﻿using Elsa.Tenants.Contracts;
-
-namespace Elsa.Tenants.Services;
+﻿namespace Elsa.Tenants.Services;
 
 /// <inheritdoc />
 public class AmbientTenantAccessor : IAmbientTenantAccessor

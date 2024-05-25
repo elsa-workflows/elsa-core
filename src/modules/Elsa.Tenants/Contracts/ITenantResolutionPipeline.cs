@@ -1,6 +1,6 @@
 using Elsa.Common.Contracts;
 
-namespace Elsa.Tenants.Contracts;
+namespace Elsa.Tenants;
 
 /// <summary>
 /// Represents a pipeline builder of tenant resolution strategies.

@@ -1,7 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Tenants.Contracts;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Resolvers;
