@@ -158,6 +158,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
+	ProjectSection(SolutionItems) = preProject
+		test\component\Directory.Build.props = test\component\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.JavaScript.UnitTests", "test\unit\Elsa.JavaScript.UnitTests\Elsa.JavaScript.UnitTests.csproj", "{0BB927FB-8C12-49B6-9150-64B733B2EBFD}"
 EndProject
@@ -232,8 +235,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Mediator", "src\common\Elsa.Mediator\Elsa.Mediator.csproj", "{28818676-F6AF-4203-8B65-BD33A50CB9A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core.UnitTests", "test\unit\Elsa.Workflows.Core.UnitTests\Elsa.Workflows.Core.UnitTests.csproj", "{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.ProtoCluster.ComponentTests", "test\component\Elsa.ProtoCluster.ComponentTests\Elsa.ProtoCluster.ComponentTests.csproj", "{B99B23D4-6D36-4A31-BE92-DE2415514C79}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.ChildWorkflows", "samples\aspnet\Elsa.Samples.AspNet.ChildWorkflows\Elsa.Samples.AspNet.ChildWorkflows.csproj", "{2EA47068-6079-4276-8776-F67DE99B568D}"
 EndProject
@@ -341,6 +342,17 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.MassTransit", "src\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj", "{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed", "src\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj", "{7EB0CFB8-B668-4F3F-898D-80411095BC2F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.ComponentTests", "test\component\Elsa.Workflows.ComponentTests\Elsa.Workflows.ComponentTests.csproj", "{34BC9836-681D-43A5-BC39-E4FEE17FC528}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "performance", "performance", "{CBB515F3-A0EF-43B5-A907-FD4E652DD66E}"
+	ProjectSection(SolutionItems) = preProject
+		test\performance\Directory.Build.props = test\performance\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.PerformanceTests", "test\performance\Elsa.Workflows.PerformanceTests\Elsa.Workflows.PerformanceTests.csproj", "{90CD37A9-C866-4D90-A3B1-8C87F53B845E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDb.UnitTests", "test\unit\Elsa.MongoDb.UnitTests\Elsa.MongoDb.UnitTests.csproj", "{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Tenants", "samples\aspnet\Elsa.Samples.AspNet.Tenants\Elsa.Samples.AspNet.Tenants.csproj", "{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}"
 EndProject
@@ -664,10 +676,6 @@ Global
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2EA47068-6079-4276-8776-F67DE99B568D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -830,6 +838,18 @@ Global
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90CD37A9-C866-4D90-A3B1-8C87F53B845E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90CD37A9-C866-4D90-A3B1-8C87F53B845E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90CD37A9-C866-4D90-A3B1-8C87F53B845E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90CD37A9-C866-4D90-A3B1-8C87F53B845E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -937,7 +957,6 @@ Global
 		{85E13383-7C39-4719-AAC0-0B357C3A97C7} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{28818676-F6AF-4203-8B65-BD33A50CB9A2} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 		{DC9CCAD0-7363-4691-B964-FF5B3AEA3F95} = {18453B51-25EB-4317-A4B3-B10518252E92}
-		{B99B23D4-6D36-4A31-BE92-DE2415514C79} = {08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}
 		{2EA47068-6079-4276-8776-F67DE99B568D} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{CA9391E3-FA3F-4F96-B6DF-25309BFE7D05} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{1B794B9C-9B8A-4D5A-9848-B51274BD1FC5} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
@@ -983,6 +1002,10 @@ Global
 		{A1FE2CA0-8EF3-4EDB-9055-DD282E374E16} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 		{BF4CDE28-F0CC-482D-8392-C1C9BB4C368F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 		{7EB0CFB8-B668-4F3F-898D-80411095BC2F} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{34BC9836-681D-43A5-BC39-E4FEE17FC528} = {08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}
+		{CBB515F3-A0EF-43B5-A907-FD4E652DD66E} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
+		{90CD37A9-C866-4D90-A3B1-8C87F53B845E} = {CBB515F3-A0EF-43B5-A907-FD4E652DD66E}
+		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection

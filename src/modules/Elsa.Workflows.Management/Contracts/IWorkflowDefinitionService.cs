@@ -1,6 +1,8 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management;
 
@@ -12,7 +14,7 @@ public interface IWorkflowDefinitionService
     /// <summary>
     /// Constructs an executable <see cref="Workflow"/> from the specified <see cref="WorkflowDefinition"/>.
     /// </summary>
-    Task<Workflow> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    Task<WorkflowGraph> MaterializeWorkflowAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Looks for a <see cref="WorkflowDefinition"/> by the specified definition ID and <see cref="VersionOptions"/>.
@@ -25,12 +27,22 @@ public interface IWorkflowDefinitionService
     Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(string definitionVersionId, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
     
     /// <summary>
+    /// Looks for a <see cref="WorkflowDefinition"/> by the specified <see cref="WorkflowDefinitionFilter"/>.
+    /// </summary>
+    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
+    
+    /// <summary>
     /// Looks for a <see cref="Workflow"/> by the specified definition ID and <see cref="VersionOptions"/>.
     /// </summary>
-    Task<Workflow?> FindWorkflowAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
+    Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionId, VersionOptions versionOptions, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Looks for a <see cref="Workflow"/> by the specified version ID.
     /// </summary>
-    Task<Workflow?> FindWorkflowAsync(string definitionVersionId, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
+    Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, bool tenantAgnostic = false, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Looks for a <see cref="Workflow"/> by the specified <see cref="WorkflowDefinitionFilter"/>.
+    /// </summary>
+    Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
 }

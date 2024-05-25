@@ -26,13 +26,14 @@ public class WorkflowHost : IWorkflowHost
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
     /// </summary>
     public WorkflowHost(
-        Workflow workflow,
+        IServiceScopeFactory serviceScopeFactory,
+        WorkflowGraph workflowGraph,
         WorkflowState workflowState,
         IIdentityGenerator identityGenerator,
         IServiceScopeFactory serviceScopeFactory,
         ILogger<WorkflowHost> logger)
     {
-        Workflow = workflow;
+        WorkflowGraph = workflowGraph;
         WorkflowState = workflowState;
         _serviceScopeFactory = serviceScopeFactory;
         _identityGenerator = identityGenerator;
@@ -40,7 +41,10 @@ public class WorkflowHost : IWorkflowHost
     }
 
     /// <inheritdoc />
-    public Workflow Workflow { get; set; }
+    public WorkflowGraph WorkflowGraph { get; }
+
+    /// <inheritdoc />
+    public Workflow Workflow => WorkflowGraph.Workflow;
 
     /// <inheritdoc />
     public WorkflowState WorkflowState { get; set; }
@@ -90,8 +94,8 @@ public class WorkflowHost : IWorkflowHost
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = @params?.IsExistingInstance == true
-            ? await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken)
-            : await workflowRunner.RunAsync(Workflow, runOptions, cancellationToken);
+            ? await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, cancellationToken)
+            : await workflowRunner.RunAsync(WorkflowGraph, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
 
@@ -133,7 +137,7 @@ public class WorkflowHost : IWorkflowHost
 
         using var scope = _serviceScopeFactory.CreateScope();
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-        var workflowResult = await workflowRunner.RunAsync(Workflow, WorkflowState, runOptions, cancellationToken);
+        var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, cancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
 

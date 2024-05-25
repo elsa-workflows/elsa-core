@@ -406,7 +406,6 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
     /// </summary>
-    [RequiresUnreferencedCode("The activity may be serialized and executed in a different context.")]
     public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
     {
         var cancellationToken = context.CancellationToken;

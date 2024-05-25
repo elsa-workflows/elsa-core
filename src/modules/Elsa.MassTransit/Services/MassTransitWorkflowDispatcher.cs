@@ -1,12 +1,17 @@
 using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
+using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
 
@@ -17,23 +22,22 @@ public class MassTransitWorkflowDispatcher(
     IBus bus,
     IEndpointChannelFormatter endpointChannelFormatter,
     IWorkflowDefinitionService workflowDefinitionService,
-    IWorkflowInstanceManager workflowInstanceManager)
+    IWorkflowInstanceManager workflowInstanceManager,
+    IBookmarkHasher bookmarkHasher,
+    ITriggerStore triggerStore,
+    IBookmarkStore bookmarkStore,
+    ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // When a request is received to execute a workflow, the initial step taken by our system is the creation of the workflow instance.
-        // The input parameters for the particular instance are immediately persisted in the database. This step is crucial for a couple of reasons:
-        // 1. Size constraint: It helps us prevent scenarios where the message size exceeds limits. Large messages cause the system to fail at the sending stage.
-        // 2. Performance: A smaller message size means less information needs to be processed and transferred, optimizing speed and efficiency.
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
 
-        // To create the instance, we need to find the workflow definition first.
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
-
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
 
+        var workflow = workflowGraph.Workflow;
         var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
         {
             Workflow = workflow,
@@ -44,13 +48,7 @@ public class MassTransitWorkflowDispatcher(
             CorrelationId = request.CorrelationId
         };
 
-        // The workflow instance is created and persisted in the database.
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
-
-        // The workflow instance is then dispatched for execution.
-        var sendEndpoint = await GetSendEndpointAsync(options);
-        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, request.TriggerActivityId);
-        await sendEndpoint.Send(message, cancellationToken);
+        await DispatchWorkflowAsync(createWorkflowInstanceRequest, request.TriggerActivityId, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -66,7 +64,8 @@ public class MassTransitWorkflowDispatcher(
             ActivityNodeId = request.ActivityNodeId,
             ActivityInstanceId = request.ActivityInstanceId,
             ActivityHash = request.ActivityHash,
-            CorrelationId = request.CorrelationId
+            CorrelationId = request.CorrelationId,
+            Input = request.Input
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -74,29 +73,104 @@ public class MassTransitWorkflowDispatcher(
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var sendEndpoint = await GetSendEndpointAsync(options);
-        await sendEndpoint.Send(new DispatchTriggerWorkflows(request.ActivityTypeName, request.BookmarkPayload)
-        {
-            CorrelationId = request.CorrelationId,
-            WorkflowInstanceId = request.WorkflowInstanceId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            Input = request.Input
-        }, cancellationToken);
+        await DispatchTriggersAsync(request, options, cancellationToken);
+        await DispatchBookmarksAsync(request, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var sendEndpoint = await GetSendEndpointAsync(options);
-        await sendEndpoint.Send(new DispatchResumeWorkflows(request.ActivityTypeName, request.BookmarkPayload)
+        var hash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, request.ActivityInstanceId);
+        var correlationId = request.CorrelationId;
+        var workflowInstanceId = request.WorkflowInstanceId;
+        var activityInstanceId = request.ActivityInstanceId;
+        var filter = new BookmarkFilter
         {
-            CorrelationId = request.CorrelationId,
-            WorkflowInstanceId = request.WorkflowInstanceId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            Input = request.Input
-        }, cancellationToken);
+            Hash = hash,
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId
+        };
+        var bookmarks = await bookmarkStore.FindManyAsync(filter, cancellationToken);
+        await DispatchBookmarksAsync(bookmarks, request.Input, null, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
+    }
+
+    private async Task DispatchTriggersAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var triggerHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload);
+        var triggerFilter = new TriggerFilter
+        {
+            Hash = triggerHash
+        };
+        var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
+
+        foreach (var trigger in triggers)
+        {
+            var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(trigger.WorkflowDefinitionVersionId, cancellationToken);
+
+            if (workflowGraph == null)
+            {
+                logger.LogWarning("Workflow definition with ID '{WorkflowDefinitionId}' not found", trigger.WorkflowDefinitionVersionId);
+                continue;
+            }
+
+            var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+            {
+                Workflow = workflowGraph.Workflow,
+                WorkflowInstanceId = request.WorkflowInstanceId,
+                Input = request.Input,
+                Properties = request.Properties,
+                CorrelationId = request.CorrelationId
+            };
+
+            await DispatchWorkflowAsync(createWorkflowInstanceRequest, trigger.ActivityId, options, cancellationToken);
+        }
+    }
+
+    private async Task DispatchWorkflowAsync(CreateWorkflowInstanceRequest createWorkflowInstanceRequest, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
+    {
+        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+        var sendEndpoint = await GetSendEndpointAsync(options);
+        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
+        await sendEndpoint.Send(message, cancellationToken);
+    }
+
+    private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
+    {
+        var correlationId = request.CorrelationId;
+        var workflowInstanceId = request.WorkflowInstanceId;
+        var activityInstanceId = request.ActivityInstanceId;
+        var bookmarkHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, activityInstanceId);
+
+        var filter = new BookmarkFilter
+        {
+            Hash = bookmarkHash,
+            CorrelationId = correlationId,
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityInstanceId = activityInstanceId
+        };
+        var bookmarks = (await bookmarkStore.FindManyAsync(filter, cancellationToken)).ToList();
+
+        await DispatchBookmarksAsync(bookmarks, request.Input, request.Properties, options, cancellationToken);
+    }
+
+    private async Task DispatchBookmarksAsync(IEnumerable<StoredBookmark> bookmarks, IDictionary<string, object>? input, IDictionary<string, object>? properties, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
+    {
+        foreach (var bookmark in bookmarks)
+        {
+            var workflowInstanceId = bookmark.WorkflowInstanceId;
+
+            var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
+            {
+                BookmarkId = bookmark.BookmarkId,
+                CorrelationId = bookmark.CorrelationId,
+                Input = input,
+                Properties = properties
+            };
+            await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
+        }
     }
 
     private async Task<ISendEndpoint> GetSendEndpointAsync(DispatchWorkflowOptions? options = default)

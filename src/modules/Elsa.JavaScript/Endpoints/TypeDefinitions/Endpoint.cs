@@ -3,8 +3,8 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
-using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Endpoints.TypeDefinitions;
@@ -35,15 +35,16 @@ internal class Get : ElsaEndpoint<Request>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var workflow = await GetWorkflowAsync(request.WorkflowDefinitionId, cancellationToken);
+        var workflowGraph = await GetWorkflowGraphAsync(request.WorkflowDefinitionId, cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
         {
             AddError($"Workflow definition {request.WorkflowDefinitionId} not found");
             await SendErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
+        var workflow = workflowGraph.Workflow;
         var typeDefinitionContext = new TypeDefinitionContext(workflow, request.ActivityTypeName, request.PropertyName, cancellationToken);
         var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(typeDefinitionContext);
         var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
@@ -52,9 +53,9 @@ internal class Get : ElsaEndpoint<Request>
         await SendBytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
     }
 
-    private async Task<Workflow?> GetWorkflowAsync(string workflowDefinitionId, CancellationToken cancellationToken)
+    private async Task<WorkflowGraph?> GetWorkflowGraphAsync(string workflowDefinitionId, CancellationToken cancellationToken)
     {
-        return await _workflowDefinitionService.FindWorkflowAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
+        return await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
     }
 }
 

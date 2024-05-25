@@ -1,5 +1,5 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Enums;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
@@ -11,39 +11,28 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class DefaultActivityExecutionMapper : IActivityExecutionMapper
+public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options) : IActivityExecutionMapper
 {
-    private LogPersistenceMode _serverLogPersistenceMode;
     private const string LogPersistenceModeKey = "logPersistenceMode";
-
-    public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
-    {
-        _serverLogPersistenceMode = options.Value.LogPersistenceMode;
-    }
 
     /// <inheritdoc />
     public ActivityExecutionRecord Map(ActivityExecutionContext source)
     {
         /*
-        * { 
-        *      "logPersistenceMode": {
-        *          "default": "default",
-        *          "inputs": { k : v }, 
-        *          "outputs": { k: v }
-        *          }
-        *  }
-        */
+         * {
+         *      "logPersistenceMode": {
+         *          "default": "default",
+         *          "inputs": { k : v },
+         *          "outputs": { k: v }
+         *          }
+         *  }
+         */
 
-        var workflowPersistenceProperty =
-            GetDefaultPersistenceMode(source.WorkflowExecutionContext.Workflow.CustomProperties, () => _serverLogPersistenceMode);
-            
-       
-        var activityPersistenceProperties = source.Activity.CustomProperties
-            .GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var activityPersistencePropertyDefault =
-            GetDefaultPersistenceMode(source.Activity.CustomProperties, () => workflowPersistenceProperty);
-            
- 
+        var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
+        var workflowPersistenceProperty = GetDefaultPersistenceMode(workflow.CustomProperties, () => options.Value.LogPersistenceMode);
+        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
+        var activityPersistencePropertyDefault = GetDefaultPersistenceMode(source.Activity.CustomProperties, () => workflowPersistenceProperty);
+
         // Get any outcomes that were added to the activity execution context.
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
         var payload = new Dictionary<string, object>();
@@ -73,8 +62,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return default;
         });
 
-        outputs = StorePropertyUsingPersistanceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-        var activityState = StorePropertyUsingPersistanceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault );
+        outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+        var activityState = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
 
         return new ActivityExecutionRecord
         {
@@ -97,32 +86,28 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         };
     }
 
-    private static LogPersistenceMode GetDefaultPersistenceMode(IDictionary<string, object> customProperties,Func<LogPersistenceMode> defaultFactory)
+    private static LogPersistenceMode GetDefaultPersistenceMode(IDictionary<string, object> customProperties, Func<LogPersistenceMode> defaultFactory)
     {
-        var properties = customProperties
-            .GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
-        var persistencePropertyDefault = properties!
-            .GetValueOrDefault("default", defaultFactory);
+        var properties = customProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceModeKey, () => new Dictionary<string, object?>());
+        var persistencePropertyDefault = properties!.GetValueOrDefault("default", defaultFactory);
 
-        if(persistencePropertyDefault == LogPersistenceMode.Default) 
+        if (persistencePropertyDefault == LogPersistenceMode.Inherit)
             return defaultFactory();
-        return persistencePropertyDefault; 
+        return persistencePropertyDefault;
     }
 
-    private static Dictionary<string,object?> StorePropertyUsingPersistanceMode(IDictionary<string,object?> inputs
-        , IDictionary<string,object> persistenceModeConfiguration
-        , LogPersistenceMode defaultLogPersistenceMode = LogPersistenceMode.Exclude)
+    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> inputs,
+        IDictionary<string, object> persistenceModeConfiguration,
+        LogPersistenceMode defaultLogPersistenceMode)
     {
         var result = new Dictionary<string, object?>();
 
         foreach (var input in inputs)
         {
             var persistence = persistenceModeConfiguration.GetValueOrDefault(input.Key.Camelize(), () => defaultLogPersistenceMode);
-            if (persistence.Equals(LogPersistenceMode.Include) 
-                || (persistence.Equals(LogPersistenceMode.Default) && defaultLogPersistenceMode == LogPersistenceMode.Include)
-                )
+            if (persistence.Equals(LogPersistenceMode.Include)
+                || (persistence.Equals(LogPersistenceMode.Inherit) && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit))
                 result.Add(input.Key, input.Value);
-            
         }
 
         return result;

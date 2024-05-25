@@ -11,32 +11,32 @@ namespace Elsa.Workflows.Management.Handlers;
 /// This service listens for specific notifications and triggers cache invalidation operations accordingly.
 /// </remarks>
 [UsedImplicitly]
-public class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManager workflowDefinitionCacheManager) :
-    INotificationHandler<WorkflowDefinitionPublished>,
-    INotificationHandler<WorkflowDefinitionRetracted>,
-    INotificationHandler<WorkflowDefinitionDeleted>,
-    INotificationHandler<WorkflowDefinitionsDeleted>
+internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManager workflowDefinitionCacheManager) :
+    INotificationHandler<WorkflowDefinitionPublishing>,
+    INotificationHandler<WorkflowDefinitionRetracting>,
+    INotificationHandler<WorkflowDefinitionDeleting>,
+    INotificationHandler<WorkflowDefinitionsDeleting>
 {
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionPublishing notification, CancellationToken cancellationToken)
     {
         await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionRetracting notification, CancellationToken cancellationToken)
     {
         await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionDeleting notification, CancellationToken cancellationToken)
     {
         await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken)
     {
         foreach (var definitionId in notification.DefinitionIds)
             await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);

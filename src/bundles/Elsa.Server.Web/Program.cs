@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
+using Elsa.Caching.Options;
 using Elsa.Common.DistributedLocks.Noop;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
@@ -11,6 +12,7 @@ using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
+using Elsa.Features.Services;
 using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
@@ -20,10 +22,12 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
+using Elsa.Workflows;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Stores;
+using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
@@ -41,7 +45,7 @@ const bool useMassTransit = true;
 const bool useZipCompression = true;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
-const bool useCachingStores = true;
+const bool useCaching = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = true;
@@ -59,7 +63,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
 
 // Add Elsa services.
 services
@@ -152,8 +156,10 @@ services
                 if (useMassTransit)
                     management.UseMassTransitDispatcher();
 
-                if (useCachingStores)
-                    management.UseCachingStores();
+                if (useCaching)
+                    management.UseCache();
+
+                management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -200,8 +206,8 @@ services
                     runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
 
-                if (useCachingStores)
-                    runtime.UseCachingStores();
+                if (useCaching)
+                    runtime.UseCache();
 
                 runtime.DistributedLockProvider = _ =>
                 {
@@ -265,6 +271,9 @@ services
             .UseHttp(http =>
             {
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
+
+                if (useCaching)
+                    http.UseCache();
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
@@ -314,7 +323,7 @@ services
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 4;
+                        bus.PrefetchCount = 100;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
                         bus.MaxConcurrentCalls = 32;
                         bus.MaxDeliveryCount = 8;
@@ -361,7 +370,10 @@ services
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
         elsa.AddFastEndpointsAssembly<Program>();
+        ConfigureForTest?.Invoke(elsa);
     });
+
+services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 
 services.AddHealthChecks();
 services.AddControllers();
@@ -408,3 +420,15 @@ app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();
+
+/// <summary>
+/// The main entry point for the application made public for end to end testing.
+/// </summary>
+[UsedImplicitly]
+public partial class Program
+{
+    /// <summary>
+    /// Set by the test runner to configure the module for testing.
+    /// </summary>
+    public static Action<IModule>? ConfigureForTest { get; set; }
+}

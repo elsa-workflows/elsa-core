@@ -32,7 +32,7 @@ public interface IApiSerializer
     /// Returns the serializer options.
     /// </summary>
     /// <returns>The serializer options.</returns>
-    JsonSerializerOptions CreateOptions();
+    JsonSerializerOptions GetOptions();
 
     /// <summary>
     /// Applies the serializer options.

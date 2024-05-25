@@ -156,7 +156,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         if (filter.WorkflowSubStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.SubStatus).Query(filter.WorkflowSubStatus.ToString()!));
 
         if (string.IsNullOrWhiteSpace(filter.SearchTerm))
-            return descriptor.MatchAll();
+            return descriptor.MatchAll(new MatchAllQuery());
 
         return descriptor
             .QueryString(c => c

@@ -98,7 +98,8 @@ public class WorkflowDefinitionMapper
     /// <returns>The mapped <see cref="Workflow"/>.</returns>
     public async Task<WorkflowDefinitionModel> MapAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default)
     {
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflowGraph = await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        var workflow = workflowGraph.Workflow;
         var variables = _variableDefinitionMapper.Map(workflow.Variables).ToList();
 
         return new(
@@ -120,7 +121,7 @@ public class WorkflowDefinitionMapper
             workflowDefinition.IsLatest,
             workflowDefinition.IsPublished,
             workflow.Options,
-            default,
+            null,
             workflow.Root);
     }
     
@@ -152,7 +153,7 @@ public class WorkflowDefinitionMapper
             workflow.Publication.IsLatest,
             workflow.Publication.IsPublished,
             workflow.Options,
-            default,
+            null,
             workflow.Root);
     }
 }

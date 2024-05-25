@@ -303,7 +303,7 @@ public class WriteFileHttpResponse : Activity
         var httpContext = httpContextAccessor.HttpContext;
 
         if (httpContext == null)
-            throw new FaultException("Cannot execute in a non-HTTP context");
+            throw new FaultException(HttpFaultCodes.NoHttpContext, HttpFaultCategories.Http, DefaultFaultTypes.System, "Cannot execute in a non-HTTP context");
 
         await WriteResponseAsync(context, httpContext);
     }

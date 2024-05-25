@@ -1,4 +1,5 @@
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.Runtime.Results;
 using Elsa.Workflows.State;
@@ -11,9 +12,14 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowHost
 {
     /// <summary>
-    /// The workflow definition.
+    /// The workflow graph.
     /// </summary>
-    Workflow Workflow { get; set; }
+    WorkflowGraph WorkflowGraph { get; }
+    
+    /// <summary>
+    /// The workflow.
+    /// </summary>
+    Workflow Workflow { get; }
 
     /// <summary>
     /// The workflow state.

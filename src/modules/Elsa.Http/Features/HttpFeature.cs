@@ -34,7 +34,7 @@ namespace Elsa.Http.Features;
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
-[DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(HttpJavaScriptFeature))]
 public class HttpFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -58,7 +58,7 @@ public class HttpFeature : FeatureBase
     public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
 
     /// <summary>
-    /// A delegate that is invoked when an HTTP workflow faults. 
+    /// A delegate that is invoked when an HTTP workflow faults.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
 
@@ -153,14 +153,13 @@ public class HttpFeature : FeatureBase
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
             .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
-            .AddScoped<IHttpWorkflowsCacheManager, HttpWorkflowsCacheManager>()
+            .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
 
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
-            .AddNotificationHandler<InvalidateHttpWorkflowsCache>()
 
             // Content parsers.
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
@@ -194,6 +193,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IDownloadableContentHandler, FormFileDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
 
             // File caches.
             .AddScoped(FileCache)

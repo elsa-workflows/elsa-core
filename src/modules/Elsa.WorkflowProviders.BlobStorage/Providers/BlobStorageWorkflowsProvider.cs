@@ -56,6 +56,7 @@ public class BlobStorageWorkflowsProvider : IWorkflowsProvider
         var options = new ListOptions
         {
             Recurse = true,
+            BrowseFilter = x => x.Name.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || x.Name.EndsWith(".elsa", StringComparison.OrdinalIgnoreCase)
         };
 
         var blobStorage = _blobStorageProvider.GetBlobStorage();

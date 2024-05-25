@@ -18,7 +18,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     /// <inheritdoc />
     public string Serialize(object model)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(model, options);
     }
 
@@ -28,7 +28,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     /// <inheritdoc />
     public T Deserialize<T>(string serializedModel)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<T>(serializedModel, options)!;
     }
 
@@ -44,7 +44,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
     }
 
-    JsonSerializerOptions IApiSerializer.CreateOptions() => base.CreateOptions();
+    JsonSerializerOptions IApiSerializer.GetOptions() => GetOptions();
 
     JsonSerializerOptions IApiSerializer.ApplyOptions(JsonSerializerOptions options)
     {

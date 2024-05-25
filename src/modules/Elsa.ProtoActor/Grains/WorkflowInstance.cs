@@ -79,12 +79,14 @@ internal class WorkflowInstance : WorkflowInstanceBase
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
 
-        // Load the workflow definition.
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(_definitionId, VersionOptions.SpecificVersion(_version), cancellationToken);
+        // Get the workflow.
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(_definitionId, VersionOptions.SpecificVersion(_version), cancellationToken);
 
-        if (workflow == null)
+        if (workflowGraph == null)
             throw new Exception("Workflow definition is no longer available");
 
+        var workflow = workflowGraph.Workflow;
+        
         // Create an initial workflow state.
         if (_workflowState == null!)
         {
@@ -97,7 +99,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
 
         // Create a workflow host.
         var workflowHostFactory = scope.ServiceProvider.GetRequiredService<IWorkflowHostFactory>();
-        _workflowHost = await workflowHostFactory.CreateAsync(workflow, _workflowState, cancellationToken);
+        _workflowHost = await workflowHostFactory.CreateAsync(workflowGraph, _workflowState, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -413,7 +415,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
     {
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
 
         if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");
@@ -435,7 +437,7 @@ internal class WorkflowInstance : WorkflowInstanceBase
         var versionOptions = VersionOptions.SpecificVersion(workflowState.DefinitionVersion);
         using var scope = _scopeFactory.CreateScope();
         var workflowDefinitionService = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowAsync(definitionId, versionOptions, cancellationToken);
+        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
 
         if (workflow == null)
             throw new Exception("Specified workflow definition and version does not exist");

@@ -19,7 +19,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public string Serialize(IAlteration alteration)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(alteration, options);
     }
 
@@ -27,7 +27,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public string SerializeMany(IEnumerable<IAlteration> alterations)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(alterations.ToArray(), options);
     }
 
@@ -35,7 +35,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public IAlteration Deserialize(string json)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<IAlteration>(json, options)!;
     }
 
@@ -43,7 +43,7 @@ public class AlterationSerializer : ConfigurableSerializer, IAlterationSerialize
     [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]
     public IEnumerable<IAlteration> DeserializeMany(string json)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<IAlteration[]>(json, options)!;
     }
 }

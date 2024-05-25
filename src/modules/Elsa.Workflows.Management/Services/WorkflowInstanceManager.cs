@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
@@ -20,6 +20,12 @@ public class WorkflowInstanceManager(
     IWorkflowStateSerializer workflowStateSerializer)
     : IWorkflowInstanceManager
 {
+    /// <inheritdoc />
+    public async Task<WorkflowInstance?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
+    {
+        return await store.FindAsync(id, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task SaveAsync(WorkflowInstance workflowInstance, CancellationToken cancellationToken = default)
     {

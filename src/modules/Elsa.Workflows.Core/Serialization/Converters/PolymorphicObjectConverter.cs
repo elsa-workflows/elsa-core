@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Dynamic;
+using System.Reflection;
+using System.Runtime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
@@ -29,7 +31,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var newOptions = new JsonSerializerOptions(options);
+        var newOptions = options.Clone();
 
         if (reader.TokenType != JsonTokenType.StartObject && reader.TokenType != JsonTokenType.StartArray)
             return ReadPrimitive(ref reader, newOptions);
@@ -47,7 +49,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             {
                 return JsonSerializer.Deserialize(ref reader, targetType, newOptions)!;
             }
-            catch (NotSupportedException e)
+            catch (Exception e) when (e is NotSupportedException or TargetException)
             {
                 return default!;
             }
@@ -115,7 +117,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             throw new InvalidOperationException($"Cannot determine the element type of array '{targetType}'.");
 
         var model = JsonElement.ParseValue(ref reader);
-        var referenceResolver = (options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
+        var referenceResolver = (newOptions.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
 
         if (model.TryGetProperty(RefPropertyName, out var refProperty))
         {
@@ -166,7 +168,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             return;
         }
 
-        var newOptions = new JsonSerializerOptions(options);
+        var newOptions = options.Clone();
         var type = value.GetType();
 
         if (type.IsPrimitive || value is string or decimal or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
@@ -194,7 +196,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         // Determine if the value is going to be serialized for the first time.
         // Later on, we need to know this information to determine if we need to write the type name or not, so that we can reconstruct the actual type when deserializing.
         var shouldWriteTypeField = true;
-        var referenceResolver = (CustomPreserveReferenceResolver?)(options.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
+        var referenceResolver = (CustomPreserveReferenceResolver?)(newOptions.ReferenceHandler as CrossScopedReferenceHandler)?.GetResolver();
 
         if (referenceResolver != null)
         {

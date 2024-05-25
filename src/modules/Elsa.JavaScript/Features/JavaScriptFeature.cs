@@ -1,3 +1,4 @@
+using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
@@ -24,6 +25,7 @@ namespace Elsa.JavaScript.Features;
 /// </summary>
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
+[DependsOn(typeof(MemoryCacheFeature))]
 public class JavaScriptFeature : FeatureBase
 {
     /// <inheritdoc />

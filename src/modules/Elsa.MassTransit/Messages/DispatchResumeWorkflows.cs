@@ -3,6 +3,7 @@ using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 
+[Obsolete("This message is no longer used and will be removed in a future version.")]
 public class DispatchResumeWorkflows(string activityTypeName, object bookmarkPayload)
 {
     public string ActivityTypeName { get; init; } = activityTypeName;
