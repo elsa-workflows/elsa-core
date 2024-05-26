@@ -6,7 +6,7 @@ using static System.Int32;
 namespace Elsa.Dapper.Migrations.Runtime;
 
 /// <inheritdoc />
-[Migration(20002, "Elsa:Runtime:V3.2")]
+[Migration(20003, "Elsa:Runtime:V3.2")]
 [PublicAPI]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class V3_2 : Migration
