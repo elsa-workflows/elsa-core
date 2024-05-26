@@ -13,7 +13,6 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.AspNetCore.Http;
-using Elsa.Extensions;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 

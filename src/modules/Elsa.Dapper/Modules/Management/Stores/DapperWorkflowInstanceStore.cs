@@ -27,7 +27,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(WorkflowInstanceRecord)")]
     public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await _store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
         return record == null ? null : Map(record);
     }
 
@@ -46,7 +46,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(Page<WorkflowInstanceRecord>)")]
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var page = await _store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return Map(page);
     }
 
@@ -54,7 +54,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(IEnumerable<WorkflowInstanceRecord>)")]
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
         return Map(records).ToList();
     }
 
@@ -62,7 +62,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(IEnumerable<WorkflowInstanceRecord>)")]
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var records = await _store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
         return Map(records).ToList();
     }
 
@@ -130,21 +130,21 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = Map(instance);
-        await _store.SaveAsync(record, cancellationToken);
+        await store.SaveAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = Map(instance);
-        await _store.AddAsync(record, cancellationToken);
+        await store.AddAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         var record = Map(instance);
-        await _store.UpdateAsync(record, cancellationToken);
+        await store.UpdateAsync(record, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -152,7 +152,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         var records = Map(instances);
-        await _store.SaveManyAsync(records, cancellationToken);
+        await store.SaveManyAsync(records, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -203,7 +203,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private WorkflowInstance Map(WorkflowInstanceRecord source)
     {
-        var workflowState = _workflowStateSerializer.Deserialize(source.WorkflowState);
+        var workflowState = workflowStateSerializer.Deserialize(source.WorkflowState);
         return new WorkflowInstance
         {
             Id = source.Id,
@@ -227,7 +227,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private WorkflowInstanceRecord Map(WorkflowInstance source)
     {
-        var workflowState = _workflowStateSerializer.Serialize(source.WorkflowState);
+        var workflowState = workflowStateSerializer.Serialize(source.WorkflowState);
         return new WorkflowInstanceRecord
         {
             Id = source.Id,

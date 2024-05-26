@@ -1,5 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
@@ -8,16 +8,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 /// Deletes a specific version of a workflow definition.
 /// </summary>
 [PublicAPI]
-public class DeleteVersion : ElsaEndpointWithoutRequest
+public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager) : ElsaEndpointWithoutRequest
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-
-    /// <inheritdoc />
-    public DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -31,7 +23,7 @@ public class DeleteVersion : ElsaEndpointWithoutRequest
         var definitionId = Route<string>("definitionId")!;
         var version = Route<int>("version");
         
-        var result = await _workflowDefinitionManager.DeleteVersionAsync(definitionId, version, ct);
+        var result = await workflowDefinitionManager.DeleteVersionAsync(definitionId, version, ct);
         
         if (!result)
         {

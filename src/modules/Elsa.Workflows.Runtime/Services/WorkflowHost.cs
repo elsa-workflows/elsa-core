@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
@@ -23,6 +23,7 @@ public class WorkflowHost : IWorkflowHost
     /// Initializes a new instance of the <see cref="WorkflowHost"/> class.
     /// </summary>
     public WorkflowHost(
+        IServiceScopeFactory serviceScopeFactory,
         WorkflowGraph workflowGraph,
         WorkflowState workflowState,
         ILogger<WorkflowHost> logger)

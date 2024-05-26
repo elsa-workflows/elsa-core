@@ -39,7 +39,6 @@ using Proto.Persistence.SqlServer;
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.Dapper;
 const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
-const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -50,7 +49,7 @@ const bool useCaching = true;
 const bool useAzureServiceBusModule = false;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = true;
 
 var builder = WebApplication.CreateBuilder(args);

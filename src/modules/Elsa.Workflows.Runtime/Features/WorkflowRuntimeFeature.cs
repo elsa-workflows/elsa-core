@@ -199,7 +199,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
-            .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
+            .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)

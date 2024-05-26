@@ -1,7 +1,5 @@
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scheduling.Tasks;

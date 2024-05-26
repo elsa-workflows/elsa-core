@@ -412,8 +412,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task UpdateAsync(T record, CancellationToken cancellationToken = default)
     {
-        using var connection = _dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(_dbConnectionProvider.Dialect).Insert(TableName, record);
+        using var connection = dbConnectionProvider.GetConnection();
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Insert(TableName, record);
         await query.ExecuteAsync(connection);
     }
 

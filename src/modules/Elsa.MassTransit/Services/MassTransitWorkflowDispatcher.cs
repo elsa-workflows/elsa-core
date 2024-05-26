@@ -2,7 +2,7 @@ using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;

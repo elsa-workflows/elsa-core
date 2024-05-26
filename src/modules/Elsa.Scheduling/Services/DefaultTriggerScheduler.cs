@@ -1,10 +1,8 @@
-using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Scheduling.Services;

@@ -1,6 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;

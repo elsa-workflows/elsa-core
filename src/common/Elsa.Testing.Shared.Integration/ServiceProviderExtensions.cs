@@ -94,7 +94,7 @@ public static class ServiceProviderExtensions
             {
                 var runRequest = new RunWorkflowInstanceRequest
                 {
-                    BookmarkId = bookmark.BookmarkId
+                    BookmarkId = bookmark.Id
                 };
                 response = await workflowClient.RunInstanceAsync(runRequest);
             }

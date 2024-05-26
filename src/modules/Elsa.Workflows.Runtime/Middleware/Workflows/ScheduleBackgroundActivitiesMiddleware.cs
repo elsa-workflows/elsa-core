@@ -22,8 +22,9 @@ public class ScheduleBackgroundActivitiesMiddleware(
     {
         await Next(context);
         
-        var workflowExecutionContext = context;
         var cancellationToken = context.CancellationToken;
+        var workflowExecutionContext = context;
+        var tenantId = context.Workflow.Identity.TenantId;
 
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
@@ -49,16 +50,19 @@ public class ScheduleBackgroundActivitiesMiddleware(
             workflowExecutionContext.Bookmarks.Add(bookmark);
 
             // Update the bookmark.
-            var storedBookmark = new StoredBookmark(
-                bookmark.Id,
-                bookmark.Name,
-                bookmark.Hash,
-                workflowExecutionContext.Id,
-                bookmark.CreatedAt,
-                bookmark.ActivityInstanceId,
-                workflowExecutionContext.CorrelationId,
-                bookmark.Payload
-            );
+            var storedBookmark = new StoredBookmark
+            {
+                Id = bookmark.Id,
+                TenantId = tenantId,
+                ActivityInstanceId = bookmark.ActivityInstanceId,
+                ActivityTypeName = bookmark.Name,
+                Hash = bookmark.Hash,
+                WorkflowInstanceId = workflowExecutionContext.Id,
+                CreatedAt = bookmark.CreatedAt,
+                CorrelationId = workflowExecutionContext.CorrelationId,
+                Payload = bookmark.Payload,
+                Metadata = bookmark.Metadata,
+            };
          
             await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }

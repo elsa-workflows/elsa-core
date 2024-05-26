@@ -1,4 +1,4 @@
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 

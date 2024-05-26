@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
-using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
@@ -39,9 +38,9 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             var request = new ScheduleExistingWorkflowInstanceRequest
             {
                 WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.BookmarkId
+                BookmarkId = bookmark.Id
             };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.BookmarkId, request, resumeAt, cancellationToken);
+            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
         }
 
         // Schedule each StartAt bookmark.
@@ -52,9 +51,9 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             var request = new ScheduleExistingWorkflowInstanceRequest
             {
                 WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.BookmarkId
+                BookmarkId = bookmark.Id
             };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.BookmarkId, request, executeAt, cancellationToken);
+            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, executeAt, cancellationToken);
         }
 
         // Schedule each Timer bookmark.
@@ -65,9 +64,9 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             var request = new ScheduleExistingWorkflowInstanceRequest
             {
                 WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.BookmarkId
+                BookmarkId = bookmark.Id
             };
-            await _workflowScheduler.ScheduleAtAsync(bookmark.BookmarkId, request, resumeAt, cancellationToken);
+            await _workflowScheduler.ScheduleAtAsync(bookmark.Id, request, resumeAt, cancellationToken);
         }
 
         // Schedule each Cron bookmark.
@@ -78,9 +77,9 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             var request = new ScheduleExistingWorkflowInstanceRequest
             {
                 WorkflowInstanceId = bookmark.WorkflowInstanceId,
-                BookmarkId = bookmark.BookmarkId
+                BookmarkId = bookmark.Id
             };
-            await _workflowScheduler.ScheduleCronAsync(bookmark.BookmarkId, request, cronExpression, cancellationToken);
+            await _workflowScheduler.ScheduleCronAsync(bookmark.Id, request, cronExpression, cancellationToken);
         }
     }
 

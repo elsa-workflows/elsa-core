@@ -13,11 +13,11 @@ using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -195,7 +195,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             Input = input,
             CorrelationId = correlationId,
             ActivityHandle = bookmark.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(bookmark.ActivityInstanceId) : null,
-            BookmarkId = bookmark.BookmarkId
+            BookmarkId = bookmark.Id
         };
 
         await ExecuteWorkflowAsync(httpContext, runWorkflowParams, bookmarkPayload, workflow, input);

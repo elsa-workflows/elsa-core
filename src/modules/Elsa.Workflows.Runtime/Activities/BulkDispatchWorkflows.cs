@@ -7,6 +7,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -15,7 +16,6 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
 using JetBrains.Annotations;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Activities;
