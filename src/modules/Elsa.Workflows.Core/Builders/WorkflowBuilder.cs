@@ -33,6 +33,9 @@ public class WorkflowBuilder : IWorkflowBuilder
     public string? DefinitionId { get; set; }
 
     /// <inheritdoc />
+    public string? TenantId { get; set; }
+
+    /// <inheritdoc />
     public int Version { get; set; } = 1;
 
     /// <inheritdoc />
@@ -75,6 +78,13 @@ public class WorkflowBuilder : IWorkflowBuilder
     public IWorkflowBuilder WithDefinitionId(string definitionId)
     {
         DefinitionId = definitionId;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithTenantId(string tenantId)
+    {
+        TenantId = tenantId;
         return this;
     }
 
@@ -218,8 +228,9 @@ public class WorkflowBuilder : IWorkflowBuilder
     {
         var definitionId = string.IsNullOrEmpty(DefinitionId) ? _identityGenerator.GenerateId() : DefinitionId;
         var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
+        var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
-        var identity = new WorkflowIdentity(definitionId, Version, id);
+        var identity = new WorkflowIdentity(definitionId, Version, id, tenantId);
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);
