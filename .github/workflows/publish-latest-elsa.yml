@@ -115,32 +115,32 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18.12.1
-          registry-url: 'https://npm/pkg.github.com'
+          registry-url: 'https://npm.pkg.github.com'
           scope: '@world-of-workflows'
 
       - run: npm publish *.tgz
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.elsa_publish }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  #publish_npm_release:
-  #  name: Publish to npm
-  #  needs: build_and_pack
-  #  runs-on: ubuntu-latest
-  #  if: ${{ github.event_name == 'release' }}
-  #  steps:
-  #    - name: Download NPM Package
-  #     uses: actions/download-artifact@v3
-  #      with:
-  #       name: designer-npm-package
+  publish_npm_release:
+    name: Publish to npm
+    needs: build_and_pack
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'release' }}
+    steps:
+      - name: Download NPM Package
+        uses: actions/download-artifact@v3
+        with:
+         name: designer-npm-package
 
-#      - uses: actions/setup-node@v3
- #       with:
-  #        node-version: 18.12.1
-   #       registry-url: 'https://registry.npmjs.org'
+      - uses: actions/setup-node@v3
+        with:
+         node-version: 18.12.1
+         registry-url: 'https://npm.pkg.github.com'
 
-    #  - run: npm publish *.tgz
-     #   env:
-      #    NODE_AUTH_TOKEN: ${{ secrets.elsa_publish }}
+      - run: npm publish *.tgz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish_nuget_preview:
     name: Publish Nuget (Preview)
@@ -154,7 +154,7 @@ jobs:
           name: elsa-nuget-package
       
       - name: Publish Nuget Packages to MyGet
-        run: dotnet nuget push *.nupkg -k ${{ secrets.elsa_publish }} -s "https://github.com/world-of-workflows/elsa-workflows" --skip-duplicate
+        run: dotnet nuget push *.nupkg -k ${{ secrets.elsa_GITHUB_TOKEN }} -s "https://github.com/world-of-workflows/elsa-workflows" --skip-duplicate
 
 #  publish_nuget_release:
 #    name: Publish to Nuget

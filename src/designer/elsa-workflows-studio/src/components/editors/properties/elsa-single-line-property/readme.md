@@ -7,11 +7,12 @@
 
 ## Properties
 
-| Property             | Attribute | Description | Type                         | Default     |
-| -------------------- | --------- | ----------- | ---------------------------- | ----------- |
-| `activityModel`      | --        |             | `ActivityModel`              | `undefined` |
-| `propertyDescriptor` | --        |             | `ActivityPropertyDescriptor` | `undefined` |
-| `propertyModel`      | --        |             | `ActivityDefinitionProperty` | `undefined` |
+| Property             | Attribute     | Description | Type                         | Default     |
+| -------------------- | ------------- | ----------- | ---------------------------- | ----------- |
+| `activityModel`      | --            |             | `ActivityModel`              | `undefined` |
+| `isEncypted`         | `is-encypted` |             | `boolean`                    | `undefined` |
+| `propertyDescriptor` | --            |             | `ActivityPropertyDescriptor` | `undefined` |
+| `propertyModel`      | --            |             | `ActivityDefinitionProperty` | `undefined` |
 
 
 ## Dependencies

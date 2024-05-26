@@ -15,6 +15,19 @@
 | `serverUrl` | `server-url` |             | `string`        | `undefined` |
 
 
+## Methods
+
+### `loadWorkflowDefinitions() => Promise<void>`
+
+
+
+#### Returns
+
+Type: `Promise<void>`
+
+
+
+
 ## Dependencies
 
 ### Used by

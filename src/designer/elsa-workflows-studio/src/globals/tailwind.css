@@ -2510,6 +2510,10 @@ select {
   left: 0.5rem;
 }
 
+.elsa-top-10 {
+  top: 2.5rem;
+}
+
 .elsa-bottom-10 {
   bottom: 2.5rem;
 }
@@ -2653,12 +2657,16 @@ select {
   margin-top: 4rem;
 }
 
-.elsa--mt-2 {
-  margin-top: -0.5rem;
-}
-
 .elsa-mb-2 {
   margin-bottom: 0.5rem;
+}
+
+.-elsa-mr-1 {
+  margin-right: -0.25rem;
+}
+
+.elsa--mt-2 {
+  margin-top: -0.5rem;
 }
 
 .-elsa-ml-0\.5 {
@@ -2675,10 +2683,6 @@ select {
 
 .elsa-ml-0 {
   margin-left: 0px;
-}
-
-.-elsa-mr-1 {
-  margin-right: -0.25rem;
 }
 
 .elsa-ml-3\.5 {
@@ -12427,10 +12431,6 @@ svg.jtk-connector.jtk-hover path {
 
   .sm\:elsa-w-full {
     width: 100%;
-  }
-
-  .sm\:elsa-max-w-4xl {
-    max-width: 56rem;
   }
 
   .sm\:elsa-max-w-md {

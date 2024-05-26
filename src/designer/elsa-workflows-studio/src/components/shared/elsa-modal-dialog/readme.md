@@ -5,6 +5,13 @@
 <!-- Auto Generated Below -->
 
 
+## Properties
+
+| Property      | Attribute      | Description | Type     | Default  |
+| ------------- | -------------- | ----------- | -------- | -------- |
+| `dialogWidth` | `dialog-width` |             | `string` | `'56em'` |
+
+
 ## Events
 
 | Event    | Description | Type               |
