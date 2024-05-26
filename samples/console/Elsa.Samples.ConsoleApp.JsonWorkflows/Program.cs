@@ -13,7 +13,7 @@ services.AddElsa();
 // Build service container.
 var serviceProvider = services.BuildServiceProvider();
 
-// Populate registries. This is only necessary for applications  that are not using hosted services.
+// Populate registries. This is only necessary for applications that are not using hosted services.
 await serviceProvider.PopulateRegistriesAsync();
 
 // Import a workflow from a JSON file.

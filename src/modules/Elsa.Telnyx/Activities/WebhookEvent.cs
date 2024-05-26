@@ -46,11 +46,11 @@ public class WebhookEvent : Activity<Payload>
         else
         {
             var eventType = EventType;
-            var payload = new WebhookEventBookmarkPayload(eventType);
+            var payload = new WebhookEventStimulus(eventType);
 
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type
             });

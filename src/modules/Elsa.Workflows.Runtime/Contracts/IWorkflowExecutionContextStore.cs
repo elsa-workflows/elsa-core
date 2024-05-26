@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Stores <see cref="WorkflowExecutionContext"/> records.

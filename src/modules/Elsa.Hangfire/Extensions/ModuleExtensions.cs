@@ -1,6 +1,5 @@
 using Elsa.Features.Services;
 using Elsa.Hangfire.Features;
-using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Features;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;

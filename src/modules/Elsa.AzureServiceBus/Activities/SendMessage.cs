@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Elsa.Common.Contracts;
 using Elsa.Common.Services;
@@ -7,6 +8,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 
 namespace Elsa.AzureServiceBus.Activities;
@@ -22,7 +24,7 @@ public class SendMessage : CodeActivity
     public SendMessage([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
-    
+
     /// <summary>
     /// The contents of the message to send.
     /// </summary>
@@ -53,15 +55,16 @@ public class SendMessage : CodeActivity
     /// The formatter to use when serializing the message body.
     /// </summary>
     public Input<Type?> FormatterType { get; set; } = default!;
+
     /// <summary>
     /// The application properties to embed with the Service Bus Message
     /// </summary>
-    [Input(Category = "Advanced", 
-        DefaultSyntax = "Json", 
-        SupportedSyntaxes = new[] { "JavaScript", "Json" }, 
+    [Input(Category = "Advanced",
+        DefaultSyntax = "Json",
+        SupportedSyntaxes = ["JavaScript", "Json"],
         UIHint = InputUIHints.MultiLine)
-        ]
-    public Input<IDictionary<string, object>?> ApplicationProperties { get; set; } = default;
+    ]
+    public Input<IDictionary<string, object>?> ApplicationProperties { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -79,14 +82,20 @@ public class SendMessage : CodeActivity
 
             // TODO: Maybe expose additional members?
         };
-        if (context.Get(ApplicationProperties) != null)
-            foreach (var property in context.Get(ApplicationProperties))
-                message.ApplicationProperties.Add(property.Key, ((System.Text.Json.JsonElement)property.Value).GetString());
 
-        var client = context.GetRequiredService<ServiceBusClient>();
+        var applicationProperties = ApplicationProperties.GetOrDefault(context);
 
-        await using var sender = client.CreateSender(queueOrTopic);
-        await sender.SendMessageAsync(message, cancellationToken);
+        if (applicationProperties != null)
+            foreach (var property in applicationProperties)
+                message.ApplicationProperties.Add(property.Key, ((JsonElement)property.Value).GetString());
+
+        context.DeferTask(async () =>
+        {
+            var client = context.GetRequiredService<ServiceBusClient>();
+
+            await using var sender = client.CreateSender(queueOrTopic);
+            await sender.SendMessageAsync(message, cancellationToken);
+        });
     }
 
     private async ValueTask<BinaryData> SerializeMessageBodyAsync(ActivityExecutionContext context, object value, CancellationToken cancellationToken)

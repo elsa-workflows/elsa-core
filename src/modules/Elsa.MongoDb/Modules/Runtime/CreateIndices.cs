@@ -19,7 +19,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
             CreateActivityExecutionLogIndices(scope, cancellationToken),
             CreateWorkflowBookmarkIndices(scope, cancellationToken),
             CreateWorkflowTriggerIndices(scope, cancellationToken),
-            CreateWorkflowInboxIndices(scope, cancellationToken),
             CreateKeyValueIndices(scope, cancellationToken)
         );
     }
@@ -129,29 +128,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                     },
                     cancellationToken));
     }
-
-    private static Task CreateWorkflowInboxIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
-    {
-        var collection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowInboxMessage>>();
-        if (collection == null) return Task.CompletedTask;
-
-        return IndexHelpers.CreateAsync(
-            collection,
-            async (col, indexBuilder) =>
-                await col.Indexes.CreateManyAsync(
-                    new List<CreateIndexModel<WorkflowInboxMessage>>
-                    {
-                        new(indexBuilder.Ascending(x => x.ActivityTypeName)),
-                        new(indexBuilder.Ascending(x => x.Hash)),
-                        new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
-                        new(indexBuilder.Ascending(x => x.CorrelationId)),
-                        new(indexBuilder.Ascending(x => x.CreatedAt)),
-                        new(indexBuilder.Ascending(x => x.ExpiresAt)),
-                        new(indexBuilder.Ascending(x => x.TenantId))
-                    },
-                    cancellationToken));
-    }
-
+    
     private Task CreateKeyValueIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var keyValuePairCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<SerializedKeyValuePair>>();

@@ -2,7 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
-using Elsa.Scheduling.Contracts;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.Logging;
@@ -29,7 +29,6 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     /// <inheritdoc />
     public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
-        // Select Timer, StartAt and Cron triggers.
         var triggerList = triggers.ToList();
         var timerTriggers = triggerList.Filter<Activities.Timer>();
         var startAtTriggers = triggerList.Filter<StartAt>();
@@ -40,10 +39,9 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         {
             var (startAt, interval) = trigger.GetPayload<TimerTriggerPayload>();
             var input = new { StartAt = startAt, Interval = interval }.ToDictionary();
-            var request = new DispatchWorkflowDefinitionRequest
+            var request = new ScheduleNewWorkflowInstanceRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -55,10 +53,9 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         {
             var executeAt = trigger.GetPayload<StartAtPayload>().ExecuteAt;
             var input = new { ExecuteAt = executeAt }.ToDictionary();
-            var request = new DispatchWorkflowDefinitionRequest
+            var request = new ScheduleNewWorkflowInstanceRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -72,10 +69,9 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             var payload = trigger.GetPayload<CronTriggerPayload>();
             var cronExpression = payload.CronExpression;
             var input = new { CronExpression = cronExpression }.ToDictionary();
-            var request = new DispatchWorkflowDefinitionRequest
+            var request = new ScheduleNewWorkflowInstanceRequest
             {
-                DefinitionId = trigger.WorkflowDefinitionId,
-                VersionOptions = VersionOptions.Published,
+                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
@@ -85,7 +81,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             }
             catch (FormatException ex)
             {
-                _logger.LogWarning($"Cron expression format error: {ex.Message}. CronExpression: {cronExpression}");
+                _logger.LogWarning("Cron expression format error: {ExMessage}. CronExpression: {CronExpression}", ex.Message, cronExpression);
             }
         }
     }
@@ -94,20 +90,11 @@ public class DefaultTriggerScheduler : ITriggerScheduler
     public async Task UnscheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
         var triggerList = triggers.ToList();
-
-        // Select all Timer triggers.
         var timerTriggers = triggerList.Filter<Activities.Timer>();
-
-        // Select all StartAt triggers.
         var startAtTriggers = triggerList.Filter<StartAt>();
-
-        // Select all Cron triggers.
         var cronTriggers = triggerList.Filter<Cron>();
-
-        // Concatenate the filtered triggers.
         var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers);
-
-        // Unschedule each trigger.
+        
         foreach (var trigger in filteredTriggers)
             await _workflowScheduler.UnscheduleAsync(trigger.Id, cancellationToken);
     }

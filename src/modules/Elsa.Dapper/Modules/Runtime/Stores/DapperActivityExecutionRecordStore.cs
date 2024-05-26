@@ -5,6 +5,7 @@ using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;

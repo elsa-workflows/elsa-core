@@ -1,6 +1,4 @@
-using Elsa.Workflows.Runtime.Models;
-
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Invokes activities from a background worker within the context of its workflow instance.

@@ -81,8 +81,8 @@ public class DialAndWait : Activity<CallPayload>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var response = await DialAsync(context);
-        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, response.CallControlId);
-        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, response.CallControlId);
+        var answeredBookmark = new WebhookEventStimulus(WebhookEventTypes.CallAnswered, response.CallControlId);
+        var hangupBookmark = new WebhookEventStimulus(WebhookEventTypes.CallHangup, response.CallControlId);
         
         context.CreateBookmark(answeredBookmark, OnCallAnswered, false);
         context.CreateBookmark(hangupBookmark, OnCallHangup, false);

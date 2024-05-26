@@ -129,6 +129,16 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         await mongoDbStore.SaveAsync(instance, cancellationToken);
     }
 
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await mongoDbStore.AddAsync(instance, cancellationToken);
+    }
+
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await mongoDbStore.SaveAsync(instance, cancellationToken);
+    }
+
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {

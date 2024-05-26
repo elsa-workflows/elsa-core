@@ -1,6 +1,5 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
@@ -33,8 +32,8 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         await Next(context);
 
         // Get the managed cancellation token.
-        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
-
+        var cancellationToken = context.CancellationToken;
+        
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;
 

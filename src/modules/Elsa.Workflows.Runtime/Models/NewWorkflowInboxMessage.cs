@@ -1,7 +1,7 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// A message that can be delivered to a workflow instance.

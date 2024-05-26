@@ -26,6 +26,7 @@ using Elsa.Workflows;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -42,10 +43,12 @@ const bool useProtoActor = false;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
-const bool useZipCompression = true;
+const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
+const bool useAzureServiceBusModule = false;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = true;
@@ -63,7 +66,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
 
 // Add Elsa services.
 services
@@ -182,7 +185,12 @@ services
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
-                if (useProtoActor)
+                if (workflowRuntime == WorkflowRuntime.Distributed)
+                {
+                    runtime.UseDistributedRuntime();
+                }
+
+                if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
@@ -203,12 +211,13 @@ services
                 {
                     runtime.ActivityExecutionLogStore = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-                    runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
 
                 if (useCaching)
                     runtime.UseCache();
 
+                runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
+                
                 runtime.DistributedLockProvider = _ =>
                 {
                     switch (distributedLockProviderName)
@@ -319,7 +328,7 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
@@ -331,7 +340,7 @@ services
                     });
                 }
 
-                if (useMassTransitBroker == MassTransitBroker.RabbitMq)
+                if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
@@ -350,6 +359,14 @@ services
             elsa.UseDistributedCache(distributedCaching =>
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
+            });
+        }
+
+        if (useAzureServiceBusModule)
+        {
+            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+            {
+                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
             });
         }
 

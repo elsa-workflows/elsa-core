@@ -1,5 +1,5 @@
-﻿using Elsa.Abstractions;
-using Elsa.Workflows.Management;
+using Elsa.Abstractions;
+using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;

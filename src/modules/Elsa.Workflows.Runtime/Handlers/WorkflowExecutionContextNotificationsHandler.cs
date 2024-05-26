@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Notifications;
-using Elsa.Workflows.Runtime.Contracts;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 

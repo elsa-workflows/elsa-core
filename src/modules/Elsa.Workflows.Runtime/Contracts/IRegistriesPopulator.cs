@@ -1,7 +1,7 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Updates the workflow store from <see cref="IWorkflowsProvider"/> implementations, creates triggers, updates the <see cref="IActivityRegistry"/> and <see cref="IExpressionDescriptorRegistry"/>.

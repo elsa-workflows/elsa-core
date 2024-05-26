@@ -1,28 +1,33 @@
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Scheduling;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Messages;
 
 namespace Elsa.Hangfire.Jobs;
 
 /// <summary>
 /// A job that resumes a workflow.
 /// </summary>
-public class RunWorkflowJob
+public class RunWorkflowJob(IWorkflowRuntime workflowRuntime)
 {
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-        
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RunWorkflowJob"/> class.
-    /// </summary>
-    public RunWorkflowJob(IWorkflowDispatcher workflowDispatcher)
-    {
-        _workflowDispatcher = workflowDispatcher;
-    }
-
     /// <summary>
     /// Executes the job.
     /// </summary>
     /// <param name="name">The name of the job.</param>
     /// <param name="request">The workflow request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public async Task ExecuteAsync(string name, DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken) => await _workflowDispatcher.DispatchAsync(request, cancellationToken: cancellationToken);
+    public async Task ExecuteAsync(string name, ScheduleNewWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    {
+        var client = await workflowRuntime.CreateClientAsync(cancellationToken);
+        var createAndRunRequest = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
+            TriggerActivityId = request.TriggerActivityId,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input,
+            Properties = request.Properties,
+            ParentId = request.ParentId
+        };
+        await client.CreateAndRunInstanceAsync(createAndRunRequest, cancellationToken);
+    }
 }

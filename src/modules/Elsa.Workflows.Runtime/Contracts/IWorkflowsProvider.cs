@@ -1,6 +1,4 @@
-﻿using Elsa.Workflows.Runtime.Models;
-
-namespace Elsa.Workflows.Runtime.Contracts;
+﻿namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a source of workflow definitions.

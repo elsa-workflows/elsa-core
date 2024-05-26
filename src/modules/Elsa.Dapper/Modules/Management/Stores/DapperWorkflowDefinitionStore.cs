@@ -155,12 +155,16 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)
     {
+        var definitionId = filter.DefinitionId ?? filter.DefinitionHandle?.DefinitionId;
+        var versionOptions = filter.VersionOptions ?? filter.DefinitionHandle?.VersionOptions;
+        var id = filter.Id ?? filter.DefinitionHandle?.DefinitionVersionId;
+        
         query
-            .Is(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionId)
+            .Is(nameof(WorkflowDefinition.DefinitionId), definitionId)
             .In(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)
-            .Is(nameof(WorkflowDefinition.Id), filter.Id)
+            .Is(nameof(WorkflowDefinition.Id), id)
             .In(nameof(WorkflowDefinition.Id), filter.Ids)
-            .Is(filter.VersionOptions)
+            .Is(versionOptions)
             .Is(nameof(WorkflowDefinition.MaterializerName), filter.MaterializerName)
             .Is(nameof(WorkflowDefinition.Name), filter.Name)
             .In(nameof(WorkflowDefinition.Name), filter.Names)

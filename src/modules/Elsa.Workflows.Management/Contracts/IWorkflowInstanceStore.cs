@@ -138,6 +138,20 @@ public interface IWorkflowInstanceStore
     /// <param name="instance">The workflow instance.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Adds the specified <see cref="WorkflowInstance"/> in the persistence store.
+    /// </summary>
+    /// <param name="instance">The workflow instance.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates the specified <see cref="WorkflowInstance"/> in the persistence store.
+    /// </summary>
+    /// <param name="instance">The workflow instance.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds or updates the specified set of <see cref="WorkflowInstance"/> objects in the persistence store.

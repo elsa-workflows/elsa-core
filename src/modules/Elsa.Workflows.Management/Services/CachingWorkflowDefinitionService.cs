@@ -40,6 +40,17 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
     }
 
     /// <inheritdoc />
+    public Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = handle
+        };
+
+        return FindWorkflowDefinitionAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         var cacheKey = cacheManager.CreateWorkflowDefinitionFilterCacheKey(filter);
@@ -64,6 +75,17 @@ public class CachingWorkflowDefinitionService(IWorkflowDefinitionService decorat
         return await GetFromCacheAsync(cacheKey,
             () => decoratedService.FindWorkflowGraphAsync(definitionVersionId, cancellationToken),
             x => x.Workflow.Identity.DefinitionId);
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = definitionHandle
+        };
+
+        return FindWorkflowGraphAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

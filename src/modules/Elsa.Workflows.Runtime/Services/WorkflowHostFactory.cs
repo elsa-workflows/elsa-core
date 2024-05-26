@@ -1,47 +1,46 @@
-using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider)
-    : IWorkflowHostFactory
+[Obsolete("Use IWorkflowRuntime, IWorkflowRunner and IWorkflowInvoker services instead.")]
+public class WorkflowHostFactory : IWorkflowHostFactory
 {
-    /// <inheritdoc />
-    public async Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default)
+    private readonly IIdentityGenerator _identityGenerator;
+    private readonly IServiceProvider _serviceProvider;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WorkflowHostFactory"/> class.
+    /// </summary>
+    public WorkflowHostFactory(IIdentityGenerator identityGenerator, IServiceProvider serviceProvider)
     {
-        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflow = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
+        _identityGenerator = identityGenerator;
+        _serviceProvider = serviceProvider;
+    }
 
-        if (workflow == null)
-            return default;
+    /// <inheritdoc />
+    public async Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, WorkflowHostOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var workflow = workflowGraph.Workflow;
+        var newWorkflowInstanceId = options?.NewWorkflowInstanceId ?? _identityGenerator.GenerateId();
+        var workflowState = new WorkflowState
+        {
+            Id = newWorkflowInstanceId,
+            DefinitionId = workflow.Identity.DefinitionId,
+            DefinitionVersion = workflow.Identity.Version
+        };
 
-        return await CreateAsync(workflow, cancellationToken);
+        return await CreateAsync(workflowGraph, workflowState, cancellationToken);
     }
 
     /// <inheritdoc />
     public Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var workflowHost = (IWorkflowHost)ActivatorUtilities.CreateInstance<WorkflowHost>(serviceProvider, workflowGraph, workflowState);
+        var workflowHost = (IWorkflowHost)ActivatorUtilities.CreateInstance<WorkflowHost>(_serviceProvider, workflowGraph, workflowState);
         return Task.FromResult(workflowHost);
-    }
-
-    /// <inheritdoc />
-    public Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, CancellationToken cancellationToken = default)
-    {
-        var workflow = workflowGraph.Workflow;
-        var workflowState = new WorkflowState
-        {
-            Id = identityGenerator.GenerateId(),
-            DefinitionId = workflow.Identity.DefinitionId,
-            DefinitionVersion = workflow.Identity.Version
-        };
-
-        return CreateAsync(workflowGraph, workflowState, cancellationToken);
     }
 }

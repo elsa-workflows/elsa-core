@@ -1,4 +1,4 @@
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.Report;
 

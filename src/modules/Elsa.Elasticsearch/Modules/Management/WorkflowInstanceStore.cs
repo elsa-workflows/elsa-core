@@ -110,8 +110,21 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
+    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
         await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>

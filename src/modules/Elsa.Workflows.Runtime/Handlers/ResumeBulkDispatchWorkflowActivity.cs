@@ -1,10 +1,8 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -13,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Resumes any blocking <see cref="BulkDispatchWorkflows"/> activities when its child workflows complete.
 /// </summary>
 [PublicAPI]
-internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : INotificationHandler<WorkflowExecuted>
+internal class ResumeBulkDispatchWorkflowActivity(IBookmarkResumer bookmarkResumer) : INotificationHandler<WorkflowExecuted>
 {
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
@@ -27,8 +25,7 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
         if (string.IsNullOrWhiteSpace(parentInstanceId))
             return;
 
-        var bookmark = new BulkDispatchWorkflowsBookmark(parentInstanceId);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
+        var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId);
         var workflowInstanceId = workflowState.Id;
         var input = new Dictionary<string, object>
         {
@@ -37,14 +34,11 @@ internal class ResumeBulkDispatchWorkflowActivity(IWorkflowInbox workflowInbox) 
             ["WorkflowStatus"] = workflowState.Status,
             ["WorkflowSubStatus"] = workflowState.SubStatus,
         };
-        var message = new NewWorkflowInboxMessage
-        {
-            ActivityTypeName = activityTypeName,
-            Input = input,
-            BookmarkPayload = bookmark,
-            WorkflowInstanceId = parentInstanceId,
-        };
 
-        await workflowInbox.SubmitAsync(message, cancellationToken);
+        var resumeBookmarkOptions = new ResumeBookmarkOptions
+        {
+            Input = input
+        };
+        await bookmarkResumer.ResumeAsync<BulkDispatchWorkflows>(stimulus, parentInstanceId, resumeBookmarkOptions, cancellationToken);
     }
 }

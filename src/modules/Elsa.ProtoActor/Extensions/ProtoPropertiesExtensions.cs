@@ -4,11 +4,11 @@ namespace Elsa.ProtoActor.Extensions;
 
 internal static class ProtoPropertiesExtensions
 {
-    public static IDictionary<string, object> Deserialize(this Properties properties) => properties.Data.Deserialize();
+    public static IDictionary<string, object> DeserializeProperties(this ProtoProperties properties) => properties.Data.Deserialize();
 
-    public static Properties SerializeProperties(this IDictionary<string, object> properties)
+    public static ProtoProperties SerializeProperties(this IDictionary<string, object> properties)
     {
-        var result = new Properties();
+        var result = new ProtoProperties();
         properties.Serialize(result.Data);
         return result;
     }

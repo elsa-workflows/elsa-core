@@ -216,8 +216,8 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = DefinitionId ?? _identityGenerator.GenerateId();
-        var id = Id ?? _identityGenerator.GenerateId();
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? _identityGenerator.GenerateId() : DefinitionId;
+        var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
         var root = Root ?? new Sequence();
         var identity = new WorkflowIdentity(definitionId, Version, id);
         var publication = WorkflowPublication.LatestAndPublished;

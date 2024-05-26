@@ -1,10 +1,14 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Handlers;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -14,7 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -68,10 +72,19 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     management.UseMassTransitDispatcher();
+                    management.UseCache();
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
+                    //runtime.UseProtoActor();
+                    runtime.UseDistributedRuntime();
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
                 });
             };
         }
@@ -80,10 +93,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
         });
     }
-
+    
     protected override void ConfigureClient(HttpClient client)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);

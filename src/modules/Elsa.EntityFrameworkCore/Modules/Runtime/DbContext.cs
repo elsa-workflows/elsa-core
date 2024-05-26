@@ -34,11 +34,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The workflow bookmarks.
     /// </summary>
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
-
-    /// <summary>
-    /// The workflow inbox messages.
-    /// </summary>
-    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = default!;
     
     /// <summary>
     /// The generic key value pairs.
@@ -55,7 +50,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
-        modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
     }
 }
