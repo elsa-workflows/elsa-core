@@ -2,6 +2,7 @@
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
-    partial class IdentityElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240526181437_V3_2")]
+    partial class V3_2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.18");

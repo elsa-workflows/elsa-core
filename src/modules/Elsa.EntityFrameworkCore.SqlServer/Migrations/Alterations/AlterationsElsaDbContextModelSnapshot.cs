@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.18")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -48,6 +48,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -68,6 +71,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationJob_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationJob_TenantId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
@@ -99,6 +105,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
@@ -112,6 +121,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationPlan_Status");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_AlterationPlan_TenantId");
 
                     b.ToTable("AlterationPlans", "Elsa");
                 });
