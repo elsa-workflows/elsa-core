@@ -1,13 +1,16 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
+using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
+using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -86,6 +89,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
+                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
+                });
             };
         }
 
@@ -93,11 +101,12 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddScoped<ITenantResolutionStrategy, TestTenantResolutionStrategy>();
             services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
         });
     }
-    
+
     protected override void ConfigureClient(HttpClient client)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
