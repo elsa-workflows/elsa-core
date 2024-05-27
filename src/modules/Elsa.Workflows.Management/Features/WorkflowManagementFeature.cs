@@ -46,6 +46,8 @@ public class WorkflowManagementFeature : FeatureBase
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
+    private bool IsReadOnlyMode { get; set; }
+
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -174,6 +176,16 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables read-only mode for resources such as workflow definitions.
+    /// </summary>
+    /// <returns></returns>
+    public WorkflowManagementFeature UseReadOnlyMode(bool enabled)
+    {
+        IsReadOnlyMode = enabled;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -228,6 +240,7 @@ public class WorkflowManagementFeature : FeatureBase
 
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
+            options.IsReadOnlyMode = IsReadOnlyMode;
         });
     }
 }

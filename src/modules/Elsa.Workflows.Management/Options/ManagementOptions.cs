@@ -11,7 +11,7 @@ public class ManagementOptions
     /// A collection of activity types that are available to the system.
     /// </summary>
     public HashSet<Type> ActivityTypes { get; set; } = new();
-    
+
     /// <summary>
     /// A collection of types that are available to the system as variable types.
     /// </summary>
@@ -26,4 +26,9 @@ public class ManagementOptions
     /// The default Log Persistence Mode to use for all the system
     /// </summary>
     public LogPersistenceMode LogPersistenceMode { get; set; }
+
+    /// <summary>
+    /// A mode that does not allow editing workflows.
+    /// </summary>
+    public bool IsReadOnlyMode { get; set; }
 }

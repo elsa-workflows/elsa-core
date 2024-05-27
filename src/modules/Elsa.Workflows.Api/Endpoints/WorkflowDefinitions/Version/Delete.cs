@@ -1,6 +1,11 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Management;
+using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
@@ -18,19 +23,41 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager)
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var definitionId = Route<string>("definitionId")!;
         var version = Route<int>("version");
-        
-        var result = await workflowDefinitionManager.DeleteVersionAsync(definitionId, version, ct);
-        
-        if (!result)
+
+        var filter = new WorkflowDefinitionFilter
         {
-            await SendNotFoundAsync(ct);
+            DefinitionId = definitionId,
+            VersionOptions = VersionOptions.SpecificVersion(version)
+        };
+
+        var definition = await store.FindAsync(filter, cancellationToken);
+
+        if (definition == null)
+        {
+            await SendNotFoundAsync(cancellationToken);
             return;
         }
 
-        await SendOkAsync(ct);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var result = await workflowDefinitionManager.DeleteVersionAsync(definition, cancellationToken);
+
+        if (!result)
+        {
+            await SendNotFoundAsync(cancellationToken);
+            return;
+        }
+
+        await SendOkAsync(cancellationToken);
     }
 }

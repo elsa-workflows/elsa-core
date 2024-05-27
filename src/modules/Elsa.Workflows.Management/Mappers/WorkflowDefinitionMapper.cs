@@ -124,7 +124,7 @@ public class WorkflowDefinitionMapper
             null,
             workflow.Root);
     }
-    
+
     /// <summary>
     /// Maps a <see cref="Workflow"/> to a <see cref="WorkflowDefinitionModel"/>.
     /// </summary>

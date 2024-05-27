@@ -12,15 +12,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies.List;
 /// <summary>
 /// Returns list of available <see cref="IWorkflowActivationStrategy" /> implementations.
 /// </summary>
-internal class List : ElsaEndpointWithoutRequest<ListResponse<WorkflowActivationStrategyDescriptor>>
+internal class List(IEnumerable<IWorkflowActivationStrategy> strategies) : ElsaEndpointWithoutRequest<ListResponse<WorkflowActivationStrategyDescriptor>>
 {
-    private readonly IEnumerable<IWorkflowActivationStrategy> _strategies;
-
-    public List(IEnumerable<IWorkflowActivationStrategy> strategies)
-    {
-        _strategies = strategies;
-    }
-
     public override void Configure()
     {
         Get("/descriptors/workflow-activation-strategies");
@@ -29,7 +22,7 @@ internal class List : ElsaEndpointWithoutRequest<ListResponse<WorkflowActivation
 
     public override Task<ListResponse<WorkflowActivationStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = _strategies.Select(WorkflowActivationStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
+        var descriptors = strategies.Select(WorkflowActivationStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
         var response =new ListResponse<WorkflowActivationStrategyDescriptor>(descriptors);
         return Task.FromResult(response);
     }

@@ -42,7 +42,7 @@ public class WorkflowDefinitionFilter
     /// Filter by the handle of the workflow definition.
     /// </summary>
     public WorkflowDefinitionHandle? DefinitionHandle { get; set; }
-    
+
     /// <summary>
     /// Filter by the name of the workflow definition.
     /// </summary>
@@ -74,6 +74,11 @@ public class WorkflowDefinitionFilter
     public bool? IsSystem { get; set; }
 
     /// <summary>
+    /// Filter on workflows that are read-only.
+    /// </summary>
+    public bool? IsReadonly { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether to include tenant matching in the filter.
     /// </summary>
     public bool TenantAgnostic { get; set; }
@@ -88,7 +93,7 @@ public class WorkflowDefinitionFilter
         var definitionId = DefinitionId ?? DefinitionHandle?.DefinitionId;
         var versionOptions = VersionOptions ?? DefinitionHandle?.VersionOptions;
         var id = Id ?? DefinitionHandle?.DefinitionVersionId;
-        
+
         if (definitionId != null) queryable = queryable.Where(x => x.DefinitionId == definitionId);
         if (DefinitionIds != null) queryable = queryable.Where(x => DefinitionIds.Contains(x.DefinitionId));
         if (id != null) queryable = queryable.Where(x => x.Id == id);
@@ -100,6 +105,7 @@ public class WorkflowDefinitionFilter
         if (UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == UsableAsActivity);
         if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(SearchTerm) || x.Description!.Contains(SearchTerm) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
         if (IsSystem != null) queryable = queryable.Where(x => x.IsSystem == IsSystem);
+        if (IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == IsReadonly);
 
         return queryable;
     }

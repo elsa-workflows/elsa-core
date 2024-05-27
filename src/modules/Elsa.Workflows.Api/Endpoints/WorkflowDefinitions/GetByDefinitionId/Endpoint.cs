@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -13,19 +12,9 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetByDefinitionId;
 
 [PublicAPI]
-internal class GetByDefinitionId : ElsaEndpoint<Request>
+internal class GetByDefinitionId(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, IWorkflowDefinitionLinker linker)
+    : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IApiSerializer _apiSerializer;
-    private readonly WorkflowDefinitionMapper _mapper;
-
-    public GetByDefinitionId(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
-    {
-        _store = store;
-        _apiSerializer = apiSerializer;
-        _mapper = mapper;
-    }
-
     public override void Configure()
     {
         Get("/workflow-definitions/by-definition-id/{definitionId}", "/workflow-definitions/{definitionId}");
@@ -43,16 +32,17 @@ internal class GetByDefinitionId : ElsaEndpoint<Request>
         };
 
         var order = new WorkflowDefinitionOrder<int>(x => x.Version, OrderDirection.Descending);
-        var definition = (await _store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
+        var definition = (await store.FindManyAsync(filter, order, cancellationToken: cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
         }
-        
-        var model = await _mapper.MapAsync(definition, cancellationToken);
-        var serializerOptions = _apiSerializer.GetOptions();
+
+        var model = await linker.MapAsync(definition, cancellationToken);
+
+        var serializerOptions = apiSerializer.GetOptions();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)
