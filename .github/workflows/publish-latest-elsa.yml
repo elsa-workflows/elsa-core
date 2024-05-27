@@ -116,7 +116,6 @@ jobs:
         with:
           node-version: 18.12.1
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@world-of-workflows'
 
       - run: npm publish *.tgz
         env:
