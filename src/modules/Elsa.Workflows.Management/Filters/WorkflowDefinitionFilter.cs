@@ -17,22 +17,22 @@ public class WorkflowDefinitionFilter
     /// Filter by the ID of the workflow definition.
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// Filter by the IDs of the workflow definitions.
     /// </summary>
     public ICollection<string>? Ids { get; set; }
-    
+
     /// <summary>
     /// Filter by the ID of the workflow definition.
     /// </summary>
     public string? DefinitionId { get; set; }
-    
+
     /// <summary>
     /// Filter by the IDs of the workflow definitions.
     /// </summary>
     public ICollection<string>? DefinitionIds { get; set; }
-    
+
     /// <summary>
     /// Filter by the version options.
     /// </summary>
@@ -42,7 +42,7 @@ public class WorkflowDefinitionFilter
     /// Filter by the handle of the workflow definition.
     /// </summary>
     public WorkflowDefinitionHandle? DefinitionHandle { get; set; }
-    
+
     /// <summary>
     /// Filter by the name of the workflow definition.
     /// </summary>
@@ -57,12 +57,12 @@ public class WorkflowDefinitionFilter
     /// Filter by the names of the workflow definitions.
     /// </summary>
     public ICollection<string>? Names { get; set; }
-    
+
     /// <summary>
     /// Filter by the name of the workflow definition materializer.
     /// </summary>
     public string? MaterializerName { get; set; }
-    
+
     /// <summary>
     /// Filter on workflows that are usable as activities.
     /// </summary>
@@ -88,7 +88,7 @@ public class WorkflowDefinitionFilter
         var definitionId = DefinitionId ?? DefinitionHandle?.DefinitionId;
         var versionOptions = VersionOptions ?? DefinitionHandle?.VersionOptions;
         var id = Id ?? DefinitionHandle?.DefinitionVersionId;
-        
+
         if (definitionId != null) queryable = queryable.Where(x => x.DefinitionId == definitionId);
         if (DefinitionIds != null) queryable = queryable.Where(x => DefinitionIds.Contains(x.DefinitionId));
         if (id != null) queryable = queryable.Where(x => x.Id == id);
@@ -100,7 +100,7 @@ public class WorkflowDefinitionFilter
         if (UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == UsableAsActivity);
         if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(SearchTerm) || x.Description!.Contains(SearchTerm) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
         if (IsSystem != null) queryable = queryable.Where(x => x.IsSystem == IsSystem);
-        if (filter.IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == filter.IsReadonly);
+        if (IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == IsReadonly);
 
         return queryable;
     }
