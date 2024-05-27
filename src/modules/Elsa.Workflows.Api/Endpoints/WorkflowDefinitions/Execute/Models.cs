@@ -17,12 +17,7 @@ public class Request
     public object? Input { get; set; }
 }
 
-public class Response
+public class Response(WorkflowState workflowState)
 {
-    public Response(WorkflowState workflowState)
-    {
-        WorkflowState = workflowState;
-    }
-
-    public WorkflowState WorkflowState { get; }
+    public WorkflowState WorkflowState { get; } = workflowState;
 }

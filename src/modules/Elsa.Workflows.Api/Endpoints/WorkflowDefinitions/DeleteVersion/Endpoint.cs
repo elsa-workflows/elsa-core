@@ -1,19 +1,16 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.DeleteVersion;
 
 [PublicAPI]
-internal class DeleteVersion : ElsaEndpoint<Request>
+internal class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-
-    public DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-    }
-
     public override void Configure()
     {
         Delete("/workflow-definition-versions/{id}");
@@ -22,7 +19,15 @@ internal class DeleteVersion : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var deleted = await _workflowDefinitionManager.DeleteByIdAsync(request.Id, cancellationToken);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var deleted = await workflowDefinitionManager.DeleteByIdAsync(request.Id, cancellationToken);
 
         if (!deleted)
             await SendNotFoundAsync(cancellationToken);

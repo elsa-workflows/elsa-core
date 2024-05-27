@@ -4,9 +4,9 @@ using Elsa.Api.Client.Shared.Models;
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 
 /// <summary>
-/// Represents a versioned workflow definition.
+/// Represents a linked workflow definition.
 /// </summary>
-public class WorkflowDefinition : VersionedEntity
+public class WorkflowDefinition : LinkedEntity
 {
     /// <summary>
     /// The logical ID of the workflow. This ID is the same across versions. 
@@ -77,7 +77,7 @@ public class WorkflowDefinition : VersionedEntity
     /// The root activity of the workflow.
     /// </summary>
     public JsonObject Root { get; set; } = default!;
-    
+
     /// <summary>
     /// An option to use the workflow as a readonly workflow.
     /// </summary>
