@@ -1,7 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -16,17 +15,17 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Import;
 internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
 {
     private readonly IWorkflowDefinitionImporter _workflowDefinitionImporter;
-    private readonly IWorkflowDefinitionLinkService _linkService;
+    private readonly IWorkflowDefinitionLinker _linker;
     private readonly IAuthorizationService _authorizationService;
 
     /// <inheritdoc />
     public Import(
         IWorkflowDefinitionImporter workflowDefinitionImporter,
-        IWorkflowDefinitionLinkService linkService,
+        IWorkflowDefinitionLinker linker,
         IAuthorizationService authorizationService)
     {
         _workflowDefinitionImporter = workflowDefinitionImporter;
-        _linkService = linkService;
+        _linker = linker;
         _authorizationService = authorizationService;
     }
 
@@ -54,7 +53,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
             return;
         }
 
-        var updatedModel = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(definition, cancellationToken);
+        var updatedModel = await _linker.MapAsync(definition, cancellationToken);
 
         if (result.Succeeded)
         {

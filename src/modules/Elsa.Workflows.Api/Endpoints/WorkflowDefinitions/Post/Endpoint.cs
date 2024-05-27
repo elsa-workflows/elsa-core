@@ -6,7 +6,6 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
@@ -22,31 +21,15 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Post;
 
 [PublicAPI]
-internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflowDefinitionModel>
+internal class Post(
+    IApiSerializer serializer,
+    IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    VariableDefinitionMapper variableDefinitionMapper,
+    IDistributedLockProvider distributedLockProvider,
+    IWorkflowDefinitionLinker linker,
+    IAuthorizationService authorizationService)
+    : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflowDefinitionModel>
 {
-    private readonly IApiSerializer _serializer;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly VariableDefinitionMapper _variableDefinitionMapper;
-    private readonly IDistributedLockProvider _distributedLockProvider;
-    private readonly IWorkflowDefinitionLinkService _linkService;
-    private readonly IAuthorizationService _authorizationService;
-
-    public Post(
-        IApiSerializer serializer,
-        IWorkflowDefinitionPublisher workflowDefinitionPublisher,
-        VariableDefinitionMapper variableDefinitionMapper,
-        IDistributedLockProvider distributedLockProvider,
-        IWorkflowDefinitionLinkService linkService,
-        IAuthorizationService authorizationService)
-    {
-        _serializer = serializer;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _variableDefinitionMapper = variableDefinitionMapper;
-        _distributedLockProvider = distributedLockProvider;
-        _linkService = linkService;
-        _authorizationService = authorizationService;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions");
@@ -59,10 +42,10 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
         var definitionId = model.DefinitionId;
         var resourceName = $"{GetType().FullName}:{(!string.IsNullOrWhiteSpace(definitionId) ? definitionId : Guid.NewGuid().ToString())}";
 
-        await using var handle = await _distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
+        await using var handle = await distributedLockProvider.AcquireLockAsync(resourceName, TimeSpan.FromMinutes(1), cancellationToken);
 
         var draft = !string.IsNullOrWhiteSpace(definitionId)
-            ? await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
+            ? await workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest, cancellationToken)
             : default;
 
         var isNew = draft == null;
@@ -70,13 +53,13 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
         // Create a new workflow in case no existing definition was found.
         if (isNew)
         {
-            draft = _workflowDefinitionPublisher.New();
+            draft = workflowDefinitionPublisher.New();
 
             if (!string.IsNullOrWhiteSpace(definitionId))
                 draft.DefinitionId = definitionId;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -86,13 +69,13 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
 
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
-        var serializerOptions = _serializer.GetOptions().Clone();
+        var serializerOptions = serializer.GetOptions().Clone();
 
         // Ignore the root activity when serializing the workflow definition.
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
-        var variables = _variableDefinitionMapper.Map(model.Variables).ToList();
+        var variables = variableDefinitionMapper.Map(model.Variables).ToList();
         var inputs = model.Inputs ?? new List<InputDefinition>();
         var outputs = model.Outputs ?? new List<OutputDefinition>();
         var outcomes = model.Outcomes ?? new List<string>();
@@ -111,7 +94,7 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
 
         if (request.Publish.GetValueOrDefault(false))
         {
-            var result = await _workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
+            var result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
 
             if (!result.Succeeded)
             {
@@ -124,10 +107,10 @@ internal class Post : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflow
         }
         else
         {
-            await _workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
+            await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }
 
-        var response = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(draft, cancellationToken);
+        var response = await linker.MapAsync(draft, cancellationToken);
 
         if (isNew)
             await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, response, cancellation: cancellationToken);

@@ -10,19 +10,9 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.UpdateReferences;
 
 [PublicAPI]
-internal class UpdateReferences : ElsaEndpoint<Request, Response>
+internal class UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly IAuthorizationService _authorizationService;
-
-    public UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
-    {
-        _store = store;
-        _workflowDefinitionManager = workflowDefinitionManager;
-        _authorizationService = authorizationService;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/update-references");
@@ -37,7 +27,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
             VersionOptions = VersionOptions.Latest
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -45,7 +35,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -53,7 +43,7 @@ internal class UpdateReferences : ElsaEndpoint<Request, Response>
             return;
         }
 
-        var affectedWorkflows = await _workflowDefinitionManager.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
+        var affectedWorkflows = await workflowDefinitionManager.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
         var response = new Response(affectedWorkflows.Select(w => w.Name ?? w.DefinitionId));
         await SendOkAsync(response, cancellationToken);
     }

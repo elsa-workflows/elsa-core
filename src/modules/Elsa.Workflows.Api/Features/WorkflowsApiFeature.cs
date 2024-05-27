@@ -42,7 +42,7 @@ public class WorkflowsApiFeature : FeatureBase
         Services.AddSerializationOptionsConfigurator<SerializationConfigurator>();
         Module.AddFastEndpointsFromModule();
 
-        Services.AddScoped<IWorkflowDefinitionLinkService, WorkflowDefinitionLinkService>();
+        Services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
 
         Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>

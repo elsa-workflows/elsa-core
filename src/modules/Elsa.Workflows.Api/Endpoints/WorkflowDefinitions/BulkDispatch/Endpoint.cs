@@ -10,19 +10,9 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDispatch;
 
 [PublicAPI]
-internal class Endpoint : ElsaEndpoint<Request, Response>
+internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-    private readonly IIdentityGenerator _identityGenerator;
-
-    public Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator)
-    {
-        _store = store;
-        _workflowDispatcher = workflowDispatcher;
-        _identityGenerator = identityGenerator;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/bulk-dispatch");
@@ -34,7 +24,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
 
-        var exists = await _store.AnyAsync(
+        var exists = await store.AnyAsync(
             new WorkflowDefinitionFilter
             {
                 DefinitionId = definitionId,
@@ -52,7 +42,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
 
         for (var i = 0; i < request.Count; i++)
         {
-            var instanceId = _identityGenerator.GenerateId();
+            var instanceId = identityGenerator.GenerateId();
             var triggerActivityId = request.TriggerActivityId;
             var input = (IDictionary<string, object>?)request.Input;
             var dispatchRequest = new DispatchWorkflowDefinitionRequest
@@ -64,7 +54,7 @@ internal class Endpoint : ElsaEndpoint<Request, Response>
                 TriggerActivityId = triggerActivityId
             };
 
-            await _workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
+            await workflowDispatcher.DispatchAsync(dispatchRequest, cancellationToken: cancellationToken);
             instanceIds.Add(instanceId);
         }
 

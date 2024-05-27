@@ -10,19 +10,9 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 
 [PublicAPI]
-internal class RevertVersion : ElsaEndpointWithoutRequest
+internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
+    : ElsaEndpointWithoutRequest
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly IAuthorizationService _authorizationService;
-    private readonly IWorkflowDefinitionStore _store;
-
-    public RevertVersion(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-        _authorizationService = authorizationService;
-        _store = store;
-    }
-
     public override void Configure()
     {
         Post("workflow-definitions/{definitionId}/revert/{version}");
@@ -40,7 +30,7 @@ internal class RevertVersion : ElsaEndpointWithoutRequest
             VersionOptions = VersionOptions.SpecificVersion(version)
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -48,7 +38,7 @@ internal class RevertVersion : ElsaEndpointWithoutRequest
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -56,7 +46,7 @@ internal class RevertVersion : ElsaEndpointWithoutRequest
             return;
         }
 
-        await _workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
+        await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
 
         await SendOkAsync(cancellationToken);
     }

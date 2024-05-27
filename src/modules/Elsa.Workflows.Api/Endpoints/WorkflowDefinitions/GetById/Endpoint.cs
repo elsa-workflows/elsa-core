@@ -1,6 +1,5 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -11,19 +10,9 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetById;
 
 [PublicAPI]
-internal class GetById : ElsaEndpoint<Request>
+internal class GetById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, IWorkflowDefinitionLinker linker)
+    : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IApiSerializer _apiSerializer;
-    private readonly IWorkflowDefinitionLinkService _linkService;
-
-    public GetById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, IWorkflowDefinitionLinkService linkService)
-    {
-        _store = store;
-        _apiSerializer = apiSerializer;
-        _linkService = linkService;
-    }
-
     public override void Configure()
     {
         Get("/workflow-definitions/by-id/{id}");
@@ -37,7 +26,7 @@ internal class GetById : ElsaEndpoint<Request>
             Id = request.Id
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -45,8 +34,8 @@ internal class GetById : ElsaEndpoint<Request>
             return;
         }
 
-        var model = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(definition, cancellationToken);
-        var serializerOptions = _apiSerializer.GetOptions().Clone();
+        var model = await linker.MapAsync(definition, cancellationToken);
+        var serializerOptions = apiSerializer.GetOptions().Clone();
 
         // If the root of composite activities is not requested, exclude them from being serialized.
         if (!request.IncludeCompositeRoot)

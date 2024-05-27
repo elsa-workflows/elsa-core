@@ -3,7 +3,6 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -12,21 +11,9 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
 [PublicAPI]
-internal class Retract : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
+internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly IWorkflowDefinitionLinkService _linkService;
-    private readonly IAuthorizationService _authorizationService;
-
-    public Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IWorkflowDefinitionLinkService linkService, IAuthorizationService authorizationService)
-    {
-        _store = store;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _linkService = linkService;
-        _authorizationService = authorizationService;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/retract");
@@ -41,7 +28,7 @@ internal class Retract : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             VersionOptions = VersionOptions.LatestOrPublished
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -49,7 +36,7 @@ internal class Retract : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -64,8 +51,8 @@ internal class Retract : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             return;
         }
 
-        await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
-        var response = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(definition, cancellationToken);
+        await workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
+        var response = await linker.MapAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }

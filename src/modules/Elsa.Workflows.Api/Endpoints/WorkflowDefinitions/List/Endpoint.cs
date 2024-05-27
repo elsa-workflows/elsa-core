@@ -3,7 +3,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -12,7 +11,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinkService linkService) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
+internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
 {
     public override void Configure()
     {
@@ -26,7 +25,7 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinkServi
         var filter = CreateFilter(request);
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
         var pagedList = new PagedListResponse<WorkflowDefinitionSummary>(summaries);
-        var response = linkService.MapToLinkedPagedListAsync(pagedList);
+        var response = linker.MapAsync(pagedList);
         return response;
     }
 

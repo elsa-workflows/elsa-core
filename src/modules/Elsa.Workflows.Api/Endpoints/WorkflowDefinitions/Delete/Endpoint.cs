@@ -8,19 +8,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 
-internal class Delete : ElsaEndpoint<Request>
+internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
+    : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly IAuthorizationService _authorizationService;
-    private readonly IWorkflowDefinitionStore _store;
-
-    public Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-        _authorizationService = authorizationService;
-        _store = store;
-    }
-
     public override void Configure()
     {
         Delete("/workflow-definitions/{definitionId}");
@@ -35,7 +25,7 @@ internal class Delete : ElsaEndpoint<Request>
             VersionOptions = VersionOptions.Latest
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -43,7 +33,7 @@ internal class Delete : ElsaEndpoint<Request>
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -51,7 +41,7 @@ internal class Delete : ElsaEndpoint<Request>
             return;
         }
 
-        var result = await _workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
+        var result = await workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
 
         if (result == 0)
             await SendNotFoundAsync(cancellationToken);

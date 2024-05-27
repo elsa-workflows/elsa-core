@@ -5,23 +5,14 @@ internal class Request
     public ICollection<string> DefinitionIds { get; set; } = default!;
 }
 
-internal class Response
+internal class Response(ICollection<string> retracted, ICollection<string> alreadyRetracted, ICollection<string> notFound, ICollection<string> skipped)
 {
-    public Response(ICollection<string> retracted, ICollection<string> alreadyRetracted, ICollection<string> notFound, ICollection<string> skipped)
-    {
-        Retracted = retracted;
-        AlreadyRetracted = alreadyRetracted;
-        NotPublished = alreadyRetracted;
-        NotFound = notFound;
-        Skipped = skipped;
-    }
-
-    public ICollection<string> Retracted { get; }
-    public ICollection<string> AlreadyRetracted { get; }
-    public ICollection<string> Skipped { get; }
+    public ICollection<string> Retracted { get; } = retracted;
+    public ICollection<string> AlreadyRetracted { get; } = alreadyRetracted;
+    public ICollection<string> Skipped { get; } = skipped;
 
     [Obsolete("Use AlreadyRetracted instead")]
-    public ICollection<string> NotPublished { get; }
+    public ICollection<string> NotPublished { get; } = alreadyRetracted;
 
-    public ICollection<string> NotFound { get; }
+    public ICollection<string> NotFound { get; } = notFound;
 }

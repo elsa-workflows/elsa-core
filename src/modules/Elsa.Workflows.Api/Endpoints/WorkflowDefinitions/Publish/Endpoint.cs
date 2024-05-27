@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
@@ -16,23 +15,9 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
 [PublicAPI]
-internal class Publish : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
+internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly IApiSerializer _serializer;
-    private readonly IWorkflowDefinitionLinkService _linkService;
-    private readonly IAuthorizationService _authorizationService;
-
-    public Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer, IWorkflowDefinitionLinkService linkService, IAuthorizationService authorizationService)
-    {
-        _store = store;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _serializer = serializer;
-        _linkService = linkService;
-        _authorizationService = authorizationService;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/publish");
@@ -47,7 +32,7 @@ internal class Publish : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             VersionOptions = VersionOptions.Latest
         };
 
-        var definition = await _store.FindAsync(filter, cancellationToken);
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
@@ -55,7 +40,7 @@ internal class Publish : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             return;
         }
 
-        var authorizationResult = _authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Result.Succeeded)
         {
@@ -70,12 +55,12 @@ internal class Publish : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
             return;
         }
 
-        await _workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+        await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
 
-        var response = await _linkService.MapToLinkedWorkflowDefinitionModelAsync(definition, cancellationToken);
+        var response = await linker.MapAsync(definition, cancellationToken);
 
         // We do not want to include composite root activities in the response.
-        var serializerOptions = _serializer.GetOptions().Clone();
+        var serializerOptions = serializer.GetOptions().Clone();
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
