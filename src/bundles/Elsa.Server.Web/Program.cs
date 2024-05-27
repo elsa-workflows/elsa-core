@@ -47,6 +47,7 @@ const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBusModule = false;
+const bool useReadOnlyMode = false;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
@@ -162,6 +163,7 @@ services
                     management.UseCache();
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
+                management.UseReadOnlyMode(useReadOnlyMode);
             })
             .UseWorkflowRuntime(runtime =>
             {
@@ -250,7 +252,10 @@ services
                 if (useQuartz)
                     scheduling.UseQuartzScheduler();
             })
-            .UseWorkflowsApi(api => api.AddFastEndpointsAssembly<Program>())
+            .UseWorkflowsApi(api =>
+            {
+                api.AddFastEndpointsAssembly<Program>();
+            })
             .UseRealTimeWorkflows()
             .UseCSharp(options =>
             {

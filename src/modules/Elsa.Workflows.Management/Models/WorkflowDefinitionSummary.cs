@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Elsa.Models;
 using Elsa.Workflows.Management.Entities;
 using JetBrains.Annotations;
 
@@ -25,7 +26,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>
@@ -43,7 +45,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>

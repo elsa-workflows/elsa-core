@@ -1,27 +1,19 @@
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Models;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Mappers;
-using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Retract;
 
 [PublicAPI]
-internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionModel>
+internal class Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
-
-    public Retract(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, WorkflowDefinitionMapper workflowDefinitionMapper)
-    {
-        _store = store;
-        _workflowDefinitionPublisher = workflowDefinitionPublisher;
-        _workflowDefinitionMapper = workflowDefinitionMapper;
-    }
-
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/retract");
@@ -35,12 +27,20 @@ internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionModel>
             DefinitionId = request.DefinitionId,
             VersionOptions = VersionOptions.LatestOrPublished
         };
-        
-        var definition = await _store.FindAsync(filter, cancellationToken);
+
+        var definition = await store.FindAsync(filter, cancellationToken);
 
         if (definition == null)
         {
             await SendNotFoundAsync(cancellationToken);
+            return;
+        }
+
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
             return;
         }
 
@@ -51,8 +51,8 @@ internal class Retract : ElsaEndpoint<Request, WorkflowDefinitionModel>
             return;
         }
 
-        await _workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
-        var response = await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
+        await workflowDefinitionPublisher.RetractAsync(definition, cancellationToken);
+        var response = await linker.MapAsync(definition, cancellationToken);
         await SendOkAsync(response, cancellationToken);
     }
 }

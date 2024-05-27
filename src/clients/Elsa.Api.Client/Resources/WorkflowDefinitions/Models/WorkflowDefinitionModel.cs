@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Elsa.Api.Client.Shared.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
@@ -7,13 +8,8 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 /// Represents a serializable workflow definition.
 /// </summary>
 [PublicAPI]
-public class WorkflowDefinitionModel
+public class WorkflowDefinitionModel : LinkedEntity
 {
-    /// <summary>
-    /// Gets or sets the version ID of the workflow definition.
-    /// </summary>
-    public string Id { get; set; } = default!;
-    
     /// <summary>
     /// Gets or sets the definition ID of the workflow definition.
     /// </summary>
@@ -28,16 +24,6 @@ public class WorkflowDefinitionModel
     /// Gets or sets the description of the workflow definition.
     /// </summary>
     public string? Description { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the time at which the workflow definition was created.
-    /// </summary>
-    public DateTimeOffset CreatedAt { get; set; }
-    
-    /// <summary>
-    /// Gets or sets the version of the workflow definition.
-    /// </summary>
-    public int Version { get; set; }
     
     /// <summary>
     /// Gets or sets the version of the tool that created the workflow definition.
@@ -74,16 +60,6 @@ public class WorkflowDefinitionModel
     /// </summary>
     public bool IsReadonly { get; set; }
     
-    /// <summary>
-    /// Gets or sets whether this is the latest version of the workflow definition.
-    /// </summary>
-    public bool IsLatest { get; set; }
-    
-    /// <summary>
-    /// Gets or sets whether this is the published version of the workflow definition.
-    /// </summary>
-    public bool IsPublished { get; set; }
-
     /// <summary>
     /// Gets or sets the <see cref="WorkflowOptions"/> of the workflow definition.
     /// </summary>

@@ -74,6 +74,11 @@ public class WorkflowDefinitionFilter
     public bool? IsSystem { get; set; }
 
     /// <summary>
+    /// Filter on workflows that are read-only.
+    /// </summary>
+    public bool? IsReadonly { get; set; }
+
+    /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
     /// <param name="queryable">The queryable to apply the filter to.</param>
@@ -95,6 +100,7 @@ public class WorkflowDefinitionFilter
         if (UsableAsActivity != null) queryable = queryable.Where(x => x.Options.UsableAsActivity == UsableAsActivity);
         if (!string.IsNullOrWhiteSpace(SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(SearchTerm) || x.Description!.Contains(SearchTerm) || x.Id.Contains(SearchTerm) || x.DefinitionId.Contains(SearchTerm));
         if (IsSystem != null) queryable = queryable.Where(x => x.IsSystem == IsSystem);
+        if (filter.IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == filter.IsReadonly);
 
         return queryable;
     }

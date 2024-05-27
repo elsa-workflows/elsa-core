@@ -180,6 +180,8 @@ public class DapperWorkflowDefinitionStore : IWorkflowDefinitionStore
             .Is(nameof(WorkflowDefinition.Name), filter.Name)
             .In(nameof(WorkflowDefinition.Name), filter.Names)
             .Is(nameof(WorkflowDefinition.Options.UsableAsActivity), filter.UsableAsActivity)
+            .Is(nameof(WorkflowDefinition.IsSystem), filter.IsSystem)
+            .Is(nameof(WorkflowDefinition.IsReadonly), filter.IsReadonly)
             .WorkflowDefinitionSearchTerm(filter.SearchTerm);
     }
 
