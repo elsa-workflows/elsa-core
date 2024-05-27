@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Version;
 /// Deletes a specific version of a workflow definition.
 /// </summary>
 [PublicAPI]
-public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager) : ElsaEndpointWithoutRequest
+public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager, IWorkflowDefinitionStore store, IAuthorizationService authorizationService) : ElsaEndpointWithoutRequest
 {
     /// <inheritdoc />
     public override void Configure()

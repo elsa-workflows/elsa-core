@@ -1,9 +1,10 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
-using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management;
+
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDelete;
 
 [UsedImplicitly]
