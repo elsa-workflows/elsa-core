@@ -119,6 +119,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Is(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNull(query, field);
         query.Sql.AppendLine(query.Dialect.And(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -134,6 +135,8 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNot(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNotNull(query, field);
+
         query.Sql.AppendLine(query.Dialect.AndNot(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -389,7 +392,7 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
-    
+
     /// <summary>
     /// Appends a statement that updates a record.
     /// </summary>

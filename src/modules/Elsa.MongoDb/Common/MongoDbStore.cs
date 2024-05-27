@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.MongoDb.Extensions;

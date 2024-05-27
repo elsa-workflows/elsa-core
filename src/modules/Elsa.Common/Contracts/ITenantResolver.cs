@@ -1,6 +1,6 @@
 ﻿using Elsa.Common.Entities;
 
-namespace Elsa.Tenants;
+namespace Elsa.Common.Contracts;
 
 /// <summary>
 /// Provides access to the current tenant ID.

@@ -1,4 +1,5 @@
 using Dapper;
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
@@ -501,7 +502,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
 
         var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
         var tenantId = tenant?.Id;
-        query.Is(nameof(Record.TenantId), tenantId);
+        query.Is(nameof(Record.TenantId), (object?)tenantId ?? DBNull.Value);
     }
 
     private async Task SetTenantIdAsync(T record, CancellationToken cancellationToken)

@@ -37,7 +37,7 @@ using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
-const PersistenceProvider persistenceProvider = PersistenceProvider.Dapper;
+const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
 const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
 const bool useHangfire = false;
 const bool useQuartz = true;
@@ -45,13 +45,13 @@ const bool useMassTransit = true;
 const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
-const bool useCaching = true;
+const bool useCaching = false;
 const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = true;
+const bool useMultitenancy = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

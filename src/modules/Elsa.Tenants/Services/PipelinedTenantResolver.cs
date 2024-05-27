@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Contexts;
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Tenants.Services;
 
 /// <inheritdoc />
-public class TenantResolver(IOptions<MultitenancyOptions> options, ITenantsProvider tenantsProvider, IServiceProvider serviceProvider) : ITenantResolver
+public class PipelinedTenantResolver(IOptions<MultitenancyOptions> options, ITenantsProvider tenantsProvider, IServiceProvider serviceProvider) : ITenantResolver
 {
     private Tenant? _currentTenant;
 

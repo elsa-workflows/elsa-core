@@ -1,4 +1,5 @@
-﻿using Elsa.KeyValues.Entities;
+﻿using Elsa.Common.Contracts;
+using Elsa.KeyValues.Entities;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Tenants;
