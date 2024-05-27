@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Bookmarks;
 public class BackgroundActivityBookmark
 {
     /// <summary>
-    /// Set retroactively after the job has been scheduled. It is used to cancel te job when the bookmark is deleted.
+    /// Set retroactively after the job has been scheduled. It is used to cancel the job when the bookmark is deleted.
     /// </summary>
     public string? JobId { get; set; }
 }
