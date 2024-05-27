@@ -7,12 +7,7 @@ internal class Request
     public ICollection<string> DefinitionIds { get; set; } = default!;
 }
 
-internal class Response
+internal class Response(long deletedCount)
 {
-    public Response(long deletedCount)
-    {
-        DeletedCount = deletedCount;
-    }
-
-    [JsonPropertyName("deleted")] public long DeletedCount { get; }
+    [JsonPropertyName("deleted")] public long DeletedCount { get; } = deletedCount;
 }
