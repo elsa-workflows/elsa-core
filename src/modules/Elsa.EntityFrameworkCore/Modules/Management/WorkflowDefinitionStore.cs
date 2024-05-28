@@ -140,7 +140,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
     /// <inheritdoc />
     public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(x => true, x =>  x.DefinitionId, cancellationToken);
+        return await _store.CountAsync(x => true, x => x.DefinitionId, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -193,7 +193,14 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));
         if (filter.UsableAsActivity != null) queryable = queryable.Where(x => EF.Property<bool>(x, "UsableAsActivity") == filter.UsableAsActivity);
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm)) queryable = queryable.Where(x => x.Name!.Contains(filter.SearchTerm) || x.Description!.Contains(filter.SearchTerm) || x.Id.Contains(filter.SearchTerm) || x.DefinitionId.Contains(filter.SearchTerm));
-        if (filter.IsSystem != null) queryable = queryable.Where(x => x.IsSystem == filter.IsSystem);
+
+        // TEMP: IsSystem may be null when upgrading from older versions of Elsa to 3.2. See issue #5366.
+        // In a future version, we should remove this check and simply do queryable.Where(x => x.IsSystem == filter.IsSystem).
+        if (filter.IsSystem != null)
+            queryable = filter.IsSystem == true
+                ? queryable.Where(x => x.IsSystem == true)
+                : queryable.Where(x => x.IsSystem == false || x.IsSystem == null);
+
         if (filter.IsReadonly != null) queryable = queryable.Where(x => x.IsReadonly == filter.IsReadonly);
         return queryable;
     }
@@ -204,7 +211,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
         return queryable;
     }
-    
+
     private class WorkflowDefinitionState
     {
         [JsonConstructor]
