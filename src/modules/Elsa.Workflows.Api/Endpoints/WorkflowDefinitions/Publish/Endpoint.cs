@@ -55,10 +55,11 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+        var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
 
-        var response = await linker.MapAsync(definition, cancellationToken);
-
+        var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
+        var response = new Response(mappedDefinition, result.ConsumingWorkflows?.Count() ?? 0);
+        
         // We do not want to include composite root activities in the response.
         var serializerOptions = serializer.GetOptions().Clone();
         serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());

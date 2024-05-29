@@ -33,6 +33,7 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var notFound = new List<string>();
         var alreadyPublished = new List<string>();
         var skipped = new List<string>();
+        var consumingUpdated = new List<string>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
@@ -62,10 +63,15 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 continue;
             }
 
-            await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+            var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
+            
+            if (result.ConsumingWorkflows?.Any() == true)
+            {
+                consumingUpdated.AddRange(result.ConsumingWorkflows.Select(x => x.DefinitionId));
+            }
         }
 
-        return new Response(published, alreadyPublished, notFound, skipped);
+        return new Response(published, alreadyPublished, notFound, skipped, consumingUpdated);
     }
 }

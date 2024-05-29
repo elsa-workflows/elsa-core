@@ -92,9 +92,11 @@ internal class Post(
         draft.Outcomes = outcomes;
         draft.Options = model.Options ?? new WorkflowOptions();
 
+        PublishWorkflowDefinitionResult? result = null;
+        
         if (request.Publish.GetValueOrDefault(false))
         {
-            var result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
+            result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
 
             if (!result.Succeeded)
             {
@@ -110,10 +112,11 @@ internal class Post(
             await workflowDefinitionPublisher.SaveDraftAsync(draft, cancellationToken);
         }
 
-        var response = await linker.MapAsync(draft, cancellationToken);
+        var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
+        var response = new Response(mappedDefinition, result?.ConsumingWorkflows?.Count() ?? 0);
 
         if (isNew)
-            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, response, cancellation: cancellationToken);
+            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, mappedDefinition, cancellation: cancellationToken);
         else
         {
             await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
