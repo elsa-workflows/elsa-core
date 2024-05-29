@@ -50,8 +50,7 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         if (definition.IsPublished)
         {
-            AddError($"Workflow with id {request.DefinitionId} is already published");
-            await SendErrorsAsync(cancellation: cancellationToken);
+            await SendStringAsync($"Workflow with id {request.DefinitionId} is already published");
             return;
         }
 
