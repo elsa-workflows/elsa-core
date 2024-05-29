@@ -28,9 +28,10 @@ namespace Elsa.Activities.Mqtt.Activities.SendMqttMessage
             Hint = "Message body",
             Order = 2,
             UIHint = ActivityInputUIHints.MultiLine,
-            SupportedSyntaxes = new[] { SyntaxNames.Json })]
+            DefaultSyntax = SyntaxNames.Json,
+            SupportedSyntaxes = new[] { SyntaxNames.Json, SyntaxNames.JavaScript, SyntaxNames.Liquid }
         public string Message { get; set; } = default!;
-
+        
         [ActivityOutput(Hint = "Received message")]
         public object? Output { get; set; }
         
