@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
@@ -48,7 +49,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     }
 
     /// <inheritdoc />
-    public async Task RegisterAsync(Type activityType, CancellationToken cancellationToken)
+    public async Task RegisterAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken)
     {
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName(activityType);
 
@@ -70,6 +71,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(_manualActivityDescriptors);
 
+    /// <inheritdoc />
     public async Task RefreshDescriptors(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
@@ -94,7 +96,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         Add(descriptor, _activityDescriptors, target);
     }
 
-    private void Add(ActivityDescriptor descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
+    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
     {
         if (descriptor is null)
         {

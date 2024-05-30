@@ -5,6 +5,13 @@ namespace Elsa.MassTransit.Messages;
 /// </summary>
 public class WorkflowDefinitionCreated(string id, bool usableAsActivity)
 {
-    public string Id { get; set; } = id;
-    public bool UsableAsActivity { get; set; } = usableAsActivity;
+    /// <summary>
+    /// The ID of the created workflow definition.
+    /// </summary>
+    public string Id { get; } = id;
+    
+    /// <summary>
+    /// Whether the created workflow definition is usable as an activity.
+    /// </summary>
+    public bool UsableAsActivity { get; } = usableAsActivity;
 }
