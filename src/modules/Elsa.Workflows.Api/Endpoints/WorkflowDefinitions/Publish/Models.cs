@@ -7,4 +7,4 @@ internal class Request
     public string DefinitionId { get; set; } = default!;
 }
 
-internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, int ConsumingWorkflowCount);
+internal record Response(LinkedWorkflowDefinitionModel WorkflowDefinition, bool AlreadyPublished, int ConsumingWorkflowCount);
