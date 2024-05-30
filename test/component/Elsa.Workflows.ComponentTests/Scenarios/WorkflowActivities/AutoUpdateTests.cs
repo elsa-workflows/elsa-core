@@ -64,7 +64,7 @@ public class AutoUpdateTests : AppComponentTest
         await client.GetStringAsync("test-cache-invalidation");
         
         //Make sure the items are in the cache
-        var hash = ComputeBookmarkHash("/test-cache-invalidation", "get");
+        var hash = _httpCacheManager.ComputeBookmarkHash("/test-cache-invalidation", "get");
         Assert.True(_cache.TryGetValue($"http-workflow:{hash}", out _));
 
         var filter = new TriggerFilter
@@ -112,12 +112,5 @@ public class AutoUpdateTests : AppComponentTest
         {
             _signalManager.Trigger(GraphChangeTokenSignal, args);
         }
-    }
-    
-    private string ComputeBookmarkHash(string path, string method)
-    {
-        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        return _bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
     }
 }
