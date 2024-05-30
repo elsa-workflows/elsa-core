@@ -3,7 +3,6 @@ using Elsa.Http;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Caching.Memory;
@@ -14,7 +13,6 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
 public class AutoUpdateTests : AppComponentTest
 {
     private readonly IMemoryCache _cache;
-    private readonly IBookmarkHasher _bookmarkHasher;
     private readonly IHasher _hasher;
     private readonly IWorkflowDefinitionCacheManager _definitionCacheManager;
     private readonly IWorkflowDefinitionPublisher _publisher;
@@ -26,9 +24,9 @@ public class AutoUpdateTests : AppComponentTest
     private readonly IHttpWorkflowsCacheManager _httpCacheManager;
     private readonly IWorkflowDefinitionCacheManager _workflowCacheManager;
     
-    private string _httpChangeToken;
-    private string _triggerChangeToken;
-    private string _graphChangeToken;
+    private string? _httpChangeToken;
+    private string? _triggerChangeToken;
+    private string? _graphChangeToken;
     
     private static readonly object HttpChangeTokenSignal = new();
     private static readonly object TriggerChangeTokenSignal = new();
@@ -41,7 +39,6 @@ public class AutoUpdateTests : AppComponentTest
     public AutoUpdateTests(App app) : base(app)
     {
         _cache = Scope.ServiceProvider.GetRequiredService<IMemoryCache>();
-        _bookmarkHasher = Scope.ServiceProvider.GetRequiredService<IBookmarkHasher>();
         _hasher = Scope.ServiceProvider.GetRequiredService<IHasher>();
         _definitionCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
         _publisher = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();

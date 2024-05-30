@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Contracts;
@@ -74,7 +75,7 @@ public interface IActivityRegistry : IActivityProvider
     /// </summary>
     /// <param name="activityType">The activity type to register.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task RegisterAsync(Type activityType, CancellationToken cancellationToken = default);
+    Task RegisterAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Registers multiple activity types.
