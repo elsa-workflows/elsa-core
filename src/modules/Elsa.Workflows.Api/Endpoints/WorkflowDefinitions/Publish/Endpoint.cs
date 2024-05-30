@@ -7,6 +7,7 @@ using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -48,16 +49,15 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        if (definition.IsPublished)
+        PublishWorkflowDefinitionResult? result = null;
+        var isPublished = definition.IsPublished; 
+        if (!isPublished)
         {
-            await SendStringAsync($"Workflow with id {request.DefinitionId} is already published");
-            return;
+            result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
         }
-
-        var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
-
+        
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, result.ConsumingWorkflows?.Count() ?? 0);
+        var response = new Response(mappedDefinition, isPublished, result?.ConsumingWorkflows?.Count() ?? 0);
         
         // We do not want to include composite root activities in the response.
         var serializerOptions = serializer.GetOptions().Clone();
