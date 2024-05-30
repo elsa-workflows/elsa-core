@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -580,7 +581,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// </summary>
     public async Task<ActivityExecutionContext> CreateActivityExecutionContext(IActivity activity, ActivityInvocationOptions? options = default)
     {
-        var activityDescriptor = await ActivityRegistryLookup.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
+        var activityDescriptor = await ActivityRegistryLookup.Find(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
