@@ -73,7 +73,7 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
 
             if (string.IsNullOrWhiteSpace(cronExpression))
             {
-                _logger.LogWarning("Cron expression is empty. TriggerId: {TriggerId}. Skipping scheduling of this trigger", trigger.Id);
+                logger.LogWarning("Cron expression is empty. TriggerId: {TriggerId}. Skipping scheduling of this trigger", trigger.Id);
                 continue;
             }
             
