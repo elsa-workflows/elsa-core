@@ -91,7 +91,7 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
             }
             catch (FormatException ex)
             {
-                logger.LogWarning(ex,"Cron expression format error: {exceptionMessage}. CronExpression: {cronExpression}", ex.Message, cronExpression);
+                logger.LogWarning(ex,"Cron expression format error: {ExceptionMessage}. CronExpression: {CronExpression}", ex.Message, cronExpression);
             }
         }
     }
