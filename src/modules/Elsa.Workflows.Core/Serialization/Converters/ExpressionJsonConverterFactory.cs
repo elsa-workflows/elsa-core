@@ -6,7 +6,7 @@ using Elsa.Expressions.Models;
 namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
-/// A JSON converter factory that creates <see cref="InputJsonConverter{T}"/> instances.
+/// A JSON converter factory that creates <see cref="ExpressionJsonConverter"/> instances.
 /// </summary>
 public class ExpressionJsonConverterFactory : JsonConverterFactory
 {

@@ -7,7 +7,7 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
-/// Serializes <see cref="Input"/> objects.
+/// Serializes <see cref="Expression"/> objects.
 /// </summary>
 public class ExpressionJsonConverter : JsonConverter<Expression>
 {
