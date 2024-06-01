@@ -1,9 +1,9 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -12,12 +12,6 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// </summary>
 public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 {
-    private static readonly ISet<EntityState> ModifiedEntityStates = new HashSet<EntityState>
-    {
-        EntityState.Added,
-        EntityState.Modified,
-    };
-    
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
@@ -27,30 +21,19 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     public string Schema { get; }
 
     /// <summary>
-    /// The table used to store the migrations' history.
+    /// The table used to store the migrations history.
     /// </summary>
     public static string MigrationsHistoryTable { get; set; } = "__EFMigrationsHistory";
 
     /// <summary>
-    /// Current TenantId.
-    /// </summary>
-    public string? TenantId { get; set; }
-
-    /// <summary>
-    /// Service Provider used in some strategies and filters.
-    /// </summary>
-    protected readonly IServiceProvider ServiceProvider;
-
-    /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
-    [RequiresUnreferencedCode("The constructor of the base class is called by the generated code.")]
-    protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
+    protected ElsaDbContextBase(DbContextOptions options) : base(options)
     {
-        ServiceProvider = serviceProvider;
-
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
+    protected readonly IServiceProvider ServiceProvider;
+    public string? TenantId { get; set; }
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }

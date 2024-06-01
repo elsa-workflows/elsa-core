@@ -1,3 +1,5 @@
+using Elsa.Common.Contracts;
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
@@ -10,20 +12,9 @@ namespace Elsa.Scheduling.Services;
 /// <summary>
 /// A default implementation of <see cref="ITriggerScheduler"/> that schedules triggers using <see cref="IWorkflowScheduler"/>.
 /// </summary>
-public class DefaultTriggerScheduler : ITriggerScheduler
+public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISystemClock systemClock, ILogger<DefaultTriggerScheduler> logger)
+    : ITriggerScheduler
 {
-    private readonly IWorkflowScheduler _workflowScheduler;
-    private readonly ILogger<DefaultTriggerScheduler> _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultTriggerScheduler"/> class.
-    /// </summary>
-    public DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ILogger<DefaultTriggerScheduler> logger)
-    {
-        _workflowScheduler = workflowScheduler;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
     public async Task ScheduleAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken = default)
     {
@@ -31,6 +22,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         var timerTriggers = triggerList.Filter<Activities.Timer>();
         var startAtTriggers = triggerList.Filter<StartAt>();
         var cronTriggers = triggerList.Filter<Cron>();
+        var now = systemClock.UtcNow;
 
         // Schedule each Timer trigger.
         foreach (var trigger in timerTriggers)
@@ -43,13 +35,21 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 TriggerActivityId = trigger.ActivityId,
                 Input = input
             };
-            await _workflowScheduler.ScheduleRecurringAsync(trigger.Id, request, startAt, interval, cancellationToken);
+            await workflowScheduler.ScheduleRecurringAsync(trigger.Id, request, startAt, interval, cancellationToken);
         }
 
         // Schedule each StartAt trigger.
         foreach (var trigger in startAtTriggers)
         {
             var executeAt = trigger.GetPayload<StartAtPayload>().ExecuteAt;
+            
+            // If the trigger is in the past, log info and skip scheduling.
+            if (executeAt < now)
+            {
+                logger.LogInformation("StartAt trigger is in the past. TriggerId: {TriggerId}. ExecuteAt: {ExecuteAt}. Skipping scheduling", trigger.Id, executeAt);
+                continue;
+            }
+            
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new ScheduleNewWorkflowInstanceRequest
             {
@@ -58,7 +58,7 @@ public class DefaultTriggerScheduler : ITriggerScheduler
                 Input = input
             };
 
-            await _workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
+            await workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
         }
 
         // Schedule each Cron trigger.
@@ -66,6 +66,13 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         {
             var payload = trigger.GetPayload<CronTriggerPayload>();
             var cronExpression = payload.CronExpression;
+
+            if (string.IsNullOrWhiteSpace(cronExpression))
+            {
+                logger.LogWarning("Cron expression is empty. TriggerId: {TriggerId}. Skipping scheduling of this trigger", trigger.Id);
+                continue;
+            }
+            
             var input = new { CronExpression = cronExpression }.ToDictionary();
             var request = new ScheduleNewWorkflowInstanceRequest
             {
@@ -75,11 +82,11 @@ public class DefaultTriggerScheduler : ITriggerScheduler
             };
             try
             {
-                await _workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
+                await workflowScheduler.ScheduleCronAsync(trigger.Id, request, cronExpression, cancellationToken);
             }
             catch (FormatException ex)
             {
-                _logger.LogWarning("Cron expression format error: {ExMessage}. CronExpression: {CronExpression}", ex.Message, cronExpression);
+                logger.LogWarning("Cron expression format error: {ExMessage}. CronExpression: {CronExpression}", ex.Message, cronExpression);
             }
         }
     }
@@ -94,6 +101,6 @@ public class DefaultTriggerScheduler : ITriggerScheduler
         var filteredTriggers = timerTriggers.Concat(startAtTriggers).Concat(cronTriggers);
         
         foreach (var trigger in filteredTriggers)
-            await _workflowScheduler.UnscheduleAsync(trigger.Id, cancellationToken);
+            await workflowScheduler.UnscheduleAsync(trigger.Id, cancellationToken);
     }
 }
