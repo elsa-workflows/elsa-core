@@ -10,6 +10,6 @@ public interface ITenantResolver
     /// <summary>
     /// Get the current <see cref="Tenant"/>.
     /// </summary>
-    /// <returns>Current tenant or null.</returns>
-    Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default);
+    /// <returns>Current tenant.</returns>
+    Task<Tenant> GetTenantAsync(CancellationToken cancellationToken = default);
 }

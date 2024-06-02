@@ -2,6 +2,7 @@ using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Tenants.HostedServices;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Resolvers;
@@ -35,6 +36,11 @@ public class TenantsFeature : FeatureBase
         Module.Configure<TenantResolverFeature>(feature => feature.TenantResolver = sp => sp.GetRequiredService<PipelinedTenantResolver>());
     }
 
+    public override void ConfigureHostedServices()
+    {
+        ConfigureHostedService<CreateShellsHostedService>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
@@ -44,6 +50,9 @@ public class TenantsFeature : FeatureBase
             .AddTransient<PipelinedTenantResolver>()
             .AddSingleton<ConfigurationTenantsProvider>()
             .AddSingleton<IAmbientTenantAccessor, AmbientTenantAccessor>()
+            .AddSingleton<IApplicationServicesAccessor>(new DefaultApplicationServicesAccessor(Services))
+            .AddSingleton<IShellFactory, DefaultShellFactory>()
+            .AddSingleton<IShellHost, DefaultShellHost>()
             .AddScoped(TenantsProvider)
             .AddHttpContextAccessor();
 

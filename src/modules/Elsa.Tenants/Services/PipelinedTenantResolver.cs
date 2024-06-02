@@ -12,7 +12,7 @@ public class PipelinedTenantResolver(IOptions<MultitenancyOptions> options, ITen
     private Tenant? _currentTenant;
 
     /// <inheritdoc/>
-    public async Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default)
+    public async Task<Tenant> GetTenantAsync(CancellationToken cancellationToken = default)
     {
         if (_currentTenant != null)
             return _currentTenant;
@@ -27,11 +27,11 @@ public class PipelinedTenantResolver(IOptions<MultitenancyOptions> options, ITen
 
             if (result.IsResolved)
             {
-                _currentTenant = tenantsDictionary!.GetValueOrDefault(result.TenantId);
-                break;
+                _currentTenant = tenantsDictionary[result.TenantId!];
+                return _currentTenant;
             }
         }
 
-        return _currentTenant;
+        return _currentTenant ??= Tenant.DefaultTenant;
     }
 }

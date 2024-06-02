@@ -8,14 +8,8 @@ namespace Elsa.Common.Services;
 /// </summary>
 public class DefaultTenantResolver : ITenantResolver
 {
-    private readonly Tenant _defaultTenant = new()
+    public Task<Tenant> GetTenantAsync(CancellationToken cancellationToken = default)
     {
-        Id = null!,
-        Name = "Default"
-    };
-
-    public Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult<Tenant?>(_defaultTenant);
+        return Task.FromResult(Tenant.DefaultTenant);
     }
 }

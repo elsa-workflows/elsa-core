@@ -51,7 +51,7 @@ const bool useReadOnlyMode = false;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -383,7 +383,8 @@ services
                     options.TenantResolutionPipelineBuilder
                         .Append<HttpContextTenantResolver>()
                         .Append<ClaimsTenantResolver>()
-                        .Append<CurrentUserTenantResolver>();
+                        .Append<CurrentUserTenantResolver>()
+                        .Append<RoutePrefixTenantResolver>();
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
@@ -402,6 +403,10 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
+
+// Configure multitenancy.
+if (useMultitenancy)
+    app.UseMultitenancy();
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
