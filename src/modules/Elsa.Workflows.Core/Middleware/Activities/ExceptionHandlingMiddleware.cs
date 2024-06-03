@@ -1,7 +1,9 @@
 using Elsa.Common.Contracts;
+using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Signals;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
@@ -60,6 +62,8 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
 
             var strategy = await _incidentStrategyResolver.ResolveStrategyAsync(context);
             strategy.HandleIncident(context);
+
+            await context.SendSignalAsync(new ExceptionSignal(activity, e));
         }
     }
 }
