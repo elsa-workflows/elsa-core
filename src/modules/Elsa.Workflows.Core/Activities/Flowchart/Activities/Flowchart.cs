@@ -168,7 +168,6 @@ public class Flowchart : Container
         // If the complete activity is a terminal node, complete the flowchart immediately.
         if (completedActivity is ITerminalNode)
         {
-            logger.LogDebug("Completed activity {ActivityId} is a terminal activity. Completing flowchart", completedActivity.Id);
             await flowchartContext.CompleteActivityAsync();
         }
         else if (scheduleChildren)
@@ -214,7 +213,7 @@ public class Flowchart : Container
                         if (joinContext != null)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing join context {JoinContext}", activity.Id, joinContext.Id);
                         else
-                            logger.LogDebug("Next activity {ChildActivityId} is a join activity", activity.Id);
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Creating new join context", activity.Id);
                         
                         await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
