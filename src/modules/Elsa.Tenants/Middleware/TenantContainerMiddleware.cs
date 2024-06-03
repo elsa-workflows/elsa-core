@@ -20,12 +20,19 @@ public class TenantContainerMiddleware(RequestDelegate next, IShellHost shellHos
             httpContext.Request.Path = new PathString("/" + string.Join("/", segments.Skip(1)));
         }
 
+        // Resolve the tenant.
         var currentTenant = await tenantResolver.GetTenantAsync();
         var shell = shellHost.GetShell(currentTenant.Id);
+        
+        // Replace the request services with the tenant-specific service provider.
         var originalServiceProvider = httpContext.RequestServices;
         await using var scope = shell.ServiceProvider.CreateAsyncScope();
         httpContext.RequestServices = scope.ServiceProvider;
+        
+        // Call the next middleware in the pipeline.
         await next(httpContext);
+        
+        // Restore the original service provider.
         httpContext.RequestServices = originalServiceProvider;
     }
 }
