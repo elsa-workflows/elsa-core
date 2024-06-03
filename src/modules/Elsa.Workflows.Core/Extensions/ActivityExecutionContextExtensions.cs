@@ -363,26 +363,9 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
-        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList();
         var logger = context.GetRequiredService<ILogger<ActivityExecutionContext>>();
-
-        // Let all ancestors capture the signal.
-        foreach (var ancestorContext in capturingContexts)
-        {
-            var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
-
-            if (ancestorContext.Activity is not ISignalHandler handler)
-                continue;
-
-            logger.LogDebug("Capturing signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-            await handler.CaptureSignalAsync(signal, signalContext);
-
-            if (signalContext.StopPropagationRequested)
-            {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-                return;
-            }
-        }
+        var signalType = signal.GetType();
+        var signalTypeName = signalType.Name;
 
         // Let all ancestors receive the signal.
         foreach (var ancestorContext in receivingContexts)
@@ -392,12 +375,12 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
-            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
             await handler.ReceiveSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
             {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
                 return;
             }
         }
