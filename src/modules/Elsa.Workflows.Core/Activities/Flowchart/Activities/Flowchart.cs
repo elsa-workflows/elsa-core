@@ -212,7 +212,7 @@ public class Flowchart : Container
                         };
 
                         if (joinContext != null)
-                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing context {JoinContext}", activity.Id, joinContext.Id);
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing join context {JoinContext}", activity.Id, joinContext.Id);
                         else
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity", activity.Id);
                         
@@ -237,13 +237,10 @@ public class Flowchart : Container
 
         if (!hasPendingWork)
         {
-            logger.LogDebug("No pending work found");
             var hasFaultedActivities = context.GetActiveChildren().Any(x => x.Status == ActivityStatus.Faulted);
 
             if (!hasFaultedActivities)
             {
-                logger.LogDebug("No faulted activities found");
-                logger.LogDebug("Completing flowchart");
                 await context.CompleteActivityAsync();
             }
         }
