@@ -164,6 +164,13 @@ public class Flowchart : Container
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
+        var loggerScopeState = new Dictionary<string, object>
+        {
+            ["ThreadId"] = Thread.CurrentThread.ManagedThreadId,
+            ["ActivityId"] = context
+        };
+        using var loggerScope = logger.BeginScope(loggerScopeState);
+
         var flowchartContext = context.TargetContext;
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
@@ -175,10 +182,7 @@ public class Flowchart : Container
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
         var outcomeNames = result is Outcomes outcomes
             ? outcomes.Names
-            : new[]
-            {
-                default(string), "Done"
-            };
+            : [null!, "Done"];
 
         // Only query the outbound connections if the completed activity wasn't already completed.
         var outboundConnections = Connections.Where(connection => connection.Source.Activity == completedActivity && outcomeNames.Contains(connection.Source.Port)).ToList();
