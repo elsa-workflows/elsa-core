@@ -167,7 +167,8 @@ public class Flowchart : Container
         var loggerScopeState = new Dictionary<string, object>
         {
             ["ThreadId"] = Thread.CurrentThread.ManagedThreadId,
-            ["ActivityId"] = context
+            ["ActivityId"] = Id,
+            ["ActivityInstanceId"] = context.TargetContext.Id
         };
         using var loggerScope = logger.BeginScope(loggerScopeState);
 
