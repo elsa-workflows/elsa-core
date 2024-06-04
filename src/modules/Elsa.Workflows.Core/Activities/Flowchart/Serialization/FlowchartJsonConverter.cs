@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
@@ -29,6 +30,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
         var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
+        var variablesElement = doc.RootElement.TryGetProperty("variables", out var variablesEl) ? variablesEl : default;
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
         var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
@@ -41,6 +43,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var connectionsToRestore = FindConnectionsThatCanBeRestored(notFoundConnections, activities);
         var connectionComparer = new ConnectionComparer();
         var connectionsWithRestoredOnes = connections.Except(notFoundConnections, connectionComparer).Union(connectionsToRestore, connectionComparer).ToList();
+        var variables = variablesElement.ValueKind != JsonValueKind.Undefined ? variablesElement.Deserialize<ICollection<Variable>>(options) ?? new List<Variable>() : new List<Variable>();
 
         var flowChart = new Activities.Flowchart
         {
@@ -50,6 +53,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             Metadata = metadata,
             Activities = activities,
             Connections = connectionsWithRestoredOnes,
+            Variables = variables,
             CustomProperties =
             {
                 [AllActivitiesKey] = activities.ToList(),
@@ -86,7 +90,8 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
             value.Metadata,
             CustomProperties = customProperties,
             Activities = allActivities,
-            Connections = allConnections
+            Connections = allConnections,
+            value.Variables,
         };
 
         JsonSerializer.Serialize(writer, model, connectionSerializerOptions);
