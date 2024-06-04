@@ -6,6 +6,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Services;
 
@@ -17,7 +18,8 @@ public class WorkflowRunner(
     IWorkflowBuilderFactory workflowBuilderFactory,
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
-    INotificationSender notificationSender)
+    INotificationSender notificationSender,
+    ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
 {
     /// <inheritdoc />
@@ -107,7 +109,7 @@ public class WorkflowRunner(
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
         return await RunAsync(workflowGraph, workflowState, options, cancellationToken);
     }
-    
+
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
@@ -161,7 +163,8 @@ public class WorkflowRunner(
         }
         else if (activityInstanceId != null)
         {
-            var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ?? throw new Exception("No activity execution context found with the specified ID.");
+            var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ??
+                                           throw new Exception("No activity execution context found with the specified ID.");
             workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
         }
         else if (workflowExecutionContext.Scheduler.HasAny)
@@ -180,6 +183,12 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        var workflowInstanceId = workflowExecutionContext.Id;
+        var logContext = new Dictionary<string, object>
+        {
+            ["WorkflowInstanceId"] = workflowInstanceId
+        };
+        using var loggingScope = logger.BeginScope(logContext);
         var workflow = workflowExecutionContext.Workflow;
         var applicationCancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
         var systemCancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
