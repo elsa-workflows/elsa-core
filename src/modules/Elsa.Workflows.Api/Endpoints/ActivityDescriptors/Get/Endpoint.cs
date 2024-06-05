@@ -26,7 +26,7 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var descriptor = request.Version == null ? await _registryLookup.Find(request.TypeName) : await _registryLookup.Find(request.TypeName, request.Version.Value);
+        var descriptor = request.Version == null ? await _registryLookup.FindAsync(request.TypeName) : await _registryLookup.FindAsync(request.TypeName, request.Version.Value);
 
         if (descriptor == null)
             await SendNotFoundAsync(cancellationToken);

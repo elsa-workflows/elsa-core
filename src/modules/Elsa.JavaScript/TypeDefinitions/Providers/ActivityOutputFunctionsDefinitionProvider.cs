@@ -29,7 +29,7 @@ internal class ActivityOutputFunctionsDefinitionProvider : FunctionDefinitionPro
         var nodes = (await _activityVisitor.VisitAsync(workflow.Root, context.CancellationToken)).Flatten().Distinct().ToList();
         
         // Ensure identities.
-        await _identityGraphService.AssignIdentities(nodes);
+        await _identityGraphService.AssignIdentitiesAsync(nodes);
         
         var activitiesWithOutputs = nodes.GetActivitiesWithOutputs(_activityRegistryLookup);
         var definitions = new List<FunctionDefinition>();

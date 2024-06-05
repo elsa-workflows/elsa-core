@@ -80,7 +80,7 @@ public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistry
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (var definition in notification.VersionUpdate)
+        foreach (var definition in notification.VersionUpdates)
         {
             await UpdateDefinition(definition.Id, definition.UsableAsActivity);
         }

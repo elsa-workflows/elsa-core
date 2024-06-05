@@ -7,4 +7,4 @@ namespace Elsa.Workflows.Management.Notifications;
 /// A notification that is sent when specific workflow definition versions are updated.
 /// </summary>
 [PublicAPI]
-public record WorkflowDefinitionVersionsUpdated(IEnumerable<WorkflowDefinitionVersionsUpdate> VersionUpdate) : INotification;
+public record WorkflowDefinitionVersionsUpdated(IEnumerable<WorkflowDefinitionVersionUpdate> VersionUpdates) : INotification;
