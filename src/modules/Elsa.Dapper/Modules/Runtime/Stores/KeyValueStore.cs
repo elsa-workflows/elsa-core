@@ -39,15 +39,15 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
     /// <inheritdoc />
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
-        return store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Key), key), cancellationToken);
+        return store.DeleteAsync(query => query.Is(nameof(KeyValuePairRecord.Id), key), cancellationToken);
     }
 
     private void ApplyFilter(ParameterizedQuery query, KeyValueFilter filter)
     {
         query
-            .Is(nameof(KeyValuePairRecord.Key), filter.Key)
-            .In(nameof(KeyValuePairRecord.Key), filter.Keys)
-            .StartsWith(nameof(KeyValuePairRecord.Key), filter.StartsWith, filter.Key);
+            .Is(nameof(KeyValuePairRecord.Id), filter.Key)
+            .In(nameof(KeyValuePairRecord.Id), filter.Keys)
+            .StartsWith(nameof(KeyValuePairRecord.Id), filter.StartsWith, filter.Key);
     }
 
     private KeyValuePairRecord Map(SerializedKeyValuePair source)
@@ -55,7 +55,6 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
         return new()
         {
             Id = source.Id,
-            Key = source.Key,
             Value = source.SerializedValue,
             TenantId = source.TenantId
         };
@@ -66,7 +65,6 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
         return new()
         {
             Id = source.Id,
-            Key = source.Key,
             SerializedValue = source.Value,
             TenantId = source.TenantId
         };
