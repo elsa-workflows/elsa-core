@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Tenants.Models;
+namespace Elsa.Shells;
 
 public class Shell(IServiceCollection serviceCollection, IServiceProvider serviceProvider)
 {

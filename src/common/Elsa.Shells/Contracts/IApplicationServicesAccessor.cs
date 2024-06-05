@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Tenants;
+namespace Elsa.Shells;
 
 public interface IApplicationServicesAccessor
 {

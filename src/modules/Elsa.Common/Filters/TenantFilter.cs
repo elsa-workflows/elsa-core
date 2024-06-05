@@ -1,7 +1,7 @@
 ﻿using Elsa.Common.Entities;
 using JetBrains.Annotations;
 
-namespace Elsa.Tenants.Models;
+namespace Elsa.Common.Filters;
 
 /// <summary>
 /// Represents a tenant filter.

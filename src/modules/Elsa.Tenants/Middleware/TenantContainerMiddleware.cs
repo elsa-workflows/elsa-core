@@ -1,4 +1,5 @@
 using Elsa.Common.Contracts;
+using Elsa.Shells;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 

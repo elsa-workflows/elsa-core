@@ -1,6 +1,4 @@
-using Elsa.Tenants.Models;
-
-namespace Elsa.Tenants;
+namespace Elsa.Shells;
 
 /// <summary>
 /// Represents a shell host responsible for initializing & managing shells.

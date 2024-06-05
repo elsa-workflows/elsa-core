@@ -1,4 +1,6 @@
-﻿using JetBrains.Annotations;
+﻿using System.Text.Json;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Common.Entities;
 
@@ -12,6 +14,11 @@ public class Tenant : Entity
     /// Gets or sets the name.
     /// </summary>
     public string Name { get; set; } = default!;
+    
+    /// <summary>
+    /// Gets or sets the isolation mode for a tenant.
+    /// </summary>
+    public TenantIsolationMode IsolationMode { get; set; } = TenantIsolationMode.Shared;
 
     /// <summary>
     /// Gets or sets the configuration for a tenant.
@@ -19,12 +26,15 @@ public class Tenant : Entity
     /// <remarks>
     /// The configuration can be used to store various settings and options specific to a tenant.
     /// </remarks>
-    public IDictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+    public JsonElement? Configuration { get; set; }
 
     /// <summary>
-    /// Gets or sets the isolation mode for a tenant.
+    /// Gets or sets the list of enabled features for the tenant.
     /// </summary>
-    public TenantIsolationMode IsolationMode { get; set; } = TenantIsolationMode.Shared;
+    /// <remarks>
+    /// The <see cref="EnabledFeatures"/> property represents a collection of features that are enabled for the tenant. Each feature is represented by a unique string identifier.
+    /// </remarks>
+    public ICollection<string> EnabledFeatures { get; set; } = new List<string>();
     
     public static readonly Tenant DefaultTenant = new()
     {

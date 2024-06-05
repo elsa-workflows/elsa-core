@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Shells\Elsa.Shells.csproj" />
         <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
         <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />

@@ -1,8 +1,8 @@
 using Elsa.Common;
-using Elsa.Tenants.Models;
+using Elsa.Common.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Tenants.Services;
+namespace Elsa.Shells.Services;
 
 /// A default shell host implementation that creates and manages shells for the main application and for each isolated tenant.
 public class DefaultShellHost(

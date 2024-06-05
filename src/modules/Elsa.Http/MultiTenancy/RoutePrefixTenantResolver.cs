@@ -1,5 +1,6 @@
 using Elsa.Common.Abstractions;
 using Elsa.Common.Contexts;
+using Elsa.Common.Contracts;
 using Elsa.Common.Results;
 using Elsa.Extensions;
 using Elsa.Http.Contracts;

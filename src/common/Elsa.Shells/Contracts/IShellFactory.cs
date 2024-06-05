@@ -1,7 +1,6 @@
 using Elsa.Common.Entities;
-using Elsa.Tenants.Models;
 
-namespace Elsa.Tenants;
+namespace Elsa.Shells;
 
 /// <summary>
 /// Represents a factory for creating Shell objects.
