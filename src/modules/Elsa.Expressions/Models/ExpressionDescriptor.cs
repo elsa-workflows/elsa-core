@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
+using Elsa.Extensions;
 
 namespace Elsa.Expressions.Models;
 
@@ -16,9 +17,13 @@ public class ExpressionDescriptor
         // Default deserialization function.
         Deserialize = context =>
         {
-            return context.JsonElement.ValueKind == JsonValueKind.Object
-                ? context.JsonElement.Deserialize<Expression>((JsonSerializerOptions?)context.Options)!
-                : new Expression(context.ExpressionType, null!);
+            var expression = new Expression(context.ExpressionType, null);
+
+            if (context.JsonElement.ValueKind == JsonValueKind.Object)
+                if (context.JsonElement.TryGetProperty("value", out var expressionValueElement)) 
+                    expression.Value = expressionValueElement.GetValue();
+
+            return expression;
         };
     }
 
