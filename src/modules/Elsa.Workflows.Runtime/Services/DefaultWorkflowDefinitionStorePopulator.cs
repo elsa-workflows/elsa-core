@@ -127,7 +127,17 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
 
         if (existingDefinitionVersion != null)
+        {
             workflowDefinitionsToSave.Add(existingDefinitionVersion);
+            
+            if(existingDefinitionVersion.Id != workflow.Identity.Id)
+            {
+                // It's possible that the imported workflow definition has a different ID than the existing one in the store.
+                // In a future update, we might store this discrepancy in a "troubleshooting" table and provide tooling for managing these, and other, discrepancies.
+                // See https://github.com/elsa-workflows/elsa-core/issues/5540
+                _logger.LogWarning("Workflow with ID {WorkflowId} already exists with a different ID {ExistingWorkflowId}", workflow.Identity.Id, existingDefinitionVersion.Id);
+            }
+        }
 
         await UpdateIsLatest();
         await UpdateIsPublished();

@@ -49,6 +49,7 @@ public class ClrWorkflowProvider : IWorkflowProvider
         var workflowBuilderType = workflowBuilder.GetType();
 
         builder.DefinitionId = workflowBuilderType.Name;
+        builder.Id = $"{workflowBuilderType.Name}:1.0";
         await workflowBuilder.BuildAsync(builder, cancellationToken);
 
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);

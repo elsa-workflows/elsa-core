@@ -6,6 +6,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Services;
 
@@ -17,7 +18,8 @@ public class WorkflowRunner(
     IWorkflowBuilderFactory workflowBuilderFactory,
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
-    INotificationSender notificationSender)
+    INotificationSender notificationSender,
+    ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
 {
     /// <inheritdoc />
@@ -168,6 +170,12 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        var workflowInstanceId = workflowExecutionContext.Id;
+        var logContext = new Dictionary<string, object>
+        {
+            ["WorkflowInstanceId"] = workflowInstanceId
+        };
+        using var loggingScope = logger.BeginScope(logContext);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
 
