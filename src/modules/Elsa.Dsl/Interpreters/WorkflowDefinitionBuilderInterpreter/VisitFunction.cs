@@ -27,7 +27,7 @@ public partial class WorkflowDefinitionBuilderInterpreter
         var functionName = context.ID().GetText();
         var argsNode = context.args();
         var args = argsNode != null ? _argValues.Get(context.args()) : default;
-        var activity = _functionActivityRegistry.ResolveFunction(functionName, args).GetAwaiter().GetResult();
+        var activity = _functionActivityRegistry.ResolveFunctionAsync(functionName, args).GetAwaiter().GetResult();
             
         _expressionValue.Put(context, activity);
         return DefaultResult;

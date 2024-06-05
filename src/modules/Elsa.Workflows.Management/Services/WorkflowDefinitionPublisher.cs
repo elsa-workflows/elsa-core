@@ -252,7 +252,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         if (updatedWorkflowDefinitions.Any())
         {
             var definitionVersionsUpdates = updatedWorkflowDefinitions.Select(x => 
-                new WorkflowDefinitionVersionsUpdate(x.Id, x.DefinitionId, x.Options.UsableAsActivity.GetValueOrDefault())).ToList();
+                new WorkflowDefinitionVersionUpdate(x.Id, x.DefinitionId, x.Options.UsableAsActivity.GetValueOrDefault())).ToList();
             await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionVersionsUpdates), cancellationToken);
             await _workflowDefinitionStore.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
             await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionVersionsUpdates), cancellationToken);

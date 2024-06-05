@@ -154,7 +154,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             cancellationTokens);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
-        await workflowStateExtractor.Apply(workflowExecutionContext, workflowState);
+        await workflowStateExtractor.ApplyAsync(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }
@@ -579,9 +579,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
     /// </summary>
-    public async Task<ActivityExecutionContext> CreateActivityExecutionContext(IActivity activity, ActivityInvocationOptions? options = default)
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity, ActivityInvocationOptions? options = default)
     {
-        var activityDescriptor = await ActivityRegistryLookup.Find(activity) ?? throw new ActivityNotFoundException(activity.Type);
+        var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;

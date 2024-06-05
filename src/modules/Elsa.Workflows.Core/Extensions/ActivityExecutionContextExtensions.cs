@@ -142,7 +142,7 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
-        var activityDescriptor = await activityRegistryLookup.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
         if (inputDescriptor == null)
@@ -183,7 +183,7 @@ public static class ActivityExecutionContextExtensions
         foreach (var node in nodes)
         {
             var activity = node.Activity;
-            var activityDescriptor = await activityRegistryLookup.Find(activity.Type, activity.Version);
+            var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type, activity.Version);
             if (activityDescriptor != null && activityDescriptor.Outputs.Any()) 
                 yield return (activity, activityDescriptor);
         }

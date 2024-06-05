@@ -31,14 +31,14 @@ public class IdentityGraphService : IIdentityGraphService
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
         var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
-        await AssignIdentities(graph);
+        await AssignIdentitiesAsync(graph);
     }
 
     /// <inheritdoc />
-    public Task AssignIdentities(ActivityNode root) => AssignIdentities(root.Flatten().ToList());
+    public Task AssignIdentitiesAsync(ActivityNode root) => AssignIdentitiesAsync(root.Flatten().ToList());
 
     /// <inheritdoc />
-    public async Task AssignIdentities(ICollection<ActivityNode> flattenedList)
+    public async Task AssignIdentitiesAsync(ICollection<ActivityNode> flattenedList)
     {
         var identityCounters = new Dictionary<string, int>();
 
@@ -46,7 +46,7 @@ public class IdentityGraphService : IIdentityGraphService
         {
             node.Activity.Id = CreateId(node, identityCounters, flattenedList);
             node.Activity.NodeId = node.NodeId;
-            await AssignInputOutputs(node.Activity);
+            await AssignInputOutputsAsync(node.Activity);
 
             if (node.Activity is IVariableContainer variableContainer)
                 AssignVariables(variableContainer);
@@ -54,9 +54,9 @@ public class IdentityGraphService : IIdentityGraphService
     }
 
     /// <inheritdoc />
-    public async Task AssignInputOutputs(IActivity activity)
+    public async Task AssignInputOutputsAsync(IActivity activity)
     {
-        var activityDescriptor = await _activityRegistryLookup.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await _activityRegistryLookup.FindAsync(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
         var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
         foreach (var (inputName, input) in inputDictionary)

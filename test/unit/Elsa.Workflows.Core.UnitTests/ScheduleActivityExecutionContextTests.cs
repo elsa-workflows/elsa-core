@@ -23,7 +23,7 @@ public class ScheduleActivityExecutionContextTests(ITestOutputHelper testOutputH
         var workflowGraphBuilder = _serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
         var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflowGraph, "test");
-        var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContext(writeLineA);
+        var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(writeLineA);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => activityExecutionContext.ScheduleActivityAsync(writeLineB).AsTask());
     }

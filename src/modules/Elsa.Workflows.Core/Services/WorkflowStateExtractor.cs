@@ -41,7 +41,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowExecutionContext> Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
+    public async Task<WorkflowExecutionContext> ApplyAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowState state)
     {
         workflowExecutionContext.Id = state.Id;
         workflowExecutionContext.CorrelationId = state.CorrelationId;
@@ -55,7 +55,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.FinishedAt = state.FinishedAt;
         ApplyInput(state, workflowExecutionContext);
         ApplyProperties(state, workflowExecutionContext);
-        await ApplyActivityExecutionContexts(state, workflowExecutionContext);
+        await ApplyActivityExecutionContextsAsync(state, workflowExecutionContext);
         ApplyCompletionCallbacks(state, workflowExecutionContext);
         ApplyScheduledActivities(state, workflowExecutionContext);
         return workflowExecutionContext;
@@ -96,10 +96,10 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
             workflowExecutionContext.Properties[property.Key] = property.Value;
     }
 
-    private static async Task ApplyActivityExecutionContexts(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private static async Task ApplyActivityExecutionContextsAsync(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         var activityExecutionContexts = (await Task.WhenAll(
-                state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContext(item))))
+                state.ActivityExecutionContexts.Select(async item => await CreateActivityExecutionContextAsync(item))))
             .Where(x => x != null)
             .Select(x => x!)
             .ToList();
@@ -128,7 +128,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
         workflowExecutionContext.ActivityExecutionContexts = activityExecutionContexts;
         return;
 
-        async Task<ActivityExecutionContext?> CreateActivityExecutionContext(ActivityExecutionContextState activityExecutionContextState)
+        async Task<ActivityExecutionContext?> CreateActivityExecutionContextAsync(ActivityExecutionContextState activityExecutionContextState)
         {
             var activity = workflowExecutionContext.FindActivityByNodeId(activityExecutionContextState.ScheduledActivityNodeId);
 
@@ -137,7 +137,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
                 return null;
 
             var properties = activityExecutionContextState.Properties;
-            var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContext(activity);
+            var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity);
             activityExecutionContext.Id = activityExecutionContextState.Id;
             activityExecutionContext.Properties = properties;
             activityExecutionContext.ActivityState = activityExecutionContextState.ActivityState ?? new Dictionary<string, object>();

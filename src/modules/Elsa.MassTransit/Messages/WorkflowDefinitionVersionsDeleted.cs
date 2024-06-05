@@ -5,5 +5,8 @@ namespace Elsa.MassTransit.Messages;
 /// </summary>
 public class WorkflowDefinitionVersionsDeleted(IEnumerable<string> ids)
 {
+    /// <summary>
+    /// The IDs of the deleted workflow definition versions.
+    /// </summary>
     public IEnumerable<string> Ids { get; set; } = ids;
 }

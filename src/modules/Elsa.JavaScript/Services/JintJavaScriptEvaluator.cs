@@ -100,7 +100,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
-        await CreateActivityOutputAccessors(engine, context);
+        await CreateActivityOutputAccessorsAsync(engine, context);
 
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
@@ -171,7 +171,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static async Task CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    private static async Task CreateActivityOutputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
     {
         var activityOutputs = context.GetActivityOutputs();
 

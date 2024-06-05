@@ -29,5 +29,5 @@ public interface IFunctionActivityRegistry
     /// <param name="functionName">The name of the function.</param>
     /// <param name="arguments">The arguments that are passed to the function.</param>
     /// <returns>An activity that can be invoked from a DSL script.</returns>
-    Task<IActivity> ResolveFunction(string functionName, IEnumerable<object?>? arguments = default);
+    Task<IActivity> ResolveFunctionAsync(string functionName, IEnumerable<object?>? arguments = default);
 }
