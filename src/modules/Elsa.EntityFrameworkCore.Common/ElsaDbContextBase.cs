@@ -1,9 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -12,6 +11,15 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// </summary>
 public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 {
+    private static readonly ISet<EntityState> ModifiedEntityStates = new HashSet<EntityState>
+    {
+        EntityState.Added,
+        EntityState.Modified,
+    };
+    
+    protected readonly IServiceProvider ServiceProvider;
+    public string? TenantId { get; set; }
+
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
@@ -28,21 +36,13 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// Initializes a new instance of the <see cref="ElsaDbContextBase"/> class.
     /// </summary>
-    protected ElsaDbContextBase(DbContextOptions options) : base(options)
+    protected ElsaDbContextBase(DbContextOptions options, IServiceProvider serviceProvider) : base(options)
     {
+        ServiceProvider = serviceProvider;
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
-    protected readonly IServiceProvider ServiceProvider;
-    public string? TenantId { get; set; }
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
-    }
-
-    /// <inheritdoc/>
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        await OnBeforeSavingAsync(cancellationToken);
-        return await base.SaveChangesAsync(cancellationToken);
     }
 
     /// <inheritdoc />
