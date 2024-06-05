@@ -41,7 +41,7 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (WorkflowDefinitionVersionsUpdate versionDefinition in notification.VersionUpdate)
+        foreach (WorkflowDefinitionVersionUpdate versionDefinition in notification.VersionUpdates)
         {
             await InvalidateTriggerCacheForDefinitionVersionAsync(versionDefinition.Id, cancellationToken);
         }

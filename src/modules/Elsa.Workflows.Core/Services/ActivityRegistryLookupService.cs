@@ -9,21 +9,21 @@ namespace Elsa.Workflows.Services;
 public class ActivityRegistryLookupService(IActivityRegistry activityRegistry, IEnumerable<IActivityProvider> providers) : IActivityRegistryLookupService
 {
     /// <inheritdoc />
-    public Task<ActivityDescriptor?> Find(string type)
+    public Task<ActivityDescriptor?> FindAsync(string type)
     {
-        return Find(() => activityRegistry.Find(type));
+        return FindAsync(() => activityRegistry.Find(type));
     }
 
     /// <inheritdoc />
-    public Task<ActivityDescriptor?> Find(string type, int version)
+    public Task<ActivityDescriptor?> FindAsync(string type, int version)
     {
-        return Find(() => activityRegistry.Find(type, version));
+        return FindAsync(() => activityRegistry.Find(type, version));
     }
 
     /// <inheritdoc />
-    public Task<ActivityDescriptor?> Find(Func<ActivityDescriptor, bool> predicate)
+    public Task<ActivityDescriptor?> FindAsync(Func<ActivityDescriptor, bool> predicate)
     {
-        return Find(() => activityRegistry.Find(predicate));
+        return FindAsync(() => activityRegistry.Find(predicate));
     }
 
     /// <inheritdoc />
@@ -32,7 +32,7 @@ public class ActivityRegistryLookupService(IActivityRegistry activityRegistry, I
         return activityRegistry.FindMany(predicate);
     }
     
-    private async Task<ActivityDescriptor?> Find(Func<ActivityDescriptor?> findPredicate)
+    private async Task<ActivityDescriptor?> FindAsync(Func<ActivityDescriptor?> findPredicate)
     {
         var descriptor = findPredicate.Invoke();
         if (descriptor is not null)

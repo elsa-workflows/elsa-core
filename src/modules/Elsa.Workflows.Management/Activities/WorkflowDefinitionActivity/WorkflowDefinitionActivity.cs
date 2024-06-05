@@ -45,7 +45,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        await CopyInputOutputToVariables(context);
+        await CopyInputOutputToVariablesAsync(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
@@ -84,10 +84,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         await activityExecutionContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
-    private async Task CopyInputOutputToVariables(ActivityExecutionContext context)
+    private async Task CopyInputOutputToVariablesAsync(ActivityExecutionContext context)
     {
         var serviceProvider = context.GetRequiredService<IServiceProvider>();
-        var activityDescriptor = await FindActivityDescriptor(serviceProvider);
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
 
         DeclareInputAsVariables(activityDescriptor, (descriptor, variable) =>
         {
@@ -165,10 +165,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         return workflowGraph;
     }
 
-    private async Task<ActivityDescriptor> FindActivityDescriptor(IServiceProvider serviceProvider)
+    private async Task<ActivityDescriptor> FindActivityDescriptorAsync(IServiceProvider serviceProvider)
     {
         var activityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
-        return await activityRegistryLookup.Find(Type, Version) ?? await activityRegistryLookup.Find(Type) ?? throw new Exception($"Could not find activity descriptor for {Type}.");
+        return await activityRegistryLookup.FindAsync(Type, Version) ?? await activityRegistryLookup.FindAsync(Type) ?? throw new Exception($"Could not find activity descriptor for {Type}.");
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
@@ -186,7 +186,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         if (workflowGraph == null)
             throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
-        var activityDescriptor = await FindActivityDescriptor(serviceProvider);
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
 
         // Declare input and output variables.
         DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));

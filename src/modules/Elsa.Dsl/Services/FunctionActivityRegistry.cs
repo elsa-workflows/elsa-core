@@ -37,12 +37,12 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
     }
 
     /// <inheritdoc />
-    public async Task<IActivity> ResolveFunction(string functionName, IEnumerable<object?>? arguments = default)
+    public async Task<IActivity> ResolveFunctionAsync(string functionName, IEnumerable<object?>? arguments = default)
     {
         if (!_dictionary.TryGetValue(functionName, out var descriptor))
             throw new Exception($"Could not resolve function {functionName}. Did you forget to register it?");
 
-        var activityDescriptor = await _activityRegistryLookup.Find(x => x.Name == descriptor.ActivityTypeName || x.TypeName == descriptor.ActivityTypeName);
+        var activityDescriptor = await _activityRegistryLookup.FindAsync(x => x.Name == descriptor.ActivityTypeName || x.TypeName == descriptor.ActivityTypeName);
 
         if (activityDescriptor == null)
             throw new Exception($"Could not find activity descriptor for activity type {descriptor.ActivityTypeName}");

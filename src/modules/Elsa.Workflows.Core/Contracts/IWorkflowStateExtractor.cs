@@ -20,5 +20,5 @@ public interface IWorkflowStateExtractor
     /// <param name="workflowExecutionContext">The workflow execution context to map onto.</param>
     /// <param name="state">The workflow state to apply.</param>
     /// <returns>The updated workflow execution context.</returns>
-    Task<WorkflowExecutionContext> Apply(WorkflowExecutionContext workflowExecutionContext, WorkflowState state);
+    Task<WorkflowExecutionContext> ApplyAsync(WorkflowExecutionContext workflowExecutionContext, WorkflowState state);
 }
