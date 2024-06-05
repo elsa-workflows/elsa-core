@@ -44,6 +44,13 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
+    
+    /// <inheritdoc/>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await OnBeforeSavingAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
+    }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
