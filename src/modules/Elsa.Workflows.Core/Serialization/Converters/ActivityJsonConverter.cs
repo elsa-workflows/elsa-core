@@ -217,6 +217,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         var newOptions = new JsonSerializerOptions(options);
         newOptions.Converters.Add(new InputJsonConverterFactory(_serviceProvider));
         newOptions.Converters.Add(new OutputJsonConverterFactory(_serviceProvider));
+        newOptions.Converters.Add(new ExpressionJsonConverterFactory(_expressionDescriptorRegistry));
         return _options = newOptions;
     }
 }

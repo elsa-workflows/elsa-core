@@ -164,10 +164,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         return workflowGraph;
     }
 
-    private ActivityDescriptor FindActivityDescriptor(IServiceProvider serviceProvider)
+    private ActivityDescriptor? FindActivityDescriptor(IServiceProvider serviceProvider)
     {
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        return activityRegistry.Find(Type, Version) ?? activityRegistry.Find(Type) ?? throw new Exception($"Could not find activity descriptor for {Type}.");
+        return activityRegistry.Find(Type, Version) ?? activityRegistry.Find(Type);
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
@@ -187,10 +187,18 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
         var activityDescriptor = FindActivityDescriptor(serviceProvider);
 
-        // Declare input and output variables.
-        DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-        DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-
+        if (activityDescriptor == null)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
+            logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
+        }
+        else
+        {
+            // Declare input and output variables.
+            DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+            DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+        }
+        
         // Set the root activity.
         Root = workflowGraph.Workflow;
     }
