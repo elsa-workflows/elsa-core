@@ -175,11 +175,12 @@ public class Flowchart : Container
         {
             if (children.Any())
             {
-                scope.AddActivities(children);
-
                 // Schedule each child, but only if all of its left inbound activities have already executed.
                 foreach (var activity in children)
                 {
+                    var existingActivity = scope.ContainsActivity(activity);
+                    scope.AddActivity(activity);
+                    
                     var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
 
                     // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
@@ -213,8 +214,13 @@ public class Flowchart : Container
 
                         if (joinContext != null)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing join context {JoinContext}", activity.Id, joinContext.Id);
-                        else
+                        else if(!existingActivity)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Creating new join context", activity.Id);
+                        else
+                        {
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Join context was not found, but activity is already being created.", activity.Id);
+                            continue;
+                        }
                         
                         await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
