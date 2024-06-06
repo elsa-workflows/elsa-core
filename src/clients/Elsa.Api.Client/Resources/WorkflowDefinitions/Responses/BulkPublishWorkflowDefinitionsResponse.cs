@@ -7,4 +7,4 @@ public record BulkPublishWorkflowDefinitionsResponse(
     ICollection<string> Published, 
     ICollection<string> AlreadyPublished, 
     ICollection<string> NotFound, 
-    ICollection<string> ConsumingUpdated);
+    ICollection<string> UpdatedConsumers);
