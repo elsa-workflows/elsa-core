@@ -15,7 +15,7 @@ namespace Elsa.Retention.Jobs;
     /// </summary>
     public class CleanupJob
     {
-        private readonly IWorkflowInstanceStore _workflowInstanceStore;
+        private readonly IWorkflowInstanceManager _workflowInstanceManager;
         private readonly CleanupOptions _options;
         private readonly ILogger _logger;
         private readonly ISystemClock _systemClock;
@@ -23,20 +23,20 @@ namespace Elsa.Retention.Jobs;
         /// <summary>
         /// Creates a new cleanup job
         /// </summary>
-        /// <param name="workflowInstanceStore"></param>
+        /// <param name="workflowInstanceManager"></param>
         /// <param name="options"></param>
         /// <param name="systemClock"></param>
         /// <param name="logger"></param>
         public CleanupJob(
-            IWorkflowInstanceStore workflowInstanceStore,
+            IWorkflowInstanceManager workflowInstanceManager,
             IOptions<CleanupOptions> options,
             ISystemClock systemClock,
             ILogger<CleanupJob> logger)
         {
-            _workflowInstanceStore = workflowInstanceStore;
             _systemClock = systemClock;
             _options = options.Value;
             _logger = logger;
+            _workflowInstanceManager = workflowInstanceManager;
         }
 
         /// <summary>
@@ -58,8 +58,8 @@ namespace Elsa.Retention.Jobs;
                     Timestamp = threshold
                 }
             );
-            
-            long count =  await _workflowInstanceStore.DeleteAsync(specification, cancellationToken);
+
+            long count = await _workflowInstanceManager.BulkDeleteAsync(specification, cancellationToken);
             _logger.LogInformation("Deleted {WorkflowInstanceCount} workflow instances", count);
         }
     }    
