@@ -9,8 +9,6 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.Incidents.Workflows;
 
 public class FaultyWorkflow : WorkflowBase
 {
-    
-    
     protected override void Build(IWorkflowBuilder builder)
     {
         var start = new WriteLine("Start");
@@ -20,7 +18,7 @@ public class FaultyWorkflow : WorkflowBase
         var step2A = new WriteLine("Step 2a");
         var event2 = new Event("Event 2");
         var step2B = new WriteLine("Step 2b");
-        var fault = new Fault("Whoops!");
+        var fault = Fault.Create("Whoops!", "Test", "Test");
 
         builder.WorkflowOptions.IncidentStrategyType = TestSettings.IncidentStrategyType;
         

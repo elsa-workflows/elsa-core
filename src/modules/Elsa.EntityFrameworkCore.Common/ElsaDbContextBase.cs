@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Common;
+
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
 /// </summary>
@@ -12,10 +13,11 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema { get; set;  } = "Elsa";
-    private string _schema;
+    public static string ElsaSchema { get; set; } = "Elsa";
+
     /// <inheritdoc/>
-    public string Schema => _schema;
+    public string Schema { get; }
+
     /// <summary>
     /// The table used to store the migrations history.
     /// </summary>
@@ -29,13 +31,8 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         var elsaDbContextOptions = options.FindExtension<ElsaDbContextOptionsExtension>()?.Options;
 
         // ReSharper disable once VirtualMemberCallInConstructor
-        _schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
-
-    /// <summary>
-    /// The schema used by Elsa.
-    /// </summary>
-   // protected virtual string Schema { get; set; }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,11 +42,11 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
             if (!Database.IsSqlite())
                 modelBuilder.HasDefaultSchema(Schema);
         }
-        
+
         ApplyEntityConfigurations(modelBuilder);
 
-        if(Database.IsSqlite()) SetupForSqlite(modelBuilder);
-        if(Database.IsOracle()) SetupForOracle(modelBuilder);
+        if (Database.IsSqlite()) SetupForSqlite(modelBuilder);
+        if (Database.IsOracle()) SetupForOracle(modelBuilder);
     }
 
     /// <summary>

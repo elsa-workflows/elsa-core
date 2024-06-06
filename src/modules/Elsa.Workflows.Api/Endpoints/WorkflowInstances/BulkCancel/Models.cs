@@ -28,12 +28,7 @@ public class Request
     public VersionOptions? VersionOptions { get; set; }
 }
 
-public class Response
+public class Response(int cancelledCount)
 {
-    public Response(int cancelledCount)
-    {
-        CancelledCount = cancelledCount;
-    }
-
-    [JsonPropertyName("cancelled")] public int CancelledCount { get; }
+    [JsonPropertyName("cancelled")] public int CancelledCount { get; } = cancelledCount;
 }

@@ -1,17 +1,16 @@
 using Elsa.Abstractions;
+using Elsa.Common.Models;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Delete;
 
-internal class Delete : ElsaEndpoint<Request>
+internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService, IWorkflowDefinitionStore store)
+    : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-
-    public Delete(IWorkflowDefinitionManager workflowDefinitionManager)
-    {
-        _workflowDefinitionManager = workflowDefinitionManager;
-    }
-
     public override void Configure()
     {
         Delete("/workflow-definitions/{definitionId}");
@@ -20,7 +19,29 @@ internal class Delete : ElsaEndpoint<Request>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var result = await _workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = request.DefinitionId,
+            VersionOptions = VersionOptions.Latest
+        };
+
+        var definition = await store.FindAsync(filter, cancellationToken);
+
+        if (definition == null)
+        {
+            await SendNotFoundAsync(cancellationToken);
+            return;
+        }
+
+        var authorizationResult = authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(definition), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Result.Succeeded)
+        {
+            await SendForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var result = await workflowDefinitionManager.DeleteByDefinitionIdAsync(request.DefinitionId, cancellationToken);
 
         if (result == 0)
             await SendNotFoundAsync(cancellationToken);

@@ -10,6 +10,8 @@ using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Elsa.Http.Options;
 
 namespace Elsa.Http;
 
@@ -86,7 +88,7 @@ public class WriteHttpResponse : Activity
         if (httpContext == null)
         {
             // We're not in an HTTP context, so let's fail.
-            throw new FaultException("Cannot execute in a non-HTTP context");
+            throw new FaultException(HttpFaultCodes.NoHttpContext, HttpFaultCategories.Http, DefaultFaultTypes.System, "Cannot execute in a non-HTTP context");
         }
 
         await WriteResponseAsync(context, httpContext.Response);
@@ -134,6 +136,11 @@ public class WriteHttpResponse : Activity
                 }
             }
         }
+
+        //Check if the configuration is set to flush immediatly the response to the caller.
+        var options = context.GetRequiredService<IOptions<HttpActivityOptions>>();
+        if (options.Value.WriteHttpResponseSynchronously)
+            await response.CompleteAsync();
 
         // Complete activity.
         await context.CompleteActivityAsync();

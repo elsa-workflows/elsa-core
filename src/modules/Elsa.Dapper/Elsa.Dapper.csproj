@@ -14,12 +14,18 @@
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="Npgsql" VersionOverride="7.0.7" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageReference Include="Npgsql" VersionOverride="8.0.3" />
+    </ItemGroup>
+    
     <ItemGroup>
         <PackageReference Include="Dapper" />
         <PackageReference Include="FluentMigrator" />
         <PackageReference Include="FluentMigrator.Runner" />
         <PackageReference Include="Microsoft.Data.Sqlite.Core" />
-        <PackageReference Include="Npgsql" />
         <PackageReference Include="System.Data.SqlClient" />
     </ItemGroup>
 

@@ -47,14 +47,8 @@ internal class JournalFilter
     public ICollection<string>? EventNames { get; set; }
 }
 
-internal class Response
+internal class Response(ICollection<ExecutionLogRecord> items, long totalCount)
 {
-    public Response(ICollection<ExecutionLogRecord> items, long totalCount)
-    {
-        Items = items;
-        TotalCount = totalCount;
-    }
-
-    public ICollection<ExecutionLogRecord> Items { get; }
-    public long TotalCount { get; }
+    public ICollection<ExecutionLogRecord> Items { get; } = items;
+    public long TotalCount { get; } = totalCount;
 }
