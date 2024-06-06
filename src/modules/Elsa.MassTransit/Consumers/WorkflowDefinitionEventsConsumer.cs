@@ -1,6 +1,6 @@
 using Elsa.MassTransit.Messages;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
-using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using MassTransit;
 
@@ -10,7 +10,7 @@ namespace Elsa.MassTransit.Consumers;
 /// Consumes messages related to workflow definition changes.
 /// </summary>
 [PublicAPI]
-public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activityRegistryPopulator) :
+public class WorkflowDefinitionEventsConsumer(IActivityRegistryUpdateService activityRegistryUpdateService) :
     IConsumer<WorkflowDefinitionCreated>,
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
@@ -29,7 +29,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
     { 
-        activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        activityRegistryUpdateService.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
         return Task.CompletedTask;
     }
 
@@ -42,7 +42,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context)
     {
-        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
         return Task.CompletedTask;
     }
 
@@ -51,7 +51,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     {
         foreach (var id in context.Message.Ids)
         {
-            activityRegistryPopulator.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+            activityRegistryUpdateService.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         }
 
         return Task.CompletedTask;
@@ -60,7 +60,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionVersionDeleted> context)
     {
-        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
+        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), context.Message.Id);
         return Task.CompletedTask;
     }
 
@@ -69,7 +69,7 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     {
         foreach (var id in context.Message.Ids)
         {
-            activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+            activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         }
 
         return Task.CompletedTask;
@@ -87,9 +87,9 @@ public class WorkflowDefinitionEventsConsumer(IActivityRegistryPopulator activit
     private Task UpdateDefinition(string id, bool usableAsActivity)
     {
         if (usableAsActivity)
-            return activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+            return activityRegistryUpdateService.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
 
-        activityRegistryPopulator.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
         return Task.CompletedTask;
     }
 }
