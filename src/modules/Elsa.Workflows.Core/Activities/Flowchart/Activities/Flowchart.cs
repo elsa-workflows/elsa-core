@@ -141,7 +141,8 @@ public class Flowchart : Container
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
         var loggerScopeState = new Dictionary<string, object>
         {
-            ["ThreadId"] = Thread.CurrentThread.ManagedThreadId,
+            ["ThreadId"] = Environment.CurrentManagedThreadId,
+            ["TaskId"] = Task.CurrentId?.ToString() ?? "N/A",
             ["ActivityId"] = Id,
             ["ActivityInstanceId"] = context.TargetContext.Id
         };
