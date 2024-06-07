@@ -56,9 +56,7 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<TResult> RunAsync<T, TResult>(
-        RunWorkflowOptions? options = default,
-        CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
+    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
     {
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
