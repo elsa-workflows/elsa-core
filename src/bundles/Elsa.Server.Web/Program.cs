@@ -405,6 +405,8 @@ app.UseJsonSerializationErrorHandler();
 // Elsa HTTP Endpoint activities.
 app.UseWorkflows();
 
+app.MapControllers();
+
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())
 {
