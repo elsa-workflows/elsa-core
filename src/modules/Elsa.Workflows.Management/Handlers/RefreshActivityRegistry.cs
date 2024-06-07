@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
 using JetBrains.Annotations;
@@ -11,7 +12,7 @@ namespace Elsa.Workflows.Management.Handlers;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegistryUpdateService) :
+public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
@@ -30,14 +31,14 @@ public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegi
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     { 
-        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
     { 
-        activityRegistryUpdateService.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.DefinitionId, cancellationToken);
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(notification.DefinitionId);
         return Task.CompletedTask;
     }
     
@@ -46,7 +47,7 @@ public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegi
     {
         foreach (string id in notification.DefinitionIds)
         {
-            activityRegistryUpdateService.RemoveDefinitionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id, cancellationToken);
+            workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(id);
         }
 
         return Task.CompletedTask;
@@ -61,7 +62,7 @@ public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegi
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
     { 
-        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id, cancellationToken);
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
         return Task.CompletedTask;
     }
 
@@ -70,7 +71,7 @@ public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegi
     {
         foreach (string id in notification.Ids)
         {
-            activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id, cancellationToken);
+            workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
         }
 
         return Task.CompletedTask;
@@ -88,9 +89,9 @@ public class RefreshActivityRegistry(IActivityRegistryUpdateService activityRegi
     private Task UpdateDefinition(string id, bool? usableAsActivity)
     {
         if (usableAsActivity.GetValueOrDefault())
-            return activityRegistryUpdateService.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+            return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 
-        activityRegistryUpdateService.RemoveDefinitionVersionFromRegistry(typeof(WorkflowDefinitionActivityProvider), id);
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
         return Task.CompletedTask;
     }
 }
