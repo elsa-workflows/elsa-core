@@ -1,17 +1,20 @@
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows.Management.Services;
 
 /// <summary>
 /// Service responsible for updating the activity registry based on activity providers.
 /// </summary>
-public class ActivityRegistryUpdateService(IEnumerable<IActivityProvider> providers, IActivityRegistry registry) : IActivityRegistryUpdateService
+public class WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivityProvider provider, IActivityRegistry registry) : IWorkflowDefinitionActivityRegistryUpdater
 {
+    private readonly Type _providerType = typeof(WorkflowDefinitionActivityProvider);
+    
     /// <inheritdoc />
-    public async Task AddToRegistry(Type providerType, string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    public async Task AddToRegistry(string workflowDefinitionVersionId, CancellationToken cancellationToken)
     {
-        var provider = providers.First(x => x.GetType() == providerType);
         var descriptors = await provider.GetDescriptorsAsync(cancellationToken);
         var descriptorToAdd = descriptors
             .SingleOrDefault(d =>
@@ -19,13 +22,13 @@ public class ActivityRegistryUpdateService(IEnumerable<IActivityProvider> provid
                 val.ToString() == workflowDefinitionVersionId);
         
         if (descriptorToAdd is not null)
-            registry.Add(providerType, descriptorToAdd);
+            registry.Add(_providerType, descriptorToAdd);
     }
 
     /// <inheritdoc />
-    public void RemoveDefinitionFromRegistry(Type providerType, string workflowDefinitionId, CancellationToken cancellationToken = default)
+    public void RemoveDefinitionFromRegistry(string workflowDefinitionId)
     {
-        var providerDescriptors = registry.ListByProvider(providerType);
+        var providerDescriptors = registry.ListByProvider(_providerType);
         
         var descriptorsToRemove = providerDescriptors
             .Where(d =>
@@ -34,14 +37,14 @@ public class ActivityRegistryUpdateService(IEnumerable<IActivityProvider> provid
 
         foreach (ActivityDescriptor activityDescriptor in descriptorsToRemove)
         {
-            registry.Remove(providerType, activityDescriptor);
+            registry.Remove(_providerType, activityDescriptor);
         }
     }
 
     /// <inheritdoc />
-    public void RemoveDefinitionVersionFromRegistry(Type providerType, string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
+    public void RemoveDefinitionVersionFromRegistry(string workflowDefinitionVersionId)
     {
-        var providerDescriptors = registry.ListByProvider(providerType);
+        var providerDescriptors = registry.ListByProvider(_providerType);
         
         var descriptorToRemove = providerDescriptors
             .SingleOrDefault(d =>
@@ -49,6 +52,6 @@ public class ActivityRegistryUpdateService(IEnumerable<IActivityProvider> provid
                 val.ToString() == workflowDefinitionVersionId);
 
         if (descriptorToRemove is not null)
-            registry.Remove(providerType, descriptorToRemove);
+            registry.Remove(_providerType, descriptorToRemove);
     }
 }

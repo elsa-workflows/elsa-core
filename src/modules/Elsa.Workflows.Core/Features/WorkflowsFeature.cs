@@ -137,7 +137,6 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>()
-            .AddScoped<IActivityRegistryUpdateService, ActivityRegistryUpdateService>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>()
             .AddSingleton<IActivityFactory, ActivityFactory>()
