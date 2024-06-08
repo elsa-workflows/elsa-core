@@ -11,13 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Variables;
 
-public class CountdownWorkflowTests : AppComponentTest
+public class CountdownWorkflowTests(App app) : AppComponentTest(app)
 {
-    /// <inheritdoc />
-    public CountdownWorkflowTests(App app) : base(app)
-    {
-    }
-
     [Fact(DisplayName = "Variable is persisted across workflow runs")]
     public async Task VariableIsPersistedAcrossWorkflowRuns()
     {
