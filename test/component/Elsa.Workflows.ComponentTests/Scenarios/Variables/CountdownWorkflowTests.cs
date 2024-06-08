@@ -37,7 +37,7 @@ public class CountdownWorkflowTests : AppComponentTest
             var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
             var actualCounter = variables["Workflow1:variable-1"].ConvertTo<int>();
             Assert.Equal(--expectedCounter, actualCounter);
-            
+
             var bookmark = bookmarks.Pop();
             var resumeWorkflowRuntimeOptions = new ResumeWorkflowRuntimeParams
             {
@@ -50,8 +50,6 @@ public class CountdownWorkflowTests : AppComponentTest
                 break;
 
             foreach (var newBookmark in result.Bookmarks) bookmarks.Push(newBookmark);
-
-            
         }
     }
 
