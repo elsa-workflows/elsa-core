@@ -48,7 +48,7 @@ const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -64,6 +64,7 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
+var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
 
 // Add Elsa services.
 services
@@ -324,6 +325,9 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
+                if (appRole == ApplicationRole.Api)
+                    massTransit.DisableConsumers = true;
+
                 if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
