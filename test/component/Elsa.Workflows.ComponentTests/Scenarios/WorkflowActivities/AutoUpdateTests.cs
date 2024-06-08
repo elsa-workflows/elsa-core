@@ -1,6 +1,3 @@
-using Elsa.Common.Models;
-using Elsa.Http;
-using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -18,9 +15,6 @@ public class AutoUpdateTests : AppComponentTest
     private readonly IWorkflowDefinitionPublisher _publisher;
     private readonly ISignalManager _signalManager;
     private readonly ITriggerChangeTokenSignalEvents _changeTokenEvents;
-    private readonly IWorkflowDefinitionManager _definitionManager;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    
     private readonly IHttpWorkflowsCacheManager _httpCacheManager;
     private readonly IWorkflowDefinitionCacheManager _workflowCacheManager;
     
@@ -42,8 +36,6 @@ public class AutoUpdateTests : AppComponentTest
         _hasher = Scope.ServiceProvider.GetRequiredService<IHasher>();
         _definitionCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
         _publisher = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
-        _definitionManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
-        _workflowDefinitionService = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
         
         _httpCacheManager = Scope.ServiceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
         _workflowCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
