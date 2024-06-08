@@ -260,9 +260,9 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
 
     private static IEnumerable<ActivityExecutionContext> GetActiveActivityExecutionContexts(IEnumerable<ActivityExecutionContext> activityExecutionContexts)
     {
-        // Filter out completed activity execution contexts.
+        // Filter out completed activity execution contexts, except for the root Workflow activity context, which stores workflow-level variables.
         // This will currently break scripts accessing activity output directly, but there's a workaround for that via variable capturing.
         // We may ultimately restore direct output access, but in a different way.
-        return activityExecutionContexts.Where(x => !x.IsCompleted).ToList();
+        return activityExecutionContexts.Where(x => !x.IsCompleted || x.ParentActivityExecutionContext == null).ToList();
     }
 }
