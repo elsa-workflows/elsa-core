@@ -2,7 +2,7 @@ namespace Elsa.Server.Web;
 
 public enum ApplicationRole
 {
-    Hybrid,
+    Default,
     Api,
     Worker
 }
