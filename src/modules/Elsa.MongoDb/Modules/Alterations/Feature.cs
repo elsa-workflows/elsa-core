@@ -3,6 +3,7 @@ using Elsa.Alterations.Features;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MongoDb.Common;
+using Elsa.MongoDb.Modules.Alterations.Documents;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MongoDb.Modules.Alterations;
@@ -23,7 +24,10 @@ public class MongoAlterationsPersistenceFeature(IModule module) : PersistenceFea
     {
         base.Apply();
 
+        AddCollection<AlterationPlanDocument>("alteration_plans");
         AddCollection<AlterationJob>("alteration_jobs");
+
+        AddStore<AlterationPlanDocument, MongoAlterationPlanStore>();
         AddStore<AlterationJob, MongoAlterationJobStore>();
 
         Services.AddHostedService<CreateIndices>();
