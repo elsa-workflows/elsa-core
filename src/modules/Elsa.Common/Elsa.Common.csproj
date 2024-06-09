@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Framework\Elsa.Framework.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
     </ItemGroup>
 
@@ -20,6 +21,13 @@
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
         <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Contexts\" />
+      <Folder Include="Entities\" />
+      <Folder Include="Enums\" />
+      <Folder Include="Results\" />
     </ItemGroup>
 
 </Project>

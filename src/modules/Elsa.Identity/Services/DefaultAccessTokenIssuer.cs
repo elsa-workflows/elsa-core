@@ -54,8 +54,25 @@ public class DefaultAccessTokenIssuer : IAccessTokenIssuer
 
         var accessTokenExpiresAt = _systemClock.UtcNow.Add(accessTokenLifetime);
         var refreshTokenExpiresAt = _systemClock.UtcNow.Add(refreshTokenLifetime);
-        var accessToken = JWTBearer.CreateToken(signingKey, accessTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
-        var refreshToken = JWTBearer.CreateToken(signingKey, refreshTokenExpiresAt.UtcDateTime, permissions, issuer: issuer, audience: audience, claims: claims);
+        
+        var accessToken = JwtBearer.CreateToken(options =>
+        {
+            options.SigningKey = signingKey;
+            options.Issuer = issuer;
+            options.Audience = audience;
+            options.ExpireAt = accessTokenExpiresAt.UtcDateTime;
+            options.User.Claims.AddRange(claims);
+            options.User.Permissions.AddRange(permissions);
+        });
+        var refreshToken = JwtBearer.CreateToken(options =>
+        {
+            options.SigningKey = signingKey;
+            options.Issuer = issuer;
+            options.Audience = audience;
+            options.ExpireAt = refreshTokenExpiresAt.UtcDateTime;
+            options.User.Claims.AddRange(claims);
+            options.User.Permissions.AddRange(permissions);
+        });
 
         return new IssuedTokens(accessToken, refreshToken);
     }

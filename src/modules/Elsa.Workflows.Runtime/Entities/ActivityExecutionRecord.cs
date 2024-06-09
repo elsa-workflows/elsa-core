@@ -1,4 +1,4 @@
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.Entities;

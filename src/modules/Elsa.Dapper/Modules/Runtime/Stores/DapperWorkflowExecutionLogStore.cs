@@ -1,10 +1,10 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Services;
 using Elsa.Extensions;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;

@@ -361,7 +361,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Tenants
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Tenants.External", "samples\aspnet\Elsa.Samples.AspNet.Tenants.External\Elsa.Samples.AspNet.Tenants.External.csproj", "{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Shells", "src\common\Elsa.Shells\Elsa.Shells.csproj", "{51A9FF3A-4017-4BB4-9544-602037A7FF95}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Framework", "src\common\Elsa.Framework\Elsa.Framework.csproj", "{51A9FF3A-4017-4BB4-9544-602037A7FF95}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularServer.Web", "src\bundles\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj", "{5CF613F6-FA3B-4C06-8498-59F1D433D8BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Framework.AspNetCore", "src\common\Elsa.Framework.AspNetCore\Elsa.Framework.AspNetCore.csproj", "{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -875,6 +879,14 @@ Global
 		{51A9FF3A-4017-4BB4-9544-602037A7FF95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{51A9FF3A-4017-4BB4-9544-602037A7FF95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{51A9FF3A-4017-4BB4-9544-602037A7FF95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1028,6 +1040,8 @@ Global
 		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{51A9FF3A-4017-4BB4-9544-602037A7FF95} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
+		{5CF613F6-FA3B-4C06-8498-59F1D433D8BB} = {F06B9573-DF68-4606-866C-A7546A10A05A}
+		{CB7A3A50-E843-4AE0-A0DB-B3D6F11FF853} = {C6658DE0-2B2F-47F0-BB61-2CA66D435C09}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

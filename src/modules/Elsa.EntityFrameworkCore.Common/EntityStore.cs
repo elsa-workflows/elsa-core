@@ -1,4 +1,4 @@
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 
 namespace Elsa.EntityFrameworkCore.Common;
 

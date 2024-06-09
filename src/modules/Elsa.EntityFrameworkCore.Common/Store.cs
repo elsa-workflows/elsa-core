@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
@@ -6,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
 using Elsa.Common.Contracts;
+using Elsa.Framework.Entities;
+using Elsa.Framework.Tenants.Contracts;
 using Elsa.Tenants;
 using Microsoft.Extensions.DependencyInjection;
 

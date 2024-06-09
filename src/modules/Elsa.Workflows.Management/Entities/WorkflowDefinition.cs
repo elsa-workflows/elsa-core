@@ -1,4 +1,4 @@
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 

@@ -1,4 +1,4 @@
-using Elsa.Shells;
+using Elsa.Framework.Shells;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 

@@ -4,6 +4,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Framework.Tenants;
+using Elsa.Framework.Tenants.Contracts;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;

@@ -1,7 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Entities;
-using Elsa.Common.Filters;
-using Elsa.Tenants;
+using Elsa.Framework.Tenants;
 
 namespace Elsa.Workflows.ComponentTests.Helpers.Services;
 

@@ -1,9 +1,9 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Shells;
-using Elsa.Shells.Services;
+using Elsa.Framework.Shells;
+using Elsa.Framework.Shells.Services;
+using Elsa.Framework.Tenants;
 using Elsa.Tenants.HostedServices;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;

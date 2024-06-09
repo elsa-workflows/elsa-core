@@ -1,5 +1,5 @@
-using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.Framework.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Elsa.EntityFrameworkCore.Common.EntityHandlers;

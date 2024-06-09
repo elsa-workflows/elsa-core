@@ -1,6 +1,6 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Framework.Entities;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Helpers;
 using Elsa.Workflows.Management;

@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
-using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.Framework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Query;

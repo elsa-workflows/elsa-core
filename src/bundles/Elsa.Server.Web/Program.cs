@@ -22,7 +22,6 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Shells.Extensions;
 using Elsa.Workflows;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
@@ -68,8 +67,6 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
-
-services.AddShellFeatures();
 
 // Add Elsa services.
 services

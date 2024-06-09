@@ -1,7 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Framework.Entities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;

@@ -1,6 +1,4 @@
-using Elsa.Common.Abstractions;
-using Elsa.Common.Contexts;
-using Elsa.Common.Results;
+using Elsa.Framework.Tenants;
 using Elsa.Http.Extensions;
 using Microsoft.AspNetCore.Http;
 

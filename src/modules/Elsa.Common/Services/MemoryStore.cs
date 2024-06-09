@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Elsa.Common.Entities;
+using Elsa.Framework.Entities;
 
 namespace Elsa.Common.Services;
 

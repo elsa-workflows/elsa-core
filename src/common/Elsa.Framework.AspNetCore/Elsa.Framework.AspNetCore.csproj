@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides framework level integration features shared across modules that integrate with ASP.NET Core.
+        </Description>
+        <PackageTags>elsa framework aspnetcore</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Framework\Elsa.Framework.csproj" />
+    </ItemGroup>
+
+</Project>

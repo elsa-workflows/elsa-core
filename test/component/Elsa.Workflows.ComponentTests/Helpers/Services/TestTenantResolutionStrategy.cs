@@ -1,6 +1,4 @@
-using Elsa.Common.Abstractions;
-using Elsa.Common.Contexts;
-using Elsa.Common.Results;
+using Elsa.Framework.Tenants;
 
 namespace Elsa.Workflows.ComponentTests.Helpers.Services;
 
