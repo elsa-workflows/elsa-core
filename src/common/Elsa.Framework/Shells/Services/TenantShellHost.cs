@@ -4,12 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Framework.Shells.Services;
 
 /// A default shell host implementation that creates and manages shells for the main application and for each isolated tenant.
-public class DefaultShellHost(
-    IShellFactory shellFactory,
+public class TenantShellHost(
+    ITenantShellFactory tenantShellFactory,
     IServiceScopeFactory scopeFactory,
     IApplicationServicesAccessor applicationServicesAccessor,
     IServiceProvider applicationServiceProvider)
-    : IShellHost
+    : ITenantShellHost
 {
     /// <inheritdoc />
     public Shell ApplicationShell { get; } = new(applicationServicesAccessor.ApplicationServices, applicationServiceProvider);
@@ -25,7 +25,7 @@ public class DefaultShellHost(
 
         foreach (var tenant in isolatedTenants)
         {
-            var shell = shellFactory.CreateShell(tenant);
+            var shell = tenantShellFactory.CreateShell(tenant);
             TenantShells.Add(tenant.Id, shell);
         }
     }

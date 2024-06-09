@@ -2,8 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Framework.Shells;
 
-public class Shell(IServiceCollection serviceCollection, IServiceProvider serviceProvider)
+public class Shell(ShellBlueprint blueprint, IServiceCollection serviceCollection, IServiceProvider serviceProvider)
 {
-    public IServiceCollection ServiceCollection { get; init; } = serviceCollection;
-    public IServiceProvider ServiceProvider { get; init; } = serviceProvider;
+    public ShellBlueprint Blueprint { get; } = blueprint;
+    public IServiceCollection ServiceCollection { get; } = serviceCollection;
+    public IServiceProvider ServiceProvider { get; } = serviceProvider;
 }

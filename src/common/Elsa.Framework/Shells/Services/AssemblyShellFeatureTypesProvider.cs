@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Elsa.Framework.Shells.Services;
 
 public class AssemblyShellFeatureTypesProvider : IShellFeatureTypesProvider
@@ -20,10 +18,5 @@ public class AssemblyShellFeatureTypesProvider : IShellFeatureTypesProvider
             .ToList();
 
         return featureTypes;
-    }
-
-    private IEnumerable<Type> GetFeatureTypes(Assembly assembly)
-    {
-        return assembly.GetTypes().Where(type => typeof(IShellFeature).IsAssignableFrom(type) && !type.IsInterface && !type.IsAbstract);
     }
 }

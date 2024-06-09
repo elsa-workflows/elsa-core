@@ -3,7 +3,7 @@ namespace Elsa.Framework.Shells;
 /// <summary>
 /// Represents a shell host responsible for initializing & managing shells.
 /// </summary>
-public interface IShellHost
+public interface ITenantShellHost
 {
     /// Returns the shell for the main application.
     Shell ApplicationShell { get; }
@@ -13,4 +13,9 @@ public interface IShellHost
     
     /// Gets a shell by tenant ID.
     Shell GetShell(string? tenantId);
+}
+
+public interface IShellHost
+{
+    
 }

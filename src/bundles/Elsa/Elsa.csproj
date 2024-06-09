@@ -17,6 +17,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Framework\Elsa.Framework.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Tenants\Elsa.Tenants.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />

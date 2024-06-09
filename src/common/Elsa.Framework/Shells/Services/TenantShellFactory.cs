@@ -6,11 +6,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Framework.Shells.Services;
 
-public class DefaultShellFactory(
+public class TenantShellFactory(
     IApplicationServicesAccessor applicationServicesAccessor,
     IShellFeatureTypesProvider shellFeatureTypesProvider,
     IConfiguration applicationConfiguration,
-    IServiceProvider serviceProvider) : IShellFactory
+    IServiceProvider serviceProvider) : ITenantShellFactory
 {
     public Shell CreateShell(Tenant tenant)
     {

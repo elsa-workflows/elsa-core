@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Tenants.Middleware;
 
-public class TenantContainerMiddleware(RequestDelegate next, IShellHost shellHost)
+public class TenantContainerMiddleware(RequestDelegate next, ITenantShellHost tenantShellHost)
 {
     public async Task InvokeAsync(HttpContext httpContext, ITenantResolver tenantResolver)
     {
@@ -23,7 +23,7 @@ public class TenantContainerMiddleware(RequestDelegate next, IShellHost shellHos
 
         // Resolve the tenant.
         var currentTenant = await tenantResolver.GetTenantAsync();
-        var shell = shellHost.GetShell(currentTenant.Id);
+        var shell = tenantShellHost.GetShell(currentTenant.Id);
         
         // Replace the request services with the tenant-specific service provider.
         var originalServiceProvider = httpContext.RequestServices;

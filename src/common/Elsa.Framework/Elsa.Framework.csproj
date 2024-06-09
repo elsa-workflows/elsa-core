@@ -10,11 +10,12 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Configuration" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Folder Include="Data\" />
-      <Folder Include="Shells\" />
+      <Folder Include="Builders\Abstractions\" />
+      <Folder Include="Builders\Models\" />
     </ItemGroup>
     
 </Project>

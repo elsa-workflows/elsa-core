@@ -1,15 +1,14 @@
-using Elsa.Framework.Shells;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.Tenants.HostedServices;
+namespace Elsa.Framework.Shells.HostedServices;
 
 [UsedImplicitly]
-public class CreateShellsHostedService(IShellHost shellHost) : IHostedService
+public class CreateShellsHostedService(ITenantShellHost tenantShellHost) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await shellHost.InitializeAsync(cancellationToken);
+        await tenantShellHost.InitializeAsync(cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken)

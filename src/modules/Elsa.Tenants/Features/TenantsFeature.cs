@@ -2,9 +2,9 @@ using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Framework.Shells;
+using Elsa.Framework.Shells.HostedServices;
 using Elsa.Framework.Shells.Services;
 using Elsa.Framework.Tenants;
-using Elsa.Tenants.HostedServices;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
 using Elsa.Tenants.Resolvers;
@@ -53,8 +53,8 @@ public class TenantsFeature : FeatureBase
             .AddSingleton<ConfigurationTenantsProvider>()
             .AddSingleton<IAmbientTenantAccessor, AmbientTenantAccessor>()
             .AddSingleton<IApplicationServicesAccessor>(new DefaultApplicationServicesAccessor(Services))
-            .AddSingleton<IShellFactory, DefaultShellFactory>()
-            .AddSingleton<IShellHost, DefaultShellHost>()
+            .AddSingleton<ITenantShellFactory, TenantShellFactory>()
+            .AddSingleton<ITenantShellHost, DefaultShellHost>()
             .AddScoped(TenantsProvider)
             .AddHttpContextAccessor();
 
