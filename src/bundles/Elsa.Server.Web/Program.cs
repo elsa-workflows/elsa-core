@@ -326,8 +326,7 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (appRole == ApplicationRole.Api)
-                    massTransit.DisableConsumers = true;
+                massTransit.DisableConsumers = appRole == ApplicationRole.Api;
 
                 if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
@@ -409,6 +408,8 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities.
 app.UseWorkflows();
+
+app.MapControllers();
 
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())
