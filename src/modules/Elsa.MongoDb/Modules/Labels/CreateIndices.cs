@@ -21,7 +21,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 
     private static Task CreateWorkflowDefinitionLabelIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowDefinitionLabelCollection = serviceScope.ServiceProvider.GetService<MongoCollectionBase<WorkflowDefinitionLabel>>();
+        var workflowDefinitionLabelCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowDefinitionLabel>>();
         if (workflowDefinitionLabelCollection == null) return Task.CompletedTask;
         
         return IndexHelpers.CreateAsync(

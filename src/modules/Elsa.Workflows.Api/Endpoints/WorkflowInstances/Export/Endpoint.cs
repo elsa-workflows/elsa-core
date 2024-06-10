@@ -7,11 +7,10 @@ using Elsa.Common.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -134,7 +133,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     {
         var jsonBookmarkNodes = bookmarks.Select(x => new JsonObject
         {
-            ["id"] = x.BookmarkId,
+            ["id"] = x.Id,
             ["activityTypeName"] = x.ActivityTypeName,
             ["workflowInstanceId"] = x.WorkflowInstanceId,
             ["activityInstanceId"] = x.ActivityInstanceId,

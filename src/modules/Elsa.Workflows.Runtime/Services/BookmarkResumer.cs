@@ -42,7 +42,7 @@ public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bo
         {
             Input = options?.Input,
             Properties = options?.Properties,
-            BookmarkId = bookmark.BookmarkId
+            BookmarkId = bookmark.Id
         };
         var response = await workflowClient.RunInstanceAsync(runRequest, cancellationToken);
         return ResumeBookmarkResult.Found(response);

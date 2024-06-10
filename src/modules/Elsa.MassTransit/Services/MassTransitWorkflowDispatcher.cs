@@ -2,7 +2,7 @@ using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -10,7 +10,6 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
-using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
@@ -159,7 +158,7 @@ public class MassTransitWorkflowDispatcher(
 
             var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
             {
-                BookmarkId = bookmark.BookmarkId,
+                BookmarkId = bookmark.Id,
                 CorrelationId = bookmark.CorrelationId,
                 Input = input,
                 Properties = properties

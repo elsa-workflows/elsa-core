@@ -5,7 +5,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Publishes workflow definitions.

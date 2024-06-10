@@ -4,9 +4,7 @@ using Elsa.Alterations.Extensions;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 

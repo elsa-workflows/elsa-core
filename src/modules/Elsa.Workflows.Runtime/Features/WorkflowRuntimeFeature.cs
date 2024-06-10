@@ -5,7 +5,9 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Services;
@@ -102,6 +104,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
     
     /// <summary>
+    /// A factory that instantiates an <see cref="ICommandHandler"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
+
+    /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
     public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
@@ -191,7 +198,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Core.
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
-            .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
+            .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
@@ -215,6 +222,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<DispatchWorkflowCommandHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
@@ -232,7 +240,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(ActivityExecutionLogStore)
 
             // Lazy services.
-            .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
+            .AddScoped<Func<IEnumerable<IWorkflowsProvider>>>(sp => sp.GetServices<IWorkflowsProvider>)
             .AddScoped<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Noop stores.
@@ -247,10 +255,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
-            .AddScoped(DistributedLockProvider)
+            .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
+            .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()

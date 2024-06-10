@@ -1,6 +1,6 @@
 using Elsa.Workflows.Management.Entities;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Provides operations for managing workflow definitions.

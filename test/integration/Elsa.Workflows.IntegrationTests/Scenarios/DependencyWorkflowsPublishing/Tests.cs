@@ -2,8 +2,8 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;

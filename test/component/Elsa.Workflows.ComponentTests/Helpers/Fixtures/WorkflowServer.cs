@@ -1,16 +1,22 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Reflection;
+using Elsa.Alterations.Extensions;
+using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
+using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -72,6 +78,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
                     massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
@@ -86,9 +93,18 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     //runtime.UseProtoActor();
                     runtime.UseDistributedRuntime();
                 });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
                 elsa.UseHttp(http =>
                 {
                     http.UseCache();
+                });
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
+                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
                 });
             };
         }
@@ -99,11 +115,12 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
             services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
             services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
+            services.AddScoped<ITenantResolutionStrategy, TestTenantResolutionStrategy>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
             services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
         });
     }
-    
+
     protected override void ConfigureClient(HttpClient client)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);

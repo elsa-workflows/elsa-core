@@ -1,8 +1,8 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.ComponentTests.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
 

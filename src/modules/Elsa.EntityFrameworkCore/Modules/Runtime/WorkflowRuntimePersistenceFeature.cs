@@ -1,4 +1,5 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
@@ -13,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
+public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreWorkflowRuntimePersistenceFeature(IModule module) : base(module)
@@ -46,5 +47,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
+        
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

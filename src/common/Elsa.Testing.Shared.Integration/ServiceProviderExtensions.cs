@@ -1,7 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
@@ -94,7 +94,7 @@ public static class ServiceProviderExtensions
             {
                 var runRequest = new RunWorkflowInstanceRequest
                 {
-                    BookmarkId = bookmark.BookmarkId
+                    BookmarkId = bookmark.Id
                 };
                 response = await workflowClient.RunInstanceAsync(runRequest);
             }

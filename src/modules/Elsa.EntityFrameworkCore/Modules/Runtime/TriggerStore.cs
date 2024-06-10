@@ -25,10 +25,16 @@ public class EFCoreTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
@@ -48,9 +54,11 @@ public class EFCoreTriggerStore : ITriggerStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
-    
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredTrigger entity, CancellationToken cancellationToken)
     {
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
@@ -64,7 +72,7 @@ public class EFCoreTriggerStore : ITriggerStore
 
         var json = dbContext.Entry(entity).Property<string>("SerializedPayload").CurrentValue;
         entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
-        
+
         return ValueTask.CompletedTask;
     }
 }

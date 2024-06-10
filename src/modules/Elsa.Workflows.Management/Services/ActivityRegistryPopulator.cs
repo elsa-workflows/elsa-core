@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Management.Services;
 

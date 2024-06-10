@@ -99,7 +99,7 @@ public class StimulusSender(
                     Input = input,
                     Properties = properties,
                     ActivityHandle = activityHandle,
-                    BookmarkId = storedBookmark.BookmarkId,
+                    BookmarkId = storedBookmark.Id,
                 };
                 var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
                 responses.Add(response);

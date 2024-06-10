@@ -26,7 +26,7 @@ public class AzureServiceBusFeature : FeatureBase
     }
 
     /// <summary>
-    /// A value controlling whether or not queues, topics and subscriptions should be created automatically. 
+    /// A value controlling whether queues, topics and subscriptions should be created automatically. 
     /// </summary>
     public bool CreateQueuesTopicsAndSubscriptions { get; set; } = true;
 

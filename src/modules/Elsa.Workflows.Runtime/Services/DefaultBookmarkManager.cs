@@ -21,7 +21,7 @@ public class DefaultBookmarkManager(IBookmarkStore bookmarkStore, INotificationS
 
         if (logger.IsEnabled(LogLevel.Debug))
             foreach (var bookmark in bookmarks)
-                logger.LogDebug("Deleted bookmark {BookmarkId} for workflow {WorkflowInstanceId}", bookmark.BookmarkId, bookmark.WorkflowInstanceId);
+                logger.LogDebug("Deleted bookmark {BookmarkId} for workflow {WorkflowInstanceId}", bookmark.Id, bookmark.WorkflowInstanceId);
 
         return count;
     }

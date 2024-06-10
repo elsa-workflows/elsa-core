@@ -6,7 +6,7 @@ using static System.Int32;
 namespace Elsa.Dapper.Migrations.Runtime;
 
 /// <inheritdoc />
-[Migration(20002, "Elsa:Runtime:V3.2")]
+[Migration(20003, "Elsa:Runtime:V3.2")]
 [PublicAPI]
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 public class V3_2 : Migration
@@ -15,11 +15,22 @@ public class V3_2 : Migration
     public override void Up()
     {
         Delete.Table("WorkflowInboxMessages");
+        Alter.Table("Triggers").AddColumn("TenantId").AsString().Nullable();
+        Alter.Table("Bookmarks").AddColumn("TenantId").AsString().Nullable();
+        Alter.Table("WorkflowExecutionLogRecords").AddColumn("TenantId").AsString().Nullable();
+        Alter.Table("ActivityExecutionRecords").AddColumn("TenantId").AsString().Nullable();
+        Alter.Table("KeyValuePairs").AddColumn("TenantId").AsString().Nullable();
     }
 
     /// <inheritdoc />
     public override void Down()
     {
+        Delete.Column("TenantId").FromTable("Triggers");
+        Delete.Column("TenantId").FromTable("Bookmarks");
+        Delete.Column("TenantId").FromTable("WorkflowExecutionLogRecords");
+        Delete.Column("TenantId").FromTable("ActivityExecutionRecords");
+        Delete.Column("TenantId").FromTable("KeyValuePairs");
+        
         IfDatabase("SqlServer", "Oracle", "MySql", "Postgres")
             .Create
             .Table("WorkflowInboxMessages")

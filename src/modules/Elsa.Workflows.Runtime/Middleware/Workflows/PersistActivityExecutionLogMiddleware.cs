@@ -15,9 +15,9 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
 
     /// <inheritdoc />
     public PersistActivityExecutionLogMiddleware(
-        WorkflowMiddlewareDelegate next, 
-        IActivityExecutionStore activityExecutionStore, 
-        IActivityExecutionMapper activityExecutionMapper, 
+        WorkflowMiddlewareDelegate next,
+        IActivityExecutionStore activityExecutionStore,
+        IActivityExecutionMapper activityExecutionMapper,
         INotificationSender notificationSender) : base(next)
     {
         _activityExecutionStore = activityExecutionStore;
@@ -36,7 +36,7 @@ public class PersistActivityExecutionLogMiddleware : WorkflowExecutionMiddleware
         
         // Get all activity execution contexts.
         var activityExecutionContexts = context.ActivityExecutionContexts;
-        
+
         // Persist activity execution entries.
         var entries = activityExecutionContexts.Select(_activityExecutionMapper.Map).ToList();
 

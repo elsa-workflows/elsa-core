@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.18")
+                .HasAnnotation("ProductVersion", "7.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -72,6 +72,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("ToolVersion")
                         .HasColumnType("text");
 
@@ -94,6 +97,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
 
                     b.HasIndex("UsableAsActivity")
                         .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
@@ -156,6 +162,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -187,6 +196,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");

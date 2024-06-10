@@ -68,8 +68,4 @@
         </None>
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Scenarios\AzureServiceBus\" />
-    </ItemGroup>
-
 </Project>

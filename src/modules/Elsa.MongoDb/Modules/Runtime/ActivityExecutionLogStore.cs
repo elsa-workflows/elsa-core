@@ -9,7 +9,6 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
 using MongoDB.Driver.Linq;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.MongoDb.Modules.Runtime;
 
@@ -79,5 +78,10 @@ public class MongoActivityExecutionLogStore(MongoDbStore<ActivityExecutionRecord
     private IMongoQueryable<ActivityExecutionRecord> Order<TOrderBy>(IMongoQueryable<ActivityExecutionRecord> queryable, ActivityExecutionRecordOrder<TOrderBy> order)
     {
         return (queryable.OrderBy(order) as IMongoQueryable<ActivityExecutionRecord>)!;
+    }
+
+    private IMongoQueryable<ActivityExecutionRecord> Paginate(IMongoQueryable<ActivityExecutionRecord> queryable, PageArgs pageArgs)
+    {
+        return (queryable.Paginate(pageArgs) as IMongoQueryable<ActivityExecutionRecord>)!;
     }
 }

@@ -15,7 +15,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
     ICommandHandler<DispatchWorkflowInstanceCommand>,
     ICommandHandler<DispatchResumeWorkflowsCommand>
 {
-    public async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchTriggerWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var activityTypeName = command.ActivityTypeName;
         var stimulus = command.Stimulus;
@@ -32,7 +32,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowDefinitionCommand command, CancellationToken cancellationToken)
     {
         var client = await workflowRuntime.CreateClientAsync(command.InstanceId, cancellationToken);
         var createRequest = new CreateAndRunWorkflowInstanceRequest
@@ -48,7 +48,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchWorkflowInstanceCommand command, CancellationToken cancellationToken)
     {
         var runRequest = new RunWorkflowInstanceRequest
         {
@@ -63,7 +63,7 @@ internal class DispatchWorkflowCommandHandler(IStimulusSender stimulusSender, IW
         return Unit.Instance;
     }
 
-    public async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
+    public virtual async Task<Unit> HandleAsync(DispatchResumeWorkflowsCommand command, CancellationToken cancellationToken)
     {
         var activityTypeName = command.ActivityTypeName;
         var stimulus = command.Stimulus;

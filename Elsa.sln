@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34003.232
@@ -277,6 +276,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.FileStorage", "src\mod
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "storage", "storage", "{B818988E-639C-4E6E-85C1-B231BCAD9DAB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants", "src\modules\Elsa.Tenants\Elsa.Tenants.csproj", "{29638A67-E79F-44FE-AC05-DA499EBA929E}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.CSharp", "src\modules\Elsa.CSharp\Elsa.CSharp.csproj", "{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Python", "src\modules\Elsa.Python\Elsa.Python.csproj", "{790E94F2-5393-47DF-AC52-D9247F5B243A}"
@@ -295,26 +296,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "build\_build.csproj", "{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.BatchProcessing", "samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.BatchProcessing", "samples\aspnet\Elsa.Samples.AspNet.BatchProcessing\Elsa.Samples.AspNet.BatchProcessing.csproj", "{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{F0385327-CEDE-4CD4-88A5-B66E73E75B28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Studio.Web", "src\bundles\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{F0385327-CEDE-4CD4-88A5-B66E73E75B28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.CustomUIHandler", "samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{E4BF9791-4086-41EB-8EF0-02686A5F3F65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.CustomUIHandler", "samples\aspnet\Elsa.Samples.AspNet.CustomUIHandler\Elsa.Samples.AspNet.CustomUIHandler.csproj", "{E4BF9791-4086-41EB-8EF0-02686A5F3F65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.Heartbeats", "samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Heartbeats", "samples\aspnet\Elsa.Samples.AspNet.Heartbeats\Elsa.Samples.AspNet.Heartbeats.csproj", "{73852FEC-9847-4C6C-B1F5-1BB014C50A79}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
 	ProjectSection(SolutionItems) = preProject
-		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
-		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
-		migrations\efcore-3.1-sql.sh = migrations\efcore-3.1-sql.sh
 		migrations\README.md = migrations\README.md
+		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
 		migrations\efcore-3.2.sh = migrations\efcore-3.2.sh
+		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
+		migrations\efcore-3.3.sh = migrations\efcore-3.3.sh
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hosting", "hosting", "{A516931E-EDBB-4FC3-BB94-1BB824D5BC61}"
 EndProject
@@ -358,6 +359,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.JavaScript.IntegrationTests", "test\integration\Elsa.JavaScript.IntegrationTests\Elsa.JavaScript.IntegrationTests.csproj", "{4332A6BC-434A-4AF5-A075-F1BBCDD28F5D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.AzureServiceBus.ComponentTests", "test\component\Elsa.AzureServiceBus.ComponentTests\Elsa.AzureServiceBus.ComponentTests.csproj", "{7F5A304F-7DD9-4A64-8FCD-9B1FF06735B9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Tenants", "samples\aspnet\Elsa.Samples.AspNet.Tenants\Elsa.Samples.AspNet.Tenants.csproj", "{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Tenants.External", "samples\aspnet\Elsa.Samples.AspNet.Tenants.External\Elsa.Samples.AspNet.Tenants.External.csproj", "{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -745,6 +750,10 @@ Global
 		{732BF088-6AD7-4C4D-9A48-8074253596D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{732BF088-6AD7-4C4D-9A48-8074253596D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{732BF088-6AD7-4C4D-9A48-8074253596D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29638A67-E79F-44FE-AC05-DA499EBA929E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29638A67-E79F-44FE-AC05-DA499EBA929E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29638A67-E79F-44FE-AC05-DA499EBA929E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29638A67-E79F-44FE-AC05-DA499EBA929E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -757,6 +766,8 @@ Global
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+								{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -781,8 +792,6 @@ Global
 		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBCE36D1-6767-4ED1-B3E8-84D2567A962A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BBCE36D1-6767-4ED1-B3E8-84D2567A962A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBCE36D1-6767-4ED1-B3E8-84D2567A962A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -855,6 +864,14 @@ Global
 		{7F5A304F-7DD9-4A64-8FCD-9B1FF06735B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F5A304F-7DD9-4A64-8FCD-9B1FF06735B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F5A304F-7DD9-4A64-8FCD-9B1FF06735B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -974,6 +991,7 @@ Global
 		{CCCCEF8C-7D96-4BEA-B9D0-E91EDF08E65D} = {AB797AF0-C12C-46DE-A157-7E25625C6200}
 		{732BF088-6AD7-4C4D-9A48-8074253596D4} = {B818988E-639C-4E6E-85C1-B231BCAD9DAB}
 		{B818988E-639C-4E6E-85C1-B231BCAD9DAB} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{29638A67-E79F-44FE-AC05-DA499EBA929E} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{790E94F2-5393-47DF-AC52-D9247F5B243A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
@@ -1004,6 +1022,8 @@ Global
 		{99B171E6-0248-4402-836D-98947CD63772} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{4332A6BC-434A-4AF5-A075-F1BBCDD28F5D} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
 		{7F5A304F-7DD9-4A64-8FCD-9B1FF06735B9} = {08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}
+		{9A6395A7-9F82-4F82-BFCB-1EBC38F0A86D} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{1B9E55EB-4379-4B95-9F84-EEEB5AA20987} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

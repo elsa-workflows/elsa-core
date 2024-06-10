@@ -1,5 +1,5 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Options;

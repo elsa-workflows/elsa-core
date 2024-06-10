@@ -4,7 +4,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -77,7 +77,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var results = await _store.SearchAsync(d => SelectId( Filter(d, filter)), cancellationToken);
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), cancellationToken);
         return results.Select(x => x.Id).ToList();
     }
 
@@ -172,8 +172,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             return descriptor.MatchAll(new MatchAllQuery());
 
         return descriptor
-                .QueryString(c => c
-                    .Query(filter.SearchTerm));
+            .QueryString(c => c
+                .Query(filter.SearchTerm));
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
@@ -191,7 +191,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.DefinitionVersionId),
             field => field.Field(f => f.UpdatedAt)
         );
-    
+
     private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
         descriptor.Fields(field => field.Field(f => f.Id));
 }

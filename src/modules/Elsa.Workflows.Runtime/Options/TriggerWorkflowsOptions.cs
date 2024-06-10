@@ -10,5 +10,6 @@ public class TriggerWorkflowsOptions
     public string? ActivityInstanceId { get; set; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
+    public bool TenantAgnostic { get; set; }
     public CancellationToken CancellationToken { get; set; }
 }

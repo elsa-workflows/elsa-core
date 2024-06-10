@@ -1,4 +1,6 @@
+using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Features;
+using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -43,10 +45,10 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     {
         base.Apply();
 
-        Services.AddScoped<DapperTriggerStore>();
-        Services.AddScoped<DapperBookmarkStore>();
-        Services.AddScoped<DapperWorkflowExecutionLogStore>();
-        Services.AddScoped<DapperActivityExecutionRecordStore>();
-        Services.AddScoped<DapperKeyValueStore>();
+        Services.AddDapperStore<DapperTriggerStore, StoredTriggerRecord>("Triggers");
+        Services.AddDapperStore<DapperBookmarkStore, StoredBookmarkRecord>("Bookmarks");
+        Services.AddDapperStore<DapperWorkflowExecutionLogStore, WorkflowExecutionLogRecordRecord>("WorkflowExecutionLogRecords");
+        Services.AddDapperStore<DapperActivityExecutionRecordStore, ActivityExecutionRecordRecord>("ActivityExecutionRecords");
+        Services.AddDapperStore<DapperKeyValueStore, KeyValuePairRecord>("KeyValues");
     }
 }

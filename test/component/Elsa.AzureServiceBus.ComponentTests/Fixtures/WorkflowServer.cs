@@ -1,6 +1,9 @@
 using System.Net.Http.Headers;
+using Elsa.Alterations.Extensions;
 using Elsa.AzureServiceBus.ComponentTests.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -50,6 +53,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
                 });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
@@ -62,6 +66,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
                     runtime.UseProtoActor();
+                });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(e => e.UsePostgreSql(dbConnectionString));
                 });
                 elsa.UseHttp(http =>
                 {

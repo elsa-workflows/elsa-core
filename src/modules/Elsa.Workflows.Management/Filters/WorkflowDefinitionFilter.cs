@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -77,6 +76,11 @@ public class WorkflowDefinitionFilter
     /// Filter on workflows that are read-only.
     /// </summary>
     public bool? IsReadonly { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to include tenant matching in the filter.
+    /// </summary>
+    public bool TenantAgnostic { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified queryable.
