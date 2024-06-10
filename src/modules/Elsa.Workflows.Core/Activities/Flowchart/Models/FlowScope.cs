@@ -45,6 +45,11 @@ internal class FlowScope
         return state;
 
     }
+
+    public bool ContainsActivity(IActivity activity)
+    {
+        return Activities.ContainsKey(activity.Id);
+    }
     
     public void RegisterActivityExecution(IActivity activity)
     {

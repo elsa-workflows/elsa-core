@@ -85,19 +85,22 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
-                    
-                    foreach (var consumer in temporaryConsumers)
-                    {
-                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
-                        configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
-                        {
-                            endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                            endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                            endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
-                        });
-                    }
 
-                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    if (!massTransitFeature.DisableConsumers)
+                    {
+                        foreach (var consumer in temporaryConsumers)
+                        {
+                            var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                            configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
+                            {
+                                endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
+                            });
+                        }
+
+                        configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    }
                 });
             };
         });

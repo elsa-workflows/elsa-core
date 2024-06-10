@@ -18,6 +18,7 @@ using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
 using Elsa.Identity.MultiTenancy;
 using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
@@ -67,6 +68,7 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
+var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
 
 // Add Elsa services.
 services
@@ -293,7 +295,7 @@ services
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)
                 {
-                    // TODO: alterations.UseMongoDb();
+                    alterations.UseMongoDb();
                 }
                 else if (persistenceProvider == PersistenceProvider.Dapper)
                 {
@@ -332,11 +334,13 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
+                massTransit.DisableConsumers = appRole == ApplicationRole.Api;
+
                 if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 100;
+                        bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
                         bus.MaxConcurrentCalls = 32;
                         bus.MaxDeliveryCount = 8;
@@ -348,7 +352,7 @@ services
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 4;
+                        bus.PrefetchCount = 50;
                         bus.Durable = true;
                         bus.AutoDelete = false;
                         bus.ConcurrentMessageLimit = 32;
@@ -429,6 +433,8 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities.
 app.UseWorkflows();
+
+app.MapControllers();
 
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())

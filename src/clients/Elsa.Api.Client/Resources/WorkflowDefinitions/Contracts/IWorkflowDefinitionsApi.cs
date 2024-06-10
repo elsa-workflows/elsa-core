@@ -73,7 +73,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="request">The request containing the workflow definition to save.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions")]
-    Task<WorkflowDefinition> SaveAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    Task<SaveWorkflowDefinitionResponse> SaveAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Deletes a workflow definition.
@@ -99,7 +99,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-definitions/{definitionId}/publish")]
     [Headers(MediaTypeNames.Application.Json)]
-    Task<WorkflowDefinition> PublishAsync(string definitionId, PublishWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
+    Task<SaveWorkflowDefinitionResponse> PublishAsync(string definitionId, PublishWorkflowDefinitionRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retracts a workflow definition.

@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.UpdateReferences;
 
 [PublicAPI]
-internal class UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
+internal class UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IAuthorizationService authorizationService)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -43,7 +43,7 @@ internal class UpdateReferences(IWorkflowDefinitionStore store, IWorkflowDefinit
             return;
         }
 
-        var affectedWorkflows = await workflowDefinitionManager.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
+        var affectedWorkflows = await workflowDefinitionPublisher.UpdateReferencesInConsumingWorkflows(definition, cancellationToken);
         var response = new Response(affectedWorkflows.Select(w => w.Name ?? w.DefinitionId));
         await SendOkAsync(response, cancellationToken);
     }

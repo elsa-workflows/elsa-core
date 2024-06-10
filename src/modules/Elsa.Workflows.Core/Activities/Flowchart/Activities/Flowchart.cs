@@ -139,14 +139,6 @@ public class Flowchart : Container
     private async ValueTask OnChildCompletedAsync(ActivityCompletedContext context)
     {
         var logger = context.GetRequiredService<ILogger<Flowchart>>();
-        var loggerScopeState = new Dictionary<string, object>
-        {
-            ["ThreadId"] = Thread.CurrentThread.ManagedThreadId,
-            ["ActivityId"] = Id,
-            ["ActivityInstanceId"] = context.TargetContext.Id
-        };
-        using var loggerScope = logger.BeginScope(loggerScopeState);
-
         var flowchartContext = context.TargetContext;
         var completedActivityContext = context.ChildContext;
         var completedActivity = completedActivityContext.Activity;
@@ -174,11 +166,12 @@ public class Flowchart : Container
         {
             if (children.Any())
             {
-                scope.AddActivities(children);
-
                 // Schedule each child, but only if all of its left inbound activities have already executed.
                 foreach (var activity in children)
                 {
+                    var existingActivity = scope.ContainsActivity(activity);
+                    scope.AddActivity(activity);
+
                     var inboundActivities = Connections.LeftInboundActivities(activity).ToList();
 
                     // If the completed activity is not part of the left inbound path, always allow its children to be scheduled.
@@ -194,15 +187,14 @@ public class Flowchart : Container
                         var executionCount = scope.GetExecutionCount(activity);
                         var haveInboundActivitiesExecuted = inboundActivities.All(x => scope.GetExecutionCount(x) > executionCount);
 
-                        if (haveInboundActivitiesExecuted)
-                        {
+                        if (haveInboundActivitiesExecuted) 
                             await flowchartContext.ScheduleActivityAsync(activity, OnChildCompletedAsync);
-                        }
                     }
                     else
                     {
                         // Select an existing activity execution context for this activity, if any.
-                        var joinContext = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == flowchartContext && x.Activity == activity);
+                        var joinContext = flowchartContext.WorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x =>
+                            x.ParentActivityExecutionContext == flowchartContext && x.Activity == activity);
                         var scheduleWorkOptions = new ScheduleWorkOptions
                         {
                             CompletionCallback = OnChildCompletedAsync,
@@ -212,9 +204,14 @@ public class Flowchart : Container
 
                         if (joinContext != null)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Attaching to existing join context {JoinContext}", activity.Id, joinContext.Id);
-                        else
+                        else if (!existingActivity)
                             logger.LogDebug("Next activity {ChildActivityId} is a join activity. Creating new join context", activity.Id);
-                        
+                        else
+                        {
+                            logger.LogDebug("Next activity {ChildActivityId} is a join activity. Join context was not found, but activity is already being created", activity.Id);
+                            continue;
+                        }
+
                         await flowchartContext.ScheduleActivityAsync(activity, scheduleWorkOptions);
                     }
                 }
@@ -231,7 +228,6 @@ public class Flowchart : Container
 
     private async Task CompleteIfNoPendingWorkAsync(ActivityExecutionContext context)
     {
-        var logger = context.GetRequiredService<ILogger<Flowchart>>();
         var hasPendingWork = HasPendingWork(context);
 
         if (!hasPendingWork)

@@ -122,9 +122,7 @@ public class Workflow : Composite<object>, ICloneable
     /// </summary>
     public MemoryRegister CreateRegister()
     {
-        var register = new MemoryRegister();
-        register.Declare(Variables);
-        return register;
+        return new MemoryRegister();
     }
 
     /// <inheritdoc />

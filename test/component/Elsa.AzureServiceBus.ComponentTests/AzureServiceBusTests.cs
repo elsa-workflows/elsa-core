@@ -1,4 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.ComponentTests.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
