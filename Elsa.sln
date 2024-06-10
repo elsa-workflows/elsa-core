@@ -309,7 +309,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
 	ProjectSection(SolutionItems) = preProject
 		migrations\README.md = migrations\README.md
+		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
 		migrations\efcore-3.2.sh = migrations\efcore-3.2.sh
+		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
+		migrations\efcore-3.3.sh = migrations\efcore-3.3.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
@@ -764,7 +767,7 @@ Global
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-        {99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+								{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
