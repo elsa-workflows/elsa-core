@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Elsa.Workflows.ComponentTests;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
