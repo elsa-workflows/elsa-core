@@ -15,7 +15,8 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     INotificationHandler<WorkflowDefinitionPublishing>,
     INotificationHandler<WorkflowDefinitionRetracting>,
     INotificationHandler<WorkflowDefinitionDeleting>,
-    INotificationHandler<WorkflowDefinitionsDeleting>
+    INotificationHandler<WorkflowDefinitionsDeleting>,
+    INotificationHandler<WorkflowDefinitionVersionsUpdating>
 {
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionPublishing notification, CancellationToken cancellationToken)
@@ -40,5 +41,12 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     {
         foreach (var definitionId in notification.DefinitionIds)
             await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionVersionsUpdating notification, CancellationToken cancellationToken)
+    {
+        foreach (var definition in notification.VersionUpdates)
+            await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definition.DefinitionId, cancellationToken);
     }
 }

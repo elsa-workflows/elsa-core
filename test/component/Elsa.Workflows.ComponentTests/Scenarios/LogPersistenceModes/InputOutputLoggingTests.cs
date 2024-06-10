@@ -1,4 +1,4 @@
-﻿using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Framework.Entities;

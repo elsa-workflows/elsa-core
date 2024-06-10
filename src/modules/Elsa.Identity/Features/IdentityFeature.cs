@@ -1,4 +1,5 @@
 using AspNetCore.Authentication.ApiKey;
+using Elsa.Common.Contracts;
 using Elsa.Common.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;

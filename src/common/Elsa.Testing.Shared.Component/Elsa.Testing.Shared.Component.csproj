@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -22,10 +22,6 @@
         <ProjectReference Include="..\..\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
         <ProjectReference Include="..\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Fixtures\" />
     </ItemGroup>
 
 </Project>

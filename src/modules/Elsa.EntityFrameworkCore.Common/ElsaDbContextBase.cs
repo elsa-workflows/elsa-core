@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Framework.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,9 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         EntityState.Modified,
     };
     
+    protected readonly IServiceProvider ServiceProvider;
+    public string? TenantId { get; set; }
+
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
@@ -43,9 +47,6 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
     }
     
-    protected readonly IServiceProvider ServiceProvider;
-    public string? TenantId { get; set; }
-
     /// <inheritdoc/>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

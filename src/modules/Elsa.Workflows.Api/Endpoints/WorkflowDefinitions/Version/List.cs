@@ -1,4 +1,4 @@
-﻿using Elsa.Abstractions;
+using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Framework.Entities;
 using Elsa.Workflows.Management;

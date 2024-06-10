@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Framework.Tenants;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;

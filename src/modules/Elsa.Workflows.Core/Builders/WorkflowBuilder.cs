@@ -251,7 +251,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
 
         // Assign identities to all activities.
-        _identityGraphService.AssignIdentities(nodes);
+        await _identityGraphService.AssignIdentitiesAsync(nodes);
 
         // Give unnamed variables in each variable container a predictable name.
         var variableContainers = nodes.Where(x => x.Activity is IVariableContainer).Select(x => (IVariableContainer)x.Activity).ToList();
