@@ -24,6 +24,7 @@ using Elsa.Server.Web;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -39,17 +40,18 @@ const bool useSqlServer = false;
 const bool usePostgres = false;
 const bool useCockroachDb = false;
 const bool useDapper = false;
-const bool useProtoActor = false;
 const bool useHangfire = false;
-const bool useQuartz = false;
+const bool useQuartz = true;
 const bool useMassTransit = true;
 const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
+const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.RabbitMq;
+const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -64,7 +66,7 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
 var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
 
 // Add Elsa services.
@@ -186,7 +188,12 @@ services
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
-                if (useProtoActor)
+                if (workflowRuntime == WorkflowRuntime.Distributed)
+                {
+                    runtime.UseDistributedRuntime();
+                }
+
+                if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
@@ -207,11 +214,12 @@ services
                 {
                     runtime.ActivityExecutionLogStore = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-                    runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
 
                 if (useCaching)
                     runtime.UseCache();
+
+                runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
 
                 runtime.DistributedLockProvider = _ =>
                 {
@@ -328,11 +336,11 @@ services
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
 
-                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 100;
+                        bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
                         bus.MaxConcurrentCalls = 32;
                         bus.MaxDeliveryCount = 8;
@@ -340,11 +348,11 @@ services
                     });
                 }
 
-                if (useMassTransitBroker == MassTransitBroker.RabbitMq)
+                if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 4;
+                        bus.PrefetchCount = 50;
                         bus.Durable = true;
                         bus.AutoDelete = false;
                         bus.ConcurrentMessageLimit = 32;
@@ -359,6 +367,14 @@ services
             elsa.UseDistributedCache(distributedCaching =>
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
+            });
+        }
+
+        if (useAzureServiceBusModule)
+        {
+            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+            {
+                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
             });
         }
 

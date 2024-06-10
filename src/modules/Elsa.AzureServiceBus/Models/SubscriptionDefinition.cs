@@ -13,5 +13,6 @@ public class SubscriptionDefinition
     /// <summary>
     /// The topic.
     /// </summary>
-    public string Topic { get; set; } = default!;
+    [Obsolete("Use TopicDefinition.Subscriptions instead.")]
+    public string? Topic { get; set; }
 }

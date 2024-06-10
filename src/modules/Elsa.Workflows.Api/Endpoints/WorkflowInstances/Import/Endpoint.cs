@@ -4,6 +4,7 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
@@ -110,7 +111,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
 
     private async Task ImportSingleWorkflowInstanceAsync(ExportedWorkflowState model, CancellationToken cancellationToken)
     {
-        var workflowState = await _workflowStateSerializer.DeserializeAsync(model.WorkflowState, cancellationToken);
+        var workflowState = _workflowStateSerializer.Deserialize(model.WorkflowState);
         await _workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
 
         if (model.Bookmarks != null)

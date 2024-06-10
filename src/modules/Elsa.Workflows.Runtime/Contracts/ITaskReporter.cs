@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.Activities;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Reports the status of a given task, which will result in <see cref="RunTask"/> activities being resumed.

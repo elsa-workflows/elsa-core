@@ -1,4 +1,5 @@
 using Elsa.Caching.Distributed.MassTransit.Messages;
+using Elsa.Testing.Shared;
 using Hangfire.Annotations;
 using MassTransit;
 

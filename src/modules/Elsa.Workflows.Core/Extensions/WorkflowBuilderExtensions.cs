@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 

@@ -128,6 +128,18 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Add(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Update(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {

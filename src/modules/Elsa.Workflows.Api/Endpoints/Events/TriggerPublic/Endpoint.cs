@@ -1,7 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.SasTokens.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
@@ -15,14 +15,12 @@ internal class Trigger : ElsaEndpointWithoutRequest
 {
     private readonly ITokenService _tokenService;
     private readonly IEventPublisher _eventPublisher;
-    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
 
     /// <inheritdoc />
-    public Trigger(ITokenService tokenService, IEventPublisher eventPublisher, IHttpBookmarkProcessor httpBookmarkProcessor)
+    public Trigger(ITokenService tokenService, IEventPublisher eventPublisher)
     {
         _tokenService = tokenService;
         _eventPublisher = eventPublisher;
-        _httpBookmarkProcessor = httpBookmarkProcessor;
     }
 
     /// <inheritdoc />
@@ -46,10 +44,8 @@ internal class Trigger : ElsaEndpointWithoutRequest
 
         var eventName = payload.EventName;
         var workflowInstanceId = payload.WorkflowInstanceId;
-        var results = await _eventPublisher.PublishAsync(eventName, workflowInstanceId: workflowInstanceId, cancellationToken: cancellationToken);
+        await _eventPublisher.PublishAsync(eventName, workflowInstanceId: workflowInstanceId, cancellationToken: cancellationToken);
         
-        await _httpBookmarkProcessor.ProcessBookmarks(results, cancellationToken: cancellationToken);
-
         if (!HttpContext.Response.HasStarted)
             await SendOkAsync(cancellationToken);
     }

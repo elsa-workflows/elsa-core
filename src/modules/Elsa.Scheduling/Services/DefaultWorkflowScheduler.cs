@@ -1,7 +1,5 @@
-using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Schedules;
 using Elsa.Scheduling.Tasks;
-using Elsa.Workflows.Runtime.Requests;
 
 namespace Elsa.Scheduling.Services;
 
@@ -21,13 +19,13 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         await _scheduler.ScheduleAsync(taskName, new RunWorkflowTask(request), new SpecificInstantSchedule(at), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new SpecificInstantSchedule(at);
@@ -35,7 +33,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         var task = new RunWorkflowTask(request);
         var schedule = new RecurringSchedule(startAt, interval);
@@ -43,7 +41,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new RecurringSchedule(startAt, interval);
@@ -51,7 +49,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowDefinitionRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var task = new RunWorkflowTask(request);
         var schedule = new CronSchedule(cronExpression);
@@ -59,7 +57,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new CronSchedule(cronExpression);

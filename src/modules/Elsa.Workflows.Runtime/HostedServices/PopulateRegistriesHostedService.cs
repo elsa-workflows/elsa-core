@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
 using Medallion.Threading;
@@ -30,7 +29,7 @@ public class PopulateRegistriesHostedService : IHostedService
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockAcquisitionTimeout = _options.LockAcquisitionTimeout;
         await using (await distributedLockProvider.AcquireLockAsync("PopulateRegistries", lockAcquisitionTimeout, cancellationToken))

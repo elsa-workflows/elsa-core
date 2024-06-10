@@ -33,7 +33,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxMessageStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
         });
@@ -46,7 +45,6 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
 
         Services.AddScoped<DapperTriggerStore>();
         Services.AddScoped<DapperBookmarkStore>();
-        Services.AddScoped<DapperWorkflowInboxMessageStore>();
         Services.AddScoped<DapperWorkflowExecutionLogStore>();
         Services.AddScoped<DapperActivityExecutionRecordStore>();
         Services.AddScoped<DapperKeyValueStore>();

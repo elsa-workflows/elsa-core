@@ -7,7 +7,7 @@ using Elsa.Workflows.Helpers;
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class HttpWorkflowsCacheManager(ICacheManager cache, IBookmarkHasher bookmarkHasher) : IHttpWorkflowsCacheManager
+public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHasher) : IHttpWorkflowsCacheManager
 {
     /// <inheritdoc />
     public ICacheManager Cache => cache;

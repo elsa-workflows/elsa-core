@@ -1,5 +1,4 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ParentChildOutputMapping;

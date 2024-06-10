@@ -183,11 +183,15 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter)
     {
-        if (filter.DefinitionId != null) queryable = queryable.Where(x => x.DefinitionId == filter.DefinitionId);
+        var definitionId = filter.DefinitionId ?? filter.DefinitionHandle?.DefinitionId;
+        var versionOptions = filter.VersionOptions ?? filter.DefinitionHandle?.VersionOptions;
+        var id = filter.Id ?? filter.DefinitionHandle?.DefinitionVersionId;
+        
+        if (definitionId != null) queryable = queryable.Where(x => x.DefinitionId == definitionId);
         if (filter.DefinitionIds != null) queryable = queryable.Where(x => filter.DefinitionIds.Contains(x.DefinitionId));
-        if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
+        if (id != null) queryable = queryable.Where(x => x.Id == id);
         if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
-        if (filter.VersionOptions != null) queryable = queryable.WithVersion(filter.VersionOptions.Value);
+        if (versionOptions != null) queryable = queryable.WithVersion(versionOptions.Value);
         if (filter.MaterializerName != null) queryable = queryable.Where(x => x.MaterializerName == filter.MaterializerName);
         if (filter.Name != null) queryable = queryable.Where(x => x.Name == filter.Name);
         if (filter.Names != null) queryable = queryable.Where(x => filter.Names.Contains(x.Name!));

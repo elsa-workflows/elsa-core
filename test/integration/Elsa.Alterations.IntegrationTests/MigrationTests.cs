@@ -5,6 +5,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -19,7 +20,6 @@ public class MigrationTests
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
     private readonly IAlterationRunner _alterationRunner;
-    private readonly IWorkflowRuntime _workflowRuntime;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
     /// <summary>
@@ -32,7 +32,6 @@ public class MigrationTests
             .ConfigureElsa(elsa => elsa.UseAlterations())
             .Build();
         _alterationRunner = _services.GetRequiredService<IAlterationRunner>();
-        _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
         _workflowInstanceStore = _services.GetRequiredService<IWorkflowInstanceStore>();
     }
 

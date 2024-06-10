@@ -74,7 +74,6 @@ public class WorkflowRunner(
         var correlationId = options?.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
-        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             serviceProvider,
             workflowGraph,
@@ -85,8 +84,7 @@ public class WorkflowRunner(
             properties,
             default,
             triggerActivityId,
-            statusUpdatedCallback,
-            options?.CancellationTokens ?? cancellationToken);
+            cancellationToken);
 
         // Schedule the first activity.
         workflowExecutionContext.ScheduleWorkflow();
@@ -117,7 +115,6 @@ public class WorkflowRunner(
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
         var triggerActivityId = options?.TriggerActivityId;
         var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
-        var statusUpdatedCallback = options?.StatusUpdatedCallback;
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             serviceProvider,
             workflowGraph,
@@ -128,42 +125,31 @@ public class WorkflowRunner(
             properties,
             default,
             triggerActivityId,
-            statusUpdatedCallback,
-            options?.CancellationTokens ?? cancellationToken);
+            cancellationToken);
 
         var bookmarkId = options?.BookmarkId;
-        var activityNodeId = options?.ActivityNodeId;
-        var activityId = options?.ActivityId;
-        var activityInstanceId = options?.ActivityInstanceId;
-        var activityHash = options?.ActivityHash;
+        var activityHandle = options?.ActivityHandle;
 
-        if (bookmarkId != null)
+        if (!string.IsNullOrEmpty(bookmarkId))
         {
             var bookmark = workflowState.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
 
             if (bookmark != null)
                 workflowExecutionContext.ScheduleBookmark(bookmark);
         }
-        else if (activityNodeId != null)
+        else if (activityHandle != null)
         {
-            var activity = workflowExecutionContext.FindActivityByNodeId(activityNodeId);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityHash != null)
-        {
-            var activity = workflowExecutionContext.FindActivityByHash(activityHash);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityId != null)
-        {
-            var activity = workflowExecutionContext.FindActivityById(activityId);
-            if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
-        }
-        else if (activityInstanceId != null)
-        {
-            var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId) ??
-                                           throw new Exception("No activity execution context found with the specified ID.");
-            workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
+            if (!string.IsNullOrEmpty(activityHandle.ActivityInstanceId))
+            {
+                var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId)
+                                               ?? throw new Exception("No activity execution context found with the specified ID.");
+                workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
+            }
+            else
+            {
+                var activity = workflowExecutionContext.FindActivity(activityHandle);
+                if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
+            }
         }
         else if (workflowExecutionContext.Scheduler.HasAny)
         {
@@ -178,6 +164,7 @@ public class WorkflowRunner(
         return await RunAsync(workflowExecutionContext);
     }
 
+
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
@@ -188,16 +175,15 @@ public class WorkflowRunner(
         };
         using var loggingScope = logger.BeginScope(logContext);
         var workflow = workflowExecutionContext.Workflow;
-        var applicationCancellationToken = workflowExecutionContext.CancellationTokens.ApplicationCancellationToken;
-        var systemCancellationToken = workflowExecutionContext.CancellationTokens.SystemCancellationToken;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
 
-        await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), applicationCancellationToken);
+        await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
 
         // If the status is Pending, it means the workflow is started for the first time.
         if (workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending)
         {
             workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
-            await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), applicationCancellationToken);
+            await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
         await pipeline.ExecuteAsync(workflowExecutionContext);
@@ -205,11 +191,11 @@ public class WorkflowRunner(
 
         if (workflowState.Status == WorkflowStatus.Finished)
         {
-            await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), applicationCancellationToken);
+            await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), cancellationToken);
         }
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
-        await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), systemCancellationToken);
+        await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

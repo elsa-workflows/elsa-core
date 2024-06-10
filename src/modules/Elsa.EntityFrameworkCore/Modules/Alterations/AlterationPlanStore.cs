@@ -5,7 +5,6 @@ using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Management.Filters;
 
 namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 

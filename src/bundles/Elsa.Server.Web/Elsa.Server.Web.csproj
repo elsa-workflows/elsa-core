@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
@@ -32,7 +33,6 @@
         <ProjectReference Include="..\..\modules\Elsa.MongoDb\Elsa.MongoDb.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
-        <ProjectReference Include="..\..\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>

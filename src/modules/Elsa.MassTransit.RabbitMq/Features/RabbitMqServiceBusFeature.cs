@@ -4,7 +4,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Features;
-using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;

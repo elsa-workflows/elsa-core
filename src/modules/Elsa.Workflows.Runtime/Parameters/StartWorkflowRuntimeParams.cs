@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Parameters;
 
@@ -19,9 +18,8 @@ public class StartWorkflowRuntimeParams
     public string? TriggerActivityId { get; set; }
 
     public string? InstanceId { get; set; }
-    public bool IsExistingInstance { get; set; }
 
-    public CancellationTokens CancellationTokens { get; set; }
+    public CancellationToken CancellationToken { get; set; }
     
     public string? ParentWorkflowInstanceId { get; set; }
 }

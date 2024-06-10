@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
@@ -10,7 +10,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDispatch;
 
 [PublicAPI]
-internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator)
+internal class Endpoint(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -23,16 +23,9 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
-
-        var exists = await store.AnyAsync(
-            new WorkflowDefinitionFilter
-            {
-                DefinitionId = definitionId,
-                VersionOptions = versionOptions
-            },
-            cancellationToken);
-
-        if (!exists)
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(definitionId, versionOptions, cancellationToken);
+        
+        if (workflowGraph == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -45,10 +38,8 @@ internal class Endpoint(IWorkflowDefinitionStore store, IWorkflowDispatcher work
             var instanceId = identityGenerator.GenerateId();
             var triggerActivityId = request.TriggerActivityId;
             var input = (IDictionary<string, object>?)request.Input;
-            var dispatchRequest = new DispatchWorkflowDefinitionRequest
+            var dispatchRequest = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
             {
-                DefinitionId = definitionId,
-                VersionOptions = versionOptions,
                 Input = input,
                 InstanceId = instanceId,
                 TriggerActivityId = triggerActivityId

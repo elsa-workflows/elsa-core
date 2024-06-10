@@ -3,8 +3,10 @@ using Elsa.Extensions;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +19,20 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
     public async Task VariableIsPersistedAcrossWorkflowRuns()
     {
         var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        var workflowClient = await workflowRuntime.CreateClientAsync();
         var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
-        var startParams = new StartWorkflowRuntimeParams();
-        var result = await workflowRuntime.StartWorkflowAsync(CountdownWorkflow.DefinitionId, startParams);
-        var workflowInstanceId = result.WorkflowInstanceId;
-        var bookmarks = new Stack<Bookmark>(result.Bookmarks);
+        var bookmarkStore = Scope.ServiceProvider.GetRequiredService<IBookmarkStore>();
+        var runAndCreateRequest = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(CountdownWorkflow.DefinitionId),
+        };
+        var runResponse = await workflowClient.CreateAndRunInstanceAsync(runAndCreateRequest);
+        var workflowInstanceId = runResponse.WorkflowInstanceId;
+        var createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+        {
+            WorkflowInstanceId = workflowInstanceId
+        });
+        var bookmarks = new Stack<StoredBookmark>(createdBookmarks);
         var expectedCounter = 3;
 
         while (bookmarks.Any())
@@ -34,20 +45,27 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             Assert.Equal(--expectedCounter, actualCounter);
 
             var bookmark = bookmarks.Pop();
-            var resumeWorkflowRuntimeOptions = new ResumeWorkflowRuntimeParams
+            var runRequest = new RunWorkflowInstanceRequest
             {
-                BookmarkId = bookmark?.Id,
+                BookmarkId = bookmark!.BookmarkId,
             };
+            runResponse = await workflowClient.RunInstanceAsync(runRequest);
 
-            result = await workflowRuntime.ResumeWorkflowAsync(workflowInstanceId, resumeWorkflowRuntimeOptions);
-
-            if (result == null)
+            if (runResponse == null)
                 break;
 
-            foreach (var newBookmark in result.Bookmarks) bookmarks.Push(newBookmark);
+            createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            {
+                WorkflowInstanceId = workflowInstanceId
+            });
+
+            foreach (var newBookmark in createdBookmarks)
+                bookmarks.Push(newBookmark);
         }
     }
 
-    private IDictionary<string, object> GetVariablesDictionary(ActivityExecutionContextState context) =>
-        context.Properties.GetOrAdd(WorkflowStorageDriver.VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+    private IDictionary<string, object> GetVariablesDictionary(ActivityExecutionContextState context)
+    {
+        return context.Properties.GetOrAdd(WorkflowStorageDriver.VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+    }
 }

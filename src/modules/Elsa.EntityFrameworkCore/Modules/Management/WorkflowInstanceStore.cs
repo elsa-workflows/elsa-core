@@ -30,8 +30,8 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// Constructor.
     /// </summary>
     public EFCoreWorkflowInstanceStore(
-        EntityStore<ManagementElsaDbContext, WorkflowInstance> store, 
-        IWorkflowStateSerializer workflowStateSerializer, 
+        EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
+        IWorkflowStateSerializer workflowStateSerializer,
         ICompressionCodecResolver compressionCodecResolver,
         IOptions<ManagementOptions> options)
     {
@@ -157,6 +157,18 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.UpdateAsync(instance, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
@@ -165,7 +177,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     private async ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
     {
         var data = entity.WorkflowState;
-        var json = await _workflowStateSerializer.SerializeAsync(data, cancellationToken);
+        var json = _workflowStateSerializer.Serialize(data);
         var compressionAlgorithm = _options.Value.CompressionAlgorithm ?? nameof(None);
         var compressionCodec = _compressionCodecResolver.Resolve(compressionAlgorithm);
         var compressedJson = await compressionCodec.CompressAsync(json, cancellationToken);
@@ -187,7 +199,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         if (!string.IsNullOrWhiteSpace(json))
         {
             json = await compressionStrategy.DecompressAsync(json, cancellationToken);
-            data = await _workflowStateSerializer.DeserializeAsync(json, cancellationToken);
+            data = _workflowStateSerializer.Deserialize(json);
         }
 
         entity.WorkflowState = data;

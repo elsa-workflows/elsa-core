@@ -1,4 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.KeyValues.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -34,11 +34,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The workflow bookmarks.
     /// </summary>
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
-
-    /// <summary>
-    /// The workflow inbox messages.
-    /// </summary>
-    public DbSet<WorkflowInboxMessage> WorkflowInboxMessages { get; set; } = default!;
     
     /// <summary>
     /// The generic key value pairs.
@@ -53,7 +48,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
-        modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
     }
 
@@ -75,9 +69,6 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
 
         modelBuilder.Entity<StoredBookmark>().Property("SerializedPayload").HasColumnType("NCLOB");
         modelBuilder.Entity<StoredBookmark>().Property("SerializedMetadata").HasColumnType("NCLOB");
-
-        modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedInput").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowInboxMessage>().Property("SerializedBookmarkPayload").HasColumnType("NCLOB");
 
         modelBuilder.Entity<SerializedKeyValuePair>().Property("SerializedValue").HasColumnType("NCLOB");
     }

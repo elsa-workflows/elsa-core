@@ -6,7 +6,6 @@ using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.DependencyWorkflowsPublishing;

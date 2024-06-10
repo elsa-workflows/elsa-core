@@ -1,6 +1,4 @@
-using Elsa.Workflows.Runtime.Models;
-
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Executes activities that are temporarily detached from the workflow. This allows activities to execute in the background, for example.

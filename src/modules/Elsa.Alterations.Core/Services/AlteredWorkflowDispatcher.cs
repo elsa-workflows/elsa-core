@@ -1,5 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Results;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 

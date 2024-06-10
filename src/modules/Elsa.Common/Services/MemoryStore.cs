@@ -46,6 +46,13 @@ public class MemoryStore<TEntity>
         foreach (var entity in entities)
             Save(entity, idAccessor);
     }
+    
+    /// <summary>
+    /// Updates an entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="idAccessor">A function that returns the ID of the entity.</param>
+    public void Update(TEntity entity, Func<TEntity, string> idAccessor) => Entities[idAccessor(entity)] = entity;
 
     /// <summary>
     /// Finds an entity matching the specified predicate.
