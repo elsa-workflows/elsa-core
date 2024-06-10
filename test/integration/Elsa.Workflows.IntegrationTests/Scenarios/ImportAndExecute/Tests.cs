@@ -17,7 +17,7 @@ public class Tests
     }
 
     [Theory(DisplayName = "Workflow imported from file should execute successfully.")]
-    [MemberData(nameof(GetSpecimen))]
+    [MemberData(memberName: nameof(GetSpecimen))]
     public async Task Test1(string workflowFileName, string[] expectedOutput)
     {
         // Populate registries.
@@ -35,7 +35,7 @@ public class Tests
         Assert.Equal(expectedOutput, lines);
     }
     
-    public static TheoryData GetSpecimen()
+    public static TheoryData<string, string[]> GetSpecimen()
     {
         return new TheoryData<string, string[]>
         {
