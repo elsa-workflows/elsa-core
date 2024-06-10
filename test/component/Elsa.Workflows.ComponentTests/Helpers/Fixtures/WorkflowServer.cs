@@ -1,4 +1,5 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
+using System.Reflection;
 using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -11,6 +12,7 @@ using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;

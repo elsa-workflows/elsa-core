@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;

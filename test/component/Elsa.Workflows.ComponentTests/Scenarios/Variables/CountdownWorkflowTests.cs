@@ -1,6 +1,7 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -47,7 +48,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             var bookmark = bookmarks.Pop();
             var runRequest = new RunWorkflowInstanceRequest
             {
-                BookmarkId = bookmark!.BookmarkId,
+                BookmarkId = bookmark.Id,
             };
             runResponse = await workflowClient.RunInstanceAsync(runRequest);
 

@@ -2,7 +2,6 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Options;
-using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management;

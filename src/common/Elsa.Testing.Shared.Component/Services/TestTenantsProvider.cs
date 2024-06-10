@@ -2,7 +2,7 @@ using Elsa.Common.Entities;
 using Elsa.Tenants;
 using Elsa.Tenants.Models;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Services;
+namespace Elsa.Testing.Shared.Services;
 
 public class TestTenantsProvider(params string[] tenantIds) : ITenantsProvider
 {

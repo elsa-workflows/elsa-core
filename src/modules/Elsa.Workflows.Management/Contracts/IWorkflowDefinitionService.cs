@@ -32,11 +32,6 @@ public interface IWorkflowDefinitionService
     Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Looks for a <see cref="WorkflowDefinition"/> by the specified <see cref="WorkflowDefinitionHandle"/>.
-    /// </summary>
-    Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default);
-    
-    /// <summary>
     /// Looks for a <see cref="WorkflowDefinition"/> by the specified <see cref="WorkflowDefinitionFilter"/>.
     /// </summary>
     Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
@@ -51,11 +46,6 @@ public interface IWorkflowDefinitionService
     /// </summary>
     Task<WorkflowGraph?> FindWorkflowGraphAsync(string definitionVersionId, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Looks for a <see cref="WorkflowGraph"/> by the specified <see cref="WorkflowDefinitionHandle"/>.
-    /// </summary>
-    Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default);
-    
     /// <summary>
     /// Looks for a <see cref="WorkflowGraph"/> by the specified <see cref="WorkflowDefinitionHandle"/>.
     /// </summary>
