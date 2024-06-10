@@ -220,7 +220,7 @@ services
                     runtime.UseCache();
 
                 runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
-                
+
                 runtime.DistributedLockProvider = _ =>
                 {
                     switch (distributedLockProviderName)
@@ -336,11 +336,11 @@ services
             {
                 massTransit.DisableConsumers = appRole == ApplicationRole.Api;
 
-                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 100;
+                        bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
                         bus.MaxConcurrentCalls = 32;
                         bus.MaxDeliveryCount = 8;
@@ -352,7 +352,7 @@ services
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 4;
+                        bus.PrefetchCount = 50;
                         bus.Durable = true;
                         bus.AutoDelete = false;
                         bus.ConcurrentMessageLimit = 32;
