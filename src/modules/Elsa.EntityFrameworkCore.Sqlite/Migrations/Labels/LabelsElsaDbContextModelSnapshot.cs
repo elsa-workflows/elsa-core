@@ -14,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.14");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
 
             modelBuilder.Entity("Elsa.Labels.Entities.Label", b =>
                 {

@@ -321,6 +321,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", 
 		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
 		migrations\efcore-3.1-sql.sh = migrations\efcore-3.1-sql.sh
 		migrations\README.md = migrations\README.md
+		migrations\efcore-3.2.sh = migrations\efcore-3.2.sh
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
