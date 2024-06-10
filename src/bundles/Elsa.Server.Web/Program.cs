@@ -16,6 +16,7 @@ using Elsa.Features.Services;
 using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
@@ -286,7 +287,7 @@ services
             {
                 if (useMongoDb)
                 {
-                    // TODO: alterations.UseMongoDb();
+                    alterations.UseMongoDb();
                 }
                 else if (useDapper)
                 {
