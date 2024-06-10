@@ -1,7 +1,9 @@
 ﻿using System.Net.Http.Headers;
 using System.Reflection;
+using Elsa.Alterations.Extensions;
 using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -91,6 +93,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     //runtime.UseProtoActor();
                     runtime.UseDistributedRuntime();
                 });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
                 elsa.UseHttp(http =>
                 {
                     http.UseCache();
@@ -114,7 +120,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
         });
     }
-    
+
     protected override void ConfigureClient(HttpClient client)
     {
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("ApiKey", AdminApiKeyProvider.DefaultApiKey);
