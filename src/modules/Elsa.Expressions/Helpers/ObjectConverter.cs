@@ -51,7 +51,6 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
     
     private static JsonSerializerOptions? _defaultSerializerOptions;

@@ -1,8 +1,6 @@
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -17,8 +15,6 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     private readonly INotificationSender _notificationSender;
     private readonly IWorkflowDefinitionPublisher _workflowPublisher;
     private readonly IIdentityGenerator _identityGenerator;
-    private readonly IActivitySerializer _activitySerializer;
-    private readonly IActivityVisitor _activityVisitor;
 
     /// <summary>
     /// Constructor.
@@ -27,16 +23,12 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         IWorkflowDefinitionStore store,
         INotificationSender notificationSender,
         IWorkflowDefinitionPublisher workflowPublisher,
-        IIdentityGenerator identityGenerator,
-        IActivitySerializer activitySerializer,
-        IActivityVisitor activityVisitor)
+        IIdentityGenerator identityGenerator)
     {
         _store = store;
         _notificationSender = notificationSender;
         _workflowPublisher = workflowPublisher;
         _identityGenerator = identityGenerator;
-        _activitySerializer = activitySerializer;
-        _activityVisitor = activityVisitor;
     }
 
     /// <inheritdoc />
@@ -45,7 +37,6 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
         await _notificationSender.SendAsync(new WorkflowDefinitionDeleting(definitionId), cancellationToken);
         var filter = new WorkflowDefinitionFilter { DefinitionId = definitionId };
         var count = await _store.DeleteAsync(filter, cancellationToken);
-        await EnsureLastVersionIsLatestAsync(definitionId, cancellationToken);
         await _notificationSender.SendAsync(new WorkflowDefinitionDeleted(definitionId), cancellationToken);
         return count;
     }
@@ -141,53 +132,6 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
 
         await _store.SaveAsync(draft, cancellationToken);
         return draft;
-    }
-
-    /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default)
-    {
-        var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
-
-        var workflowDefinitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
-        {
-            VersionOptions = VersionOptions.LatestOrPublished
-        }, cancellationToken)).ToList();
-
-        // Remove the dependency from the list of workflow definitions to consider.
-        workflowDefinitions = workflowDefinitions.Where(x => x.DefinitionId != dependency.DefinitionId).ToList();
-
-        foreach (var definition in workflowDefinitions)
-        {
-            var root = _activitySerializer.Deserialize(definition.StringData!);
-            var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
-            var flattenedList = graph.Flatten().ToList();
-            var definitionId = dependency.DefinitionId;
-            var version = dependency.Version;
-            var nodes = flattenedList
-                .Where(x => x.Activity is WorkflowDefinitionActivity workflowDefinitionActivity && workflowDefinitionActivity.WorkflowDefinitionId == definitionId)
-                .ToList();
-
-            foreach (var node in nodes.Where(activity => activity.Activity.Version < version))
-            {
-                var activity = (WorkflowDefinitionActivity)node.Activity;
-                activity.Version = version;
-                activity.WorkflowDefinitionVersionId = dependency.Id;
-
-                if (!updatedWorkflowDefinitions.Contains(definition))
-                    updatedWorkflowDefinitions.Add(definition);
-            }
-
-            if (updatedWorkflowDefinitions.Contains(definition))
-            {
-                var serializedData = _activitySerializer.Serialize(root);
-                definition.StringData = serializedData;
-            }
-        }
-
-        if (updatedWorkflowDefinitions.Any())
-            await _store.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
-
-        return updatedWorkflowDefinitions;
     }
 
     private async Task EnsureLastVersionIsLatestAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken)

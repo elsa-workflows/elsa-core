@@ -16,6 +16,7 @@ using Elsa.Features.Services;
 using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
@@ -66,6 +67,7 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
+var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
 
 // Add Elsa services.
 services
@@ -293,7 +295,7 @@ services
             {
                 if (useMongoDb)
                 {
-                    // TODO: alterations.UseMongoDb();
+                    alterations.UseMongoDb();
                 }
                 else if (useDapper)
                 {
@@ -332,7 +334,9 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
+                massTransit.DisableConsumers = appRole == ApplicationRole.Api;
+
+                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
@@ -420,6 +424,8 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities.
 app.UseWorkflows();
+
+app.MapControllers();
 
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())

@@ -68,4 +68,12 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The saved workflow definition.</returns>
     Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates all referencing workflow definitions to use the version of the specified workflow definition.
+    /// </summary>
+    /// <param name="dependency">The workflow definition to update references for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated workflow definitions.</returns>
+    Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default);
 }

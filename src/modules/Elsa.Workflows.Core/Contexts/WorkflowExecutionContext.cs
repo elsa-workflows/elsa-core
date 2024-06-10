@@ -5,6 +5,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -60,6 +61,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ServiceProvider = serviceProvider;
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        ActivityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
@@ -148,7 +150,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             cancellationToken);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
-        workflowStateExtractor.Apply(workflowExecutionContext, workflowState);
+        await workflowStateExtractor.ApplyAsync(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }
@@ -223,6 +225,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// Gets the <see cref="IActivityRegistry"/>.
     /// </summary>
     public IActivityRegistry ActivityRegistry { get; }
+
+    /// <summary>
+    /// Gets the <see cref="IActivityRegistryLookupService"/>.
+    /// </summary>
+    public IActivityRegistryLookupService ActivityRegistryLookup { get; }
 
     /// <summary>
     /// Gets the workflow graph.
@@ -593,9 +600,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
     /// </summary>
-    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityInvocationOptions? options = default)
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity, ActivityInvocationOptions? options = default)
     {
-        var activityDescriptor = ActivityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
+        var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;

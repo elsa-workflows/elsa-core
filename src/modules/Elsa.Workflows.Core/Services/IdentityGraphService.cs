@@ -10,15 +10,15 @@ namespace Elsa.Workflows.Services;
 public class IdentityGraphService : IIdentityGraphService
 {
     private readonly IActivityVisitor _activityVisitor;
-    private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityRegistryLookupService _activityRegistryLookup;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistry activityRegistry)
+    public IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistryLookupService activityRegistryLookup)
     {
         _activityVisitor = activityVisitor;
-        _activityRegistry = activityRegistry;
+        _activityRegistryLookup = activityRegistryLookup;
     }
 
     /// <inheritdoc />
@@ -31,14 +31,14 @@ public class IdentityGraphService : IIdentityGraphService
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
         var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
-        AssignIdentities(graph);
+        await AssignIdentitiesAsync(graph);
     }
 
     /// <inheritdoc />
-    public void AssignIdentities(ActivityNode root) => AssignIdentities(root.Flatten().ToList());
+    public Task AssignIdentitiesAsync(ActivityNode root) => AssignIdentitiesAsync(root.Flatten().ToList());
 
     /// <inheritdoc />
-    public void AssignIdentities(ICollection<ActivityNode> flattenedList)
+    public async Task AssignIdentitiesAsync(ICollection<ActivityNode> flattenedList)
     {
         var identityCounters = new Dictionary<string, int>();
 
@@ -46,7 +46,7 @@ public class IdentityGraphService : IIdentityGraphService
         {
             node.Activity.Id = CreateId(node, identityCounters, flattenedList);
             node.Activity.NodeId = node.NodeId;
-            AssignInputOutputs(node.Activity);
+            await AssignInputOutputsAsync(node.Activity);
 
             if (node.Activity is IVariableContainer variableContainer)
                 AssignVariables(variableContainer);
@@ -54,9 +54,9 @@ public class IdentityGraphService : IIdentityGraphService
     }
 
     /// <inheritdoc />
-    public void AssignInputOutputs(IActivity activity)
+    public async Task AssignInputOutputsAsync(IActivity activity)
     {
-        var activityDescriptor = _activityRegistry.Find(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await _activityRegistryLookup.FindAsync(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
         var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
         foreach (var (inputName, input) in inputDictionary)

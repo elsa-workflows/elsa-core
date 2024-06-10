@@ -20,7 +20,6 @@ public class Tests
     private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
     private readonly IActivitySerializer _activitySerializer;
     private readonly IActivityVisitor _activityVisitor;
-    private readonly IWorkflowDefinitionManager _workflowManager;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Tests"/> class.
@@ -33,7 +32,6 @@ public class Tests
             .Build();
 
         _workflowDefinitionPublisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
-        _workflowManager = _services.GetRequiredService<IWorkflowDefinitionManager>();
         _activitySerializer = _services.GetRequiredService<IActivitySerializer>();
         _activityVisitor = _services.GetRequiredService<IActivityVisitor>();
     }
@@ -57,9 +55,6 @@ public class Tests
         // Create a new draft for the child workflow and publish it.
         var childDefinitionV2 = (await _workflowDefinitionPublisher.GetDraftAsync(childDefinitionV1.DefinitionId, VersionOptions.Published))!;
         await _workflowDefinitionPublisher.PublishAsync(childDefinitionV2);
-
-        // Update consuming workflows to point to the new version of the child workflow.
-        await _workflowManager.UpdateReferencesInConsumingWorkflows(childDefinitionV2);
 
         // Assert that the parent workflow now points to the new version of the child workflow.
         parentDefinition = await _services.GetWorkflowDefinitionAsync("parent", VersionOptions.Latest);

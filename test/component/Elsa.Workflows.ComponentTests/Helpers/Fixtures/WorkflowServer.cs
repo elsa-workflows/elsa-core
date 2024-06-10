@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using System.Reflection;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -9,6 +10,8 @@ using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -56,7 +59,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {
-                    var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    var assemblyLocation = Assembly.GetExecutingAssembly().Location;
                     var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
                     var workflowsDirectorySegments = new[]
                     {
@@ -68,6 +71,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseMassTransit(massTransit =>
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
+                    massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
                 elsa.UseWorkflowManagement(management =>
                 {
@@ -94,8 +99,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
-            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
+            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
+            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
+            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
         });
     }
     

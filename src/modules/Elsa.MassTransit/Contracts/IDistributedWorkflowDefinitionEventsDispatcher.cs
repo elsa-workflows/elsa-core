@@ -41,4 +41,9 @@ public interface IDistributedWorkflowDefinitionEventsDispatcher
     /// Dispatches a workflow definition versions deleted event.
     /// </summary>
     Task DispatchAsync(WorkflowDefinitionVersionsDeleted request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Dispatches a workflow definition versions updated event.
+    /// </summary>
+    Task DispatchAsync(WorkflowDefinitionVersionsUpdated request, CancellationToken cancellationToken);
 }
