@@ -13,9 +13,4 @@
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Builders\Abstractions\" />
-      <Folder Include="Builders\Models\" />
-    </ItemGroup>
-    
 </Project>

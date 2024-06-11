@@ -3,14 +3,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Framework.Shells.Builders;
 
-public class ShellBuilder(ElsaBuilder elsaBuilder) : IServiceConfigurator
+public class ShellBuilder(ElsaBuilder elsaBuilder)
 {
     private string _id = Guid.NewGuid().ToString();
     private readonly ISet<Type> _features = new HashSet<Type>();
 
+    public string Id => _id;
     public ElsaBuilder ElsaBuilder { get; } = elsaBuilder;
 
-    public ShellBuilder AddFeature<TFeature>()
+    public ShellBuilder AddFeature<TFeature>() where TFeature : IShellFeature
     {
         _features.Add(typeof(TFeature));
         return this;
@@ -31,11 +32,6 @@ public class ShellBuilder(ElsaBuilder elsaBuilder) : IServiceConfigurator
     }
 
     public void Build(IServiceCollection services)
-    {
-        ElsaBuilder.Build(services);
-    }
-
-    public void Configure(IServiceCollection services)
     {
         var shellBlueprint = new ShellBlueprint(_id, _features);
         services.AddSingleton(shellBlueprint);

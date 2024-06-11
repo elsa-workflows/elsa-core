@@ -1,4 +1,3 @@
-using Elsa.Framework.Shells.HostedServices;
 using Elsa.Framework.Shells.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,9 +10,12 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddSingleton<IShellFeatureTypesProvider, AssemblyShellFeatureTypesProvider>()
+            .AddSingleton<IShellFactory, ShellFactory>()
+            .AddSingleton<IRootServicesAccessor>(_ => new RootServicesAccessor(services))
             // .AddSingleton<ITenantShellFactory, TenantShellFactory>()
             // .AddSingleton<ITenantShellHost, TenantShellHost>()
-            .AddHostedService<CreateShellsHostedService>();
+            //.AddHostedService<CreateShellsHostedService>()
+            ;
     }
     
     public static IServiceCollection Clone(this IServiceCollection services)

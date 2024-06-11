@@ -1,4 +1,3 @@
-using Elsa.Framework.Shells;
 using Elsa.Framework.Tenants;
 using Elsa.Tenants;
 using Elsa.Tenants.Configuration;
@@ -24,7 +23,6 @@ public static class ServiceCollectionExtensions
             .AddTransient<PipelinedTenantResolver>()
             .AddSingleton<ConfigurationTenantsProvider>()
             .AddSingleton<IAmbientTenantAccessor, AmbientTenantAccessor>()
-            .AddSingleton<IApplicationServicesAccessor>(new DefaultApplicationServicesAccessor(services))
             .AddScoped<ConfigurationTenantsProvider>()
             .AddScoped<ITenantResolutionStrategy, AmbientTenantResolver>();
     }

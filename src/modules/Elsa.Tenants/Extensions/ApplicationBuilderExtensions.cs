@@ -1,4 +1,3 @@
-using Elsa.Tenants.Middleware;
 using Microsoft.AspNetCore.Builder;
 
 namespace Elsa.Tenants.Extensions;
@@ -13,7 +12,7 @@ public static class ApplicationBuilderExtensions
     /// </summary>
     public static IApplicationBuilder UseMultitenancy(this IApplicationBuilder app)
     {
-        app.UseMiddleware<TenantContainerMiddleware>();
+        //app.UseMiddleware<TenantContainerMiddleware>();
         return app;
     }
 }
