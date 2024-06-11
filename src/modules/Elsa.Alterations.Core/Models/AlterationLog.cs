@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Framework.System;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Core.Models;
@@ -7,19 +7,10 @@ namespace Elsa.Alterations.Core.Models;
 /// <summary>
 /// Represents a log of alterations.
 /// </summary>
-public class AlterationLog 
+public class AlterationLog(ISystemClock systemClock)
 {
-    private readonly ISystemClock _systemClock;
     private readonly List<AlterationLogEntry> _logEntries = new();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlterationLog"/> class.
-    /// </summary>
-    public AlterationLog(ISystemClock systemClock)
-    {
-        _systemClock = systemClock;
-    }
-    
     /// <summary>
     /// Gets the log entries.
     /// </summary>
@@ -32,7 +23,7 @@ public class AlterationLog
     /// <param name="logLevel">The log level.</param>
     public void Add(string message, LogLevel logLevel = LogLevel.Information)
     {
-        var entry = new AlterationLogEntry(message, logLevel, _systemClock.UtcNow);
+        var entry = new AlterationLogEntry(message, logLevel, systemClock.UtcNow);
         
         _logEntries.Add(entry);
     }

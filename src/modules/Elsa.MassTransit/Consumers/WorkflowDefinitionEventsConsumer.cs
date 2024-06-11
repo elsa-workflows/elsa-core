@@ -1,6 +1,5 @@
 using Elsa.MassTransit.Messages;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
+using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 using MassTransit;
 

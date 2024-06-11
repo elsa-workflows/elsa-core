@@ -1,13 +1,11 @@
 using Dapper;
-using Elsa.Common.Contracts;
 using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Records;
 using Elsa.Framework.Entities;
-using Elsa.Framework.Tenants.Contracts;
-using Elsa.Tenants;
+using Elsa.Framework.Tenants;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;

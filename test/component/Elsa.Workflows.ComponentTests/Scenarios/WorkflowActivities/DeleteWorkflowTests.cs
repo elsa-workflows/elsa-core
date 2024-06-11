@@ -1,7 +1,6 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;

@@ -1,6 +1,5 @@
 using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Elsa.Workflows.ComponentTests;
 

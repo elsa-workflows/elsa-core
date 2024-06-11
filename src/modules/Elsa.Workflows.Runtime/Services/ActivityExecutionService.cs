@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 using Elsa.Framework.Entities;
-=======
-using Elsa.Common.Entities;
->>>>>>> main
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 

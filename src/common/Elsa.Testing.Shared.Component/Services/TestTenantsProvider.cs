@@ -1,6 +1,6 @@
 using Elsa.Framework.Tenants;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Services;
+namespace Elsa.Testing.Shared.Services;
 
 public class TestTenantsProvider(params string[] tenantIds) : ITenantsProvider
 {

@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Framework.System;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;

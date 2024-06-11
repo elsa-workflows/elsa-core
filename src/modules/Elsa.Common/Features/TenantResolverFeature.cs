@@ -1,6 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.Framework.Tenants.Contracts;
+using Elsa.Framework.Tenants;
 using Elsa.Framework.Tenants.Services;
 using Microsoft.Extensions.DependencyInjection;
 

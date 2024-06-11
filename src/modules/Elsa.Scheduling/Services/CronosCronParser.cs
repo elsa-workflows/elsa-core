@@ -1,5 +1,5 @@
 using Cronos;
-using Elsa.Common.Contracts;
+using Elsa.Framework.System;
 
 namespace Elsa.Scheduling.Services;
 

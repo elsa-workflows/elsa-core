@@ -1,6 +1,4 @@
-using Elsa.Common.Contexts;
-using Elsa.Common.Contracts;
-using Elsa.Common.Results;
+using Elsa.Framework.Tenants;
 
 namespace Elsa.Common.Abstractions;
 

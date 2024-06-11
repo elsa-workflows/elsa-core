@@ -3,7 +3,6 @@ using Elsa.Scheduling;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Requests;
 using Quartz;
 
 namespace Elsa.Quartz.Jobs;

@@ -4,7 +4,6 @@ using Elsa.Alterations.Core.Filters;
 using Elsa.MongoDb.Common;
 using Elsa.MongoDb.Modules.Alterations.Documents;
 using Microsoft.Extensions.DependencyInjection;
-using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.MongoDb.Modules.Alterations;

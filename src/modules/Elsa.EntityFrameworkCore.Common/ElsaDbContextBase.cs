@@ -1,9 +1,7 @@
-using Elsa.Common.Entities;
 using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Framework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;

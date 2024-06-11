@@ -1,6 +1,5 @@
 using Elsa.Hangfire.Jobs;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Hangfire;
 
 namespace Elsa.Hangfire.Services;

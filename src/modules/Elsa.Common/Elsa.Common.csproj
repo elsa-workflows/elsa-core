@@ -25,7 +25,6 @@
 
     <ItemGroup>
       <Folder Include="Contexts\" />
-      <Folder Include="Entities\" />
       <Folder Include="Enums\" />
       <Folder Include="Results\" />
     </ItemGroup>

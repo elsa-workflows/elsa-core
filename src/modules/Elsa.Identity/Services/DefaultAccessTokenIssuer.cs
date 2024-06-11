@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using Elsa.Common.Contracts;
 using Elsa.Extensions;
+using Elsa.Framework.System;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;

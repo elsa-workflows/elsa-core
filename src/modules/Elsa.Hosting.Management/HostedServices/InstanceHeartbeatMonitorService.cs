@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Framework.System;
 using Elsa.Hosting.Management.Notifications;
 using Elsa.Hosting.Management.Options;
 using Elsa.KeyValues.Contracts;

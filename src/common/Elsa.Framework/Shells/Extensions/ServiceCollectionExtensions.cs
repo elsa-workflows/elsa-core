@@ -11,8 +11,8 @@ public static class ServiceCollectionExtensions
     {
         return services
             .AddSingleton<IShellFeatureTypesProvider, AssemblyShellFeatureTypesProvider>()
-            .AddSingleton<ITenantShellFactory, TenantShellFactory>()
-            .AddSingleton<ITenantShellHost, TenantShellHost>()
+            // .AddSingleton<ITenantShellFactory, TenantShellFactory>()
+            // .AddSingleton<ITenantShellHost, TenantShellHost>()
             .AddHostedService<CreateShellsHostedService>();
     }
     

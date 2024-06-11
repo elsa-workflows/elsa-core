@@ -1,5 +1,3 @@
-using Elsa.Framework.Tenants.Contracts;
-
 namespace Elsa.Framework.Tenants.Services;
 
 /// <summary>

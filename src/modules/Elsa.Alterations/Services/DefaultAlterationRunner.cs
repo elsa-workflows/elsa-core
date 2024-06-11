@@ -2,7 +2,7 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Results;
 using Elsa.Alterations.Middleware.Workflows;
-using Elsa.Common.Contracts;
+using Elsa.Framework.System;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;

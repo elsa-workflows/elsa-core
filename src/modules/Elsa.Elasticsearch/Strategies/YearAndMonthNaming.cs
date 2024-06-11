@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
 using Elsa.Elasticsearch.Contracts;
+using Elsa.Framework.System;
 using Humanizer;
 using JetBrains.Annotations;
 

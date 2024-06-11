@@ -1,11 +1,8 @@
 using System.Linq.Expressions;
-using Elsa.Common.Contracts;
-using Elsa.Common.Entities;
 using Elsa.Extensions;
 using Elsa.Framework.Entities;
-using Elsa.Framework.Tenants.Contracts;
+using Elsa.Framework.Tenants;
 using Elsa.MongoDb.Extensions;
-using Elsa.Tenants;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;

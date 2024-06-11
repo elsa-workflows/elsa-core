@@ -1,7 +1,7 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Framework.System;
+using Elsa.Framework.System.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Features;

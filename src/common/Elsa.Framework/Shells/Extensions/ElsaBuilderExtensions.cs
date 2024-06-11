@@ -1,4 +1,5 @@
 using Elsa.Framework.Builders;
+using Elsa.Framework.Shells.Builders;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

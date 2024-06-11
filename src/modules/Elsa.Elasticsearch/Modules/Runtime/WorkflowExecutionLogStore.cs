@@ -6,7 +6,6 @@ using Elsa.Elasticsearch.Shared.Models;
 using Elsa.Extensions;
 using Elsa.Framework.Entities;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;

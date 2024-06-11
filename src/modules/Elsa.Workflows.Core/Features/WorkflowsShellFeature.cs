@@ -1,7 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Serialization;
 using Elsa.Extensions;
-using Elsa.Framework;
 using Elsa.Framework.Shells;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Activities.Flowchart.Serialization;

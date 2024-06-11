@@ -1,4 +1,4 @@
-using Elsa.Common.Entities;
+using Elsa.Framework.Tenants;
 
 namespace Elsa.Common.Contexts;
 

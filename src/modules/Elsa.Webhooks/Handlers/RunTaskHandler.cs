@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Framework.System;
 using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Models;
 using Elsa.Webhooks.Services;

@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
-using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;

@@ -1,7 +1,7 @@
-using Elsa.Framework.Shells;
+using Elsa.Framework.Builders;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Framework.Builders;
+namespace Elsa.Framework.Shells.Builders;
 
 public class ShellBuilder(ElsaBuilder elsaBuilder) : IServiceConfigurator
 {

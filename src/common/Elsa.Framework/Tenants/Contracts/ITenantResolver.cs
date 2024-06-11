@@ -1,4 +1,4 @@
-﻿namespace Elsa.Framework.Tenants.Contracts;
+﻿namespace Elsa.Framework.Tenants;
 
 /// <summary>
 /// Provides access to the current tenant ID.

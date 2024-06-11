@@ -4,10 +4,8 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
-using Elsa.Common.Contracts;
 using Elsa.Framework.Entities;
-using Elsa.Framework.Tenants.Contracts;
-using Elsa.Tenants;
+using Elsa.Framework.Tenants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;

@@ -1,7 +1,5 @@
 using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Hangfire.Annotations;
-using JetBrains.Annotations;
-using Xunit;
 
 namespace Elsa.Workflows.ComponentTests;
 
