@@ -8,29 +8,32 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Protobuf" />
-        <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+        <PackageReference Include="Google.Protobuf"/>
+        <PackageReference Include="Grpc.Tools" PrivateAssets="all"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
     </ItemGroup>
 
     <ItemGroup Label="ProtoActor">
-        <PackageReference Include="Proto.Actor" />
-        <PackageReference Include="Proto.Cluster" />
-        <PackageReference Include="Proto.Cluster.CodeGen" />
-        <PackageReference Include="Proto.Cluster.TestProvider" />
-        <PackageReference Include="Proto.Persistence" />
-        <PackageReference Include="Proto.Remote" />
+        <PackageReference Include="Proto.Actor"/>
+        <PackageReference Include="Proto.Cluster"/>
+        <PackageReference Include="Proto.Cluster.CodeGen"/>
+        <PackageReference Include="Proto.Cluster.TestProvider"/>
+        <PackageReference Include="Proto.Persistence"/>
+        <PackageReference Include="Proto.Remote"/>
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <Protobuf Include="Proto\Shared.proto" AdditionalImportDirs="./Proto" />
+        <Protobuf Include="Proto\Shared.proto" AdditionalImportDirs="./Proto"/>
         <Protobuf Include="Proto\WorkflowInstance.Messages.proto" AdditionalImportDirs="./Proto" />
         <ProtoGrain Include="Proto\WorkflowInstance.proto" AdditionalImportDirs="./Proto" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Models\" />
     </ItemGroup>
 
 </Project>

@@ -18,21 +18,26 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("ProductVersion", "7.0.20")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
-                    b.Property<string>("Key")
+                    b.Property<string>("Id")
                         .HasColumnType("text");
 
                     b.Property<string>("SerializedValue")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Key");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_SerializedKeyValuePair_TenantId");
 
                     b.ToTable("KeyValuePairs", "Elsa");
                 });
@@ -91,6 +96,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -124,6 +132,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_ActivityExecutionRecord_Status");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_TenantId");
+
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_WorkflowInstanceId");
 
@@ -135,7 +146,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
-                    b.Property<string>("BookmarkId")
+                    b.Property<string>("Id")
                         .HasColumnType("text");
 
                     b.Property<string>("ActivityInstanceId")
@@ -161,11 +172,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("BookmarkId");
+                    b.HasKey("Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
 
@@ -178,6 +192,8 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex(new[] { "CreatedAt" }, "IX_StoredBookmark_CreatedAt");
 
                     b.HasIndex(new[] { "Hash" }, "IX_StoredBookmark_Hash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_StoredBookmark_TenantId");
 
                     b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_StoredBookmark_WorkflowInstanceId");
 
@@ -203,6 +219,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -218,6 +237,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_StoredTrigger_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_StoredTrigger_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionId");
@@ -276,6 +298,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.Property<string>("Source")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
@@ -323,6 +348,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     b.HasIndex("Sequence")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Sequence");
 
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowExecutionLogRecord_TenantId");
+
                     b.HasIndex("Timestamp")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp");
 
@@ -345,59 +373,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_Timestamp_Sequence");
 
                     b.ToTable("WorkflowExecutionLogRecords", "Elsa");
-                });
-
-            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowInboxMessage", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ActivityInstanceId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ActivityTypeName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("CorrelationId")
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("SerializedBookmarkPayload")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SerializedInput")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WorkflowInstanceId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_WorkflowInboxMessage_ActivityInstanceId");
-
-                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_WorkflowInboxMessage_ActivityTypeName");
-
-                    b.HasIndex(new[] { "CorrelationId" }, "IX_WorkflowInboxMessage_CorrelationId");
-
-                    b.HasIndex(new[] { "CreatedAt" }, "IX_WorkflowInboxMessage_CreatedAt");
-
-                    b.HasIndex(new[] { "ExpiresAt" }, "IX_WorkflowInboxMessage_ExpiresAt");
-
-                    b.HasIndex(new[] { "Hash" }, "IX_WorkflowInboxMessage_Hash");
-
-                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_WorkflowInboxMessage_WorkflowInstanceId");
-
-                    b.ToTable("WorkflowInboxMessages", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

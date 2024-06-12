@@ -18,28 +18,34 @@ public class WorkflowStateMapper
         if (source == null)
             return default;
 
-        var workflowInstance = new WorkflowInstance
-        {
-            Id = source.Id,
-            CreatedAt = source.CreatedAt,
-            DefinitionId = source.DefinitionId,
-            DefinitionVersionId = source.DefinitionVersionId,
-            Version = source.DefinitionVersion,
-            ParentWorkflowInstanceId = source.ParentWorkflowInstanceId,
-            Status = source.Status,
-            SubStatus = source.SubStatus,
-            CorrelationId = source.CorrelationId,
-            IncidentCount = source.Incidents.Count,
-            IsSystem = source.IsSystem,
-            UpdatedAt = source.UpdatedAt,
-            FinishedAt = source.FinishedAt,
-            WorkflowState = source
-        };
-        
-        if (source.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
-            workflowInstance.Name = name;
+        var workflowInstance = new WorkflowInstance();
+        Apply(source, workflowInstance);
 
         return workflowInstance;
+    }
+    
+    /// <summary>
+    /// Maps a workflow state to a workflow instance.
+    /// </summary>
+    public void Apply(WorkflowState source, WorkflowInstance target)
+    {
+        target.Id = source.Id;
+        target.CreatedAt = source.CreatedAt;
+        target.DefinitionId = source.DefinitionId;
+        target.DefinitionVersionId = source.DefinitionVersionId;
+        target.Version = source.DefinitionVersion;
+        target.ParentWorkflowInstanceId = source.ParentWorkflowInstanceId;
+        target.Status = source.Status;
+        target.SubStatus = source.SubStatus;
+        target.CorrelationId = source.CorrelationId;
+        target.IncidentCount = source.Incidents.Count;
+        target.IsSystem = source.IsSystem;
+        target.UpdatedAt = source.UpdatedAt;
+        target.FinishedAt = source.FinishedAt;
+        target.WorkflowState = source;
+        
+        if (source.Properties.TryGetValue<string>(SetName.WorkflowInstanceNameKey, out var name))
+            target.Name = name;
     }
 
     /// <summary>

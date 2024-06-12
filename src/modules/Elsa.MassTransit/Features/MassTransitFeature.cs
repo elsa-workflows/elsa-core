@@ -35,6 +35,8 @@ public class MassTransitFeature : FeatureBase
     /// The number of messages to prefetch.
     [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
+    
+    public bool DisableConsumers { get; set; }
 
     /// <summary>
     /// A delegate that can be set to configure MassTransit's <see cref="IBusRegistrationConfigurator"/>. Used by transport-level features such as AzureServiceBusFeature and RabbitMqServiceBusFeature. 
@@ -130,17 +132,21 @@ public class MassTransitFeature : FeatureBase
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
 
-            foreach (var consumer in temporaryConsumers)
+            if(!DisableConsumers)
             {
-                busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                foreach (var consumer in temporaryConsumers)
                 {
-                    endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                    endpoint.ConfigureConsumer(context, consumer.ConsumerType);
-                });
+                    busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                    {
+                        endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                        endpoint.ConfigureConsumer(context, consumer.ConsumerType);
+                    });
+                }
+                
+                busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+                busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
             }
-
-            busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
-            busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+            
             busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
             {
                 var serializer = context.GetRequiredService<IJsonSerializer>();

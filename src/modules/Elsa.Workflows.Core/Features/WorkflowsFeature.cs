@@ -31,6 +31,8 @@ namespace Elsa.Workflows.Features;
 [DependsOn(typeof(SystemClockFeature))]
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]
+[DependsOn(typeof(DefaultFormattersFeature))]
+[DependsOn(typeof(TenantResolverFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -131,11 +133,12 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
             .AddSingleton<IHasher, Hasher>()
-            .AddSingleton<IBookmarkHasher, BookmarkHasher>()
+            .AddSingleton<IStimulusHasher, StimulusHasher>()
             .AddSingleton(IdentityGenerator)
-            .AddScoped<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
+            .AddSingleton<IBookmarkPayloadSerializer>(sp => ActivatorUtilities.CreateInstance<BookmarkPayloadSerializer>(sp))
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
+            .AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>()
             .AddSingleton<IActivityFactory, ActivityFactory>()

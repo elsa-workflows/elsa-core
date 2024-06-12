@@ -1,0 +1,67 @@
+{
+  "id": "23d18a46dc3000fd",
+  "definitionId": "f353742a9ef6af4",
+  "name": "CacheInvalidation_Child",
+  "createdAt": "2024-05-28T08:10:31.5429337+00:00",
+  "version": 1,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "5d146ccb42668b6b",
+    "nodeId": "Workflow1:5d146ccb42668b6b",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "correlationId": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Child version 1"
+          }
+        },
+        "id": "d719079757f5d1bf",
+        "nodeId": "Workflow1:5d146ccb42668b6b:d719079757f5d1bf",
+        "name": "Correlate1",
+        "type": "Elsa.Correlate",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -127.40211486816406,
+              "y": 526.2000122070312
+            },
+            "size": {
+              "width": 132.7375030517578,
+              "height": 49.60000228881836
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

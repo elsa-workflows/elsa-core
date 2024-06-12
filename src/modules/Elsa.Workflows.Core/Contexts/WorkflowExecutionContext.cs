@@ -5,6 +5,8 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -37,7 +39,6 @@ public partial class WorkflowExecutionContext : IExecutionContext
     private readonly IList<ActivityCompletionCallbackEntry> _completionCallbackEntries = new List<ActivityCompletionCallbackEntry>();
     private IList<ActivityExecutionContext> _activityExecutionContexts;
     private readonly IHasher _hasher;
-    private readonly Action<WorkflowExecutionContext>? _statusUpdatedCallback;
 
     /// <summary>
     /// Initializes a new instance of <see cref="WorkflowExecutionContext"/>.
@@ -53,13 +54,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
         ExecuteActivityDelegate? executeDelegate,
         string? triggerActivityId,
         IEnumerable<ActivityIncident> incidents,
+        IEnumerable<Bookmark> originalBookmarks,
         DateTimeOffset createdAt,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback,
-        CancellationTokens cancellationTokens)
+        CancellationToken cancellationToken)
     {
         ServiceProvider = serviceProvider;
         SystemClock = serviceProvider.GetRequiredService<ISystemClock>();
         ActivityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        ActivityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         _hasher = serviceProvider.GetRequiredService<IHasher>();
         SubStatus = WorkflowSubStatus.Pending;
         Id = id;
@@ -74,15 +76,13 @@ public partial class WorkflowExecutionContext : IExecutionContext
         TriggerActivityId = triggerActivityId;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
-        CancellationTokens = cancellationTokens;
+        CancellationToken = cancellationToken;
         Incidents = incidents.ToList();
+        OriginalBookmarks = originalBookmarks.ToList();
         WorkflowGraph = workflowGraph;
-        var appSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.ApplicationCancellationToken);
-        _cancellationTokenSources.Add(appSource);
-        var sysSource = CancellationTokenSource.CreateLinkedTokenSource(CancellationTokens.SystemCancellationToken);
-        _cancellationTokenSources.Add(sysSource);
-        _cancellationRegistrations.Add(appSource.Token.Register(CancelWorkflow));
-        _cancellationRegistrations.Add(sysSource.Token.Register(CancelWorkflow));
+        var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationTokenSources.Add(linkedCancellationTokenSource);
+        _cancellationRegistrations.Add(linkedCancellationTokenSource.Token.Register(CancelWorkflow));
     }
 
     /// <summary>
@@ -98,8 +98,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = null,
         ExecuteActivityDelegate? executeDelegate = null,
         string? triggerActivityId = null,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = null,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
         var systemClock = serviceProvider.GetRequiredService<ISystemClock>();
 
@@ -108,6 +107,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             workflowGraph,
             id,
             new List<ActivityIncident>(),
+            new List<Bookmark>(),
             systemClock.UtcNow,
             correlationId,
             parentWorkflowInstanceId,
@@ -115,8 +115,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
-            statusUpdatedCallback,
-            cancellationTokens
+            cancellationToken
         );
     }
 
@@ -133,14 +132,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = null,
         ExecuteActivityDelegate? executeDelegate = null,
         string? triggerActivityId = null,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = null,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
         var workflowExecutionContext = await CreateAsync(
             serviceProvider,
             workflowGraph,
             workflowState.Id,
             workflowState.Incidents,
+            workflowState.Bookmarks,
             workflowState.CreatedAt,
             correlationId,
             parentWorkflowInstanceId,
@@ -148,11 +147,10 @@ public partial class WorkflowExecutionContext : IExecutionContext
             properties,
             executeDelegate,
             triggerActivityId,
-            statusUpdatedCallback,
-            cancellationTokens);
+            cancellationToken);
 
         var workflowStateExtractor = serviceProvider.GetRequiredService<IWorkflowStateExtractor>();
-        workflowStateExtractor.Apply(workflowExecutionContext, workflowState);
+        await workflowStateExtractor.ApplyAsync(workflowExecutionContext, workflowState);
 
         return workflowExecutionContext;
     }
@@ -165,6 +163,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         WorkflowGraph workflowGraph,
         string id,
         IEnumerable<ActivityIncident> incidents,
+        IEnumerable<Bookmark> originalBookmarks,
         DateTimeOffset createdAt,
         string? correlationId = null,
         string? parentWorkflowInstanceId = null,
@@ -172,10 +171,9 @@ public partial class WorkflowExecutionContext : IExecutionContext
         IDictionary<string, object>? properties = null,
         ExecuteActivityDelegate? executeDelegate = null,
         string? triggerActivityId = null,
-        Action<WorkflowExecutionContext>? statusUpdatedCallback = null,
-        CancellationTokens cancellationTokens = default)
+        CancellationToken cancellationToken = default)
     {
-        // Setup a workflow execution context.
+        // Set up a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
             workflowGraph,
@@ -187,14 +185,14 @@ public partial class WorkflowExecutionContext : IExecutionContext
             executeDelegate,
             triggerActivityId,
             incidents,
+            originalBookmarks,
             createdAt,
-            statusUpdatedCallback,
-            cancellationTokens)
+            cancellationToken)
         {
             MemoryRegister = workflowGraph.Workflow.CreateRegister()
         };
 
-        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationTokens.ApplicationCancellationToken);
+        workflowExecutionContext.ExpressionExecutionContext = new ExpressionExecutionContext(serviceProvider, workflowExecutionContext.MemoryRegister, cancellationToken: cancellationToken);
 
         await workflowExecutionContext.SetWorkflowGraphAsync(workflowGraph);
         return workflowExecutionContext;
@@ -211,7 +209,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         // Register activity types.
         var activityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
-        await ActivityRegistry.RegisterAsync(activityTypes, CancellationTokens.ApplicationCancellationToken);
+        await ActivityRegistry.RegisterAsync(activityTypes, CancellationToken);
 
         // Update the activity execution contexts with the actual activity instances.
         foreach (var activityExecutionContext in ActivityExecutionContexts)
@@ -227,6 +225,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// Gets the <see cref="IActivityRegistry"/>.
     /// </summary>
     public IActivityRegistry ActivityRegistry { get; }
+
+    /// <summary>
+    /// Gets the <see cref="IActivityRegistryLookupService"/>.
+    /// </summary>
+    public IActivityRegistryLookupService ActivityRegistryLookup { get; }
 
     /// <summary>
     /// Gets the workflow graph.
@@ -327,9 +330,19 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public IIdentityGenerator IdentityGenerator { get; }
 
     /// <summary>
+    /// Gets the collection of original bookmarks associated with the workflow execution context.
+    /// </summary>
+    public ICollection<Bookmark> OriginalBookmarks { get; set; }
+
+    /// <summary>
     /// A collection of collected bookmarks during workflow execution. 
     /// </summary>
     public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
+    /// <summary>
+    /// A diff between the original bookmarks and the current bookmarks.
+    /// </summary>
+    public Diff<Bookmark> BookmarksDiff => Diff.For(OriginalBookmarks, Bookmarks);
 
     /// <summary>
     /// A dictionary of inputs provided at the start of the current workflow execution. 
@@ -373,7 +386,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// A set of cancellation tokens that can be used to cancel the workflow execution without cancelling system-level operations.
     /// </summary>
-    public CancellationTokens CancellationTokens { get; }
+    public CancellationToken CancellationToken { get; }
 
     /// <summary>
     /// A list of <see cref="ActivityCompletionCallbackEntry"/> callbacks that are invoked when the associated child activity completes.
@@ -474,6 +487,24 @@ public partial class WorkflowExecutionContext : IExecutionContext
     }
 
     /// <summary>
+    /// Finds the activity based on the provided <paramref name="handle"/>.
+    /// </summary>
+    /// <param name="handle">The handle containing the identification parameters for the activity.</param>
+    /// <returns>The activity found based on the handle, or null if no activity is found.</returns>
+    public IActivity? FindActivity(ActivityHandle handle)
+    {
+        return handle.ActivityId != null
+            ? FindActivityById(handle.ActivityId)
+            : handle.ActivityNodeId != null
+                ? FindActivityByNodeId(handle.ActivityNodeId)
+                : handle.ActivityInstanceId != null
+                    ? FindActivityByInstanceId(handle.ActivityInstanceId)
+                    : handle.ActivityHash != null
+                        ? FindActivityByHash(handle.ActivityHash)
+                        : default;
+    }
+
+    /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
     /// </summary>
     public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : default;
@@ -516,6 +547,11 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public IActivity? FindActivityByHash(string hash) => FindNodeByHash(hash)?.Activity;
 
     /// <summary>
+    /// Returns the <see cref="ActivityExecutionContext"/> with the specified activity instance ID.
+    /// </summary>
+    public IActivity? FindActivityByInstanceId(string activityInstanceId) => ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityInstanceId)?.Activity;
+
+    /// <summary>
     /// Returns a custom property with the specified key from the <see cref="Properties"/> dictionary.
     /// </summary>
     public T? GetProperty<T>(string key) => Properties.TryGetValue(key, out var value) ? value.ConvertTo<T>() : default;
@@ -553,37 +589,29 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
         if (Status == WorkflowStatus.Finished)
             FinishedAt = UpdatedAt;
-
-        //For now only trigger on Cancelled, since the other statuses are handling via the host/runner
-        if (SubStatus == WorkflowSubStatus.Cancelled
-            && _statusUpdatedCallback is not null)
-            _statusUpdatedCallback(this);
-
-        if (Status == WorkflowStatus.Finished
-            || SubStatus == WorkflowSubStatus.Suspended)
+        
+        if (Status == WorkflowStatus.Finished || SubStatus == WorkflowSubStatus.Suspended)
         {
-            foreach (var registration in _cancellationRegistrations)
-            {
+            foreach (var registration in _cancellationRegistrations) 
                 registration.Dispose();
-            }
         }
     }
 
     /// <summary>
     /// Creates a new <see cref="ActivityExecutionContext"/> for the specified activity.
     /// </summary>
-    public ActivityExecutionContext CreateActivityExecutionContext(IActivity activity, ActivityInvocationOptions? options = default)
+    public async Task<ActivityExecutionContext> CreateActivityExecutionContextAsync(IActivity activity, ActivityInvocationOptions? options = default)
     {
-        var activityDescriptor = ActivityRegistry.Find(activity) ?? throw new Exception($"Activity with type {activity.Type} not found in registry");
+        var activityDescriptor = await ActivityRegistryLookup.FindAsync(activity) ?? throw new ActivityNotFoundException(activity.Type);
         var tag = options?.Tag;
         var parentContext = options?.Owner;
         var parentExpressionExecutionContext = parentContext?.ExpressionExecutionContext ?? ExpressionExecutionContext;
         var properties = ExpressionExecutionContextExtensions.CreateActivityExecutionContextPropertiesFrom(this, Input);
         var memory = new MemoryRegister();
         var now = SystemClock.UtcNow;
-        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationTokens.ApplicationCancellationToken);
+        var expressionExecutionContext = new ExpressionExecutionContext(ServiceProvider, memory, parentExpressionExecutionContext, properties, CancellationToken);
         var id = IdentityGenerator.GenerateId();
-        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationTokens.ApplicationCancellationToken);
+        var activityExecutionContext = new ActivityExecutionContext(id, this, parentContext, expressionExecutionContext, activity, activityDescriptor, now, tag, SystemClock, CancellationToken);
         var variablesToDeclare = options?.Variables ?? Array.Empty<Variable>();
         var variableContainer = new[]
         {

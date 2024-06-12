@@ -106,6 +106,11 @@ public class Workflow : Composite<object>, ICloneable
     /// Gets or sets a value indicating whether the workflow is a system workflow.
     /// </summary>
     public bool IsSystem { get; }
+    
+    /// <summary>
+    /// Returns the workflow definition handle.
+    /// </summary>
+    public WorkflowDefinitionHandle DefinitionHandle => WorkflowDefinitionHandle.ByDefinitionVersionId(Identity.Id);
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
@@ -117,9 +122,7 @@ public class Workflow : Composite<object>, ICloneable
     /// </summary>
     public MemoryRegister CreateRegister()
     {
-        var register = new MemoryRegister();
-        register.Declare(Variables);
-        return register;
+        return new MemoryRegister();
     }
 
     /// <inheritdoc />

@@ -7,8 +7,8 @@ namespace Elsa.Workflows.Models;
 /// </summary>
 public class CreateBookmarkArgs
 {
-    /// <summary>An optional payload to associate with the bookmark.</summary>
-    public object? Payload { get; set; }
+    /// <summary>An optional stimulus to associate with the bookmark.</summary>
+    public object? Stimulus { get; set; }
 
     /// <summary>An optional callback to invoke when the bookmark is triggered.</summary>
     public ExecuteActivityDelegate? Callback { get; set; }

@@ -85,6 +85,13 @@ public abstract class SqlDialectBase : ISqlDialect
         return $"INSERT INTO {table} ({fieldList}) VALUES ({fieldParamList});";
     }
 
+    public string Update(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default)
+    {
+        getParamName ??= x => x;
+        var fieldList = string.Join(", ", fields.Select(x => $"{x} = @{getParamName(x)}"));
+        return $"UPDATE {table} SET {fieldList} WHERE {primaryKeyField} = @{getParamName(primaryKeyField)};";
+    }
+
     /// <inheritdoc />
     public virtual string Upsert(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default)
     {

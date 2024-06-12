@@ -13,16 +13,21 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
+using Elsa.Identity.MultiTenancy;
 using Elsa.MongoDb.Extensions;
+using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Workflows;
+using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -33,22 +38,21 @@ using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 
-const bool useMongoDb = false;
-const bool useSqlServer = false;
-const bool usePostgres = false;
-const bool useCockroachDb = false;
-const bool useDapper = false;
-const bool useProtoActor = false;
+const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
 const bool useHangfire = false;
 const bool useQuartz = true;
-const bool useMassTransit = false;
-const bool useZipCompression = true;
+const bool useMassTransit = true;
+const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = false;
+const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.None;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
+const bool useMultitenancy = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -63,28 +67,29 @@ var mongoDbConnectionString = configuration.GetConnectionString("MongoDb")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
-var distributedLockProviderName = configuration.GetSection("Runtime")["DistributedLockProvider"];
+var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
+var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
 
 // Add Elsa services.
 services
     .AddElsa(elsa =>
     {
-        if (useMongoDb)
+        if (persistenceProvider == PersistenceProvider.MongoDb)
             elsa.UseMongoDb(mongoDbConnectionString);
 
-        if (useDapper)
+        if (persistenceProvider == PersistenceProvider.Dapper)
             elsa.UseDapper(dapper =>
             {
                 dapper.UseMigrations(feature =>
                 {
-                    if (useSqlServer)
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         feature.UseSqlServer();
                     else
                         feature.UseSqlite();
                 });
                 dapper.DbConnectionProvider = sp =>
                 {
-                    if (useSqlServer)
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                         return new SqlServerDbConnectionProvider(sqlServerConnectionString!);
                     else
                         return new SqliteDbConnectionProvider(sqliteConnectionString);
@@ -101,26 +106,25 @@ services
             .UseFileStorage()
             .UseIdentity(identity =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     identity.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     identity.UseDapper();
                 else
                     identity.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
-
-                identity.IdentityOptions = options => identitySection.Bind(options);
+                
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
@@ -129,18 +133,18 @@ services
             .UseDefaultAuthentication()
             .UseWorkflowManagement(management =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     management.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     management.UseDapper();
                 else
                     management.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -165,18 +169,18 @@ services
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                     runtime.UseMongoDb();
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                     runtime.UseDapper();
                 else
                     runtime.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString!);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString!);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -184,11 +188,16 @@ services
                         ef.RunMigrations = runEFCoreMigrations;
                     });
 
-                if (useProtoActor)
+                if (workflowRuntime == WorkflowRuntime.Distributed)
+                {
+                    runtime.UseDistributedRuntime();
+                }
+
+                if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
                     runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                         else
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
@@ -205,12 +214,13 @@ services
                 {
                     runtime.ActivityExecutionLogStore = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-                    runtime.WorkflowInboxStore = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
                 }
 
                 if (useCaching)
                     runtime.UseCache();
 
+                runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
+                
                 runtime.DistributedLockProvider = _ =>
                 {
                     switch (distributedLockProviderName)
@@ -283,11 +293,11 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseAlterations(alterations =>
             {
-                if (useMongoDb)
+                if (persistenceProvider == PersistenceProvider.MongoDb)
                 {
-                    // TODO: alterations.UseMongoDb();
+                    alterations.UseMongoDb();
                 }
-                else if (useDapper)
+                else if (persistenceProvider == PersistenceProvider.Dapper)
                 {
                     // TODO: alterations.UseDapper();
                 }
@@ -295,11 +305,11 @@ services
                 {
                     alterations.UseEntityFrameworkCore(ef =>
                     {
-                        if (useSqlServer)
+                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
                             ef.UseSqlServer(sqlServerConnectionString);
-                        else if (usePostgres)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                             ef.UsePostgreSql(postgresConnectionString);
-                        else if (useCockroachDb)
+                        else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
                             ef.UseSqlite(sqliteConnectionString);
@@ -324,11 +334,13 @@ services
         {
             elsa.UseMassTransit(massTransit =>
             {
-                if (useMassTransitBroker == MassTransitBroker.AzureServiceBus)
+                massTransit.DisableConsumers = appRole == ApplicationRole.Api;
+
+                if (massTransitBroker == MassTransitBroker.AzureServiceBus)
                 {
                     massTransit.UseAzureServiceBus(azureServiceBusConnectionString, serviceBusFeature => serviceBusFeature.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 100;
+                        bus.PrefetchCount = 50;
                         bus.LockDuration = TimeSpan.FromMinutes(5);
                         bus.MaxConcurrentCalls = 32;
                         bus.MaxDeliveryCount = 8;
@@ -336,11 +348,11 @@ services
                     });
                 }
 
-                if (useMassTransitBroker == MassTransitBroker.RabbitMq)
+                if (massTransitBroker == MassTransitBroker.RabbitMq)
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString, rabbit => rabbit.ConfigureServiceBus = bus =>
                     {
-                        bus.PrefetchCount = 4;
+                        bus.PrefetchCount = 50;
                         bus.Durable = true;
                         bus.AutoDelete = false;
                         bus.ConcurrentMessageLimit = 32;
@@ -358,6 +370,28 @@ services
             });
         }
 
+        if (useAzureServiceBusModule)
+        {
+            elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+            {
+                asb.AzureServiceBusOptions = options => configuration.GetSection("AzureServiceBus").Bind(options);
+            });
+        }
+
+        if (useMultitenancy)
+            elsa.UseTenants(tenants =>
+            {
+                tenants.TenantsOptions = options =>
+                {
+                    configuration.GetSection("Multitenancy").Bind(options);
+                    options.TenantResolutionPipelineBuilder
+                        .Append<HttpContextTenantResolver>()
+                        .Append<ClaimsTenantResolver>()
+                        .Append<CurrentUserTenantResolver>();
+                };
+                tenants.UseConfigurationBasedTenantsProvider();
+            });
+
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
         elsa.AddFastEndpointsAssembly<Program>();
@@ -372,11 +406,6 @@ services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader()
 
 // Build the web application.
 var app = builder.Build();
-
-// app.UseSimulatedLatency(
-//     TimeSpan.FromMilliseconds(1000),
-//     TimeSpan.FromMilliseconds(3000)
-// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
@@ -404,6 +433,8 @@ app.UseJsonSerializationErrorHandler();
 
 // Elsa HTTP Endpoint activities.
 app.UseWorkflows();
+
+app.MapControllers();
 
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())

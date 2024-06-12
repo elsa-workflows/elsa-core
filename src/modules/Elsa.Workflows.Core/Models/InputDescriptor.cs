@@ -63,32 +63,32 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the property is wrapped with an <see cref="Input{T}"/> type, false otherwise.
     /// </summary>
     public bool IsWrapped { get; set; }
-    
+
     /// <summary>
     /// A string value that hints at what UI control might be used to render in a UI tool.  
     /// </summary>
     public string UIHint { get; set; } = default!;
-    
+
     /// <summary>
-    /// The category to whcih this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
+    /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// The default value.
     /// </summary>
     public object? DefaultValue { get; set; }
-    
+
     /// <summary>
     /// The default syntax.
     /// </summary>
     public string? DefaultSyntax { get; set; }
-    
+
     /// <summary>
     /// True if the input is readonly, false otherwise.
     /// </summary>
     public bool? IsReadOnly { get; set; }
-    
+
     /// <summary>
     /// The storage driver type to use for persistence.
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.

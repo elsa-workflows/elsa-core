@@ -24,7 +24,11 @@
     <!-- https://github.com/dotnet/sourcelink -->
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
   </PropertyGroup>
 
 </Project>

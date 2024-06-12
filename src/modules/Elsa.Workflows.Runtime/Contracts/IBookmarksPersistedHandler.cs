@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Can be implemented by activities that need to do work after their bookmarks have been persisted.

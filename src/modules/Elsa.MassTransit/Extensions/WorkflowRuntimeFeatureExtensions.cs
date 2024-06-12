@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.MassTransit.Features;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Features;
 
 // ReSharper disable once CheckNamespace

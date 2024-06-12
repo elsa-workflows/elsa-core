@@ -1,3 +1,4 @@
+using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Hangfire.Annotations;
 
 namespace Elsa.Workflows.ComponentTests;

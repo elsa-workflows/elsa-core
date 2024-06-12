@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
-using Xunit;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
 

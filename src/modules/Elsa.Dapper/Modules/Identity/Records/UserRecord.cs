@@ -1,8 +1,9 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Identity.Records;
 
-internal class UserRecord
+internal class UserRecord : Record
 {
-    public string Id { get; set; } = default!;
     public string Name { get; set; } = default!;
     public string HashedPassword { get; set; } = default!;
     public string HashedPasswordSalt { get; set; } = default!;

@@ -4,7 +4,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Features;
-using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
@@ -68,24 +67,27 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     
                     ConfigureServiceBus?.Invoke(configurator);
 
-                    foreach (var consumer in temporaryConsumers)
+                    if (!massTransitFeature.DisableConsumers)
                     {
-                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
-                            endpointConfigurator =>
-                            {
-                                endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                endpointConfigurator.Durable = false;
-                                endpointConfigurator.AutoDelete = true;
-                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
-                            });
-                    }
+                        foreach (var consumer in temporaryConsumers)
+                        {
+                            configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
+                                endpointConfigurator =>
+                                {
+                                    endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                    endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                    endpointConfigurator.Durable = false;
+                                    endpointConfigurator.AutoDelete = true;
+                                    endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
+                                });
+                        }
 
-                    // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
-                    if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
-                        configurator.SetupWorkflowDispatcherEndpoints(context);
-                    
-                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                        // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                        if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                            configurator.SetupWorkflowDispatcherEndpoints(context);
+
+                        configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    }
                 });
             };
         });

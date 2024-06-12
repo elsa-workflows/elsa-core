@@ -1,6 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Services;

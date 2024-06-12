@@ -1,11 +1,9 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -35,7 +33,7 @@ public class CancelBackgroundActivities : INotificationHandler<WorkflowBookmarks
 
         foreach (var removedBookmark in removedBookmarks)
         {
-            var payload = removedBookmark.GetPayload<BackgroundActivityBookmark>();
+            var payload = removedBookmark.GetPayload<BackgroundActivityStimulus>();
             if (payload.JobId != null) 
                 await _backgroundActivityScheduler.CancelAsync(payload.JobId, cancellationToken);
         }

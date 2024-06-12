@@ -10,7 +10,7 @@ namespace Elsa.Dsl.Services;
 public class DslEngine : IDslEngine
 {
     private readonly ITypeSystem _typeSystem;
-    private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityRegistryLookupService _activityRegistryLookup;
     private readonly IFunctionActivityRegistry _functionActivityRegistry;
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
 
@@ -19,12 +19,12 @@ public class DslEngine : IDslEngine
     /// </summary>
     public DslEngine(
         ITypeSystem typeSystem,
-        IActivityRegistry activityRegistry,
+        IActivityRegistryLookupService activityRegistryLookup,
         IFunctionActivityRegistry functionActivityRegistry,
         IWorkflowBuilderFactory workflowBuilderFactory)
     {
         _typeSystem = typeSystem;
-        _activityRegistry = activityRegistry;
+        _activityRegistryLookup = activityRegistryLookup;
         _functionActivityRegistry = functionActivityRegistry;
         _workflowBuilderFactory = workflowBuilderFactory;
     }
@@ -40,7 +40,7 @@ public class DslEngine : IDslEngine
 
         var interpreter = new WorkflowDefinitionBuilderInterpreter(
             _typeSystem,
-            _activityRegistry,
+            _activityRegistryLookup,
             _functionActivityRegistry,
             _workflowBuilderFactory);
 

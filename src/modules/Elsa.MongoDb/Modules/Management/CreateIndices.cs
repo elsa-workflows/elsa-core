@@ -40,7 +40,8 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                         new(indexBuilder.Ascending(x => x.Name)),
                         new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.IsLatest)),
-                        new(indexBuilder.Ascending(x => x.IsPublished))
+                        new(indexBuilder.Ascending(x => x.IsPublished)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }
@@ -78,7 +79,8 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                         new(indexBuilder.Ascending(x => x.IsSystem)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.UpdatedAt)),
-                        new(indexBuilder.Ascending(x => x.FinishedAt))
+                        new(indexBuilder.Ascending(x => x.FinishedAt)),
+                        new(indexBuilder.Ascending(x => x.TenantId))
                     },
                     cancellationToken));
     }

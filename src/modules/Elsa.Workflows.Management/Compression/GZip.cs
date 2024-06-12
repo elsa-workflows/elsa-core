@@ -1,6 +1,5 @@
 using System.IO.Compression;
 using System.Text;
-using Elsa.Workflows.Management.Contracts;
 
 namespace Elsa.Workflows.Management.Compression;
 

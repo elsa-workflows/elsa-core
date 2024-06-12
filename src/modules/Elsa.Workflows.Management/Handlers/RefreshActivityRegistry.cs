@@ -12,41 +12,86 @@ namespace Elsa.Workflows.Management.Handlers;
 /// Refreshes the <see cref="IActivityRegistry"/> for the <see cref="WorkflowDefinitionActivityProvider"/> provider whenever an <see cref="WorkflowDefinition"/> is published, retracted or deleted.
 /// </summary>
 [PublicAPI]
-public class RefreshActivityRegistry(IActivityRegistryPopulator activityRegistryPopulator) :
+public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
     INotificationHandler<WorkflowDefinitionCreated>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
-    INotificationHandler<WorkflowDefinitionVersionsDeleted>
+    INotificationHandler<WorkflowDefinitionVersionsDeleted>,
+    INotificationHandler<WorkflowDefinitionVersionsUpdated>
 {
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
     {
-        await activityRegistryPopulator.AddToRegistry(typeof(WorkflowDefinitionActivityProvider), notification.WorkflowDefinition.Id);
+        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
+    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
+    { 
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
-
+    public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
+    { 
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(notification.DefinitionId);
+        return Task.CompletedTask;
+    }
+    
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
-
-    /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
-
-    /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
-
-    /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionVersionsDeleted notification, CancellationToken cancellationToken) => await RefreshAsync(cancellationToken);
-
-    private async Task RefreshAsync(CancellationToken cancellationToken)
+    public Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
     {
-        await activityRegistryPopulator.PopulateRegistryAsync(typeof(WorkflowDefinitionActivityProvider), cancellationToken);
+        foreach (string id in notification.DefinitionIds)
+        {
+            workflowDefinitionActivityRegistryUpdater.RemoveDefinitionFromRegistry(id);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken)
+    {
+        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
+    { 
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionVersionsDeleted notification, CancellationToken cancellationToken)
+    {
+        foreach (string id in notification.Ids)
+        {
+            workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
+    {
+        foreach (var definition in notification.VersionUpdates)
+        {
+            await UpdateDefinition(definition.Id, definition.UsableAsActivity);
+        }
+    }
+
+    private Task UpdateDefinition(string id, bool? usableAsActivity)
+    {
+        if (usableAsActivity.GetValueOrDefault())
+            return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
+
+        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
+        return Task.CompletedTask;
     }
 }

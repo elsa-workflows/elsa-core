@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
@@ -33,6 +33,7 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var notFound = new List<string>();
         var alreadyPublished = new List<string>();
         var skipped = new List<string>();
+        var updatedConsumers = new List<string>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
@@ -62,10 +63,15 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
                 continue;
             }
 
-            await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+            var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
             published.Add(definitionId);
+            
+            if (result.ConsumingWorkflows?.Any() == true)
+            {
+                updatedConsumers.AddRange(result.ConsumingWorkflows.Select(x => x.DefinitionId));
+            }
         }
 
-        return new Response(published, alreadyPublished, notFound, skipped);
+        return new Response(published, alreadyPublished, notFound, skipped, updatedConsumers);
     }
 }

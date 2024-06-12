@@ -1,6 +1,8 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
-internal class WorkflowExecutionLogRecordRecord
+internal class WorkflowExecutionLogRecordRecord : Record
 {
     public string Id { get; set; } = default!;
     public string WorkflowDefinitionId { get; set; } = default!;

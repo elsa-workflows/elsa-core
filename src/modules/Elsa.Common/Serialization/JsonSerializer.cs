@@ -31,6 +31,12 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     }
 
     /// <inheritdoc />
+    public string Serialize<T>(T value)
+    {
+        return Serialize(value, typeof(T));
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     public object Deserialize(string json)
     {
@@ -44,5 +50,11 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
     {
         var options = GetOptions();
         return JsonSerializer.Deserialize(json, type, options)!;
+    }
+
+    /// <inheritdoc />
+    public T Deserialize<T>(string json)
+    {
+        return (T)Deserialize(json, typeof(T));
     }
 }

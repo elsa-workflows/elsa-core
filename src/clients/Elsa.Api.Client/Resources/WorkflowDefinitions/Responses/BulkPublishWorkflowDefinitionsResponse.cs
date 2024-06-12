@@ -6,4 +6,5 @@ namespace Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 public record BulkPublishWorkflowDefinitionsResponse(
     ICollection<string> Published, 
     ICollection<string> AlreadyPublished, 
-    ICollection<string> NotFound);
+    ICollection<string> NotFound, 
+    ICollection<string> UpdatedConsumers);

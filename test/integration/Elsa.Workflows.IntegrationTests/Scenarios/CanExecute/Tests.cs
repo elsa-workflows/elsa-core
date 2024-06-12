@@ -4,7 +4,6 @@ using Elsa.Workflows.IntegrationTests.Scenarios.CanExecute.Activities;
 using Elsa.Workflows.IntegrationTests.Scenarios.CanExecute.Workflows;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.CanExecute;

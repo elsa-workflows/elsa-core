@@ -1,21 +1,32 @@
 ﻿using System.Net.Http.Headers;
+using System.Reflection;
+using Elsa.Alterations.Extensions;
+using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Alterations;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Management;
+using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Tenants.Extensions;
+using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Handlers;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -52,7 +63,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {
-                    var assemblyLocation = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    var assemblyLocation = Assembly.GetExecutingAssembly().Location;
                     var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
                     var workflowsDirectorySegments = new[]
                     {
@@ -64,7 +75,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseMassTransit(massTransit =>
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
+                    massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
+                    massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
                 {
                     management.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
@@ -73,7 +87,24 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 });
                 elsa.UseWorkflowRuntime(runtime =>
                 {
+                    runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                    runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
+                    //runtime.UseProtoActor();
+                    runtime.UseDistributedRuntime();
+                });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
+                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
                 });
             };
         }
@@ -82,7 +113,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         {
             services.AddSingleton<ISignalManager, SignalManager>();
             services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
+            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
+            services.AddScoped<ITenantResolutionStrategy, TestTenantResolutionStrategy>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
+            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
         });
     }
 
