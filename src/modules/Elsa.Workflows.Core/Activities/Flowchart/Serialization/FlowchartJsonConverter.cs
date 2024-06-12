@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
@@ -28,38 +30,49 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
-        var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
-        var variablesElement = doc.RootElement.TryGetProperty("variables", out var variablesEl) ? variablesEl : default;
         var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
         var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
+        var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : default;
+        var version = doc.RootElement.TryGetProperty("version", out var versionElement) ? versionElement.GetInt32() : 1;
+
+        var connectionsElement = doc.RootElement.TryGetProperty("connections", out var connectionsEl) ? connectionsEl : default;
+        var activitiesElement = doc.RootElement.TryGetProperty("activities", out var activitiesEl) ? activitiesEl : default;
         var activities = activitiesElement.ValueKind != JsonValueKind.Undefined ? activitiesElement.Deserialize<ICollection<IActivity>>(options) ?? new List<IActivity>() : new List<IActivity>();
-        var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
-        var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(options) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
         var activityDictionary = activities.ToDictionary(x => x.Id);
         var connections = DeserializeConnections(connectionsElement, activityDictionary, options);
         var notFoundConnections = GetNotFoundConnections(doc.RootElement, activityDictionary, connections, options);
         var connectionsToRestore = FindConnectionsThatCanBeRestored(notFoundConnections, activities);
         var connectionComparer = new ConnectionComparer();
         var connectionsWithRestoredOnes = connections.Except(notFoundConnections, connectionComparer).Union(connectionsToRestore, connectionComparer).ToList();
+
+        var variablesElement = doc.RootElement.TryGetProperty("variables", out var variablesEl) ? variablesEl : default;
         var variables = variablesElement.ValueKind != JsonValueKind.Undefined ? variablesElement.Deserialize<ICollection<Variable>>(options) ?? new List<Variable>() : new List<Variable>();
+
+        JsonSerializerOptions polymorphicOptions = options.Clone();
+        polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options));
+
+        var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
+        var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(polymorphicOptions) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
+
+        var customPropertiesElement = doc.RootElement.TryGetProperty("customProperties", out var customPropertiesEl) ? customPropertiesEl : default;
+        var customProperties = customPropertiesEl.ValueKind != JsonValueKind.Undefined ? customPropertiesElement.Deserialize<IDictionary<string, object>>(polymorphicOptions) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
+        customProperties[AllActivitiesKey] = activities.ToList();
+        customProperties[AllConnectionsKey] = connectionsWithRestoredOnes;
+        customProperties[NotFoundConnectionsKey] = notFoundConnections.Except(connectionsToRestore, connectionComparer).ToList();
 
         var flowChart = new Activities.Flowchart
         {
             Id = id,
             NodeId = nodeId!,
             Name = name,
+            Type = type!,
+            Version = version,
+            CustomProperties = customProperties,
             Metadata = metadata,
             Activities = activities,
-            Connections = connectionsWithRestoredOnes,
             Variables = variables,
-            CustomProperties =
-            {
-                [AllActivitiesKey] = activities.ToList(),
-                [AllConnectionsKey] = connectionsWithRestoredOnes,
-                [NotFoundConnectionsKey] = notFoundConnections.Except(connectionsToRestore, connectionComparer).ToList()
-            }
+            Connections = connectionsWithRestoredOnes,
         };
 
         return flowChart;
@@ -69,10 +82,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
     public override void Write(Utf8JsonWriter writer, Activities.Flowchart value, JsonSerializerOptions options)
     {
         var activities = value.Activities;
-        var connectionSerializerOptions = new JsonSerializerOptions(options);
         var activityDictionary = activities.ToDictionary(x => x.Id);
-
-        connectionSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
 
         var customProperties = new Dictionary<string, object>(value.CustomProperties);
         var allActivities = customProperties.GetValueOrDefault(AllActivitiesKey, activities);
@@ -83,18 +93,23 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var model = new
         {
-            value.Type,
-            value.Version,
             value.Id,
             value.NodeId,
-            value.Metadata,
+            value.Name,
+            value.Type,
+            value.Version,
             CustomProperties = customProperties,
+            value.Metadata,
             Activities = allActivities,
-            Connections = allConnections,
             value.Variables,
+            Connections = allConnections,
         };
 
-        JsonSerializer.Serialize(writer, model, connectionSerializerOptions);
+        var flowchartSerializerOptions = new JsonSerializerOptions(options);
+        flowchartSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
+        flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options));
+
+        JsonSerializer.Serialize(writer, model, flowchartSerializerOptions);
     }
 
     private static ICollection<Connection> GetNotFoundConnections(JsonElement rootElement, IDictionary<string, IActivity> activities, IEnumerable<Connection> connections, JsonSerializerOptions connectionSerializerOptions)
