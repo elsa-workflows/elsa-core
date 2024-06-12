@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using Elsa.Http;
 using Elsa.Workflows.Contracts;
 using Microsoft.AspNetCore.Mvc;

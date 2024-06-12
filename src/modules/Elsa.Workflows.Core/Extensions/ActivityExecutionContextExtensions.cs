@@ -139,24 +139,24 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
+    public static async IAsyncEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
         var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
@@ -169,28 +169,25 @@ public static class ActivityExecutionContextExtensions
         var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
 
         // Select activities with outputs.
-        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistry>();
+        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistryLookupService>();
         var activitiesWithOutputs = containedNodes.GetActivitiesWithOutputs(activityRegistry);
 
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+        await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistry activityRegistry)
+    public static async IAsyncEnumerable<(IActivity activity, ActivityDescriptor activityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistryLookupService activityRegistryLookup)
     {
-        // Select activities with outputs.
-        var activitiesWithOutputs =
-            from node in nodes
-            let activity = node.Activity
-            let activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)
-            where activityDescriptor.Outputs.Any()
-            select (activity, activityDescriptor);
-
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
-            yield return (activity, activityDescriptor);
+        foreach (var node in nodes)
+        {
+            var activity = node.Activity;
+            var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type, activity.Version);
+            if (activityDescriptor != null && activityDescriptor.Outputs.Any()) 
+                yield return (activity, activityDescriptor);
+        }
     }
 
     /// <summary>
@@ -419,26 +416,9 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
-        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList();
         var logger = context.GetRequiredService<ILogger<ActivityExecutionContext>>();
-
-        // Let all ancestors capture the signal.
-        foreach (var ancestorContext in capturingContexts)
-        {
-            var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
-
-            if (ancestorContext.Activity is not ISignalHandler handler)
-                continue;
-
-            logger.LogDebug("Capturing signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-            await handler.CaptureSignalAsync(signal, signalContext);
-
-            if (signalContext.StopPropagationRequested)
-            {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-                return;
-            }
-        }
+        var signalType = signal.GetType();
+        var signalTypeName = signalType.Name;
 
         // Let all ancestors receive the signal.
         foreach (var ancestorContext in receivingContexts)
@@ -448,12 +428,12 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
-            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
             await handler.ReceiveSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
             {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
                 return;
             }
         }

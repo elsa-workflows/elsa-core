@@ -60,10 +60,7 @@ public class MongoDbFeature : FeatureBase
     {
         BsonClassMap.TryRegisterClassMap<StoredBookmark>(cm =>
         {
-            cm.AutoMap(); // Automatically map other properties
-            cm
-                .MapIdProperty(b => b.BookmarkId)
-                .SetSerializer(new StringSerializer(BsonType.String));
+            cm.AutoMap(); // Automatically map other properties;
         });
 
         BsonClassMap.RegisterClassMap<SerializedKeyValuePair>(map =>

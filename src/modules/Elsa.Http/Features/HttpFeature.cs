@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -10,6 +11,7 @@ using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
+using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
@@ -148,7 +150,6 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteMatcher, RouteMatcher>()
             .AddScoped<IRouteTable, RouteTable>()
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-            .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
@@ -162,6 +163,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
+            .AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>()
 
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
@@ -202,6 +204,10 @@ public class HttpFeature : FeatureBase
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        
+        // Tenant resolvers.
+        Services.AddScoped<ITenantResolutionStrategy, HttpContextTenantResolver>();
+        Services.AddScoped<ITenantResolutionStrategy, RoutePrefixTenantResolver>();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

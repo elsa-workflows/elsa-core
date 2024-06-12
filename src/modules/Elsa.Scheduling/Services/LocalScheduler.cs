@@ -1,6 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Models;
 
 namespace Elsa.Scheduling.Services;
 

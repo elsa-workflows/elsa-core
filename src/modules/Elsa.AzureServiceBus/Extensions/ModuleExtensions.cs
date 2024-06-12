@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Enable and configure the <see cref="AzureServiceBusFeature"/> feature. 
     /// </summary>
-    public static IModule UseAzureServiceBus(this IModule module, string connectionStringOrName, Action<AzureServiceBusFeature>? setup = default)
+    public static IModule UseAzureServiceBus(this IModule module, string connectionStringOrName, Action<AzureServiceBusFeature>? setup = null)
     {
         setup += feature => feature.AzureServiceBusOptions += options => options.ConnectionStringOrName = connectionStringOrName;
         return module.Use(setup);
@@ -21,5 +21,5 @@ public static class ModuleExtensions
     /// <summary>
     /// Enable and configure the <see cref="AzureServiceBusFeature"/> feature. 
     /// </summary>
-    public static IModule UseAzureServiceBus(this IModule module, Action<AzureServiceBusFeature> setup) => module.Use(setup);
+    public static IModule UseAzureServiceBus(this IModule module, Action<AzureServiceBusFeature>? setup = null) => module.Use(setup);
 }

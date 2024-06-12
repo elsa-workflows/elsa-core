@@ -49,8 +49,8 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
         {
             await telnyxClient.Calls.BridgeCallsAsync(callControlIdA, request, context.CancellationToken);
             
-            var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
-            var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
+            var bookmarkA = new WebhookEventStimulus(WebhookEventTypes.CallBridged, callControlIdA);
+            var bookmarkB = new WebhookEventStimulus(WebhookEventTypes.CallBridged, callControlIdB);
             context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync, false);
         }
         catch (ApiException e)

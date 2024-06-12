@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Requests;
 
@@ -33,10 +34,7 @@ public class DispatchWorkflowInstanceRequest
     /// The ID of the bookmark to resume.
     /// </summary>
     public string? BookmarkId { get; set; }
-    public string? ActivityId { get; init; }
-    public string? ActivityNodeId { get; init; }
-    public string? ActivityInstanceId { get; init; }
-    public string? ActivityHash { get; init; }
+    public ActivityHandle? ActivityHandle { get; init; }
     public IDictionary<string, object>? Input { get; init; }
     public IDictionary<string, object>? Properties { get; init; }
     public string? CorrelationId { get; init; }

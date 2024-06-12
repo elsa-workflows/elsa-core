@@ -65,6 +65,10 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             {
                 await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
             }
+            catch (OperationCanceledException e)
+            {
+                _logger.LogDebug(e, "An operation was cancelled while processing the queue");
+            }
             catch (Exception e)
             {
                 _logger.LogError(e, "An unhandled exception occured while processing the queue");

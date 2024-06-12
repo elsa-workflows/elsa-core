@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Represents a store of <see cref="WorkflowDefinition"/>s.
@@ -147,7 +147,7 @@ public interface IWorkflowDefinitionStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if any workflow definition matches the specified filter.</returns>
     Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns the number of logical workflow definitions.
     /// </summary>

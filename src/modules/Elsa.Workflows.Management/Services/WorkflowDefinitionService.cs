@@ -1,6 +1,5 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
@@ -49,6 +48,16 @@ public class WorkflowDefinitionService(
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionHandle handle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = handle
+        };
+        return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindWorkflowDefinitionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         return await workflowDefinitionStore.FindAsync(filter, cancellationToken);
@@ -74,6 +83,17 @@ public class WorkflowDefinitionService(
             return null;
 
         return await MaterializeWorkflowAsync(definition, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowGraph?> FindWorkflowGraphAsync(WorkflowDefinitionHandle definitionHandle, CancellationToken cancellationToken = default)
+    {
+        var filter = new WorkflowDefinitionFilter
+        {
+            DefinitionHandle = definitionHandle
+        };
+
+        return await FindWorkflowGraphAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />

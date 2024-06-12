@@ -13,12 +13,7 @@ internal class Request
 }
 
 [PublicAPI]
-internal class Response
+internal class Response(IDictionary<string, object> items)
 {
-    public Response(IDictionary<string,object> items)
-    {
-        Items = items;
-    }
-
-    public IDictionary<string, object> Items { get; set; }
+    public IDictionary<string, object> Items { get; set; } = items;
 }

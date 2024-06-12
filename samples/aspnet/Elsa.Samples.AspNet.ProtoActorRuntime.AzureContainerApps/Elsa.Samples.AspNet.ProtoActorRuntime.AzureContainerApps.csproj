@@ -17,7 +17,6 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.ProtoActor.Cluster.AzureContainerApps\Elsa.ProtoActor.Cluster.AzureContainerApps.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
@@ -26,6 +25,7 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" />
         <PackageReference Include="Azure.ResourceManager" />
+        <PackageReference Include="Proto.Cluster.AzureContainerApps" />
         <PackageReference Include="Proto.Persistence.Sqlite" />
     </ItemGroup>
 

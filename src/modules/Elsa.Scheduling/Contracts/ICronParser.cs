@@ -1,4 +1,4 @@
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Scheduling;
 
 /// <summary>Represents a cron expression parser.</summary>
 /// <remarks>The providers can support different formats. Quartz, for example, supports years.</remarks>

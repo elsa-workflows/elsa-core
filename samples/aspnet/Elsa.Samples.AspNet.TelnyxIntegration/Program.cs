@@ -15,11 +15,9 @@ using Event = Elsa.Workflows.Runtime.Activities.Event;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
-var identityOptions = new IdentityOptions();
 var identityTokenOptions = new IdentityTokenOptions();
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
-identitySection.Bind(identityOptions);
 identityTokenSection.Bind(identityTokenOptions);
 
 // Add Elsa services.

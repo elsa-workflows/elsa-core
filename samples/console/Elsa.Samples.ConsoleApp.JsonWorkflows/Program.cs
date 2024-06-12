@@ -1,7 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 // Setup service container.
@@ -13,7 +13,7 @@ services.AddElsa();
 // Build service container.
 var serviceProvider = services.BuildServiceProvider();
 
-// Populate registries. This is only necessary for applications  that are not using hosted services.
+// Populate registries. This is only necessary for applications that are not using hosted services.
 await serviceProvider.PopulateRegistriesAsync();
 
 // Import a workflow from a JSON file.

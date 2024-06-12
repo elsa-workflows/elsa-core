@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Options;
 
 namespace Elsa.Workflows.Signals;
 

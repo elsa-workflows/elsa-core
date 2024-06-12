@@ -16,7 +16,8 @@ public class V3_1 : Migration
     {
         Create
             .Table("KeyValuePairs")
-            .WithColumn("Key").AsString().PrimaryKey()
+            .WithColumn("Id").AsString().PrimaryKey()
+            .WithColumn("Key").AsString().Indexed()
             .WithColumn("Value").AsString(MaxValue).NotNullable();
     }
 

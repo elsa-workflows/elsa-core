@@ -46,6 +46,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     }
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The Jint library uses reflection and can't be statically analyzed.")]
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
@@ -63,22 +64,24 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         options ??= new ExpressionEvaluatorOptions();
 
-        var engine = new Engine(opts =>
+        var engineOptions = new Jint.Options();;
+        
+        if (_jintOptions.AllowClrAccess)
+            engineOptions.AllowClr();
+
+        // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
+        engineOptions.SetWrapObjectHandler((engine, target, type) =>
         {
-            if (_jintOptions.AllowClrAccess)
-                opts.AllowClr();
+            var instance = new ObjectWrapper(engine, target);
 
-            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
-            opts.SetWrapObjectHandler((engine, target, type) =>
-            {
-                var instance = new ObjectWrapper(engine, target);
+            if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
 
-                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
-                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
-
-                return instance;
-            });
+            return instance;
         });
+            
+        await _mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
+        var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);
 
@@ -100,7 +103,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
-        CreateActivityOutputAccessors(engine, context);
+        await CreateActivityOutputAccessorsAsync(engine, context);
 
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
@@ -171,11 +174,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    private static async Task CreateActivityOutputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
     {
         var activityOutputs = context.GetActivityOutputs();
 
-        foreach (var activityOutput in activityOutputs)
+        await foreach (var activityOutput in activityOutputs)
         foreach (var outputName in activityOutput.OutputNames)
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }

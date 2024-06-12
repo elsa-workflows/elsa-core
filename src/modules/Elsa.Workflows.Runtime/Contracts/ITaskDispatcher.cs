@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.Notifications;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Dispatches a request for running a task.

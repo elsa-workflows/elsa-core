@@ -9,7 +9,7 @@ namespace Elsa.MongoDb.Modules.Identity;
 /// <summary>
 /// A MongoDB implementation of <see cref="IUserStore"/>.
 /// </summary>
-public abstract class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUserStore
+public class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUserStore
 {
     /// <inheritdoc />
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)

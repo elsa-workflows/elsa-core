@@ -17,7 +17,6 @@ namespace Elsa.Workflows;
 public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalReceivedHandlers = new List<SignalHandlerRegistration>();
-    private readonly ICollection<SignalHandlerRegistration> _signalCapturedHandlers = new List<SignalHandlerRegistration>();
 
     /// <summary>
     /// Constructor.
@@ -161,44 +160,6 @@ public abstract class Activity : IActivity, ISignalHandler
             return ValueTask.CompletedTask;
         });
     }
-    
-    /// <summary>
-    /// Override this method to handle any signals sent from downstream activities.
-    /// </summary>
-    protected virtual ValueTask OnCaptureSignalAsync(object signal, SignalContext context)
-    {
-        OnSignalCaptured(signal, context);
-        return ValueTask.CompletedTask;
-    }
-
-    /// <summary>
-    /// Override this method to handle any signals sent from downstream activities.
-    /// </summary>
-    protected virtual void OnSignalCaptured(object signal, SignalContext context)
-    {
-    }
-
-    /// <summary>
-    /// Register a signal handler delegate.
-    /// </summary>
-    protected void OnSignalCaptured(Type signalType, Func<object, SignalContext, ValueTask> handler) => _signalCapturedHandlers.Add(new SignalHandlerRegistration(signalType, handler));
-
-    /// <summary>
-    /// Register a signal handler delegate.
-    /// </summary>
-    protected void OnSignalCaptured<T>(Func<T, SignalContext, ValueTask> handler) => OnSignalCaptured(typeof(T), (signal, context) => handler((T)signal, context));
-
-    /// <summary>
-    /// Register a signal handler delegate.
-    /// </summary>
-    protected void OnSignalCaptured<T>(Action<T, SignalContext> handler)
-    {
-        OnSignalCaptured<T>((signal, context) =>
-        {
-            handler(signal, context);
-            return ValueTask.CompletedTask;
-        });
-    }
 
     /// <summary>
     /// Notify the workflow that this activity completed.
@@ -220,23 +181,7 @@ public abstract class Activity : IActivity, ISignalHandler
         // Invoke behaviors.
         foreach (var behavior in Behaviors) await behavior.ExecuteAsync(context);
     }
-
-    async ValueTask ISignalHandler.CaptureSignalAsync(object signal, SignalContext context)
-    {
-        // Give derived activity a chance to do something with the signal.
-        await OnCaptureSignalAsync(signal, context);
-
-        // Invoke registered signal delegates for this particular type of signal.
-        var signalType = signal.GetType();
-        var handlers = _signalCapturedHandlers.Where(x => x.SignalType == signalType);
-
-        foreach (var registration in handlers)
-            await registration.Handler(signal, context);
-
-        // Invoke behaviors.
-        foreach (var behavior in Behaviors) await behavior.CaptureSignalAsync(signal, context);
-    }
-
+    
     async ValueTask ISignalHandler.ReceiveSignalAsync(object signal, SignalContext context)
     {
         // Give derived activity a chance to do something with the signal.

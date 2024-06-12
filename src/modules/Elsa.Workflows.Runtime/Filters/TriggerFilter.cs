@@ -11,46 +11,51 @@ public class TriggerFilter
     /// Gets or sets the ID of the trigger to find.
     /// </summary>
     public string? Id { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the triggers to find.
     /// </summary>
     public ICollection<string>? Ids { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the ID of the workflow definition.
     /// </summary>
     public string? WorkflowDefinitionId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the ID of the workflow definition version.
     /// </summary>
     public string? WorkflowDefinitionVersionId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the workflow definitions.
     /// </summary>
     public ICollection<string>? WorkflowDefinitionIds { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the IDs of the workflow definition versions.
     /// </summary>
     public ICollection<string>? WorkflowDefinitionVersionIds { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the name of the trigger to find.
     /// </summary>
     public string? Name { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the names of the triggers to find.
     /// </summary>
     public ICollection<string>? Names { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the hash of the trigger to find.
     /// </summary>
     public string? Hash { get; set; }
+
+    /// <summary>
+    /// Get or sets if the triggers to find is a tenant agnostic search
+    /// </summary>
+    public bool TenantAgnostic { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified query.
