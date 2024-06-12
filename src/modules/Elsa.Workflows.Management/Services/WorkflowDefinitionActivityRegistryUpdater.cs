@@ -17,7 +17,7 @@ public class WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivit
     {
         var descriptors = await provider.GetDescriptorsAsync(cancellationToken);
         var descriptorToAdd = descriptors
-            .SingleOrDefault(d =>
+            .FirstOrDefault(d =>
                 d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
                 val.ToString() == workflowDefinitionVersionId);
         
@@ -47,7 +47,7 @@ public class WorkflowDefinitionActivityRegistryUpdater(WorkflowDefinitionActivit
         var providerDescriptors = registry.ListByProvider(_providerType);
         
         var descriptorToRemove = providerDescriptors
-            .SingleOrDefault(d =>
+            .FirstOrDefault(d =>
                 d.CustomProperties.TryGetValue("WorkflowDefinitionVersionId", out var val) &&
                 val.ToString() == workflowDefinitionVersionId);
 
