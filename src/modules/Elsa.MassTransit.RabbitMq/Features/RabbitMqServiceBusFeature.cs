@@ -67,22 +67,24 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                     
                     ConfigureServiceBus?.Invoke(configurator);
+                    
+                    // Temporary consumers are used for pub/sub, which is used for invalidating local caches and should therefore not be disabled.
+                    foreach (var consumer in temporaryConsumers)
+                    {
+                        configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
+                            endpointConfigurator =>
+                            {
+                                endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                                endpointConfigurator.Durable = false;
+                                endpointConfigurator.AutoDelete = true;
+                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
+                            });
+                    }
 
+                    // Other consumers that represent workers should be disabled when configured as such.
                     if (!massTransitFeature.DisableConsumers)
                     {
-                        foreach (var consumer in temporaryConsumers)
-                        {
-                            configurator.ReceiveEndpoint($"{instanceNameProvider.GetName()}-{consumer.Name}",
-                                endpointConfigurator =>
-                                {
-                                    endpointConfigurator.QueueExpiration = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                    endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                    endpointConfigurator.Durable = false;
-                                    endpointConfigurator.AutoDelete = true;
-                                    endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
-                                });
-                        }
-
                         // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
                         if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
                             configurator.SetupWorkflowDispatcherEndpoints(context);

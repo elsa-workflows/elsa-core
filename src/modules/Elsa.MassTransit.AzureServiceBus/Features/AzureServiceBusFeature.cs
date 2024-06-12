@@ -85,19 +85,21 @@ public class AzureServiceBusFeature : FeatureBase
                     ConfigureServiceBus?.Invoke(configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
+                    // Temporary consumers are used for pub/sub, which is used for invalidating local caches and should therefore not be disabled.
+                    foreach (var consumer in temporaryConsumers)
+                    {
+                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                        configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
+                        {
+                            endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                            endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
+                        });
+                    }
+                    
+                    // Other consumers that represent workers should be disabled when configured as such.
                     if (!massTransitFeature.DisableConsumers)
                     {
-                        foreach (var consumer in temporaryConsumers)
-                        {
-                            var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
-                            configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
-                            {
-                                endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
-                            });
-                        }
-                        
                         // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
                         if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
                             configurator.SetupWorkflowDispatcherEndpoints(context);

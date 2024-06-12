@@ -132,17 +132,19 @@ public class MassTransitFeature : FeatureBase
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
 
+            // Temporary consumers are used for pub/sub, which is used for invalidating local caches and should therefore not be disabled.
+            foreach (var consumer in temporaryConsumers)
+            {
+                busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
+                {
+                    endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                    endpoint.ConfigureConsumer(context, consumer.ConsumerType);
+                });
+            }
+
+            // Other consumers that represent workers should be disabled when configured as such.
             if (!DisableConsumers)
             {
-                foreach (var consumer in temporaryConsumers)
-                {
-                    busFactoryConfigurator.ReceiveEndpoint(consumer.Name!, endpoint =>
-                    {
-                        endpoint.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                        endpoint.ConfigureConsumer(context, consumer.ConsumerType);
-                    });
-                }
-
                 // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
                 if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
                     busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
