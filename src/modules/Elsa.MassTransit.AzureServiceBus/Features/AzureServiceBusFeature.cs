@@ -82,7 +82,6 @@ public class AzureServiceBusFeature : FeatureBase
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
                     
                     configurator.UseServiceBusMessageScheduler();
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
@@ -98,6 +97,10 @@ public class AzureServiceBusFeature : FeatureBase
                                 endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
                             });
                         }
+                        
+                        // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                        if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                            configurator.SetupWorkflowDispatcherEndpoints(context);
 
                         configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                     }

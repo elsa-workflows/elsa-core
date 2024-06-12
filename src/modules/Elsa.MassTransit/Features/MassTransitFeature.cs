@@ -35,7 +35,7 @@ public class MassTransitFeature : FeatureBase
     /// The number of messages to prefetch.
     [Obsolete("PrefetchCount has been moved to be included in MassTransitOptions")]
     public int? PrefetchCount { get; set; }
-    
+
     public bool DisableConsumers { get; set; }
 
     /// <summary>
@@ -132,7 +132,7 @@ public class MassTransitFeature : FeatureBase
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
 
-            if(!DisableConsumers)
+            if (!DisableConsumers)
             {
                 foreach (var consumer in temporaryConsumers)
                 {
@@ -142,11 +142,14 @@ public class MassTransitFeature : FeatureBase
                         endpoint.ConfigureConsumer(context, consumer.ConsumerType);
                     });
                 }
-                
-                busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+
+                // Only configure the dispatcher endpoints if the Masstransit Workflow Dispatcher feature is enabled.
+                if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                    busFactoryConfigurator.SetupWorkflowDispatcherEndpoints(context);
+
                 busFactoryConfigurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
             }
-            
+
             busFactoryConfigurator.ConfigureJsonSerializerOptions(serializerOptions =>
             {
                 var serializer = context.GetRequiredService<IJsonSerializer>();
