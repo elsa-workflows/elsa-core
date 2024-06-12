@@ -114,6 +114,10 @@ internal class Post(
 
         var mappedDefinition = await linker.MapAsync(draft, cancellationToken);
         var response = new Response(mappedDefinition, false, result?.ConsumingWorkflows?.Count() ?? 0);
+        
+        if (isNew)
+            await SendCreatedAtAsync<GetByDefinitionId.GetByDefinitionId>(new { definitionId }, mappedDefinition, cancellation: cancellationToken);
+        
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }
