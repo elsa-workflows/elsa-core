@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\Elsa\Elsa.csproj"/>
@@ -52,14 +52,10 @@
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
     </ItemGroup>
-
+    
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions of Npgsql.-->
     <ItemGroup>
-        <PackageReference Include="Npgsql" VersionOverride="8.0.3" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="App_Data\"/>
-        <Folder Include="Workflows\" />
+        <PackageReference Include="Npgsql" VersionOverride="8.0.3"/>
     </ItemGroup>
 
 </Project>
