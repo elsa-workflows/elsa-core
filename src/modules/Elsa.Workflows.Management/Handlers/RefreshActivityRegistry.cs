@@ -17,7 +17,6 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
-    INotificationHandler<WorkflowDefinitionCreated>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsUpdated>
@@ -25,7 +24,7 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
     {
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+        return UpdateDefinition(notification.WorkflowDefinition.Id, true, notification.WorkflowDefinition.Options.UsableAsActivity);
     }
 
     /// <inheritdoc />
@@ -54,12 +53,6 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken)
-    {
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
-    }
-
-    /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken)
     { 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
@@ -80,15 +73,15 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (var definition in notification.VersionUpdates)
+        foreach (var definition in notification.WorkflowDefinitions)
         {
-            await UpdateDefinition(definition.Id, definition.UsableAsActivity);
+            await UpdateDefinition(definition.Id, definition.IsPublished, definition.Options.UsableAsActivity);
         }
     }
 
-    private Task UpdateDefinition(string id, bool? usableAsActivity)
+    private Task UpdateDefinition(string id, bool isPublished, bool? usableAsActivity)
     {
-        if (usableAsActivity.GetValueOrDefault())
+        if (isPublished && usableAsActivity.GetValueOrDefault())
             return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);

@@ -11,7 +11,6 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkf
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
-    INotificationHandler<WorkflowDefinitionCreated>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsUpdated>
@@ -34,11 +33,6 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkf
         distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionsDeleted(notification.DefinitionIds), cancellationToken);
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken) => 
-        distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionCreated(notification.WorkflowDefinition.Id,
-            notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
-
-    /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionVersionDeleted notification, CancellationToken cancellationToken) => 
         distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionDeleted(notification.WorkflowDefinition.Id), cancellationToken);
 
@@ -49,7 +43,8 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkf
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        var updates = notification.VersionUpdates.ToDictionary(x => x.Id, x => x.UsableAsActivity);
+        var updates = notification.WorkflowDefinitions.Select(x =>
+            new Distributed.WorkflowDefinitionVersionUpdate(x.Id, x.DefinitionId, x.IsPublished, x.Options.UsableAsActivity.GetValueOrDefault()));
         await distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionsUpdated(updates), cancellationToken);
     }
 }

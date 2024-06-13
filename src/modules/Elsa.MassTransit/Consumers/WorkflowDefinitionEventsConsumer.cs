@@ -10,7 +10,6 @@ namespace Elsa.MassTransit.Consumers;
 /// </summary>
 [PublicAPI]
 public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) :
-    IConsumer<WorkflowDefinitionCreated>,
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
     IConsumer<WorkflowDefinitionRetracted>,
@@ -19,12 +18,6 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     IConsumer<WorkflowDefinitionVersionsDeleted>,
     IConsumer<WorkflowDefinitionVersionsUpdated>
 {
-    /// <inheritdoc />
-    public Task Consume(ConsumeContext<WorkflowDefinitionCreated> context)
-    {
-        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
-    }
-
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
     { 
@@ -35,7 +28,7 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
     {
-        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
+        return UpdateDefinition(context.Message.Id, true, context.Message.UsableAsActivity);
     }
 
     /// <inheritdoc />
@@ -77,15 +70,15 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<WorkflowDefinitionVersionsUpdated> context)
     {
-        foreach (KeyValuePair<string,bool> definitionAsActivity in context.Message.DefinitionsAsActivity)
+        foreach (WorkflowDefinitionVersionUpdate definitionUpdate in context.Message.WorkflowDefinitionVersionUpdates)
         {
-            await UpdateDefinition(definitionAsActivity.Key, definitionAsActivity.Value);
+            await UpdateDefinition(definitionUpdate.Id, definitionUpdate.IsPublished, definitionUpdate.UsableAsActivity);
         }
     }
 
-    private Task UpdateDefinition(string id, bool usableAsActivity)
+    private Task UpdateDefinition(string id, bool isPublished, bool usableAsActivity)
     {
-        if (usableAsActivity)
+        if (isPublished && usableAsActivity)
             return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);
