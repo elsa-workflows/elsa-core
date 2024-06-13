@@ -16,4 +16,8 @@
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions of Microsoft.Identity.Client.-->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.61.3" />
+    </ItemGroup>
 </Project>
