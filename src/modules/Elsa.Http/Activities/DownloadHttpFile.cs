@@ -150,6 +150,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
             var responseContentHeaders = new HttpHeaders(response.Content.Headers);
 
             context.Set(Response, response);
+            context.Set(ResponseContent, file?.Stream);
             context.Set(Result, file);
             context.Set(StatusCode, statusCode);
             context.Set(ResponseHeaders, responseHeaders);
