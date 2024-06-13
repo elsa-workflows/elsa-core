@@ -47,7 +47,7 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdating notification, CancellationToken cancellationToken)
     {
-        foreach (var definition in notification.VersionUpdates)
+        foreach (var definition in notification.WorkflowDefinitions)
             await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definition.DefinitionId, cancellationToken);
     }
 }

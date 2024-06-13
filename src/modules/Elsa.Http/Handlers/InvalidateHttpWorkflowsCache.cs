@@ -1,6 +1,7 @@
 ﻿using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
@@ -41,7 +42,7 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (WorkflowDefinitionVersionUpdate versionDefinition in notification.VersionUpdates)
+        foreach (WorkflowDefinition versionDefinition in notification.WorkflowDefinitions)
         {
             await InvalidateTriggerCacheForDefinitionVersionAsync(versionDefinition.Id, cancellationToken);
         }
