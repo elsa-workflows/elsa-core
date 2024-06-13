@@ -44,6 +44,7 @@ public class WorkflowManagementFeature : FeatureBase
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
+    private const string DataCategory = "Data";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
@@ -78,7 +79,9 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
+        new(typeof(byte[]), DataCategory, "A byte array."),
+        new(typeof(Stream), DataCategory, "A stream.")
     ];
 
     /// <summary>
