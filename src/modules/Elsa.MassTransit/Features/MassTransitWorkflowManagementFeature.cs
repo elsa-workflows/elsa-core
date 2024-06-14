@@ -22,7 +22,7 @@ public class MassTransitWorkflowManagementFeature(IModule module) : FeatureBase(
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
     {
-        Module.AddMassTransitConsumer<WorkflowDefinitionEventsConsumer>("elsa-workflow-definition-updates", true);
+        Module.AddMassTransitConsumer<WorkflowDefinitionEventsConsumer>("elsa-workflow-definition-updates", true, true);
     }
 
     /// <inheritdoc />

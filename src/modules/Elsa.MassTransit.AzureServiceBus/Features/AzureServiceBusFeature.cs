@@ -63,16 +63,16 @@ public class AzureServiceBusFeature : FeatureBase
 
                 RegisterConsumers(consumers);
                 configure.AddServiceBusMessageScheduler();
-                
+
                 // Consumers need to be added before the UsingAzureServiceBus statement to prevent exceptions.
                 foreach (var consumer in temporaryConsumers)
                     configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
                 configure.UsingAzureServiceBus((context, configurator) =>
                 {
-                    if (ConnectionString != null) 
+                    if (ConnectionString != null)
                         configurator.Host(ConnectionString);
-                    
+
                     var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
 
                     if (options.PrefetchCount is not null)
@@ -80,32 +80,34 @@ public class AzureServiceBusFeature : FeatureBase
                     if (options.MaxAutoRenewDuration is not null)
                         configurator.MaxAutoRenewDuration = options.MaxAutoRenewDuration.Value;
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                    
+
                     configurator.UseServiceBusMessageScheduler();
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
 
+                    foreach (var consumer in temporaryConsumers)
+                    {
+                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                        configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
+                        {
+                            endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
+                            endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
+                            endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
+                        });
+                    }
+
                     if (!massTransitFeature.DisableConsumers)
                     {
-                        foreach (var consumer in temporaryConsumers)
-                        {
-                            var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
-                            configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
-                            {
-                                endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
-                                endpointConfigurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                                endpointConfigurator.ConfigureConsumer(context, consumer.ConsumerType);
-                            });
-                        }
-
-                        configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                        if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                            configurator.SetupWorkflowDispatcherEndpoints(context);
                     }
+
+                    configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });
     }
-    
+
     /// <inheritdoc />
     public override void Apply()
     {
@@ -119,7 +121,7 @@ public class AzureServiceBusFeature : FeatureBase
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
         return configuration.GetConnectionString(options.ConnectionStringOrName) ?? options.ConnectionStringOrName;
     }
-    
+
     private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
     {
         var subscriptionTopology = (
@@ -134,5 +136,4 @@ public class AzureServiceBusFeature : FeatureBase
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
         Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
     }
-
 }
