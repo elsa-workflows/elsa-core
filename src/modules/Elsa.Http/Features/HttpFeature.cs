@@ -219,6 +219,10 @@ public class HttpFeature : FeatureBase
         {
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
+            options.AddTypeAlias<HttpFile>("HttpFile");
+            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
+            options.AddTypeAlias<Downloadable>("Downloadable");
+            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
         });
     }
 }

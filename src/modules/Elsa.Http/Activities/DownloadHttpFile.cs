@@ -46,7 +46,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
         UIHint = InputUIHints.DropDown
     )]
     public Input<string> Method { get; set; } = new("GET");
-    
+
     /// <summary>
     /// A list of expected status codes to handle.
     /// </summary>
@@ -102,7 +102,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
     /// </summary>
     [Output(IsSerializable = false)]
     public Output<HttpResponseMessage> Response { get; set; } = default!;
-    
+
     /// <summary>
     /// The HTTP response status code
     /// </summary>
@@ -110,17 +110,23 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
     public Output<int> StatusCode { get; set; } = default!;
 
     /// <summary>
-    /// The parsed content, if any.
+    /// The downloaded content stream, if any.
     /// </summary>
-    [Output(Description = "The parsed content, if any.", IsSerializable = false)]
-    public Output<Stream?> ResponseContent { get; set; } = default!;
+    [Output(Description = "The downloaded content stream, if any.", IsSerializable = false)]
+    public Output<Stream?> ResponseContentStream { get; set; } = default!;
+
+    /// <summary>
+    /// The downloaded content bytes, if any.
+    /// </summary>
+    [Output(Description = "The downloaded content bytes, if any.", IsSerializable = false)]
+    public Output<byte[]?> ResponseContentBytes { get; set; } = default!;
 
     /// <summary>
     /// The response headers that were received.
     /// </summary>
     [Output(Description = "The response headers that were received.")]
     public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
-    
+
     /// <summary>
     /// The response content headers that were received.
     /// </summary>
@@ -150,11 +156,12 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
             var responseContentHeaders = new HttpHeaders(response.Content.Headers);
 
             context.Set(Response, response);
-            context.Set(ResponseContent, file?.Stream);
+            context.Set(ResponseContentStream, file?.Stream);
             context.Set(Result, file);
             context.Set(StatusCode, statusCode);
             context.Set(ResponseHeaders, responseHeaders);
             context.Set(ResponseContentHeaders, responseContentHeaders);
+            if (ResponseContentBytes.HasTarget(context)) context.Set(ResponseContentBytes, file?.GetBytes());
 
             await HandleResponseAsync(context, response);
         }
@@ -179,7 +186,7 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
             await HandleTaskCanceledExceptionAsync(context, e);
         }
     }
-    
+
     /// <summary>
     /// Handles the response.
     /// </summary>
@@ -272,11 +279,14 @@ public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValu
         var parsedContentType = new System.Net.Mime.ContentType(contentType);
         return factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == parsedContentType.MediaType)) ?? new JsonContentFactory();
     }
-    
+
     object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property)
     {
         if (property.Name == nameof(ExpectedStatusCodes))
-            return new List<int> { 200 };
+            return new List<int>
+            {
+                200
+            };
 
         return default!;
     }
