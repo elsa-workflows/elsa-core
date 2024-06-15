@@ -30,6 +30,13 @@ public class HttpHeaders : Dictionary<string, string[]>
             Add(item.Key, item.Value.ToArray());
     }
 
+    /// <inheritdoc />
+    public HttpHeaders(HttpContentHeaders source)
+    {
+        foreach (var item in source)
+            Add(item.Key, item.Value.ToArray());
+    }
+
     /// <summary>
     /// Gets the content type.
     /// </summary>
