@@ -120,7 +120,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         var consumingWorkflows = new List<WorkflowDefinition>();
 
-        if (definition.Options.UsableAsActivity == true)
+        if (definition.Options is { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
         {
             consumingWorkflows.AddRange(await UpdateReferencesInConsumingWorkflows(definition, cancellationToken));
         }

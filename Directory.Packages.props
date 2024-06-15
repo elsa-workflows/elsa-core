@@ -6,7 +6,7 @@
   <ItemGroup>
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageVersion Include="AutoMapper" Version="13.0.1" />
-    <PackageVersion Include="Azure.Identity" Version="1.11.3" />
+    <PackageVersion Include="Azure.Identity" Version="1.11.4" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
     <PackageVersion Include="Azure.ResourceManager" Version="1.12.0" />
     <PackageVersion Include="Azure.ResourceManager.AppContainers" Version="1.1.1" />
@@ -23,9 +23,9 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.1.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.14.0" />
-    <PackageVersion Include="Elsa.Studio" Version="3.2.0-preview.310" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.2.0-preview.310" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.2.0-preview.310" />
+    <PackageVersion Include="Elsa.Studio" Version="3.2.0-rc2.351" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.2.0-rc2.351" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.2.0-rc2.351" />
     <PackageVersion Include="FastEndpoints" Version="5.26.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.26.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.26.0" />
