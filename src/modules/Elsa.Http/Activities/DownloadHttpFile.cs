@@ -1,9 +1,13 @@
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
+using Elsa.Http.Models;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -12,20 +16,21 @@ using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 namespace Elsa.Http;
 
 /// <summary>
-/// Base class for activities that send HTTP requests.
+/// An activity that downloads a file from a given URL.
 /// </summary>
+[Activity("Elsa", "HTTP", "Downloads a file from a given URL.", DisplayName = "Download File", Kind = ActivityKind.Task)]
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
+public class DownloadHttpFile : Activity<HttpFile>, IActivityPropertyDefaultValueProvider
 {
     /// <inheritdoc />
-    protected SendHttpRequestBase(string? source = default, int? line = default) : base(source, line)
+    public DownloadHttpFile([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
     }
 
     /// <summary>
-    /// The URL to send the request to.
+    /// The URL to download the file from.
     /// </summary>
-    [Input]
+    [Input(DisplayName = "URL", Description = "The URL to download the file from.")]
     public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
@@ -35,7 +40,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         Description = "The HTTP method to use when sending the request.",
         Options = new[]
         {
-            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"
+            "GET", "POST", "PUT"
         },
         DefaultValue = "GET",
         UIHint = InputUIHints.DropDown
@@ -43,20 +48,31 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     public Input<string> Method { get; set; } = new("GET");
 
     /// <summary>
+    /// A list of expected status codes to handle.
+    /// </summary>
+    [Input(
+        Description = "A list of expected status codes to handle.",
+        UIHint = InputUIHints.MultiText,
+        DefaultValueProvider = typeof(FlowSendHttpRequest)
+    )]
+    public Input<ICollection<int>> ExpectedStatusCodes { get; set; } = default!;
+
+    /// <summary>
     /// The content to send with the request. Can be a string, an object, a byte array or a stream.
     /// </summary>
-    [Input(Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
-    public Input<object?> Content { get; set; } = default!;
+    [Input(Name = "Content", Description = "The content to send with the request. Can be a string, an object, a byte array or a stream.")]
+    public Input<object?> RequestContent { get; set; } = default!;
 
     /// <summary>
     /// The content type to use when sending the request.
     /// </summary>
     [Input(
+        DisplayName = "Content Type",
         Description = "The content type to use when sending the request.",
         UIHandler = typeof(HttpContentTypeOptionsProvider),
         UIHint = InputUIHints.DropDown
     )]
-    public Input<string?> ContentType { get; set; } = default!;
+    public Input<string?> RequestContentType { get; set; } = default!;
 
     /// <summary>
     /// The Authorization header value to send with the request.
@@ -82,16 +98,28 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     public Input<HttpHeaders?> RequestHeaders { get; set; } = new(new HttpHeaders());
 
     /// <summary>
+    /// The HTTP response.
+    /// </summary>
+    [Output(IsSerializable = false)]
+    public Output<HttpResponseMessage> Response { get; set; } = default!;
+
+    /// <summary>
     /// The HTTP response status code
     /// </summary>
     [Output(Description = "The HTTP response status code")]
     public Output<int> StatusCode { get; set; } = default!;
 
     /// <summary>
-    /// The parsed content, if any.
+    /// The downloaded content stream, if any.
     /// </summary>
-    [Output(Description = "The parsed content, if any.")]
-    public Output<object?> ParsedContent { get; set; } = default!;
+    [Output(Description = "The downloaded content stream, if any.", IsSerializable = false)]
+    public Output<Stream?> ResponseContentStream { get; set; } = default!;
+
+    /// <summary>
+    /// The downloaded content bytes, if any.
+    /// </summary>
+    [Output(Description = "The downloaded content bytes, if any.", IsSerializable = false)]
+    public Output<byte[]?> ResponseContentBytes { get; set; } = default!;
 
     /// <summary>
     /// The response headers that were received.
@@ -99,26 +127,17 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     [Output(Description = "The response headers that were received.")]
     public Output<HttpHeaders?> ResponseHeaders { get; set; } = default!;
 
+    /// <summary>
+    /// The response content headers that were received.
+    /// </summary>
+    [Output(DisplayName = "Content Headers", Description = "The response content headers that were received.")]
+    public Output<HttpHeaders?> ResponseContentHeaders { get; set; } = default!;
+
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         await TrySendAsync(context);
     }
-
-    /// <summary>
-    /// Handles the response.
-    /// </summary>
-    protected abstract ValueTask HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response);
-
-    /// <summary>
-    /// Handles an exception that occurred while sending the request.
-    /// </summary>
-    protected abstract ValueTask HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception);
-
-    /// <summary>
-    /// Handles <see cref="TaskCanceledException"/> that occurred while sending the request.
-    /// </summary>
-    protected abstract ValueTask HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception);
 
     private async Task TrySendAsync(ActivityExecutionContext context)
     {
@@ -131,14 +150,18 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         try
         {
             var response = await httpClient.SendAsync(request, cancellationToken);
-            var parsedContent = await ParseContentAsync(context, response);
+            var file = await GetFileFromResponse(context, response, request);
             var statusCode = (int)response.StatusCode;
             var responseHeaders = new HttpHeaders(response.Headers);
+            var responseContentHeaders = new HttpHeaders(response.Content.Headers);
 
-            context.Set(Result, response);
-            context.Set(ParsedContent, parsedContent);
+            context.Set(Response, response);
+            context.Set(ResponseContentStream, file?.Stream);
+            context.Set(Result, file);
             context.Set(StatusCode, statusCode);
             context.Set(ResponseHeaders, responseHeaders);
+            context.Set(ResponseContentHeaders, responseContentHeaders);
+            if (ResponseContentBytes.HasTarget(context)) context.Set(ResponseContentBytes, file?.GetBytes());
 
             await HandleResponseAsync(context, response);
         }
@@ -164,29 +187,55 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         }
     }
 
-    private async Task<object?> ParseContentAsync(ActivityExecutionContext context, HttpResponseMessage httpResponse)
+    /// <summary>
+    /// Handles the response.
+    /// </summary>
+    private async Task HandleResponseAsync(ActivityExecutionContext context, HttpResponseMessage response)
+    {
+        var expectedStatusCodes = ExpectedStatusCodes.GetOrDefault(context) ?? new List<int>(0);
+        var statusCode = (int)response.StatusCode;
+        var hasMatchingStatusCode = expectedStatusCodes.Contains(statusCode);
+        var outcome = expectedStatusCodes.Any() ? hasMatchingStatusCode ? statusCode.ToString() : "Unmatched status code" : default;
+        var outcomes = new List<string>();
+
+        if (outcome != null)
+            outcomes.Add(outcome);
+
+        outcomes.Add("Done");
+        await context.CompleteActivityWithOutcomesAsync(outcomes.ToArray());
+    }
+
+    /// <summary>
+    /// Handles an exception that occurred while sending the request.
+    /// </summary>
+    private async Task HandleRequestExceptionAsync(ActivityExecutionContext context, HttpRequestException exception)
+    {
+        await context.CompleteActivityWithOutcomesAsync("Failed to connect");
+    }
+
+    /// <summary>
+    /// Handles <see cref="TaskCanceledException"/> that occurred while sending the request.
+    /// </summary>
+    private async Task HandleTaskCanceledExceptionAsync(ActivityExecutionContext context, TaskCanceledException exception)
+    {
+        await context.CompleteActivityWithOutcomesAsync("Timeout");
+    }
+
+    private async Task<HttpFile?> GetFileFromResponse(ActivityExecutionContext context, HttpResponseMessage httpResponse, HttpRequestMessage httpRequestMessage)
     {
         var httpContent = httpResponse.Content;
         if (!HasContent(httpContent))
             return null;
 
         var cancellationToken = context.CancellationToken;
-        var targetType = ParsedContent.GetTargetType(context);
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var responseHeaders = httpResponse.Headers;
         var contentHeaders = httpContent.Headers;
         var contentType = contentHeaders.ContentType?.MediaType!;
+        var filename = contentHeaders.ContentDisposition?.FileName ?? httpRequestMessage.RequestUri!.Segments.LastOrDefault() ?? "file.dat";
+        var eTag = responseHeaders.ETag?.Tag;
 
-        targetType ??= contentType switch
-        {
-            "application/json" => typeof(object),
-            _ => typeof(string)
-        };
-
-        var contentHeadersDictionary = contentHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
-        var responseHeadersDictionary = responseHeaders.ToDictionary(x => x.Key, x => x.Value.Cast<string?>().ToArray(), StringComparer.OrdinalIgnoreCase);
-        var headersDictionary = contentHeadersDictionary.Concat(responseHeadersDictionary).ToDictionary(x => x.Key, x => x.Value, StringComparer.OrdinalIgnoreCase);
-        return await context.ParseContentAsync(contentStream, contentType, targetType, headersDictionary, cancellationToken);
+        return new HttpFile(contentStream, filename, contentType, eTag);
     }
 
     private static bool HasContent(HttpContent httpContent) => httpContent.Headers.ContentLength > 0;
@@ -209,8 +258,8 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
-        var contentType = ContentType.GetOrDefault(context);
-        var content = Content.GetOrDefault(context);
+        var contentType = RequestContentType.GetOrDefault(context);
+        var content = RequestContent.GetOrDefault(context);
 
         if (contentType != null && content != null)
         {
@@ -229,5 +278,16 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
 
         var parsedContentType = new System.Net.Mime.ContentType(contentType);
         return factories.FirstOrDefault(httpContentFactory => httpContentFactory.SupportedContentTypes.Any(c => c == parsedContentType.MediaType)) ?? new JsonContentFactory();
+    }
+
+    object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property)
+    {
+        if (property.Name == nameof(ExpectedStatusCodes))
+            return new List<int>
+            {
+                200
+            };
+
+        return default!;
     }
 }

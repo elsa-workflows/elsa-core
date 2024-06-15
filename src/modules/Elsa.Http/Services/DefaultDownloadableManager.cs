@@ -24,7 +24,7 @@ public class DefaultDownloadableManager : IDownloadableManager
         var provider = _providers.FirstOrDefault(x => x.GetSupportsContent(content));
 
         if (provider == null)
-            return Enumerable.Empty<Func<ValueTask<Downloadable>>>();
+            return [];
 
         options ??= new();
         var context = new DownloadableContext(this, content, options, cancellationToken);

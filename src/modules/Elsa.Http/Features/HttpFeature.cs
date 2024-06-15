@@ -116,7 +116,9 @@ public class HttpFeature : FeatureBase
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
                 typeof(HttpHeaders),
-                typeof(IFormFile)
+                typeof(IFormFile),
+                typeof(HttpFile),
+                typeof(Downloadable)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -164,6 +166,7 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
             .AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, FileHttpContentParser>()
 
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
@@ -193,6 +196,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
 
             // File caches.
             .AddScoped(FileCache)
@@ -220,6 +224,10 @@ public class HttpFeature : FeatureBase
         {
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
+            options.AddTypeAlias<HttpFile>("HttpFile");
+            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
+            options.AddTypeAlias<Downloadable>("Downloadable");
+            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
         });
     }
 }
