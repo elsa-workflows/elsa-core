@@ -53,4 +53,13 @@ public static class OutputExtensions
         var parsedContentVariableType = (memoryBlock.Metadata as VariableBlockMetadata)?.Variable.GetType();
         return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
     }
+
+    /// <summary>
+    /// Returns a value indicating whether the output has a target.
+    /// </summary>
+    public static bool HasTarget(this Output? output, ActivityExecutionContext context)
+    {
+        var memoryBlockReference = output?.MemoryBlockReference();
+        return memoryBlockReference is not null && context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out _);
+    }
 }

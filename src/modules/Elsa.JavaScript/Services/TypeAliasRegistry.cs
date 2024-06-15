@@ -24,10 +24,14 @@ public class TypeAliasRegistry : ITypeAliasRegistry
         this.RegisterType<decimal>("Decimal");
         this.RegisterType<float>("Single");
         this.RegisterType<double>("Double");
+        this.RegisterType<byte[]>("Buffer");
+        this.RegisterType<Stream>("Stream");
+        this.RegisterType<Guid>("Guid");
         this.RegisterType<DateTime>("Date");
         this.RegisterType<DateTimeOffset>("Date");
         this.RegisterType<DateOnly>("Date");
         this.RegisterType<TimeOnly>("Date");
+        this.RegisterType<IDictionary<string, object>>("ObjectDictionary");
     }
 
     /// <inheritdoc />

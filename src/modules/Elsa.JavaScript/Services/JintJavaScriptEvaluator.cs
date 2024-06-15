@@ -12,10 +12,13 @@ using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
+using Elsa.JavaScript.ObjectConverters;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
+using Jint.Native;
+using Jint.Native.TypedArray;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -27,23 +30,11 @@ namespace Elsa.JavaScript.Services;
 /// <summary>
 /// Provides a JavaScript evaluator using Jint.
 /// </summary>
-public class JintJavaScriptEvaluator : IJavaScriptEvaluator
+public class JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
+    : IJavaScriptEvaluator
 {
-    private readonly INotificationSender _mediator;
-    private readonly IMemoryCache _memoryCache;
-    private readonly JintOptions _jintOptions;
-    private readonly IConfiguration _configuration;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
-    {
-        _mediator = mediator;
-        _memoryCache = memoryCache;
-        _jintOptions = scriptOptions.Value;
-        _configuration = configuration;
-    }
+    private readonly JintOptions _jintOptions = scriptOptions.Value;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = CreateJsonSerializerOptions();
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The Jint library uses reflection and can't be statically analyzed.")]
@@ -79,6 +70,8 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
             return instance;
         });
+
+        engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
             
         await _mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         var engine = new Engine(engineOptions);
@@ -126,7 +119,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create configuration value accessor
         if (_jintOptions.AllowConfigurationAccess)
-            engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
+            engine.SetValue("getConfig", (Func<string, object?>)(name => configuration.GetSection(name).Value));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
@@ -138,7 +131,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         _jintOptions.ConfigureEngineCallback(engine, context);
 
         // Allow listeners invoked by the mediator to configure the engine.
-        await _mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
         return engine;
     }
@@ -162,6 +155,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
+    [RequiresUnreferencedCode("Calls Jint.Engine.SetValue<T>(String, T)")]
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var variableNames = context.GetVariableNamesInScope().ToList();
@@ -187,7 +181,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var cacheKey = "jint:script:" + Hash(expression);
 
-        var parsedScript = _memoryCache.GetOrCreate(cacheKey, entry =>
+        var parsedScript = memoryCache.GetOrCreate(cacheKey, entry =>
         {
             if (_jintOptions.ScriptCacheTimeout.HasValue)
                 entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
@@ -207,15 +201,19 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    private static string Serialize(object value)
+    private string Serialize(object value)
+    {
+        return JsonSerializer.Serialize(value, _jsonSerializerOptions);
+    }
+    
+    private static JsonSerializerOptions CreateJsonSerializerOptions()
     {
         var options = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         };
         options.Converters.Add(new JsonStringEnumConverter());
-
-        return JsonSerializer.Serialize(value, options);
+        return options;
     }
     
     private string Hash(string input)
