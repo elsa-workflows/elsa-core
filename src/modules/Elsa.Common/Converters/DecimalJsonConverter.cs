@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,7 +18,7 @@ public class DecimalJsonConverter : JsonConverter<decimal>
         if (reader.TokenType == JsonTokenType.String)
         {
             var value = reader.GetString()!;
-            return decimal.Parse(value);
+            return decimal.Parse(value, CultureInfo.InvariantCulture);
         }
 
         throw new JsonException("Expected number or string.");
