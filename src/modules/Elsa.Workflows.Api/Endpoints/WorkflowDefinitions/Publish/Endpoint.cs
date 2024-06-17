@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Serialization.Converters;
+using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +18,7 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
 [PublicAPI]
 internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IApiSerializer serializer, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
-    : ElsaEndpoint<Request, LinkedWorkflowDefinitionModel>
+    : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -60,9 +61,9 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
         var response = new Response(mappedDefinition, isPublished, result?.ConsumingWorkflows?.Count() ?? 0);
         
         // We do not want to include composite root activities in the response.
-        var serializerOptions = serializer.GetOptions().Clone();
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        //var serializerOptions = serializer.GetOptions();
+        //serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
-        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
+        await SendOkAsync(response, cancellationToken);
     }
 }

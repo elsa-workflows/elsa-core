@@ -44,12 +44,12 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IApiSerializer 
 
         var serializerOptions = apiSerializer.GetOptions();
 
-        // If the root of composite activities is not requested, exclude them from being serialized.
-        if (!request.IncludeCompositeRoot)
-        {
-            serializerOptions = serializerOptions.Clone();
-            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-        }
+        // // If the root of composite activities is not requested, exclude them from being serialized.
+        // if (!request.IncludeCompositeRoot)
+        // {
+        //     serializerOptions = serializerOptions.Clone();
+        //     serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        // }
 
         await HttpContext.Response.WriteAsJsonAsync(model, serializerOptions, cancellationToken);
     }

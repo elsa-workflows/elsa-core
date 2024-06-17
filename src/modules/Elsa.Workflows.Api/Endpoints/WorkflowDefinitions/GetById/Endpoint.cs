@@ -37,9 +37,9 @@ internal class GetById(IWorkflowDefinitionStore store, IApiSerializer apiSeriali
         var model = await linker.MapAsync(definition, cancellationToken);
         var serializerOptions = apiSerializer.GetOptions().Clone();
 
-        // If the root of composite activities is not requested, exclude them from being serialized.
-        if (!request.IncludeCompositeRoot)
-            serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        // // If the root of composite activities is not requested, exclude them from being serialized.
+        // if (!request.IncludeCompositeRoot)
+        //     serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         await HttpContext.Response.WriteAsJsonAsync(model, serializerOptions, cancellationToken);
     }

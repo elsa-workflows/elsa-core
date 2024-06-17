@@ -5,6 +5,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -54,8 +55,10 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         return allDescriptors;
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions) =>
-        definitions.Select(x => CreateDescriptor(x, definitions));
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions)
+    {
+        return definitions.Select(x => CreateDescriptor(x, definitions));
+    }
 
     private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, ICollection<WorkflowDefinition> allDefinitions)
     {
@@ -119,6 +122,11 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.LatestAvailablePublishedVersionId = latestPublishedVersion?.Id;
 
                 return activity;
+            },
+            ConfigureSerializerOptions = options =>
+            {
+                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+                return options;
             }
         };
     }

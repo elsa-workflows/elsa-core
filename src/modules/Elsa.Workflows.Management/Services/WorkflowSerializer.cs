@@ -37,7 +37,7 @@ public class WorkflowSerializer(IApiSerializer apiSerializer, WorkflowDefinition
             return _writeOptions;
         
         var options = apiSerializer.GetOptions().Clone();
-        options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        //options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
         return _writeOptions = options;
     }
 }

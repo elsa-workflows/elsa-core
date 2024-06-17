@@ -69,10 +69,10 @@ internal class Post(
 
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
-        var serializerOptions = serializer.GetOptions().Clone();
+        var serializerOptions = serializer.GetOptions();
 
-        // Ignore the root activity when serializing the workflow definition.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        // // Ignore the root activity when serializing the workflow definition.
+        // serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = variableDefinitionMapper.Map(model.Variables).ToList();

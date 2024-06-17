@@ -83,19 +83,20 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
-        var newOptions = GetClonedOptions(options);
-
-        // Write to a JsonObject so that we can add additional information.
-        var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), newOptions)!;
+        var activityModelSerializerOptions = GetClonedOptions(options);
         var activityDescriptor = _activityRegistry.Find(value.Type, value.Version);
+        activityModelSerializerOptions = activityDescriptor?.ConfigureSerializerOptions?.Invoke(activityModelSerializerOptions) ?? activityModelSerializerOptions;
+        
+        // Write to a JsonObject so that we can add additional information.
+        var activityModel = JsonSerializer.SerializeToNode(value, value.GetType(), activityModelSerializerOptions)!;
 
         if (activityDescriptor != null)
-            WriteSyntheticProperties(activityModel, value, activityDescriptor, newOptions);
+            WriteSyntheticProperties(activityModel, value, activityDescriptor, activityModelSerializerOptions);
         else
             _logger.LogWarning("Activity descriptor for activity {ActivityType} with version {ActivityVersion} not found. Skipping serialization of synthetic properties", value.Type, value.Version);
 
         // Send the model to the writer.
-        JsonSerializer.Serialize(writer, activityModel, newOptions);
+        JsonSerializer.Serialize(writer, activityModel, options);
     }
 
     private void WriteSyntheticProperties(JsonNode activityModel, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions newOptions)

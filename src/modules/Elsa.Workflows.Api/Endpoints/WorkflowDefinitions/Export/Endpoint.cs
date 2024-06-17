@@ -115,8 +115,8 @@ internal class Export : ElsaEndpoint<Request>
     {
         var serializerOptions = _serializer.GetOptions().Clone();
 
-        // Exclude composite activities from being serialized.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+        // // Exclude composite activities from being serialized.
+        // serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
 
         var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
         return binaryJson;
