@@ -18,13 +18,12 @@ public static class SqliteQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the SQLite job store.
     /// </summary>
-    public static QuartzFeature UseSqlite(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString)
+    public static QuartzFeature UseSqlite(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useContextPooling = false)
     {
-        feature.Services.AddDbContextFactory<SqliteQuartzDbContext>(options =>
-        {
-            // Use SQLite migrations.
-            options.UseSqlite(connectionString, sqlite => { sqlite.MigrationsAssembly(typeof(SqliteQuartzDbContext).Assembly.GetName().Name); });
-        });
+        if (useContextPooling)
+            feature.Services.AddPooledDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options));
+        else
+            feature.Services.AddDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -39,5 +38,11 @@ public static class SqliteQuartzExtensions
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<SqliteQuartzDbContext>>(-100);
 
         return feature;
+    }
+
+    private static void UseSqlite(string connectionString, DbContextOptionsBuilder options)
+    {
+        // Use SQLite migrations.
+        options.UseSqlite(connectionString, sqlite => { sqlite.MigrationsAssembly(typeof(SqliteQuartzDbContext).Assembly.GetName().Name); });
     }
 }
