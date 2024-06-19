@@ -4,7 +4,7 @@
 mods=("Alterations" "Runtime" "Management" "Identity" "Labels")
 
 # Define the list of providers
-providers=("MySql" "SqlServer" "Sqlite" "PostgreSql")
+providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")
 
 # Connection strings for each provider
 typeset -A connStrings

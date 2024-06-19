@@ -133,6 +133,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageVersion Include="Npgsql" Version="7.0.7" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.18" />
+    <PackageVersion Include="Oracle.EntityFrameworkCore" Version="7.21.9" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
     <PackageVersion Include="System.Text.Json" Version="7.0.4" />
@@ -164,6 +165,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageVersion Include="Npgsql" Version="8.0.3" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageVersion Include="Oracle.EntityFrameworkCore" Version="8.21.121" />
     <PackageVersion Include="Polly" Version="8.4.0" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.3" />
