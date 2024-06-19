@@ -28,6 +28,12 @@ public class SendHttpRequestActivityResolver : IActivityResolver
         foreach (var @case in cases)
             yield return @case.Activity!;
 
+        if (sendHttpRequest.Timeout != null)
+            yield return sendHttpRequest.Timeout;
+
+        if (sendHttpRequest.FailedToConnect != null)
+            yield return sendHttpRequest.FailedToConnect;
+
         if (sendHttpRequest.UnmatchedStatusCode != null)
             yield return sendHttpRequest.UnmatchedStatusCode;
     }
