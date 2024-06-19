@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 
 /// <summary>
-/// Handles the cleanup of azure service bus topology for which no children can be found.
+/// Cleans up Azure Service Bus resources for which no children can be found.
 /// </summary>
 /// <remarks>
 /// This will clean up topics without subscriptions and subscription of which the queue can not be found.
-/// - This handler is not able to differentiate between topology created by ELSA or not. It will clean up all topology in the namespace.
-/// - Queues in other namespaces will not be found by this handler and the subscription will therefor be removed.
+/// - This handler is unable to differentiate between topologies created by Elsa and others. It will clean up all topology in the namespace.
+/// - Queues in other namespaces will not be found by this handler and the subscription will therefore be removed.
 /// </remarks>
 [UsedImplicitly]
 public class CleanupOrphanedTopology(ServiceBusAdministrationClient client, ILogger<CleanupOrphanedTopology> logger) : INotificationHandler<CleanupSubscriptions>
@@ -45,7 +45,7 @@ public class CleanupOrphanedTopology(ServiceBusAdministrationClient client, ILog
                 return !queueNames.Contains(queueName);
             }).ToList();
             
-            //Remove subscriptions for which the queue to be forwarded to can not be found in the same namespace.
+            // Remove subscriptions for which the queue to be forwarded to can not be found in the same namespace.
             foreach (SubscriptionProperties? asbSubscription in subscriptionsToDelete)
             {
                 logger.LogWarning("Deleting subscription {subscriptionName} on topic {topicName}", asbSubscription.SubscriptionName, topic.Name);
