@@ -36,12 +36,12 @@ public class AzureServiceBusFeature : FeatureBase
     public string? ConnectionString { get; set; }
 
     /// <summary>
-    /// This will cause subscriptions, from which the connected queue could not be found, to be deleted.
+    /// Delete subscriptions where their connected queues could not be found.
     /// Topics without any subscriptions will be deleted as well.
     /// </summary>
     /// <remarks>
-    /// - It will clean up all subscriptions. Not just those created by ELSA. 
-    /// - Queues in other namespaces will not be found and the subscription will therefor be removed.
+    /// - All subscriptions will be cleaned up, including those that were not created by Elsa.
+    /// - Queues in other namespaces will not be found and the subscription will therefore be removed.
     /// </remarks>
     public bool EnableAutomatedSubscriptionCleanup { get; set; }
 
@@ -104,7 +104,7 @@ public class AzureServiceBusFeature : FeatureBase
                     foreach (var consumer in temporaryConsumers)
                     {
                         // Start with the instance name since we will be using that to delete queues / subscriptions that are no longer needed.
-                        // Since MassTransit will trim names that are too large this is the only way to guarantee we can match the subscriptions to an instance. 
+                        // This is the only way to guarantee we can match subscriptions to an application instance, since the Azure Service Bus transport for MassTransit trims names that are too large.
                         var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
                         configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
                         {
