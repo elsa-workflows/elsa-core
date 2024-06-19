@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Features;
 using Elsa.MassTransit.AzureServiceBus.Handlers;
+using Elsa.MassTransit.AzureServiceBus.HostedServices;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
 using Elsa.MassTransit.AzureServiceBus.Services;
@@ -35,6 +36,16 @@ public class AzureServiceBusFeature : FeatureBase
     public string? ConnectionString { get; set; }
 
     /// <summary>
+    /// This will cause subscriptions, from which the connected queue could not be found, to be deleted.
+    /// Topics without any subscriptions will be deleted as well.
+    /// </summary>
+    /// <remarks>
+    /// - It will clean up all subscriptions. Not just those created by ELSA. 
+    /// - Queues in other namespaces will not be found and the subscription will therefor be removed.
+    /// </remarks>
+    public bool EnableAutomatedSubscriptionCleanup { get; set; }
+
+    /// <summary>
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
@@ -43,6 +54,11 @@ public class AzureServiceBusFeature : FeatureBase
     /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
     /// </summary>
     public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
+
+    /// <summary>
+    /// A delegate to configure <see cref="SubscriptionCleanupOptions"/>.
+    /// </summary>
+    public Action<SubscriptionCleanupOptions> SubscriptionCleanupOptions { get; set; } = _ => { };
 
     /// <summary>
     /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
@@ -87,7 +103,9 @@ public class AzureServiceBusFeature : FeatureBase
 
                     foreach (var consumer in temporaryConsumers)
                     {
-                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                        // Start with the instance name since we will be using that to delete queues / subscriptions that are no longer needed.
+                        // Since MassTransit will trim names that are too large this is the only way to guarantee we can match the subscriptions to an instance. 
+                        var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
                         configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
                         {
                             endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
@@ -112,7 +130,17 @@ public class AzureServiceBusFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(AzureServiceBusOptions);
+        Services.Configure(SubscriptionCleanupOptions);
         Services.AddSingleton(ServiceBusAdministrationClientFactory);
+    }
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        if (EnableAutomatedSubscriptionCleanup)
+        {
+            Module.ConfigureHostedService<CleanSubscriptionsWithoutQueues>();
+        }
     }
 
     private static string GetConnectionString(IServiceProvider serviceProvider)
@@ -135,5 +163,6 @@ public class AzureServiceBusFeature : FeatureBase
 
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
         Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
+        Services.AddNotificationHandler<CleanupOrphanedTopology>();
     }
 }

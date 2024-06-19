@@ -29,7 +29,7 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
 var massTransitDispatcherSection = configuration.GetSection("MassTransit.Dispatcher");
 var heartbeatSection = configuration.GetSection("Heartbeat");
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
 
 services.Configure<MassTransitOptions>(massTransitSection);
 services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
@@ -112,7 +112,11 @@ services
                     switch (useMassTransitBroker)
                     {
                         case MassTransitBroker.AzureServiceBus:
-                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+                            {
+                                asb.SubscriptionCleanupOptions = options => options.Interval = TimeSpan.FromMinutes(5);
+                                asb.EnableAutomatedSubscriptionCleanup = true;
+                            });
                             break;
                         case MassTransitBroker.RabbitMq:
                             massTransit.UseRabbitMq(rabbitMqConnectionString);
