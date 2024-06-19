@@ -15,7 +15,7 @@ using MassTransitBroker = Elsa.ServerAndStudio.Web.Enums.MassTransitBroker;
 const bool useMassTransit = true;
 const bool useProtoActor = false;
 const bool useCaching = true;
-const bool useMySql = true;
+const bool useMySql = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
