@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
@@ -130,6 +131,15 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
 
     private void WriteActivity(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options, ActivityDescriptor? activityDescriptor, bool excludeChildren = false)
     {
+        // Check if there's a specialized converter for the activity.
+        var valueType = value.GetType();
+        var specializedConverter = options.Converters.FirstOrDefault(x => x.CanConvert(valueType));
+        if (specializedConverter != null)
+        {
+            JsonSerializer.Serialize(writer, value, valueType, options);
+            return;
+        }
+        
         writer.WriteStartObject();
 
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);

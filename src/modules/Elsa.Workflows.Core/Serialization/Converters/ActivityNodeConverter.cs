@@ -51,6 +51,15 @@ public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter
 
     private void WriteActivity(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options)
     {
+        // Check if there's a specialized converter for the activity.
+        var valueType = value.GetType();
+        var specializedConverter = options.Converters.FirstOrDefault(x => x.CanConvert(valueType));
+        if (specializedConverter != null)
+        {
+            JsonSerializer.Serialize(writer, value, valueType, options);
+            return;
+        }
+        
         writer.WriteStartObject();
 
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
