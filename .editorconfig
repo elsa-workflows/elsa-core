@@ -1,5 +1,5 @@
-root = true
 # Remove the line below if you want to inherit .editorconfig settings from higher directories
+root = true
 
 # C# files
 [*.cs]
@@ -21,7 +21,6 @@ max_line_length = 180
 # Organize usings
 dotnet_separate_import_directive_groups = false
 dotnet_sort_system_directives_first = true
-file_header_template = 
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false
