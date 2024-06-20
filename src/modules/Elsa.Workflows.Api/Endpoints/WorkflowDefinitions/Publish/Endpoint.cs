@@ -4,7 +4,6 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -44,8 +43,8 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        bool isPublished = definition.IsPublished;
-        PublishWorkflowDefinitionResult? result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
+        var isPublished = definition.IsPublished;
+        var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
         var response = new Response(mappedDefinition, isPublished, result?.ConsumingWorkflows?.Count() ?? 0);
         await SendOkAsync(response, cancellationToken);
