@@ -8,7 +8,6 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
