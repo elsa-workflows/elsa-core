@@ -7,9 +7,9 @@ using Elsa.Workflows.Serialization.Helpers;
 namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
-/// Serializes the <see cref="ActivityNode"/> type and its immediate child nodes.
+/// Serializes the <see cref="ActivityNode"/> type and its descendant nodes based on the specified depth.
 /// </summary>
-/// <param name="depth">The level of descendants to include. Defaults to 1.</param>
+/// <param name="depth">The number of levels of descendants to include. Defaults to 1.</param>
 public class ActivityNodeConverter(ActivityWriter activityWriter, int depth = 1, int level = 0) : JsonConverter<ActivityNode>
 {
     /// <inheritdoc />
