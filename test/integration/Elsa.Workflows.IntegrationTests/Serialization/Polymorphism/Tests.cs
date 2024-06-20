@@ -6,7 +6,6 @@ using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using Xunit;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
 
