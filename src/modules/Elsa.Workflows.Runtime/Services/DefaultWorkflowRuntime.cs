@@ -2,6 +2,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
@@ -12,7 +11,6 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Medallion.Threading;
 using Microsoft.AspNetCore.Authorization;

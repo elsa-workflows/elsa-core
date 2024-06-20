@@ -5,7 +5,6 @@ using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 

@@ -8,6 +8,7 @@ using Elsa.ProtoActor.Snapshots;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Runtime.Contracts;

@@ -5,7 +5,7 @@ using Elsa.Alterations.Middleware.Workflows;
 using Elsa.Common.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;

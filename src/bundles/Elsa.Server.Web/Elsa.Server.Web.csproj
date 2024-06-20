@@ -57,5 +57,8 @@
     <ItemGroup>
         <PackageReference Include="Npgsql" VersionOverride="8.0.3"/>
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
 
 </Project>
