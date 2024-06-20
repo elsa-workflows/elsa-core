@@ -136,7 +136,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async Task<WorkflowGraph?> FindWorkflowGraphAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private async Task<WorkflowDefinition?> FindWorkflowGraphAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var filter = new WorkflowDefinitionFilter
@@ -149,20 +149,20 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         else
             filter.VersionOptions = VersionOptions.SpecificVersion(Version);
 
-        var workflowGraph =
-            await workflowDefinitionService.FindWorkflowGraphAsync(filter, cancellationToken)
-            ?? (await workflowDefinitionService.FindWorkflowGraphAsync(new WorkflowDefinitionFilter
+        var workflowDefinition =
+            await workflowDefinitionService.FindWorkflowDefinitionAsync(filter, cancellationToken)
+            ?? (await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
                 {
                     DefinitionId = WorkflowDefinitionId,
                     VersionOptions = VersionOptions.Published
                 }, cancellationToken)
-                ?? await workflowDefinitionService.FindWorkflowGraphAsync(new WorkflowDefinitionFilter
+                ?? await workflowDefinitionService.FindWorkflowDefinitionAsync(new WorkflowDefinitionFilter
                 {
                     DefinitionId = WorkflowDefinitionId,
                     VersionOptions = VersionOptions.Latest
                 }, cancellationToken));
 
-        return workflowGraph;
+        return workflowDefinition;
     }
 
     private async Task<ActivityDescriptor?> FindActivityDescriptorAsync(IServiceProvider serviceProvider)
@@ -181,9 +181,11 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
 
         var serviceProvider = context.ServiceProvider;
         var cancellationToken = context.CancellationToken;
-        var workflowGraph = await FindWorkflowGraphAsync(serviceProvider, cancellationToken);
+        
+        // Find the workflow definition and not the graph; the graph must be computed at runtime, since one NodeIds will vary across graphs.
+        var workflowDefinition = await FindWorkflowGraphAsync(serviceProvider, cancellationToken);
 
-        if (workflowGraph == null)
+        if (workflowDefinition == null)
             throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
         var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
@@ -199,6 +201,9 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
             DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
         }
+        
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
         
         // Set the root activity.
         Root = workflowGraph.Workflow;
