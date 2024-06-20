@@ -18,9 +18,10 @@ public class PropertyBasedActivityResolver : IActivityResolver
     /// <inheritdoc />
     public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        return new (GetActivities(activity).ToHashSet());
+        return new ValueTask<IEnumerable<IActivity>>(GetActivities(activity).ToHashSet());
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         return new(GetActivityPortsInternal(activity));
@@ -30,8 +31,8 @@ public class PropertyBasedActivityResolver : IActivityResolver
     {
         return GetActivityPortsInternal(activity).SelectMany(x => x.GetActivities());
     }
-    
-    public static IEnumerable<ActivityPort> GetActivityPortsInternal(IActivity activity)
+
+    private static IEnumerable<ActivityPort> GetActivityPortsInternal(IActivity activity)
     {
         var activityType = activity.GetType();
 

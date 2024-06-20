@@ -20,6 +20,7 @@ public class WorkflowDefinitionActivityResolver : IActivityResolver
         return (await GetActivityPortsAsync(activity, cancellationToken)).SelectMany(x => x.GetActivities());
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var definitionActivity = (WorkflowDefinitionActivity)activity;

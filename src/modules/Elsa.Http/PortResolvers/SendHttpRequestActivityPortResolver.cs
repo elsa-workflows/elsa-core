@@ -21,16 +21,18 @@ public class SendHttpRequestActivityResolver : IActivityResolver
         return new(ports);
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        IEnumerable<ActivityPort> ports = GetPortsInternal(activity);
+        return new ValueTask<IEnumerable<ActivityPort>>(ports);
     }
 
     private IEnumerable<IActivity> GetActivitiesInternal(IActivity activity)
     {
         return GetPortsInternal(activity).SelectMany(x => x.GetActivities());
     }
-    
+
     private IEnumerable<ActivityPort> GetPortsInternal(IActivity activity)
     {
         var sendHttpRequest = (SendHttpRequest)activity;

@@ -22,13 +22,14 @@ public class SwitchActivityResolver : IActivityResolver
         return new(ports);
     }
 
+    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var ports = GetPortsInternal(activity).ToList();
         return new(ports);
     }
 
-    private IEnumerable<ActivityPort> GetPortsInternal(IActivity activity)
+    private static IEnumerable<ActivityPort> GetPortsInternal(IActivity activity)
     {
         var @switch = (Switch)activity;
         var cases = @switch.Cases.Where(x => x.Activity != null);
