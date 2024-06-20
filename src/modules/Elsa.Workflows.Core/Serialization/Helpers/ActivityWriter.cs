@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Workflows.Serialization.Helpers;
 
 /// The ActivityWriter class is responsible for writing an activity to a JSON writer using the provided options.
-/// /
 public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropertiesWriter syntheticPropertiesWriter, ILogger<ActivityWriter> logger)
 {
     /// <summary>
@@ -16,6 +15,7 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
     /// <param name="writer">The JSON writer.</param>
     /// <param name="value">The activity to write.</param>
     /// <param name="options">The JSON serialization options.</param>
+    /// <param name="ignoreSpecializedConverters">Controls whether to ignore the availability of converters that can handle IActivity objects.</param>
     /// <param name="excludeChildren">A flag indicating whether to exclude child activities.</param>
     /// <param name="propertyFilter">An additional property filter. Returning true will skip the property.</param>
     public void WriteActivity(Utf8JsonWriter writer, IActivity? value, JsonSerializerOptions options, bool ignoreSpecializedConverters = false, bool excludeChildren = false, Func<PropertyInfo, bool>? propertyFilter = null)
