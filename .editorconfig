@@ -1,5 +1,5 @@
-# Remove the line below if you want to inherit .editorconfig settings from higher directories
 root = true
+# Remove the line below if you want to inherit .editorconfig settings from higher directories
 
 # C# files
 [*.cs]
@@ -21,7 +21,7 @@ max_line_length = 180
 # Organize usings
 dotnet_separate_import_directive_groups = false
 dotnet_sort_system_directives_first = true
-file_header_template = unset
+file_header_template = 
 
 # this. and Me. preferences
 dotnet_style_qualification_for_event = false
@@ -231,6 +231,7 @@ dotnet_naming_style.begins_with_i.word_separator =
 dotnet_naming_style.begins_with_i.capitalization = pascal_case
 
 # ReSharper properties
+resharper_csharp_max_line_length = 420
 resharper_max_array_initializer_elements_on_line = 50
 resharper_max_initializer_elements_on_line = 1
 resharper_wrap_array_initializer_style = chop_if_long

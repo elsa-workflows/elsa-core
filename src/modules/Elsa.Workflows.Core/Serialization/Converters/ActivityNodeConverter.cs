@@ -17,8 +17,8 @@ public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter
     public override void Write(Utf8JsonWriter writer, ActivityNode value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
-        writer.WritePropertyName("nodeId");
-        writer.WriteStringValue(value.NodeId);
+        writer.WriteString("nodeId", value.NodeId);
+        writer.WriteString("port", value.Port);
         writer.WritePropertyName("activity");
         WriteActivity(writer, value.Activity, options);
 

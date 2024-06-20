@@ -12,9 +12,11 @@ public class ActivityNode
     /// Initializes a new instance of the <see cref="ActivityNode"/> class.
     /// </summary>
     /// <param name="activity">The activity.</param>
-    public ActivityNode(IActivity activity)
+    /// <param name="port">The port to which the activity belongs.</param>
+    public ActivityNode(IActivity activity, string port)
     {
         Activity = activity;
+        Port = port;
     }
 
     /// <summary>
@@ -33,7 +35,12 @@ public class ActivityNode
     /// Gets the activity.
     /// </summary>
     public IActivity Activity { get; }
-    
+
+    /// <summary>
+    /// Gets the port to which the activity belongs.
+    /// </summary>
+    public string Port { get; }
+
     /// <summary>
     /// Gets the parents of this node.
     /// </summary>

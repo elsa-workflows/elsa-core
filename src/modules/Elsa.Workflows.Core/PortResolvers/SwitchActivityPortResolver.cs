@@ -1,5 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.PortResolvers;
 
@@ -17,19 +18,25 @@ public class SwitchActivityResolver : IActivityResolver
     /// <inheritdoc />
     public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        var ports = GetPortsInternal(activity);
+        var ports = GetPortsInternal(activity).SelectMany(x => x.GetActivities());
         return new(ports);
     }
 
-    private IEnumerable<IActivity> GetPortsInternal(IActivity activity)
+    public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
+    {
+        var ports = GetPortsInternal(activity).ToList();
+        return new(ports);
+    }
+
+    private IEnumerable<ActivityPort> GetPortsInternal(IActivity activity)
     {
         var @switch = (Switch)activity;
         var cases = @switch.Cases.Where(x => x.Activity != null);
 
         foreach (var @case in cases)
-            yield return @case.Activity!;
+            yield return ActivityPort.FromActivity(@case.Activity!, @case.Label);
 
         if (@switch.Default != null)
-            yield return @switch.Default;
+            yield return ActivityPort.FromActivity(@switch.Default, nameof(Switch.Default));
     }
 }

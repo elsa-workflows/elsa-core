@@ -1,5 +1,4 @@
 using Elsa.Abstractions;
-using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
@@ -12,8 +11,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Graph;
 
 [PublicAPI]
-internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper)
-    : ElsaEndpoint<Request>
+internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiSerializer apiSerializer, WorkflowDefinitionMapper mapper) : ElsaEndpoint<Request>
 {
     private readonly WorkflowDefinitionMapper _mapper = mapper;
 
@@ -41,9 +39,9 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
             return;
         }
 
-        var parentNode = request.ParentId == null ? workflowGraph.Root : workflowGraph.NodeIdLookup.TryGetValue(request.ParentId, out var node) ? node : workflowGraph.Root;
+        var parentNode = request.ParentNodeId == null ? workflowGraph.Root : workflowGraph.NodeIdLookup.TryGetValue(request.ParentNodeId, out var node) ? node : workflowGraph.Root;
         var serializerOptions = apiSerializer.GetOptions().Clone();
-        serializerOptions.Converters.Add(new ActivityNodeConverter());
+        serializerOptions.Converters.Add(new ActivityNodeConverter(depth: 2));
 
         await HttpContext.Response.WriteAsJsonAsync(parentNode, serializerOptions, cancellationToken);
     }
