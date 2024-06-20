@@ -3,7 +3,6 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
@@ -41,6 +40,44 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// The latest published version ID set by the provider. This is used by tooling to let the user know that a newer version is available.
     /// </summary>
     public string? LatestAvailablePublishedVersionId { get; set; }
+
+    async ValueTask IInitializable.InitializeAsync(InitializationContext context)
+    {
+        // This is not just for efficiency, but also a necessity to avoid potential race conditions.
+        // Such conditions can occur when multiple threads are simultaneously creating consuming workflows,
+        // especially when cached workflows are being updated during the graph construction process.
+        if (IsInitialized)
+            return;
+
+        var serviceProvider = context.ServiceProvider;
+        var cancellationToken = context.CancellationToken;
+
+        // Find the workflow definition and not the graph; the graph must be computed at runtime, since one NodeIds will vary across graphs.
+        var workflowDefinition = await GetWorkflowDefinitionAsync(serviceProvider, cancellationToken);
+
+        if (workflowDefinition == null)
+            throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
+
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
+
+        if (activityDescriptor == null)
+        {
+            var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
+            logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
+        }
+        else
+        {
+            // Declare input and output variables.
+            DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+            DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
+        }
+
+        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+
+        // Set the root activity.
+        Root = workflowGraph.Workflow;
+    }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -136,7 +173,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         }
     }
 
-    private async Task<WorkflowDefinition?> FindWorkflowGraphAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private async Task<WorkflowDefinition?> GetWorkflowDefinitionAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
         var filter = new WorkflowDefinitionFilter
@@ -169,43 +206,5 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     {
         var activityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
         return await activityRegistryLookup.FindAsync(Type, Version) ?? await activityRegistryLookup.FindAsync(Type);
-    }
-
-    async ValueTask IInitializable.InitializeAsync(InitializationContext context)
-    {
-        // This is not just for efficiency, but also a necessity to avoid potential race conditions.
-        // Such conditions can occur when multiple threads are simultaneously creating consuming workflows,
-        // especially when cached workflows are being updated during the graph construction process.
-        if (IsInitialized)
-            return;
-
-        var serviceProvider = context.ServiceProvider;
-        var cancellationToken = context.CancellationToken;
-        
-        // Find the workflow definition and not the graph; the graph must be computed at runtime, since one NodeIds will vary across graphs.
-        var workflowDefinition = await FindWorkflowGraphAsync(serviceProvider, cancellationToken);
-
-        if (workflowDefinition == null)
-            throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
-
-        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
-
-        if (activityDescriptor == null)
-        {
-            var logger = serviceProvider.GetRequiredService<ILogger<WorkflowDefinitionActivity>>();
-            logger.LogWarning("Could not find activity descriptor for activity type {ActivityType}", Type);
-        }
-        else
-        {
-            // Declare input and output variables.
-            DeclareInputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-            DeclareOutputAsVariables(activityDescriptor, (_, variable) => Variables.Declare(variable));
-        }
-        
-        var workflowDefinitionService = serviceProvider.GetRequiredService<IWorkflowDefinitionService>();
-        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
-        
-        // Set the root activity.
-        Root = workflowGraph.Workflow;
     }
 }

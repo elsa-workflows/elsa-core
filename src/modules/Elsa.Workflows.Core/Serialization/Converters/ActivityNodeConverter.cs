@@ -1,9 +1,11 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Helpers;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -11,7 +13,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// Serializes the <see cref="ActivityNode"/> type and its immediate child nodes.
 /// </summary>
 /// <param name="depth">The level of descendants to include. Defaults to 1.</param>
-public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter<ActivityNode>
+public class ActivityNodeConverter(IActivityRegistry activityRegistry, IExpressionDescriptorRegistry expressionDescriptorRegistry, int depth = 1, int level = 0) : JsonConverter<ActivityNode>
 {
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, ActivityNode value, JsonSerializerOptions options)
@@ -27,7 +29,7 @@ public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter
             writer.WritePropertyName("children");
             writer.WriteStartArray();
 
-            var nodeConverter = new ActivityNodeConverter(depth, 1);
+            var nodeConverter = new ActivityNodeConverter(activityRegistry, expressionDescriptorRegistry, depth, 1);
             var newOptions = options.Clone();
             newOptions.Converters.Remove(this);
             newOptions.Converters.Add(nodeConverter);
@@ -59,7 +61,7 @@ public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter
             JsonSerializer.Serialize(writer, value, valueType, options);
             return;
         }
-        
+
         writer.WriteStartObject();
 
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -99,6 +101,11 @@ public class ActivityNodeConverter(int depth = 1, int level = 0) : JsonConverter
 
             JsonSerializer.Serialize(writer, input, options);
         }
+
+        var activityDescriptor = activityRegistry.Find(value.Type, value.Version);
+
+        if (activityDescriptor != null)
+            SyntheticPropertiesWriter.WriteSyntheticProperties(writer, value, activityDescriptor, expressionDescriptorRegistry, options);
 
         writer.WriteEndObject();
     }

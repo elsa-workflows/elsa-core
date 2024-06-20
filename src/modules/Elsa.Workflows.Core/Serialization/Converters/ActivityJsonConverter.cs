@@ -2,14 +2,12 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
-using Humanizer;
+using Elsa.Workflows.Serialization.Helpers;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Converters;
@@ -19,11 +17,11 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class ActivityJsonConverter : JsonConverter<IActivity>
 {
-    private readonly IActivityRegistry _activityRegistry;
     private readonly IActivityFactory _activityFactory;
+    private readonly IActivityRegistry _activityRegistry;
     private readonly IExpressionDescriptorRegistry _expressionDescriptorRegistry;
-    private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ActivityJsonConverter> _logger;
+    private readonly IServiceProvider _serviceProvider;
 
     /// <inheritdoc />
     public ActivityJsonConverter(
@@ -86,12 +84,11 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
     {
         var clonedOptions = GetClonedOptions(options);
         var activityDescriptor = _activityRegistry.Find(value.Type, value.Version);
-        var ignoreChildActivities = options.Converters.Any(x => x is IgnoreChildActivitiesConverter);
 
         // Give the activity descriptor a chance to customize the serializer options.
         clonedOptions = activityDescriptor?.ConfigureSerializerOptions?.Invoke(clonedOptions) ?? clonedOptions;
 
-        WriteActivity(writer, value, clonedOptions, activityDescriptor, ignoreChildActivities);
+        WriteActivity(writer, value, clonedOptions, activityDescriptor);
     }
 
     private string GetActivityDetails(JsonElement activityRoot, out int activityTypeVersion, out ActivityDescriptor? activityDescriptor)
@@ -129,7 +126,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         return activityTypeName;
     }
 
-    private void WriteActivity(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options, ActivityDescriptor? activityDescriptor, bool excludeChildren = false)
+    private void WriteActivity(Utf8JsonWriter writer, IActivity value, JsonSerializerOptions options, ActivityDescriptor? activityDescriptor)
     {
         // Check if there's a specialized converter for the activity.
         var valueType = value.GetType();
@@ -139,7 +136,7 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             JsonSerializer.Serialize(writer, value, valueType, options);
             return;
         }
-        
+
         writer.WriteStartObject();
 
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -148,18 +145,6 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
         {
             if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
                 continue;
-            
-            if (property.GetCustomAttribute<JsonIgnoreCompositeRootAttribute>() != null)
-                continue;
-
-            if (excludeChildren)
-            {
-                if (typeof(IActivity).IsAssignableFrom(property.PropertyType))
-                    continue;
-
-                if (typeof(IEnumerable<IActivity>).IsAssignableFrom(property.PropertyType))
-                    continue;
-            }
 
             var propName = options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
             writer.WritePropertyName(propName);
@@ -186,95 +171,12 @@ public class ActivityJsonConverter : JsonConverter<IActivity>
             JsonSerializer.Serialize(writer, input, options);
         }
 
-        WriteSyntheticProperties(writer, value, activityDescriptor, options);
+        if (activityDescriptor == null)
+            _logger.LogDebug("No descriptor found for activity {ActivityType}", value.GetType().Name);
+        else
+            SyntheticPropertiesWriter.WriteSyntheticProperties(writer, value, activityDescriptor, _expressionDescriptorRegistry, options);
 
         writer.WriteEndObject();
-    }
-
-    private void WriteSyntheticProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor? activityDescriptor, JsonSerializerOptions options)
-    {
-        if (activityDescriptor == null)
-        {
-            _logger.LogDebug("No descriptor found for activity {ActivityType}", value.GetType().Name);
-            return;
-        }
-
-        var syntheticInputs = activityDescriptor.Inputs.Where(x => x.IsSynthetic).ToList();
-        var syntheticOutputs = activityDescriptor.Outputs.Where(x => x.IsSynthetic).ToList();
-
-        // Write synthetic inputs. 
-        foreach (var inputDescriptor in syntheticInputs)
-        {
-            var inputName = inputDescriptor.Name;
-            var propertyName = inputName.Camelize();
-
-            if (!value.SyntheticProperties.TryGetValue(inputName, out var inputValue))
-                continue;
-
-            writer.WritePropertyName(propertyName);
-
-            var input = (Input?)inputValue;
-
-            if (input == null)
-            {
-                writer.WriteNullValue();
-                continue;
-            }
-
-            var expression = input.Expression;
-            var expressionType = expression?.Type;
-            var inputType = input.Type;
-            var memoryReferenceId = input.MemoryBlockReference().Id;
-            var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
-
-            if (expressionDescriptor == null)
-                throw new Exception($"Syntax descriptor with expression type {expressionType} not found in registry");
-
-            var inputModel = new
-            {
-                TypeName = inputType,
-                Expression = expression,
-                MemoryReference = new
-                {
-                    Id = memoryReferenceId
-                }
-            };
-
-            JsonSerializer.Serialize(writer, inputModel, inputModel.GetType(), options);
-        }
-
-        // Write synthetic outputs. 
-        foreach (var outputDescriptor in syntheticOutputs)
-        {
-            var outputName = outputDescriptor.Name;
-            var propertyName = outputName.Camelize();
-
-            if (!value.SyntheticProperties.TryGetValue(outputName, out var outputValue))
-                continue;
-
-            writer.WritePropertyName(propertyName);
-            var output = (Output?)outputValue;
-
-            if (output == null)
-            {
-                writer.WriteNullValue();
-                continue;
-            }
-
-            var outputType = outputDescriptor.Type;
-            var memoryReferenceId = output.MemoryBlockReference().Id;
-
-            var outputModel = new
-            {
-                TypeName = outputType,
-                MemoryReference = new
-                {
-                    Id = memoryReferenceId
-                }
-            };
-
-            JsonSerializer.Serialize(writer, outputModel, outputModel.GetType(), options);
-        }
     }
 
     private JsonSerializerOptions GetClonedOptions(JsonSerializerOptions options)

@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -13,20 +14,8 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 
 /// </summary>
-public class WorkflowDefinitionActivityProvider : IActivityProvider
+public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityRegistry activityRegistry, IExpressionDescriptorRegistry expressionDescriptorRegistry) : IActivityProvider
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IActivityFactory _activityFactory;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
-    {
-        _store = store;
-        _activityFactory = activityFactory;
-    }
-
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
@@ -35,7 +24,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             UsableAsActivity = true,
             VersionOptions = VersionOptions.All
         };
-        
+
         var allDescriptors = new List<ActivityDescriptor>();
         var currentPage = 0;
         const int pageSize = 100;
@@ -43,15 +32,15 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
         while (true)
         {
             var pageArgs = PageArgs.FromPage(currentPage++, pageSize);
-            var pageOfDefinitions = await _store.FindManyAsync(filter, pageArgs, cancellationToken);
+            var pageOfDefinitions = await store.FindManyAsync(filter, pageArgs, cancellationToken);
             var descriptors = CreateDescriptors(pageOfDefinitions.Items).ToList();
-            
+
             allDescriptors.AddRange(descriptors);
-            
-            if(allDescriptors.Count >= pageOfDefinitions.TotalCount)
+
+            if (allDescriptors.Count >= pageOfDefinitions.TotalCount)
                 break;
         }
-        
+
         return allDescriptors;
     }
 
@@ -113,7 +102,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             },
             Constructor = context =>
             {
-                var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
+                var activity = (WorkflowDefinitionActivity)activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;
@@ -125,7 +114,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             },
             ConfigureSerializerOptions = options =>
             {
-                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityRegistry, expressionDescriptorRegistry));
                 return options;
             }
         };
