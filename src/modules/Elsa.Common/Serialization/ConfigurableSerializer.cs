@@ -67,7 +67,7 @@ public abstract class ConfigurableSerializer
     /// <summary>
     /// Creates a new instance of <see cref="JsonSerializerOptions"/>.
     /// </summary>
-    private JsonSerializerOptions CreateOptionsInternal()
+    private static JsonSerializerOptions CreateOptionsInternal()
     {
         var options = new JsonSerializerOptions
         {

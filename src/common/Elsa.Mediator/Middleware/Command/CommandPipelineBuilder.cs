@@ -6,7 +6,7 @@ namespace Elsa.Mediator.Middleware.Command;
 public class CommandPipelineBuilder : ICommandPipelineBuilder
 {
     private const string ServicesKey = "mediator.Services";
-    private readonly IList<Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate>> _components = new List<Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate>>();
+    private readonly List<Func<CommandMiddlewareDelegate, CommandMiddlewareDelegate>> _components = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandPipelineBuilder"/> class.
@@ -38,8 +38,10 @@ public class CommandPipelineBuilder : ICommandPipelineBuilder
     {
         CommandMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse())
-            pipeline = component(pipeline);
+        for (int i = _components.Count - 1; i >= 0; i--)
+        {
+            pipeline = _components[i](pipeline);
+        }
 
         return pipeline;
     }

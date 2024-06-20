@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,7 +18,7 @@ public class IntegerJsonConverter : JsonConverter<int>
         if (reader.TokenType == JsonTokenType.String)
         {
             var value = reader.GetString()!;
-            return int.Parse(value);
+            return int.Parse(value, CultureInfo.InvariantCulture);
         }
 
         throw new JsonException("Expected number or string.");

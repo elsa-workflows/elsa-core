@@ -14,7 +14,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     private readonly int _workerCount;
     private readonly INotificationsChannel _notificationsChannel;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IList<Channel<INotification>> _outputs;
+    private readonly List<Channel<INotification>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />

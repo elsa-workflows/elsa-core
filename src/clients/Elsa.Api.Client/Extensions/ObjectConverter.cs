@@ -137,7 +137,7 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, value);
 
             if (underlyingSourceType == typeof(double))
-                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
         }
 
         if (value is string s)
@@ -178,7 +178,7 @@ public static class ObjectConverter
 
         try
         {
-            return Convert.ChangeType(value, underlyingTargetType);
+            return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
         catch (InvalidCastException)
         {

@@ -6,7 +6,7 @@ namespace Elsa.Features.Services;
 /// <inheritdoc />
 public class InstalledFeatureRegistry : IInstalledFeatureRegistry
 {
-    private readonly IDictionary<string, FeatureDescriptor> _descriptors = new Dictionary<string, FeatureDescriptor>();
+    private readonly Dictionary<string, FeatureDescriptor> _descriptors = new();
 
     /// <inheritdoc />
     public void Add(FeatureDescriptor descriptor) => _descriptors[descriptor.FullName] = descriptor;
@@ -15,5 +15,5 @@ public class InstalledFeatureRegistry : IInstalledFeatureRegistry
     public IEnumerable<FeatureDescriptor> List() => _descriptors.Values;
 
     /// <inheritdoc />
-    public FeatureDescriptor? Find(string fullName) => _descriptors.TryGetValue(fullName, out var descriptor) ? descriptor : null;
+    public FeatureDescriptor? Find(string fullName) => _descriptors.GetValueOrDefault(fullName);
 }

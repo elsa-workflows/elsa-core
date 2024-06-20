@@ -14,7 +14,7 @@ public class MessageProcessorHostedService<T> : BackgroundService where T : notn
     private readonly Channel<T> _channel;
     private readonly IEnumerable<IConsumer<T>> _consumers;
     private readonly ILogger _logger;
-    private readonly IList<MessageWorker<T>> _workers;
+    private readonly List<MessageWorker<T>> _workers;
 
     /// <inheritdoc />
     // ReSharper disable once ContextualLoggerProblem

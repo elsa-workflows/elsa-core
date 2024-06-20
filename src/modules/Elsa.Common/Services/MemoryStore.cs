@@ -119,7 +119,7 @@ public class MemoryStore<TEntity>
         foreach (var entry in entries)
             Entities.Remove(entry);
 
-        return entries.LongCount();
+        return entries.Count;
     }
 
     /// <summary>

@@ -37,7 +37,7 @@ public class ActivityNode
         get
         {
             var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.GetId()).ToList();
-            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.GetId()}" : Activity.GetId();
+            return ancestorIds.Count > 0 ? $"{string.Join(":", ancestorIds)}:{Activity.GetId()}" : Activity.GetId();
         }
     }
 
