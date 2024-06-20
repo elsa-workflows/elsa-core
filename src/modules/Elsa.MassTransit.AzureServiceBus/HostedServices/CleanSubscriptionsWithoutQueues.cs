@@ -1,4 +1,4 @@
-using Elsa.MassTransit.AzureServiceBus.Notifications;
+using Elsa.MassTransit.AzureServiceBus.Commands;
 using Elsa.MassTransit.AzureServiceBus.Options;
 using Elsa.Mediator.Contracts;
 using Medallion.Threading;
@@ -45,13 +45,13 @@ public class CleanSubscriptionsWithoutQueues(IServiceProvider serviceProvider, I
     {
         using var scope = serviceProvider.CreateScope();
         var lockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+        var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
         
         const string lockKey = "SubscriptionCleanupService";
         await using var monitorLock = await lockProvider.TryAcquireLockAsync(lockKey, TimeSpan.Zero);
         if (monitorLock == null)
             return;
         
-        await notificationSender.SendAsync(new CleanupSubscriptions());
+        await commandSender.SendAsync(new CleanupSubscriptions());
     }
 }

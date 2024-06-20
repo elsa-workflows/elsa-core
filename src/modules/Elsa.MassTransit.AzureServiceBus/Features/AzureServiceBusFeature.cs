@@ -163,6 +163,6 @@ public class AzureServiceBusFeature : FeatureBase
 
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
         Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
-        Services.AddNotificationHandler<CleanupOrphanedTopology>();
+        Services.AddCommandHandler<CleanupOrphanedTopology>();
     }
 }

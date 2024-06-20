@@ -1,6 +1,7 @@
 using Azure.Messaging.ServiceBus.Administration;
-using Elsa.MassTransit.AzureServiceBus.Notifications;
+using Elsa.MassTransit.AzureServiceBus.Commands;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -15,10 +16,10 @@ namespace Elsa.MassTransit.AzureServiceBus.Handlers;
 /// - Queues in other namespaces will not be found by this handler and the subscription will therefore be removed.
 /// </remarks>
 [UsedImplicitly]
-public class CleanupOrphanedTopology(ServiceBusAdministrationClient client, ILogger<CleanupOrphanedTopology> logger) : INotificationHandler<CleanupSubscriptions>
+public class CleanupOrphanedTopology(ServiceBusAdministrationClient client, ILogger<CleanupOrphanedTopology> logger) : ICommandHandler<CleanupSubscriptions>
 {
     /// <inheritdoc />
-    public async Task HandleAsync(CleanupSubscriptions notification, CancellationToken cancellationToken)
+    public async Task<Unit> HandleAsync(CleanupSubscriptions notification, CancellationToken cancellationToken)
     {
         var queues = await client.GetQueuesAsync().ToListAsync(cancellationToken);
         var queueNames = queues.Select(q => q.Name).ToList();
@@ -52,5 +53,7 @@ public class CleanupOrphanedTopology(ServiceBusAdministrationClient client, ILog
                 await client.DeleteSubscriptionAsync(topic.Name, asbSubscription.SubscriptionName, cancellationToken);
             }
         }
+
+        return Unit.Instance;
     }
 }
