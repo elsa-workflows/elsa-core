@@ -7,6 +7,8 @@ namespace Elsa.Workflows.IntegrationTests.Activities.CollectionInputs;
 
 public class DynamicArguments : CodeActivity
 {
+    public DynamicArguments([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) { }
+
     public DynamicArguments(Dictionary<string, Input<object>> arguments, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Arguments = arguments;
 
     public Dictionary<string, Input<object>>? Arguments { get; set; } = default;

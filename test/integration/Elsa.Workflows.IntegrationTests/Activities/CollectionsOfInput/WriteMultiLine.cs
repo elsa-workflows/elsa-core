@@ -7,6 +7,9 @@ namespace Elsa.Workflows.IntegrationTests.Activities.CollectionInputs;
 
 public class WriteMultiLine : CodeActivity
 {
+    public WriteMultiLine([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line) { }
+
+
     public WriteMultiLine(List<Input<string>> text, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : this(source, line) => Text = text;
 
     public List<Input<string>>? Text { get; set; } = default;
