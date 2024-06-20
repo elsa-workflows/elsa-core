@@ -16,6 +16,6 @@ public class JsonIgnoreCompositeRootConverterFactory(IActivityRegistry activityR
     /// <inheritdoc />
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        return new JsonIgnoreCompositeRootConverter(activityRegistry, activityWriter);
+        return new JsonIgnoreCompositeRootConverter(activityWriter);
     }
 }

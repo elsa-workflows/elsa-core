@@ -18,7 +18,7 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
     /// <param name="options">The JSON serialization options.</param>
     /// <param name="excludeChildren">A flag indicating whether to exclude child activities.</param>
     /// <param name="propertyFilter">An additional property filter. Returning true will skip the property.</param>
-    public void WriteActivity(Utf8JsonWriter writer, IActivity? value, JsonSerializerOptions options, bool excludeChildren = false, Func<PropertyInfo, bool>? propertyFilter = null)
+    public void WriteActivity(Utf8JsonWriter writer, IActivity? value, JsonSerializerOptions options, bool ignoreSpecializedConverters = false, bool excludeChildren = false, Func<PropertyInfo, bool>? propertyFilter = null)
     {
         if (value == null)
         {
@@ -26,13 +26,16 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
             return;
         }
 
-        // Check if there's a specialized converter for the activity.
-        var valueType = value.GetType();
-        var specializedConverter = options.Converters.FirstOrDefault(x => x.CanConvert(valueType));
-        if (specializedConverter != null)
+        if (!ignoreSpecializedConverters)
         {
-            JsonSerializer.Serialize(writer, value, valueType, options);
-            return;
+            // Check if there's a specialized converter for the activity.
+            var valueType = value.GetType();
+            var specializedConverter = options.Converters.FirstOrDefault(x => x.CanConvert(valueType));
+            if (specializedConverter != null)
+            {
+                JsonSerializer.Serialize(writer, value, valueType, options);
+                return;
+            }
         }
 
         writer.WriteStartObject();
