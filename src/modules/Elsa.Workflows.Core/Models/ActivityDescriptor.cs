@@ -122,6 +122,7 @@ public class ActivityDescriptor
     /// };
     /// </code>
     /// </remarks>
+    [JsonIgnore]
     public Func<JsonSerializerOptions, JsonSerializerOptions>? ConfigureSerializerOptions { get; set; }
 }
 
