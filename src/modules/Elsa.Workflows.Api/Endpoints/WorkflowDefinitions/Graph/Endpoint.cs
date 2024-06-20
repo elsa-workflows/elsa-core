@@ -17,21 +17,18 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
 
     public override void Configure()
     {
-        Get("/workflow-definitions/{definitionId}/graph");
+        Get("/workflow-definitions/subgraph/{id}");
         ConfigurePermissions("read:workflow-definitions");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var versionOptions = request.VersionOptions != null ? VersionOptions.FromString(request.VersionOptions) : VersionOptions.Latest;
-
         var filter = new WorkflowDefinitionFilter
         {
-            DefinitionId = request.DefinitionId,
-            VersionOptions = versionOptions
+            Id = request.Id
         };
 
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(filter, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.Id, cancellationToken);
 
         if (workflowGraph == null)
         {
