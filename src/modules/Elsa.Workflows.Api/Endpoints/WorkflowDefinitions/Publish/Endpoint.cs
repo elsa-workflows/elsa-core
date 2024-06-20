@@ -44,13 +44,8 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
-        PublishWorkflowDefinitionResult? result = null;
         bool isPublished = definition.IsPublished;
-        if (!isPublished)
-        {
-            result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
-        }
-
+        PublishWorkflowDefinitionResult? result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
         var response = new Response(mappedDefinition, isPublished, result?.ConsumingWorkflows?.Count() ?? 0);
         await SendOkAsync(response, cancellationToken);
