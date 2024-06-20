@@ -1,18 +1,14 @@
 using Elsa.Abstractions;
-using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetManyById;
 
 [PublicAPI]
-internal class GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSerializer, IWorkflowDefinitionLinker linker)
-    : ElsaEndpoint<Request>
+internal class GetManyById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request>
 {
     public override void Configure()
     {
@@ -28,15 +24,8 @@ internal class GetManyById(IWorkflowDefinitionStore store, IApiSerializer apiSer
         };
 
         var definitions = (await store.FindManyAsync(filter, cancellationToken)).ToList();
-        var serializerOptions = apiSerializer.GetOptions().Clone();
-
-        // // If the root of composite activities is not requested, exclude them from being serialized.
-        // if (!request.IncludeCompositeRoot)
-        //     serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
         var models = await linker.MapAsync(definitions, cancellationToken);
         var response = new ListResponse<LinkedWorkflowDefinitionModel>(models);
-
-        await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
+        await SendOkAsync(response, cancellationToken);
     }
 }

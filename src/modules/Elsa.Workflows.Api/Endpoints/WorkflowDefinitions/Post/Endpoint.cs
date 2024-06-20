@@ -68,10 +68,6 @@ internal class Post(
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
         var serializerOptions = serializer.GetOptions();
-
-        // // Ignore the root activity when serializing the workflow definition.
-        // serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = variableDefinitionMapper.Map(model.Variables).ToList();
         var inputs = model.Inputs ?? new List<InputDefinition>();
@@ -91,7 +87,7 @@ internal class Post(
         draft.Options = model.Options ?? new WorkflowOptions();
 
         PublishWorkflowDefinitionResult? result = null;
-        
+
         if (request.Publish.GetValueOrDefault(false))
         {
             result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);
