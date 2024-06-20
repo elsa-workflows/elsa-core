@@ -9,18 +9,18 @@ namespace Elsa.Workflows.Serialization.Helpers;
 /// <summary>
 /// Helper class for writing synthetic properties of an activity to a JSON writer.
 /// </summary>
-public static class SyntheticPropertiesWriter
+public class SyntheticPropertiesWriter(IExpressionDescriptorRegistry expressionDescriptorRegistry)
 {
     /// <summary>
     /// Writes synthetic properties of an activity to a JSON writer.
     /// </summary>
-    public static void WriteSyntheticProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, IExpressionDescriptorRegistry expressionDescriptorRegistry, JsonSerializerOptions options)
+    public void WriteSyntheticProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions options)
     {
-        WriteSyntheticInputProperties(writer, value, activityDescriptor, expressionDescriptorRegistry, options);
-        WriteSyntheticOutputProperties(writer, value, activityDescriptor, expressionDescriptorRegistry, options);
+        WriteSyntheticInputProperties(writer, value, activityDescriptor, options);
+        WriteSyntheticOutputProperties(writer, value, activityDescriptor, options);
     }
 
-    private static void WriteSyntheticInputProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, IExpressionDescriptorRegistry expressionDescriptorRegistry, JsonSerializerOptions options)
+    private void WriteSyntheticInputProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions options)
     {
         var syntheticInputs = activityDescriptor.Inputs.Where(x => x.IsSynthetic).ToList();
 
@@ -65,7 +65,7 @@ public static class SyntheticPropertiesWriter
         }
     }
 
-    private static void WriteSyntheticOutputProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, IExpressionDescriptorRegistry expressionDescriptorRegistry, JsonSerializerOptions options)
+    private void WriteSyntheticOutputProperties(Utf8JsonWriter writer, IActivity value, ActivityDescriptor activityDescriptor, JsonSerializerOptions options)
     {
         var syntheticOutputs = activityDescriptor.Outputs.Where(x => x.IsSynthetic).ToList();
 

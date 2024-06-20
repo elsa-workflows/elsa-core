@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
@@ -7,6 +6,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Helpers;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 
 /// </summary>
-public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityRegistry activityRegistry, IExpressionDescriptorRegistry expressionDescriptorRegistry) : IActivityProvider
+public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityRegistry activityRegistry, ActivityWriter activityWriter) : IActivityProvider
 {
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
@@ -114,7 +114,7 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
             },
             ConfigureSerializerOptions = options =>
             {
-                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityRegistry, expressionDescriptorRegistry));
+                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityRegistry, activityWriter));
                 return options;
             }
         };
