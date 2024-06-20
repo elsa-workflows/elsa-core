@@ -15,12 +15,6 @@ public class WorkflowDefinitionActivityResolver : IActivityResolver
     public bool GetSupportsActivity(IActivity activity) => activity is WorkflowDefinitionActivity;
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
-    {
-        return (await GetActivityPortsAsync(activity, cancellationToken)).SelectMany(x => x.GetActivities());
-    }
-
-    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var definitionActivity = (WorkflowDefinitionActivity)activity;

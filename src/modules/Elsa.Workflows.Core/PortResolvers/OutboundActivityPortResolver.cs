@@ -16,20 +16,9 @@ public class PropertyBasedActivityResolver : IActivityResolver
     public bool GetSupportsActivity(IActivity activity) => true;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
-    {
-        return new ValueTask<IEnumerable<IActivity>>(GetActivities(activity).ToHashSet());
-    }
-
-    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         return new(GetActivityPortsInternal(activity));
-    }
-
-    private static IEnumerable<IActivity> GetActivities(IActivity activity)
-    {
-        return GetActivityPortsInternal(activity).SelectMany(x => x.GetActivities());
     }
 
     private static IEnumerable<ActivityPort> GetActivityPortsInternal(IActivity activity)

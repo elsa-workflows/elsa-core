@@ -12,17 +12,12 @@ public interface IActivityResolver
     /// The priority of this resolver. Resolvers with higher priority are executed first.
     /// </summary>
     int Priority { get; }
-    
+
     /// <summary>
     /// Returns true if this resolver supports the specified activity.
     /// </summary>
     bool GetSupportsActivity(IActivity activity);
-    
-    /// <summary>
-    /// Returns a list of contained activities for the specified activity.
-    /// </summary>
-    ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns a list of contained activity ports for the specified activity.
     /// </summary>

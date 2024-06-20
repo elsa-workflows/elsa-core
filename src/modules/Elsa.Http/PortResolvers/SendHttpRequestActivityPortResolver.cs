@@ -14,23 +14,12 @@ public class SendHttpRequestActivityResolver : IActivityResolver
     /// <inheritdoc />
     public bool GetSupportsActivity(IActivity activity) => activity is SendHttpRequest;
 
-    /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
-    {
-        var ports = GetActivitiesInternal(activity);
-        return new(ports);
-    }
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         IEnumerable<ActivityPort> ports = GetPortsInternal(activity);
         return new ValueTask<IEnumerable<ActivityPort>>(ports);
-    }
-
-    private IEnumerable<IActivity> GetActivitiesInternal(IActivity activity)
-    {
-        return GetPortsInternal(activity).SelectMany(x => x.GetActivities());
     }
 
     private IEnumerable<ActivityPort> GetPortsInternal(IActivity activity)

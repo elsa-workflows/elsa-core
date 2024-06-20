@@ -16,13 +16,6 @@ public class SwitchActivityResolver : IActivityResolver
     public bool GetSupportsActivity(IActivity activity) => activity is Switch;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
-    {
-        var ports = GetPortsInternal(activity).SelectMany(x => x.GetActivities());
-        return new(ports);
-    }
-
-    /// <inheritdoc />
     public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var ports = GetPortsInternal(activity).ToList();
