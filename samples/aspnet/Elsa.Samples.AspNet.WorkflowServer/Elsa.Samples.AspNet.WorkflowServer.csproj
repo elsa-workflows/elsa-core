@@ -14,4 +14,8 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="App_Data\locks\" />
+    </ItemGroup>
+
 </Project>

@@ -64,7 +64,7 @@ public class InstanceHeartbeatService : IHostedService, IDisposable
         var systemClock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
         await store.SaveAsync(new SerializedKeyValuePair
             {
-                Key = $"{HeartbeatKeyPrefix}{instanceNameProvider.GetName()}",
+                Id = $"{HeartbeatKeyPrefix}{instanceNameProvider.GetName()}",
                 SerializedValue = systemClock.UtcNow.ToString("o")
             },
             default);

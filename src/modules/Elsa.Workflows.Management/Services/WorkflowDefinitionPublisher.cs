@@ -1,10 +1,11 @@
 using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Materializers;
@@ -21,6 +22,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly INotificationSender _notificationSender;
     private readonly IIdentityGenerator _identityGenerator;
+    private readonly IActivityVisitor _activityVisitor;
     private readonly IActivitySerializer _activitySerializer;
     private readonly IRequestSender _requestSender;
     private readonly ISystemClock _systemClock;
@@ -33,6 +35,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         IWorkflowDefinitionStore workflowDefinitionStore,
         INotificationSender notificationSender,
         IIdentityGenerator identityGenerator,
+        IActivityVisitor activityVisitor,
         IActivitySerializer activitySerializer,
         IRequestSender requestSender,
         ISystemClock systemClock)
@@ -41,6 +44,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         _workflowDefinitionStore = workflowDefinitionStore;
         _notificationSender = notificationSender;
         _identityGenerator = identityGenerator;
+        _activityVisitor = activityVisitor;
         _activitySerializer = activitySerializer;
         _requestSender = requestSender;
         _systemClock = systemClock;
@@ -77,7 +81,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             return new PublishWorkflowDefinitionResult(false, new List<WorkflowValidationError>
             {
                 new("Workflow definition not found.")
-            });
+            }, null);
 
         return await PublishAsync(definition, cancellationToken);
     }
@@ -90,7 +94,7 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         var validationErrors = responses.SelectMany(r => r.ValidationErrors).ToList();
 
         if (validationErrors.Any())
-            return new PublishWorkflowDefinitionResult(false, validationErrors);
+            return new PublishWorkflowDefinitionResult(false, validationErrors, null);
         
         await _notificationSender.SendAsync(new WorkflowDefinitionPublishing(definition), cancellationToken);
 
@@ -113,7 +117,15 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
 
         await _notificationSender.SendAsync(new WorkflowDefinitionPublished(definition), cancellationToken);
-        return new PublishWorkflowDefinitionResult(true, validationErrors);
+
+        var consumingWorkflows = new List<WorkflowDefinition>();
+
+        if (definition.Options is { UsableAsActivity: true, AutoUpdateConsumingWorkflows: true })
+        {
+            consumingWorkflows.AddRange(await UpdateReferencesInConsumingWorkflows(definition, cancellationToken));
+        }
+        
+        return new PublishWorkflowDefinitionResult(true, validationErrors, consumingWorkflows);
     }
 
     /// <inheritdoc />
@@ -135,7 +147,6 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
             throw new InvalidOperationException("Cannot retract an unpublished workflow definition.");
 
         definition.IsPublished = false;
-        definition = Initialize(definition);
 
         await _notificationSender.SendAsync(new WorkflowDefinitionRetracting(definition), cancellationToken);
         await _workflowDefinitionStore.SaveAsync(definition, cancellationToken);
@@ -194,6 +205,59 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
         }
 
         return draft;
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default)
+    {
+        var updatedWorkflowDefinitions = new List<WorkflowDefinition>();
+
+        var workflowDefinitions = (await _workflowDefinitionStore.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            VersionOptions = VersionOptions.LatestOrPublished
+        }, cancellationToken)).ToList();
+
+        // Remove the dependency from the list of workflow definitions to consider.
+        workflowDefinitions = workflowDefinitions.Where(x => x.DefinitionId != dependency.DefinitionId).ToList();
+
+        foreach (var definition in workflowDefinitions)
+        {
+            var root = _activitySerializer.Deserialize(definition.StringData!);
+            var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+            var flattenedList = graph.Flatten().ToList();
+            var definitionId = dependency.DefinitionId;
+            var version = dependency.Version;
+            var nodes = flattenedList
+                .Where(x => x.Activity is WorkflowDefinitionActivity workflowDefinitionActivity && workflowDefinitionActivity.WorkflowDefinitionId == definitionId)
+                .ToList();
+
+            foreach (var node in nodes.Where(activity => activity.Activity.Version < version))
+            {
+                var activity = (WorkflowDefinitionActivity)node.Activity;
+                activity.Version = version;
+                activity.WorkflowDefinitionVersionId = dependency.Id;
+
+                if (!updatedWorkflowDefinitions.Contains(definition))
+                    updatedWorkflowDefinitions.Add(definition);
+            }
+
+            if (updatedWorkflowDefinitions.Contains(definition))
+            {
+                var serializedData = _activitySerializer.Serialize(root);
+                definition.StringData = serializedData;
+            }
+        }
+
+        if (updatedWorkflowDefinitions.Any())
+        {
+            var definitionVersionsUpdates = updatedWorkflowDefinitions.Select(x => 
+                new WorkflowDefinitionVersionUpdate(x.Id, x.DefinitionId, x.Options.UsableAsActivity.GetValueOrDefault())).ToList();
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionVersionsUpdates), cancellationToken);
+            await _workflowDefinitionStore.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionVersionsUpdates), cancellationToken);
+        }
+
+        return updatedWorkflowDefinitions;
     }
 
     private WorkflowDefinition Initialize(WorkflowDefinition definition)

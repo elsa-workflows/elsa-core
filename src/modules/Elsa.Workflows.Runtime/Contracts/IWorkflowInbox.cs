@@ -1,14 +1,15 @@
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Parameters;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Params;
 using Elsa.Workflows.Runtime.Results;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// An inbox for delivering messages to workflow instances.
 /// </summary>
+[Obsolete("Use the Stimulus API instead")]
 public interface IWorkflowInbox
 {
     /// <summary>

@@ -4,13 +4,8 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
 [PublicAPI]
-internal class Response
+internal class Response(ICollection<ActivityDescriptor> items)
 {
-    public Response(ICollection<ActivityDescriptor> items)
-    {
-        Items = items;
-    }
-
-    public ICollection<ActivityDescriptor> Items { get; set; }
+    public ICollection<ActivityDescriptor> Items { get; set; } = items;
     public int Count => Items.Count;
 }

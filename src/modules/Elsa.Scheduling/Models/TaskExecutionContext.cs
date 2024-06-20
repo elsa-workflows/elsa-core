@@ -1,4 +1,4 @@
-namespace Elsa.Scheduling.Models;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// Represents a task execution context.

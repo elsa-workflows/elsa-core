@@ -1,6 +1,4 @@
-using Elsa.Scheduling.Contracts;
-
-namespace Elsa.Scheduling.Models;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// The context for scheduling a task.

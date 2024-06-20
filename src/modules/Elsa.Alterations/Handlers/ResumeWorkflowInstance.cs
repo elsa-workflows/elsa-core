@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Notifications;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;

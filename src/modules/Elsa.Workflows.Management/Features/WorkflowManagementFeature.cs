@@ -44,9 +44,12 @@ public class WorkflowManagementFeature : FeatureBase
     private const string PrimitivesCategory = "Primitives";
     private const string LookupsCategory = "Lookups";
     private const string DynamicCategory = "Dynamic";
+    private const string DataCategory = "Data";
 
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
+    private bool IsReadOnlyMode { get; set; }
+
     /// <inheritdoc />
     public WorkflowManagementFeature(IModule module) : base(module)
     {
@@ -76,7 +79,9 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(TimeSpan), PrimitivesCategory, "Represents a duration of time."),
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
-        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation.")
+        new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
+        new(typeof(byte[]), DataCategory, "A byte array."),
+        new(typeof(Stream), DataCategory, "A stream.")
     ];
 
     /// <summary>
@@ -175,6 +180,16 @@ public class WorkflowManagementFeature : FeatureBase
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables read-only mode for resources such as workflow definitions.
+    /// </summary>
+    /// <returns></returns>
+    public WorkflowManagementFeature UseReadOnlyMode(bool enabled)
+    {
+        IsReadOnlyMode = enabled;
+        return this;
+    }
+
     /// <inheritdoc />
     [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public override void Configure()
@@ -189,6 +204,9 @@ public class WorkflowManagementFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinition, MemoryWorkflowDefinitionStore>()
             .AddMemoryStore<WorkflowInstance, MemoryWorkflowInstanceStore>()
             .AddActivityProvider<TypedActivityProvider>()
+            .AddActivityProvider<WorkflowDefinitionActivityProvider>()
+            .AddScoped<WorkflowDefinitionActivityProvider>()
+            .AddScoped<IWorkflowDefinitionActivityRegistryUpdater, WorkflowDefinitionActivityRegistryUpdater>()
             .AddScoped<IWorkflowDefinitionService, WorkflowDefinitionService>()
             .AddScoped<IWorkflowSerializer, WorkflowSerializer>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
@@ -204,7 +222,6 @@ public class WorkflowManagementFeature : FeatureBase
             .AddScoped<IWorkflowMaterializer, ClrWorkflowMaterializer>()
             .AddScoped<IWorkflowMaterializer, JsonWorkflowMaterializer>()
             .AddScoped<IActivityResolver, WorkflowDefinitionActivityResolver>()
-            .AddActivityProvider<WorkflowDefinitionActivityProvider>()
             .AddScoped<WorkflowDefinitionMapper>()
             .AddSingleton<VariableDefinitionMapper>()
             .AddSingleton<WorkflowStateMapper>()
@@ -229,6 +246,7 @@ public class WorkflowManagementFeature : FeatureBase
 
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
+            options.IsReadOnlyMode = IsReadOnlyMode;
         });
     }
 }

@@ -6,7 +6,7 @@ using Elsa.MassTransit.ConsumerDefinitions;
 using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Options;
 using Elsa.MassTransit.Services;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;

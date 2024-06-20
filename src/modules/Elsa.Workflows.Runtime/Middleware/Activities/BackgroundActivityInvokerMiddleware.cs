@@ -4,9 +4,9 @@ using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Stimuli;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
@@ -26,7 +26,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />
-    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next) : base(next)
+    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<BackgroundActivityInvokerMiddleware> logger) : base(next, logger)
     {
     }
 
@@ -79,11 +79,11 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var scheduledBackgroundActivities = context.WorkflowExecutionContext.TransientProperties.GetOrAdd(BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         var activityNodeId = context.NodeId;
-        var bookmarkPayload = new BackgroundActivityBookmark();
+        var bookmarkPayload = new BackgroundActivityStimulus();
         var bookmarkOptions = new CreateBookmarkArgs
         {
             BookmarkName = BackgroundActivityBookmarkName,
-            Payload = bookmarkPayload,
+            Stimulus = bookmarkPayload,
             AutoComplete = false
         };
         var bookmark = context.CreateBookmark(bookmarkOptions);

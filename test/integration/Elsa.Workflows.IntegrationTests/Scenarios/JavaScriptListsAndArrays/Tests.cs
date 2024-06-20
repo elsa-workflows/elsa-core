@@ -4,7 +4,6 @@ using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JavaScriptListsAndArrays;

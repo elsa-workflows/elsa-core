@@ -13,7 +13,9 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj" />
+        <ProjectReference Include="..\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
         <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
+        <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />

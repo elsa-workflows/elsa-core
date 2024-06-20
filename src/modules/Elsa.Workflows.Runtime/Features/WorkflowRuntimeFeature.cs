@@ -5,16 +5,16 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -47,7 +47,7 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<DefaultWorkflowRuntime>(sp);
+    public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalWorkflowRuntime>(sp);
 
     /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
@@ -84,11 +84,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
 
     /// <summary>
-    /// A factory that instantiates an <see cref="IWorkflowInboxMessageStore"/>.
-    /// </summary>
-    public Func<IServiceProvider, IWorkflowInboxMessageStore> WorkflowInboxStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowInboxMessageStore>();
-
-    /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowExecutionContextStore> WorkflowExecutionContextStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionContextStore>();
@@ -108,6 +103,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
     
+    /// <summary>
+    /// A factory that instantiates an <see cref="ICommandHandler"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
+
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
@@ -179,7 +179,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     public override void ConfigureHostedServices()
     {
         Module.ConfigureHostedService<PopulateRegistriesHostedService>();
-        Module.ConfigureHostedService<WorkflowInboxCleanupHostedService>();
     }
 
     /// <inheritdoc />
@@ -199,8 +198,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Core.
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
-            .AddSingleton<IWorkflowHostFactory, WorkflowHostFactory>()
-            .AddScoped<IBackgroundActivityInvoker, DefaultBackgroundActivityInvoker>()
+            .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
+            .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
@@ -215,24 +214,33 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
+            .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
+            .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
+            .AddScoped<IStimulusSender, StimulusSender>()
+            .AddScoped<ITriggerBoundWorkflowService, TriggerBoundWorkflowService>()
+            .AddScoped<IBookmarkBoundWorkflowService, BookmarkBoundWorkflowService>()
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<DispatchWorkflowCommandHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
-            .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
+            .AddScoped<IBookmarkResumer, BookmarkResumer>()
+            .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            
+            // Deprecated services.
+            .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
             
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
-            .AddScoped(WorkflowInboxStore)
 
             // Lazy services.
-            .AddScoped<Func<IEnumerable<IWorkflowProvider>>>(sp => sp.GetServices<IWorkflowProvider>)
+            .AddScoped<Func<IEnumerable<IWorkflowsProvider>>>(sp => sp.GetServices<IWorkflowsProvider>)
             .AddScoped<Func<IEnumerable<IWorkflowMaterializer>>>(sp => sp.GetServices<IWorkflowMaterializer>)
 
             // Noop stores.
@@ -244,18 +252,16 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
-            .AddMemoryStore<WorkflowInboxMessage, MemoryWorkflowInboxMessageStore>()
             .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
-            .AddScoped(DistributedLockProvider)
+            .AddSingleton(DistributedLockProvider)
 
             // Workflow definition providers.
-            .AddWorkflowDefinitionProvider<ClrWorkflowProvider>()
+            .AddWorkflowDefinitionProvider<ClrWorkflowsProvider>()
 
             // Domain handlers.
             .AddCommandHandler<DispatchWorkflowCommandHandler>()
-            .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
             .AddNotificationHandler<IndexTriggers>()
@@ -264,8 +270,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteTriggers>()
             .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
-            .AddNotificationHandler<ReadWorkflowInboxMessage>()
-            .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
 
@@ -274,5 +278,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+        
     }
 }

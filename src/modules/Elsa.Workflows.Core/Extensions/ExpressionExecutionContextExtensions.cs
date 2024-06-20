@@ -66,8 +66,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns the <see cref="Workflow"/> of the specified <see cref="ExpressionExecutionContext"/>
     /// </summary>
-    public static bool TryGetWorkflowExecutionContext(this ExpressionExecutionContext context, out WorkflowExecutionContext workflowExecutionContext) =>
-        context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
+    public static bool TryGetWorkflowExecutionContext(this ExpressionExecutionContext context, out WorkflowExecutionContext workflowExecutionContext) => context.TransientProperties.TryGetValue(WorkflowExecutionContextKey, out workflowExecutionContext!);
 
     /// <summary>
     /// Returns the <see cref="WorkflowExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
@@ -77,16 +76,11 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/>
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
     public static ActivityExecutionContext GetActivityExecutionContext(this ExpressionExecutionContext context) => (ActivityExecutionContext)context.TransientProperties[ActivityExecutionContextKey];
 
     /// <summary>
     /// Returns the <see cref="ActivityExecutionContext"/> of the specified <see cref="ExpressionExecutionContext"/> 
     /// </summary>
-    /// <param name="context"></param>
-    /// <param name="activityExecutionContext"></param>
-    /// <returns></returns>
     public static bool TryGetActivityExecutionContext(this ExpressionExecutionContext context, out ActivityExecutionContext activityExecutionContext) => context.TransientProperties.TryGetValue(ActivityExecutionContextKey, out activityExecutionContext!);
 
     /// <summary>
@@ -104,31 +98,41 @@ public static class ExpressionExecutionContextExtensions
     /// </summary>
     public static object? Get(this ExpressionExecutionContext context, Output output) => context.GetBlock(output.MemoryBlockReference).Value;
 
-
     /// <summary>
     /// Returns the value of the variable with the specified name.
     /// </summary>
-    public static T? GetVariable<T>(this ExpressionExecutionContext context, string name) => (T?)context.GetVariable(name)?.Value;
+    public static T? GetVariable<T>(this ExpressionExecutionContext context, string name)
+    {
+        var block = context.GetVariableBlock(name);
+        return (T?)block?.Value;
+    }
 
     /// <summary>
     /// Returns the variable with the specified name.
     /// </summary>
     public static Variable? GetVariable(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
     {
+        var block = context.GetVariableBlock(name, localScopeOnly);
+        return block?.Metadata is VariableBlockMetadata metadata ? metadata.Variable : default;
+    }
+
+    private static MemoryBlock? GetVariableBlock(this ExpressionExecutionContext context, string name, bool localScopeOnly = false)
+    {
         foreach (var block in context.Memory.Blocks.Where(b => b.Value.Metadata is VariableBlockMetadata))
         {
             var metadata = block.Value.Metadata as VariableBlockMetadata;
             if (metadata!.Variable.Name == name)
-                return metadata.Variable;
+                return block.Value;
         }
 
-        return localScopeOnly ? null : context.ParentContext?.GetVariable(name);
+        return localScopeOnly ? null : context.ParentContext?.GetVariableBlock(name);
     }
 
     /// <summary>
     /// Creates a named variable in the context.
     /// </summary>
-    public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null, Action<MemoryBlock>? configure = default)
+    public static Variable CreateVariable<T>(this ExpressionExecutionContext context, string name, T? value, Type? storageDriverType = null,
+        Action<MemoryBlock>? configure = default)
     {
         var existingVariable = context.GetVariable(name, localScopeOnly: true);
 
@@ -174,7 +178,6 @@ public static class ExpressionExecutionContextExtensions
         var contextWithVariable = context.FindContextContainingBlock(variable.Id) ?? context;
 
         // Set the value on the variable.
-        variable.Value = value;
         variable.Set(contextWithVariable, value, configure);
 
         // Return the variable.
@@ -354,14 +357,14 @@ public static class ExpressionExecutionContextExtensions
     {
         return context.GetInput<T>(inputDefinition.Name);
     }
-    
+
     private static JsonSerializerOptions? _serializerOptions;
 
     private static JsonSerializerOptions GetSerializerOptions(ExpressionExecutionContext context)
     {
-        if(_serializerOptions != null)
+        if (_serializerOptions != null)
             return _serializerOptions;
-        
+
         var serializerOptions = context.GetRequiredService<IJsonSerializer>().GetOptions().Clone();
         serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
         _serializerOptions = serializerOptions;
@@ -434,7 +437,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns all activity outputs.
     /// </summary>
-    public static IEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
+    public static async IAsyncEnumerable<ActivityOutputs> GetActivityOutputs(this ExpressionExecutionContext context)
     {
         if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
             yield break;
@@ -445,7 +448,7 @@ public static class ExpressionExecutionContextExtensions
         if (useActivityName)
             activitiesWithOutputs = activitiesWithOutputs.Where(x => !string.IsNullOrWhiteSpace(x.Activity.Name));
 
-        foreach (var activityWithOutput in activitiesWithOutputs)
+        await foreach (var activityWithOutput in activitiesWithOutputs)
         {
             var activity = activityWithOutput.Activity;
             var activityDescriptor = activityWithOutput.ActivityDescriptor;

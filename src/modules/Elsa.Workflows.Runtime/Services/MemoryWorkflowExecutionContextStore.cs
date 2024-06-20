@@ -1,5 +1,4 @@
 using Elsa.Common.Services;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Stores;
 
 namespace Elsa.Workflows.Runtime.Services;

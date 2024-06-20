@@ -1,7 +1,7 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.ProtoActor.Grains;
+using Elsa.ProtoActor.Actors;
 using Elsa.ProtoActor.HostedServices;
 using Elsa.ProtoActor.Mappers;
 using Elsa.ProtoActor.ProtoBuf;
@@ -38,7 +38,7 @@ public class ProtoActorFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorRuntime>(sp);
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public class ProtoActorFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<WorkflowServerHost>();
+        Module.ConfigureHostedService<WorkflowSystemHost>();
     }
 
     /// <inheritdoc />
@@ -87,6 +87,7 @@ public class ProtoActorFeature : FeatureBase
         {
             var systemConfig = Proto.ActorSystemConfig
                 .Setup()
+                .WithDiagnosticsLogLevel(LogLevel.Debug)
                 .WithMetrics();
 
             var clusterProvider = ClusterProvider(sp);
@@ -96,10 +97,12 @@ public class ProtoActorFeature : FeatureBase
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
-                    .WithActorRequestTimeout(TimeSpan.FromHours(1))
+                    .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
+                    .WithGossipRequestTimeout(TimeSpan.FromHours(1))
+                    //.WithLegacyRequestTimeoutBehavior()
                     .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
                 ;
 
@@ -123,12 +126,21 @@ public class ProtoActorFeature : FeatureBase
 
         // Mappers.
         services
-            .AddScoped<BookmarkMapper>()
+            .AddSingleton<Mappers.Mappers>()
+            .AddSingleton<ActivityHandleMapper>()
+            .AddSingleton<WorkflowDefinitionHandleMapper>()
+            .AddSingleton<ActivityIncidentMapper>()
             .AddSingleton<ExceptionMapper>()
-            .AddScoped<WorkflowExecutionResultMapper>()
             .AddSingleton<ActivityIncidentStateMapper>()
             .AddSingleton<WorkflowStatusMapper>()
-            .AddSingleton<WorkflowSubStatusMapper>();
+            .AddSingleton<WorkflowSubStatusMapper>()
+            .AddSingleton<CreateWorkflowInstanceRequestMapper>()
+            .AddSingleton<CreateWorkflowInstanceResponseMapper>()
+            .AddSingleton<RunWorkflowInstanceRequestMapper>()
+            .AddSingleton<RunWorkflowInstanceResponseMapper>()
+            .AddSingleton<CreateAndRunWorkflowInstanceRequestMapper>()
+            .AddSingleton<RunWorkflowParamsMapper>()
+            .AddSingleton<WorkflowStateJsonMapper>();
 
         // Mediator handlers.
         services.AddHandlersFrom<ProtoActorFeature>();
@@ -138,8 +150,10 @@ public class ProtoActorFeature : FeatureBase
 
         // Actors.
         services
-            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstance>(sp, context)))
-            ;
+            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
+            
+        // Distributed runtime.
+        services.AddSingleton<ProtoActorRuntime>();
     }
 
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)

@@ -19,12 +19,17 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
     {
-        var canConvert = typeToConvert.IsClass
+        if (typeToConvert.IsClass
                && typeToConvert == typeof(object)
                || typeToConvert == typeof(ExpandoObject)
-               || typeToConvert == typeof(Dictionary<string, object>);
+               || typeToConvert == typeof(Dictionary<string, object>))
+            return true;
 
-        return canConvert;
+        if (typeToConvert.IsInterface
+               && typeToConvert == typeof(IDictionary<string, object>))
+            return true;
+
+        return false;
     }
 
     /// <inheritdoc />

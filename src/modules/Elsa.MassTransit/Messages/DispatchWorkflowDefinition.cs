@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 
 namespace Elsa.MassTransit.Messages;
@@ -21,45 +20,14 @@ public record DispatchWorkflowDefinition
         };
     }
 
-    /// <summary>
-    /// A message to dispatch a workflow definition for execution.
-    /// </summary>
-    /// <param name="definitionId">The ID of the workflow definition to dispatch.</param>
-    /// <param name="versionOptions">The version options to use when dispatching the workflow definition.</param>
-    /// <param name="parentWorkflowInstanceId">The ID of the parent workflow instance.</param>
-    /// <param name="input">Any input to pass to the workflow.</param>
-    /// <param name="properties">Any properties to attach to the workflow.</param>
-    /// <param name="correlationId">A correlation ID to associate the workflow with.</param>
-    /// <param name="instanceId">The ID to use when creating an instance of the workflow to dispatch.</param>
-    /// <param name="triggerActivityId">The ID of the activity that triggered the workflow.</param>
-    public static DispatchWorkflowDefinition DispatchNewWorkflowInstance(
-        string? definitionId,
-        VersionOptions? versionOptions,
-        string? parentWorkflowInstanceId,
-        IDictionary<string, object>? input,
-        IDictionary<string, object>? properties,
-        string? correlationId,
-        string? instanceId,
-        string? triggerActivityId)
-    {
-        return new()
-        {
-            DefinitionId = definitionId,
-            VersionOptions = versionOptions,
-            ParentWorkflowInstanceId = parentWorkflowInstanceId,
-            Input = input,
-            Properties = properties,
-            CorrelationId = correlationId,
-            InstanceId = instanceId,
-            TriggerActivityId = triggerActivityId
-        };
-    }
-
     /// The ID of the workflow definition to dispatch.
     public string? DefinitionId { get; init; }
 
     /// The version options to use when dispatching the workflow definition.
     public VersionOptions? VersionOptions { get; init; }
+    
+    /// The ID of the workflow definition version to dispatch.
+    public string? DefinitionVersionId { get; set; }
 
     /// The ID of the parent workflow instance.
     public string? ParentWorkflowInstanceId { get; init; }
