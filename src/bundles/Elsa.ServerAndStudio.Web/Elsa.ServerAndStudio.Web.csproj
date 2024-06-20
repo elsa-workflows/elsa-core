@@ -8,6 +8,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
@@ -24,7 +26,6 @@
         <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
-        <ProjectReference Include="..\Elsa.Server.Web\Elsa.Server.Web.csproj" />
         <ProjectReference Include="..\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj"/>
     </ItemGroup>
 

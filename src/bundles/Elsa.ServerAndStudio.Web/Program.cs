@@ -5,12 +5,11 @@ using Elsa.MassTransit.Options;
 using Elsa.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.MassTransit.Extensions;
-using Elsa.Server.Web;
+using Elsa.ServerAndStudio.Web.Enums;
 using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
-using MassTransitBroker = Elsa.ServerAndStudio.Web.Enums.MassTransitBroker;
 
 const bool useMassTransit = true;
 const bool useProtoActor = false;
