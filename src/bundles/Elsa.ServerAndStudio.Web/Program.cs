@@ -120,7 +120,11 @@ services
                     switch (useMassTransitBroker)
                     {
                         case MassTransitBroker.AzureServiceBus:
-                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+                            {
+                                asb.SubscriptionCleanupOptions = options => options.Interval = TimeSpan.FromMinutes(5);
+                                asb.EnableAutomatedSubscriptionCleanup = true;
+                            });
                             break;
                         case MassTransitBroker.RabbitMq:
                             massTransit.UseRabbitMq(rabbitMqConnectionString);
