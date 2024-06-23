@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Management.Filters;
 /// <summary>
 /// A filter for querying workflow instances.
 /// </summary>
-public class WorkflowInstanceFilter : ICloneable
+public class WorkflowInstanceFilter
 {
     /// <summary>
     /// Filter workflow instances by ID.
@@ -169,37 +169,5 @@ public class WorkflowInstanceFilter : ICloneable
         }
 
         return query;
-    }
-
-    /// <inheritdoc cref="ICloneable"/>
-    public object Clone()
-    {
-        return new WorkflowInstanceFilter
-        {
-            Id = Id,
-            Ids = Ids == null ? null : new List<string>(Ids),
-            Version = Version,
-            CorrelationId = CorrelationId,
-            CorrelationIds = CorrelationIds == null ? null : new List<string>(CorrelationIds),
-            DefinitionId = DefinitionId,
-            DefinitionIds = DefinitionIds == null ? null : new List<string>(DefinitionIds),
-            HasIncidents = HasIncidents,
-            IsSystem = IsSystem,
-            SearchTerm = SearchTerm,
-            TimestampFilters = TimestampFilters?.Select(x => new TimestampFilter
-            {
-                Column = x.Column,
-                Operator = x.Operator,
-                Timestamp = x.Timestamp
-            }).ToList(),
-            WorkflowStatus = WorkflowStatus,
-            WorkflowStatuses = WorkflowStatuses == null ? null : new List<WorkflowStatus>(WorkflowStatuses),
-            DefinitionVersionId = DefinitionVersionId,
-            DefinitionVersionIds = DefinitionVersionIds == null ? null : new List<string>(DefinitionVersionIds),
-            WorkflowSubStatus = WorkflowSubStatus,
-            WorkflowSubStatuses = WorkflowSubStatuses == null ? null : new List<WorkflowSubStatus>(WorkflowSubStatuses),
-            ParentWorkflowInstanceIds =
-                ParentWorkflowInstanceIds == null ? null : new List<string>(ParentWorkflowInstanceIds)
-        };
     }
 }

@@ -1,6 +1,7 @@
 using Elsa.Common.Contracts;
+using Elsa.Retention.Extensions;
 using Elsa.Retention.Options;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Enums;
 using Elsa.Workflows.Management.Filters;
@@ -46,7 +47,7 @@ namespace Elsa.Retention.Jobs;
         public async Task ExecuteAsync(CancellationToken cancellationToken = default)
         {
             var threshold = _systemClock.UtcNow.Subtract(_options.TimeToLive);
-            WorkflowInstanceFilter specification = (WorkflowInstanceFilter)_options.WorkflowInstanceFilter.Clone();
+            WorkflowInstanceFilter specification = _options.WorkflowInstanceFilter.Clone();
 
             specification.TimestampFilters ??= new List<TimestampFilter>();
             
