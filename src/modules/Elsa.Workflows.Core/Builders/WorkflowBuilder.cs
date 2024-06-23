@@ -33,6 +33,9 @@ public class WorkflowBuilder : IWorkflowBuilder
     public string? DefinitionId { get; set; }
 
     /// <inheritdoc />
+    public string? TenantId { get; set; }
+
+    /// <inheritdoc />
     public int Version { get; set; } = 1;
 
     /// <inheritdoc />
@@ -75,6 +78,13 @@ public class WorkflowBuilder : IWorkflowBuilder
     public IWorkflowBuilder WithDefinitionId(string definitionId)
     {
         DefinitionId = definitionId;
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IWorkflowBuilder WithTenantId(string tenantId)
+    {
+        TenantId = tenantId;
         return this;
     }
 
@@ -216,10 +226,11 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = DefinitionId ?? _identityGenerator.GenerateId();
-        var id = Id ?? _identityGenerator.GenerateId();
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? _identityGenerator.GenerateId() : DefinitionId;
+        var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
+        var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
-        var identity = new WorkflowIdentity(definitionId, Version, id);
+        var identity = new WorkflowIdentity(definitionId, Version, id, tenantId);
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);
@@ -240,7 +251,7 @@ public class WorkflowBuilder : IWorkflowBuilder
         await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
 
         // Assign identities to all activities.
-        _identityGraphService.AssignIdentities(nodes);
+        await _identityGraphService.AssignIdentitiesAsync(nodes);
 
         // Give unnamed variables in each variable container a predictable name.
         var variableContainers = nodes.Where(x => x.Activity is IVariableContainer).Select(x => (IVariableContainer)x.Activity).ToList();

@@ -1,5 +1,4 @@
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.HostedServices;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -25,7 +24,7 @@ public class DefaultRegistriesPopulator : IRegistriesPopulator
         // Stage 1: Populate the activity registry.
         // Because workflow definitions can be used as activities, we need to make sure that the activity registry is populated before we populate the workflow definition store.
         await _activityRegistryPopulator.PopulateRegistryAsync(cancellationToken);
-
+        
         // Stage 2: Populate the workflow definition store.
         await _workflowDefinitionStorePopulator.PopulateStoreAsync(false, cancellationToken);
 

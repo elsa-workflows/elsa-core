@@ -12,6 +12,7 @@ using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.Helpers;
 using Elsa.JavaScript.Notifications;
+using Elsa.JavaScript.ObjectConverters;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
@@ -27,25 +28,14 @@ namespace Elsa.JavaScript.Services;
 /// <summary>
 /// Provides a JavaScript evaluator using Jint.
 /// </summary>
-public class JintJavaScriptEvaluator : IJavaScriptEvaluator
+public class JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
+    : IJavaScriptEvaluator
 {
-    private readonly INotificationSender _mediator;
-    private readonly IMemoryCache _memoryCache;
-    private readonly JintOptions _jintOptions;
-    private readonly IConfiguration _configuration;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
-    {
-        _mediator = mediator;
-        _memoryCache = memoryCache;
-        _jintOptions = scriptOptions.Value;
-        _configuration = configuration;
-    }
+    private readonly JintOptions _jintOptions = scriptOptions.Value;
+    private readonly JsonSerializerOptions _jsonSerializerOptions = CreateJsonSerializerOptions();
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The Jint library uses reflection and can't be statically analyzed.")]
     public async Task<object?> EvaluateAsync(string expression,
         Type returnType,
         ExpressionExecutionContext context,
@@ -63,22 +53,26 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         options ??= new ExpressionEvaluatorOptions();
 
-        var engine = new Engine(opts =>
+        var engineOptions = new Jint.Options();;
+        
+        if (_jintOptions.AllowClrAccess)
+            engineOptions.AllowClr();
+
+        // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
+        engineOptions.SetWrapObjectHandler((engine, target, type) =>
         {
-            if (_jintOptions.AllowClrAccess)
-                opts.AllowClr();
+            var instance = ObjectWrapper.Create(engine, target);
 
-            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
-            opts.SetWrapObjectHandler((engine, target, type) =>
-            {
-                var instance = new ObjectWrapper(engine, target);
+            if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
 
-                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
-                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
-
-                return instance;
-            });
+            return instance;
         });
+
+        engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
+            
+        await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
+        var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);
 
@@ -100,7 +94,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         CreateWorkflowInputAccessors(engine, context);
 
         // Create output getters for each activity.
-        CreateActivityOutputAccessors(engine, context);
+        await CreateActivityOutputAccessorsAsync(engine, context);
 
         // Create argument getters for each argument.
         foreach (var argument in options.Arguments)
@@ -123,7 +117,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
 
         // Create configuration value accessor
         if (_jintOptions.AllowConfigurationAccess)
-            engine.SetValue("getConfig", (Func<string, object?>)(name => _configuration.GetSection(name).Value));
+            engine.SetValue("getConfig", (Func<string, object?>)(name => configuration.GetSection(name).Value));
 
         // Add common .NET types.
         engine.RegisterType<DateTime>();
@@ -135,7 +129,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         _jintOptions.ConfigureEngineCallback(engine, context);
 
         // Allow listeners invoked by the mediator to configure the engine.
-        await _mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
 
         return engine;
     }
@@ -159,6 +153,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
+    [RequiresUnreferencedCode("Calls Jint.Engine.SetValue<T>(String, T)")]
     private static void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
     {
         var variableNames = context.GetVariableNamesInScope().ToList();
@@ -171,11 +166,11 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
         }
     }
 
-    private static void CreateActivityOutputAccessors(Engine engine, ExpressionExecutionContext context)
+    private static async Task CreateActivityOutputAccessorsAsync(Engine engine, ExpressionExecutionContext context)
     {
         var activityOutputs = context.GetActivityOutputs();
 
-        foreach (var activityOutput in activityOutputs)
+        await foreach (var activityOutput in activityOutputs)
         foreach (var outputName in activityOutput.OutputNames)
             engine.SetValue($"get{outputName}From{activityOutput.ActivityName}", (Func<object?>)(() => context.GetOutput(activityOutput.ActivityId, outputName)));
     }
@@ -184,7 +179,7 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     {
         var cacheKey = "jint:script:" + Hash(expression);
 
-        var parsedScript = _memoryCache.GetOrCreate(cacheKey, entry =>
+        var parsedScript = memoryCache.GetOrCreate(cacheKey, entry =>
         {
             if (_jintOptions.ScriptCacheTimeout.HasValue)
                 entry.SetAbsoluteExpiration(_jintOptions.ScriptCacheTimeout.Value);
@@ -204,15 +199,19 @@ public class JintJavaScriptEvaluator : IJavaScriptEvaluator
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    private static string Serialize(object value)
+    private string Serialize(object value)
+    {
+        return JsonSerializer.Serialize(value, _jsonSerializerOptions);
+    }
+    
+    private static JsonSerializerOptions CreateJsonSerializerOptions()
     {
         var options = new JsonSerializerOptions
         {
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         };
         options.Converters.Add(new JsonStringEnumConverter());
-
-        return JsonSerializer.Serialize(value, options);
+        return options;
     }
     
     private string Hash(string input)

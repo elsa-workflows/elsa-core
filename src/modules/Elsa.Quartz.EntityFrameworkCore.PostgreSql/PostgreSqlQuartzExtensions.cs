@@ -18,13 +18,12 @@ public static class PostgreSqlQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the PostgreSQL job store.
     /// </summary>
-    public static QuartzFeature UsePostgreSql(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true)
+    public static QuartzFeature UsePostgreSql(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true, bool useContextPooling = false)
     {
-        feature.Services.AddDbContextFactory<PostgreSqlQuartzDbContext>(options =>
-        {
-            // Use PostgreSQL migrations.
-            options.UseNpgsql(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(PostgreSqlQuartzDbContext).Assembly.GetName().Name); });
-        });
+        if (useContextPooling)
+            feature.Services.AddPooledDbContextFactory<PostgreSqlQuartzDbContext>(options => UseNpgsql(connectionString, options));
+        else
+            feature.Services.AddDbContextFactory<PostgreSqlQuartzDbContext>(options => UseNpgsql(connectionString, options));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -47,5 +46,11 @@ public static class PostgreSqlQuartzExtensions
         feature.Module.ConfigureHostedService<RunMigrationsHostedService<PostgreSqlQuartzDbContext>>(-100);
 
         return feature;
+    }
+
+    private static void UseNpgsql(string connectionString, DbContextOptionsBuilder options)
+    {
+        // Use PostgreSQL migrations.
+        options.UseNpgsql(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(PostgreSqlQuartzDbContext).Assembly.GetName().Name); });
     }
 }

@@ -1,13 +1,14 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
 
 namespace Elsa.Server.Web.Endpoints.DynamicWorkflows.Post;
 
-public class Post(IWorkflowRegistry workflowRegistry, IWorkflowRuntime workflowRuntime) : ElsaEndpointWithoutRequest
+public class Post(IWorkflowInvoker workflowInvoker) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -31,7 +32,6 @@ public class Post(IWorkflowRegistry workflowRegistry, IWorkflowRuntime workflowR
             }
         };
 
-        await workflowRegistry.RegisterAsync(workflow, ct);
-        await workflowRuntime.StartWorkflowAsync("DynamicWorkflow1", new StartWorkflowRuntimeParams());
+        await workflowInvoker.InvokeAsync(workflow, cancellationToken: ct);
     }
 }

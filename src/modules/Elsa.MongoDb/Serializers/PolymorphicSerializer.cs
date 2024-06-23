@@ -1,3 +1,4 @@
+using Elsa.Common.Helpers;
 using Elsa.Extensions;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -29,7 +30,7 @@ public class PolymorphicSerializer : IBsonSerializer<object>
                 if (document.Contains("$type") && document.Contains("$value"))
                 {
                     var typeValue = document["$type"].AsString;
-                    var type = Type.GetType(typeValue);
+                    var type = TypeHelper.GetLatestType(typeValue);
                     var valueBson = document["$value"];
                     using var jsonReader = new JsonReader(valueBson.ToJson());
                     return BsonSerializer.Deserialize(jsonReader, type);

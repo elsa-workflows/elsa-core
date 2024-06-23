@@ -1,6 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.MongoDb.Common;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;

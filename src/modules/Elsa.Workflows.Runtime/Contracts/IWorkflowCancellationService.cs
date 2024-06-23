@@ -1,6 +1,6 @@
 using Elsa.Common.Models;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Service wrapper for cancelling multiple workflow instances.

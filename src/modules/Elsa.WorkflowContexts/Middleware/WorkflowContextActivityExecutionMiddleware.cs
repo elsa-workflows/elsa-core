@@ -3,7 +3,6 @@ using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Middleware.Activities;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Middleware;

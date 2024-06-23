@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
@@ -99,6 +98,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             CustomProperties =
             {
                 ["RootType"] = nameof(WorkflowDefinitionActivity),
+                ["WorkflowDefinitionId"] = definition.DefinitionId,
                 ["WorkflowDefinitionVersionId"] = definition.Id
             },
             ConstructionProperties = new Dictionary<string, object>

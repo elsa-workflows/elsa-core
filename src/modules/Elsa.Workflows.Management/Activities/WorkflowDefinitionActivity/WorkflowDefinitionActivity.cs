@@ -3,7 +3,6 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
@@ -45,7 +44,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        CopyInputOutputToVariables(context);
+        await CopyInputOutputToVariablesAsync(context);
         await context.ScheduleActivityAsync(Root, OnChildCompletedAsync);
     }
 
@@ -84,10 +83,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         await activityExecutionContext.CompleteActivityAsync(completeCompositeSignal?.Value);
     }
 
-    private void CopyInputOutputToVariables(ActivityExecutionContext context)
+    private async Task CopyInputOutputToVariablesAsync(ActivityExecutionContext context)
     {
         var serviceProvider = context.GetRequiredService<IServiceProvider>();
-        var activityDescriptor = FindActivityDescriptor(serviceProvider);
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
 
         DeclareInputAsVariables(activityDescriptor, (descriptor, variable) =>
         {
@@ -99,7 +98,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
             variable.Set(context, evaluatedExpression);
         });
 
-        DeclareOutputAsVariables(activityDescriptor, (descriptor, variable) => context.ExpressionExecutionContext.Memory.Declare(variable));
+        DeclareOutputAsVariables(activityDescriptor, (_, variable) => context.ExpressionExecutionContext.Memory.Declare(variable));
     }
 
     private void DeclareInputAsVariables(ActivityDescriptor activityDescriptor, Action<InputDescriptor, Variable> configureVariable)
@@ -165,10 +164,10 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         return workflowGraph;
     }
 
-    private ActivityDescriptor? FindActivityDescriptor(IServiceProvider serviceProvider)
+    private async Task<ActivityDescriptor?> FindActivityDescriptorAsync(IServiceProvider serviceProvider)
     {
-        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        return activityRegistry.Find(Type, Version) ?? activityRegistry.Find(Type);
+        var activityRegistryLookup = serviceProvider.GetRequiredService<IActivityRegistryLookupService>();
+        return await activityRegistryLookup.FindAsync(Type, Version) ?? await activityRegistryLookup.FindAsync(Type);
     }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
@@ -186,7 +185,7 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
         if (workflowGraph == null)
             throw new Exception($"Could not find workflow definition with ID {WorkflowDefinitionId}.");
 
-        var activityDescriptor = FindActivityDescriptor(serviceProvider);
+        var activityDescriptor = await FindActivityDescriptorAsync(serviceProvider);
 
         if (activityDescriptor == null)
         {

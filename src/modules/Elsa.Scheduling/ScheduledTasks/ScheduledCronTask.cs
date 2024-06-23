@@ -1,7 +1,6 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
-using Elsa.Scheduling.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;

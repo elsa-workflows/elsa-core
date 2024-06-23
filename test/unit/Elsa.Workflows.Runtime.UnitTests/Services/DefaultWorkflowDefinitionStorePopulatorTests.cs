@@ -1,12 +1,11 @@
 using Elsa.Common.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -24,7 +23,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         _storeMock = Substitute.For<IWorkflowDefinitionStore>();
         _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
             .Returns(_workflowDefinitionsInStore);
-        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowProvider>(),
+        _populator = new DefaultWorkflowDefinitionStorePopulator(() => new List<IWorkflowsProvider>(),
             Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),

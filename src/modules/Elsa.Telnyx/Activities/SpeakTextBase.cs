@@ -107,7 +107,7 @@ public abstract class SpeakTextBase : Activity
             await telnyxClient.Calls.SpeakTextAsync(callControlId, request, context.CancellationToken);
             
             // Create bookmark to resume the workflow when speaking has finished.
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallSpeakEnded, callControlId), HandleSpeakingHasFinished, true);
+            context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallSpeakEnded, callControlId), HandleSpeakingHasFinished, true);
         }
         catch (ApiException e)
         {

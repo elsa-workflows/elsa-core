@@ -6,6 +6,12 @@ namespace Elsa.Workflows.Exceptions;
 public class ActivityNotFoundException : Exception
 {
     /// <inheritdoc />
+    public ActivityNotFoundException(string missingTypeName) : base($"Activity type '{missingTypeName}' could not be found.")
+    {
+        MissingTypeName = missingTypeName;
+    }
+    
+    /// <inheritdoc />
     public ActivityNotFoundException(string missingTypeName, int missingTypeVersion) : base($"Activity type '{missingTypeName}' version '{missingTypeVersion}' could not be found.")
     {
         MissingTypeName = missingTypeName;

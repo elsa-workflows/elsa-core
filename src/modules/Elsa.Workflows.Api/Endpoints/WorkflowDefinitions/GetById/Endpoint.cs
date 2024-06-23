@@ -1,7 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;

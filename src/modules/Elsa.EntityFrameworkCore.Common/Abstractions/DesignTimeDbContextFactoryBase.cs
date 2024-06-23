@@ -1,7 +1,8 @@
-﻿using System.CommandLine;
-using System.CommandLine.Parsing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using System.CommandLine;
+using System.CommandLine.Parsing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common.Abstractions;
 
@@ -22,10 +23,11 @@ public abstract class DesignTimeDbContextFactoryBase<TDbContext> : IDesignTimeDb
         var parser = new Parser(command);
         var parseResult = parser.Parse(args);
         var connectionString = parseResult.GetValueForOption(connectionStringOption) ?? "Data Source=local";
+        var serviceProvider = new ServiceCollection().BuildServiceProvider();
 
         ConfigureBuilder(builder, connectionString);
 
-        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
+        return (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options, serviceProvider);
     }
 
     /// <summary>
