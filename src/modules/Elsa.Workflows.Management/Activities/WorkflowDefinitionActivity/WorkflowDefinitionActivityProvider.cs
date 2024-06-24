@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 
 /// </summary>
-public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, IActivityRegistry activityRegistry, ActivityWriter activityWriter) : IActivityProvider
+public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, ActivityWriter activityWriter) : IActivityProvider
 {
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
@@ -114,7 +114,7 @@ public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, 
             },
             ConfigureSerializerOptions = options =>
             {
-                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityRegistry, activityWriter));
+                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityWriter));
                 return options;
             }
         };

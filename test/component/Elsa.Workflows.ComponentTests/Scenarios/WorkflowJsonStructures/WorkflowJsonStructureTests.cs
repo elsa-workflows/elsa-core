@@ -24,9 +24,7 @@ public class WorkflowJsonStructureTests(App app) : AppComponentTest(app)
         var client = WorkflowServer.CreateApiClient<IWorkflowDefinitionsApi>();
         var subgraph = (await client.GetSubgraphAsync(MainDefinitionId, Sub1NodeId))!;
         Assert.Equal(Sub1NodeId, subgraph.Activity["nodeId"]!.ToString());
-        var root = subgraph.Activity["root"];
-        Assert.NotNull(root);
-        var writeLine = root["root"]["activities"][0]!;
+        var writeLine = subgraph.Activity["root"]!["root"]!["activities"]![0]!;
         Assert.Equal("Elsa.WriteLine", writeLine["type"]!.ToString());
     }
 }
