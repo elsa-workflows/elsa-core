@@ -22,6 +22,12 @@ public class MassTransitDistributedEventsDispatcher(IBus bus) : IDistributedWork
     }
 
     /// <inheritdoc />
+    public Task DispatchAsync(WorkflowDefinitionVersionRetracted request, CancellationToken cancellationToken)
+    {
+        return bus.Publish(request, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task DispatchAsync(WorkflowDefinitionDeleted request, CancellationToken cancellationToken)
     {
         return bus.Publish(request, cancellationToken);
