@@ -30,7 +30,7 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
 
         var parentNode = request.ParentNodeId == null ? workflowGraph.Root : workflowGraph.NodeIdLookup.TryGetValue(request.ParentNodeId, out var node) ? node : workflowGraph.Root;
         var serializerOptions = apiSerializer.GetOptions().Clone();
-        serializerOptions.Converters.Add(new ActivityNodeConverter(activityWriter, depth: 2));
+        serializerOptions.Converters.Add(new RootActivityNodeConverter(activityWriter));
         await HttpContext.Response.WriteAsJsonAsync(parentNode, serializerOptions, cancellationToken);
     }
 }
