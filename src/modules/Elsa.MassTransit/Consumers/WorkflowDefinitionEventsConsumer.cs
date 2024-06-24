@@ -13,6 +13,7 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     IConsumer<WorkflowDefinitionDeleted>,
     IConsumer<WorkflowDefinitionPublished>,
     IConsumer<WorkflowDefinitionRetracted>,
+    IConsumer<WorkflowDefinitionVersionRetracted>,
     IConsumer<WorkflowDefinitionsDeleted>,
     IConsumer<WorkflowDefinitionVersionDeleted>,
     IConsumer<WorkflowDefinitionVersionsDeleted>,
@@ -28,14 +29,19 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionPublished> context)
     {
-        return UpdateDefinition(context.Message.Id, true, context.Message.UsableAsActivity);
+        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
     }
 
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionRetracted> context)
     {
-        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(context.Message.Id);
-        return Task.CompletedTask;
+        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
+    }
+
+    /// <inheritdoc />
+    public Task Consume(ConsumeContext<WorkflowDefinitionVersionRetracted> context)
+    {
+        return UpdateDefinition(context.Message.Id, context.Message.UsableAsActivity);
     }
 
     /// <inheritdoc />
@@ -72,13 +78,14 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     {
         foreach (WorkflowDefinitionVersionUpdate definitionUpdate in context.Message.WorkflowDefinitionVersionUpdates)
         {
-            await UpdateDefinition(definitionUpdate.Id, definitionUpdate.IsPublished, definitionUpdate.UsableAsActivity);
+            await UpdateDefinition(definitionUpdate.Id, definitionUpdate.UsableAsActivity);
         }
     }
 
-    private Task UpdateDefinition(string id, bool isPublished, bool usableAsActivity)
+    private Task UpdateDefinition(string id, bool usableAsActivity)
     {
-        if (isPublished && usableAsActivity)
+        // Once a workflow has been published it should remain in the activity registry unless no longer being marked as an activity.
+        if (usableAsActivity)
             return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 
         workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(id);

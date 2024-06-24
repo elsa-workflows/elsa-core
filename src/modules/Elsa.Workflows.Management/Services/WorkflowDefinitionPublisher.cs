@@ -107,9 +107,13 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
+            var isPublished = publishedAndOrLatestWorkflow.IsPublished; 
             publishedAndOrLatestWorkflow.IsPublished = false;
             publishedAndOrLatestWorkflow.IsLatest = false;
             await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
+            
+            if (isPublished)
+                await _notificationSender.SendAsync(new WorkflowDefinitionVersionRetracted(publishedAndOrLatestWorkflow), cancellationToken);
         }
 
         // Save the new published definition.

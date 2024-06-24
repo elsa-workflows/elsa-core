@@ -9,6 +9,7 @@ namespace Elsa.MassTransit.Handlers;
 public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkflowDefinitionEventsDispatcher distributedEventsDispatcher) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
+    INotificationHandler<WorkflowDefinitionVersionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
@@ -21,8 +22,14 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IDistributedWorkf
             notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) => 
-        distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionRetracted(notification.WorkflowDefinition.Id), cancellationToken);
+    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken) =>
+        distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionRetracted(notification.WorkflowDefinition.Id, 
+                notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionVersionRetracted notification, CancellationToken cancellationToken) => 
+        distributedEventsDispatcher.DispatchAsync(new Distributed.WorkflowDefinitionVersionRetracted(notification.WorkflowDefinition.Id, 
+            notification.WorkflowDefinition.Options.UsableAsActivity.GetValueOrDefault()), cancellationToken);
 
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken) => 
