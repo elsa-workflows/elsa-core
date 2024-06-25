@@ -40,7 +40,7 @@ public abstract class Composite : Activity, IVariableContainer
     /// </summary>
     [Port]
     [Browsable(false)]
-    [JsonIgnoreCompositeRoot] // Composite activities' Root is intended to be constructed from code only.
+    [JsonIgnoreCompositeRoot]
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />

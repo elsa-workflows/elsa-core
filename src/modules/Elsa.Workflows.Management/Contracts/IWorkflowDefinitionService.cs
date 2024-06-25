@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Manages materialization of <see cref="WorkflowDefinition"/> to <see cref="Workflow"/> objects. 

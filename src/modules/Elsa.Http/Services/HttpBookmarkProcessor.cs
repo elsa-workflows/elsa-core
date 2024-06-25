@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Models;

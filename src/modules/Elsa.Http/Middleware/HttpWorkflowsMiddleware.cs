@@ -22,6 +22,7 @@ using Elsa.Workflows.State;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 

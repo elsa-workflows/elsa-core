@@ -16,6 +16,7 @@ using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
+using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
@@ -179,10 +180,12 @@ public class WorkflowsFeature : FeatureBase
             .AddSingleton<IApiSerializer, ApiSerializer>()
             .AddSingleton<ISafeSerializer, SafeSerializer>()
             .AddSingleton<IJsonSerializer, StandardJsonSerializer>()
+            .AddSingleton<SyntheticPropertiesWriter>()
+            .AddSingleton<ActivityWriter>()
 
             // Instantiation strategies.
             .AddScoped<IWorkflowActivationStrategy, AllowAlwaysStrategy>()
-            
+
             // UI hints.
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()

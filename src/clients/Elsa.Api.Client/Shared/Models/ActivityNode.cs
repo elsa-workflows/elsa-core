@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Elsa.Api.Client.Extensions;
 
 namespace Elsa.Api.Client.Shared.Models;
@@ -8,38 +9,36 @@ namespace Elsa.Api.Client.Shared.Models;
 /// </summary>
 public class ActivityNode
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ActivityNode"/> class.
-    /// </summary>
-    /// <param name="activity">The activity.</param>
-    /// <param name="propertyName">The name of the property that contains the activity.</param>
-    public ActivityNode(JsonObject activity, string? propertyName)
+    [JsonConstructor]
+    public ActivityNode()
+    {
+    }
+
+    public ActivityNode(JsonObject activity)
     {
         Activity = activity;
-        PropertyName = propertyName;
+        NodeId = activity.GetNodeId();
+    }
+    
+    public ActivityNode(JsonObject activity, string port) : this(activity)
+    {
+        Port = port;
     }
     
     /// <summary>
     /// Gets the activity.
     /// </summary>
-    public JsonObject Activity { get; }
+    public JsonObject Activity { get; set; } = default!;
 
     /// <summary>
     /// Gets the property name that contains the activity.
     /// </summary>
-    public string? PropertyName { get; }
-    
+    public string? Port { get; set; }
+
     /// <summary>
     /// Gets the node ID.
     /// </summary>
-    public string NodeId
-    {
-        get
-        {
-            var ancestorIds = Ancestors().Reverse().Select(x => x.Activity.GetId()).ToList();
-            return ancestorIds.Any() ? $"{string.Join(":", ancestorIds)}:{Activity.GetId()}" : Activity.GetId();
-        }
-    }
+    public string NodeId { get; set; } = default!;
 
     /// <summary>
     /// Gets the parents of this node.

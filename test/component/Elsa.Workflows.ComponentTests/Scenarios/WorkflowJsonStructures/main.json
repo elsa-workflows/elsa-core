@@ -1,0 +1,103 @@
+{
+  "id": "a417fadbbb7c417e",
+  "definitionId": "ebe87d0f1d1924ea",
+  "name": "Main",
+  "createdAt": "2024-06-20T15:08:33.469865+00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "4d5af7585eece1d7",
+    "nodeId": "Workflow2:4d5af7585eece1d7",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "497be45e7d647e8f",
+        "workflowDefinitionVersionId": "e91d58c7a7ca1861",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "e91d58c7a7ca1861",
+        "id": "f19ae76011a020f3",
+        "nodeId": "Workflow2:4d5af7585eece1d7:f19ae76011a020f3",
+        "name": "Sub1",
+        "type": "Sub",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -235.796875,
+              "y": -74
+            },
+            "size": {
+              "width": 58.7421875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "workflowDefinitionId": "497be45e7d647e8f",
+        "workflowDefinitionVersionId": "e91d58c7a7ca1861",
+        "latestAvailablePublishedVersion": 1,
+        "latestAvailablePublishedVersionId": "e91d58c7a7ca1861",
+        "id": "ad4d54104a443b5b",
+        "nodeId": "Workflow2:4d5af7585eece1d7:ad4d54104a443b5b",
+        "name": "Sub2",
+        "type": "Sub",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -101.796875,
+              "y": -74
+            },
+            "size": {
+              "width": 58.7421875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "f19ae76011a020f3",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "ad4d54104a443b5b",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

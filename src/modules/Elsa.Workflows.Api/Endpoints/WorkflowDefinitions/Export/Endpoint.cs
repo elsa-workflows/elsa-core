@@ -2,14 +2,13 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Serialization.Converters;
 using Humanizer;
 using JetBrains.Annotations;
 
@@ -21,8 +20,8 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
 [UsedImplicitly]
 internal class Export : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionStore _store;
     private readonly IApiSerializer _serializer;
+    private readonly IWorkflowDefinitionStore _store;
     private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
@@ -57,7 +56,10 @@ internal class Export : ElsaEndpoint<Request>
 
     private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, CancellationToken cancellationToken)
     {
-        var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter { Ids = ids }, cancellationToken: cancellationToken)).ToList();
+        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            Ids = ids
+        }, cancellationToken)).ToList();
 
         if (!definitions.Any())
         {
@@ -88,7 +90,11 @@ internal class Export : ElsaEndpoint<Request>
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
-        var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = parsedVersionOptions }, cancellationToken: cancellationToken)).FirstOrDefault();
+        WorkflowDefinition? definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = parsedVersionOptions
+        }, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
@@ -113,11 +119,7 @@ internal class Export : ElsaEndpoint<Request>
 
     private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
     {
-        var serializerOptions = _serializer.GetOptions().Clone();
-
-        // Exclude composite activities from being serialized.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
+        JsonSerializerOptions serializerOptions = _serializer.GetOptions();
         var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
         return binaryJson;
     }
