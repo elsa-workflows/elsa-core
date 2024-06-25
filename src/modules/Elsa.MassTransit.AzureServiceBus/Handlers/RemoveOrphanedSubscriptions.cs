@@ -33,7 +33,7 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
                 // MassTransit automatically truncates them.
                 await foreach (var asbSubscription in client.GetSubscriptionsAsync(subscription.TopicName, cancellationToken))
                 {
-                    if (asbSubscription.SubscriptionName.StartsWith($"Elsa-{notification.InstanceName}-"))
+                    if (asbSubscription.SubscriptionName.StartsWith($"{notification.InstanceName}-elsa-"))
                     {
                         var queueName = asbSubscription.ForwardTo[(asbSubscription.ForwardTo.LastIndexOf('/') + 1)..];
 
@@ -43,7 +43,7 @@ public class RemoveOrphanedSubscriptions(MessageTopologyProvider topologyProvide
                     }
                 }
             }
-            catch (ServiceBusException ex) when(ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
+            catch (ServiceBusException ex) when (ex.Reason == ServiceBusFailureReason.MessagingEntityNotFound)
             {
                 logger.LogWarning(ex, "Service bus entity {entityPath} was not found", ex.EntityPath);
             }
