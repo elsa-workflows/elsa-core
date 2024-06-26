@@ -28,7 +28,7 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
             return;
         }
 
-        var parentNode = request.ParentNodeId == null ? workflowGraph.Root : workflowGraph.NodeIdLookup.TryGetValue(request.ParentNodeId, out var node) ? node : workflowGraph.Root;
+        var parentNode = workflowGraph.NodeIdLookup.TryGetValue(request.ParentNodeId, out var node) ? node : workflowGraph.Root;
         var serializerOptions = apiSerializer.GetOptions().Clone();
         serializerOptions.Converters.Add(new RootActivityNodeConverter(activityWriter));
         await HttpContext.Response.WriteAsJsonAsync(parentNode, serializerOptions, cancellationToken);
