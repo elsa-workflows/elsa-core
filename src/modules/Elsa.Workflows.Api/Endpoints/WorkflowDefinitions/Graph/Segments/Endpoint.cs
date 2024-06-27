@@ -61,7 +61,7 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
         }
 
         var leafSegment = segments.FirstOrDefault();
-        var container = leafSegment == null ? ancestors.Last() : ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
+        var container = leafSegment == null ? ancestors.LastOrDefault() ?? childNode : ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
         var response = new Response(childNode, container, segments.ToList());
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
