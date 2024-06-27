@@ -31,11 +31,18 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
         }
 
         var nodeId = request.ChildNodeId;
-        var childNode = workflowGraph.NodeIdLookup[nodeId];
-        var ancestors = childNode.Ancestors().Reverse().ToList();
+
+        if (!workflowGraph.NodeIdLookup.TryGetValue(nodeId, out var childNode))
+        {
+            AddError("Unknown node ID");
+            await SendErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+        
+        var ancestors = childNode.Ancestors().ToList();
         var serializerOptions = apiSerializer.GetOptions().Clone().WithConverters(new RootActivityNodeConverter(activityWriter));
-        var segments = new List<ActivityPathSegment>();
-        var currentNode = ancestors.LastOrDefault();
+        var segments = new Stack<ActivityPathSegment>();
+        var currentNode = ancestors.FirstOrDefault();
         var previousNode = childNode;
 
         while (currentNode != null)
@@ -46,16 +53,16 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
                 var currentPort = previousNode?.Port ?? "Root";
                 var activityName = currentActivity.Name ?? currentActivity.Type;
                 var segment = new ActivityPathSegment(currentNode.NodeId, currentActivity.Id, currentActivity.Type, currentPort, activityName);
-                segments.Add(segment);
+                segments.Push(segment);
             }
 
             previousNode = currentNode;
             currentNode = currentNode.Parents.FirstOrDefault();
         }
 
-        var leafSegment = segments.LastOrDefault();
+        var leafSegment = segments.FirstOrDefault();
         var container = leafSegment == null ? ancestors.Last() : ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
-        var response = new Response(childNode, container, segments);
+        var response = new Response(childNode, container, segments.ToList());
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
 }
