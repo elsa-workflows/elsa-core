@@ -24,7 +24,7 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
     {
         var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.Id, cancellationToken);
 
-        if (workflowGraph == null)
+        if (workflowGraph?.Root == null)
         {
             await SendNotFoundAsync(cancellationToken);
             return;
@@ -35,30 +35,26 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
         var ancestors = childNode.Ancestors().Reverse().ToList();
         var serializerOptions = apiSerializer.GetOptions().Clone().WithConverters(new RootActivityNodeConverter(activityWriter));
         var segments = new List<ActivityPathSegment>();
+        var currentNode = ancestors.LastOrDefault();
+        var previousNode = childNode;
 
-        if (ancestors.Any())
+        while (currentNode != null)
         {
-            var currentNode = ancestors.LastOrDefault();
-            var previousNode = default(ActivityNode);
-
-            while (currentNode != null)
+            if (currentNode.Activity.Type is not "Elsa.Workflow" and not "Elsa.Flowchart")
             {
-                if (currentNode.Activity.Type is not "Elsa.Workflow" and not "Elsa.Flowchart")
-                {
-                    var currentActivity = currentNode.Activity;
-                    var currentPort = previousNode?.Port ?? "Root";
-                    var activityName = currentActivity.Name ?? currentActivity.Type;
-                    var segment = new ActivityPathSegment(currentNode.NodeId, currentActivity.Id, currentActivity.Type, currentPort, activityName);
-                    segments.Add(segment);
-                }
-
-                previousNode = currentNode;
-                currentNode = currentNode.Parents.FirstOrDefault();
+                var currentActivity = currentNode.Activity;
+                var currentPort = previousNode?.Port ?? "Root";
+                var activityName = currentActivity.Name ?? currentActivity.Type;
+                var segment = new ActivityPathSegment(currentNode.NodeId, currentActivity.Id, currentActivity.Type, currentPort, activityName);
+                segments.Add(segment);
             }
+
+            previousNode = currentNode;
+            currentNode = currentNode.Parents.FirstOrDefault();
         }
 
-        var leafSegment = segments.Last();
-        var container = ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
+        var leafSegment = segments.LastOrDefault();
+        var container = leafSegment == null ? ancestors.Last() : ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
         var response = new Response(childNode, container, segments);
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
