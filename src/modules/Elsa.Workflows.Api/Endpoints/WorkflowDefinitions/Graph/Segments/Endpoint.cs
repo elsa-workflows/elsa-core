@@ -3,7 +3,6 @@ using Elsa.Extensions;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
@@ -60,7 +59,7 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
             currentNode = currentNode.Parents.FirstOrDefault();
         }
 
-        var leafSegment = segments.FirstOrDefault();
+        var leafSegment = segments.LastOrDefault();
         var container = leafSegment == null ? ancestors.LastOrDefault() ?? childNode : ancestors.Last(x => x.Activity.Id == leafSegment.ActivityId);
         var response = new Response(childNode, container, segments.ToList());
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
