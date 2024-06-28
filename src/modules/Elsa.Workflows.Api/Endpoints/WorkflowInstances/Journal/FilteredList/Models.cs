@@ -44,6 +44,7 @@ internal class Request
 internal class JournalFilter
 {
     public ICollection<string>? ActivityIds { get; set; }
+    public ICollection<string>? ExcludedActivityTypes { get; set; }
     public ICollection<string>? EventNames { get; set; }
 }
 
