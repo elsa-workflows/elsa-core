@@ -35,6 +35,7 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
         
         activityDescriptor.TypeName = fullTypeName;
         activityDescriptor.Name = eventType.DisplayName;
+        activityDescriptor.Description = eventType.DisplayName;
         activityDescriptor.Category = webhookSource.Name;
         activityDescriptor.Description = eventTypeDescription;
         var eventTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(WebhookEventReceived.EventType));
