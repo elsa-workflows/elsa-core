@@ -10,6 +10,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
+using WebhooksCore.Options;
 
 const bool useMassTransit = true;
 const bool useProtoActor = false;
@@ -97,7 +98,7 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-            .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
+            .UseWebhooks()
             .UseWorkflowsApi()
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
@@ -128,6 +129,8 @@ services
             });
         }
     });
+
+services.Configure<WebhookSinksOptions>(options => configuration.GetSection("Webhooks").Bind(options));
 
 services.AddHealthChecks();
 

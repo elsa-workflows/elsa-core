@@ -43,7 +43,7 @@
     <PackageVersion Include="Hangfire.Storage.SQLite" Version="0.4.2" />
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="IronCompress" Version="1.5.2" />
-    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
+    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="All" />
     <PackageVersion Include="Jint" Version="3.1.2" />
     <PackageVersion Include="LinqKit.Core" Version="1.2.5" />
     <PackageVersion Include="MailKit" Version="4.6.0" />
@@ -95,6 +95,7 @@
     <PackageVersion Include="Testcontainers.Redis" Version="3.8.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="3.8.0" />
     <PackageVersion Include="ThrottleDebounce" Version="2.0.0" />
+    <PackageVersion Include="WebhooksCore" Version="0.0.1-preview.11" />
     <PackageVersion Include="xunit" Version="2.8.1" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.extensibility.core" Version="2.8.1" />

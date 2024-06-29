@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.Webhooks.WorkflowServer.Workflows;
+using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,8 +22,10 @@ builder.Services.AddElsa(elsa =>
     })
     .UseWorkflowsApi()
     .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
-    .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
+    .UseWebhooks();
 });
+
+builder.Services.Configure<WebhookSinksOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 
 var app = builder.Build();
 

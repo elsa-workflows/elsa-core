@@ -3,7 +3,7 @@ namespace Elsa.Webhooks.Models;
 /// <summary>
 /// Stores payload information about the RunTask webhook event type.
 /// </summary>
-public record RunTaskWebhook(
+public record RunTaskWebhookPayload(
     string WorkflowInstanceId, 
     string WorkflowDefinitionId, 
     string? WorkflowName, 

@@ -10,9 +10,11 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Http" />
         <PackageReference Include="Microsoft.Extensions.Http.Polly" />
+<!--        <PackageReference Include="WebhooksCore" />-->
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\..\..\..\sfmskywalker\webhooks-core\main\src\WebhooksCore\WebhooksCore.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 

@@ -6,19 +6,15 @@
         </Description>
         <PackageTags>elsa module orchardcore</PackageTags>
     </PropertyGroup>
-
+    
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.Webhooks\Elsa.Webhooks.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
-
+    
     <ItemGroup>
       <Folder Include="Activities\" />
-      <Folder Include="Clients\GraphQL\" />
-      <Folder Include="Clients\Rest\" />
-      <Folder Include="Contracts\" />
-      <Folder Include="Extensions\" />
-      <Folder Include="Features\" />
     </ItemGroup>
 </Project>
