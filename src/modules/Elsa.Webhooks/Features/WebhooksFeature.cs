@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Webhooks.ActivityProviders;
 using Microsoft.Extensions.DependencyInjection;
 using WebhooksCore;
 using WebhooksCore.Options;
@@ -38,6 +39,8 @@ public class WebhooksFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddWebhooksCore();
+        Services
+            .AddWebhooksCore()
+            .AddActivityProvider<WebhookEventActivityProvider>();
     }
 }

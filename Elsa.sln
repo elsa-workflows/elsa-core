@@ -374,6 +374,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebhooksCore.Shared", "..\.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebhooksCore", "..\..\..\sfmskywalker\webhooks-core\main\src\WebhooksCore\WebhooksCore.csproj", "{C16156BF-C32E-4DEB-A850-EF18A4F2E554}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.OrchardCoreIntegration", "samples\aspnet\Elsa.Samples.AspNet.OrchardCoreIntegration\Elsa.Samples.AspNet.OrchardCoreIntegration.csproj", "{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -894,6 +896,10 @@ Global
 		{C16156BF-C32E-4DEB-A850-EF18A4F2E554}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C16156BF-C32E-4DEB-A850-EF18A4F2E554}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C16156BF-C32E-4DEB-A850-EF18A4F2E554}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1050,6 +1056,7 @@ Global
 		{B0460856-7E6D-4B1E-B243-8E20662FC32E} = {EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}
 		{FAB8DA28-D9E2-4577-B858-1846BF0092EB} = {31A0F0C9-2DC2-4B7E-84BA-AC8824632BB2}
 		{C16156BF-C32E-4DEB-A850-EF18A4F2E554} = {31A0F0C9-2DC2-4B7E-84BA-AC8824632BB2}
+		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

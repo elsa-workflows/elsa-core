@@ -30,11 +30,11 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
         var webhookSourceName = webhookSource.Name.Dehumanize();
         var eventTypeDescription = string.IsNullOrWhiteSpace(eventType.Description) ? $"Handles {eventType.EventType} webhook events" : eventType.Description;
         var ns = $"Webhooks.{webhookSourceName}";
-        var fullTypeName = $"{ns}.{eventType.EventType}";
+        var fullTypeName = $"{ns}.{eventType.EventType.Dehumanize()}";
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(WebhookEventReceived), cancellationToken);
         
         activityDescriptor.TypeName = fullTypeName;
-        activityDescriptor.Name = webhookSourceName;
+        activityDescriptor.Name = eventType.DisplayName;
         activityDescriptor.Category = webhookSource.Name;
         activityDescriptor.Description = eventTypeDescription;
         var eventTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(WebhookEventReceived.EventType));
