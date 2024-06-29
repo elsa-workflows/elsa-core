@@ -158,8 +158,7 @@ public class ActivityDescriber : IActivityDescriber
 
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
-
-        //var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
+        
         var uiSpecification = await _propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
         return new InputDescriptor
@@ -172,7 +171,6 @@ public class ActivityDescriber : IActivityDescriber
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             descriptionAttribute?.Description ?? inputAttribute?.Description,
-            //inputOptions,
             inputAttribute?.Category,
             inputAttribute?.Order ?? 0,
             _defaultValueResolver.GetDefaultValue(propertyInfo),
