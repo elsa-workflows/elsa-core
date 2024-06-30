@@ -38,11 +38,26 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
         activityDescriptor.DisplayName = eventType.DisplayName;
         activityDescriptor.Category = webhookSource.Name;
         activityDescriptor.Description = eventTypeDescription;
+        activityDescriptor.Constructor = context =>
+        {
+            var activity = activityFactory.Create(typeof(WebhookEventReceived), context);
+            activity.Type = fullTypeName;
+            return activity;
+        };
+        
         var eventTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(WebhookEventReceived.EventType));
+        var eventPayloadTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(WebhookEventReceived.PayloadType));
+        var payloadOutputDescriptor = activityDescriptor.Outputs.First(x => x.Name == nameof(WebhookEventReceived.Payload));
         
         eventTypeDescriptor.IsReadOnly = true;
-        eventTypeDescriptor.ValueGetter = _ => eventType.Description;
+        eventTypeDescriptor.DefaultValue = eventType.EventType;
+        eventTypeDescriptor.ValueGetter = _ => new Input<string>(eventType.EventType);
         eventTypeDescriptor.ValueSetter = (_, _) => { };
+
+        eventPayloadTypeDescriptor.IsBrowsable = false;
+        eventPayloadTypeDescriptor.ValueGetter = _ => new Input<Type>(eventType.PayloadType ?? typeof(object));
+
+        payloadOutputDescriptor.Type = eventType.PayloadType ?? typeof(object);
         
         return activityDescriptor;
     }

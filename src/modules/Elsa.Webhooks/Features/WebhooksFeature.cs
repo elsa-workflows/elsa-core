@@ -36,6 +36,11 @@ public class WebhooksFeature : FeatureBase
         return this;
     }
 
+    public override void Configure()
+    {
+        Module.AddVariableTypeAndAlias<WebhookEvent>("WebhookEvent", "Webhooks");
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {

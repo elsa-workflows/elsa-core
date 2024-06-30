@@ -12,6 +12,8 @@ builder.Services.AddElsa(elsa =>
         .UseWorkflowsApi()
         .UseHttp()
         .UseScheduling()
+        .UseJavaScript()
+        .UseLiquid()
         .UseOrchardWebhooks()
         .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
         .AddActivitiesFrom<Program>()
@@ -19,11 +21,7 @@ builder.Services.AddElsa(elsa =>
         .UseIdentity(identity =>
         {
             identity.UseAdminUserProvider();
-            identity.TokenOptions = options =>
-            {
-                options.SigningKey = "super-secret-tamper-free-token-signing-key";
-                options.AccessTokenLifetime = TimeSpan.FromDays(1);
-            };
+            identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
         });
 });
 
