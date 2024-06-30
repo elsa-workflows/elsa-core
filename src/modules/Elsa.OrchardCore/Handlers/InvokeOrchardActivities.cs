@@ -4,6 +4,7 @@ using Elsa.OrchardCore.Stimuli;
 using Elsa.OrchardCore.WebhookPayloads;
 using Elsa.Webhooks.Notifications;
 using Elsa.Workflows.Runtime;
+using WebhooksCore;
 
 namespace Elsa.OrchardCore.Handlers;
 
@@ -25,7 +26,8 @@ public class InvokeOrchardActivities(IStimulusSender stimulusSender) : INotifica
         {
             Input = new Dictionary<string, object>
             {
-                [nameof(ContentItemPublishedPayload)] = webhookEvent
+                [nameof(WebhookEvent)] = webhookEvent,
+                [nameof(ContentItemPublishedPayload)] = contentPublishedPayload
             }
         };
         await stimulusSender.SendAsync(fullTypeName, stimulus, metadata, cancellationToken);
