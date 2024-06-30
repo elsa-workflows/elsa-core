@@ -1,6 +1,7 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Stimuli;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -9,7 +10,7 @@ using WebhooksCore;
 
 namespace Elsa.Webhooks.Activities;
 
-public class WebhookEventReceived : Trigger<WebhookEvent>
+public class WebhookEventReceived : Trigger<WebhookEvent>, INotification
 {
     /// The webhook event type to be received.
     [Input(Description = "The webhook event type to be received.")]

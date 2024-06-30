@@ -20,20 +20,24 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
     
     private async Task<IEnumerable<ActivityDescriptor>> CreateActivityDescriptors(WebhookSource webhookSource, CancellationToken cancellationToken = default)
     {
-        var descriptorTasks = webhookSource.EventTypes.Select(async eventType => await CreateActivityDescriptorAsync(webhookSource, eventType, cancellationToken)).ToList();
+        var descriptorTasks = webhookSource.EventTypes
+            .Where(x => x.ActivityBinding != null)
+            .Select(async eventType => await CreateActivityDescriptorAsync(webhookSource, eventType, cancellationToken))
+            .ToList();
 
         return await Task.WhenAll(descriptorTasks);
     }
 
     private async Task<ActivityDescriptor> CreateActivityDescriptorAsync(WebhookSource webhookSource, WebhookSourceEventType eventType, CancellationToken cancellationToken = default)
     {
-        var eventTypeDescription = string.IsNullOrWhiteSpace(eventType.Description) ? $"Handles {eventType.EventType} webhook events" : eventType.Description;
-        var fullTypeName = webhookSource.GetWebhookActivityTypeName(eventType.EventType);
+        var activityBinding = eventType.ActivityBinding!;
+        var eventTypeDescription = string.IsNullOrWhiteSpace(activityBinding.Description) ? $"Handles {eventType.EventType} webhook events" : activityBinding.Description;
+        var fullTypeName = activityBinding.TypeName; //webhookSource.GetWebhookActivityTypeName(eventType.EventType);
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(WebhookEventReceived), cancellationToken);
         
         activityDescriptor.TypeName = fullTypeName;
-        activityDescriptor.Name = eventType.DisplayName;
-        activityDescriptor.DisplayName = eventType.DisplayName;
+        activityDescriptor.Name = activityBinding.DisplayName;
+        activityDescriptor.DisplayName = activityBinding.DisplayName;
         activityDescriptor.Category = webhookSource.Name;
         activityDescriptor.Description = eventTypeDescription;
         activityDescriptor.Constructor = context =>

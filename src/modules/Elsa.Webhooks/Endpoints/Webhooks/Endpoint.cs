@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Webhooks.Stimuli;
+using Elsa.Mediator.Contracts;
+using Elsa.Webhooks.Notifications;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +10,7 @@ namespace Elsa.Webhooks.Endpoints.Webhooks;
 
 /// An API endpoint that receives webhook events from a webhook source.
 [PublicAPI]
-internal class Post(IWebhookSourceProvider webhookSourceProvider, IStimulusSender stimulusSender) : ElsaEndpointWithoutRequest
+internal class Post(IWebhookSourceProvider webhookSourceProvider, INotificationSender notificationSender, IStimulusSender stimulusSender) : ElsaEndpointWithoutRequest
 {
     /// <inheritdoc />
     public override void Configure()
@@ -32,16 +33,7 @@ internal class Post(IWebhookSourceProvider webhookSourceProvider, IStimulusSende
             return;
         }
         
-        var fullTypeName = matchingSource.GetWebhookActivityTypeName(webhookEvent.EventType);
-        var stimulus = new WebhookEventReceivedStimulus(webhookEvent.EventType);
-        var input = new Dictionary<string, object>
-        {
-            [nameof(WebhookEvent)] = webhookEvent
-        };
-        var metadata = new StimulusMetadata
-        {
-            Input = input
-        };
-        await stimulusSender.SendAsync(fullTypeName, stimulus, metadata, cancellationToken);
+        var notification = new WebhookEventReceived(webhookEvent, matchingSource);
+        await notificationSender.SendAsync(notification, cancellationToken);
     }
 }
