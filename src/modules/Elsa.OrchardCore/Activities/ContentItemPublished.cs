@@ -1,8 +1,8 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.OrchardCore.Stimuli;
 using Elsa.OrchardCore.WebhookPayloads;
-using Elsa.Webhooks.Stimuli;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 
@@ -25,9 +25,9 @@ public class ContentItemPublished : Trigger<ContentItemPublishedPayload>, INotif
         await ExecuteInternalAsync(context);
     }
 
-    protected override object GetTriggerPayload(TriggerIndexingContext context) => new WebhookEventReceivedStimulus(ContentType);
+    protected override object GetTriggerPayload(TriggerIndexingContext context) => new ContentItemPublishedStimulus(ContentType);
     private async ValueTask OnResumeAsync(ActivityExecutionContext context) => await ExecuteInternalAsync(context);
-    private object GetStimulus(ExpressionExecutionContext context) => new WebhookEventReceivedStimulus(ContentType);
+    private object GetStimulus(ExpressionExecutionContext context) => new ContentItemPublishedStimulus(ContentType);
 
     private async Task ExecuteInternalAsync(ActivityExecutionContext context)
     {
