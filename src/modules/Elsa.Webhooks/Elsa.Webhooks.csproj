@@ -18,4 +18,8 @@
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Extensions\HttpContextExtensions.cs" />
+    </ItemGroup>
+
 </Project>

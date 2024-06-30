@@ -38,7 +38,9 @@ public class WebhooksFeature : FeatureBase
 
     public override void Configure()
     {
-        Module.AddVariableTypeAndAlias<WebhookEvent>("WebhookEvent", "Webhooks");
+        Module
+            .AddVariableTypeAndAlias<WebhookEvent>("WebhookEvent", "Webhooks")
+            .AddFastEndpointsAssembly(GetType());
     }
 
     /// <inheritdoc />

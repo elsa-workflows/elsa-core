@@ -27,10 +27,8 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
 
     private async Task<ActivityDescriptor> CreateActivityDescriptorAsync(WebhookSource webhookSource, WebhookSourceEventType eventType, CancellationToken cancellationToken = default)
     {
-        var webhookSourceName = webhookSource.Name.Dehumanize();
         var eventTypeDescription = string.IsNullOrWhiteSpace(eventType.Description) ? $"Handles {eventType.EventType} webhook events" : eventType.Description;
-        var ns = $"Webhooks.{webhookSourceName}";
-        var fullTypeName = $"{ns}.{eventType.EventType.Dehumanize()}";
+        var fullTypeName = webhookSource.GetWebhookActivityTypeName(eventType.EventType);
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(WebhookEventReceived), cancellationToken);
         
         activityDescriptor.TypeName = fullTypeName;
@@ -40,8 +38,10 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
         activityDescriptor.Description = eventTypeDescription;
         activityDescriptor.Constructor = context =>
         {
-            var activity = activityFactory.Create(typeof(WebhookEventReceived), context);
+            var activity = (WebhookEventReceived)activityFactory.Create(typeof(WebhookEventReceived), context);
             activity.Type = fullTypeName;
+            activity.EventType = eventType.EventType;
+            activity.PayloadType = eventType.PayloadType;
             return activity;
         };
         
@@ -49,14 +49,8 @@ public class WebhookEventActivityProvider(IWebhookSourceProvider webhookSourcePr
         var eventPayloadTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(WebhookEventReceived.PayloadType));
         var payloadOutputDescriptor = activityDescriptor.Outputs.First(x => x.Name == nameof(WebhookEventReceived.Payload));
         
-        eventTypeDescriptor.IsReadOnly = true;
-        eventTypeDescriptor.DefaultValue = eventType.EventType;
-        eventTypeDescriptor.ValueGetter = _ => new Input<string>(eventType.EventType);
-        eventTypeDescriptor.ValueSetter = (_, _) => { };
-
+        eventTypeDescriptor.IsBrowsable = false;
         eventPayloadTypeDescriptor.IsBrowsable = false;
-        eventPayloadTypeDescriptor.ValueGetter = _ => new Input<Type>(eventType.PayloadType ?? typeof(object));
-
         payloadOutputDescriptor.Type = eventType.PayloadType ?? typeof(object);
         
         return activityDescriptor;

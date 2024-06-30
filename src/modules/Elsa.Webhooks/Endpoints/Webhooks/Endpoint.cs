@@ -16,26 +16,23 @@ internal class Post(IWebhookSourceProvider webhookSourceProvider, IStimulusSende
     {
         Routes("/webhooks");
         Verbs(FastEndpoints.Http.POST);
-        ConfigurePermissions("webhooks");
+        AllowAnonymous();
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var origin = HttpContext.Request.Host.Host;
         var webhookEvent = (await HttpContext.Request.ReadFromJsonAsync<WebhookEvent>(cancellationToken))!;
         var webhookSources = (await webhookSourceProvider.ListAsync(cancellationToken)).ToList();
-        var matchingSource = webhookSources.FirstOrDefault(source =>
-            source.Origin.StartsWith(origin) && source.EventTypes.Any(eventType => eventType.EventType == webhookEvent.EventType));
+        var matchingSource = webhookSources.FirstOrDefault(source => source.EventTypes.Any(eventType => eventType.EventType == webhookEvent.EventType));
 
         if (matchingSource == null)
         {
             await SendOkAsync(cancellationToken);
             return;
         }
-
-        var ns = $"Webhooks.{matchingSource.Name}";
-        var fullTypeName = $"{ns}.{webhookEvent.EventType}";
+        
+        var fullTypeName = matchingSource.GetWebhookActivityTypeName(webhookEvent.EventType);
         var stimulus = new WebhookEventReceivedStimulus(webhookEvent.EventType);
         var input = new Dictionary<string, object>
         {

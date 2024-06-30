@@ -13,11 +13,11 @@ public class WebhookEventReceived : Trigger<WebhookEvent>
 {
     /// The webhook event type to be received.
     [Input(Description = "The webhook event type to be received.")]
-    public Input<string> EventType { get; set; } = default!;
+    public string EventType { get; set; } = default!;
 
     /// The webhook event payload type to be received.
     [Input(Description = "The webhook event payload type to be received.")]
-    public Input<Type?> PayloadType { get; set; } = default!;
+    public Type? PayloadType { get; set; }
 
     /// The webhook payload, if any.
     [Output(Description = "The webhook payload, if any.")]
@@ -36,8 +36,7 @@ public class WebhookEventReceived : Trigger<WebhookEvent>
 
     protected override object GetTriggerPayload(TriggerIndexingContext context)
     {
-        var eventType = EventType.Get(context.ExpressionExecutionContext);
-        return new WebhookEventReceivedStimulus(eventType);
+        return new WebhookEventReceivedStimulus(EventType);
     }
 
     private async ValueTask OnResumeAsync(ActivityExecutionContext context)
@@ -47,15 +46,14 @@ public class WebhookEventReceived : Trigger<WebhookEvent>
 
     private object GetStimulus(ExpressionExecutionContext context)
     {
-        var eventType = EventType.Get(context);
-        return new WebhookEventReceivedStimulus(eventType);
+        return new WebhookEventReceivedStimulus(EventType);
     }
 
     private async Task ExecuteInternalAsync(ActivityExecutionContext context)
     {
         var receivedWebhookEvent = context.GetWorkflowInput<WebhookEvent>();
         var payload = receivedWebhookEvent.Payload;
-        var payloadType = PayloadType.GetOrDefault(context);
+        var payloadType = PayloadType;
 
         if (payloadType != null && payload != null)
         {

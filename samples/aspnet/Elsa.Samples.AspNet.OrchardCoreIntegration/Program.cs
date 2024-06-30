@@ -1,4 +1,5 @@
-﻿using Elsa.EntityFrameworkCore.Modules.Management;
+﻿using Elsa.EntityFrameworkCore.Extensions;
+using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using WebhooksCore.Options;
@@ -7,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddElsa(elsa =>
 {
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore())
-        .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore())
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowsApi()
         .UseHttp()
         .UseScheduling()
