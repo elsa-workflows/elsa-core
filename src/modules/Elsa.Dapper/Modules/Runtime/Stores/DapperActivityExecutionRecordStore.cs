@@ -130,10 +130,11 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             HasBookmarks = source.HasBookmarks,
             Status = source.Status.ToString(),
             ActivityTypeVersion = source.ActivityTypeVersion,
-            SerializedActivityState = source.ActivityState != null ? await _safeSerializer.SerializeAsync(source.ActivityState, cancellationToken) : default,
-            SerializedPayload = source.Payload != null ? await _safeSerializer.SerializeAsync(source.Payload, cancellationToken) : default,
-            SerializedOutputs = source.Outputs != null ? await _safeSerializer.SerializeAsync(source.Outputs, cancellationToken) : default,
-            SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : default
+            SerializedActivityState = source.ActivityState != null ? await _safeSerializer.SerializeAsync(source.ActivityState, cancellationToken) : null,
+            SerializedPayload = source.Payload != null ? await _safeSerializer.SerializeAsync(source.Payload, cancellationToken) : null,
+            SerializedOutputs = source.Outputs?.Any() == true ? await _safeSerializer.SerializeAsync(source.Outputs, cancellationToken) : null,
+            SerializedException = source.Exception != null ? _payloadSerializer.Serialize(source.Exception) : null,
+            SerializedProperties = source.Properties.Any() ? await _safeSerializer.SerializeAsync(source.Properties, cancellationToken) : null
         };
     }
 
@@ -155,7 +156,8 @@ public class DapperActivityExecutionRecordStore : IActivityExecutionStore
             ActivityState = source.SerializedActivityState != null ? _payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : default,
             Payload = source.SerializedPayload != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedPayload, cancellationToken) : default,
             Outputs = source.SerializedOutputs != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object?>>(source.SerializedOutputs, cancellationToken) : default,
-            Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default
+            Exception = source.SerializedException != null ? _payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default,
+            Properties = source.SerializedProperties != null ? await _safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedProperties, cancellationToken) : default
         };
     }
 
