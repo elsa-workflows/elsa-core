@@ -58,10 +58,10 @@ public interface IWorkflowDefinitionsApi
     Task<ActivityNode?> GetSubgraphAsync(string id, [Query]string? parentNodeId = null, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Gets a list of ancestor nodes of the specified child node.
+    /// Gets a list of path segments leading to the specified child node.
     /// </summary>
-    /// <param name="id">The ID of the workflow definition to get.</param>
-    /// <param name="childNodeId">The node ID of the child activity to get the ancestors for.</param>
+    /// <param name="id">The ID of the workflow definition containing the specified node.</param>
+    /// <param name="childNodeId">The node ID of the child activity to get the segments for.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     [Get("/workflow-definitions/subgraph/segments/{id}")]
     Task<GetPathSegmentsResponse?> GetPathSegmentsGetAsync(string id, [Query]string? childNodeId = null, CancellationToken cancellationToken = default);
