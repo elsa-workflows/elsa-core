@@ -109,6 +109,8 @@ public class DapperWorkflowExecutionLogStore : IWorkflowExecutionLogStore
             .In(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
             .Is(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
             .In(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.EventNames)
+            .IsNot(nameof(WorkflowExecutionLogRecordRecord.ActivityType), filter.ExcludeActivityType)
+            .NotIn(nameof(WorkflowExecutionLogRecordRecord.ActivityType), filter.ExcludeActivityTypes)
             ;
     }
 
