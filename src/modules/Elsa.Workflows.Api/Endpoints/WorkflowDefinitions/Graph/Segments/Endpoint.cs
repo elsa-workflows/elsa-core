@@ -1,5 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
@@ -46,10 +48,10 @@ internal class Nodes(IWorkflowDefinitionService workflowDefinitionService, IApiS
 
         while (currentNode != null)
         {
-            if (currentNode.Activity.Type is not "Elsa.Workflow" and not "Elsa.Flowchart")
+            if (currentNode.Activity is not Workflow and not Flowchart)
             {
                 var currentActivity = currentNode.Activity;
-                var currentPort = previousNode?.Port ?? "Root";
+                var currentPort = previousNode.Port;
                 var activityName = currentActivity.Name ?? currentActivity.Type;
                 var segment = new ActivityPathSegment(currentNode.NodeId, currentActivity.Id, currentActivity.Type, currentPort, activityName);
                 segments.Push(segment);
