@@ -8,7 +8,7 @@ internal class Request
     /// The workflow definition version ID.
     public string Id { get; set; } = default!;
     
-    /// The ID of the leaf node. When set, its node and its ancestors will be returned.
+    /// The ID of the child node to get segments for.
     public string ChildNodeId { get; set; } = default!;
 }
 
