@@ -37,6 +37,7 @@ public class ExpressionOptions
         this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
         this.AddTypeAlias<IDictionary<string, string>>("StringMap");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectMap");
+        this.AddTypeAlias<Dictionary<string, object>>("ObjectMap1");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
     }
 
