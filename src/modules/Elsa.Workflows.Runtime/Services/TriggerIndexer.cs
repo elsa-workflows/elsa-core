@@ -86,7 +86,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
-        // Collect new triggers **if workflow is published**.
+        // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
             : new List<StoredTrigger>(0);
