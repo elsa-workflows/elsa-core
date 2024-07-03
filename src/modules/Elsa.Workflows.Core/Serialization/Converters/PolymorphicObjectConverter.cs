@@ -140,10 +140,9 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
             }
             else if (isHashSet)
             {
-                addSetMethod.Invoke(collection, new[]
-                {
+                addSetMethod.Invoke(collection, [
                     deserializedElement
-                });
+                ]);
             }
             else if (collection is IList list)
             {
