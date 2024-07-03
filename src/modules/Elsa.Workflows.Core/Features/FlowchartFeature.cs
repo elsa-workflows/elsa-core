@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Activities.Flowchart.Serialization;
 
 namespace Elsa.Workflows.Features;
@@ -19,5 +20,11 @@ public class FlowchartFeature : FeatureBase
     public override void Apply()
     {
         Services.AddSerializationOptionsConfigurator<FlowchartSerializationOptionConfigurator>();
+        
+    }
+
+    public override void Configure()
+    {
+        Module.AddTypeAlias<FlowScope>("FlowScope");
     }
 }
