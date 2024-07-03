@@ -1,7 +1,7 @@
 using Newtonsoft.Json; 
 using System.Collections.Generic; 
-namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{ 
-
+namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome
+{ 
     public class Downloads
     {
         [JsonProperty("chrome")]
@@ -10,5 +10,4 @@ namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{
         [JsonProperty("chromedriver")]
         public List<Chromedriver> Chromedriver { get; set; }
     }
-
 }

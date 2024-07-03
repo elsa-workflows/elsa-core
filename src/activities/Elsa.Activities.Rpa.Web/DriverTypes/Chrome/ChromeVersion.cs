@@ -1,6 +1,7 @@
 using Newtonsoft.Json; 
-namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{ 
 
+namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome
+{ 
     public class ChromeVersion
     {
         [JsonProperty("version")]
@@ -12,5 +13,4 @@ namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{
         [JsonProperty("downloads")]
         public Downloads Downloads { get; set; }
     }
-
 }

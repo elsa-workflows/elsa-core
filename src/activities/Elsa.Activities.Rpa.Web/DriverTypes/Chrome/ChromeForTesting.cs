@@ -1,8 +1,9 @@
 using Newtonsoft.Json; 
 using System.Collections.Generic; 
 using System; 
-namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{ 
 
+namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome
+{ 
     public class ChromeForTesting
     {
         [JsonProperty("timestamp")]
@@ -11,5 +12,4 @@ namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{
         [JsonProperty("versions")]
         public List<ChromeVersion> Versions { get; set; }
     }
-
 }

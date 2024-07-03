@@ -1,6 +1,7 @@
-using Newtonsoft.Json; 
-namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{ 
+using Newtonsoft.Json;
 
+namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome
+{ 
     public class Chrome
     {
         [JsonProperty("platform")]
@@ -9,5 +10,4 @@ namespace Elsa.Activities.Rpa.Web.DriverTypes.Chrome{
         [JsonProperty("url")]
         public string Url { get; set; }
     }
-
 }
