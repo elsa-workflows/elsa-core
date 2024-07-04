@@ -107,6 +107,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
+
+    /// <summary>
+    /// Represents a sink for workflow execution logs.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowExecutionLogSink> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
     
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
@@ -206,6 +211,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(WorkflowExecutionContextStore)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
@@ -218,6 +224,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<StoreWorkflowExecutionLogSink>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IWorkflowInbox, DefaultWorkflowInbox>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
