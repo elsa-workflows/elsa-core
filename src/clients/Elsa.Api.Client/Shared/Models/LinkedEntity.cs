@@ -8,5 +8,5 @@ public class LinkedEntity : VersionedEntity
     /// <summary>
     /// A list of links that with the possible actions used in the context of HATEOAS.
     /// </summary>
-    public Link[]? Links { get; set; } = default;
+    public Link[]? Links { get; set; }
 }

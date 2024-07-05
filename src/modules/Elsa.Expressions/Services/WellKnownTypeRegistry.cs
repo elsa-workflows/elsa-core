@@ -7,8 +7,8 @@ namespace Elsa.Expressions.Services;
 /// <inheritdoc />
 public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 {
-    private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>();
-    private readonly IDictionary<Type, string> _typeAliasDictionary = new Dictionary<Type, string>();
+    private readonly Dictionary<string, Type> _aliasTypeDictionary = new();
+    private readonly Dictionary<Type, string> _typeAliasDictionary = new();
 
     /// <summary>
     /// Creates a new instance of the <see cref="WellKnownTypeRegistry"/> class.

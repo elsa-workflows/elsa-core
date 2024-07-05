@@ -37,5 +37,5 @@ public interface ICommandSender
     /// <param name="command">The command to send.</param>
     /// <param name="strategy">The command strategy to use.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    Task SendAsync(ICommand command, ICommandStrategy strategy, CancellationToken cancellationToken = default);
+    Task SendAsync(ICommand command, ICommandStrategy? strategy, CancellationToken cancellationToken = default);
 }
