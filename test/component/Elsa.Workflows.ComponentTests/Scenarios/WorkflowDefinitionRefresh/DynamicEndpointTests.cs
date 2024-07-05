@@ -25,7 +25,7 @@ public class DynamicEndpointTests : AppComponentTest
         await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(new Runtime.Requests.RefreshWorkflowDefinitionsRequest
         {
             BatchSize = 10,
-            DefinitionIds = ["f926beb0afc8505e"]
+            DefinitionIds = ["f69f061159adc3ae"]
         }, CancellationToken.None);
 
         var secondResponse = await client.GetStringAsync("secondvalue");
