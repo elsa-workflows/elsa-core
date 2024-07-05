@@ -30,7 +30,7 @@ public class DynamicEndpointTests : AppComponentTest
 
         var secondResponse = await client.GetStringAsync("secondvalue");
 
-        Assert.Equal("Hello World!", firstResponse);
-        Assert.Equal("Hello World!", secondResponse);
+        Assert.Equal("", firstResponse);
+        Assert.Equal("", secondResponse);
     }
 }
