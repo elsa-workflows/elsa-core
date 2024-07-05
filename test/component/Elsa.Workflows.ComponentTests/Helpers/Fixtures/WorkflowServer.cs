@@ -6,6 +6,7 @@ using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -79,6 +80,14 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     runtime.UseMassTransitDispatcher();
                     runtime.UseCache();
+                });
+                elsa.UseJavaScript(options =>
+                {
+                    options.AllowClrAccess = true;
+                    options.ConfigureEngine(engine =>
+                    {
+                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                    });
                 });
             };
         }
