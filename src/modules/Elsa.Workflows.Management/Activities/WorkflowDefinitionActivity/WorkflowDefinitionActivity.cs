@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 [Browsable(false)]
 public class WorkflowDefinitionActivity : Composite, IInitializable
 {
-    private bool IsInitialized => Root.Id != null;
+    private bool IsInitialized => Root.Id != null!;
 
     /// <summary>
     /// The definition ID of the workflow to schedule for execution.
@@ -32,18 +32,18 @@ public class WorkflowDefinitionActivity : Composite, IInitializable
     public string? WorkflowDefinitionVersionId { get; set; }
 
     /// <summary>
-    /// The latest published version number set by the provider. This is used by tooling to let the user know that a newer version is available.
+    /// The latest published version number set by the provider. Tooling uses this to let the user know that a newer version is available.
     /// </summary>
     public int LatestAvailablePublishedVersion { get; set; }
 
     /// <summary>
-    /// The latest published version ID set by the provider. This is used by tooling to let the user know that a newer version is available.
+    /// The latest published version ID set by the provider. Tooling uses this to let the user know that a newer version is available.
     /// </summary>
     public string? LatestAvailablePublishedVersionId { get; set; }
 
     async ValueTask IInitializable.InitializeAsync(InitializationContext context)
     {
-        // This is not just for efficiency, but also a necessity to avoid potential race conditions.
+        // This is not just for efficiency but also a necessity to avoid potential race conditions.
         // Such conditions can occur when multiple threads are simultaneously creating consuming workflows,
         // especially when cached workflows are being updated during the graph construction process.
         if (IsInitialized)
