@@ -43,10 +43,10 @@ public class SchedulingFeature : FeatureBase
         Services
             .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
-            .AddScoped<IScheduler, LocalScheduler>()
+            .AddSingleton<IScheduler, LocalScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
-            .AddScoped<CronosCronParser>()
-            .AddScoped(CronParser)
+            .AddSingleton<CronosCronParser>()
+            .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
