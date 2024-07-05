@@ -3,16 +3,12 @@ namespace Elsa.Workflows.Runtime.Requests;
 /// Represents a request to refresh workflow definitions by re-indexing their triggers.
 public class RefreshWorkflowDefinitionsRequest
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    /// Initializes a new instance of <see cref="RefreshWorkflowDefinitionsRequest"/>.
     public RefreshWorkflowDefinitionsRequest()
     {
     }
 
-    /// <summary>
-    /// 
-    /// </summary>
+    /// Initializes a new instance of <see cref="RefreshWorkflowDefinitionsRequest"/>.
     public RefreshWorkflowDefinitionsRequest(IEnumerable<string>? definitionIds, int batchSize)
     {
         BatchSize = batchSize;

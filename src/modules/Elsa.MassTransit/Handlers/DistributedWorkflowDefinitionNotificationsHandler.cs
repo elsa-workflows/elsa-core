@@ -73,7 +73,7 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
     public Task HandleAsync(WorkflowDefinitionsRefreshed notification, CancellationToken cancellationToken)
     {
         // Prevent re-entrance.
-        if (AmbientConsumerScope.IsRaisedFromConsumer)
+        if (AmbientConsumerScope.IsConsumerExecutionContext)
             return Task.CompletedTask;
 
         var definitionIds = notification.WorkflowDefinitionIds;

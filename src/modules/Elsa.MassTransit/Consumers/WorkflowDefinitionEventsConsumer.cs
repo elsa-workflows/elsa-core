@@ -82,9 +82,9 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     {
         var message = context.Message;
         var notification = new Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionsRefreshed(message.WorkflowDefinitionIds);
-        AmbientConsumerScope.IsRaisedFromConsumer = true;
+        AmbientConsumerScope.IsConsumerExecutionContext = true;
         await notificationSender.SendAsync(notification, context.CancellationToken);
-        AmbientConsumerScope.IsRaisedFromConsumer = false;
+        AmbientConsumerScope.IsConsumerExecutionContext = false;
     }
 
     private Task UpdateDefinition(string id, bool usableAsActivity)

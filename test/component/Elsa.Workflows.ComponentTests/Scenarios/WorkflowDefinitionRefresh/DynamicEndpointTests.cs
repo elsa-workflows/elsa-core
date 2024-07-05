@@ -10,7 +10,7 @@ public class DynamicEndpointTests : AppComponentTest
 
     public DynamicEndpointTests(App app) : base(app)
     {
-        StaticValueHolder.Value = "firstvalue";
+        StaticValueHolder.Value = "first-value";
         _workflowDefinitionsRefresher = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionsRefresher>();
     }
 
@@ -19,16 +19,16 @@ public class DynamicEndpointTests : AppComponentTest
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        var firstResponse = await client.GetStringAsync("firstvalue");
+        var firstResponse = await client.GetStringAsync("first-value");
 
-        StaticValueHolder.Value = "secondvalue";
+        StaticValueHolder.Value = "second-value";
         await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(new Runtime.Requests.RefreshWorkflowDefinitionsRequest
         {
             BatchSize = 10,
             DefinitionIds = ["f69f061159adc3ae"]
         }, CancellationToken.None);
 
-        var secondResponse = await client.GetStringAsync("secondvalue");
+        var secondResponse = await client.GetStringAsync("second-value");
 
         Assert.Equal("", firstResponse);
         Assert.Equal("", secondResponse);

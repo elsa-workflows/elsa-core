@@ -37,7 +37,7 @@
           "typeName": "String",
           "expression": {
             "type": "JavaScript",
-            "value": "return getStaticValue() ?? \u0022firstvalue\u0022;"
+            "value": "return getStaticValue() ?? \u0022first-value\u0022;"
           }
         },
         "supportedMethods": {
