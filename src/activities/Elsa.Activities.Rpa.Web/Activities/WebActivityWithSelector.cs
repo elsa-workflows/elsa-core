@@ -21,7 +21,7 @@ namespace Elsa.Activities.Rpa.Web
         [ActivityInput(
             UIHint = ActivityInputUIHints.Dropdown,
             Hint = "The type of selector to be used to identity the element",
-            Options = new[] { SelectorTypes.ByName, SelectorTypes.ById, SelectorTypes.ByCss },
+            Options = new[] { SelectorTypes.ByName, SelectorTypes.ById, SelectorTypes.ByCss, SelectorTypes.ByXPath },
             SupportedSyntaxes = new[] { SyntaxNames.JavaScript, SyntaxNames.Liquid }
         )]
         public string? SelectorType { get; set; }
@@ -50,6 +50,7 @@ namespace Elsa.Activities.Rpa.Web
                     {
                         case SelectorTypes.ById: { output.AddRange(driver.FindElements(By.Id(SelectorValue))); break; }
                         case SelectorTypes.ByName: { output.AddRange(driver.FindElements(By.Name(SelectorValue))); break; }
+                        case SelectorTypes.ByCss: { output.AddRange(driver.FindElements(By.CssSelector(SelectorValue))); break; }
                         case SelectorTypes.ByXPath: { output.AddRange(driver.FindElements(By.XPath(SelectorValue))); break; }
                         case SelectorTypes.ByLinkText: { output.AddRange(driver.FindElements(By.LinkText(SelectorValue))); break; }
                         case SelectorTypes.Advanced:
