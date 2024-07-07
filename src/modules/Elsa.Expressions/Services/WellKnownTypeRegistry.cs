@@ -7,7 +7,7 @@ namespace Elsa.Expressions.Services;
 /// <inheritdoc />
 public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 {
-    private readonly Dictionary<string, Type> _aliasTypeDictionary = new();
+    private readonly Dictionary<string, Type> _aliasTypeDictionary = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<Type, string> _typeAliasDictionary = new();
 
     /// <summary>
