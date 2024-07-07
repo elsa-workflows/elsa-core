@@ -14,7 +14,6 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.MultiTenancy;
-using Elsa.Http.Options;
 using Elsa.MassTransit.Extensions;
 using Elsa.Identity.MultiTenancy;
 using Elsa.MongoDb.Extensions;
@@ -25,6 +24,7 @@ using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
 using Elsa.Workflows;
 using Elsa.Tenants.Extensions;
+using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
@@ -425,7 +425,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Elsa API endpoints for designer.
-var routePrefix = app.Services.GetRequiredService<IOptions<HttpActivityOptions>>().Value.ApiRoutePrefix;
+var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;
 app.UseWorkflowsApi(routePrefix);
 
 // Captures unhandled exceptions and returns a JSON response.

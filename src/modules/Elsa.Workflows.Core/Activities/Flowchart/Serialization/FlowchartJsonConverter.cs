@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Contracts;
@@ -11,26 +12,19 @@ namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 /// <summary>
 /// A JSON converter for <see cref="Activities.Flowchart"/>.
 /// </summary>
-public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
+public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverter<Activities.Flowchart>
 {
-    private readonly IIdentityGenerator _identityGenerator;
     private const string AllActivitiesKey = "allActivities";
     private const string AllConnectionsKey = "allConnections";
     private const string NotFoundConnectionsKey = "notFoundConnections";
-
-    /// <inheritdoc />
-    public FlowchartJsonConverter(IIdentityGenerator identityGenerator)
-    {
-        _identityGenerator = identityGenerator;
-    }
-
+    
     /// <inheritdoc />
     public override Activities.Flowchart Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : _identityGenerator.GenerateId();
+        var id = doc.RootElement.TryGetProperty("id", out var idAttribute) ? idAttribute.GetString()! : identityGenerator.GenerateId();
         var nodeId = doc.RootElement.TryGetProperty("nodeId", out var nodeIdAttribute) ? nodeIdAttribute.GetString() : default;
         var name = doc.RootElement.TryGetProperty("name", out var nameElement) ? nameElement.GetString() : default;
         var type = doc.RootElement.TryGetProperty("type", out var typeElement) ? typeElement.GetString() : default;
@@ -50,7 +44,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
         var variables = variablesElement.ValueKind != JsonValueKind.Undefined ? variablesElement.Deserialize<ICollection<Variable>>(options) ?? new List<Variable>() : new List<Variable>();
 
         JsonSerializerOptions polymorphicOptions = options.Clone();
-        polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options));
+        polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options, wellKnownTypeRegistry));
 
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
         var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(polymorphicOptions) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
@@ -107,7 +101,7 @@ public class FlowchartJsonConverter : JsonConverter<Activities.Flowchart>
 
         var flowchartSerializerOptions = new JsonSerializerOptions(options);
         flowchartSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary));
-        flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options));
+        flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options, wellKnownTypeRegistry));
 
         JsonSerializer.Serialize(writer, model, flowchartSerializerOptions);
     }

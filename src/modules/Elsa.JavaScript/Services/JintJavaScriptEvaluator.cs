@@ -55,8 +55,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         options ??= new ExpressionEvaluatorOptions();
 
-        var engineOptions = new Jint.Options();;
-        
+        var engineOptions = new Jint.Options();
+        ;
+
         if (_jintOptions.AllowClrAccess)
             engineOptions.AllowClr();
 
@@ -65,20 +66,14 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         {
             var instance = ObjectWrapper.Create(engine, target);
 
-            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
-            opts.SetWrapObjectHandler((engine, target, type) =>
-            {
-                var instance = ObjectWrapper.Create(engine, target);
+            if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
 
-                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
-                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
-
-                return instance;
-            });
+            return instance;
         });
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
-            
+
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         var engine = new Engine(engineOptions);
 
@@ -211,7 +206,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         return JsonSerializer.Serialize(value, _jsonSerializerOptions);
     }
-    
+
     private static JsonSerializerOptions CreateJsonSerializerOptions()
     {
         var options = new JsonSerializerOptions
@@ -221,7 +216,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         options.Converters.Add(new JsonStringEnumConverter());
         return options;
     }
-    
+
     private string Hash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);

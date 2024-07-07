@@ -1,4 +1,3 @@
-using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;

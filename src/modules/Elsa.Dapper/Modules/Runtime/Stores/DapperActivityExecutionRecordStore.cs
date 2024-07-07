@@ -6,7 +6,6 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -121,7 +120,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             SerializedPayload = source.Payload != null ? await safeSerializer.SerializeAsync(source.Payload, cancellationToken) : null,
             SerializedOutputs = source.Outputs != null ? await safeSerializer.SerializeAsync(source.Outputs, cancellationToken) : null,
             SerializedException = source.Exception != null ? payloadSerializer.Serialize(source.Exception) : null,
-            SerializedProperties = source.Properties.Any() ? await safeSerializer.SerializeAsync(source.Properties, cancellationToken) : null
+            SerializedProperties = source.Properties.Any() ? await safeSerializer.SerializeAsync(source.Properties, cancellationToken) : null,
             TenantId = source.TenantId
         };
     }
@@ -145,7 +144,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             Payload = source.SerializedPayload != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedPayload, cancellationToken) : default,
             Outputs = source.SerializedOutputs != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object?>>(source.SerializedOutputs, cancellationToken) : default,
             Exception = source.SerializedException != null ? payloadSerializer.Deserialize<ExceptionState>(source.SerializedException) : default,
-            Properties = source.SerializedProperties != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedProperties, cancellationToken) : default
+            Properties = source.SerializedProperties != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedProperties, cancellationToken) : new Dictionary<string, object>(),
             TenantId = source.TenantId
         };
     }

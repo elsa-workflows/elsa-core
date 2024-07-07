@@ -37,7 +37,7 @@ public class StoreWorkflowExecutionLogSink(IWorkflowExecutionLogStore store, IId
             Sequence = x.Sequence
         }).ToList();
         
-        await store.AddManyAsync(records, context.CancellationTokens.SystemCancellationToken);
-        await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationTokens.SystemCancellationToken);
+        await store.AddManyAsync(records, context.CancellationToken);
+        await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationToken);
     }
 }

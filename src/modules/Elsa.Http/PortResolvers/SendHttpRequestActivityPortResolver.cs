@@ -31,12 +31,12 @@ public class SendHttpRequestActivityResolver : IActivityResolver
             yield return ActivityPort.FromActivity(@case.Activity!, @case.StatusCode.ToString());
 
         if (sendHttpRequest.Timeout != null)
-            yield return sendHttpRequest.Timeout;
+            yield return ActivityPort.FromActivity(sendHttpRequest.Timeout, nameof(SendHttpRequest.Timeout));
 
         if (sendHttpRequest.FailedToConnect != null)
-            yield return sendHttpRequest.FailedToConnect;
+            yield return ActivityPort.FromActivity(sendHttpRequest.FailedToConnect, nameof(SendHttpRequest.FailedToConnect));
 
         if (sendHttpRequest.UnmatchedStatusCode != null)
-            yield return ActivityPort.FromActivity(sendHttpRequest.UnmatchedStatusCode, nameof(SendHttpRequest.ExpectedStatusCodes));
+            yield return ActivityPort.FromActivity(sendHttpRequest.UnmatchedStatusCode, nameof(SendHttpRequest.UnmatchedStatusCode));
     }
 }
