@@ -65,7 +65,7 @@ public class ActivityDescriptor
     /// Instantiates a concrete instance of an <see cref="IActivity"/>.
     /// </summary>
     [JsonIgnore]
-    public Func<ActivityConstructorContext, IActivity> Constructor { get; init; } = default!;
+    public Func<ActivityConstructorContext, IActivity> Constructor { get; set; } = default!;
 
     /// <summary>
     /// The kind of activity.
@@ -75,7 +75,7 @@ public class ActivityDescriptor
     /// <summary>
     /// The ports of the activity type.
     /// </summary>
-    public ICollection<Port> Ports { get; init; } = new List<Port>();
+    public ICollection<Port> Ports { get; set; } = new List<Port>();
     
     /// <summary>
     /// The custom properties of the activity type.
