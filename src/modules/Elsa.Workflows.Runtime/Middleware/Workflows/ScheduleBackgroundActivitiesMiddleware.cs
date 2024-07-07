@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Middleware.Activities;
@@ -14,7 +15,8 @@ public class ScheduleBackgroundActivitiesMiddleware(
     WorkflowMiddlewareDelegate next,
     IBackgroundActivityScheduler backgroundActivityScheduler,
     IStimulusHasher stimulusHasher,
-    IBookmarkStore bookmarkStore)
+    IBookmarkStore bookmarkStore,
+    IWorkflowInstanceManager workflowInstanceManager)
     : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
@@ -29,42 +31,53 @@ public class ScheduleBackgroundActivitiesMiddleware(
         var scheduledBackgroundActivities = workflowExecutionContext
             .TransientProperties
             .GetOrAdd(BackgroundActivityInvokerMiddleware.BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
+
+        if (scheduledBackgroundActivities.Count == 0)
+            return;
         
-        foreach (var scheduledBackgroundActivity in scheduledBackgroundActivities)
+        context.DeferTask(async () =>
         {
-            // Schedule the background activity.
-            var jobId = await backgroundActivityScheduler.ScheduleAsync(scheduledBackgroundActivity, cancellationToken);
-
-            // Select the bookmark associated with the background activity.
-            var bookmark = workflowExecutionContext.Bookmarks.First(x => x.Id == scheduledBackgroundActivity.BookmarkId);
-            var stimulus = bookmark.GetPayload<BackgroundActivityStimulus>();
-
-            // Store the created job ID.
-            workflowExecutionContext.Bookmarks.Remove(bookmark);
-            stimulus.JobId = jobId;
-            bookmark = bookmark with
+            // Commit state.
+            await workflowInstanceManager.SaveAsync(context, cancellationToken);
+            
+            foreach (var scheduledBackgroundActivity in scheduledBackgroundActivities)
             {
-                Payload = bookmark.Payload,
-                Hash = stimulusHasher.Hash(bookmark.Name, stimulus)
-            };
-            workflowExecutionContext.Bookmarks.Add(bookmark);
+                // Schedule the background activity.
+                var jobId = await backgroundActivityScheduler.ScheduleAsync(scheduledBackgroundActivity, cancellationToken);
 
-            // Update the bookmark.
-            var storedBookmark = new StoredBookmark
-            {
-                Id = bookmark.Id,
-                TenantId = tenantId,
-                ActivityInstanceId = bookmark.ActivityInstanceId,
-                ActivityTypeName = bookmark.Name,
-                Hash = bookmark.Hash,
-                WorkflowInstanceId = workflowExecutionContext.Id,
-                CreatedAt = bookmark.CreatedAt,
-                CorrelationId = workflowExecutionContext.CorrelationId,
-                Payload = bookmark.Payload,
-                Metadata = bookmark.Metadata,
-            };
+                // Select the bookmark associated with the background activity.
+                var bookmark = workflowExecutionContext.Bookmarks.First(x => x.Id == scheduledBackgroundActivity.BookmarkId);
+                var stimulus = bookmark.GetPayload<BackgroundActivityStimulus>();
+
+                // Store the created job ID.
+                workflowExecutionContext.Bookmarks.Remove(bookmark);
+                stimulus.JobId = jobId;
+                bookmark = bookmark with
+                {
+                    Payload = bookmark.Payload,
+                    Hash = stimulusHasher.Hash(bookmark.Name, stimulus)
+                };
+                workflowExecutionContext.Bookmarks.Add(bookmark);
+
+                // Update the bookmark.
+                var storedBookmark = new StoredBookmark
+                {
+                    Id = bookmark.Id,
+                    TenantId = tenantId,
+                    ActivityInstanceId = bookmark.ActivityInstanceId,
+                    ActivityTypeName = bookmark.Name,
+                    Hash = bookmark.Hash,
+                    WorkflowInstanceId = workflowExecutionContext.Id,
+                    CreatedAt = bookmark.CreatedAt,
+                    CorrelationId = workflowExecutionContext.CorrelationId,
+                    Payload = bookmark.Payload,
+                    Metadata = bookmark.Metadata,
+                };
          
-            await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
-        }
+                await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
+            }    
+        });
+        
+        
     }
 }

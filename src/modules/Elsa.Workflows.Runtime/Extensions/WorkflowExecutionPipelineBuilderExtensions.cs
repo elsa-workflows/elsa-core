@@ -13,8 +13,8 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
-            .UseBackgroundActivities()
             .UseDeferredActivityTasks()
+            .UseBackgroundActivities()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
