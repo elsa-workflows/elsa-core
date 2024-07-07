@@ -12,7 +12,7 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
 {
     [Theory(DisplayName = "Saving workflows updates ActivityRegistry")]
     [InlineData("Save1", true, true, true, true)]
-    [InlineData("Save2", true, false, true, false)]
+    [InlineData("Save2", true, false, false, false)]
     [InlineData("Save3", false, true, false, false)]
     [InlineData("Save4", false, false, false, false)]
     public async Task ActivityRegistry(string name, bool usableAsActivity, bool publish, bool expectedInRegistry, bool isBrowsable)

@@ -204,6 +204,30 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
+    
+    /// <summary>
+    /// Appends a negating AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="values">The values.</param>
+    public static ParameterizedQuery NotIn(this ParameterizedQuery query, string field, IEnumerable<object>? values)
+    {
+        var valueList = values?.ToList();
+
+        if (valueList == null || !valueList.Any()) return query;
+
+        var fieldParamNames = valueList
+            .Select((_, index) => $"@{field}{index}")
+            .ToArray();
+
+        query.Sql.AppendLine(query.Dialect.AndNot(field, fieldParamNames));
+
+        for (var i = 0; i < fieldParamNames.Length; i++)
+            query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
+
+        return query;
+    }
 
     public static ParameterizedQuery StartsWith(this ParameterizedQuery query, string field, bool startsWith, string? value)
     {

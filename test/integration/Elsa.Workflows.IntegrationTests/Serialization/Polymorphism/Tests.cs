@@ -2,6 +2,7 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Elsa.Expressions.Services;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 
@@ -73,7 +74,6 @@ public class Tests
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();
-
         var options = new JsonSerializerOptions
         {
             ReferenceHandler = referenceHandler,
@@ -84,7 +84,7 @@ public class Tests
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(new PolymorphicObjectConverterFactory(new WellKnownTypeRegistry()));
         return options;
     }
 }

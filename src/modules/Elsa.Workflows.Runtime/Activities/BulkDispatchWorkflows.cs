@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
@@ -7,16 +8,14 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Services;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
-using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -201,7 +200,6 @@ public class BulkDispatchWorkflows : Activity
         var input = context.WorkflowInput;
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
-        var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
         context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);

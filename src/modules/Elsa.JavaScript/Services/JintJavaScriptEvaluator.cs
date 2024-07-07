@@ -17,6 +17,8 @@ using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
+using Jint.Native;
+using Jint.Native.TypedArray;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -63,10 +65,16 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         {
             var instance = ObjectWrapper.Create(engine, target);
 
-            if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
-                instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
+            // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
+            opts.SetWrapObjectHandler((engine, target, type) =>
+            {
+                var instance = ObjectWrapper.Create(engine, target);
 
-            return instance;
+                if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
+                    instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
+
+                return instance;
+            });
         });
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());

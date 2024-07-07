@@ -102,6 +102,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     /// </summary>
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
+
+    /// <summary>
+    /// Represents a sink for workflow execution logs.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowExecutionLogSink> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
     
     /// <summary>
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
@@ -205,6 +210,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(WorkflowExecutionContextStore)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
@@ -213,6 +219,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
+            .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
             .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
@@ -222,6 +229,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<StoreWorkflowExecutionLogSink>()
             .AddScoped<DispatchWorkflowCommandHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()

@@ -14,13 +14,16 @@ using Proto.Persistence.Sqlite;
 const bool useMassTransit = true;
 const bool useProtoActor = false;
 const bool useCaching = true;
+const bool useMySql = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
 var services = builder.Services;
 var configuration = builder.Configuration;
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var identitySection = configuration.GetSection("Identity");
@@ -28,7 +31,6 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var massTransitSection = configuration.GetSection("MassTransit");
 var massTransitDispatcherSection = configuration.GetSection("MassTransit.Dispatcher");
 var heartbeatSection = configuration.GetSection("Heartbeat");
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 services.Configure<MassTransitOptions>(massTransitSection);
 services.Configure<MassTransitWorkflowDispatcherOptions>(massTransitDispatcherSection);
@@ -58,11 +60,17 @@ services
                 if (useCaching)
                     management.UseCache();
 
-                management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                if (useMySql)
+                    management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+                else
+                    management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             })
             .UseWorkflowRuntime(runtime =>
             {
-                runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                if (useMySql)
+                    runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+                else
+                    runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
                 
                 if (useMassTransit)
                 {
@@ -110,7 +118,11 @@ services
                     switch (useMassTransitBroker)
                     {
                         case MassTransitBroker.AzureServiceBus:
-                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString);
+                            massTransit.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
+                            {
+                                asb.SubscriptionCleanupOptions = options => options.Interval = TimeSpan.FromMinutes(5);
+                                asb.EnableAutomatedSubscriptionCleanup = true;
+                            });
                             break;
                         case MassTransitBroker.RabbitMq:
                             massTransit.UseRabbitMq(rabbitMqConnectionString);

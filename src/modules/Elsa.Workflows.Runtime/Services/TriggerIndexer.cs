@@ -6,6 +6,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
@@ -84,7 +85,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
-        // Collect new triggers **if workflow is published**.
+        // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
             : new List<StoredTrigger>(0);

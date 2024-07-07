@@ -12,6 +12,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>

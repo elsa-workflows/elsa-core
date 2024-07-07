@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
 using Elsa.Common.Contracts;
@@ -16,7 +16,7 @@ using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
-using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.ComponentTests.Services;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -92,6 +92,14 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseMassTransitDispatcher();
                     //runtime.UseProtoActor();
                     runtime.UseDistributedRuntime();
+                });
+                elsa.UseJavaScript(options =>
+                {
+                    options.AllowClrAccess = true;
+                    options.ConfigureEngine(engine =>
+                    {
+                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                    });
                 });
                 elsa.UseAlterations(alterations =>
                 {

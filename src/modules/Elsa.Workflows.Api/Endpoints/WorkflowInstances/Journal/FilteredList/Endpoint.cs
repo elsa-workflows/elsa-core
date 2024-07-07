@@ -39,7 +39,8 @@ internal class Get : ElsaEndpoint<Request, Response>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityIds = request.Filter?.ActivityIds,
-            EventNames = request.Filter?.EventNames
+            ExcludeActivityTypes = request.Filter?.ExcludedActivityTypes,
+            EventNames = request.Filter?.EventNames,
         };
         var order = new WorkflowExecutionLogRecordOrder<long>(x => x.Sequence, OrderDirection.Ascending);
         var pageOfRecords = await _store.FindManyAsync(filter, pageArgs, order, cancellationToken);
