@@ -152,7 +152,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties, entity.PropertyBag);
         var json = _payloadSerializer.Serialize(data);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
@@ -165,7 +165,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         if (entity == null)
             return ValueTask.CompletedTask;
 
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties, entity.PropertyBag);
         var json = (string?)managementElsaDbContext.Entry(entity).Property("Data").CurrentValue;
 
         if (!string.IsNullOrWhiteSpace(json))
@@ -177,6 +177,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         entity.Outputs = data.Outputs;
         entity.Outcomes = data.Outcomes;
         entity.CustomProperties = data.CustomProperties;
+        entity.PropertyBag = data.PropertyBag;
 
         return ValueTask.CompletedTask;
     }
@@ -225,7 +226,8 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             ICollection<InputDefinition> inputs,
             ICollection<OutputDefinition> outputs,
             ICollection<string> outcomes,
-            IDictionary<string, object> customProperties
+            IDictionary<string, object> customProperties,
+            PropertyBag propertyBag
         )
         {
             Options = options;
@@ -234,6 +236,7 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
             Outputs = outputs;
             Outcomes = outcomes;
             CustomProperties = customProperties;
+            PropertyBag = propertyBag;
         }
 
         public WorkflowOptions Options { get; set; } = new();
@@ -241,6 +244,10 @@ public class EFCoreWorkflowDefinitionStore : IWorkflowDefinitionStore
         public ICollection<InputDefinition> Inputs { get; set; } = new List<InputDefinition>();
         public ICollection<OutputDefinition> Outputs { get; set; } = new List<OutputDefinition>();
         public ICollection<string> Outcomes { get; set; } = new List<string>();
+        
+        [Obsolete("Use PropertyBag instead")]
         public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+
+        public PropertyBag PropertyBag { get; set; } = new();
     }
 }
