@@ -96,7 +96,7 @@ public class WorkflowDefinitionManager : IWorkflowDefinitionManager
     {
         if (definitionToDelete.IsPublished)
         {
-            throw new Exception("Published version cannot be deleted before retracting it");
+            await _workflowPublisher.RetractAsync(definitionToDelete, cancellationToken);
         }
 
         await _notificationSender.SendAsync(new WorkflowDefinitionVersionDeleting(definitionToDelete), cancellationToken);
