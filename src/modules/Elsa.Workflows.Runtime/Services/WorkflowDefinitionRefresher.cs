@@ -39,6 +39,9 @@ public class WorkflowDefinitionsRefresher(IWorkflowDefinitionStore store, ITrigg
             await IndexWorkflowTriggersAsync(definitions.Items, cancellationToken);
             processedWorkflowDefinitions.AddRange(definitions.Items);
             currentPage++;
+
+            if (definitions.Items.Count < batchSize)
+                break;
         }
 
         var processedWorkflowDefinitionIds = processedWorkflowDefinitions.Select(x => x.Id).ToList();

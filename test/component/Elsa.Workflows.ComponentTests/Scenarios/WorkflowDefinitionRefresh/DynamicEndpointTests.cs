@@ -1,4 +1,5 @@
-﻿using Elsa.Workflows.ComponentTests.Helpers.Services;
+﻿using System.Net;
+using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,18 +20,14 @@ public class DynamicEndpointTests : AppComponentTest
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
-        var firstResponse = await client.GetStringAsync("first-value");
+        var firstResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "first-value"));
 
         StaticValueHolder.Value = "second-value";
-        await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(new Runtime.Requests.RefreshWorkflowDefinitionsRequest
-        {
-            BatchSize = 10,
-            DefinitionIds = ["f69f061159adc3ae"]
-        }, CancellationToken.None);
+        await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(new Runtime.Requests.RefreshWorkflowDefinitionsRequest(), CancellationToken.None);
 
-        var secondResponse = await client.GetStringAsync("second-value");
+        var secondResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "second-value"));
 
-        Assert.Equal("", firstResponse);
-        Assert.Equal("", secondResponse);
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
     }
 }
