@@ -47,6 +47,16 @@ public interface IWorkflowInstancesApi
     Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Checks if there are updates in the journal for a specific workflow instance.
+    /// </summary>
+    /// <param name="workflowInstanceId">The ID of the workflow instance for which to check for updates.</param>
+    /// <param name="request">The request containing the ID and time from which to check for updates.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Returns whether updates are available for the journal.</returns>
+    [Get("/workflow-instances/{workflowInstanceId}/journal/has-updates")]
+    Task<bool> HasJournalUpdates(string workflowInstanceId, [Query]HasJournalUpdateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a workflow instance.
     /// </summary>
     /// <param name="id">The ID of the workflow instance to delete.</param>

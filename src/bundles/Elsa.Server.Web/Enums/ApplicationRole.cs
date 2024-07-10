@@ -4,5 +4,6 @@ public enum ApplicationRole
 {
     Default,
     Api,
-    Worker
+    Worker,
+    Monitoring    
 }
