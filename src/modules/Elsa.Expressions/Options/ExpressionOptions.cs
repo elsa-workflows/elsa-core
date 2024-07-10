@@ -24,16 +24,17 @@ public class ExpressionOptions
         this.AddTypeAlias<bool>("Boolean");
         this.AddTypeAlias<decimal>("Decimal");
         this.AddTypeAlias<double>("Double");
+        this.AddTypeAlias<byte[]>("ByteArray");
         this.AddTypeAlias<Guid>("Guid");
         this.AddTypeAlias<DateTime>("DateTime");
         this.AddTypeAlias<DateTimeOffset>("DateTimeOffset");
         this.AddTypeAlias<TimeSpan>("TimeSpan");
-        this.AddTypeAlias<ExpandoObject>("ExpandoObject");
+        this.AddTypeAlias<Stream>("Stream");
         this.AddTypeAlias<ExpandoObject>("JSON");
-        this.AddTypeAlias<Dictionary<string, string>>("StringDictionary");
+        this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
+        this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
         this.AddTypeAlias<Dictionary<string, string>>("StringMap");
         this.AddTypeAlias<Dictionary<string, object>>("ObjectMap");
-        this.AddTypeAlias<Dictionary<string, object>>("ObjectDictionary");
     }
     
     /// Gets the type alias dictionary.
