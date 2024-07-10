@@ -217,6 +217,11 @@ public class HttpFeature : FeatureBase
 
         Services.Configure<ExpressionOptions>(options =>
         {
+            options.AddTypeAlias<HttpRequest>("HttpRequest");
+            options.AddTypeAlias<HttpResponse>("HttpResponse");
+            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
+            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
+            options.AddTypeAlias<RouteData>("RouteData");
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
             options.AddTypeAlias<HttpFile>("HttpFile");
