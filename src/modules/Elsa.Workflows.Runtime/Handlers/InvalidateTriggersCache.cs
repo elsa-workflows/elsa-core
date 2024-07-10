@@ -15,11 +15,19 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// The cache is invalidated by calling the <c>TriggerTokenAsync</c> method of the <c>ICacheManager</c> passed to the class constructor.
 /// </remarks>
 [UsedImplicitly]
-public class InvalidateTriggersCache(ICacheManager cacheManager) : INotificationHandler<WorkflowDefinitionsRefreshed>
+public class InvalidateTriggersCache(ICacheManager cacheManager) :
+    INotificationHandler<WorkflowDefinitionsRefreshed>,
+    INotificationHandler<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionsRefreshed notification, CancellationToken cancellationToken)
     {
         return cacheManager.TriggerTokenAsync(CachingTriggerStore.CacheInvalidationTokenKey, cancellationToken).AsTask();
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
+    {
+        await cacheManager.TriggerTokenAsync(CachingTriggerStore.CacheInvalidationTokenKey, cancellationToken);
     }
 }
