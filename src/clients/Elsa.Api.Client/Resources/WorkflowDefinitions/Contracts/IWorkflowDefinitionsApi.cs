@@ -209,6 +209,7 @@ public interface IWorkflowDefinitionsApi
     /// <param name="definitionId">The definition ID of the workflow definition to revert.</param>
     /// <param name="version">The version to revert to.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
+    /// <returns>A summary view of the newly created workflow definition version.</returns>
     [Post("/workflow-definitions/{definitionId}/revert/{version}")]
-    Task RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
+    Task<WorkflowDefinitionSummary> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default);
 }

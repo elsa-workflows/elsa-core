@@ -4,6 +4,7 @@ using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -46,8 +47,12 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
             return;
         }
 
-        await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
+        var newDefinition = await workflowDefinitionManager.RevertVersionAsync(definitionId, version, cancellationToken);
+        var newDefinitionSummary = WorkflowDefinitionSummary.FromDefinition(newDefinition);
 
-        await SendOkAsync(cancellationToken);
+        await SendCreatedAtAsync("GetWorkflowDefinitionById", new
+        {
+            id = newDefinition.Id
+        }, newDefinitionSummary, cancellation: cancellationToken);
     }
 }
