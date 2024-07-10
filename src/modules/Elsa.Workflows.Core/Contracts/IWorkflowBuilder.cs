@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -82,7 +83,13 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
+    [Obsolete("Use PropertyBag instead")]
     IDictionary<string, object> CustomProperties { get; }
+    
+    /// <summary>
+    /// A set of properties that can be used for storing application-specific information about the workflow being built.
+    /// </summary>
+    PropertyBag PropertyBag { get; set; }
     
     /// <summary>
     /// A fluent method for setting the <see cref="DefinitionId"/> property.
