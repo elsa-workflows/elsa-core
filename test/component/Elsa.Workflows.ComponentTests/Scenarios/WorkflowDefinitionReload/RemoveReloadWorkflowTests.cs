@@ -17,7 +17,7 @@ public class RemoveReloadWorkflowTests : AppComponentTest
     }
 
     [Fact]
-    public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
+    public async Task RemovingTheWorkflowThenReload_WorflowShouldBeReachableAgain()
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 

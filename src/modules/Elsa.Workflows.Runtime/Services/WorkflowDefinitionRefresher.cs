@@ -44,10 +44,10 @@ public class WorkflowDefinitionsRefresher(IWorkflowDefinitionStore store, ITrigg
                 break;
         }
 
-        var processedWorkflowDefinitionIds = processedWorkflowDefinitions.Select(x => x.Id).ToList();
+        var processedWorkflowDefinitionIds = processedWorkflowDefinitions.Select(x => x.DefinitionId).ToList();
         var notification = new WorkflowDefinitionsRefreshed(processedWorkflowDefinitionIds);
         await notificationSender.SendAsync(notification, cancellationToken);
-        return new RefreshWorkflowDefinitionsResponse(processedWorkflowDefinitions);
+        return new RefreshWorkflowDefinitionsResponse(processedWorkflowDefinitionIds, request.DefinitionIds?.Except(processedWorkflowDefinitionIds)?.ToList() ?? []);
     }
 
     private async Task IndexWorkflowTriggersAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken)

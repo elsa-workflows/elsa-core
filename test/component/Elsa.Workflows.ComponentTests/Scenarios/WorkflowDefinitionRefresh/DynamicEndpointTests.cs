@@ -16,14 +16,15 @@ public class DynamicEndpointTests : AppComponentTest
     }
 
     [Fact]
-    public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
+    public async Task ChangingEndpointValueThenRefresh_WorkflowShouldRespondToTheNewValue()
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         var firstResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "first-value"));
 
         StaticValueHolder.Value = "second-value";
-        await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(new Runtime.Requests.RefreshWorkflowDefinitionsRequest(), CancellationToken.None);
+        var _ = await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(
+            new Runtime.Requests.RefreshWorkflowDefinitionsRequest() { DefinitionIds = ["f69f061159adc3ae"] }, CancellationToken.None);
 
         var secondResponse = await client.SendAsync(new HttpRequestMessage(HttpMethod.Get, "second-value"));
 
