@@ -231,6 +231,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            .AddScoped<IWorkflowExecutionLogRecordExtractor, WorkflowExecutionLogRecordExtractor>()
             
             // Stores.
             .AddScoped(BookmarkStore)
