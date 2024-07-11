@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Builder;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.GetById;
 
@@ -12,6 +13,7 @@ internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker
     {
         Get("/workflow-definitions/by-id/{id}");
         ConfigurePermissions("read:workflow-definitions");
+        Options(x => x.WithName("GetWorkflowDefinitionById"));
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

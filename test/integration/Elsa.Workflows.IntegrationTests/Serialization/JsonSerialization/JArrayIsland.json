@@ -4,5 +4,5 @@
     "_island": "[\r\n  {\r\n    \u0022path\u0022: \u0022folder1\u0022,\r\n    \u0022command\u0022: \u0022add\u0022\r\n  }\r\n]",
     "_type": "Newtonsoft.Json.Linq.JArray, Newtonsoft.Json"
   },
-  "_type": "ObjectDictionary"
+  "_type": "ObjectMap"
 }

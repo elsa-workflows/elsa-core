@@ -39,6 +39,7 @@ internal class Get : ElsaEndpoint<Request, Response>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityIds = request.Filter?.ActivityIds,
+            ActivityNodeIds = request.Filter?.ActivityNodeIds,
             ExcludeActivityTypes = request.Filter?.ExcludedActivityTypes,
             EventNames = request.Filter?.EventNames,
         };

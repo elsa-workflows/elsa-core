@@ -13,8 +13,4 @@
         <PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
-    <ItemGroup>
-        <_ContentIncludedByDefault Remove="wwwroot\index.html" />
-    </ItemGroup>
-
 </Project>

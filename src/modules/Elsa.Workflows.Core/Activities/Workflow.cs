@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Elsa.Common.Models;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
@@ -30,6 +31,7 @@ public class Workflow : Composite<object>, ICloneable
         ICollection<OutputDefinition> outputs,
         ICollection<string> outcomes,
         IDictionary<string, object> customProperties,
+        PropertyBag propertyBag,
         bool isReadonly,
         bool isSystem)
     {
@@ -38,6 +40,7 @@ public class Workflow : Composite<object>, ICloneable
         Inputs = inputs;
         Outputs = outputs;
         Outcomes = outcomes;
+        PropertyBag = propertyBag;
         WorkflowMetadata = workflowMetadata;
         Options = options;
         Variables = variables;
@@ -96,6 +99,11 @@ public class Workflow : Composite<object>, ICloneable
     /// Gets or sets options for the workflow.
     /// </summary>
     public WorkflowOptions Options { get; set; } = new();
+
+    /// <summary>
+    /// A bag of properties that can be used by applications and modules to store information that can be shared with tooling.
+    /// </summary>
+    public PropertyBag PropertyBag { get; set; } = new();
     
     /// <summary>
     /// Make workflow definition readonly.
