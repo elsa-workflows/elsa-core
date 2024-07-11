@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.TriggerAuthenticated;
 

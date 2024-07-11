@@ -1,6 +1,6 @@
 using Elsa.Expressions.Models;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 public class Output : Argument
 {

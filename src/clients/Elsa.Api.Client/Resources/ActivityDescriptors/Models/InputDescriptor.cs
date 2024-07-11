@@ -24,11 +24,6 @@ public class InputDescriptor : PropertyDescriptor
     public string UIHint { get; set; } = default!;
     
     /// <summary>
-    /// An arbitrary options object that can be used by UI tooling.
-    /// </summary>
-    public IDictionary<string, object>? Options { get; set; }
-    
-    /// <summary>
     /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
     /// </summary>
     public string? Category { get; set; }
@@ -42,7 +37,6 @@ public class InputDescriptor : PropertyDescriptor
     /// The default syntax.
     /// </summary>
     public string? DefaultSyntax { get; set; }
-    //public ICollection<string> SupportedSyntaxes { get; set; } = new List<string>();
     
     /// <summary>
     /// True if the input is readonly, false otherwise.
@@ -54,4 +48,9 @@ public class InputDescriptor : PropertyDescriptor
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
     public string? StorageDriverType { get; set; }
+    
+    /// <summary>
+    /// A dictionary of UI specifications to be used by the UI.
+    /// </summary>
+    public IDictionary<string, object>? UISpecifications { get; set; }
 }

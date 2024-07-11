@@ -1,10 +1,13 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Globalization;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Exceptions;
 using Elsa.Expressions.Extensions;
@@ -26,16 +29,17 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value.TryConvertTo(typeof(T), serializerOptions);
+    public static Result TryConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value.TryConvertTo(typeof(T), converterOptions);
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? serializerOptions = null)
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
+    public static Result TryConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         try
         {
-            var convertedValue = value.ConvertTo(targetType, serializerOptions);
+            var convertedValue = value.ConvertTo(targetType, converterOptions);
             return new Result(true, convertedValue, null);
         }
         catch (Exception e)
@@ -47,11 +51,29 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? serializerOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), serializerOptions) : default;
+    public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
+    
+    private static JsonSerializerOptions? _defaultSerializerOptions;
+    private static JsonSerializerOptions? _internalSerializerOptions;
+    
+    private static JsonSerializerOptions DefaultSerializerOptions => _defaultSerializerOptions ??= new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        ReferenceHandler = ReferenceHandler.Preserve,
+        Converters = { new JsonStringEnumConverter() },
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
+    
+    private static JsonSerializerOptions InternalSerializerOptions => _internalSerializerOptions ??= new JsonSerializerOptions
+    {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+    };
 
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static object? ConvertTo(this object? value, Type targetType, ObjectConverterOptions? converterOptions = null)
     {
         if (value == null)
@@ -62,12 +84,7 @@ public static class ObjectConverter
         if (sourceType == targetType)
             return value;
 
-        var options = converterOptions?.SerializerOptions != null ? new JsonSerializerOptions(converterOptions.SerializerOptions) : new JsonSerializerOptions();
-        options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.ReferenceHandler = ReferenceHandler.Preserve;
-        options.PropertyNameCaseInsensitive = true;
-        options.Converters.Add(new JsonStringEnumConverter());
-
+        var serializerOptions = converterOptions?.SerializerOptions ?? DefaultSerializerOptions;
         var underlyingTargetType = Nullable.GetUnderlyingType(targetType) ?? targetType;
         var underlyingSourceType = Nullable.GetUnderlyingType(sourceType) ?? sourceType;
 
@@ -79,7 +96,7 @@ public static class ObjectConverter
             if (jsonElement.ValueKind == JsonValueKind.String && underlyingTargetType != typeof(string))
                 return jsonElement.GetString().ConvertTo(underlyingTargetType);
 
-            return jsonElement.Deserialize(targetType, options);
+            return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
         if (value is JsonObject jsonObject)
@@ -87,7 +104,7 @@ public static class ObjectConverter
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonObject.ToString(),
-                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, options),
+                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
                 _ => jsonObject,
             };
         }
@@ -101,7 +118,7 @@ public static class ObjectConverter
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
 
                 if (firstChar is '{' or '[')
-                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType, options);
+                    return JsonSerializer.Deserialize(stringValue, underlyingTargetType, serializerOptions);
             }
             catch (Exception e)
             {
@@ -121,29 +138,27 @@ public static class ObjectConverter
         if (IsDateType(underlyingSourceType) && IsDateType(underlyingTargetType))
             return ConvertAnyDateType(value, underlyingTargetType);
 
+        var internalSerializerOptions = InternalSerializerOptions;
+        
         if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingSourceType) && underlyingTargetType.IsClass)
         {
             if (typeof(ExpandoObject) == underlyingTargetType)
             {
-                var expandoJson = JsonSerializer.Serialize(value);
+                var expandoJson = JsonSerializer.Serialize(value, internalSerializerOptions);
                 return ConvertTo(expandoJson, underlyingTargetType, converterOptions);
             }
 
             if (typeof(IDictionary<string, object>).IsAssignableFrom(underlyingTargetType))
                 return new Dictionary<string, object>((IDictionary<string, object>)value);
 
-            if (typeof(ExpandoObject) == underlyingSourceType)
-            {
-                // Parse ExpandoObject into target type.
-                var expandoObject = (IDictionary<string, object>)value;
-                var json = JsonSerializer.Serialize(expandoObject);
-                return ConvertTo(json, underlyingTargetType, converterOptions);
-            }
+            var sourceDictionary = (IDictionary<string, object>)value;
+            var json = JsonSerializer.Serialize(sourceDictionary, internalSerializerOptions);
+            return ConvertTo(json, underlyingTargetType, converterOptions);
         }
 
         if (typeof(IEnumerable<object>).IsAssignableFrom(underlyingSourceType))
             if (underlyingTargetType == typeof(string))
-                return JsonSerializer.Serialize(value);
+                return JsonSerializer.Serialize(value, internalSerializerOptions);
 
         var targetTypeConverter = TypeDescriptor.GetConverter(underlyingTargetType);
 
@@ -166,10 +181,10 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, value);
 
             if (underlyingSourceType == typeof(double))
-                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
             
             if (underlyingSourceType == typeof(long))
-                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
         }
 
         if (value is string s)
@@ -210,7 +225,7 @@ public static class ObjectConverter
 
         try
         {
-            return Convert.ChangeType(value, underlyingTargetType);
+            return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
         catch (InvalidCastException e)
         {

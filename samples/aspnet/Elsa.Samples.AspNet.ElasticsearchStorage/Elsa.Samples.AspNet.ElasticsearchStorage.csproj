@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\bundles\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,13 +1,13 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Schedule an activity for each item in parallel.
@@ -28,7 +28,7 @@ public class ParallelForEach<T> : Activity
     /// The items to iterate.
     /// </summary>
     [Input(Description = "The items to iterate through.")]
-    public Input<ICollection<T>> Items { get; set; } = new(Array.Empty<T>());
+    public Input<object> Items { get; set; } = new(Array.Empty<T>());
 
     /// <summary>
     /// The <see cref="IActivity"/> to execute each iteration.
@@ -39,17 +39,14 @@ public class ParallelForEach<T> : Activity
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        var items = context.Get(Items)!.ToList();
+        var items = context.GetItemSource<T>(Items);
         var tags = new List<Guid>();
         var currentIndex = 0;
-
-        if (items.Count == 0)
-        {
-            await context.CompleteActivityAsync();
-            return;
-        }
-
-        foreach (var item in items)
+        
+        context.SetProperty(ScheduledTagsProperty, tags);
+        context.SetProperty(CompletedTagsProperty, new List<Guid>());
+        
+        await foreach (var item in items)
         {
             // For each item, declare a new variable for the work to be scheduled.
             var currentValueVariable = new Variable<T>("CurrentValue", item)
@@ -57,26 +54,19 @@ public class ParallelForEach<T> : Activity
                 // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
                 StorageDriverType = typeof(WorkflowStorageDriver)
             };
-            
-            var currentIndexVariable = new Variable<int>("CurrentIndex", currentIndex++)
-            {
-                StorageDriverType = typeof(WorkflowStorageDriver)
-            };
 
-            var variables = new List<Variable>
-            {
-                currentValueVariable,
-                currentIndexVariable
-            };
+            var currentIndexVariable = new Variable<int>("CurrentIndex", currentIndex++) { StorageDriverType = typeof(WorkflowStorageDriver) };
+            var variables = new List<Variable> { currentValueVariable, currentIndexVariable };
 
             // Schedule a body of work for each item.
             var tag = Guid.NewGuid();
             tags.Add(tag);
             await context.ScheduleActivityAsync(Body, OnChildCompleted, tag, variables);
         }
-
-        context.SetProperty(ScheduledTagsProperty, tags);
-        context.SetProperty(CompletedTagsProperty, new List<Guid>());
+        
+        // If there were no items, we're done.
+        if (tags.Count == 0)
+            await context.CompleteActivityAsync();
     }
 
     private async ValueTask OnChildCompleted(ActivityCompletedContext context)

@@ -1,10 +1,12 @@
 using Elsa.Alterations.Core.Abstractions;
+using JetBrains.Annotations;
 
 namespace Elsa.Alterations.AlterationTypes;
 
 /// <summary>
 /// Migrates a workflow instance to a newer version.
 /// </summary>
+[UsedImplicitly]
 public class Migrate : AlterationBase
 {
     /// <summary>

@@ -1,0 +1,158 @@
+{
+  "id": "4cf7c10c7a2901d6",
+  "definitionId": "input-output-logging-3-child",
+  "name": "Input Output Logging 3 - Child",
+  "createdAt": "2024-04-22T13:11:07.146222+00:00",
+  "version": 4,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [
+    {
+      "type": "Object",
+      "name": "Output1",
+      "displayName": "Output 1",
+      "category": "Primitives",
+      "isArray": false
+    },
+    {
+      "type": "Object",
+      "name": "Output2",
+      "displayName": "Output 2",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {
+    "logPersistenceMode": {
+      "default": "Exclude"
+    },
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "5f72efc9043753fa",
+    "nodeId": "Workflow1:5f72efc9043753fa",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output1"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Output value 1"
+          }
+        },
+        "id": "402076f12c1220a9",
+        "nodeId": "Workflow1:5f72efc9043753fa:402076f12c1220a9",
+        "name": "SetOutput1",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false,
+          "logPersistenceMode": {
+            "default": "Default",
+            "inputs": {
+              "outputName": "Default",
+              "outputValue": "Default"
+            },
+            "outputs": {}
+          }
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -221.4757080078125,
+              "y": 264.861083984375
+            },
+            "size": {
+              "width": 107.734375,
+              "height": 50.2256965637207
+            }
+          }
+        }
+      },
+      {
+        "outputName": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Output2"
+          }
+        },
+        "outputValue": {
+          "typeName": "Object",
+          "expression": {
+            "type": "Literal",
+            "value": "Output value 2"
+          }
+        },
+        "id": "db1d1c02cbfac590",
+        "nodeId": "Workflow1:5f72efc9043753fa:db1d1c02cbfac590",
+        "name": "SetOutput2",
+        "type": "Elsa.SetOutput",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false,
+          "logPersistenceMode": {
+            "default": "Default",
+            "inputs": {
+              "outputName": "Include",
+              "outputValue": "Include"
+            },
+            "outputs": {}
+          }
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 58.5242919921875,
+              "y": 264.861083984375
+            },
+            "size": {
+              "width": 107.734375,
+              "height": 50.2256965637207
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "402076f12c1220a9",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "db1d1c02cbfac590",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

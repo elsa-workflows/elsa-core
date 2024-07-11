@@ -1,5 +1,5 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 
 // ReSharper disable once CheckNamespace
@@ -11,7 +11,7 @@ namespace Elsa.Extensions;
 public static class ActivityExecutionPipelineBuilderExtensions
 {
     /// <summary>
-    /// Installs the <see cref="BackgroundActivityCollectorMiddleware"/>.
+    /// Installs the <see cref="BackgroundActivityInvokerMiddleware"/>.
     /// </summary>
-    public static IActivityExecutionPipelineBuilder UseBackgroundActivityInvoker(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<BackgroundActivityCollectorMiddleware>();
+    public static IActivityExecutionPipelineBuilder UseBackgroundActivityInvoker(this IActivityExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<BackgroundActivityInvokerMiddleware>();
 }

@@ -3,7 +3,7 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
@@ -11,27 +11,22 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
 [PublicAPI]
-internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinitionSummary>>
+internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker linker) : ElsaEndpoint<Request, PagedListResponse<LinkedWorkflowDefinitionSummary>>
 {
-    private readonly IWorkflowDefinitionStore _store;
-
-    public List(IWorkflowDefinitionStore store)
-    {
-        _store = store;
-    }
-
     public override void Configure()
     {
         Get("/workflow-definitions");
         ConfigurePermissions("read:workflow-definitions");
     }
 
-    public override async Task<PagedListResponse<WorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    public override async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
         var filter = CreateFilter(request);
         var summaries = await FindAsync(request, filter, pageArgs, cancellationToken);
-        return new PagedListResponse<WorkflowDefinitionSummary>(summaries);
+        var pagedList = new PagedListResponse<WorkflowDefinitionSummary>(summaries);
+        var response = linker.MapAsync(pagedList);
+        return response;
     }
 
     private WorkflowDefinitionFilter CreateFilter(Request request)
@@ -40,6 +35,7 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
 
         return new WorkflowDefinitionFilter
         {
+            IsSystem = request.IsSystem,
             VersionOptions = versionOptions,
             SearchTerm = request.SearchTerm?.Trim(),
             MaterializerName = request.MaterializerName,
@@ -57,35 +53,35 @@ internal class List : ElsaEndpoint<Request, PagedListResponse<WorkflowDefinition
         switch (request.OrderBy)
         {
             default:
-            {
-                var order = new WorkflowDefinitionOrder<DateTimeOffset>
                 {
-                    KeySelector = p => p.CreatedAt,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<DateTimeOffset>
+                    {
+                        KeySelector = p => p.CreatedAt,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
             case OrderByWorkflowDefinition.Name:
-            {
-                var order = new WorkflowDefinitionOrder<string>
                 {
-                    KeySelector = p => p.Name!,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<string>
+                    {
+                        KeySelector = p => p.Name!,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
             case OrderByWorkflowDefinition.Version:
-            {
-                var order = new WorkflowDefinitionOrder<int>
                 {
-                    KeySelector = p => p.Version,
-                    Direction = direction
-                };
+                    var order = new WorkflowDefinitionOrder<int>
+                    {
+                        KeySelector = p => p.Version,
+                        Direction = direction
+                    };
 
-                return await _store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
-            }
+                    return await store.FindSummariesAsync(filter, order, pageArgs, cancellationToken);
+                }
         }
     }
 }

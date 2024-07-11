@@ -1,10 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <Description>
             Provides integration with the Quartz.NET library and provide am implementation of Elsa's IJobScheduler using Quartz.NET.
         </Description>
@@ -12,13 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Quartz" Version="3.8.0" />
-        <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.8.0" />
-        <PackageReference Include="Quartz.Extensions.Hosting" Version="3.8.0" />
+        <PackageReference Include="Quartz" />
+        <PackageReference Include="Quartz.Extensions.DependencyInjection" />
+        <PackageReference Include="Quartz.Extensions.Hosting" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
     </ItemGroup>
 
 </Project>

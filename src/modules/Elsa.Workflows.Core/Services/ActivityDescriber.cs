@@ -3,31 +3,33 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using Humanizer;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber
 {
-    private readonly IPropertyOptionsResolver _optionsResolver;
+    //private readonly IPropertyOptionsResolver _optionsResolver;
     private readonly IPropertyDefaultValueResolver _defaultValueResolver;
     private readonly IActivityFactory _activityFactory;
-
+    private readonly IPropertyUIHandlerResolver _propertyUIHandlerResolver;
     /// <summary>
     /// Constructor.
     /// </summary>
-    public ActivityDescriber(IPropertyOptionsResolver optionsResolver, IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory)
+    public ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolver, IActivityFactory activityFactory, IPropertyUIHandlerResolver propertyUIHandlerResolver)
     {
-        _optionsResolver = optionsResolver;
+        //_optionsResolver = optionsResolver;
         _defaultValueResolver = defaultValueResolver;
         _activityFactory = activityFactory;
+        _propertyUIHandlerResolver = propertyUIHandlerResolver;
     }
 
     /// <inheritdoc />
@@ -72,6 +74,7 @@ public class ActivityDescriber : IActivityDescriber
         var isTrigger = activityType.IsAssignableTo(typeof(ITrigger));
         var browsableAttr = activityType.GetCustomAttribute<BrowsableAttribute>();
         var isTerminal = activityType.FindInterfaces((type, criteria) => type == typeof(ITerminalNode), null).Any();
+        var isStart = activityType.FindInterfaces((type, criteria) => type == typeof(IStartNode), null).Any();
         var attributes = activityType.GetCustomAttributes(true).Cast<Attribute>().ToList();
         var outputAttribute = attributes.OfType<OutputAttribute>().FirstOrDefault();
 
@@ -90,6 +93,7 @@ public class ActivityDescriber : IActivityDescriber
             Outputs = (await DescribeOutputPropertiesAsync(outputProperties, cancellationToken)).ToList(),
             IsContainer = typeof(IContainer).IsAssignableFrom(activityType),
             IsBrowsable = browsableAttr == null || browsableAttr.Browsable,
+            IsStart = isStart,
             IsTerminal = isTerminal,
             Attributes = attributes,
             Constructor = context =>
@@ -155,7 +159,8 @@ public class ActivityDescriber : IActivityDescriber
         if (wrappedPropertyType.IsNullableType())
             wrappedPropertyType = wrappedPropertyType.GetTypeOfNullable();
 
-        var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
+        //var inputOptions = await _optionsResolver.GetOptionsAsync(propertyInfo, cancellationToken);
+        var uiSpecification = await _propertyUIHandlerResolver.GetUIPropertiesAsync(propertyInfo, null, cancellationToken);
 
         return new InputDescriptor
         (
@@ -167,7 +172,7 @@ public class ActivityDescriber : IActivityDescriber
             GetUIHint(wrappedPropertyType, inputAttribute),
             inputAttribute?.DisplayName ?? propertyInfo.Name.Humanize(LetterCasing.Title),
             descriptionAttribute?.Description ?? inputAttribute?.Description,
-            inputOptions,
+            //inputOptions,
             inputAttribute?.Category,
             inputAttribute?.Order ?? 0,
             _defaultValueResolver.GetDefaultValue(propertyInfo),
@@ -178,7 +183,8 @@ public class ActivityDescriber : IActivityDescriber
             false,
             autoEvaluate,
             default,
-            propertyInfo
+            propertyInfo,
+            uiSpecification
         );
     }
 
@@ -190,20 +196,12 @@ public class ActivityDescriber : IActivityDescriber
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default) =>
-        await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
-
-    private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
-        return await Task.WhenAll(properties.Select(async x => await DescribeInputPropertyAsync(x, cancellationToken)));
+        return await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
     }
-
-    private async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
-    {
-        return await Task.WhenAll(properties.Select(async x => await DescribeOutputPropertyAsync(x, cancellationToken)));
-    }
-
-    private static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
+    
+    public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
     {
         if (inputAttribute?.UIHint != null)
             return inputAttribute.UIHint;
@@ -215,10 +213,10 @@ public class ActivityDescriber : IActivityDescriber
             return InputUIHints.SingleLine;
 
         if (typeof(IEnumerable).IsAssignableFrom(wrappedPropertyType))
-            return InputUIHints.Dropdown;
+            return InputUIHints.DropDown;
 
         if (wrappedPropertyType.IsEnum || wrappedPropertyType.IsNullableType() && wrappedPropertyType.GetTypeOfNullable().IsEnum)
-            return InputUIHints.Dropdown;
+            return InputUIHints.DropDown;
 
         if (wrappedPropertyType == typeof(Variable))
             return InputUIHints.VariablePicker;
@@ -227,5 +225,15 @@ public class ActivityDescriber : IActivityDescriber
             return InputUIHints.TypePicker;
 
         return InputUIHints.SingleLine;
+    }
+
+    private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(properties.Select(async x => await DescribeInputPropertyAsync(x, cancellationToken)));
+    }
+
+    private async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(properties.Select(async x => await DescribeOutputPropertyAsync(x, cancellationToken)));
     }
 }

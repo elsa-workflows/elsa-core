@@ -2,9 +2,11 @@ using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Open.Linq.AsyncExtensions;
@@ -29,7 +31,19 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await _store.AddAsync(record, OnSaveAsync, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
+    {
+        await _store.AddManyAsync(records, OnSaveAsync, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
@@ -73,7 +87,8 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
 
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState != null ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
+        entity = entity.SanitizeLogMessage();
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? await _safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
         dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await _safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
     }
 

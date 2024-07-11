@@ -44,8 +44,8 @@ public class EmailFeature : FeatureBase
     {
         Services
             .Configure(ConfigureOptions)
-            .AddSingleton<MailKitSmtpService>()
-            .AddSingleton(SmtpService)
+            .AddScoped<MailKitSmtpService>()
+            .AddScoped(SmtpService)
             .AddHttpClient<IDownloader, DefaultDownloader>(ConfigureDownloaderHttpClient);
     }
 }

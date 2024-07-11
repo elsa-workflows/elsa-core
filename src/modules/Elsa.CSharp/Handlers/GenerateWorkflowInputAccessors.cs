@@ -3,7 +3,6 @@ using Elsa.CSharp.Notifications;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.CSharp.Handlers;
@@ -19,7 +18,11 @@ public class GenerateWorkflowInputAccessors : INotificationHandler<EvaluatingCSh
     {
         var expressionExecutionContext = notification.Context;
         var workflowInputs = expressionExecutionContext.GetWorkflowInputs().ToList();
-        var workflow = expressionExecutionContext.GetWorkflowExecutionContext().Workflow;
+
+        if (!expressionExecutionContext.TryGetWorkflowExecutionContext(out var workflowExecutionContext))
+            return Task.CompletedTask;
+
+        var workflow = workflowExecutionContext.Workflow;
         var inputDefinitions = workflow.Inputs.ToList();
         var sb = new StringBuilder();
         sb.AppendLine("public partial class WorkflowInputsProxy {");

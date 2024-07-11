@@ -1,3 +1,3 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 public record TriggerType(string TypeName, Type Type);

@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\packages.props" />
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides HTTP activities to listen for and send out HTTP requests.
@@ -12,32 +7,18 @@
         <PackageTags>elsa module http activities</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.14"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="7.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
-        <PackageReference Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
-        <PackageReference Include="AspNetCore.Authentication.ApiKey" Version="8.0.0" />
+    <ItemGroup>
+        <PackageReference Include="FluentStorage" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2"/>
-        <PackageReference Include="Microsoft.AspNetCore.Http.Extensions" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Routing" Version="2.2.2"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj"/>
+        <ProjectReference Include="..\Elsa.Liquid\Elsa.Liquid.csproj" />
+        <ProjectReference Include="..\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
         <ProjectReference Include="..\Elsa.SasTokens\Elsa.SasTokens.csproj" />
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
+        <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
     </ItemGroup>
 </Project>

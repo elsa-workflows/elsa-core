@@ -1,7 +1,5 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;
@@ -10,14 +8,14 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptorOptions.Get;
 internal class Get : ElsaEndpoint<Request, Response>
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly IActivityRegistry _registry;
-    private readonly IPropertyOptionsResolver _optionsResolver;
+    private readonly IActivityRegistryLookupService _registryLookup;
+    private readonly IPropertyUIHandlerResolver _optionsResolver;
 
     /// <inheritdoc />
-    public Get(IServiceProvider serviceProvider, IActivityRegistry registry, IPropertyOptionsResolver optionsResolver)
+    public Get(IServiceProvider serviceProvider, IActivityRegistryLookupService registryLookup, IPropertyUIHandlerResolver optionsResolver)
     {
         _serviceProvider = serviceProvider;
-        _registry = registry;
+        _registryLookup = registryLookup;
         _optionsResolver = optionsResolver;
     }
 
@@ -31,18 +29,19 @@ internal class Get : ElsaEndpoint<Request, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var descriptor = request.Version == null ? _registry.Find(request.ActivityTypeName) : _registry.Find(request.ActivityTypeName, request.Version.Value);
+        var descriptor = request.Version == null ? await _registryLookup.FindAsync(request.ActivityTypeName) : await _registryLookup.FindAsync(request.ActivityTypeName, request.Version.Value);
         if (descriptor == null)
             await SendNotFoundAsync(cancellationToken);
 
         var propertyDescriptor =  descriptor!.Inputs.FirstOrDefault(x => x.Name == request.PropertyName);
 
         if(propertyDescriptor == null)
+        {
             await SendNotFoundAsync(cancellationToken);
-
-        var optionsResolver = new PropertyOptionsResolver(_serviceProvider);
-
-        var inputOptions = await optionsResolver.GetOptionsAsync(propertyDescriptor!.PropertyInfo, request.Context, cancellationToken);
+            return;
+        }
+        
+        var inputOptions = await _optionsResolver.GetUIPropertiesAsync(propertyDescriptor.PropertyInfo!, request.Context, cancellationToken);
 
         await SendOkAsync(new Response(inputOptions), cancellationToken);
     }

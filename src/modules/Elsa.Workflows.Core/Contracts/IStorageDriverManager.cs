@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides access to registered <see cref="IStorageDriver"/> objects.

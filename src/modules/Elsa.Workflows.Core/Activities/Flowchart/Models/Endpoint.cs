@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
+namespace Elsa.Workflows.Activities.Flowchart.Models;
 
 /// <summary>
 /// Represents an endpoint of a connection.

@@ -1,11 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
-        <Version>3.0.0</Version>
         <Description>
             Provides API endpoints for client applications such as the Elsa Designer web component.
         </Description>
@@ -13,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
-        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj"/>
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

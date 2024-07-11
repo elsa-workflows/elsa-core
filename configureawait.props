@@ -1,9 +1,0 @@
-<Project>
-  <ItemGroup>
-      <PackageReference Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All" />
-      <PackageReference Include="Fody" Version="6.8.0">
-        <PrivateAssets>All</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-      </PackageReference>
-  </ItemGroup>
-</Project>

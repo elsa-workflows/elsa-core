@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// Creates timer schedules for the specified bookmarks.

@@ -28,6 +28,11 @@ public partial class ExecutionContextProxy
     /// Gets the value of the specified variable.
     /// </summary>
     public T? GetVariable<T>(string name) => ExpressionExecutionContext.GetVariableInScope(name).ConvertTo<T>();
+    
+    /// <summary>
+    /// Gets the value of the specified variable.
+    /// </summary>
+    public object? GetVariable(string name) => ExpressionExecutionContext.GetVariableInScope(name);
 
     /// <summary>
     /// Sets the value of the specified variable.

@@ -1,6 +1,6 @@
 using System.Reflection;
 using Elsa.Features.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Features;
 
 // ReSharper disable once CheckNamespace
@@ -18,15 +18,6 @@ public static class ModuleExtensions
     {
         module.Configure(configure);
         return module;
-    }
-    
-    /// <summary>
-    /// Enables the <see cref="WorkflowRuntimeFeature"/> and configures it to use the default workflow runtime.
-    /// </summary>
-    public static WorkflowRuntimeFeature UseDefaultWorkflowRuntime(this WorkflowRuntimeFeature runtime, Action<DefaultWorkflowRuntimeFeature>? configureDefaultRuntime = default)
-    {
-        runtime.Module.Configure(configureDefaultRuntime);
-        return runtime;
     }
 
     /// <summary>
@@ -59,6 +50,15 @@ public static class ModuleExtensions
     /// <param name="configure">A callback that configures the default workflow runtime.</param>
     /// <returns>The workflow runtime feature.</returns>
     public static WorkflowRuntimeFeature UseDefaultRuntime(this WorkflowRuntimeFeature feature, Action<DefaultWorkflowRuntimeFeature>? configure = default)
+    {
+        feature.Module.Configure(configure);
+        return feature;
+    }
+    
+    /// <summary>
+    /// Adds caching stores feature to the workflow runtime feature.
+    /// </summary>
+    public static WorkflowRuntimeFeature UseCache(this WorkflowRuntimeFeature feature, Action<CachingWorkflowRuntimeFeature>? configure = default)
     {
         feature.Module.Configure(configure);
         return feature;

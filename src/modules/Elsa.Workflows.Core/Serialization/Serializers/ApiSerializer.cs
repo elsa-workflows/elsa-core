@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Serialization.Serializers;
+namespace Elsa.Workflows.Serialization.Serializers;
 
-/// <inheritdoc cref="Elsa.Workflows.Core.Contracts.IApiSerializer" />
+/// <inheritdoc cref="IApiSerializer" />
 public class ApiSerializer : ConfigurableSerializer, IApiSerializer
 {
     /// <summary>
@@ -18,7 +18,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     /// <inheritdoc />
     public string Serialize(object model)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(model, options);
     }
 
@@ -28,7 +28,7 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
     /// <inheritdoc />
     public T Deserialize<T>(string serializedModel)
     {
-        var options = CreateOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<T>(serializedModel, options)!;
     }
 
@@ -44,11 +44,11 @@ public class ApiSerializer : ConfigurableSerializer, IApiSerializer
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
     }
 
-    JsonSerializerOptions IApiSerializer.CreateOptions() => base.CreateOptions();
+    JsonSerializerOptions IApiSerializer.GetOptions() => GetOptions();
 
     JsonSerializerOptions IApiSerializer.ApplyOptions(JsonSerializerOptions options)
     {
-        Apply(options);
+        ApplyOptions(options);
         return options;
     }
 }

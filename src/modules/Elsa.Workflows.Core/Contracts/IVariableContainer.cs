@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Represents a container for <see cref="Variable"/>s.

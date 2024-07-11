@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Schedule an activity for each item in parallel.

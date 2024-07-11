@@ -1,7 +1,7 @@
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Provides access to the underlying store of stored triggers.
@@ -9,15 +9,26 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface ITriggerStore
 {
     /// <summary>
-    /// Adds or updates the specified record.
+    /// Adds or updates the specified <see cref="StoredTrigger"/> in the persistence store.
     /// </summary>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Adds or updates the specified set of records. 
+    /// Adds or updates the specified set of <see cref="StoredTrigger"/> objects in the persistence store.
     /// </summary>
+    /// <remarks>
+    /// If a record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Returns the first record matching the specified filter.
+    /// </summary>
+    ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default);
+    
     /// <summary>
     /// Returns all records matching the specified filter.
     /// </summary>

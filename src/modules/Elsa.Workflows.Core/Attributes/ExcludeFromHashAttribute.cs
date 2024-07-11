@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Attributes;
+namespace Elsa.Workflows.Attributes;
 
 /// <summary>
 /// Indicates that a property should be excluded from the hash computation.

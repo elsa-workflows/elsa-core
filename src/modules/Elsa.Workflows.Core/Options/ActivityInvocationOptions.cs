@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Options;
+namespace Elsa.Workflows.Options;
 
 /// <summary>
 /// Represents options for invoking an activity.

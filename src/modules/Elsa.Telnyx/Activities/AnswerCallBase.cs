@@ -4,9 +4,9 @@ using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -46,7 +46,7 @@ public abstract class AnswerCallBase : Activity<CallAnsweredPayload>
             await telnyxClient.Calls.AnswerCallAsync(callControlId, request, context.CancellationToken);
 
             // Create a bookmark so we can resume the workflow when the call is answered.
-            context.CreateBookmark(new AnswerCallBookmarkPayload(callControlId), ResumeAsync, true);
+            context.CreateBookmark(new AnswerCallStimulus(callControlId), ResumeAsync, true);
         }
         catch (ApiException e)
         {

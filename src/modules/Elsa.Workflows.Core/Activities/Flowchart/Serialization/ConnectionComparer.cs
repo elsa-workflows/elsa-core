@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
+using Elsa.Workflows.Activities.Flowchart.Models;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
+namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// Compares two <see cref="Connection"/> instances.

@@ -1,9 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Unicode;
 using Elsa.Expressions.Helpers;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Services;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -13,6 +17,19 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class VariableExtensions
 {
+    private static JsonSerializerOptions? _serializerOptions;
+
+    private static JsonSerializerOptions SerializerOptions =>
+        _serializerOptions ??= new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            ReferenceHandler = ReferenceHandler.Preserve,
+            PropertyNameCaseInsensitive = true,
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+        }.WithConverters(
+            new JsonStringEnumConverter(),
+            new ExpandoObjectConverterFactory());
+
     /// <summary>
     /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
     /// </summary>
@@ -50,13 +67,12 @@ public static class VariableExtensions
     /// <summary>
     /// Converts the specified value into a type that is compatible with the variable.
     /// </summary>
-    public static object ParseValue(this Variable variable, object value)
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+    public static object? ParseValue(this Variable variable, object? value)
     {
         var genericType = variable.GetType().GenericTypeArguments.FirstOrDefault();
-        var jsonSerializerOptions = new JsonSerializerOptions();
-        jsonSerializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
-        var converterOptions = new ObjectConverterOptions(jsonSerializerOptions);
-        return genericType == null ? value : value.ConvertTo(genericType, converterOptions)!;
+        var converterOptions = new ObjectConverterOptions(SerializerOptions);
+        return genericType == null ? value : value?.ConvertTo(genericType, converterOptions);
     }
 
     /// <summary>

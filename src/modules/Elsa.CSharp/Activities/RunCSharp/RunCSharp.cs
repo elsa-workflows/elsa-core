@@ -4,9 +4,10 @@ using Elsa.CSharp.Extensions;
 using Elsa.CSharp.Models;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.CSharp.Activities;
@@ -34,10 +35,10 @@ public class RunCSharp : CodeActivity<object?>
     [Input(
         Description = "The script to run.",
         UIHint = InputUIHints.CodeEditor,
-        OptionsProvider = typeof(RunCSharpOptionsProvider)
+        UIHandler = typeof(RunCSharpOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
-    
+
     /// <summary>
     /// A list of possible outcomes. Use "SetOutcome(string)" to set the outcome. Use "SetOutcomes(params string[])" to set multiple outcomes.
     /// </summary>

@@ -10,5 +10,5 @@ public interface IAlterationPlanScheduler
     /// <summary>
     /// Submits an alteration plan for execution.
     /// </summary>
-    Task<string> SubmitAsync(NewAlterationPlan newPlan, CancellationToken cancellationToken = default);
+    Task<string> SubmitAsync(AlterationPlanParams planParams, CancellationToken cancellationToken = default);
 }

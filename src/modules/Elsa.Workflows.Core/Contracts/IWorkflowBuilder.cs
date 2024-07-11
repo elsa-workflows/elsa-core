@@ -1,8 +1,9 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Common.Models;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// A workflow pipelineBuilder collects information about a workflow to be built programmatically.
@@ -18,7 +19,12 @@ public interface IWorkflowBuilder
     /// The version ID to use for the workflow being built.
     /// </summary>
     string? Id { get; set; }
-    
+
+    /// <summary>
+    /// The ID of the tenant associated with the workflow being built.
+    /// </summary>
+    string? TenantId { get; set; }
+
     /// <summary>
     /// The version of the workflow being built.
     /// </summary>
@@ -33,12 +39,16 @@ public interface IWorkflowBuilder
     /// A description of the workflow.
     /// </summary>
     string? Description { get; set; }
-
-
+    
     /// <summary>
     /// WorkflowDefinition is readonly.
     /// </summary>
     bool IsReadonly { get; set; }
+    
+    /// <summary>
+    /// WorkflowDefinition is readonly.
+    /// </summary>
+    bool IsSystem { get; set; }
 
     /// <summary>
     /// Options for the workflow being built.
@@ -78,8 +88,26 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
+    [Obsolete("Use PropertyBag instead")]
     IDictionary<string, object> CustomProperties { get; }
     
+    /// <summary>
+    /// A set of properties that can be used for storing application-specific information about the workflow being built.
+    /// </summary>
+    PropertyBag PropertyBag { get; set; }
+    
+    /// <summary>
+    /// A fluent method for setting the <see cref="DefinitionId"/> property.
+    /// </summary>
+    /// <param name="definitionId">The definition ID to use for the workflow being built.</param>
+    IWorkflowBuilder WithDefinitionId(string definitionId);
+
+    /// <summary>
+    /// A fluent method for setting the <see cref="TenantId"/> property.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID to use for the workflow being built.</param>
+    IWorkflowBuilder WithTenantId(string tenantId);
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
@@ -109,6 +137,31 @@ public interface IWorkflowBuilder
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     IWorkflowBuilder WithVariables(params Variable[] variables);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput<T>(string name, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(string name, Type type, string? description = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(string name, Type type, Action<InputDefinition>? setup = default);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    InputDefinition WithInput(Action<InputDefinition> setup);
+    
+    /// <summary>
+    /// A fluent method for adding an input to <see cref="Inputs"/>.
+    /// </summary>
+    IWorkflowBuilder WithInput(InputDefinition inputDefinition);
 
     /// <summary>
     /// A fluent method for adding a property to <see cref="CustomProperties"/>.
@@ -119,7 +172,17 @@ public interface IWorkflowBuilder
     /// Configure the workflow to use the specified <see cref="IWorkflowActivationStrategy"/> type.
     /// </summary>
     IWorkflowBuilder WithActivationStrategyType<T>() where T : IWorkflowActivationStrategy;
+
+    /// <summary>
+    /// Marks the workflow as readonly.
+    /// </summary>
+    IWorkflowBuilder AsReadonly();
     
+    /// <summary>
+    /// Marks the workflow as a system workflow.
+    /// </summary>
+    IWorkflowBuilder AsSystemWorkflow();
+
     /// <summary>
     /// Build a new <see cref="Workflow"/> instance using the information collected in this pipelineBuilder.
     /// </summary>

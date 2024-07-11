@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Helpers;
+namespace Elsa.Workflows.Helpers;
 
 /// <summary>
 /// A utility that compares two collections and returns a set of added, removed and unchanged items.
@@ -33,6 +33,11 @@ public class Diff<T>
 /// </summary>
 public static class Diff
 {
+    /// <summary>
+    /// Creates a new diff.
+    /// </summary>
+    public static Diff<T> From<T>(ICollection<T> added, ICollection<T> removed, ICollection<T> unchanged) => new(added, removed, unchanged);
+    
     /// <summary>
     /// Returns an empty diff.
     /// </summary>

@@ -1,19 +1,18 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using Elsa.Common.Contracts;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Signals;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -73,45 +72,6 @@ public static class ActivityExecutionContextExtensions
     /// Returns true if this activity is triggered for the first time and not being resumed.
     /// </summary>
     public static bool IsTriggerOfWorkflow(this ActivityExecutionContext context) => context.WorkflowExecutionContext.TriggerActivityId == context.Activity.Id;
-
-    /// <summary>
-    /// Adds a new <see cref="WorkflowExecutionLogEntry"/> to the execution log of the current <see cref="WorkflowExecutionContext"/>.
-    /// </summary>
-    /// <param name="context">The <see cref="ActivityExecutionContext"/></param> being extended.
-    /// <param name="eventName">The name of the event.</param>
-    /// <param name="message">The message of the event.</param>
-    /// <param name="source">The source of the activity. For example, the source file name and line number in case of composite activities.</param>
-    /// <param name="payload">Any contextual data related to this event.</param>
-    /// <param name="includeActivityState">True to include activity state with this event, false otherwise.</param>
-    /// <returns>Returns the created <see cref="WorkflowExecutionLogEntry"/>.</returns>
-    public static WorkflowExecutionLogEntry AddExecutionLogEntry(this ActivityExecutionContext context, string eventName, string? message = default, string? source = default, object? payload = default, bool includeActivityState = false)
-    {
-        var activity = context.Activity;
-        var activityInstanceId = context.Id;
-        var parentActivityInstanceId = context.ParentActivityExecutionContext?.Id;
-        var workflowExecutionContext = context.WorkflowExecutionContext;
-        var now = context.GetRequiredService<ISystemClock>().UtcNow;
-        var activityState = includeActivityState ? context.ActivityState : default;
-
-        var logEntry = new WorkflowExecutionLogEntry(
-            activityInstanceId,
-            parentActivityInstanceId,
-            activity.Id,
-            activity.Type,
-            activity.Version,
-            activity.Name,
-            context.NodeId,
-            activityState,
-            now,
-            workflowExecutionContext.ExecutionLogSequence++,
-            eventName,
-            message,
-            source ?? activity.GetSource(),
-            payload);
-
-        workflowExecutionContext.ExecutionLog.Add(logEntry);
-        return logEntry;
-    }
 
     /// <summary>
     /// Creates a workflow variable by name and optionally sets the value.
@@ -178,24 +138,24 @@ public static class ActivityExecutionContextExtensions
     /// <summary>
     /// Evaluates a specific input property of the activity.
     /// </summary>
-    public static Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
     {
         var activity = context.Activity;
-        var activityRegistry = context.GetRequiredService<IActivityRegistry>();
-        var activityDescriptor = activityRegistry.Find(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
         if (inputDescriptor == null)
             throw new Exception($"No input with name {inputName} could be found");
 
-        return EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
+    public static async IAsyncEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this ActivityExecutionContext activityExecutionContext)
     {
         // Get current container.
         var currentContainerNode = activityExecutionContext.FindParentWithVariableContainer()?.ActivityNode;
@@ -208,28 +168,25 @@ public static class ActivityExecutionContextExtensions
         var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
 
         // Select activities with outputs.
-        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistry>();
+        var activityRegistry = workflowExecutionContext.GetRequiredService<IActivityRegistryLookupService>();
         var activitiesWithOutputs = containedNodes.GetActivitiesWithOutputs(activityRegistry);
 
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
+        await foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
             yield return (activity, activityDescriptor);
     }
 
     /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
-    public static IEnumerable<(IActivity Activity, ActivityDescriptor ActivityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistry activityRegistry)
+    public static async IAsyncEnumerable<(IActivity activity, ActivityDescriptor activityDescriptor)> GetActivitiesWithOutputs(this IEnumerable<ActivityNode> nodes, IActivityRegistryLookupService activityRegistryLookup)
     {
-        // Select activities with outputs.
-        var activitiesWithOutputs =
-            from node in nodes
-            let activity = node.Activity
-            let activityDescriptor = activityRegistry.Find(activity.Type, activity.Version)
-            where activityDescriptor.Outputs.Any()
-            select (activity, activityDescriptor);
-
-        foreach (var (activity, activityDescriptor) in activitiesWithOutputs)
-            yield return (activity, activityDescriptor);
+        foreach (var node in nodes)
+        {
+            var activity = node.Activity;
+            var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type, activity.Version);
+            if (activityDescriptor != null && activityDescriptor.Outputs.Any()) 
+                yield return (activity, activityDescriptor);
+        }
     }
 
     /// <summary>
@@ -403,26 +360,9 @@ public static class ActivityExecutionContextExtensions
     public static async ValueTask SendSignalAsync(this ActivityExecutionContext context, object signal)
     {
         var receivingContexts = new[] { context }.Concat(context.GetAncestors()).ToList();
-        var capturingContexts = receivingContexts.AsEnumerable().Reverse().ToList();
         var logger = context.GetRequiredService<ILogger<ActivityExecutionContext>>();
-
-        // Let all ancestors capture the signal.
-        foreach (var ancestorContext in capturingContexts)
-        {
-            var signalContext = new SignalContext(ancestorContext, context, context.CancellationToken);
-
-            if (ancestorContext.Activity is not ISignalHandler handler)
-                continue;
-
-            logger.LogDebug("Capturing signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-            await handler.CaptureSignalAsync(signal, signalContext);
-
-            if (signalContext.StopPropagationRequested)
-            {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-                return;
-            }
-        }
+        var signalType = signal.GetType();
+        var signalTypeName = signalType.Name;
 
         // Let all ancestors receive the signal.
         foreach (var ancestorContext in receivingContexts)
@@ -432,92 +372,15 @@ public static class ActivityExecutionContextExtensions
             if (ancestorContext.Activity is not ISignalHandler handler)
                 continue;
 
-            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+            logger.LogDebug("Receiving signal {SignalType} on activity {ActivityId} of type {ActivityType}", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
             await handler.ReceiveSignalAsync(signal, signalContext);
 
             if (signalContext.StopPropagationRequested)
             {
-                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signal.GetType().Name, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
+                logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
                 return;
             }
         }
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
-    public static async ValueTask CompleteActivityAsync(this ActivityCompletedContext context, object? result = default)
-    {
-        await context.TargetContext.CompleteActivityAsync(result);
-    }
-
-    /// <summary>
-    /// Complete the current activity. This should only be called by activities that explicitly suppress automatic-completion.
-    /// </summary>
-    public static async ValueTask CompleteActivityAsync(this ActivityExecutionContext context, object? result = default)
-    {
-        // If the activity is not running, do nothing.
-        if (context.Status != ActivityStatus.Running)
-            return;
-
-        // Update all child contexts.
-        var childContexts = context.WorkflowExecutionContext.ActivityExecutionContexts.Where(x => x.ParentActivityExecutionContext == context).ToList();
-
-        foreach (var childContext in childContexts)
-            await childContext.CancelActivityAsync();
-
-        // Mark the activity as complete.
-        context.Status = ActivityStatus.Completed;
-
-        // Record the outcomes, if any.
-        if (result is Outcomes outcomes)
-            context.JournalData["Outcomes"] = outcomes.Names;
-
-        // Record the output, if any.
-        var activity = context.Activity;
-        var expressionExecutionContext = context.ExpressionExecutionContext;
-        var activityDescriptor = context.ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x => activity.GetOutput(expressionExecutionContext, x.Name)!);
-        var serializer = context.GetRequiredService<ISafeSerializer>();
-
-        foreach (var outputDescriptor in outputDescriptors)
-        {
-            if (outputDescriptor.IsSerializable == false)
-                continue;
-
-            var outputName = outputDescriptor.Name;
-            var outputValue = outputs[outputName];
-
-            if (outputValue == null!)
-                continue;
-
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue);
-            context.JournalData[outputName] = serializedOutputValue;
-        }
-
-        // Add an execution log entry.
-        context.AddExecutionLogEntry("Completed", payload: context.JournalData, includeActivityState: true);
-
-        // Send a signal.
-        await context.SendSignalAsync(new ActivityCompleted(result));
-
-        // Clear bookmarks.
-        context.ClearBookmarks();
-        context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityInstanceId == context.Id);
-
-        // Remove completion callbacks.
-        context.ClearCompletionCallbacks();
-
-        // Remove all associated variables, unless this is the root context - in which case we want to keep the variables since we're not deleting that one.
-        if (context.ParentActivityExecutionContext != null)
-        {
-            var variablePersistenceManager = context.GetRequiredService<IVariablePersistenceManager>();
-            await variablePersistenceManager.DeleteVariablesAsync(context);
-        }
-
-        // Update the completed at timestamp.
-        context.CompletedAt = context.WorkflowExecutionContext.SystemClock.UtcNow;
     }
 
     /// <summary>
@@ -553,22 +416,7 @@ public static class ActivityExecutionContextExtensions
         // Send a signal.
         await context.SendSignalAsync(new ScheduleActivityOutcomes(outcomes));
     }
-
-    /// <summary>
-    /// Complete the current activity with the specified outcome.
-    /// </summary>
-    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityCompletedContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-
-    /// <summary>
-    /// Complete the current activity with the specified outcome.
-    /// </summary>
-    public static ValueTask CompleteActivityWithOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes) => context.CompleteActivityAsync(new Outcomes(outcomes));
-
-    /// <summary>
-    /// Complete the current composite activity with the specified outcome.
-    /// </summary>
-    public static async ValueTask CompleteCompositeAsync(this ActivityExecutionContext context, params string[] outcomes) => await context.SendSignalAsync(new CompleteCompositeSignal(new Outcomes(outcomes)));
-
+    
     /// <summary>
     /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
     /// </summary>
@@ -585,13 +433,13 @@ public static class ActivityExecutionContextExtensions
             await CancelActivityAsync(childContext);
 
         var publisher = context.GetRequiredService<INotificationSender>();
-        context.Status = ActivityStatus.Canceled;
+        context.TransitionTo(ActivityStatus.Canceled);
         context.ClearBookmarks();
         context.ClearCompletionCallbacks();
         context.WorkflowExecutionContext.Bookmarks.RemoveWhere(x => x.ActivityNodeId == context.NodeId);
 
         // Add an execution log entry.
-        context.AddExecutionLogEntry("Canceled", payload: context.JournalData, includeActivityState: true);
+        context.AddExecutionLogEntry("Canceled", payload: context.JournalData);
 
         await context.SendSignalAsync(new CancelSignal());
         await publisher.SendAsync(new ActivityCancelled(context));

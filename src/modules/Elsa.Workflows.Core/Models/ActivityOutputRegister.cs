@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Stores activity output.
@@ -61,7 +61,7 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityId(string activityId, string? outputName = default)
     {
-        var record = _records.FirstOrDefault(x => x.ActivityId == activityId && x.OutputName == (outputName ?? DefaultOutputName));
+        var record = _records.LastOrDefault(x => x.ActivityId == activityId && x.OutputName == (outputName ?? DefaultOutputName));
         return record?.Value;
     }
 
@@ -73,7 +73,7 @@ public class ActivityOutputRegister
     /// <returns>The output value.</returns>
     public object? FindOutputByActivityInstanceId(string activityInstanceId, string? outputName = default)
     {
-        var record = _records.FirstOrDefault(x => x.ActivityInstanceId == activityInstanceId && x.OutputName == (outputName ?? DefaultOutputName));
+        var record = _records.LastOrDefault(x => x.ActivityInstanceId == activityInstanceId && x.OutputName == (outputName ?? DefaultOutputName));
         return record?.Value;
     }
 }

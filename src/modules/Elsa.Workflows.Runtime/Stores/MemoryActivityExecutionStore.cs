@@ -1,6 +1,5 @@
 using Elsa.Common.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -55,6 +54,20 @@ public class MemoryActivityExecutionStore : IActivityExecutionStore
     {
         var result = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
         return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, order, cancellationToken);
+        return entities.Select(ActivityExecutionRecordSummary.FromRecord);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
+    {
+        var entities = await FindManyAsync(filter, cancellationToken);
+        return entities.Select(ActivityExecutionRecordSummary.FromRecord);
     }
 
     /// <inheritdoc />

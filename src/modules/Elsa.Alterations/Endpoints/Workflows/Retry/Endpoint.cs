@@ -2,9 +2,10 @@ using Elsa.Abstractions;
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Results;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using JetBrains.Annotations;
@@ -56,7 +57,7 @@ public class Retry : ElsaEndpoint<Request, Response>
             allResults.AddRange(results);
             
             // Schedule updated workflow.
-            await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(workflowInstance.Id), cancellationToken);
+            await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(workflowInstance.Id), cancellationToken: cancellationToken);
         }
         
         // Write response.

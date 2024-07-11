@@ -1,8 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -12,13 +8,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Humanizer.Core" Version="2.14.1"/>
-        <PackageReference Include="System.Linq.Async" Version="6.0.1"/>
+        <PackageReference Include="Humanizer.Core" />
+        <PackageReference Include="IronCompress" />
+        <PackageReference Include="System.Linq.Dynamic.Core" />
+        <PackageReference Include="PolySharp">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Dsl\Elsa.Dsl.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
+        <ProjectReference Include="..\Elsa.Dsl\Elsa.Dsl.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
 </Project>

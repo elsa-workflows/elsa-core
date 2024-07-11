@@ -1,10 +1,10 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Exceptions;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Exceptions;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// This activity is instantiated in case a workflow references an activity type that could not be found.

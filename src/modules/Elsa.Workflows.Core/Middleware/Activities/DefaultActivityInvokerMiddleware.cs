@@ -1,10 +1,11 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Services;
+using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Middleware.Activities;
+namespace Elsa.Workflows.Middleware.Activities;
 
 /// <summary>
 /// Provides extension methods to <see cref="IActivityExecutionPipelineBuilder"/>.
@@ -20,18 +21,9 @@ public static class ActivityInvokerMiddlewareExtensions
 /// <summary>
 /// A default activity execution middleware component that evaluates the current activity's properties, executes the activity and adds any produced bookmarks to the workflow execution context.
 /// </summary>
-public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
+public class DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<DefaultActivityInvokerMiddleware> logger)
+    : IActivityExecutionMiddleware
 {
-    private readonly ActivityMiddlewareDelegate _next;
-
-    /// <summary>
-    /// Constructor
-    /// </summary>
-    public DefaultActivityInvokerMiddleware(ActivityMiddlewareDelegate next)
-    {
-        _next = next;
-    }
-
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
@@ -41,16 +33,24 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
 
         // Evaluate input properties.
         await EvaluateInputPropertiesAsync(context);
-
+        
+        // Prevent the activity from being started if cancellation is requested.
+        if (context.CancellationToken.IsCancellationRequested)
+        {
+            context.TransitionTo(ActivityStatus.Canceled);
+            context.AddExecutionLogEntry("Activity cancelled");
+            return;
+        }
+        
         // Check if the activity can be executed.
         if (!await context.Activity.CanExecuteAsync(context))
         {
-            context.Status = ActivityStatus.Pending;
+            context.TransitionTo(ActivityStatus.Pending);
             context.AddExecutionLogEntry("Precondition Failed", "Cannot execute at this time");
             return;
         }
 
-        context.Status = ActivityStatus.Running;
+        context.TransitionTo(ActivityStatus.Running);
 
         // Execute activity.
         await ExecuteActivityAsync(context);
@@ -62,19 +62,23 @@ public class DefaultActivityInvokerMiddleware : IActivityExecutionMiddleware
         var resumedBookmark = workflowExecutionContext.ResumedBookmarkContext?.Bookmark;
 
         if (resumedBookmark is { AutoBurn: true })
+        {
+            logger.LogDebug("Auto-burning bookmark {BookmarkId}", resumedBookmark.Id);
             workflowExecutionContext.Bookmarks.Remove(resumedBookmark);
+        }
 
         // Update execution count.
         context.IncrementExecutionCount();
 
         // Invoke next middleware.
-        await _next(context);
+        await next(context);
 
         // If the activity created any bookmarks, copy them into the workflow execution context.
         if (context.Bookmarks.Any())
         {
             // Store bookmarks.
             workflowExecutionContext.Bookmarks.AddRange(context.Bookmarks);
+            logger.LogDebug("Added {BookmarkCount} bookmarks to the workflow execution context", context.Bookmarks.Count);
         }
     }
 

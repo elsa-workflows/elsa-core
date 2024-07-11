@@ -5,9 +5,9 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -17,16 +17,10 @@ namespace Elsa.Telnyx.Handlers;
 /// Triggers all workflows blocked on a <see cref="AnswerCall"/> or <see cref="FlowAnswerCall"/> activity.
 /// </summary>
 [PublicAPI]
-internal class TriggerAnswerCallActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerAnswerCallActivities(IStimulusSender stimulusSender, ILogger<TriggerAnswerCallActivities> logger)
+    : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly ILogger _logger;
-
-    public TriggerAnswerCallActivities(IWorkflowInbox workflowInbox, ILogger<TriggerAnswerCallActivities> logger)
-    {
-        _workflowInbox = workflowInbox;
-        _logger = logger;
-    }
+    private readonly ILogger _logger = logger;
 
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
@@ -44,21 +38,20 @@ internal class TriggerAnswerCallActivities : INotificationHandler<TelnyxWebhookR
 
         var activityTypeNames = new[]
         {
-            ActivityTypeNameHelper.GenerateTypeName<AnswerCall>(),
+            ActivityTypeNameHelper.GenerateTypeName<AnswerCall>(), 
             ActivityTypeNameHelper.GenerateTypeName<FlowAnswerCall>(),
         };
 
         foreach (var activityTypeName in activityTypeNames)
         {
-            // Trigger all workflows matching the activity type names and associated call control IDs.
-            await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+            var stimulus = new AnswerCallStimulus(callControlId);
+            var metadata = new StimulusMetadata
             {
                 WorkflowInstanceId = workflowInstanceId,
-                ActivityTypeName = activityTypeName,
                 ActivityInstanceId = activityInstanceId,
-                BookmarkPayload = new AnswerCallBookmarkPayload(callControlId),
                 Input = input
-            }, cancellationToken);
+            };
+            await stimulusSender.SendAsync(activityTypeName, stimulus, metadata, cancellationToken);
         }
     }
 }

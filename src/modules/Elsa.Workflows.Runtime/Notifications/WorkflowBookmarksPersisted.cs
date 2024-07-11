@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Notifications;
 
@@ -10,4 +9,4 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// </summary>
 /// <param name="Context">The workflow execution context.</param>
 /// <param name="Diff">The bookmarks that were added, removed, or unchanged.</param>
-public record WorkflowBookmarksPersisted(WorkflowExecutionContext Context, Diff<Bookmark> Diff) : INotification;
+public record WorkflowBookmarksPersisted(Diff<Bookmark> Diff) : INotification;

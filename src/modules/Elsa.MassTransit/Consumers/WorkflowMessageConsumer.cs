@@ -1,5 +1,6 @@
 using Elsa.MassTransit.Activities;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
 using MassTransit;
@@ -36,6 +37,6 @@ public class WorkflowMessageConsumer<T> : IConsumer<T> where T : class
             CorrelationId = correlationId,
             Input = input
         };
-        await _workflowRuntime.DispatchAsync(request, cancellationToken);
+        await _workflowRuntime.DispatchAsync(request, cancellationToken: cancellationToken);
     }
 }

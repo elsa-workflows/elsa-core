@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

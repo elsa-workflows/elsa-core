@@ -1,8 +1,8 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace

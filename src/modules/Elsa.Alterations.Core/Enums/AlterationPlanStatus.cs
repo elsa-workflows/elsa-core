@@ -11,6 +11,16 @@ public enum AlterationPlanStatus
     Pending,
     
     /// <summary>
+    /// The plan is currently generating jobs.
+    /// </summary>
+    Generating,
+    
+    /// <summary>
+    /// The plan is currently dispatching jobs.
+    /// </summary>
+    Dispatching,
+    
+    /// <summary>
     /// The plan is currently being executed.
     /// </summary>
     Running,

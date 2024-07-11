@@ -1,6 +1,7 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Common.Models;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Entities;
 
@@ -54,10 +55,11 @@ public class WorkflowDefinition : VersionedEntity
     /// </summary>
     public ICollection<string> Outcomes { get; set; } = new List<string>();
     
-    /// <summary>
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
-    /// </summary>
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
+
+    /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
+    public PropertyBag PropertyBag { get; set; } = new();
 
     /// <summary>
     /// The name of the workflow provider that created this workflow, if any.
@@ -87,11 +89,16 @@ public class WorkflowDefinition : VersionedEntity
     /// <summary>
     /// An option to use the workflow as a readonly workflow
     /// </summary>
-    public bool IsReadonly { get; set; } = false;
+    public bool IsReadonly { get; set; }
+    
+    /// <summary>
+    /// Specifies whether the workflow is a system workflow.
+    /// System workflows are provided by modules and are not meant to be modified by users.
+    /// </summary>
+    public bool IsSystem { get; set; }
 
     /// <summary>
     /// Creates and returns a shallow copy of the workflow definition.
     /// </summary>
-    /// <returns></returns>
     public WorkflowDefinition ShallowClone() => (WorkflowDefinition)MemberwiseClone();
 }

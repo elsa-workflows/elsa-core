@@ -1,7 +1,7 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Humanizer;
 using JetBrains.Annotations;
 

@@ -1,8 +1,7 @@
 using System.Runtime.CompilerServices;
-using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Telnyx.Activities;
 

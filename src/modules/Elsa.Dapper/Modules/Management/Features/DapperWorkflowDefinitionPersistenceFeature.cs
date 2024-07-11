@@ -1,4 +1,6 @@
+using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Features;
+using Elsa.Dapper.Modules.Management.Records;
 using Elsa.Dapper.Modules.Management.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -34,6 +36,6 @@ public class DapperWorkflowDefinitionPersistenceFeature : FeatureBase
     {
         base.Apply();
         
-        Services.AddSingleton<DapperWorkflowDefinitionStore>();
+        Services.AddDapperStore<DapperWorkflowDefinitionStore, WorkflowDefinitionRecord>("WorkflowDefinitions");
     }
 }

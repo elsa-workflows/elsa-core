@@ -2,7 +2,8 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Options;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Alterations.Core.Serialization;
@@ -10,24 +11,20 @@ namespace Elsa.Alterations.Core.Serialization;
 /// <summary>
 /// Add additional <see cref="JsonConverter"/> objects.
 /// </summary>
-public class AlterationSerializationOptionConfigurator : SerializationOptionsConfiguratorBase
+[UsedImplicitly]
+public class AlterationSerializationOptionConfigurator(IOptions<AlterationOptions> options) : SerializationOptionsConfiguratorBase
 {
-    private readonly IOptions<AlterationOptions> _options;
-
-    /// <inheritdoc />
-    public AlterationSerializationOptionConfigurator(IOptions<AlterationOptions> options)
-    {
-        _options = options;
-    }
-
     /// <inheritdoc />
     public override IEnumerable<Action<JsonTypeInfo>> GetModifiers()
     {
-        var alterationTypes = _options.Value.AlterationTypes;
+        var alterationTypes = options.Value.AlterationTypes;
 
         yield return typeInfo =>
         {
             if (typeInfo.Type != typeof(IAlteration))
+                return;
+
+            if (typeInfo.Kind != JsonTypeInfoKind.Object)
                 return;
 
             var polymorphismOptions = new JsonPolymorphismOptions

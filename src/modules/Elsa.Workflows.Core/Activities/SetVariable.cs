@@ -2,12 +2,12 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Assign a workflow variable a value.
@@ -100,7 +100,10 @@ public class SetVariable : CodeActivity
     /// <inheritdoc />
     protected override void Execute(ActivityExecutionContext context)
     {
+        // Always refer to the variable by ID to ensure that the variable is resolved from the correct scope.
+        var variableId = Variable.Id; 
+        var variable = context.ExpressionExecutionContext.EnumerateVariablesInScope().FirstOrDefault(x => x.Id == variableId);
         var value = context.Get(Value);
-        context.SetVariable(Variable.Name, value);
+        variable?.Set(context, value);
     }
 }

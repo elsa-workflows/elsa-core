@@ -12,7 +12,7 @@ namespace Elsa.MongoDb.Modules.Identity;
 /// Configures the <see cref="IdentityFeature"/> feature with MongoDB persistence providers.
 /// </summary>
 [DependsOn(typeof(IdentityFeature))]
-[PublicAPI]
+[UsedImplicitly]
 public class MongoIdentityPersistenceFeature : PersistenceFeatureBase
 {
     /// <inheritdoc />

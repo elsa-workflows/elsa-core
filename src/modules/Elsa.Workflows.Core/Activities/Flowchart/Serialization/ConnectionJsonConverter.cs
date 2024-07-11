@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
+namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// Converts <see cref="Connection"/> to and from JSON.
@@ -31,7 +31,7 @@ public class ConnectionJsonConverter : JsonConverter<Connection>
         var targetElement = doc.RootElement.GetProperty("target");
         var sourceId = sourceElement.GetProperty("activity").GetString()!;
         var targetId = targetElement.TryGetProperty("activity", out var targetIdValue) ? targetIdValue.GetString() : default;
-        var sourcePort = sourceElement.GetProperty("port").GetString()!;
+        var sourcePort = sourceElement.TryGetProperty("port", out var sourcePortValue) ? sourcePortValue.GetString() : default;
         var targetPort = targetElement.TryGetProperty("port", out var targetPortValue) ? targetPortValue.GetString() : default;
 
         var sourceActivity = _activities.TryGetValue(sourceId, out var s) ? s : default!;

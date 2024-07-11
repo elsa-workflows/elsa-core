@@ -1,4 +1,5 @@
 using Elsa.Common.Entities;
+using Elsa.Common.Models;
 
 namespace Elsa.Dapper.Contracts;
 
@@ -97,6 +98,13 @@ public interface ISqlDialect
     string Take(int count);
 
     /// <summary>
+    /// Adds pagination to a SQL query.
+    /// </summary>
+    /// <param name="pageArgs">The pagination arguments.</param>
+    /// <returns>The modified SQL query with pagination.</returns>
+    string Page(PageArgs pageArgs);
+
+    /// <summary>
     /// Builds an INSERT query.
     /// </summary>
     /// <param name="table">The table.</param>
@@ -104,6 +112,16 @@ public interface ISqlDialect
     /// <param name="getParamName">An optional function to get the parameter name.</param>
     /// <returns>The query.</returns>
     string Insert(string table, string[] fields, Func<string, string>? getParamName = default);
+    
+    /// <summary>
+    /// Builds an UPDATE query.
+    /// </summary>
+    /// <param name="table">The table.</param>
+    /// <param name="primaryKeyField">The primary key field.</param>
+    /// <param name="fields">The fields.</param>
+    /// <param name="getParamName">An optional function to get the parameter name.</param>
+    /// <returns>The query.</returns>
+    string Update(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default);
 
     /// <summary>
     /// Builds an UPSERT query.

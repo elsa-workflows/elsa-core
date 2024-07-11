@@ -1,8 +1,8 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A base class for implementing workflow definitions using the pipelineBuilder API.

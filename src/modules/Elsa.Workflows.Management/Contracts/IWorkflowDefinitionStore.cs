@@ -3,7 +3,7 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Represents a store of <see cref="WorkflowDefinition"/>s.
@@ -113,17 +113,23 @@ public interface IWorkflowDefinitionStore
     Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Saves the specified workflow definition.
+    /// Adds or updates the specified <see cref="WorkflowDefinition"/> in the persistence store.
     /// </summary>
     /// <param name="definition">The workflow definition.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the specified workflow definitions.
+    /// Adds the specified set of <see cref="WorkflowDefinition"/> objects to te persistence store.
     /// </summary>
     /// <param name="definitions">The workflow definitions.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// If the record does not already exist, it is added to the store; if it does exist, its existing entry is updated.
+    /// </remarks>
     Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -141,7 +147,7 @@ public interface IWorkflowDefinitionStore
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>True if any workflow definition matches the specified filter.</returns>
     Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Returns the number of logical workflow definitions.
     /// </summary>

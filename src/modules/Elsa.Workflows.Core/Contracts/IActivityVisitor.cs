@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Walks an activity tree starting at the root.

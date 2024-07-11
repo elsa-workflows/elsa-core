@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.ActivationValidators;
+namespace Elsa.Workflows.ActivationValidators;
 
 /// <summary>
 /// Always allow the creation of a new workflow instance.

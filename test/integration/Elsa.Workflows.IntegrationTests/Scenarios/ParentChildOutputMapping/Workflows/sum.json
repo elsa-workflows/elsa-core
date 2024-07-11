@@ -1,0 +1,102 @@
+{
+  "id": "E02197RyVk6VyofGoO6YJQ",
+  "definitionId": "P4X-srRSDUeKpFHiDXMW-w",
+  "name": "Sum",
+  "createdAt": "2023-10-18T16:37:20.670222+00:00",
+  "version": 3,
+  "toolVersion": "3.0.0.0",
+  "variables": [],
+  "inputs": [
+    {
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "type": "Int32",
+      "name": "A",
+      "displayName": "A",
+      "category": "Primitives",
+      "isArray": false
+    },
+    {
+      "uiHint": "singleline",
+      "storageDriverType": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core",
+      "type": "Int32",
+      "name": "B",
+      "displayName": "B",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outputs": [
+    {
+      "type": "Int32",
+      "name": "Result",
+      "displayName": "Result",
+      "category": "Primitives",
+      "isArray": false
+    }
+  ],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true,
+    "activityCategory": "Custom"
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "4FUOkS0zNUGe8JyVY3Sqmw",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "possibleOutcomes": null,
+        "script": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "getA() \u002B getB()"
+          },
+          "memoryReference": {
+            "id": "weO38K8Dfk-cSK8KVIiQMg:input-1"
+          }
+        },
+        "result": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "Result"
+          }
+        },
+        "id": "weO38K8Dfk-cSK8KVIiQMg",
+        "name": "RunJavaScript1",
+        "type": "Elsa.RunJavaScript",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -240,
+              "y": 300
+            },
+            "size": {
+              "width": 175.6875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

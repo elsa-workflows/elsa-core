@@ -1,6 +1,5 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Requests;
 

@@ -1,9 +1,7 @@
 using System.Linq.Expressions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
 
@@ -19,6 +17,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Ignore(x => x.Outputs);
         builder.Ignore(x => x.Outcomes);
         builder.Ignore(x => x.CustomProperties);
+        builder.Ignore(x => x.PropertyBag);
         builder.Ignore(x => x.Options);
         builder.Property<string>("Data");
         builder.Property<bool?>("UsableAsActivity");
@@ -29,13 +28,16 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Name)}");
         builder.HasIndex(x => x.IsLatest).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsLatest)}");
         builder.HasIndex(x => x.IsPublished).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsPublished)}");
+        builder.HasIndex(x => x.IsSystem).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.IsSystem)}");
         builder.HasIndex("UsableAsActivity").HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_UsableAsActivity");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.TenantId)}");
     }
         
     public void Configure(EntityTypeBuilder<WorkflowInstance> builder)
     {
         builder.Ignore(x => x.WorkflowState);
         builder.Property<string>("Data");
+        builder.Property<string>("DataCompressionAlgorithm");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.SubStatus).HasConversion<string>();
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");
@@ -50,5 +52,7 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.CreatedAt)}");
         builder.HasIndex(x => x.UpdatedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.UpdatedAt)}");
         builder.HasIndex(x => x.FinishedAt).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.FinishedAt)}");
+        builder.HasIndex(x => x.IsSystem).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.IsSystem)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.TenantId)}");
     }
 }

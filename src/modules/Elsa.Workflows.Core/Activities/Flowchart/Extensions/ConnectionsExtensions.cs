@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Extensions;
+namespace Elsa.Workflows.Activities.Flowchart.Extensions;
 
 /// <summary>
 /// Contains extension methods for <see cref="ICollection{Connection}"/>.

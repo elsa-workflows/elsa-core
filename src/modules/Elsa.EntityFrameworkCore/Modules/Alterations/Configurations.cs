@@ -13,14 +13,15 @@ public class Configurations : IEntityTypeConfiguration<AlterationPlan>, IEntityT
     public void Configure(EntityTypeBuilder<AlterationPlan> builder)
     {
         builder.Ignore(x => x.Alterations);
-        builder.Ignore(x => x.WorkflowInstanceIds);
+        builder.Ignore(x => x.WorkflowInstanceFilter);
         builder.Property<string>("SerializedAlterations");
-        builder.Property<string>("SerializedWorkflowInstanceIds");
+        builder.Property<string>("SerializedWorkflowInstanceFilter");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.Status)}");
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.CreatedAt)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.StartedAt)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.CompletedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AlterationPlan)}_{nameof(AlterationPlan.TenantId)}");
     }
 
     /// <inheritdoc />
@@ -35,5 +36,6 @@ public class Configurations : IEntityTypeConfiguration<AlterationPlan>, IEntityT
         builder.HasIndex(x => x.CreatedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.CreatedAt)}");
         builder.HasIndex(x => x.StartedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.StartedAt)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.CompletedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AlterationJob)}_{nameof(AlterationJob.TenantId)}");
     }
 }

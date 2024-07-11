@@ -1,12 +1,13 @@
 using System.ComponentModel;
+using Elsa.Common.Models;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Represents an executable process.
@@ -30,19 +31,23 @@ public class Workflow : Composite<object>, ICloneable
         ICollection<OutputDefinition> outputs,
         ICollection<string> outcomes,
         IDictionary<string, object> customProperties,
-        bool isReadonly)
+        PropertyBag propertyBag,
+        bool isReadonly,
+        bool isSystem)
     {
         Identity = identity;
         Publication = publication;
         Inputs = inputs;
         Outputs = outputs;
         Outcomes = outcomes;
+        PropertyBag = propertyBag;
         WorkflowMetadata = workflowMetadata;
         Options = options;
         Variables = variables;
         CustomProperties = customProperties;
         Root = root;
         IsReadonly = isReadonly;
+        IsSystem = isSystem;
     }
 
     /// <summary>
@@ -94,11 +99,26 @@ public class Workflow : Composite<object>, ICloneable
     /// Gets or sets options for the workflow.
     /// </summary>
     public WorkflowOptions Options { get; set; } = new();
+
+    /// <summary>
+    /// A bag of properties that can be used by applications and modules to store information that can be shared with tooling.
+    /// </summary>
+    public PropertyBag PropertyBag { get; set; } = new();
     
     /// <summary>
     /// Make workflow definition readonly.
     /// </summary>
     public bool IsReadonly { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow is a system workflow.
+    /// </summary>
+    public bool IsSystem { get; }
+    
+    /// <summary>
+    /// Returns the workflow definition handle.
+    /// </summary>
+    public WorkflowDefinitionHandle DefinitionHandle => WorkflowDefinitionHandle.ByDefinitionVersionId(Identity.Id);
 
     /// <summary>
     /// Constructs a new <see cref="Workflow"/> from the specified <see cref="IActivity"/>.
@@ -110,9 +130,7 @@ public class Workflow : Composite<object>, ICloneable
     /// </summary>
     public MemoryRegister CreateRegister()
     {
-        var register = new MemoryRegister();
-        register.Declare(Variables);
-        return register;
+        return new MemoryRegister();
     }
 
     /// <inheritdoc />

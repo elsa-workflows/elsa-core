@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props" />
-    
     <PropertyGroup>
         <Description>
             Provides common utilities that are helpful when writing tests against Elsa Workflows functionality.
@@ -12,8 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="xunit.abstractions" Version="2.0.3" />
-        <PackageReference Include="xunit.extensibility.core" Version="2.6.2" />
+        <PackageReference Include="xunit.abstractions" />
+        <PackageReference Include="xunit.extensibility.core" />
     </ItemGroup>
 
     <ItemGroup>

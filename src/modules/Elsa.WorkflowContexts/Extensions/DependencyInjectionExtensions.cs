@@ -17,6 +17,6 @@ public static class DependencyInjectionExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddWorkflowContextProvider<T>(this IServiceCollection services) where T : class, IWorkflowContextProvider
     {
-        return services.AddSingleton<IWorkflowContextProvider, T>();
+        return services.AddScoped<IWorkflowContextProvider, T>();
     }
 }

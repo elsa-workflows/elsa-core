@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;
+namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
 /// <inheritdoc />
 public class ActivityExecutionPipelinePipelineBuilder : IActivityExecutionPipelineBuilder

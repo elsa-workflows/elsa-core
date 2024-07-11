@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Serializes and deserializes workflow states.
@@ -12,55 +12,48 @@ public interface IWorkflowStateSerializer
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
-    Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-    
+    string Serialize(WorkflowState workflowState);
+
     /// <summary>
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
-    Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-    
+    byte[] SerializeToUtfBytes(WorkflowState workflowState);
+
     /// <summary>
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
-    Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
-    
+    JsonElement SerializeToElement(WorkflowState workflowState);
+
     /// <summary>
     /// Serializes the specified workflow state.
     /// </summary>
     /// <param name="workflowState">The workflow state to serialize.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The serialized workflow state.</returns>
-    Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default);
-    
+    string Serialize(object workflowState);
+
     /// <summary>
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
-    Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default);
-    
+    WorkflowState Deserialize(string serializedState);
+
     /// <summary>
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
-    Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default);
-    
+    WorkflowState Deserialize(JsonElement serializedState);
+
     /// <summary>
     /// Deserializes the specified serialized state.
     /// </summary>
     /// <param name="serializedState">The serialized state.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deserialized workflow state.</returns>
-    Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default);
+    T Deserialize<T>(string serializedState);
 }

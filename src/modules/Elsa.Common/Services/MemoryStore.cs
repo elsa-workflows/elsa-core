@@ -10,7 +10,25 @@ namespace Elsa.Common.Services;
 public class MemoryStore<TEntity>
 {
     private IDictionary<string, TEntity> Entities { get; set; } = new ConcurrentDictionary<string, TEntity>();
-    
+
+    /// <summary>
+    /// Adds an entity.
+    /// </summary>
+    /// <param name="entity">The entity to add.</param>
+    /// <param name="idAccessor">A function that returns the ID of the entity.</param>
+    public void Add(TEntity entity, Func<TEntity, string> idAccessor) => Entities.Add(idAccessor(entity), entity);
+
+    /// <summary>
+    /// Adds many entities.
+    /// </summary>
+    /// <param name="entities">The entities to add.</param>
+    /// <param name="idAccessor">A function that returns the ID of the entity.</param>
+    public void AddMany(IEnumerable<TEntity> entities, Func<TEntity, string> idAccessor)
+    {
+        foreach (var entity in entities)
+            Add(entity, idAccessor);
+    }
+
     /// <summary>
     /// Adds or updates an entity.
     /// </summary>
@@ -28,6 +46,13 @@ public class MemoryStore<TEntity>
         foreach (var entity in entities)
             Save(entity, idAccessor);
     }
+    
+    /// <summary>
+    /// Updates an entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="idAccessor">A function that returns the ID of the entity.</param>
+    public void Update(TEntity entity, Func<TEntity, string> idAccessor) => Entities[idAccessor(entity)] = entity;
 
     /// <summary>
     /// Finds an entity matching the specified predicate.
@@ -35,14 +60,14 @@ public class MemoryStore<TEntity>
     /// <param name="predicate">A predicate to match.</param>
     /// <returns>The matching entity or null if no match was found.</returns>
     public TEntity? Find(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate).FirstOrDefault();
-    
+
     /// <summary>
     /// Finds all entities matching the specified predicate.
     /// </summary>
     /// <param name="predicate">A predicate to match.</param>
     /// <returns>The matching entities.</returns>
     public IEnumerable<TEntity> FindMany(Func<TEntity, bool> predicate) => Entities.Values.Where(predicate);
-    
+
     /// <summary>
     /// Finds all entities matching the specified predicate and orders them by the specified key.
     /// </summary>
@@ -61,7 +86,7 @@ public class MemoryStore<TEntity>
             OrderDirection.Descending => query.OrderByDescending(orderBy),
             _ => query.OrderBy(orderBy)
         };
-        
+
         return query;
     }
 
@@ -94,7 +119,7 @@ public class MemoryStore<TEntity>
         foreach (var entry in entries)
             Entities.Remove(entry);
 
-        return entries.LongCount();
+        return entries.Count;
     }
 
     /// <summary>

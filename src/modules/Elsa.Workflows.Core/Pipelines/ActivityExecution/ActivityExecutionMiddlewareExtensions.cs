@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Pipelines.ActivityExecution;
+namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
 public static class ActivityExecutionMiddlewareExtensions
 {

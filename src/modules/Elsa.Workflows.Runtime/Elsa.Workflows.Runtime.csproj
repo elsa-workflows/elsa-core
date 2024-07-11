@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides workflow runtime functionality.
@@ -11,24 +7,18 @@
         <PackageTags>elsa module workflows runtime</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <ItemGroup>
+        <PackageReference Include="DistributedLock.FileSystem"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="Open.Linq.AsyncExtensions"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DistributedLock.FileSystem" Version="1.0.1" />
-        <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
-    </ItemGroup>
-
-    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj"/>
+        <ProjectReference Include="..\Elsa.KeyValues\Elsa.KeyValues.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
     </ItemGroup>
-    
+
 </Project>

@@ -1,6 +1,6 @@
 using Elsa.Expressions.Models;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace

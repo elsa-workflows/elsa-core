@@ -1,10 +1,8 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Core;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -41,8 +39,8 @@ public class PublishEvent : Activity
     /// <summary>
     /// The input to send as the event body.
     /// </summary>
-    [Input(Description = "The input to send as the event body.")]
-    public Input<IDictionary<string, object>?> Input { get; set; } = default!;
+    [Input(Description = "The payload to send as the event body.")]
+    public Input<object> Payload { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -51,10 +49,10 @@ public class PublishEvent : Activity
         var correlationId = CorrelationId.GetOrDefault(context);
         var isLocalEvent = IsLocalEvent.GetOrDefault(context);
         var workflowInstanceId = isLocalEvent ? context.WorkflowExecutionContext.Id : default;
-        var input = Input.GetOrDefault(context);
+        var payload = Payload.GetOrDefault(context);
         var publisher = context.GetRequiredService<IEventPublisher>();
-
-        await publisher.DispatchAsync(eventName, correlationId, workflowInstanceId, null, input, context.CancellationToken);
+        
+        await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, null, payload, context.CancellationToken);
         await context.CompleteActivityAsync();
     }
 }

@@ -1,50 +1,59 @@
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// <inheritdoc />
-public class EFCoreTriggerStore : ITriggerStore
+[UsedImplicitly]
+public class EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger> store, IPayloadSerializer serializer) : ITriggerStore
 {
-    private readonly EntityStore<RuntimeElsaDbContext, StoredTrigger> _store;
-    private readonly IPayloadSerializer _serializer;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public EFCoreTriggerStore(EntityStore<RuntimeElsaDbContext, StoredTrigger> store, IPayloadSerializer serializer)
+    /// <inheritdoc />
+    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default)
     {
-        _store = store;
-        _serializer = serializer;
+        await store.SaveAsync(record, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredTrigger record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default)
+    {
+        await store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<StoredTrigger> records, CancellationToken cancellationToken = default) => await _store.SaveManyAsync(records, OnSaveAsync, cancellationToken);
+    public async ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.FindAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken);
+    public async ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask ReplaceAsync(IEnumerable<StoredTrigger> removed, IEnumerable<StoredTrigger> added, CancellationToken cancellationToken = default)
     {
         var filter = new TriggerFilter { Ids = removed.Select(r => r.Id).ToList() };
         await DeleteManyAsync(filter, cancellationToken);
-        await _store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
+        await store.SaveManyAsync(added, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) =>
-        await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
-    
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredTrigger entity, CancellationToken cancellationToken)
     {
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? _serializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? serializer.Serialize(entity.Payload) : default;
         return default;
     }
 
@@ -54,8 +63,8 @@ public class EFCoreTriggerStore : ITriggerStore
             return ValueTask.CompletedTask;
 
         var json = dbContext.Entry(entity).Property<string>("SerializedPayload").CurrentValue;
-        entity.Payload = !string.IsNullOrEmpty(json) ? _serializer.Deserialize(json) : null;
-        
+        entity.Payload = !string.IsNullOrEmpty(json) ? serializer.Deserialize(json) : null;
+
         return ValueTask.CompletedTask;
     }
 }

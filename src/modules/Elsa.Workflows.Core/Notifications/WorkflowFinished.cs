@@ -1,8 +1,8 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Notifications;
+namespace Elsa.Workflows.Notifications;
 
 /// <summary>
 /// A domain event that is published when a workflow finishes.

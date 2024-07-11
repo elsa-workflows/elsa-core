@@ -8,10 +8,11 @@ import "Shared.proto";
 import "WorkflowInstance.Messages.proto";
 
 service WorkflowInstance {
-  rpc CanStart (StartWorkflowRequest) returns (CanStartWorkflowResponse);
-  rpc Start (StartWorkflowRequest) returns (WorkflowExecutionResponse);
+  rpc Create (ProtoCreateWorkflowInstanceRequest) returns (ProtoCreateWorkflowInstanceResponse);
+  rpc Run (ProtoRunWorkflowInstanceRequest) returns (ProtoRunWorkflowInstanceResponse);
+  rpc CreateAndRun (ProtoCreateAndRunWorkflowInstanceRequest) returns (ProtoRunWorkflowInstanceResponse);
   rpc Stop (Empty) returns (Empty);
-  rpc Resume (ResumeWorkflowRequest) returns (WorkflowExecutionResponse);
-  rpc ExportState(ExportWorkflowStateRequest) returns (ExportWorkflowStateResponse);
-  rpc ImportState(ImportWorkflowStateRequest) returns (ImportWorkflowStateResponse);
+  rpc Cancel (Empty) returns (Empty);
+  rpc ExportState(Empty) returns (ProtoExportWorkflowStateResponse);
+  rpc ImportState(ProtoImportWorkflowStateRequest) returns (Empty);
 }

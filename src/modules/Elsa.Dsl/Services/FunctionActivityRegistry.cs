@@ -4,23 +4,23 @@ using Elsa.Dsl.Interpreters;
 using Elsa.Dsl.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Dsl.Services;
 
 /// <inheritdoc />
 public class FunctionActivityRegistry : IFunctionActivityRegistry
 {
-    private readonly IActivityRegistry _activityRegistry;
+    private readonly IActivityRegistryLookupService _activityRegistryLookup;
     private readonly IDictionary<string, FunctionActivityDescriptor> _dictionary = new Dictionary<string, FunctionActivityDescriptor>();
 
     /// <summary>
     /// Creates a new instance of the <see cref="FunctionActivityRegistry"/> class.
     /// </summary>
-    public FunctionActivityRegistry(IActivityRegistry activityRegistry)
+    public FunctionActivityRegistry(IActivityRegistryLookupService activityRegistryLookup)
     {
-        _activityRegistry = activityRegistry;
+        _activityRegistryLookup = activityRegistryLookup;
     }
 
     /// <inheritdoc />
@@ -37,12 +37,12 @@ public class FunctionActivityRegistry : IFunctionActivityRegistry
     }
 
     /// <inheritdoc />
-    public IActivity ResolveFunction(string functionName, IEnumerable<object?>? arguments = default)
+    public async Task<IActivity> ResolveFunctionAsync(string functionName, IEnumerable<object?>? arguments = default)
     {
         if (!_dictionary.TryGetValue(functionName, out var descriptor))
             throw new Exception($"Could not resolve function {functionName}. Did you forget to register it?");
 
-        var activityDescriptor = _activityRegistry.Find(x => x.Name == descriptor.ActivityTypeName || x.TypeName == descriptor.ActivityTypeName);
+        var activityDescriptor = await _activityRegistryLookup.FindAsync(x => x.Name == descriptor.ActivityTypeName || x.TypeName == descriptor.ActivityTypeName);
 
         if (activityDescriptor == null)
             throw new Exception($"Could not find activity descriptor for activity type {descriptor.ActivityTypeName}");

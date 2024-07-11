@@ -1,7 +1,7 @@
 ﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.State;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.State;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Management;
@@ -12,7 +12,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 public class ManagementElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public ManagementElsaDbContext(DbContextOptions options) : base(options)
+    public ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
 
@@ -20,7 +20,7 @@ public class ManagementElsaDbContext : ElsaDbContextBase
     /// The workflow definitions.
     /// </summary>
     public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; } = default!;
-    
+
     /// <summary>
     /// The workflow instances.
     /// </summary>
@@ -32,23 +32,9 @@ public class ManagementElsaDbContext : ElsaDbContextBase
         base.OnModelCreating(modelBuilder);
         modelBuilder.Ignore<WorkflowState>();
         modelBuilder.Ignore<ActivityIncident>();
-    }
-
-    /// <inheritdoc />
-    protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
-    {
+        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<WorkflowDefinition>(config);
         modelBuilder.ApplyConfiguration<WorkflowInstance>(config);
-    }
-
-    /// <inheritdoc />
-    protected override void SetupForOracle(ModelBuilder modelBuilder)
-    {
-        // In order to use data more than 2000 char we have to use NCLOB.
-        // In oracle we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
-        modelBuilder.Entity<WorkflowInstance>().Property("Data").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowDefinition>().Property("StringData").HasColumnType("NCLOB");
-        modelBuilder.Entity<WorkflowDefinition>().Property("Data").HasColumnType("NCLOB");
     }
 }

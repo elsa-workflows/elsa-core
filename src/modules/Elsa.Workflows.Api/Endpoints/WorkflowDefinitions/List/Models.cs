@@ -16,4 +16,5 @@ internal class Request
     public OrderByWorkflowDefinition? OrderBy { get; set; }
     public OrderDirection? OrderDirection { get; set; }
     public string? SearchTerm { get; set; }
+    public bool? IsSystem { get; set; }
 }

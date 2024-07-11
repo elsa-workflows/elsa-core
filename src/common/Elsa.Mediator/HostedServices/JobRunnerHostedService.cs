@@ -44,6 +44,10 @@ public class JobRunnerHostedService : BackgroundService
             {
                 _logger.LogInformation("Job {JobId} was canceled", jobItem.JobId);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Job {JobId} failed", jobItem.JobId);
+            }
             finally
             {
                 jobItem.OnJobCompleted(jobItem.JobId);

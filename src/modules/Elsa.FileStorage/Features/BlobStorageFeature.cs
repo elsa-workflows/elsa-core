@@ -32,7 +32,7 @@ public class FileStorageFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
+        Services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace Elsa.Workflows.Core.Serialization.Configurators;
+namespace Elsa.Workflows.Serialization.Configurators;
 
 /// <summary>
 /// Configures the contract resolver to add support for using non-default, private constructors for deserialization.

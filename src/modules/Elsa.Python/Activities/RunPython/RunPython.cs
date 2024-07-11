@@ -2,9 +2,10 @@
 using Elsa.Extensions;
 using Elsa.Python.Contracts;
 using Elsa.Python.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Python.Activities;
@@ -32,7 +33,7 @@ public class RunPython : CodeActivity<object?>
     [Input(
         Description = "The script to run.",
         UIHint = InputUIHints.CodeEditor,
-        OptionsProvider = typeof(RunPythonOptionsProvider)
+        UIHandler = typeof(RunPythonOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
 

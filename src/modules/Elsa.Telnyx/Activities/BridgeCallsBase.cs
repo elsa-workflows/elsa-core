@@ -5,9 +5,9 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 using Refit;
 
@@ -49,8 +49,8 @@ public abstract class BridgeCallsBase : Activity<BridgedCallsOutput>
         {
             await telnyxClient.Calls.BridgeCallsAsync(callControlIdA, request, context.CancellationToken);
             
-            var bookmarkA = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdA);
-            var bookmarkB = new WebhookEventBookmarkPayload(WebhookEventTypes.CallBridged, callControlIdB);
+            var bookmarkA = new WebhookEventStimulus(WebhookEventTypes.CallBridged, callControlIdA);
+            var bookmarkB = new WebhookEventStimulus(WebhookEventTypes.CallBridged, callControlIdB);
             context.CreateBookmarks(new[] { bookmarkA, bookmarkB }, ResumeAsync, false);
         }
         catch (ApiException e)

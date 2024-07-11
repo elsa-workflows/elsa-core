@@ -1,0 +1,41 @@
+{
+  "id": "b760f121e7dc5dae",
+  "definitionId": "my-workflow",
+  "name": "Version 1",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "52ae1d65f7896a9e",
+    "nodeId": "Workflow1:52ae1d65f7896a9e",
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Version 1"
+          }
+        },
+        "id": "3a1ab61a351fe232",
+        "nodeId": "Workflow1:52ae1d65f7896a9e:3a1ab61a351fe232",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -121.796875,
+              "y": 272
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

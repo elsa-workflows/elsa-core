@@ -1,7 +1,8 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Contains information about a workflow run, such as <see cref="WorkflowState"/>.

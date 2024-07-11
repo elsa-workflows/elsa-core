@@ -33,7 +33,7 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
         var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, resultType);
         var handlers = _commandHandlers.Where(x => handlerType.IsInstanceOfType(x)).ToArray();
 
-        if (!handlers.Any())
+        if (handlers.Length == 0)
             throw new InvalidOperationException($"There is no handler to handle the {commandType.FullName} command");
 
         if (handlers.Length > 1)
@@ -44,7 +44,7 @@ public class CommandHandlerInvokerMiddleware : ICommandMiddleware
         var strategy = context.CommandStrategy;
         var executeMethod = strategy.GetType().GetMethod(nameof(ICommandStrategy.ExecuteAsync))!;
         var executeMethodWithReturnType = executeMethod.MakeGenericMethod(resultType);
-        
+
         // Execute command.
         var task = executeMethodWithReturnType.Invoke(strategy, new object[] { strategyContext });
 

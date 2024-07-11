@@ -2,10 +2,10 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -58,21 +58,6 @@ public static class ActivityExtensions
 
         return query.Select(x => x!).ToList();
     }
-
-    /// <summary>
-    /// Gets the output with the specified name.
-    /// </summary>
-    /// <param name="activity">The activity to get the output from.</param>
-    /// <param name="context">The workflow execution context.</param>
-    /// <param name="outputName">Name of the output.</param>
-    /// <returns>The output value.</returns>
-    public static object? GetOutput(this IActivity activity, WorkflowExecutionContext context, string? outputName = default)
-    {
-        var workflowExecutionContext = context;
-        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
-        var output = outputRegister.FindOutputByActivityId(activity.Id, outputName);
-        return output;
-    }
     
     /// <summary>
     /// Gets the output with the specified name.
@@ -83,7 +68,15 @@ public static class ActivityExtensions
     /// <returns>The output value.</returns>
     public static object? GetOutput(this IActivity activity, ActivityExecutionContext context, string? outputName = default)
     {
-        return activity.GetOutput(context.WorkflowExecutionContext, outputName);
+        var workflowExecutionContext = context.WorkflowExecutionContext;
+        var outputRegister = workflowExecutionContext.GetActivityOutputRegister();
+        
+        // If the provided activity execution context is the same as the current activity's execution context, we return the exact output value of the current activity execution context.
+        if(context.Activity.NodeId == activity.NodeId)
+            return outputRegister.FindOutputByActivityInstanceId(context.Id, outputName);
+        
+        // If the provided activity execution context is different from the current activity's execution context, we look for the last output value of the activity.
+        return outputRegister.FindOutputByActivityId(activity.Id, outputName);
     }
     
     /// <summary>
@@ -95,7 +88,12 @@ public static class ActivityExtensions
     /// <returns>The output value.</returns>
     public static object? GetOutput(this IActivity activity, ExpressionExecutionContext context, string? outputName = default)
     {
-        return activity.GetOutput(context.GetWorkflowExecutionContext(), outputName);
+        var activityExecutionContext = context.GetActivityExecutionContext();
+
+        if (activityExecutionContext == null)
+            return null;
+        
+        return activity.GetOutput(activityExecutionContext, outputName);
     }
 
     /// <summary>
@@ -135,6 +133,21 @@ public static class ActivityExtensions
     /// <typeparam name="T">The type of the output.</typeparam>
     /// <returns>The output value.</returns>
     public static T? GetOutput<TActivity, T>(this TActivity activity, ActivityExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
+    {
+        var outputName = outputExpression.GetPropertyName();
+        return ((IActivity)activity!).GetOutput<T>(context, outputName);
+    }
+    
+    /// <summary>
+    /// Gets the output with the specified name.
+    /// </summary>
+    /// <param name="activity">The activity.</param>
+    /// <param name="context">The context.</param>
+    /// <param name="outputExpression">The output expression.</param>
+    /// <typeparam name="TActivity">The type of the activity.</typeparam>
+    /// <typeparam name="T">The type of the output.</typeparam>
+    /// <returns>The output value.</returns>
+    public static T? GetOutput<TActivity, T>(this TActivity activity, ExpressionExecutionContext context, Expression<Func<TActivity, object?>> outputExpression)
     {
         var outputName = outputExpression.GetPropertyName();
         return ((IActivity)activity!).GetOutput<T>(context, outputName);

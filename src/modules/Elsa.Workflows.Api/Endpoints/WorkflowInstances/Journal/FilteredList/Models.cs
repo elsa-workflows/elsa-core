@@ -5,56 +5,38 @@ using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.FilteredList;
 
-/// <summary>
 /// Represents a request for a page of workflow execution log records.
-/// </summary>
 internal class Request
 {
-    /// <summary>
     /// The ID of the workflow instance to get the execution log for.
-    /// </summary>
     [BindFrom("id")] public string WorkflowInstanceId { get; set; } = default!;
     
-    /// <summary>
     /// The filter to apply.
-    /// </summary>
     public JournalFilter? Filter { get; set; }
     
-    /// <summary>
     /// The zero-based page number to get.
-    /// </summary>
     public int? Page { get; set; }
     
-    /// <summary>
     /// The size of the page to get.
-    /// </summary>
     public int? PageSize { get; set; }
-
-    /// <summary>
+    
     /// The number of records to skip.
-    /// </summary>
     public int? Skip { get; set; }
     
-    /// <summary>
     /// The number of records to take.
-    /// </summary>
     public int? Take { get; set; }
 }
 
 internal class JournalFilter
 {
     public ICollection<string>? ActivityIds { get; set; }
+    public ICollection<string>? ActivityNodeIds { get; set; }
+    public ICollection<string>? ExcludedActivityTypes { get; set; }
     public ICollection<string>? EventNames { get; set; }
 }
 
-internal class Response
+internal class Response(ICollection<ExecutionLogRecord> items, long totalCount)
 {
-    public Response(ICollection<ExecutionLogRecord> items, long totalCount)
-    {
-        Items = items;
-        TotalCount = totalCount;
-    }
-
-    public ICollection<ExecutionLogRecord> Items { get; }
-    public long TotalCount { get; }
+    public ICollection<ExecutionLogRecord> Items { get; } = items;
+    public long TotalCount { get; } = totalCount;
 }

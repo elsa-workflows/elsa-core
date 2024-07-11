@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Attributes;
+using Elsa.Workflows.Attributes;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Iterate over a set of values.

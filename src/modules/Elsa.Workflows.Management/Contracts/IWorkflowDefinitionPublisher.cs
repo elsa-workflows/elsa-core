@@ -1,11 +1,11 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Management.Contracts;
+namespace Elsa.Workflows.Management;
 
 /// <summary>
 /// Publishes workflow definitions.
@@ -68,4 +68,12 @@ public interface IWorkflowDefinitionPublisher
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The saved workflow definition.</returns>
     Task<WorkflowDefinition> SaveDraftAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Updates all referencing workflow definitions to use the version of the specified workflow definition.
+    /// </summary>
+    /// <param name="dependency">The workflow definition to update references for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The updated workflow definitions.</returns>
+    Task<IEnumerable<WorkflowDefinition>> UpdateReferencesInConsumingWorkflows(WorkflowDefinition dependency, CancellationToken cancellationToken = default);
 }

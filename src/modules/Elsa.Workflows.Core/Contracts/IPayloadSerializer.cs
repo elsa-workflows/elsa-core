@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Serializes execution log record payloads.

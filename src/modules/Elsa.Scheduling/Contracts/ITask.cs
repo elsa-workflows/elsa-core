@@ -1,6 +1,4 @@
-using Elsa.Scheduling.Models;
-
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// Represents a task.

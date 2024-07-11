@@ -1,8 +1,9 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Identity.Records;
 
-internal class ApplicationRecord
+internal class ApplicationRecord : Record
 {
-    public string Id { get; set; } = default!;
     public string ClientId { get; set; } = default!;
     public string HashedClientSecret { get; set; } = default!;
     public string HashedClientSecretSalt { get; set; } = default!;

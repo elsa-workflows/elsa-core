@@ -1,6 +1,8 @@
 using System.Data;
+using Dapper;
 using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Dialects;
+using Elsa.Dapper.TypeHandlers.Sqlite;
 using JetBrains.Annotations;
 using Microsoft.Data.Sqlite;
 
@@ -12,7 +14,14 @@ namespace Elsa.Dapper.Services;
 [PublicAPI]
 public class SqliteDbConnectionProvider : IDbConnectionProvider
 {
-    private readonly string _connectionString = "Data Source=elsa.dapper.db";
+    private readonly string _connectionString = "Data Source=:memory:;Cache=Shared";
+
+    static SqliteDbConnectionProvider()
+    {
+        // See: https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/dapper-limitations#data-types
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new TimeSpanHandler());
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SqliteDbConnectionProvider"/> class.
@@ -29,9 +38,9 @@ public class SqliteDbConnectionProvider : IDbConnectionProvider
     {
         _connectionString = connectionString;
     }
-    
+
     /// <inheritdoc />
-    public string GetConnectionString() =>_connectionString;
+    public string GetConnectionString() => _connectionString;
 
     /// <inheritdoc />
     public IDbConnection GetConnection()

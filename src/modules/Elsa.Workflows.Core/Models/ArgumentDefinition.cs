@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Base class for workflow input and output definitions.
@@ -8,7 +8,7 @@ public abstract class ArgumentDefinition
     /// <summary>
     /// The type of the input value.
     /// </summary>
-    public Type Type { get; set; } = default!;
+    public Type Type { get; set; } = typeof(object);
 
     /// <summary>
     /// The technical name of the input.

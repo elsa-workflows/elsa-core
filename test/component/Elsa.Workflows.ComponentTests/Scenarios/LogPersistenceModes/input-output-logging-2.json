@@ -1,0 +1,213 @@
+{
+  "id": "a7499c4c7888fafb",
+  "definitionId": "input-output-logging-2",
+  "name": "Input Output Logging 2",
+  "createdAt": "2024-04-21T11:39:57.182662+00:00",
+  "version": 2,
+  "toolVersion": "3.2.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": [],
+    "logPersistenceMode": {
+      "default": "Exclude"
+    }
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "4dce3806d9c7af92",
+    "nodeId": "Workflow1:4dce3806d9c7af92",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "This should be logged"
+          }
+        },
+        "id": "30d32d634c1ddbfa",
+        "nodeId": "Workflow1:4dce3806d9c7af92:30d32d634c1ddbfa",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "logPersistenceMode": {
+            "default": "Include",
+            "inputs": {
+              "text": "Default"
+            },
+            "outputs": {}
+          },
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -380,
+              "y": -120
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "This should not be logged"
+          }
+        },
+        "id": "50fcb804a7ace442",
+        "nodeId": "Workflow1:4dce3806d9c7af92:50fcb804a7ace442",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -156,
+              "y": -120
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "This should be logged"
+          }
+        },
+        "id": "3f00f1de3ec2862b",
+        "nodeId": "Workflow1:4dce3806d9c7af92:3f00f1de3ec2862b",
+        "name": "WriteLine3",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "logPersistenceMode": {
+            "default": "Default",
+            "inputs": {
+              "text": "Include"
+            },
+            "outputs": {}
+          },
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 60,
+              "y": -120
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "This should not be logged"
+          }
+        },
+        "id": "3dcff307781b3707",
+        "nodeId": "Workflow1:4dce3806d9c7af92:3dcff307781b3707",
+        "name": "WriteLine4",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "logPersistenceMode": {
+            "default": "Default",
+            "inputs": {
+              "text": "Exclude"
+            },
+            "outputs": {}
+          },
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 264,
+              "y": -120
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "3f00f1de3ec2862b",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "3dcff307781b3707",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "30d32d634c1ddbfa",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "50fcb804a7ace442",
+          "port": "In"
+        }
+      },
+      {
+        "source": {
+          "activity": "50fcb804a7ace442",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "3f00f1de3ec2862b",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

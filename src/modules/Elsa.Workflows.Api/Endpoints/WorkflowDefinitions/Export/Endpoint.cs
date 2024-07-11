@@ -2,9 +2,8 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
@@ -20,22 +19,21 @@ namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Export;
 [UsedImplicitly]
 internal class Export : ElsaEndpoint<Request>
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IApiSerializer _serializer;
-    private readonly VariableDefinitionMapper _variableDefinitionMapper;
+    private readonly IWorkflowDefinitionStore _store;
+    private readonly WorkflowDefinitionMapper _workflowDefinitionMapper;
 
     /// <inheritdoc />
     public Export(
         IWorkflowDefinitionStore store,
         IWorkflowDefinitionService workflowDefinitionService,
         IApiSerializer serializer,
+        WorkflowDefinitionMapper workflowDefinitionMapper,
         VariableDefinitionMapper variableDefinitionMapper)
     {
         _store = store;
-        _workflowDefinitionService = workflowDefinitionService;
         _serializer = serializer;
-        _variableDefinitionMapper = variableDefinitionMapper;
+        _workflowDefinitionMapper = workflowDefinitionMapper;
     }
 
     /// <inheritdoc />
@@ -57,7 +55,10 @@ internal class Export : ElsaEndpoint<Request>
 
     private async Task DownloadMultipleWorkflowsAsync(ICollection<string> ids, CancellationToken cancellationToken)
     {
-        var definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter { Ids = ids }, cancellationToken: cancellationToken)).ToList();
+        List<WorkflowDefinition> definitions = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            Ids = ids
+        }, cancellationToken)).ToList();
 
         if (!definitions.Any())
         {
@@ -88,7 +89,11 @@ internal class Export : ElsaEndpoint<Request>
     private async Task DownloadSingleWorkflowAsync(string definitionId, string? versionOptions, CancellationToken cancellationToken)
     {
         var parsedVersionOptions = string.IsNullOrEmpty(versionOptions) ? VersionOptions.Latest : VersionOptions.FromString(versionOptions);
-        var definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId, VersionOptions = parsedVersionOptions }, cancellationToken: cancellationToken)).FirstOrDefault();
+        WorkflowDefinition? definition = (await _store.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId,
+            VersionOptions = parsedVersionOptions
+        }, cancellationToken)).FirstOrDefault();
 
         if (definition == null)
         {
@@ -113,40 +118,13 @@ internal class Export : ElsaEndpoint<Request>
 
     private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
     {
-        var serializerOptions = _serializer.CreateOptions();
-
-        // Exclude composite activities from being serialized.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
+        JsonSerializerOptions serializerOptions = _serializer.GetOptions();
         var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
         return binaryJson;
     }
 
     private async Task<WorkflowDefinitionModel> CreateWorkflowModelAsync(WorkflowDefinition definition, CancellationToken cancellationToken)
     {
-        var workflow = await _workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var variables = _variableDefinitionMapper.Map(workflow.Variables).ToList();
-
-        var model = new WorkflowDefinitionModel(
-            definition.Id,
-            definition.DefinitionId,
-            definition.Name,
-            definition.Description,
-            definition.CreatedAt,
-            definition.Version,
-            definition.ToolVersion,
-            variables,
-            definition.Inputs,
-            definition.Outputs,
-            definition.Outcomes,
-            definition.CustomProperties,
-            definition.IsReadonly,
-            definition.IsLatest,
-            definition.IsPublished,
-            definition.Options,
-            default,
-            workflow.Root);
-
-        return model;
+        return await _workflowDefinitionMapper.MapAsync(definition, cancellationToken);
     }
 }

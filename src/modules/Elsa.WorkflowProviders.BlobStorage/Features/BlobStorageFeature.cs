@@ -31,8 +31,8 @@ public class BlobStorageFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddSingleton<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
-        Services.AddWorkflowDefinitionProvider<BlobStorageWorkflowProvider>();
+        Services.AddScoped<IBlobStorageProvider>(sp => new BlobStorageProvider(BlobStorage(sp)));
+        Services.AddWorkflowDefinitionProvider<BlobStorageWorkflowsProvider>();
     }
 
     /// <summary>

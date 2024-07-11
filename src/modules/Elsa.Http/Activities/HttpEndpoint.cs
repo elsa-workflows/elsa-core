@@ -4,14 +4,15 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Http.UIHints;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Http;
 
@@ -33,7 +34,11 @@ public class HttpEndpoint : Trigger<HttpRequest>
     /// <summary>
     /// The path to associate with the workflow.
     /// </summary>
-    [Input(Description = "The path to associate with the workflow.")]
+    [Input(
+        Description = "The path to associate with the workflow.",
+        UIHint = InputUIHints.SingleLine,
+        UIHandler = typeof(HttpEndpointPathUIHandler)
+    )]
     public Input<string> Path { get; set; } = default!;
 
     /// <summary>
@@ -160,7 +165,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         if (!context.IsTriggerOfWorkflow())
         {
-            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false);
+            context.CreateBookmarks(GetBookmarkPayloads(context.ExpressionExecutionContext), includeActivityInstanceId: false, callback: OnResumeAsync);
             return;
         }
 
@@ -185,8 +190,10 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         if (httpContext == null)
         {
-            // We're not in an HTTP context, so let's fail.
-            throw new Exception("Cannot execute in a non-HTTP context");
+            // We're executing in a non-HTTP context (e.g. in a virtual actor).
+            // Create a bookmark to allow the invoker to export the state and resume execution from there.
+            context.CreateBookmark(OnResumeAsync, BookmarkMetadata.HttpCrossBoundary);
+            return;
         }
 
         await HandleRequestAsync(context, httpContext);
@@ -203,8 +210,8 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var routeData = GetRouteData(httpContext, path);
 
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
-        var queryStringDictionary = httpContext.Request.Query.ToDictionary<KeyValuePair<string, StringValues>, string, object>(queryString => queryString.Key, queryString => queryString.Value[0]!);
-        var headersDictionary = httpContext.Request.Headers.ToDictionary<KeyValuePair<string, StringValues>, string, object>(header => header.Key, header => header.Value[0]!);
+        var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
+        var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
 
         context.Set(RouteData, routeDictionary);
         context.Set(QueryStringData, queryStringDictionary);
@@ -217,48 +224,60 @@ public class HttpEndpoint : Trigger<HttpRequest>
             return;
         }
 
-        // Read files, if any.
-        var files = ReadFilesAsync(context, request);
-
-        if (files.Any())
+        // Handle Form Fields
+        if (request.HasFormContentType)
         {
-            if (!ValidateFileSizes(context, httpContext, files))
-            {
-                await HandleFileSizeTooLargeAsync(context, httpContext);
-                return;
-            }
 
-            if (!ValidateFileExtensionWhitelist(context, httpContext, files))
-            {
-                await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
-                return;
-            }
+            var formFields = request.Form.ToObjectDictionary();
 
-            if (!ValidateFileExtensionBlacklist(context, httpContext, files))
-            {
-                await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
-                return;
-            }
+            ParsedContent.Set(context, formFields);
 
-            if (!ValidateFileMimeTypes(context, httpContext, files))
-            {
-                await HandleInvalidFileMimeTypesAsync(context, httpContext);
-                return;
-            }
+            // Read files, if any.
+            var files = ReadFilesAsync(context, request);
 
-            Files.Set(context, files.ToArray());
+            if (files.Any())
+            {
+                if (!ValidateFileSizes(context, httpContext, files))
+                {
+                    await HandleFileSizeTooLargeAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileExtensionWhitelist(context, httpContext, files))
+                {
+                    await HandleInvalidFileExtensionWhitelistAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileExtensionBlacklist(context, httpContext, files))
+                {
+                    await HandleInvalidFileExtensionBlacklistAsync(context, httpContext);
+                    return;
+                }
+
+                if (!ValidateFileMimeTypes(context, httpContext, files))
+                {
+                    await HandleInvalidFileMimeTypesAsync(context, httpContext);
+                    return;
+                }
+
+                Files.Set(context, files.ToArray());
+            }
         }
+        else
+        {
+            // Parse Non-Form content.
+            try
+            {
+                var content = await ParseContentAsync(context, request);
+                ParsedContent.Set(context, content);
+            }
+            catch (JsonException e)
+            {
+                await HandleInvalidJsonPayloadAsync(context, httpContext, e);
+                throw;
+            }
 
-        // Read content, if any.
-        try
-        {
-            var content = await ParseContentAsync(context, request);
-            ParsedContent.Set(context, content);
-        }
-        catch (JsonException e)
-        {
-            await HandleInvalidJsonPayloadAsync(context, httpContext, e);
-            throw;
         }
 
         // Complete.
@@ -449,8 +468,9 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var targetType = ParsedContent.GetTargetType(context);
         var contentStream = httpRequest.Body;
         var contentType = httpRequest.ContentType!;
+        var headers = httpRequest.Headers.ToDictionary(x => x.Key, x => x.Value.ToArray());
 
-        return await context.ParseContentAsync(contentStream, contentType, targetType, cancellationToken);
+        return await context.ParseContentAsync(contentStream, contentType, targetType, headers, cancellationToken);
     }
 
     private static bool HasContent(HttpRequest httpRequest) => httpRequest.Headers.ContentLength > 0;

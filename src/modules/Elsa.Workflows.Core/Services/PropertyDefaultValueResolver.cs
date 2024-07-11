@@ -1,23 +1,13 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
-public class PropertyDefaultValueResolver : IPropertyDefaultValueResolver
+public class PropertyDefaultValueResolver(IServiceScopeFactory scopeFactory) : IPropertyDefaultValueResolver
 {
-    private readonly IServiceProvider _serviceProvider;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PropertyDefaultValueResolver"/> class.
-    /// </summary>
-    public PropertyDefaultValueResolver(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
     /// <inheritdoc />
     public object? GetDefaultValue(PropertyInfo activityPropertyInfo)
     {
@@ -30,8 +20,7 @@ public class PropertyDefaultValueResolver : IPropertyDefaultValueResolver
             return inputAttribute.DefaultValue;
 
         var providerType = inputAttribute.DefaultValueProvider;
-
-        using var scope = _serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var provider = (IActivityPropertyDefaultValueProvider) ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, providerType);
         return provider.GetDefaultValue(activityPropertyInfo);
     }

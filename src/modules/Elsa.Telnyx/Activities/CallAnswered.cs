@@ -3,9 +3,10 @@ using Elsa.Extensions;
 using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -33,10 +34,10 @@ public class CallAnswered : Activity<CallAnsweredPayload>
 
         foreach (var callControlId in callControlIds)
         {
-            var payload = new CallAnsweredBookmarkPayload(callControlId);
+            var payload = new CallAnsweredStimulus(callControlId);
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type,
                 IncludeActivityInstanceId = false

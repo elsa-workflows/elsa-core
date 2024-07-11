@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization;
-using Elsa.Expressions;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A base type for the <see cref="Input{T}"/> type.

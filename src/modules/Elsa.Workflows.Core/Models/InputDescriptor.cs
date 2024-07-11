@@ -1,7 +1,7 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A descriptor of an activity's input property.
@@ -23,7 +23,6 @@ public class InputDescriptor : PropertyDescriptor
         string uiHint,
         string displayName,
         string? description = default,
-        IDictionary<string, object>? options = default,
         string? category = default,
         float order = 0,
         object? defaultValue = default,
@@ -34,7 +33,9 @@ public class InputDescriptor : PropertyDescriptor
         bool isSynthetic = false,
         bool autoEvaluate = true,
         Type? storageDriverType = default,
-        PropertyInfo? propertyInfo = default)
+        PropertyInfo? propertyInfo = default,
+        IDictionary<string, object>? uiSpecifications = default
+        )
     {
         Name = name;
         Type = type;
@@ -44,7 +45,6 @@ public class InputDescriptor : PropertyDescriptor
         UIHint = uiHint;
         DisplayName = displayName;
         Description = description;
-        Options = options;
         Category = category;
         Order = order;
         DefaultValue = defaultValue;
@@ -56,43 +56,39 @@ public class InputDescriptor : PropertyDescriptor
         IsBrowsable = isBrowsable;
         IsSerializable = isSerializable;
         PropertyInfo = propertyInfo;
+        UISpecifications = uiSpecifications;
     }
 
     /// <summary>
     /// True if the property is wrapped with an <see cref="Input{T}"/> type, false otherwise.
     /// </summary>
     public bool IsWrapped { get; set; }
-    
+
     /// <summary>
     /// A string value that hints at what UI control might be used to render in a UI tool.  
     /// </summary>
     public string UIHint { get; set; } = default!;
-    
+
     /// <summary>
-    /// An arbitrary options object that can be used by some UI tool.
-    /// </summary>
-    public object? Options { get; set; }
-    
-    /// <summary>
-    /// The category to whcih this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
+    /// The category to which this input belongs. Can be used by UI to e.g. render different inputs in different tabs.
     /// </summary>
     public string? Category { get; set; }
-    
+
     /// <summary>
     /// The default value.
     /// </summary>
     public object? DefaultValue { get; set; }
-    
+
     /// <summary>
     /// The default syntax.
     /// </summary>
     public string? DefaultSyntax { get; set; }
-    
+
     /// <summary>
     /// True if the input is readonly, false otherwise.
     /// </summary>
     public bool? IsReadOnly { get; set; }
-    
+
     /// <summary>
     /// The storage driver type to use for persistence.
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
@@ -103,4 +99,9 @@ public class InputDescriptor : PropertyDescriptor
     /// True if the expression should be evaluated automatically, false otherwise. Defaults to true.
     /// </summary>
     public bool AutoEvaluate { get; set; } = true;
+
+    /// <summary>
+    /// A dictionary of UI specifications to be used by the UI.
+    /// </summary>
+    public IDictionary<string, object>? UISpecifications { get; set; }
 }

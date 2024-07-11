@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// A base type for <see cref="InputDescriptor"/> and <see cref="OutputDescriptor"/>.

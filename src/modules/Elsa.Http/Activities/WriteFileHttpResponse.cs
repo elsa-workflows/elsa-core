@@ -5,10 +5,10 @@ using Elsa.Http.Exceptions;
 using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Services;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Exceptions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Models;
 using FluentStorage.Blobs;
 using FluentStorage.Utils.Extensions;
 using Microsoft.AspNetCore.Http;
@@ -303,7 +303,7 @@ public class WriteFileHttpResponse : Activity
         var httpContext = httpContextAccessor.HttpContext;
 
         if (httpContext == null)
-            throw new FaultException("Cannot execute in a non-HTTP context");
+            throw new FaultException(HttpFaultCodes.NoHttpContext, HttpFaultCategories.Http, DefaultFaultTypes.System, "Cannot execute in a non-HTTP context");
 
         await WriteResponseAsync(context, httpContext);
     }

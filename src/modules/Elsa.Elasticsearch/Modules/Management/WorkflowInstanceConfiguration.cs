@@ -1,4 +1,5 @@
 using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elsa.Elasticsearch.Common;
 using Elsa.Elasticsearch.Options;
 using Elsa.Workflows.Management.Entities;
@@ -30,10 +31,10 @@ public class WorkflowInstanceConfiguration : IndexConfiguration<WorkflowInstance
     /// <inheritdoc />
     public override async ValueTask ConfigureClientAsync(ElasticsearchClient client, CancellationToken cancellationToken)
     {
-        await client.Indices.CreateAsync<WorkflowInstance>(
-            descriptor => descriptor.Mappings(m => m
-                .Properties(p => p
-                    .Flattened(d => d.WorkflowState.Properties))),
-            cancellationToken);
+        var alias = _options.GetIndexNameFor<WorkflowInstance>();
+        var indexName = IndexNamingStrategy.GenerateName(alias);
+        var descriptor = new CreateIndexRequestDescriptor<WorkflowInstance>(indexName);
+        descriptor.Mappings(m => m.Properties(p => p.Flattened(d => d.WorkflowState.Properties)));
+        await client.Indices.CreateAsync(descriptor, cancellationToken);
     }
 }

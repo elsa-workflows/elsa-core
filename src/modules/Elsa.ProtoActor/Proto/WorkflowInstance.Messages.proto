@@ -6,98 +6,47 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
-message CanStartWorkflowResponse {
-  bool CanStart = 1;
+message ProtoCreateWorkflowInstanceRequest{
+  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+  string WorkflowInstanceId = 2;
+  optional string CorrelationId = 3;
+  optional string ParentId = 4;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
 }
 
-message StartWorkflowRequest {
-  string DefinitionId = 1;
-  string InstanceId = 2;
-  string VersionOptions = 3;
-  optional string CorrelationId = 4;
-  optional Input input = 5;
-  optional Properties properties = 6;
-  optional string TriggerActivityId = 7;
+message ProtoCreateWorkflowInstanceResponse{
 }
 
-message WorkflowExecutionResponse {
-  string WorkflowInstanceId = 1;
-  RunWorkflowResult Result = 2;
-  WorkflowStatus Status = 3;
-  WorkflowSubStatus SubStatus = 4;
-  repeated Bookmark Bookmarks = 5;
-  repeated ActivityIncident Incidents = 6;
-  optional string TriggeredActivityId = 7;
+message ProtoRunWorkflowInstanceRequest{
+  optional string BookmarkId = 1;
+  optional ProtoActivityHandle ActivityHandle = 2;
+  optional ProtoInput input = 3;
+  optional ProtoProperties properties = 4;
+  optional string TriggerActivityId = 5;
 }
 
-message ActivityIncident {
-  string ActivityId = 1;
-  string ActivityType = 2;
-  string Message = 3;
-  optional ExceptionState Exception = 4;
-  string Timestamp = 5; // ISO 8601
+message ProtoRunWorkflowInstanceResponse {
+  ProtoWorkflowStatus Status = 1;
+  ProtoWorkflowSubStatus SubStatus = 2;
+  repeated ProtoActivityIncident Incidents = 3;
 }
 
-message ExceptionState {
-  string Type = 1;
-  string Message = 2;
-  optional string StackTrace = 3;
-  optional ExceptionState InnerException = 4;
+message ProtoCreateAndRunWorkflowInstanceRequest{
+  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+  string WorkflowInstanceId = 2;
+  optional string CorrelationId = 3;
+  optional string ParentId = 4;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
+  optional ProtoActivityHandle ActivityHandle = 7;
+  optional string TriggerActivityId = 8;
 }
 
-enum WorkflowStatus {
-  WorkflowStatusRunning = 0;
-  WorkflowStatusFinished = 1;
+message ProtoExportWorkflowStateResponse {
+  ProtoJson SerializedWorkflowState = 1;
 }
 
-enum WorkflowSubStatus {
-  WorkflowSubStatusExecuting = 0;
-  WorkflowSubStatusSuspended = 1;
-  WorkflowSubStatusFinished = 2;
-  WorkflowSubStatusCancelled = 3;
-  WorkflowSubStatusFaulted = 4;
-}
-
-message ResumeWorkflowRequest {
-  string InstanceId = 1;
-  optional string CorrelationId = 2;
-  optional string BookmarkId = 3;
-  optional string ActivityId = 4;
-  optional string ActivityNodeId = 5;
-  optional string ActivityInstanceId = 6;
-  optional string ActivityHash = 7;
-  optional Input Input = 8;
-  optional Properties Properties = 9;
-}
-
-message ExportWorkflowStateRequest {}
-
-message ExportWorkflowStateResponse {
-  Json SerializedWorkflowState = 1;
-}
-
-message ImportWorkflowStateRequest {
-  Json SerializedWorkflowState = 1;
-}
-
-message ImportWorkflowStateResponse {}
-
-enum RunWorkflowResult {
-  RunWorkflowResultFinished = 0;
-  RunWorkflowResultSuspended = 1;
-}
-
-message Bookmark {
-  string Id = 1;
-  string Name = 2;
-  string Hash = 3;
-  optional string Payload = 4;
-  string ActivityId = 5;
-  string ActivityNodeId = 6;
-  string ActivityInstanceId = 7;
-  map<string, string> Metadata = 8;
-  optional bool AutoBurn = 9;
-  optional string CallbackMethodName = 10;
-  optional bool AutoComplete = 11;
-  string CreatedAt = 12; // ISO 8601
+message ProtoImportWorkflowStateRequest {
+  ProtoJson SerializedWorkflowState = 1;
 }

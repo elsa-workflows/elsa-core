@@ -1,35 +1,16 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Common.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Models;
 
-/// <summary>
 /// Represents a serializable workflow definition.
-/// </summary>
-/// <param name="Id"></param>
-/// <param name="DefinitionId"></param>
-/// <param name="Name"></param>
-/// <param name="Description"></param>
-/// <param name="CreatedAt"></param>
-/// <param name="Version"></param>
-/// <param name="Variables"></param>
-/// <param name="Inputs"></param>
-/// <param name="Outputs"></param>
-/// <param name="Outcomes"></param>
-/// <param name="CustomProperties"></param>
-/// <param name="UsableAsActivity"></param>
-/// <param name="IsReadonly"></param>
-/// <param name="IsLatest"></param>
-/// <param name="IsPublished"></param>
-/// <param name="Options">The type of <see cref="IWorkflowActivationStrategy"/> to apply when new instances are requested to be created.</param>
-/// <param name="Root"></param>
 [PublicAPI]
 public record WorkflowDefinitionModel(
     string Id,
     string DefinitionId,
+    string? TenantId,
     string? Name,
     string? Description,
     DateTimeOffset CreatedAt,
@@ -39,8 +20,11 @@ public record WorkflowDefinitionModel(
     ICollection<InputDefinition>? Inputs,
     ICollection<OutputDefinition>? Outputs,
     ICollection<string>? Outcomes,
+    [property: Obsolete("Use PropertyBag instead")]
     IDictionary<string, object>? CustomProperties,
+    PropertyBag? PropertyBag,
     bool IsReadonly,
+    bool IsSystem,
     bool IsLatest,
     bool IsPublished,
     WorkflowOptions? Options,
@@ -61,6 +45,9 @@ public record WorkflowDefinitionModel(
         default!,
         default!,
         default!,
+        default!,
+        default,
+        default,
         default!,
         default!,
         default!,

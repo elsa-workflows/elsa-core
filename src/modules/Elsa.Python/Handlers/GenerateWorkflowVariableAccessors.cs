@@ -23,6 +23,12 @@ public class GenerateWorkflowVariableAccessors : INotificationHandler<Evaluating
         sb.AppendLine("    def __init__(self, execution_context):");
         sb.AppendLine("        self.execution_context = execution_context");
         sb.AppendLine();
+        sb.AppendLine("    def get(self, name):");
+        sb.AppendLine("        return self.execution_context.GetVariable(name)");
+        sb.AppendLine();
+        sb.AppendLine("    def set(self, name, value):");
+        sb.AppendLine("        self.execution_context.SetVariable(name, value)");
+        sb.AppendLine();
 
         foreach (var variable in variables)
         {

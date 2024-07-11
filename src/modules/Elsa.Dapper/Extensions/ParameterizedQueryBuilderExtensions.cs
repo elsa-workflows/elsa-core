@@ -1,3 +1,4 @@
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
@@ -75,11 +76,12 @@ public static class ParameterizedQueryBuilderExtensions
     /// </summary>
     /// <param name="query">The query.</param>
     /// <param name="table">The table.</param>
+    /// <param name="primaryKey">The primary key.</param>
     /// <param name="innerQuery">The inner query.</param>
-    public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, ParameterizedQuery innerQuery)
+    public static ParameterizedQuery Delete(this ParameterizedQuery query, string table, string primaryKey, ParameterizedQuery innerQuery)
     {
         query.Sql.AppendLine(query.Dialect.Delete(table));
-        query.Sql.AppendLine("and rowid in (");
+        query.Sql.AppendLine($"and {primaryKey} in (");
         query.Sql.AppendLine(innerQuery.Sql.ToString());
         query.Sql.AppendLine(")");
         return query;
@@ -117,6 +119,7 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery Is(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNull(query, field);
         query.Sql.AppendLine(query.Dialect.And(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -132,6 +135,8 @@ public static class ParameterizedQueryBuilderExtensions
     public static ParameterizedQuery IsNot(this ParameterizedQuery query, string field, object? value)
     {
         if (value == null) return query;
+        if (value is DBNull) return IsNotNull(query, field);
+
         query.Sql.AppendLine(query.Dialect.AndNot(field));
         query.Parameters.Add($"@{field}", value);
 
@@ -170,7 +175,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or Description like @SearchTermLike or Id = @SearchTerm or DefinitionId = @SearchTerm)");
+        query.Sql.AppendLine("and (Name like @SearchTermLike or Description like @SearchTermLike or Id like @SearchTerm or DefinitionId like @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
@@ -199,6 +204,42 @@ public static class ParameterizedQueryBuilderExtensions
 
         return query;
     }
+    
+    /// <summary>
+    /// Appends a negating AND clause to the query if the value is not null.
+    /// </summary>
+    /// <param name="query">The query.</param>
+    /// <param name="field">The field.</param>
+    /// <param name="values">The values.</param>
+    public static ParameterizedQuery NotIn(this ParameterizedQuery query, string field, IEnumerable<object>? values)
+    {
+        var valueList = values?.ToList();
+
+        if (valueList == null || !valueList.Any()) return query;
+
+        var fieldParamNames = valueList
+            .Select((_, index) => $"@{field}{index}")
+            .ToArray();
+
+        query.Sql.AppendLine(query.Dialect.AndNot(field, fieldParamNames));
+
+        for (var i = 0; i < fieldParamNames.Length; i++)
+            query.Parameters.Add(fieldParamNames[i], valueList.ElementAt(i));
+
+        return query;
+    }
+
+    public static ParameterizedQuery StartsWith(this ParameterizedQuery query, string field, bool startsWith, string? value)
+    {
+        if (!startsWith || value == null || string.IsNullOrWhiteSpace(value))
+            return query;
+
+        var searchTermLike = $"{value}%";
+        query.Sql.AppendLine($"and {field} like @SearchTermLike");
+        query.Parameters.Add($"@{field}", searchTermLike);
+
+        return query;
+    }
 
     /// <summary>
     /// Appends an AND clause to the query if the value is not null.
@@ -215,7 +256,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (options.IsLatest) sql.AppendLine("and IsLatest = 1");
         if (options.IsPublished) sql.AppendLine("and IsPublished = 1");
         if (options.IsLatestOrPublished) sql.AppendLine("and (IsLatest = 1 or IsPublished = 1)");
-        if (options.IsLatestAndPublished) sql.AppendLine("and IsLatest = 1 or IsPublished = 1");
+        if (options.IsLatestAndPublished) sql.AppendLine("and IsLatest = 1 and IsPublished = 1");
         if (options.Version > 0)
         {
             sql.AppendLine(query.Dialect.And("Version"));
@@ -235,7 +276,7 @@ public static class ParameterizedQueryBuilderExtensions
         if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
         var searchTermLike = $"%{searchTerm}%";
-        query.Sql.AppendLine("and (Name like @SearchTermLike or ID = @SearchTerm or DefinitionId = @SearchTerm or DefinitionVersionId = @SearchTerm or CorrelationId = @SearchTerm)");
+        query.Sql.AppendLine("and (Name like @SearchTermLike or ID like @SearchTerm or DefinitionId like @SearchTerm or DefinitionVersionId like @SearchTerm or CorrelationId like @SearchTerm)");
         query.Parameters.Add("@SearchTerm", searchTerm);
         query.Parameters.Add("@SearchTermLike", searchTermLike);
         return query;
@@ -312,13 +353,7 @@ public static class ParameterizedQueryBuilderExtensions
     /// <param name="pageArgs">The page arguments.</param>
     public static ParameterizedQuery Page(this ParameterizedQuery query, PageArgs pageArgs)
     {
-        // Attention: the order is important here for SQLite (LIMIT must come before OFFSET).
-        if (pageArgs.Limit != null)
-            query.Take(pageArgs.Limit.Value);
-
-        if (pageArgs.Offset != null)
-            query.Skip(pageArgs.Offset.Value);
-
+        query.Sql.AppendLine(query.Dialect.Page(pageArgs));
         return query;
     }
 
@@ -338,16 +373,20 @@ public static class ParameterizedQueryBuilderExtensions
             .ToArray();
 
         getParameterName ??= x => x;
-        
+
         query.Sql.AppendLine(query.Dialect.Upsert(table, primaryKeyField, fields, getParameterName));
-        
+
         var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
         query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
-        
+
+        var recordType = record.GetType();
         foreach (var field in fields)
         {
-            var value = record.GetType().GetProperty(field)?.GetValue(record);
-            query.Parameters.Add($"@{getParameterName(field)}", value);
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : default;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
         }
 
         return query;
@@ -376,5 +415,40 @@ public static class ParameterizedQueryBuilderExtensions
         }
 
         return query;
+    }
+    
+    /// <summary>
+    /// Appends a statement that updates a record.
+    /// </summary>
+    public static ParameterizedQuery Update(this ParameterizedQuery query, string table, object record, string primaryKeyField, Func<string, string>? getParameterName = default)
+    {
+        var fields = record.GetType().GetProperties()
+            .Where(x => x.CanRead && x.Name != primaryKeyField)
+            .Select(x => x.Name)
+            .ToArray();
+
+        getParameterName ??= x => x;
+        query.Sql.AppendLine(query.Dialect.Update(table, primaryKeyField, fields, getParameterName));
+
+        var primaryKeyValue = record.GetType().GetProperty(primaryKeyField)?.GetValue(record);
+        query.Parameters.Add($"@{getParameterName(primaryKeyField)}", primaryKeyValue);
+
+        var recordType = record.GetType();
+        foreach (var field in fields)
+        {
+            var prop = recordType.GetProperty(field)!;
+            var propType = prop.PropertyType;
+            var value = prop.GetValue(record);
+            var dbType = value == null ? GetDbType(propType) : default;
+            query.Parameters.Add($"@{getParameterName(field)}", value, dbType);
+        }
+
+        return query;
+    }
+
+    private static DbType? GetDbType(Type type)
+    {
+        if (type == typeof(byte[])) return DbType.Binary;
+        return null;
     }
 }

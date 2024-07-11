@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Converters;
 using JetBrains.Annotations;
@@ -31,7 +32,7 @@ public struct VersionOptions
     /// <summary>
     /// Gets the latest, published version.
     /// </summary>
-    public static readonly VersionOptions LatestAndPublished = new() { IsLatestOrPublished = true };
+    public static readonly VersionOptions LatestAndPublished = new() { IsLatestAndPublished = true };
 
     /// <summary>
     /// Gets the draft version.
@@ -60,7 +61,7 @@ public struct VersionOptions
             "Published" => Published,
             "LatestOrPublished" => LatestOrPublished,
             "LatestAndPublished" => LatestAndPublished,
-            _ => SpecificVersion(int.Parse(value))
+            _ => SpecificVersion(int.Parse(value, CultureInfo.InvariantCulture))
         };
 
     /// <summary>
@@ -113,5 +114,5 @@ public struct VersionOptions
     /// <summary>
     /// Returns a simple string representation of this <see cref="VersionOptions"/>.
     /// </summary>
-    public override string ToString() => AllVersions ? "AllVersions" : IsDraft ? "Draft" : IsLatest ? "Latest" : IsPublished ? "Published" : IsLatestOrPublished ? "LatestOrPublished" : IsLatestAndPublished ? "LatestAndPublished" : Version.ToString();
+    public override string ToString() => AllVersions ? "AllVersions" : IsDraft ? "Draft" : IsLatest ? "Latest" : IsPublished ? "Published" : IsLatestOrPublished ? "LatestOrPublished" : IsLatestAndPublished ? "LatestAndPublished" : Version.ToString(CultureInfo.InvariantCulture);
 }

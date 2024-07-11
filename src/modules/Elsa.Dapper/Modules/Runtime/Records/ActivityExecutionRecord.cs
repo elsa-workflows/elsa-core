@@ -1,15 +1,12 @@
+using Elsa.Dapper.Records;
+
 namespace Elsa.Dapper.Modules.Runtime.Records;
 
 /// <summary>
 /// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
-public class ActivityExecutionRecordRecord
+internal class ActivityExecutionRecordRecord : Record
 {
-    /// <summary>
-    /// Gets or sets the ID of the activity execution record.
-    /// </summary>
-    public string Id { get; set; } = default!;
-    
     /// <summary>
     /// Gets or sets the workflow instance ID.
     /// </summary>
@@ -59,6 +56,11 @@ public class ActivityExecutionRecordRecord
     /// Gets or sets the exception that occurred during the activity execution.
     /// </summary>
     public string? SerializedException { get; set; }
+
+    /// <summary>
+    /// Any properties provided by the activity.
+    /// </summary>
+    public string? SerializedProperties { get; set; }
 
     /// <summary>
     /// Gets or sets the time at which the activity execution began.

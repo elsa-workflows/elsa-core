@@ -1,9 +1,9 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Expressions;
+namespace Elsa.Workflows.Expressions;
 
 /// <summary>
 /// Evaluates an <see cref="Output"/> expression.

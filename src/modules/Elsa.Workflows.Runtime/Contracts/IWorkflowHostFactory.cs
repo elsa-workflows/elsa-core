@@ -1,42 +1,28 @@
-using Elsa.Common.Models;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Creates <see cref="IWorkflowHost"/> objects.
 /// </summary>
+[Obsolete("Use IWorkflowRuntime, IWorkflowRunner and IWorkflowInvoker services instead.")]
 public interface IWorkflowHostFactory
 {
     /// <summary>
     /// Creates a new <see cref="IWorkflowHost"/> object.
     /// </summary>
-    /// <param name="versionOptions">The version options.</param>
-    /// <param name="definitionId">The workflow definition ID.</param>
-    /// /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<IWorkflowHost?> CreateAsync(string definitionId, VersionOptions versionOptions, CancellationToken cancellationToken = default);
-    
-    /// <summary>
-    /// Creates a new <see cref="IWorkflowHost"/> object.
-    /// </summary>
-    /// <param name="workflowDefinition">The workflow definition.</param>
+    /// <param name="workflowGraph">The workflow.</param>
+    /// <param name="options">The options to use when creating the workflow host.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<IWorkflowHost> CreateAsync(WorkflowDefinition workflowDefinition, CancellationToken cancellationToken = default);
+    Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, WorkflowHostOptions? options = null, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Creates a new <see cref="IWorkflowHost"/> object.
     /// </summary>
-    /// <param name="workflow">The workflow.</param>
+    /// <param name="workflowGraph">The workflow.</param>
     /// <param name="workflowState">The workflow state to initialize the workflow host with.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<IWorkflowHost> CreateAsync(Workflow workflow, WorkflowState workflowState, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Creates a new <see cref="IWorkflowHost"/> object.
-    /// </summary>
-    /// <param name="workflow">The workflow.</param>
-    /// <param name="cancellationToken">An optional cancellation token.</param>
-    Task<IWorkflowHost> CreateAsync(Workflow workflow, CancellationToken cancellationToken = default);
+    Task<IWorkflowHost> CreateAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, CancellationToken cancellationToken = default);
 }

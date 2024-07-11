@@ -1,17 +1,17 @@
+using Elsa.Caching.Features;
 using Elsa.Common.Features;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Liquid.Contracts;
-using Elsa.Liquid.Expressions;
 using Elsa.Liquid.Filters;
 using Elsa.Liquid.Handlers;
 using Elsa.Liquid.Options;
 using Elsa.Liquid.Providers;
 using Elsa.Liquid.Services;
+using Fluid.Filters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Liquid.Features;
@@ -32,21 +32,27 @@ public class LiquidFeature : FeatureBase
     /// <summary>
     /// Configures the Fluid options.
     /// </summary>
-    public Action<FluidOptions> FluidOptions { get; set; } = _ => { };
+    public Action<FluidOptions> FluidOptions { get; set; } = options =>
+    {
+        options.ConfigureFilters = context => context.Options.Filters
+            .WithArrayFilters()
+            .WithStringFilters()
+            .WithNumberFilters()
+            .WithMiscFilters();
+    };
 
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(FluidOptions);
-        
+
         Services
             .AddHandlersFrom<ConfigureLiquidEngine>()
-            .AddSingleton<ILiquidTemplateManager, LiquidTemplateManager>()
-            .AddSingleton<LiquidParser>()
+            .AddScoped<ILiquidTemplateManager, LiquidTemplateManager>()
+            .AddScoped<LiquidParser>()
             .AddExpressionDescriptorProvider<LiquidExpressionDescriptorProvider>()
-            .AddLiquidFilter<JsonFilter>("json")
             .AddLiquidFilter<Base64Filter>("base64")
             .AddLiquidFilter<DictionaryKeysFilter>("keys")
-            ;
+        ;
     }
 }

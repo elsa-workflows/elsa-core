@@ -1,8 +1,8 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Memory;
+namespace Elsa.Workflows.Memory;
 
 /// <summary>
 /// Represents a variable that references a memory block.

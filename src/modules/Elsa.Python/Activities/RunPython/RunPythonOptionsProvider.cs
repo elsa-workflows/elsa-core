@@ -1,22 +1,10 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Management.ActivityInputOptions;
+using Elsa.Workflows.UIHints.CodeEditor;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Python.Activities;
 
-internal class RunPythonOptionsProvider : IActivityPropertyOptionsProvider
+internal class RunPythonOptionsProvider : CodeEditorOptionsProviderBase
 {
-    public ValueTask<IDictionary<string, object>> GetOptionsAsync(PropertyInfo property, object? context, CancellationToken cancellationToken = default)
-    {
-        var options = new Dictionary<string, object>
-        {
-            ["CodeEditorOptions"] = new CodeEditorOptions
-            {
-                Language = "python"
-            }
-        };
-
-        return new(options);
-    }
+    protected override string GetLanguage(PropertyInfo propertyInfo, object? context) => "python";
 }

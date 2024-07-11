@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Memory;
+using Elsa.Workflows.Memory;
 
-namespace Elsa.Workflows.Core.State;
+namespace Elsa.Workflows.State;
 
 /// <summary>
 /// A serialized representation of an activity work item.
@@ -10,7 +10,7 @@ public class ActivityWorkItemState
     /// <summary>
     /// The ID of the activity to be executed.
     /// </summary>
-    public string ActivityId { get; set; } = default!;
+    public string ActivityNodeId { get; set; } = default!;
     
     /// <summary>
     /// The ID of the parent activity execution context, if any.

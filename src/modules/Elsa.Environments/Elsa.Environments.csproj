@@ -1,11 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
-        <Version>3.0.0</Version>
         <Description>
             Provides API endpoints for client applications to enumerate available environments.
         </Description>

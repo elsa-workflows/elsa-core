@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Represents a shape of a variable that can be serialized.

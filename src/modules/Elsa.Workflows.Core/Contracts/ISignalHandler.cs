@@ -1,15 +1,10 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Handles signals.
 /// </summary>
 public interface ISignalHandler
 {
-    /// <summary>
-    /// Captures a signal.
-    /// </summary>
-    ValueTask CaptureSignalAsync(object signal, SignalContext context);
-    
     /// <summary>
     /// Receives a signal.
     /// </summary>

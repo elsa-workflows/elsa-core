@@ -2,30 +2,15 @@
 
     <PropertyGroup>
         <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.14"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.14" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.0" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
-    </ItemGroup>
-
     <ItemGroup>
-        <PackageReference Include="Elsa.Studio" Version="3.0.0-preview.164"/>
-        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" Version="3.0.0-preview.164"/>
-        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" Version="3.0.0-preview.164"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <_ContentIncludedByDefault Remove="wwwroot\index.html"/>
+        <PackageReference Include="Elsa.Studio" />
+        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" />
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 
 </Project>

@@ -1,8 +1,8 @@
 using System.Reflection;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Helpers;
+namespace Elsa.Workflows.Helpers;
 
 public static class ActivityTypeNameHelper
 {

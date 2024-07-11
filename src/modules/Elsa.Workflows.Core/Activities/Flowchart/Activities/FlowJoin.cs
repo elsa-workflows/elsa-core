@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Contracts;
-using Elsa.Workflows.Core.Activities.Flowchart.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities.Flowchart.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Merge multiple branches into a single branch of execution.
@@ -26,7 +27,8 @@ public class FlowJoin : Activity, IJoinNode
     /// </summary>
     [Input(
         Description = "The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All).",
-        DefaultValue = FlowJoinMode.WaitAny
+        DefaultValue = FlowJoinMode.WaitAny,
+        UIHint = InputUIHints.DropDown
     )]
     public Input<FlowJoinMode> Mode { get; set; } = new(FlowJoinMode.WaitAny);
 
@@ -36,7 +38,7 @@ public class FlowJoin : Activity, IJoinNode
         var flowchartContext = context.ParentActivityExecutionContext!;
         var flowchart = (Flowchart)flowchartContext.Activity;
         var inboundActivities = flowchart.Connections.LeftInboundActivities(this).ToList();
-        var flowScope = flowchartContext.GetProperty<FlowScope>(Flowchart.ScopeProperty)!;
+        var flowScope = flowchartContext.GetProperty(Flowchart.ScopeProperty, () => new FlowScope());
         var executionCount = flowScope.GetExecutionCount(this);
         var mode = context.Get(Mode);
 

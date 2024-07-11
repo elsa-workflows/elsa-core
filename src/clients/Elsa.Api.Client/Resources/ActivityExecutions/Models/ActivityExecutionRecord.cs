@@ -1,11 +1,13 @@
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
 
 /// <summary>
 /// Represents a single workflow execution, associated with an individual activity instance.
 /// </summary>
+[UsedImplicitly]
 public class ActivityExecutionRecord : Entity
 {
     /// <summary>
@@ -52,6 +54,11 @@ public class ActivityExecutionRecord : Entity
     /// Any outputs provided by the activity.
     /// </summary>
     public IDictionary<string, object?>? Outputs { get; set; }
+
+    /// <summary>
+    /// Any properties provided by the activity.
+    /// </summary>
+    public IDictionary<string, object?> Properties { get; set; } = new Dictionary<string, object?>();
     
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution.

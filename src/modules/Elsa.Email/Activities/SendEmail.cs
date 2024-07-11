@@ -6,10 +6,11 @@ using Elsa.Email.Contracts;
 using Elsa.Email.Models;
 using Elsa.Email.Options;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
@@ -119,7 +120,7 @@ public class SendEmail : Activity
         catch (Exception e)
         {
             logger.LogWarning(e, "Error while sending email message");
-            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace }, includeActivityState: true);
+            context.AddExecutionLogEntry("Error", e.Message, payload: new { e.StackTrace });
             await context.ScheduleActivityAsync(Error, OnErrorCompletedAsync);
         }
     }

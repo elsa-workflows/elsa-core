@@ -1,11 +1,11 @@
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Helpers;
 using Humanizer;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -13,20 +13,8 @@ namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 /// <summary>
 /// Provides activity descriptors based on <see cref="WorkflowDefinition"/>s stored in the database. 
 /// </summary>
-public class WorkflowDefinitionActivityProvider : IActivityProvider
+public class WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory, ActivityWriter activityWriter) : IActivityProvider
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IActivityFactory _activityFactory;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WorkflowDefinitionActivityProvider(IWorkflowDefinitionStore store, IActivityFactory activityFactory)
-    {
-        _store = store;
-        _activityFactory = activityFactory;
-    }
-
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
@@ -36,13 +24,29 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             VersionOptions = VersionOptions.All
         };
 
-        var definitions = (await _store.FindManyAsync(filter, cancellationToken)).ToList();
-        var descriptors = CreateDescriptors(definitions);
-        return descriptors;
+        var allDescriptors = new List<ActivityDescriptor>();
+        var currentPage = 0;
+        const int pageSize = 100;
+
+        while (true)
+        {
+            var pageArgs = PageArgs.FromPage(currentPage++, pageSize);
+            var pageOfDefinitions = await store.FindManyAsync(filter, pageArgs, cancellationToken);
+            var descriptors = CreateDescriptors(pageOfDefinitions.Items).ToList();
+
+            allDescriptors.AddRange(descriptors);
+
+            if (allDescriptors.Count >= pageOfDefinitions.TotalCount)
+                break;
+        }
+
+        return allDescriptors;
     }
 
-    private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions) =>
-        definitions.Select(x => CreateDescriptor(x, definitions));
+    private IEnumerable<ActivityDescriptor> CreateDescriptors(ICollection<WorkflowDefinition> definitions)
+    {
+        return definitions.Select(x => CreateDescriptor(x, definitions));
+    }
 
     private ActivityDescriptor CreateDescriptor(WorkflowDefinition definition, ICollection<WorkflowDefinition> allDefinitions)
     {
@@ -86,6 +90,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             CustomProperties =
             {
                 ["RootType"] = nameof(WorkflowDefinitionActivity),
+                ["WorkflowDefinitionId"] = definition.DefinitionId,
                 ["WorkflowDefinitionVersionId"] = definition.Id
             },
             ConstructionProperties = new Dictionary<string, object>
@@ -96,7 +101,7 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
             },
             Constructor = context =>
             {
-                var activity = (WorkflowDefinitionActivity)_activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
+                var activity = (WorkflowDefinitionActivity)activityFactory.Create(typeof(WorkflowDefinitionActivity), context);
                 activity.Type = typeName;
                 activity.WorkflowDefinitionId = definition.DefinitionId;
                 activity.WorkflowDefinitionVersionId = definition.Id;
@@ -105,6 +110,11 @@ public class WorkflowDefinitionActivityProvider : IActivityProvider
                 activity.LatestAvailablePublishedVersionId = latestPublishedVersion?.Id;
 
                 return activity;
+            },
+            ConfigureSerializerOptions = options =>
+            {
+                options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory(activityWriter));
+                return options;
             }
         };
     }

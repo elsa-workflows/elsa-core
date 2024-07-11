@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -36,7 +36,7 @@ public static class WebApplicationExtensions
     /// </summary>
     /// <param name="routes">The <see cref="IEndpointRouteBuilder"/> to register the endpoints with.</param>
     /// <param name="routePrefix">The route prefix to apply to Elsa API endpoints.</param>
-    /// /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
+    /// <example>E.g. "elsa/api" will expose endpoints like this: "/elsa/api/workflow-definitions"</example>
     public static IEndpointRouteBuilder MapWorkflowsApi(this IEndpointRouteBuilder routes, string routePrefix = "elsa/api") =>
         routes.MapFastEndpoints(config =>
         {
@@ -48,7 +48,7 @@ public static class WebApplicationExtensions
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
         var serializer = httpRequest.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
-        var options = serializer.CreateOptions();
+        var options = serializer.GetOptions();
 
         return serializerContext == null
             ? JsonSerializer.DeserializeAsync(httpRequest.Body, modelType, options, cancellationToken)
@@ -58,7 +58,7 @@ public static class WebApplicationExtensions
     private static Task SerializeRequestAsync(HttpResponse httpResponse, object? dto, string contentType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)
     {
         var serializer = httpResponse.HttpContext.RequestServices.GetRequiredService<IApiSerializer>();
-        var options = serializer.CreateOptions();
+        var options = serializer.GetOptions();
 
         httpResponse.ContentType = contentType;
         return serializerContext == null

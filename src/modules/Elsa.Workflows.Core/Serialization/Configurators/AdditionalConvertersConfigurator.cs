@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Serialization.Configurators;
+namespace Elsa.Workflows.Serialization.Configurators;
 
 /// <summary>
 /// Add additional <see cref="JsonConverter"/> objects.

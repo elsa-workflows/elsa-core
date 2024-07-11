@@ -4,18 +4,21 @@ using Elsa.Common.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Services;
+using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents the context of an activity execution.
 /// </summary>
-public class ActivityExecutionContext : IExecutionContext
+[PublicAPI]
+public partial class ActivityExecutionContext : IExecutionContext
 {
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = new();
@@ -47,6 +50,10 @@ public class ActivityExecutionContext : IExecutionContext
         Tag = tag;
         CancellationToken = cancellationToken;
         Id = id;
+        _publisher = GetRequiredService<INotificationSender>();
+
+        _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _cancellationRegistration = _cancellationTokenSource.Token.Register(CancelActivity);
     }
 
     /// <summary>
@@ -123,7 +130,18 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// The current status of the activity.
     /// </summary>
-    public ActivityStatus Status { get; set; }
+    public ActivityStatus Status { get; private set; }
+
+    /// <summary>
+    /// Sets the current status of the activity.
+    /// </summary>
+    public void TransitionTo(ActivityStatus status)
+    {
+        Status = status;
+
+        if (Status is ActivityStatus.Completed or ActivityStatus.Canceled or ActivityStatus.Faulted)
+            _cancellationRegistration.Dispose();
+    }
 
     /// <summary>
     /// Gets or sets the exception that occurred during the activity execution, if any.
@@ -206,8 +224,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ScheduleWorkOptions? options = default)
     {
-        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
-        await ScheduleActivityAsync(activityNode, this, options);
+        await ScheduleActivityAsync(activity, this, options);
     }
 
     /// <summary>
@@ -218,7 +235,9 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(IActivity? activity, ActivityExecutionContext? owner, ScheduleWorkOptions? options = default)
     {
-        var activityNode = activity != null ? WorkflowExecutionContext.FindNodeByActivity(activity) : default;
+        var activityNode = activity != null
+            ? WorkflowExecutionContext.FindNodeByActivity(activity) ?? throw new InvalidOperationException("The specified activity is not part of the workflow.")
+            : null;
         await ScheduleActivityAsync(activityNode, owner, options);
     }
 
@@ -230,6 +249,35 @@ public class ActivityExecutionContext : IExecutionContext
     /// <param name="options">The options used to schedule the activity.</param>
     public async ValueTask ScheduleActivityAsync(ActivityNode? activityNode, ActivityExecutionContext? owner = default, ScheduleWorkOptions? options = default)
     {
+        if (this.GetIsBackgroundExecution())
+        {
+            // Validate that the specified activity is part of the workflow.
+            if (activityNode != null && !WorkflowExecutionContext.NodeActivityLookup.ContainsKey(activityNode.Activity))
+                throw new InvalidOperationException("The specified activity is not part of the workflow.");
+
+            var scheduledActivity = new ScheduledActivity
+            {
+                ActivityNodeId = activityNode?.NodeId,
+                OwnerActivityInstanceId = owner?.Id,
+                Options = options != null
+                    ? new ScheduledActivityOptions
+                    {
+                        CompletionCallback = options?.CompletionCallback?.Method.Name,
+                        Tag = options?.Tag,
+                        ExistingActivityInstanceId = options?.ExistingActivityExecutionContext?.Id,
+                        PreventDuplicateScheduling = options?.PreventDuplicateScheduling ?? false,
+                        Variables = options?.Variables?.ToList(),
+                        Input = options?.Input
+                    }
+                    : default
+            };
+
+            var scheduledActivities = this.GetBackgroundScheduledActivities().ToList();
+            scheduledActivities.Add(scheduledActivity);
+            this.SetBackgroundScheduledActivities(scheduledActivities);
+            return;
+        }
+
         var completionCallback = options?.CompletionCallback;
         owner ??= this;
 
@@ -237,6 +285,7 @@ public class ActivityExecutionContext : IExecutionContext
         {
             if (completionCallback != null)
             {
+                Tag = options?.Tag;
                 var completedContext = new ActivityCompletedContext(this, this);
                 await completionCallback(completedContext);
             }
@@ -295,7 +344,7 @@ public class ActivityExecutionContext : IExecutionContext
         foreach (var payload in payloads)
             CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = callback,
                 IncludeActivityInstanceId = includeActivityInstanceId
             });
@@ -331,17 +380,34 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = stimulus,
             Callback = callback,
+            IncludeActivityInstanceId = includeActivityInstanceId,
+            Metadata = customProperties
+        });
+    }
+
+    /// <summary>
+    /// Creates a bookmark for the current activity execution context.
+    /// </summary>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
+    /// <param name="includeActivityInstanceId">Specifies whether to include the activity instance ID in the bookmark information. Defaults to true.</param>
+    /// <param name="customProperties">Additional custom properties to associate with the bookmark. Defaults to null.</param>
+    /// <returns>The created bookmark.</returns>
+    public Bookmark CreateBookmark(object stimulus, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
+    {
+        return CreateBookmark(new CreateBookmarkArgs
+        {
+            Stimulus = stimulus,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
         });
@@ -350,14 +416,14 @@ public class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="metadata">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
+    public Bookmark CreateBookmark(object stimulus, IDictionary<string, string>? metadata = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = stimulus,
             Metadata = metadata
         });
     }
@@ -368,10 +434,10 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public Bookmark CreateBookmark(CreateBookmarkArgs? options = default)
     {
-        var payload = options?.Payload;
+        var payload = options?.Stimulus;
         var callback = options?.Callback;
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
-        var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
+        var bookmarkHasher = GetRequiredService<IStimulusHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var includeActivityInstanceId = options?.IncludeActivityInstanceId ?? true;
         var hash = bookmarkHasher.Hash(bookmarkName, payload, includeActivityInstanceId ? Id : null);
@@ -600,7 +666,7 @@ public class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public void ClearCompletionCallbacks()
     {
-        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this);
+        var entriesToRemove = WorkflowExecutionContext.CompletionCallbacks.Where(x => x.Owner == this).ToList();
         WorkflowExecutionContext.RemoveCompletionCallbacks(entriesToRemove);
     }
 

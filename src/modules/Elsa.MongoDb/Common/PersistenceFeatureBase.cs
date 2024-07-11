@@ -23,8 +23,8 @@ public abstract class PersistenceFeatureBase : FeatureBase
     protected void AddStore<TDocument, TStore>() where TDocument : class where TStore : class
     {
         Services
-            .AddSingleton<MongoDbStore<TDocument>>()
-            .AddSingleton<TStore>()
+            .AddScoped<MongoDbStore<TDocument>>()
+            .AddScoped<TStore>()
             ;
     }
 
@@ -35,7 +35,7 @@ public abstract class PersistenceFeatureBase : FeatureBase
     /// <typeparam name="TDocument">The document type of the collection.</typeparam>
     protected void AddCollection<TDocument>(string collectionName) where TDocument : class
     {
-        Services.AddSingleton(
+        Services.AddScoped(
             sp => sp.GetRequiredService<IMongoDatabase>()
                 .GetCollection<TDocument>(collectionName));
     }

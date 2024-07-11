@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
-using ActivityNode = Elsa.Workflows.Core.Models.ActivityNode;
+using Elsa.Workflows.Contracts;
+using ActivityNode = Elsa.Workflows.Models.ActivityNode;
 
-namespace Elsa.Workflows.Core.Services;
+namespace Elsa.Workflows.Services;
 
 /// <inheritdoc />
 public class ActivityVisitor : IActivityVisitor
@@ -10,7 +10,7 @@ public class ActivityVisitor : IActivityVisitor
     private readonly IEnumerable<IActivityResolver> _portResolvers;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="ActivityVisitor"/> class.
     /// </summary>
     public ActivityVisitor(IEnumerable<IActivityResolver> portResolvers, IServiceProvider serviceProvider)
     {
@@ -21,14 +21,26 @@ public class ActivityVisitor : IActivityVisitor
     /// <inheritdoc />
     public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        var collectedActivities = new HashSet<IActivity>(new[] { activity });
-        var graph = new ActivityNode(activity);
-        var collectedNodes = new HashSet<ActivityNode>(new[] { graph });
-        await VisitRecursiveAsync((graph, activity), collectedActivities, collectedNodes, cancellationToken);
+        var graph = new ActivityNode(activity, "Root");
+        var collectedNodes = new HashSet<ActivityNode>(new[]
+        {
+            graph
+        });
+        var collectedActivities = new HashSet<IActivity>(new[]
+        {
+            activity
+        });
+        var visitorContext = new ActivityVisitorContext
+        {
+            CollectedActivities = collectedActivities,
+            CollectedNodes = collectedNodes
+        };
+
+        await VisitRecursiveAsync((graph, activity), visitorContext, cancellationToken);
         return graph;
     }
 
-    private async Task VisitRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
+    private async Task VisitRecursiveAsync((ActivityNode Node, IActivity Activity) pair, ActivityVisitorContext visitorContext, CancellationToken cancellationToken)
     {
         if (pair.Activity is IInitializable initializable)
         {
@@ -36,36 +48,47 @@ public class ActivityVisitor : IActivityVisitor
             await initializable.InitializeAsync(context);
         }
 
-        await VisitPortsRecursiveAsync(pair, collectedActivities, collectedNodes, cancellationToken);
+        await VisitPortsRecursiveAsync(pair, visitorContext, cancellationToken);
     }
 
-    private async Task VisitPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, HashSet<IActivity> collectedActivities, HashSet<ActivityNode> collectedNodes, CancellationToken cancellationToken)
+    private async Task VisitPortsRecursiveAsync((ActivityNode Node, IActivity Activity) pair, ActivityVisitorContext visitorContext, CancellationToken cancellationToken)
     {
         var resolver = _portResolvers.FirstOrDefault(x => x.GetSupportsActivity(pair.Activity));
 
         if (resolver == null)
             return;
 
-        var activities = await resolver.GetActivitiesAsync(pair.Activity, cancellationToken);
+        var activityPorts = await resolver.GetActivityPortsAsync(pair.Activity, cancellationToken);
+        var collectedActivities = visitorContext.CollectedActivities;
+        var collectedNodes = visitorContext.CollectedNodes;
 
-        foreach (var activity in activities)
+        foreach (var activityPort in activityPorts)
         {
-            // Continue if the specified activity was already encountered.
-            if (collectedActivities.Contains(activity))
-                continue;
-
-            var childNode = collectedNodes.FirstOrDefault(x => x.Activity == activity);
-
-            if (childNode == null)
+            foreach (var activity in activityPort.GetActivities())
             {
-                childNode = new ActivityNode(activity);
-                collectedNodes.Add(childNode);
-            }
+                // Continue if the specified activity was already encountered.
+                if (collectedActivities.Contains(activity))
+                    continue;
 
-            childNode.Parents.Add(pair.Node);
-            pair.Node.Children.Add(childNode);
-            collectedActivities.Add(activity);
-            await VisitRecursiveAsync((childNode, activity), collectedActivities, collectedNodes, cancellationToken);
+                var childNode = collectedNodes.FirstOrDefault(x => x.Activity == activity);
+
+                if (childNode == null)
+                {
+                    childNode = new ActivityNode(activity, activityPort.PortName);
+                    collectedNodes.Add(childNode);
+                }
+
+                childNode.Parents.Add(pair.Node);
+                pair.Node.Children.Add(childNode);
+                collectedActivities.Add(activity);
+                await VisitRecursiveAsync((childNode, activity), visitorContext, cancellationToken);
+            }
         }
+    }
+
+    private class ActivityVisitorContext
+    {
+        public HashSet<IActivity> CollectedActivities { get; set; } = new();
+        public HashSet<ActivityNode> CollectedNodes { get; set; } = new();
     }
 }

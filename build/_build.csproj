@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace/>
+    <NoWarn>CS0649;CS0169;CA1050;CA1822;CA2211;IDE1006</NoWarn>
+    <NukeRootDirectory>..</NukeRootDirectory>
+    <NukeScriptDirectory>..</NukeScriptDirectory>
+    <NukeTelemetryVersion>1</NukeTelemetryVersion>
+    <NukeExcludeLogs>true</NukeExcludeLogs>
+    <NukeExcludeDirectoryBuild>true</NukeExcludeDirectoryBuild>
+    <IsPackable>false</IsPackable>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nuke.Components" Version="8.0.0" />
+  </ItemGroup>
+
+  <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
+  <ItemGroup>
+<!--    <PackageReference Include="Azure.Identity" VersionOverride="1.11.4" />-->
+    <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.61.3" />
+  </ItemGroup>
+
+</Project>

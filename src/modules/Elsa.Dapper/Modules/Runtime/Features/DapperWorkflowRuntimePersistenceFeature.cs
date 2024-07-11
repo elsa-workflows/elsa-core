@@ -1,8 +1,11 @@
+using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Features;
+using Elsa.Dapper.Modules.Runtime.Records;
 using Elsa.Dapper.Modules.Runtime.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.KeyValues.Features;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,11 +27,14 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.Configure<KeyValueFeature>(feature =>
+        {
+            feature.KeyValueStore = sp => sp.GetRequiredService<DapperKeyValueStore>();
+        });
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<DapperWorkflowInboxMessageStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
         });
@@ -39,10 +45,10 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
     {
         base.Apply();
 
-        Services.AddSingleton<DapperTriggerStore>();
-        Services.AddSingleton<DapperBookmarkStore>();
-        Services.AddSingleton<DapperWorkflowInboxMessageStore>();
-        Services.AddSingleton<DapperWorkflowExecutionLogStore>();
-        Services.AddSingleton<DapperActivityExecutionRecordStore>();
+        Services.AddDapperStore<DapperTriggerStore, StoredTriggerRecord>("Triggers");
+        Services.AddDapperStore<DapperBookmarkStore, StoredBookmarkRecord>("Bookmarks");
+        Services.AddDapperStore<DapperWorkflowExecutionLogStore, WorkflowExecutionLogRecordRecord>("WorkflowExecutionLogRecords");
+        Services.AddDapperStore<DapperActivityExecutionRecordStore, ActivityExecutionRecordRecord>("ActivityExecutionRecords");
+        Services.AddDapperStore<DapperKeyValueStore, KeyValuePairRecord>("KeyValues");
     }
 }

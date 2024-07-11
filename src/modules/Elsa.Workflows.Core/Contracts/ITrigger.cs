@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Implement this method if your activity needs to provide bookmark data that will be used when it is marked as a trigger. 

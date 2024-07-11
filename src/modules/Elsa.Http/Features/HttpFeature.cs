@@ -1,10 +1,9 @@
-using Elsa.Common.Features;
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Http.ActivityOptionProviders;
 using Elsa.Http.ContentWriters;
 using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;
@@ -12,12 +11,14 @@ using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
+using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Http.UIHints;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using FluentStorage;
@@ -32,7 +33,7 @@ namespace Elsa.Http.Features;
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
-[DependsOn(typeof(MemoryCacheFeature))]
+[DependsOn(typeof(HttpJavaScriptFeature))]
 public class HttpFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -53,10 +54,10 @@ public class HttpFeature : FeatureBase
     /// <summary>
     /// A delegate that is invoked when authorizing an inbound HTTP request.
     /// </summary>
-    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AllowAnonymousHttpEndpointAuthorizationHandler>();
+    public Func<IServiceProvider, IHttpEndpointAuthorizationHandler> HttpEndpointAuthorizationHandler { get; set; } = sp => sp.GetRequiredService<AuthenticationBasedHttpEndpointAuthorizationHandler>();
 
     /// <summary>
-    /// A delegate that is invoked when an HTTP workflow faults. 
+    /// A delegate that is invoked when an HTTP workflow faults.
     /// </summary>
     public Func<IServiceProvider, IHttpEndpointFaultHandler> HttpEndpointWorkflowFaultHandler { get; set; } = sp => sp.GetRequiredService<DefaultHttpEndpointFaultHandler>();
 
@@ -115,7 +116,9 @@ public class HttpFeature : FeatureBase
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
                 typeof(HttpHeaders),
-                typeof(IFormFile)
+                typeof(IFormFile),
+                typeof(HttpFile),
+                typeof(Downloadable)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -146,54 +149,58 @@ public class HttpFeature : FeatureBase
         HttpClientBuilder(httpClientBuilder);
 
         Services
-            .AddSingleton<IRouteMatcher, RouteMatcher>()
-            .AddSingleton<IRouteTable, RouteTable>()
-            .AddSingleton<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-            .AddSingleton<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
-            .AddSingleton<IRouteTableUpdater, DefaultRouteTableUpdater>()
-            .AddSingleton(ContentTypeProvider)
+            .AddScoped<IRouteMatcher, RouteMatcher>()
+            .AddScoped<IRouteTable, RouteTable>()
+            .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
+            .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
+            .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
+            .AddScoped(ContentTypeProvider)
             .AddHttpContextAccessor()
-            
+
             // Handlers.
             .AddRequestHandler<ValidateWorkflowRequestHandler, ValidateWorkflowRequest, ValidateWorkflowResponse>()
             .AddNotificationHandler<UpdateRouteTable>()
 
             // Content parsers.
-            .AddSingleton<IHttpContentParser, StringHttpContentParser>()
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
+            .AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, FileHttpContentParser>()
 
             // HTTP content factories.
-            .AddSingleton<IHttpContentFactory, TextContentFactory>()
-            .AddSingleton<IHttpContentFactory, JsonContentFactory>()
-            .AddSingleton<IHttpContentFactory, XmlContentFactory>()
-            .AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
+            .AddScoped<IHttpContentFactory, TextContentFactory>()
+            .AddScoped<IHttpContentFactory, JsonContentFactory>()
+            .AddScoped<IHttpContentFactory, XmlContentFactory>()
+            .AddScoped<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
 
             // Activity property options providers.
-            .AddSingleton<IActivityPropertyOptionsProvider, HttpContentTypeOptionsProvider>()
+            .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
 
             // Port resolvers.
-            .AddSingleton<IActivityResolver, SendHttpRequestActivityResolver>()
+            .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()
 
             // HTTP endpoint handlers.
-            .AddSingleton<AuthenticationBasedHttpEndpointAuthorizationHandler>()
-            .AddSingleton<AllowAnonymousHttpEndpointAuthorizationHandler>()
-            .AddSingleton<DefaultHttpEndpointFaultHandler>()
-            .AddSingleton(HttpEndpointWorkflowFaultHandler)
-            .AddSingleton(HttpEndpointAuthorizationHandler)
+            .AddScoped<AuthenticationBasedHttpEndpointAuthorizationHandler>()
+            .AddScoped<AllowAnonymousHttpEndpointAuthorizationHandler>()
+            .AddScoped<DefaultHttpEndpointFaultHandler>()
+            .AddScoped(HttpEndpointWorkflowFaultHandler)
+            .AddScoped(HttpEndpointAuthorizationHandler)
 
             // Downloadable content handlers.
-            .AddSingleton<IDownloadableManager, DefaultDownloadableManager>()
-            .AddSingleton<IDownloadableContentHandler, MultiDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, StreamDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, FormFileDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
-            .AddSingleton<IDownloadableContentHandler, UrlDownloadableContentHandler>()
+            .AddScoped<IDownloadableManager, DefaultDownloadableManager>()
+            .AddScoped<IDownloadableContentHandler, MultiDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, BinaryDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, StreamDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, FormFileDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
 
             // File caches.
-            .AddSingleton(FileCache)
-            .AddSingleton<ZipManager>()
+            .AddScoped(FileCache)
+            .AddScoped<ZipManager>()
 
             // AuthenticationBasedHttpEndpointAuthorizationHandler requires Authorization services.
             // We could consider creating a separate module for installing authorization services.
@@ -201,18 +208,31 @@ public class HttpFeature : FeatureBase
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        
+        // Tenant resolvers.
+        Services.AddScoped<ITenantResolutionStrategy, HttpContextTenantResolver>();
+        Services.AddScoped<ITenantResolutionStrategy, RoutePrefixTenantResolver>();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
-            Services.AddSingleton(typeof(IHttpCorrelationIdSelector), httpCorrelationIdSelectorType);
+            Services.AddScoped(typeof(IHttpCorrelationIdSelector), httpCorrelationIdSelectorType);
 
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
-            Services.AddSingleton(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
+            Services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
 
         Services.Configure<ExpressionOptions>(options =>
         {
+            options.AddTypeAlias<HttpRequest>("HttpRequest");
+            options.AddTypeAlias<HttpResponse>("HttpResponse");
+            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
+            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
+            options.AddTypeAlias<RouteData>("RouteData");
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
+            options.AddTypeAlias<HttpFile>("HttpFile");
+            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
+            options.AddTypeAlias<Downloadable>("Downloadable");
+            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
         });
     }
 }

@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides MongoDB implementations of various abstractions from various modules.
@@ -11,28 +7,23 @@
         <PackageTags>elsa module persistence mongo</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0"/>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="MongoDB.Driver" />
+        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
+        <PackageReference Include="MongoDB.Driver.Extensions" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="MongoDB.Driver" Version="2.22.0"/>
-        <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.3.0"/>
-        <PackageReference Include="MongoDB.Driver.Extensions" Version="2.0.2"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj"/>
-        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj"/>
-        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj"/>
-        <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj"/>
-        <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,21 +1,23 @@
+using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 internal static class HttpActivityExecutionContextExtensions
 {
-    public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, CancellationToken cancellationToken)
+    public static async Task<object?> ParseContentAsync(this ActivityExecutionContext context, Stream content, string contentType, Type? returnType, Dictionary<string, string?[]> headers, CancellationToken cancellationToken)
     {
         var parsers = context.GetServices<IHttpContentParser>().OrderByDescending(x => x.Priority).ToList();
-        var contentParser = parsers.FirstOrDefault(x => x.GetSupportsContentType(contentType));
+        var httpResponseParserContext = new HttpResponseParserContext(content, contentType, returnType, headers, cancellationToken);
+        var contentParser = parsers.FirstOrDefault(x => x.GetSupportsContentType(httpResponseParserContext));
 
         if (contentParser == null)
             return null;
 
-        return await contentParser.ReadAsync(content, returnType, cancellationToken);
+        return await contentParser.ReadAsync(httpResponseParserContext);
     }
 
     public static IEnumerable<KeyValuePair<string, string[]>> GetHeaders(this ActivityExecutionContext context, Input input)

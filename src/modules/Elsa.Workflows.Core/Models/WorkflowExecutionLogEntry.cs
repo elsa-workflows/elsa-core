@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Core.Models;
+namespace Elsa.Workflows.Models;
 
 /// <summary>
 /// Represents a workflow execution log entry.
@@ -11,7 +11,7 @@ public record WorkflowExecutionLogEntry(
     int ActivityTypeVersion,
     string? ActivityName,
     string NodeId,
-    IDictionary<string, object>? ActivityState,
+    [property: Obsolete("Use ActivityInstanceId instead to locate activity state from ActivityExecutionLog")]IDictionary<string, object>? ActivityState,
     DateTimeOffset Timestamp,
     long Sequence,
     string? EventName,

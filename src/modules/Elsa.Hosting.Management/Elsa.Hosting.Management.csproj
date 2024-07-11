@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides hosting management functionality.
+        </Description>
+        <PackageTags>elsa module hosting</PackageTags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.KeyValues\Elsa.KeyValues.csproj" />
+      <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\icon.png">
+        <Link>icon.png</Link>
+      </Content>
+    </ItemGroup>
+</Project>

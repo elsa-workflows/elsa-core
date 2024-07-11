@@ -4,10 +4,11 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Elasticsearch.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Humanizer;
 
 namespace Elsa.Elasticsearch.Modules.Management;
 
@@ -74,6 +75,27 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), cancellationToken);
+        return results.Select(x => x.Id).ToList();
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId(Filter(d, filter)), pageArgs, cancellationToken);
+        return new(results.Items.Select(x => x.Id).ToList(), results.TotalCount);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
+    {
+        var results = await _store.SearchAsync(d => SelectId(Sort(Filter(d, filter), order)), pageArgs, cancellationToken);
+        return new(results.Items.Select(x => x.Id).ToList(), results.TotalCount);
+    }
+
+    /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
         var results = await _store.SearchAsync(d => Summarize(Filter(d, filter)), cancellationToken);
@@ -88,21 +110,34 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
+    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
         await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
+
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        await _store.SaveAsync(instance, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
         await _store.SaveManyAsync(instances, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         await _store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
 
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();
-        var propName = order.KeySelector.GetPropertyName();
+        var propName = order.KeySelector.GetPropertyName().Camelize();
         var sortOrder = order.Direction == OrderDirection.Ascending ? SortOrder.Asc : SortOrder.Desc;
         sortDescriptor.Field(propName, f => f.Order(sortOrder));
 
@@ -119,25 +154,26 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         if (!string.IsNullOrWhiteSpace(filter.Id)) descriptor = descriptor.Match(m => m.Field(f => f.Id).Query(filter.Id));
         if (!string.IsNullOrWhiteSpace(filter.DefinitionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionId).Query(filter.DefinitionId));
         if (!string.IsNullOrWhiteSpace(filter.DefinitionVersionId)) descriptor = descriptor.Match(m => m.Field(f => f.DefinitionVersionId).Query(filter.DefinitionVersionId));
-        
+
         // TODO: filter by IDs
         // TODO: filter by DefinitionIDs
         // TODO: filter by DefinitionVersionIDs
+        // TODO: filter by ParentWorkflowInstanceIds
         // TODO: filter by CorrelationIDs
         // TODO: filter by WorkflowStatuses
         // TODO: filter by WorkflowSubStatuses
-        
+
         if (filter.Version != null) descriptor = descriptor.Match(m => m.Field(f => f.Version).Query(filter.Version.ToString()!));
         if (!string.IsNullOrWhiteSpace(filter.CorrelationId)) descriptor = descriptor.Match(m => m.Field(f => f.CorrelationId).Query(filter.CorrelationId));
         if (filter.WorkflowStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.Status).Query(filter.WorkflowStatus.ToString()!));
         if (filter.WorkflowSubStatus != null) descriptor = descriptor.Match(m => m.Field(f => f.SubStatus).Query(filter.WorkflowSubStatus.ToString()!));
 
-        if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-            descriptor = descriptor
-                .QueryString(c => c
-                    .Query(filter.SearchTerm));
+        if (string.IsNullOrWhiteSpace(filter.SearchTerm))
+            return descriptor.MatchAll(new MatchAllQuery());
 
-        return descriptor;
+        return descriptor
+            .QueryString(c => c
+                .Query(filter.SearchTerm));
     }
 
     private static SearchRequestDescriptor<WorkflowInstance> Summarize(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
@@ -155,4 +191,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             field => field.Field(f => f.DefinitionVersionId),
             field => field.Field(f => f.UpdatedAt)
         );
+
+    private static SearchRequestDescriptor<WorkflowInstance> SelectId(SearchRequestDescriptor<WorkflowInstance> descriptor) =>
+        descriptor.Fields(field => field.Field(f => f.Id));
 }

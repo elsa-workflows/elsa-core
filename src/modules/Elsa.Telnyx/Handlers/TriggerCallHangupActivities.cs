@@ -5,9 +5,9 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -17,17 +17,9 @@ namespace Elsa.Telnyx.Handlers;
 /// Triggers all workflows starting with or blocked on a <see cref="CallHangup"/> activity.
 /// </summary>
 [PublicAPI]
-internal class TriggerCallHangupActivities : INotificationHandler<TelnyxWebhookReceived>
+internal class TriggerCallHangupActivities(IStimulusSender stimulusSender)
+    : INotificationHandler<TelnyxWebhookReceived>
 {
-    private readonly IWorkflowInbox _workflowInbox;
-    private readonly ILogger _logger;
-
-    public TriggerCallHangupActivities(IWorkflowInbox workflowInbox, ILogger<TriggerCallHangupActivities> logger)
-    {
-        _workflowInbox = workflowInbox;
-        _logger = logger;
-    }
-
     public async Task HandleAsync(TelnyxWebhookReceived notification, CancellationToken cancellationToken)
     {
         var webhook = notification.Webhook;
@@ -40,13 +32,12 @@ internal class TriggerCallHangupActivities : INotificationHandler<TelnyxWebhookR
         var workflowInstanceId = clientStatePayload?.WorkflowInstanceId;
         var input = new Dictionary<string, object>().AddInput(callHangupPayload);
         var callControlId = callHangupPayload.CallControlId;
-        
-        await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var stimulus = new CallHangupStimulus(callControlId);
+        var metadata = new StimulusMetadata
         {
-            ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<CallHangup>(),
-            BookmarkPayload = new CallHangupBookmarkPayload(callControlId),
             WorkflowInstanceId = workflowInstanceId,
             Input = input
-        }, cancellationToken);
+        };
+        await stimulusSender.SendAsync<CallHangup>(stimulus, metadata, cancellationToken);
     }
 }

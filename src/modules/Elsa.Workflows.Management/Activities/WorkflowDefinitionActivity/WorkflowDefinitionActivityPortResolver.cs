@@ -1,4 +1,5 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 
@@ -14,11 +15,12 @@ public class WorkflowDefinitionActivityResolver : IActivityResolver
     public bool GetSupportsActivity(IActivity activity) => activity is WorkflowDefinitionActivity;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default)
+    public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
         var definitionActivity = (WorkflowDefinitionActivity)activity;
         var root = definitionActivity.Root;
+        var port = ActivityPort.FromActivity(root, nameof(WorkflowDefinitionActivity.Root));
 
-        return new(new[] { root });
+        return new([port]);
     }
 }

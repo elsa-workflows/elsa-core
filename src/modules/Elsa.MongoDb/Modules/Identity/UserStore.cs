@@ -9,29 +9,28 @@ namespace Elsa.MongoDb.Modules.Identity;
 /// <summary>
 /// A MongoDB implementation of <see cref="IUserStore"/>.
 /// </summary>
-public class MongoUserStore : IUserStore
+public class MongoUserStore(MongoDbStore<User> userMongoDbStore) : IUserStore
 {
-    private readonly MongoDbStore<User> _userMongoDbStore;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="MongoUserStore"/>.
-    /// </summary>
-    public MongoUserStore(MongoDbStore<User> userMongoDbStore)
+    /// <inheritdoc />
+    public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
-        _userMongoDbStore = userMongoDbStore;
+        return userMongoDbStore.SaveAsync(user, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SaveAsync(User user, CancellationToken cancellationToken = default) => 
-        await _userMongoDbStore.SaveAsync(user, cancellationToken);
+    public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default)
+    {
+        return userMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => 
-        await _userMongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
+    public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+    {
+        return userMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+    }
 
-    /// <inheritdoc />
-    public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => 
-        await _userMongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
-
-    private static IMongoQueryable<User> Filter(IQueryable<User> query, UserFilter filter) => (filter.Apply(query) as IMongoQueryable<User>)!;
+    private static IMongoQueryable<User> Filter(IQueryable<User> query, UserFilter filter)
+    {
+        return (filter.Apply(query) as IMongoQueryable<User>)!;
+    }
 }

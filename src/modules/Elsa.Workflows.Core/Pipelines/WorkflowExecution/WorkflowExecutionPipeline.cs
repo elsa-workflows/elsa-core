@@ -1,7 +1,7 @@
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Middleware.Workflows;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Middleware.Workflows;
 
-namespace Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
 /// <inheritdoc />
 public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
@@ -10,16 +10,20 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     private WorkflowMiddlewareDelegate? _pipeline;
 
     /// <summary>
-    /// Constructor.
+    /// Initializes a new instance of the <see cref="WorkflowExecutionPipeline"/> class.
     /// </summary>
-    public WorkflowExecutionPipeline(IServiceProvider serviceProvider, Action<IWorkflowExecutionPipelineBuilder> pipelineBuilder)
+    public WorkflowExecutionPipeline(IServiceProvider serviceProvider, Action<IWorkflowExecutionPipelineBuilder> configurePipelineBuilder)
     {
         _serviceProvider = serviceProvider;
-        Setup(pipelineBuilder);
+        ConfigurePipelineBuilder = configurePipelineBuilder;
+        Setup(configurePipelineBuilder);
     }
-
+    
     /// <inheritdoc />
     public WorkflowMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
+
+    /// <inheritdoc />
+    public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder { get; }
 
     /// <inheritdoc />
     public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup)

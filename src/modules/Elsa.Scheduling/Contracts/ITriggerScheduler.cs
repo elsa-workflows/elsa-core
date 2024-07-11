@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// Schedules tasks for the specified list of triggers.

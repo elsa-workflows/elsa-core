@@ -3,8 +3,9 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Endpoints.TypeDefinitions;
@@ -35,16 +36,17 @@ internal class Get : ElsaEndpoint<Request>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await GetWorkflowDefinition(request.WorkflowDefinitionId, cancellationToken);
+        var workflowGraph = await GetWorkflowGraphAsync(request.WorkflowDefinitionId, cancellationToken);
 
-        if (workflowDefinition == null)
+        if (workflowGraph == null)
         {
             AddError($"Workflow definition {request.WorkflowDefinitionId} not found");
             await SendErrorsAsync(cancellation: cancellationToken);
             return;
         }
         
-        var typeDefinitionContext = new TypeDefinitionContext(workflowDefinition, request.ActivityTypeName, request.PropertyName, cancellationToken);
+        var workflow = workflowGraph.Workflow;
+        var typeDefinitionContext = new TypeDefinitionContext(workflow, request.ActivityTypeName, request.PropertyName, cancellationToken);
         var typeDefinitions = await _typeDefinitionService.GenerateTypeDefinitionsAsync(typeDefinitionContext);
         var fileName = $"elsa.{request.WorkflowDefinitionId}.d.ts";
         var data = Encoding.UTF8.GetBytes(typeDefinitions);
@@ -52,14 +54,9 @@ internal class Get : ElsaEndpoint<Request>
         await SendBytesAsync(data, fileName, "application/x-typescript", cancellation: cancellationToken);
     }
 
-    private async Task<Workflow?> GetWorkflowDefinition(string workflowDefinitionId, CancellationToken cancellationToken)
+    private async Task<WorkflowGraph?> GetWorkflowGraphAsync(string workflowDefinitionId, CancellationToken cancellationToken)
     {
-        var workflowDefinition = await _workflowDefinitionService.FindAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
-
-        if (workflowDefinition == null)
-            return null;
-
-        return await _workflowDefinitionService.MaterializeWorkflowAsync(workflowDefinition, cancellationToken);
+        return await _workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Latest, cancellationToken);
     }
 }
 

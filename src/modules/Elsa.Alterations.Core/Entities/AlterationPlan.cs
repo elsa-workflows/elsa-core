@@ -1,5 +1,6 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Enums;
+using Elsa.Alterations.Core.Models;
 using Elsa.Common.Entities;
 
 namespace Elsa.Alterations.Core.Entities;
@@ -13,11 +14,11 @@ public class AlterationPlan : Entity
     /// The alterations to be applied.
     /// </summary>
     public ICollection<IAlteration> Alterations { get; set; } = new List<IAlteration>();
-    
+
     /// <summary>
     /// The IDs of the workflow instances that this plan applies to.
     /// </summary>
-    public ICollection<string> WorkflowInstanceIds { get; set; } = new List<string>();
+    public AlterationWorkflowInstanceFilter WorkflowInstanceFilter { get; set; } = new();
 
     /// <summary>
     /// The status of the plan.

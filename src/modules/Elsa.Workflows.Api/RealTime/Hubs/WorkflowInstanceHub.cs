@@ -1,5 +1,5 @@
 using Elsa.Workflows.Api.RealTime.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.SignalR;
 

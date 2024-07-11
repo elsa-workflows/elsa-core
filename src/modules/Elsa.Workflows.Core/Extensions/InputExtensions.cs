@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Models;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

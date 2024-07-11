@@ -1,6 +1,9 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.KeyValues.Entities;
+using Elsa.KeyValues.Features;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<RuntimeElsaDbContext>
+public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>
 {
     /// <inheritdoc />
     public EFCoreWorkflowRuntimePersistenceFeature(IModule module) : base(module)
@@ -21,11 +24,14 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
     /// <inheritdoc />
     public override void Configure()
     {
+        Module.Configure<KeyValueFeature>(feature =>
+        {
+            feature.KeyValueStore = sp => sp.GetRequiredService<EFCoreKeyValueStore>();
+        });
         Module.Configure<WorkflowRuntimeFeature>(feature =>
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
-            feature.WorkflowInboxStore = sp => sp.GetRequiredService<EFCoreWorkflowInboxMessageStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
@@ -38,8 +44,10 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<Ru
         
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
-        AddEntityStore<WorkflowInboxMessage, EFCoreWorkflowInboxMessageStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
+        AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
+        
+        Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

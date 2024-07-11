@@ -2,7 +2,6 @@ using Elsa.Common.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Scheduling.Contracts;
 using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
@@ -42,13 +41,13 @@ public class SchedulingFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddSingleton<ITriggerScheduler, DefaultTriggerScheduler>()
-            .AddSingleton<IBookmarkScheduler, DefaultBookmarkScheduler>()
+            .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
+            .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddSingleton<IScheduler, LocalScheduler>()
-            .AddSingleton<DefaultWorkflowScheduler>()
+            .AddScoped<DefaultWorkflowScheduler>()
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)
-            .AddSingleton(WorkflowScheduler)
+            .AddScoped(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

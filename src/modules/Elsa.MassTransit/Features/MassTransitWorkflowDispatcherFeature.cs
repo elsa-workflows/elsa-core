@@ -4,12 +4,11 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.MassTransit.ConsumerDefinitions;
 using Elsa.MassTransit.Consumers;
-using Elsa.MassTransit.Implementations;
-using Elsa.MassTransit.Messages;
 using Elsa.MassTransit.Options;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.MassTransit.Services;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Features;
-using MassTransit;
+using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.MassTransit.Features;
@@ -30,12 +29,23 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
     /// Configures the MassTransit workflow dispatcher.
     /// </summary>
     public Action<MassTransitWorkflowDispatcherOptions>? ConfigureDispatcherOptions { get; set; }
+    
 
     /// <inheritdoc />
     public override void Configure()
     {
         Module.AddMassTransitConsumer<DispatchWorkflowRequestConsumer, DispatchWorkflowRequestConsumerDefinition>();
-        Module.Configure<WorkflowRuntimeFeature>(f => f.WorkflowDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
+        Module.AddMassTransitConsumer<DispatchCancelWorkflowsRequestConsumer>("elsa-dispatch-cancel-workflow", true);
+        Module.Configure<WorkflowRuntimeFeature>(f =>
+        {
+            f.WorkflowDispatcher = sp =>
+            {
+                var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
+                return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            };
+
+            f.WorkflowCancellationDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowCancellationDispatcher>();
+        });
     }
 
     /// <inheritdoc />
@@ -46,13 +56,6 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         if (ConfigureDispatcherOptions != null)
             options.Configure(ConfigureDispatcherOptions);
         
-        var queueName = KebabCaseEndpointNameFormatter.Instance.Consumer<DispatchWorkflowRequestConsumer>();
-        var queueAddress = new Uri($"queue:elsa-{queueName}");
-        EndpointConvention.Map<DispatchWorkflowDefinition>(queueAddress);
-        EndpointConvention.Map<DispatchWorkflowInstance>(queueAddress);
-        EndpointConvention.Map<DispatchTriggerWorkflows>(queueAddress);
-        EndpointConvention.Map<DispatchResumeWorkflows>(queueAddress);
-        
-        Services.AddSingleton<MassTransitWorkflowDispatcher>();
+        Services.AddScoped<MassTransitWorkflowCancellationDispatcher>();
     }
 }

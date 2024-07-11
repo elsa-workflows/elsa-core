@@ -1,0 +1,135 @@
+{
+  "id": "cbf12a4a3d1a52ef",
+  "definitionId": "133353946cd83e1d",
+  "name": "D",
+  "createdAt": "2023-11-15T14:07:04.052579+00:00",
+  "version": 1,
+  "toolVersion": "3.0.0.0",
+  "variables": [
+    {
+      "id": "f1106ece80fd17a8",
+      "name": "Variable1",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    },
+    {
+      "id": "3a8b25edc9bf109",
+      "name": "Variable2",
+      "typeName": "Object",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "26838161a6f32e2e",
+    "nodeId": "Workflow1:26838161a6f32e2e",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:47",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "8472bcf9ca261e55",
+        "workflowDefinitionVersionId": "c4041d72854d317c",
+        "latestAvailablePublishedVersion": 6,
+        "latestAvailablePublishedVersionId": "c4041d72854d317c",
+        "id": "db7bda6a28d8de82",
+        "nodeId": "Workflow1:26838161a6f32e2e:db7bda6a28d8de82",
+        "name": "C1",
+        "type": "C",
+        "version": 6,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -298.5,
+              "y": -168
+            },
+            "size": {
+              "width": 41.578125,
+              "height": 50
+            }
+          }
+        },
+        "output1": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "f1106ece80fd17a8"
+          }
+        },
+        "output2": {
+          "typeName": "Object",
+          "memoryReference": {
+            "id": "3a8b25edc9bf109"
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "CSharp",
+            "value": "return $\u0022{Variables.Variable1}{Variables.Variable2}\u0022;"
+          },
+          "memoryReference": {
+            "id": "a815c4cf1e668419:input-0"
+          }
+        },
+        "id": "a815c4cf1e668419",
+        "nodeId": "Workflow1:26838161a6f32e2e:a815c4cf1e668419",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -139.5,
+              "y": -168
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "db7bda6a28d8de82",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "a815c4cf1e668419",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

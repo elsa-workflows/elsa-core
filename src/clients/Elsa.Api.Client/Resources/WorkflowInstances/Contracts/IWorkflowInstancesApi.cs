@@ -14,7 +14,7 @@ public interface IWorkflowInstancesApi
     /// <summary>
     /// Returns a list of workflow instances.
     /// </summary>
-    [Get("/workflow-instances")]
+    [Post("/workflow-instances")]
     Task<PagedListResponse<WorkflowInstanceSummary>> ListAsync(ListWorkflowInstancesRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -62,6 +62,22 @@ public interface IWorkflowInstancesApi
     [Post("/bulk-actions/delete/workflow-instances/by-id")]
     Task BulkDeleteAsync(BulkDeleteWorkflowInstancesRequest request, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Cancels a workflow instance.
+    /// </summary>
+    /// <param name="id">The ID of the workflow instance to cancel.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/cancel/workflow-instances/{id}")]
+    Task CancelAsync(string id, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Cancels a list of workflow instances.
+    /// </summary>
+    /// <param name="request">The request containing the selection of workflow instances to cancel.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    [Post("/bulk-actions/cancel/workflow-instances")]
+    Task BulkCancelAsync(BulkCancelWorkflowInstancesRequest request, CancellationToken cancellationToken);
+    
     /// <summary>
     /// Exports a workflow instance.
     /// </summary>

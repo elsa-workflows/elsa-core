@@ -1,13 +1,12 @@
 using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Activities;
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
 
 /// <summary>
 /// Performs a boolean condition and returns an outcome based on the the result.
@@ -37,7 +36,7 @@ public class FlowDecision : Activity
     /// <summary>
     /// The condition to evaluate.
     /// </summary>
-    [Input(UIHint = "single-line")]
+    [Input(UIHint = InputUIHints.SingleLine)]
     public Input<bool> Condition { get; set; } = new(new Literal<bool>(false));
 
     /// <inheritdoc />

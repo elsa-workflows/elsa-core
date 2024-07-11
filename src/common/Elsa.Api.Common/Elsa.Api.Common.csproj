@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props"/>
-    <Import Project="..\..\..\configureawait.props"/>
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides common features to modules that expose API endpoints.
@@ -12,21 +8,15 @@
         <PackageTags>elsa api common</PackageTags>
     </PropertyGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="FastEndpoints" Version="5.19.2"/>
-        <PackageReference Include="FastEndpoints.Security" Version="5.19.2"/>
-        <PackageReference Include="FastEndpoints.Swagger" Version="5.19.2"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="FastEndpoints" Version="5.20.0-rc1"/>
-        <PackageReference Include="FastEndpoints.Security" Version="5.20.0-rc1"/>
-        <!--        <PackageReference Include="FastEndpoints.Swagger" Version="5.20.0-rc1"/>--> <!-- disabled until NSwag supports .NET 8 -->
+    <ItemGroup>
+        <PackageReference Include="FastEndpoints" />
+        <PackageReference Include="FastEndpoints.Security" />
+        <PackageReference Include="FastEndpoints.Swagger" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj"/>
-        <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,10 +1,11 @@
-using Elsa.Workflows.Runtime.Services;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Options;
 
 /// <summary>
 /// Provides options related to distributed locking, which is used by <see cref="DefaultWorkflowRuntime"/>.
 /// </summary>
+[UsedImplicitly]
 public class DistributedLockingOptions
 {
     /// <summary>

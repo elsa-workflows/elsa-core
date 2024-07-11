@@ -2,13 +2,8 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.JavaScript.Extensions;
-using Elsa.JavaScript.Features;
-using Elsa.JavaScript.Notifications;
-using Elsa.WorkflowContexts.Scripting.JavaScript;
 using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Features;
 

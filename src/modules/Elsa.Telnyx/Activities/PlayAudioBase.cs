@@ -5,10 +5,11 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -70,7 +71,7 @@ public abstract class PlayAudioBase : Activity
     /// </summary>
     [Input(
         Description = "Specifies the leg or legs on which audio will be played. If supplied, the value must be either 'self', 'opposite' or 'both'.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "", "self", "opposite", "both" },
         Category = "Advanced"
     )]
@@ -102,7 +103,7 @@ public abstract class PlayAudioBase : Activity
             await HandleDisconnectedAsync(context);
         }
         
-        context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync, true);
+        context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallPlaybackStarted, callControlId), ResumeAsync, true);
     }
 
     /// <summary>

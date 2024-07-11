@@ -29,7 +29,7 @@ public class ElasticsearchFeature : FeatureBase
     public override void Apply()
     {
         Services.Configure(Options);
-        Services.AddSingleton(sp => new ElasticsearchClient(GetSettings(sp)));
+        Services.AddScoped(sp => new ElasticsearchClient(GetSettings(sp)));
     }
 
     private static ElasticsearchClientSettings GetSettings(IServiceProvider serviceProvider)

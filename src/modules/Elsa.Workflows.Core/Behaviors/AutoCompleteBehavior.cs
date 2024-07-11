@@ -1,7 +1,6 @@
-using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Behaviors;
+namespace Elsa.Workflows.Behaviors;
 
 /// <summary>
 /// Automatically completes the currently executing activity.

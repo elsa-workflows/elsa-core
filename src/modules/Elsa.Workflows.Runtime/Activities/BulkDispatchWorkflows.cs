@@ -1,20 +1,22 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Options;
-using Elsa.Workflows.Core.Services;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.Runtime.UIHints;
+using Elsa.Workflows.Services;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -23,12 +25,12 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// </summary>
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
-[FlowNode("Finished", "Canceled", "Done")]
+[FlowNode("Completed", "Canceled", "Done")]
 [UsedImplicitly]
 public class BulkDispatchWorkflows : Activity
 {
     private const string DispatchedInstancesCountKey = nameof(DispatchedInstancesCountKey);
-    private const string FinishedInstancesCountKey = nameof(FinishedInstancesCountKey);
+    private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
@@ -39,6 +41,7 @@ public class BulkDispatchWorkflows : Activity
     /// The definition ID of the workflows to dispatch. 
     /// </summary>
     [Input(
+        DisplayName = "Workflow Definition",
         Description = "The definition ID of the workflows to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
@@ -48,42 +51,53 @@ public class BulkDispatchWorkflows : Activity
     /// The data source to use for dispatching the workflows.
     /// </summary>
     [Input(Description = "The data source to use for dispatching the workflows.")]
-    public Input<ICollection<object>>? Items { get; set; }
+    public Input<object> Items { get; set; } = default!;
 
     /// <summary>
-    /// The data source to use for dispatching the workflows.
+    /// The default key to use for the item input. Will not be used if the Items contain a list of dictionaries.
     /// </summary>
-    [Input(Description = "The data source to use for dispatching the workflows.")]
-    public IActivityDataSource? DataSource { get; set; }
+    [Input(Description = "The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries", DefaultValue = "Item")]
+    public Input<string> DefaultItemInputKey { get; set; } = new("Item");
 
     /// <summary>
     /// The correlation ID to associate the workflow with. 
     /// </summary>
     [Input(
         DisplayName = "Correlation ID Function",
-        Description = "A function to compute the correlation ID to associate a dispatched workflow with. Receives the current item as an argument called Item.",
+        Description = "A function to compute the correlation ID to associate a dispatched workflow with.",
         AutoEvaluate = false)]
     public Input<string?>? CorrelationIdFunction { get; set; }
 
     /// <summary>
     /// The input to send to the workflows.
     /// </summary>
-    [Input(Description = """Additional input to send to the workflows being dispatched. The "Item" key is reserved and should not be used.""")]
+    [Input(Description = "Additional input to send to the workflows being dispatched.")]
     public Input<IDictionary<string, object>?> Input { get; set; } = default!;
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
     /// </summary>
     [Input(
-        Description = "Wait for the dispatched workflows to complete before completing this activity. If set, the Finished outcome will not trigger.",
+        Description = "Wait for the dispatched workflows to complete before completing this activity.",
         DefaultValue = true)]
     public Input<bool> WaitForCompletion { get; set; } = new(true);
+
+    /// <summary>
+    /// The channel to dispatch the workflow to.
+    /// </summary>
+    [Input(
+        DisplayName = "Channel",
+        Description = "The channel to dispatch the workflow to.",
+        UIHint = InputUIHints.DropDown,
+        UIHandler = typeof(DispatcherChannelOptionsProvider)
+    )]
+    public Input<string?> ChannelName { get; set; } = default!;
 
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
     [Port]
-    public IActivity? ChildFinished { get; set; }
+    public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
@@ -95,40 +109,25 @@ public class BulkDispatchWorkflows : Activity
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
-        var items = GetItemsAsync(context).WithCancellation(context.CancellationToken);
-        var dispatchedInstancesCount = 0L;
-        var batchSize = 1000;
-        var batch = new List<object>();
+        var items = context.GetItemSource<object>(Items);
+        var dispatchedInstancesCount = 0;
 
         await foreach (var item in items)
         {
-            batch.Add(item);
-
-            if (batch.Count < batchSize)
-                continue;
-
-            await ProcessBatch(context, batch);
-            dispatchedInstancesCount += batch.Count;
-            batch.Clear();
-        }
-
-        // Process the last batch if it has any items.
-        if (batch.Count > 0)
-        {
-            await ProcessBatch(context, batch);
-            dispatchedInstancesCount += batch.Count;
+            context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            dispatchedInstancesCount++;
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
 
-        // If we need to wait for the child workflow to complete, create a bookmark.
-        if (waitForCompletion)
+        // If we need to wait for the child workflows to complete (if any), create a bookmark.
+        if (waitForCompletion && dispatchedInstancesCount > 0)
         {
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new BulkDispatchWorkflowsBookmark(workflowInstanceId)
+                Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
@@ -140,31 +139,8 @@ public class BulkDispatchWorkflows : Activity
         else
         {
             // Otherwise, we can complete immediately.
-            await context.CompleteActivityAsync();
+            await context.CompleteActivityWithOutcomesAsync("Done");
         }
-
-        // Cancelling children
-    }
-
-    private async Task ProcessBatch(ActivityExecutionContext context, List<object> items)
-    {
-        var tasks = items.Select(async item =>
-        {
-            try
-            {
-                await DispatchChildWorkflowAsync(context, item);
-            }
-            catch (TaskCanceledException)
-            {
-                await context.CompleteActivityWithOutcomesAsync("Canceled");
-            }
-            catch (Exception ex)
-            {
-                context.JournalData.Add("Error", ex.Message);
-            }
-        });
-
-        await Task.WhenAll(tasks);
     }
 
     private async ValueTask<string> DispatchChildWorkflowAsync(ActivityExecutionContext context, object item)
@@ -172,46 +148,53 @@ public class BulkDispatchWorkflows : Activity
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var parentInstanceId = context.WorkflowExecutionContext.Id;
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var channelName = ChannelName.GetOrDefault(context);
+        var defaultInputItemKey = DefaultItemInputKey.GetOrDefault(context, () => "Item")!;
         var properties = new Dictionary<string, object>
         {
             ["ParentInstanceId"] = parentInstanceId
         };
-        var evaluatorOptions = new ExpressionEvaluatorOptions
+
+        var itemDictionary = new Dictionary<string, object>
         {
-            Arguments = new Dictionary<string, object>
-            {
-                ["Item"] = item
-            }
+            [defaultInputItemKey] = item
         };
 
+        var evaluatorOptions = new ExpressionEvaluatorOptions
+        {
+            Arguments = itemDictionary
+        };
+
+        var inputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>();
         input["ParentInstanceId"] = parentInstanceId;
-        input["Item"] = item;
+        input.Merge(inputDictionary);
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var instanceId = identityGenerator.GenerateId();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
+
+        if (workflowGraph == null)
+            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
-        var request = new DispatchWorkflowDefinitionRequest
+        var instanceId = identityGenerator.GenerateId();
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
+            ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId
         };
+        var options = new DispatchWorkflowOptions
+        {
+            Channel = channelName
+        };
 
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
-
+        await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
         return instanceId;
-    }
-
-    private IAsyncEnumerable<object> GetItemsAsync(ActivityExecutionContext context)
-    {
-        var items = Items.Get(context);
-        var dataSource = DataSource != null ? DataSource.GetDataAsync(context) : items.ToAsyncEnumerable();
-        return dataSource;
     }
 
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
@@ -219,10 +202,9 @@ public class BulkDispatchWorkflows : Activity
         var input = context.WorkflowInput;
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
-        var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey) + 1;
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
-        context.SetProperty(FinishedInstancesCountKey, finishedInstancesCount);
+        context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);
 
         var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
@@ -246,26 +228,26 @@ public class BulkDispatchWorkflows : Activity
             case WorkflowSubStatus.Faulted when ChildFaulted is not null:
                 await context.ScheduleActivityAsync(ChildFaulted, options);
                 return;
-            case WorkflowSubStatus.Finished when ChildFinished is not null:
-                await context.ScheduleActivityAsync(ChildFinished, options);
+            case WorkflowSubStatus.Finished when ChildCompleted is not null:
+                await context.ScheduleActivityAsync(ChildCompleted, options);
                 return;
             default:
-                await CheckIfFinishedAsync(context);
+                await CheckIfCompletedAsync(context);
                 break;
         }
     }
 
     private async ValueTask OnChildFinishedCompletedAsync(ActivityCompletedContext context)
     {
-        await CheckIfFinishedAsync(context.TargetContext);
+        await CheckIfCompletedAsync(context.TargetContext);
     }
 
-    private async ValueTask CheckIfFinishedAsync(ActivityExecutionContext context)
+    private async ValueTask CheckIfCompletedAsync(ActivityExecutionContext context)
     {
         var dispatchedInstancesCount = context.GetProperty<long>(DispatchedInstancesCountKey);
-        var finishedInstancesCount = context.GetProperty<long>(FinishedInstancesCountKey);
+        var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey);
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
-            await context.CompleteActivityWithOutcomesAsync("Finished", "Done");
+            await context.CompleteActivityWithOutcomesAsync("Completed", "Done");
     }
 }

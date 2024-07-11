@@ -1,4 +1,6 @@
-namespace Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Models;
+
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// An activity resolver inspects a given activity and returns its contained activities.
@@ -10,13 +12,14 @@ public interface IActivityResolver
     /// The priority of this resolver. Resolvers with higher priority are executed first.
     /// </summary>
     int Priority { get; }
-    
+
     /// <summary>
     /// Returns true if this resolver supports the specified activity.
     /// </summary>
     bool GetSupportsActivity(IActivity activity);
+
     /// <summary>
-    /// Returns a list of contained activities for the specified activity.
+    /// Returns a list of contained activity ports for the specified activity.
     /// </summary>
-    ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default);
 }

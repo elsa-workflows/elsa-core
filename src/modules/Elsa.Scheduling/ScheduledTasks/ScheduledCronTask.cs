@@ -1,7 +1,8 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
-using Elsa.Scheduling.Contracts;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;
@@ -12,23 +13,25 @@ namespace Elsa.Scheduling.ScheduledTasks;
 public class ScheduledCronTask : IScheduledTask
 {
     private readonly ISystemClock _systemClock;
+    private readonly ILogger _logger;
     private Timer? _timer;
     private readonly ITask _task;
     private readonly string _cronExpression;
     private readonly ICronParser _cronParser;
-    private readonly ICommandSender _commandSender;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledCronTask"/>.
     /// </summary>
-    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, ICommandSender commandSender, ISystemClock systemClock)
+    public ScheduledCronTask(ITask task, string cronExpression, ICronParser cronParser, IServiceScopeFactory scopeFactory, ISystemClock systemClock, ILogger<ScheduledCronTask> logger)
     {
         _task = task;
         _cronExpression = cronExpression;
         _cronParser = cronParser;
-        _commandSender = commandSender;
+        _scopeFactory = scopeFactory;
         _systemClock = systemClock;
+        _logger = logger;
         _cancellationTokenSource = new CancellationTokenSource();
 
         Schedule();
@@ -44,7 +47,7 @@ public class ScheduledCronTask : IScheduledTask
     private void Schedule()
     {
         var adjusted = false;
-        
+
         while (true)
         {
             var now = _systemClock.UtcNow;
@@ -57,8 +60,23 @@ public class ScheduledCronTask : IScheduledTask
                 continue;
             }
 
-            SetupTimer(delay);
+            TrySetupTimer(delay);
             break;
+        }
+    }
+
+    private void TrySetupTimer(TimeSpan delay)
+    {
+        if (delay.Milliseconds <= 0) 
+            return;
+
+        try
+        {
+            SetupTimer(delay);
+        }
+        catch (ArgumentException e)
+        {
+            _logger.LogError(e, "Failed to setup timer for scheduled task");
         }
     }
 
@@ -71,9 +89,12 @@ public class ScheduledCronTask : IScheduledTask
             _timer.Dispose();
             _timer = null;
 
+            using var scope = _scopeFactory.CreateScope();
+            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
             var cancellationToken = _cancellationTokenSource.Token;
-            if (!cancellationToken.IsCancellationRequested) await _commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+            if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
             if (!cancellationToken.IsCancellationRequested) Schedule();
         };
-    } 
+    }
 }

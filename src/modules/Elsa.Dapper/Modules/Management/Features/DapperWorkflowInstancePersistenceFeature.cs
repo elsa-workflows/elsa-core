@@ -25,12 +25,4 @@ public class DapperWorkflowInstancePersistenceFeature : FeatureBase
     {
         Module.Configure<WorkflowInstancesFeature>(feature => { feature.WorkflowInstanceStore = sp => sp.GetRequiredService<DapperWorkflowInstanceStore>(); });
     }
-
-    /// <inheritdoc />
-    public override void Apply()
-    {
-        base.Apply();
-        
-        Services.AddSingleton<DapperWorkflowInstanceStore>();
-    }
 }

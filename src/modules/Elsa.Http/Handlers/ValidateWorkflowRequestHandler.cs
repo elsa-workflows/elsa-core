@@ -1,18 +1,20 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Helpers;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
+using JetBrains.Annotations;
 
 namespace Elsa.Http.Handlers;
 
 /// <summary>
-/// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors. 
+/// A <see cref="ValidateWorkflowRequest"/> handler that validates a workflow path and return any errors.
 /// </summary>
+[UsedImplicitly]
 public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRequest, ValidateWorkflowResponse>
 {
     private readonly ITriggerStore _triggerStore;
@@ -32,7 +34,7 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
     {
         var workflow = request.Workflow;
         var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
-        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)) }, cancellationToken)).ToList();
+        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)), TenantAgnostic = true }, cancellationToken)).ToList();
         var validationErrors = new List<WorkflowValidationError>();
 
         foreach (var httpEndpointTrigger in httpEndpointTriggers)

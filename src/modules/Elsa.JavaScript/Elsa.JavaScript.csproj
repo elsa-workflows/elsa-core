@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides a JavaScript expression provider.
@@ -18,8 +14,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-        <PackageReference Include="Jint" Version="3.0.0-beta-2056" />
+        <PackageReference Include="System.Linq.Async" />
+        <PackageReference Include="Jint" />
     </ItemGroup>
 
 </Project>

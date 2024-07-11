@@ -3,9 +3,9 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Common.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 
 namespace Elsa.AzureServiceBus.Activities;
 
@@ -82,7 +82,7 @@ public class MessageReceived : Trigger
     public Input<IFormatter?> Formatter { get; set; } = default!;
 
     /// <inheritdoc />
-    protected override object GetTriggerPayload(TriggerIndexingContext context) => GetBookmarkPayload(context.ExpressionExecutionContext);
+    protected override object GetTriggerPayload(TriggerIndexingContext context) => GetStimulus(context.ExpressionExecutionContext);
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -95,7 +95,7 @@ public class MessageReceived : Trigger
         else
         {
             // Create bookmarks for when we receive the expected HTTP request.
-            context.CreateBookmark(GetBookmarkPayload(context.ExpressionExecutionContext), Resume,false);
+            context.CreateBookmark(GetStimulus(context.ExpressionExecutionContext), Resume,false);
         }
     }
 
@@ -117,10 +117,10 @@ public class MessageReceived : Trigger
         context.Set(Message, body);
     }
 
-    private object GetBookmarkPayload(ExpressionExecutionContext context)
+    private object GetStimulus(ExpressionExecutionContext context)
     {
         var queueOrTopic = context.Get(QueueOrTopic)!;
         var subscription = context.Get(Subscription);
-        return new MessageReceivedTriggerPayload(queueOrTopic, subscription);
+        return new MessageReceivedStimulus(queueOrTopic, subscription);
     }
 }

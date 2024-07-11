@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Http.Models;

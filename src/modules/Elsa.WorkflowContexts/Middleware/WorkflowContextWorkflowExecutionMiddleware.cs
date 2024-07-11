@@ -1,7 +1,7 @@
 using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Pipelines.WorkflowExecution;
+using Elsa.Workflows;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Middleware;

@@ -43,5 +43,5 @@ public class SqlServerDbConnectionProvider : IDbConnectionProvider
     }
 
     /// <inheritdoc />
-    public ISqlDialect Dialect => new SqliteDialect();
+    public ISqlDialect Dialect => new SqlServerDialect();
 }

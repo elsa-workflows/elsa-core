@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Contracts;
+namespace Elsa.Workflows.Activities.Flowchart.Contracts;
 
 /// <summary>
 /// Gives implementing activities a chance to customize certain flowchart execution behaviors.

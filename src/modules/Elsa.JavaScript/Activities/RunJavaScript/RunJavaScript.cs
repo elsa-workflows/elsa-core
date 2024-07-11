@@ -2,9 +2,10 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.UIHints;
 using Jint;
 
 // ReSharper disable once CheckNamespace
@@ -33,7 +34,7 @@ public class RunJavaScript : CodeActivity<object?>
     [Input(
         Description = "The script to run.",
         UIHint = InputUIHints.CodeEditor,
-        OptionsProvider = typeof(RunJavaScriptOptionsProvider)
+        UIHandler = typeof(RunJavaScriptOptionsProvider)
     )]
     public Input<string> Script { get; set; } = new("");
 

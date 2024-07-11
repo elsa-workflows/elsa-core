@@ -1,4 +1,6 @@
+using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Features;
+using Elsa.Dapper.Modules.Identity.Records;
 using Elsa.Dapper.Modules.Identity.Stores;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -38,8 +40,8 @@ public class DapperIdentityPersistenceFeature : FeatureBase
     {
         base.Apply();
 
-        Services.AddSingleton<DapperUserStore>();
-        Services.AddSingleton<DapperApplicationStore>();
-        Services.AddSingleton<DapperRoleStore>();
+        Services.AddDapperStore<DapperUserStore, UserRecord>("Users");
+        Services.AddDapperStore<DapperApplicationStore, ApplicationRecord>("Applications");
+        Services.AddDapperStore<DapperRoleStore, RoleRecord>("Roles");
     }
 }

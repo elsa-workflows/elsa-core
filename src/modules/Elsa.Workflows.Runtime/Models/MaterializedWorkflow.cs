@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.Runtime.Models;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a workflow definition and its workflow.

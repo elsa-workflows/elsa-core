@@ -1,9 +1,9 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core;
+namespace Elsa.Workflows;
 
 public class TriggerIndexingContext
 {

@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -19,6 +18,20 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public MemoryWorkflowExecutionLogStore(MemoryStore<WorkflowExecutionLogRecord> store)
     {
         _store = store;
+    }
+
+    /// <inheritdoc />
+    public Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
+    {
+        _store.Add(record, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
+    {
+        _store.AddMany(records, x => x.Id);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

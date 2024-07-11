@@ -1,6 +1,5 @@
 using Elsa.Common.Entities;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Management.Entities;
 
@@ -23,6 +22,11 @@ public class WorkflowInstance : Entity
     /// The version of the workflow definition.
     /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// The ID of the parent workflow.
+    /// </summary>
+    public string? ParentWorkflowInstanceId { get; set; }
     
     /// <summary>
     /// The state of the workflow instance.
@@ -53,6 +57,11 @@ public class WorkflowInstance : Entity
     /// The number of incidents that have occurred during execution, if any.
     /// </summary>
     public int IncidentCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the workflow instance is a system workflow.
+    /// </summary>
+    public bool IsSystem { get; set; }
     
     /// <summary>
     /// The timestamp when the workflow instance was created.

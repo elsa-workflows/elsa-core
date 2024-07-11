@@ -1,0 +1,137 @@
+{
+  "id": "Wv2qJngeBUy6nauIj3WZxg",
+  "definitionId": "g-yf4Gck40S_T1E5pW8OVA",
+  "name": "Calculator",
+  "createdAt": "2023-10-18T17:22:19.425264+00:00",
+  "version": 5,
+  "toolVersion": "3.0.0.0",
+  "variables": [
+    {
+      "id": "1a3c8e08fbf04b42b01f5df8e6296b74",
+      "name": "TheSum",
+      "typeName": "Int32",
+      "isArray": false,
+      "storageDriverTypeName": "Elsa.Workflows.Services.WorkflowStorageDriver, Elsa.Workflows.Core"
+    }
+  ],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {},
+  "isReadonly": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "GGOfdS1e60-vuDvSskzt6A",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:46",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "workflowDefinitionId": "P4X-srRSDUeKpFHiDXMW-w",
+        "workflowDefinitionVersionId": "E02197RyVk6VyofGoO6YJQ",
+        "latestAvailablePublishedVersion": 3,
+        "latestAvailablePublishedVersionId": "E02197RyVk6VyofGoO6YJQ",
+        "id": "WDS8owJicUuwae0D5GPbZw",
+        "name": "Sum1",
+        "type": "Sum",
+        "version": 3,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -150.5,
+              "y": -173
+            },
+            "size": {
+              "width": 94.765625,
+              "height": 116.015625
+            }
+          }
+        },
+        "a": {
+          "typeName": "Int32",
+          "expression": {
+            "type": "Literal",
+            "value": "4"
+          },
+          "memoryReference": {
+            "id": "WDS8owJicUuwae0D5GPbZw:input-0"
+          }
+        },
+        "b": {
+          "typeName": "Int32",
+          "expression": {
+            "type": "Literal",
+            "value": "5"
+          },
+          "memoryReference": {
+            "id": "WDS8owJicUuwae0D5GPbZw:input-1"
+          }
+        },
+        "result": {
+          "typeName": "Int32",
+          "memoryReference": {
+            "id": "1a3c8e08fbf04b42b01f5df8e6296b74"
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "JavaScript",
+            "value": "\u0060Result: ${getTheSum()}\u0060"
+          },
+          "memoryReference": {
+            "id": "NDqbEDwcIUu7zJ0FDxbHdg:input-0"
+          }
+        },
+        "id": "NDqbEDwcIUu7zJ0FDxbHdg",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 80,
+              "y": -139.9921875
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "WDS8owJicUuwae0D5GPbZw",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "NDqbEDwcIUu7zJ0FDxbHdg",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

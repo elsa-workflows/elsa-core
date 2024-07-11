@@ -1,5 +1,5 @@
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Core;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.WorkflowContexts.Abstractions;

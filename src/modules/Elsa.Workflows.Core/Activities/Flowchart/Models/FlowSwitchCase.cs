@@ -1,9 +1,8 @@
 using System.Text.Json.Serialization;
-using Elsa.Expressions;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Core.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
+namespace Elsa.Workflows.Activities.Flowchart.Models;
 
 /// <summary>
 /// Represents an individual case of the <see cref="FlowSwitch"/> activity.

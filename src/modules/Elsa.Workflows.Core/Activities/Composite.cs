@@ -3,15 +3,15 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities.Flowchart.Models;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Signals;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
@@ -40,7 +40,7 @@ public abstract class Composite : Activity, IVariableContainer
     /// </summary>
     [Port]
     [Browsable(false)]
-    [JsonIgnoreCompositeRoot] // Composite activities' Root is intended to be constructed from code only.
+    [JsonIgnoreCompositeRoot]
     public IActivity Root { get; set; } = new Sequence();
 
     /// <inheritdoc />

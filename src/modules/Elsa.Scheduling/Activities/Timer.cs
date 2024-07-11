@@ -2,9 +2,9 @@
 using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Scheduling.Activities;
 
@@ -34,7 +34,7 @@ public class Timer : EventGenerator
     /// The interval at which the timer should execute.
     /// </summary>
     [Input(Description = "The interval at which the timer should execute.", DefaultValue = "00:01:00")]
-    public Input<TimeSpan> Interval { get; set; } = default!;
+    public Input<TimeSpan> Interval { get; set; } = new(TimeSpan.FromMinutes(1));
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)

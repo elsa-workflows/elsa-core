@@ -26,7 +26,7 @@ public class AzureServiceBusFeature : FeatureBase
     }
 
     /// <summary>
-    /// A value controlling whether or not queues, topics and subscriptions should be created automatically. 
+    /// A value controlling whether queues, topics and subscriptions should be created automatically. 
     /// </summary>
     public bool CreateQueuesTopicsAndSubscriptions { get; set; } = true;
 
@@ -70,8 +70,9 @@ public class AzureServiceBusFeature : FeatureBase
             .AddSingleton(ServiceBusAdministrationClientFactory)
             .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
+            .AddSingleton<IServiceBusInitializer, ServiceBusInitializer>()
             .AddSingleton<IWorkerManager, WorkerManager>()
-            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
+            ;
 
         // Definition providers.
         Services

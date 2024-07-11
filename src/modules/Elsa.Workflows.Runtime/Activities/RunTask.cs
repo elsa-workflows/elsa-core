@@ -2,14 +2,12 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -90,8 +88,8 @@ public class RunTask : Activity<object>
         var taskName = TaskName.Get(context);
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
         var taskId = identityGenerator.GenerateId();
-        var payload = new RunTaskBookmarkPayload(taskId, taskName);
-        context.CreateBookmark(payload, ResumeAsync, includeActivityInstanceId: false);
+        var stimulus = new RunTaskStimulus(taskId, taskName);
+        context.CreateBookmark(stimulus, ResumeAsync, includeActivityInstanceId: false);
         
         // Dispatch task request.
         var taskParams = Payload.GetOrDefault(context);

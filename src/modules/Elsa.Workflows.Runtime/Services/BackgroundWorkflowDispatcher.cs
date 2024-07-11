@@ -1,8 +1,8 @@
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Commands;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Responses;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -22,9 +22,9 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowDefinitionResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionId, request.VersionOptions)
+        var command = new DispatchWorkflowDefinitionCommand(request.DefinitionVersionId)
         {
             Input = request.Input,
             Properties = request.Properties,
@@ -34,28 +34,25 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
         };
 
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
-        return new DispatchWorkflowDefinitionResponse();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchWorkflowInstanceResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var command = new DispatchWorkflowInstanceCommand(request.InstanceId){
             BookmarkId = request.BookmarkId,
-            ActivityId = request.ActivityId,
-            ActivityNodeId = request.ActivityNodeId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            ActivityHash = request.ActivityHash,
+            ActivityHandle = request.ActivityHandle,
             Input = request.Input,
             Properties = request.Properties,
             CorrelationId = request.CorrelationId};
 
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
-        return new DispatchWorkflowInstanceResponse();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchTriggerWorkflowsResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var command = new DispatchTriggerWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
         {
@@ -66,11 +63,11 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             Properties = request.Properties
         };
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
-        return new DispatchTriggerWorkflowsResponse();
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
-    public async Task<DispatchResumeWorkflowsResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, CancellationToken cancellationToken = default)
+    public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var command = new DispatchResumeWorkflowsCommand(request.ActivityTypeName, request.BookmarkPayload)
         {
@@ -80,6 +77,6 @@ public class BackgroundWorkflowDispatcher : IWorkflowDispatcher
             Input = request.Input
         };
         await _commandSender.SendAsync(command, CommandStrategy.Background, cancellationToken);
-        return new DispatchResumeWorkflowsResponse();
+        return DispatchWorkflowResponse.Success();
     }
 }

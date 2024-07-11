@@ -6,10 +6,11 @@ using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -38,7 +39,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// </summary>
     [Input(
         Description = "The language you want spoken.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "en-US", "en-AU", "nl-NL", "es-ES", "ru-RU" },
         DefaultValue = "en-US"
     )]
@@ -49,7 +50,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// </summary>
     [Input(
         Description = "The gender of the voice used to speak back the text.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "female", "male" },
         DefaultValue = "female"
     )]
@@ -69,7 +70,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// </summary>
     [Input(
         Description = "The type of the provided payload. The payload can either be plain text, or Speech Synthesis Markup Language (SSML).",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "", "text", "ssml" }
     )]
     public Input<string?>? PayloadType { get; set; }
@@ -79,7 +80,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
     /// </summary>
     [Input(
         Description = "This parameter impacts speech quality, language options and payload types. When using `basic`, only the `en-US` language and payload type `text` are allowed.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "", "basic", "premium" },
         Category = "Advanced"
     )]
@@ -170,7 +171,7 @@ public class GatherUsingSpeak : Activity<CallGatherEndedPayload>
             await telnyxClient.Calls.GatherUsingSpeakAsync(callControlId, request, context.CancellationToken);
             
             // Create a bookmark so we can resume this activity when the call.gather.ended webhook comes back.
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync, true);
+            context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallGatherEnded, callControlId), ResumeAsync, true);
         }
         catch (ApiException e)
         {

@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-    
     <PropertyGroup>
         <Description>
             Provides Hangfire integration and an implementation of Elsa's IJobQueue implementation.
@@ -12,9 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Hangfire" Version="1.8.6" />
-      <PackageReference Include="Hangfire.MemoryStorage" Version="1.8.0" />
-      <PackageReference Include="Hangfire.Storage.SQLite" Version="0.3.4" />
+      <PackageReference Include="Hangfire" />
+      <PackageReference Include="Hangfire.MemoryStorage" />
+      <PackageReference Include="Hangfire.Storage.SQLite" />
     </ItemGroup>
 
     <ItemGroup>

@@ -17,10 +17,10 @@ public class ExpressionsFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
         Services
-            .AddSingleton<IExpressionEvaluator, ExpressionEvaluator>()
+            .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()
             .AddSingleton<IWellKnownTypeRegistry, WellKnownTypeRegistry>();
     }
 }

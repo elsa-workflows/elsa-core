@@ -1,9 +1,9 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Signals;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Signals;
 
-namespace Elsa.Workflows.Core.Behaviors;
+namespace Elsa.Workflows.Behaviors;
 
 /// <summary>
 /// Implements a "break" behavior that handles the <see cref="BreakSignal"/> signal.

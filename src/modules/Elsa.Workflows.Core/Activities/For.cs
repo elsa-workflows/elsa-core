@@ -1,12 +1,12 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Behaviors;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Behaviors;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Activities;
+namespace Elsa.Workflows.Activities;
 
 /// <summary>
 /// Iterate over a sequence of steps between a start and an end number.
@@ -88,7 +88,7 @@ public class For : Activity
         var inclusive = context.Get(OuterBoundInclusive);
         var increment = step >= 0;
 
-        currentValue = currentValue == null ? start : (currentValue + step);
+        currentValue = currentValue == null ? start : currentValue + step;
 
         var isBreaking = context.GetIsBreaking();
 

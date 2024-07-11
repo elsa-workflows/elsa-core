@@ -23,12 +23,12 @@ public abstract class ElasticPersistenceFeatureBase : FeatureBase
     protected void AddStore<TModel, TStore>() where TModel : class where TStore : class
     {
         Services
-            .AddSingleton<ElasticStore<TModel>>()
-            .AddSingleton<TStore>();
+            .AddScoped<ElasticStore<TModel>>()
+            .AddScoped<TStore>();
     }
 
     /// <summary>
     /// Registers an <see cref="IIndexConfiguration"/>.
     /// </summary>
-    protected void AddIndexConfiguration<TDocument>(Func<IServiceProvider, IIndexConfiguration<TDocument>> configuration) => Services.AddSingleton<IIndexConfiguration>(configuration);
+    protected void AddIndexConfiguration<TDocument>(Func<IServiceProvider, IIndexConfiguration<TDocument>> configuration) => Services.AddScoped<IIndexConfiguration>(configuration);
 }

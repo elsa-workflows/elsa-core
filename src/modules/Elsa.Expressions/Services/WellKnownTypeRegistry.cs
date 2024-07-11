@@ -1,6 +1,4 @@
-using System.Dynamic;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Options;
 using Microsoft.Extensions.Options;
 
@@ -9,8 +7,8 @@ namespace Elsa.Expressions.Services;
 /// <inheritdoc />
 public class WellKnownTypeRegistry : IWellKnownTypeRegistry
 {
-    private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>();
-    private readonly IDictionary<Type, string> _typeAliasDictionary = new Dictionary<Type, string>();
+    private readonly Dictionary<string, Type> _aliasTypeDictionary = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<Type, string> _typeAliasDictionary = new();
 
     /// <summary>
     /// Creates a new instance of the <see cref="WellKnownTypeRegistry"/> class.

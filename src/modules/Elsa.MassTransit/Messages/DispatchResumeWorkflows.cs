@@ -1,14 +1,15 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.MassTransit.Messages;
 
-public class DispatchResumeWorkflows(string activityTypeName, object bookmarkPayload)
+[Obsolete("This message is no longer used and will be removed in a future version.")]
+public class DispatchResumeWorkflows(string activityTypeName, object stimulus)
 {
     public string ActivityTypeName { get; init; } = activityTypeName;
 
     [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
-    public object BookmarkPayload { get; init; } = bookmarkPayload;
+    public object BookmarkPayload { get; init; } = stimulus;
 
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }

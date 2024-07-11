@@ -2,9 +2,9 @@ using System.Runtime.CompilerServices;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.WorkflowContexts.Activities;

@@ -1,13 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Abstractions;
 using Elsa.Alterations.Core.Contexts;
-using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Memory;
-using Elsa.Workflows.Core.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.AlterationHandlers;
@@ -15,9 +15,11 @@ namespace Elsa.Alterations.AlterationHandlers;
 /// <summary>
 /// Modifies a workflow variable.
 /// </summary>
+[UsedImplicitly]
 public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
 {
     /// <inheritdoc />
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     protected override async ValueTask HandleAsync(AlterationContext context, ModifyVariable alteration)
     {
         var workflow = context.Workflow;
@@ -30,39 +32,22 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             return;
         }
 
-        var convertedValue = ConvertValue(variable, alteration.Value);
-        await UpdateVariable(context, variable, convertedValue, cancellationToken);
+        var convertedValue = variable.ParseValue(alteration.Value);
+        UpdateVariable(context, variable, convertedValue);
         context.Succeed();
     }
 
-    private object? ConvertValue(Variable variable, object? value)
+    private void UpdateVariable(AlterationContext context, Variable variable, object? value)
     {
-        var variableType = variable.GetType();
-        
-        // If the variable has a type, convert the value into that type.
-        if(variableType.GenericTypeArguments.Length != 1)
-            return value;
-        
-        var type = variableType.GenericTypeArguments[0];
-        return value.ConvertTo(type);
-    }
-
-    private async Task UpdateVariable(AlterationContext context, Variable variable, object? value, CancellationToken cancellationToken)
-    {
-        var variableStorage = variable.StorageDriverType ?? typeof(WorkflowStorageDriver);
-        var storageDriverManager = context.ServiceProvider.GetRequiredService<IStorageDriverManager>();
-        var storageDriver = storageDriverManager.Get(variableStorage)!;
         var activityExecutionContext = FindActivityExecutionContextContainingVariable(context, variable);
-        
+
         if (activityExecutionContext == null)
         {
             context.Fail($"Activity execution context containing variable with ID {variable.Id} not found");
             return;
         }
-        
-        var storageDriverContext = new StorageDriverContext(activityExecutionContext, cancellationToken);
-        var stateId = GetStateId(variable);
-        await storageDriver.WriteAsync(stateId, value!, storageDriverContext);
+
+        variable.Set(activityExecutionContext, value);
     }
 
     private ActivityExecutionContext? FindActivityExecutionContextContainingVariable(AlterationContext context, Variable variable)
@@ -72,7 +57,7 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             from var in activityExecutionContext.Variables
             where var.Id == variable.Id
             select activityExecutionContext;
-        
+
         return query.FirstOrDefault();
     }
 
@@ -87,6 +72,4 @@ public class ModifyVariableHandler : AlterationHandlerBase<ModifyVariable>
             .SelectMany(x => ((IVariableContainer)x.Activity).Variables)
             .FirstOrDefault(x => x.Id == alteration.VariableId);
     }
-
-    private string GetStateId(Variable variable) => variable.Id;
 }

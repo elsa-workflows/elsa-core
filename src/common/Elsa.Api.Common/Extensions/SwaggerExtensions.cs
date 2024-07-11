@@ -1,14 +1,6 @@
-﻿#if NET6_0 || NET7_0
-using Elsa.Features.Services;
+﻿using Elsa.Features.Services;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Builder;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Elsa.Extensions
 {
@@ -27,7 +19,7 @@ namespace Elsa.Extensions
             // Swagger API documentation
             module.Services.SwaggerDocument(o =>
             {
-                o.EnableJWTBearerAuth = false;
+                o.EnableJWTBearerAuth = true;
                 o.DocumentSettings = s =>
                 {
                     s.DocumentName = $"v{ver.Major}";
@@ -56,4 +48,3 @@ namespace Elsa.Extensions
 
     }
 }
-#endif

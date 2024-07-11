@@ -1,5 +1,4 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Mime;
 using System.Text;
 using System.Text.Json;
@@ -15,6 +14,7 @@ public class JsonContentFactory : IHttpContentFactory
     public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Json, "text/json" };
 
     /// <inheritdoc />
+    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public HttpContent CreateHttpContent(object content, string contentType)
     {
         var text = content as string ?? JsonSerializer.Serialize(content);

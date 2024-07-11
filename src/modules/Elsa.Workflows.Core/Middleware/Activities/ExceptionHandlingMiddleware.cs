@@ -1,11 +1,11 @@
 using Elsa.Common.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Middleware.Activities;
+namespace Elsa.Workflows.Middleware.Activities;
 
 /// <summary>
 /// Adds extension methods to <see cref="ExceptionHandlingMiddleware"/>.
@@ -50,7 +50,7 @@ public class ExceptionHandlingMiddleware : IActivityExecutionMiddleware
         {
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Exception = e;
-            context.Status = ActivityStatus.Faulted;
+            context.TransitionTo(ActivityStatus.Faulted);
 
             var activity = context.Activity;
             var exceptionState = ExceptionState.FromException(e);

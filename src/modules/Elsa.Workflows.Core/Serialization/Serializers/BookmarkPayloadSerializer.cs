@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Serialization.Converters;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Serialization.Converters;
 
-namespace Elsa.Workflows.Core.Serialization.Serializers;
+namespace Elsa.Workflows.Serialization.Serializers;
 
 /// <inheritdoc />
 public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer

@@ -45,9 +45,17 @@ public static class DictionaryExtensions
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, IEnumerable<string> keys, Func<T?> defaultValueFactory) => TryGetValue<T>(dictionary, keys, out var value) ? value : defaultValueFactory();
     public static T? GetValueOrDefault<T>(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<T>(dictionary, key, () => default);
     public static object? GetValueOrDefault(this IDictionary<string, object> dictionary, string key) => GetValueOrDefault<object>(dictionary, key, () => default);
+    
+    public static T GetOrAdd<TKey, T>(this IDictionary<TKey, T> dictionary, TKey key, Func<T> valueFactory)
+    {
+        if(dictionary.TryGetValue(key, out T? value))
+           return value;
 
-    public static T GetOrAdd<T>(this IDictionary<string, object> dictionary, string key, Func<T> valueFactory) where T : notnull => dictionary.GetOrAdd<string, T>(key, valueFactory);
-
+        value = valueFactory()!;
+        dictionary.Add(key, value);
+        return value;
+    }
+    
     public static T GetOrAdd<TKey, T>(this IDictionary<TKey, object> dictionary, TKey key, Func<T> valueFactory)
     {
         if (dictionary.TryGetValue<TKey, T>(key, out var value))
@@ -64,6 +72,16 @@ public static class DictionaryExtensions
     {
         dictionary.Add(key, value);
         return dictionary;
+    }
+    
+    /// <summary>
+    /// Merges the specified dictionary with the other dictionary.
+    /// When a key exists in both dictionaries, the value in the other dictionary will overwrite the value in the specified dictionary.
+    /// </summary>
+    public static void Merge(this IDictionary<string, object> dictionary, IDictionary<string, object> other)
+    {
+        foreach (var (key, value) in other)
+            dictionary[key] = value;
     }
 
     private static T? ConvertValue<T>(object? value) => value.ConvertTo<T>();

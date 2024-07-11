@@ -1,25 +1,36 @@
-using System.Text.Json.Serialization;
 using Elsa.Abstractions;
+using Elsa.Workflows.Runtime;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.BulkCancel;
 
-public class Endpoint : ElsaEndpoint<Request, Response>
+/// <summary>
+/// Represents an endpoint for bulk cancelling workflow instances.
+/// </summary>
+[PublicAPI]
+public class BulkCancel(IWorkflowCancellationService workflowCancellationService) : ElsaEndpoint<Request, Response>
 {
+    /// <inheritdoc />
     public override void Configure()
     {
-        Post("/bulk-actions/cancel/workflow-instances/by-id");
+        Post("/bulk-actions/cancel/workflow-instances/");
         ConfigurePermissions("cancel:workflow-instances");
     }
 
+    /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        // TODO: Implement workflow cancellation.
-        var count = -1;
+        var tasks = new List<Task<int>>();
+        
+        if (request.Ids is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowsAsync(request.Ids!, cancellationToken));
+        if (request.DefinitionVersionId is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowByDefinitionVersionAsync(request.DefinitionVersionId!, cancellationToken));
+        if (request.DefinitionId is not null)
+            tasks.Add(workflowCancellationService.CancelWorkflowByDefinitionAsync(request.DefinitionId!, request.VersionOptions!.Value, cancellationToken));
 
-        return new(count);
+        await Task.WhenAll(tasks);
+
+        return new(tasks.Sum(t => t.Result));
     }
-
-    public record BulkCancelWorkflowInstancesRequest(ICollection<string> Ids);
-
-    public record BulkCancelWorkflowInstancesResponse([property: JsonPropertyName("cancelled")] int CancelledCount);
 }

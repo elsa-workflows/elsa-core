@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Provides serializer options and services for model serialization suitable for APIs.
@@ -32,7 +32,7 @@ public interface IApiSerializer
     /// Returns the serializer options.
     /// </summary>
     /// <returns>The serializer options.</returns>
-    JsonSerializerOptions CreateOptions();
+    JsonSerializerOptions GetOptions();
 
     /// <summary>
     /// Applies the serializer options.

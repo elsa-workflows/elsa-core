@@ -9,10 +9,11 @@ using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Options;
 using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Telnyx.Activities;
@@ -54,7 +55,7 @@ public class DialAndWait : Activity<CallPayload>
     /// </summary>
     [Input(
         Description = "Enables answering machine detection.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end", "premium" },
         DefaultValue = "disabled")]
     public Input<string?> AnsweringMachineDetection { get; set; } = new("disabled");
@@ -70,7 +71,7 @@ public class DialAndWait : Activity<CallPayload>
     /// </summary>
     [Input(
         Description = "Defines the format of the recording ('wav' or 'mp3') when `record` is specified.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "wav", "mp3" },
         DefaultValue = "mp3"
     )]
@@ -80,8 +81,8 @@ public class DialAndWait : Activity<CallPayload>
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var response = await DialAsync(context);
-        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, response.CallControlId);
-        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, response.CallControlId);
+        var answeredBookmark = new WebhookEventStimulus(WebhookEventTypes.CallAnswered, response.CallControlId);
+        var hangupBookmark = new WebhookEventStimulus(WebhookEventTypes.CallHangup, response.CallControlId);
         
         context.CreateBookmark(answeredBookmark, OnCallAnswered, false);
         context.CreateBookmark(hangupBookmark, OnCallHangup, false);

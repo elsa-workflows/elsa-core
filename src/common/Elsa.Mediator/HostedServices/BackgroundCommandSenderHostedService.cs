@@ -1,5 +1,6 @@
 using System.Threading.Channels;
 using Elsa.Mediator.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -12,16 +13,16 @@ public class BackgroundCommandSenderHostedService : BackgroundService
 {
     private readonly int _workerCount;
     private readonly ICommandsChannel _commandsChannel;
-    private readonly ICommandSender _commandSender;
-    private readonly IList<Channel<ICommand>> _outputs;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly List<Channel<ICommand>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
-    public BackgroundCommandSenderHostedService(int workerCount, ICommandsChannel commandsChannel, ICommandSender commandSender, ILogger<BackgroundCommandSenderHostedService> logger)
+    public BackgroundCommandSenderHostedService(int workerCount, ICommandsChannel commandsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundCommandSenderHostedService> logger)
     {
         _workerCount = workerCount;
         _commandsChannel = commandsChannel;
-        _commandSender = commandSender;
+        _scopeFactory = scopeFactory;
         _logger = logger;
         _outputs = new List<Channel<ICommand>>(workerCount);
     }
@@ -57,7 +58,10 @@ public class BackgroundCommandSenderHostedService : BackgroundService
         {
             try
             {
-                await _commandSender.SendAsync(command, CommandStrategy.Default, cancellationToken);
+                using var scope = _scopeFactory.CreateScope();
+                var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
+                await commandSender.SendAsync(command, CommandStrategy.Default, cancellationToken);
             }
             catch (Exception e)
             {

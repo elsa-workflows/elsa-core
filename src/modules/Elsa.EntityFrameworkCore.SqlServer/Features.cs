@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Extensions;
 public static class SqlServerProvidersExtensions
 {
     private static Assembly Assembly => typeof(SqlServerProvidersExtensions).Assembly;
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreIdentityPersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -24,7 +24,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreAlterationsPersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -33,7 +33,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreLabelPersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -42,7 +42,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowDefinitionPersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -51,7 +51,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowInstancePersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -60,7 +60,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="WorkflowManagementPersistenceFeature"/> to use SQL Server.
     /// </summary>
@@ -69,7 +69,7 @@ public static class SqlServerProvidersExtensions
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures the <see cref="EFCoreWorkflowRuntimePersistenceFeature"/> to use SQL Server.
     /// </summary>

@@ -4,7 +4,7 @@ using Elsa.Alterations.Core.Extensions;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
-using Elsa.Common.Services;
+using Elsa.Alterations.Workflows;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -26,12 +26,12 @@ public class AlterationsFeature : FeatureBase
     /// Gets or sets the factory for the alteration plan store.
     /// </summary>
     public Func<IServiceProvider, IAlterationPlanStore> AlterationPlanStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationPlanStore>();
-    
+
     /// <summary>
     /// Gets or sets the factory for the alteration job store.
     /// </summary>
     public Func<IServiceProvider, IAlterationJobStore> AlterationJobStoreFactory { get; set; } = sp => sp.GetRequiredService<MemoryAlterationJobStore>();
-    
+
     /// <summary>
     /// Gets or sets the factory for the alteration job dispatcher.
     /// </summary>
@@ -47,25 +47,30 @@ public class AlterationsFeature : FeatureBase
         Services.AddAlteration<T, THandler>();
         return this;
     }
-    
+
     /// <inheritdoc />
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly<AlterationsFeature>();
+        Module.AddWorkflow<ExecuteAlterationPlanWorkflow>();
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();
         Services.AddAlterations();
         Services.AddAlterationsCore();
-        Services.AddSingleton<BackgroundAlterationJobDispatcher>();
-        Services.AddSingleton<MemoryAlterationPlanStore>();
-        Services.AddSingleton<MemoryAlterationJobStore>();
-        Services.AddSingleton(new MemoryStore<AlterationPlan>());
-        Services.AddSingleton(new MemoryStore<AlterationJob>());
-        Services.AddSingleton(AlterationPlanStoreFactory);
-        Services.AddSingleton(AlterationJobStoreFactory);
-        Services.AddSingleton(AlterationJobDispatcherFactory);
+        Services.AddScoped<BackgroundAlterationJobDispatcher>();
+        Services.AddScoped<IAlterationPlanScheduler, DefaultAlterationPlanScheduler>();
+        Services.AddScoped<IAlterationJobRunner, DefaultAlterationJobRunner>();
+        Services.AddScoped<IAlterationRunner, DefaultAlterationRunner>();
+
+        Services.AddMemoryStore<AlterationPlan, MemoryAlterationPlanStore>();
+        Services.AddMemoryStore<AlterationJob, MemoryAlterationJobStore>();
+
+        Services.AddScoped(AlterationPlanStoreFactory);
+        Services.AddScoped(AlterationJobStoreFactory);
+        Services.AddScoped(AlterationJobDispatcherFactory);
     }
 }

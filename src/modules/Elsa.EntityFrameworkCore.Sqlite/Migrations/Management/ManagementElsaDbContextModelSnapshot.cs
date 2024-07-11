@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.11");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
@@ -25,8 +25,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<byte[]>("BinaryData")
                         .HasColumnType("BLOB");
 
-                    b.Property<string>("CreatedAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
@@ -48,6 +47,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<bool>("IsReadonly")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("MaterializerContext")
                         .HasColumnType("TEXT");
 
@@ -62,6 +64,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .HasColumnType("TEXT");
 
                     b.Property<string>("StringData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ToolVersion")
@@ -81,8 +86,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("IsPublished")
                         .HasDatabaseName("IX_WorkflowDefinition_IsPublished");
 
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowDefinition_IsSystem");
+
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowDefinition_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowDefinition_TenantId");
 
                     b.HasIndex("UsableAsActivity")
                         .HasDatabaseName("IX_WorkflowDefinition_UsableAsActivity");
@@ -105,11 +116,13 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.Property<string>("CorrelationId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CreatedAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Data")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DataCompressionAlgorithm")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("DefinitionId")
@@ -120,13 +133,19 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FinishedAt")
+                    b.Property<DateTimeOffset?>("FinishedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("IncidentCount")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentWorkflowInstanceId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
@@ -137,8 +156,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("UpdatedAt")
-                        .IsRequired()
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Version")
@@ -158,6 +179,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     b.HasIndex("FinishedAt")
                         .HasDatabaseName("IX_WorkflowInstance_FinishedAt");
 
+                    b.HasIndex("IsSystem")
+                        .HasDatabaseName("IX_WorkflowInstance_IsSystem");
+
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_WorkflowInstance_Name");
 
@@ -166,6 +190,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 
                     b.HasIndex("SubStatus")
                         .HasDatabaseName("IX_WorkflowInstance_SubStatus");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_WorkflowInstance_TenantId");
 
                     b.HasIndex("UpdatedAt")
                         .HasDatabaseName("IX_WorkflowInstance_UpdatedAt");

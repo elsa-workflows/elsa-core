@@ -7,10 +7,11 @@ using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Activities.Flowchart.Attributes;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -64,7 +65,7 @@ public class TransferCall : Activity<CallPayload>
     [Input(
         DisplayName = "Answering Machine Detection",
         Description = "Enables Answering Machine Detection.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "disabled", "detect", "detect_beep", "detect_words", "greeting_end" }
     )]
     public Input<string?> AnsweringMachineDetection { get; set; } = default!;
@@ -99,7 +100,7 @@ public class TransferCall : Activity<CallPayload>
     {
         await TransferCallAsync(context);
 
-        var initiatedBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallInitiated);
+        var initiatedBookmark = new WebhookEventStimulus(WebhookEventTypes.CallInitiated);
         context.CreateBookmark(initiatedBookmark, InitiatedAsync);
     }
 
@@ -107,8 +108,8 @@ public class TransferCall : Activity<CallPayload>
     {
         var payload = context.GetWorkflowInput<CallInitiatedPayload>();
         var callControlId = payload.CallControlId;
-        var answeredBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallAnswered, callControlId);
-        var hangupBookmark = new WebhookEventBookmarkPayload(WebhookEventTypes.CallHangup, callControlId);
+        var answeredBookmark = new WebhookEventStimulus(WebhookEventTypes.CallAnswered, callControlId);
+        var hangupBookmark = new WebhookEventStimulus(WebhookEventTypes.CallHangup, callControlId);
         context.CreateBookmark(answeredBookmark, AnsweredAsync, false);
         context.CreateBookmark(hangupBookmark, HangupAsync, false);
         return default;

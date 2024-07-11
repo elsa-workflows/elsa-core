@@ -1,11 +1,8 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Notifications;
+using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
@@ -14,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Resumes any blocking <see cref="DispatchWorkflow"/> activities when its child workflow completes.
 /// </summary>
 [PublicAPI]
-internal class ResumeDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : INotificationHandler<WorkflowExecuted>
+internal class ResumeDispatchWorkflowActivity(IBookmarkResumer bookmarkResumer) : INotificationHandler<WorkflowExecuted>
 {
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
@@ -23,16 +20,13 @@ internal class ResumeDispatchWorkflowActivity(IWorkflowInbox workflowInbox) : IN
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
-        var bookmark = new DispatchWorkflowBookmark(notification.WorkflowState.Id);
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
+        var stimulus = new DispatchWorkflowStimulus(notification.WorkflowState.Id);
         var input = workflowState.Output;
-        var message = new NewWorkflowInboxMessage
-        {
-            ActivityTypeName = activityTypeName,
-            Input = input,
-            BookmarkPayload = bookmark,
-        };
 
-        await workflowInbox.SubmitAsync(message, cancellationToken);
+        var resumeOptions = new ResumeBookmarkOptions
+        {
+            Input = input
+        };
+        await bookmarkResumer.ResumeAsync<DispatchWorkflow>(stimulus, resumeOptions, cancellationToken);
     }
 }

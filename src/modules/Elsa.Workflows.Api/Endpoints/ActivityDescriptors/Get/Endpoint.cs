@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.Get;
@@ -8,12 +8,12 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.Get;
 [PublicAPI]
 internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
 {
-    private readonly IActivityRegistry _registry;
+    private readonly IActivityRegistryLookupService _registryLookup;
 
     /// <inheritdoc />
-    public Get(IActivityRegistry registry)
+    public Get(IActivityRegistryLookupService registryLookup)
     {
-        _registry = registry;
+        _registryLookup = registryLookup;
     }
 
     /// <inheritdoc />
@@ -26,7 +26,7 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var descriptor = request.Version == null ? _registry.Find(request.TypeName) : _registry.Find(request.TypeName, request.Version.Value);
+        var descriptor = request.Version == null ? await _registryLookup.FindAsync(request.TypeName) : await _registryLookup.FindAsync(request.TypeName, request.Version.Value);
 
         if (descriptor == null)
             await SendNotFoundAsync(cancellationToken);

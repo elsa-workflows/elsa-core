@@ -2,7 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
@@ -39,7 +39,9 @@ internal class Get : ElsaEndpoint<Request, Response>
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             ActivityIds = request.Filter?.ActivityIds,
-            EventNames = request.Filter?.EventNames
+            ActivityNodeIds = request.Filter?.ActivityNodeIds,
+            ExcludeActivityTypes = request.Filter?.ExcludedActivityTypes,
+            EventNames = request.Filter?.EventNames,
         };
         var order = new WorkflowExecutionLogRecordOrder<long>(x => x.Sequence, OrderDirection.Ascending);
         var pageOfRecords = await _store.FindManyAsync(filter, pageArgs, order, cancellationToken);

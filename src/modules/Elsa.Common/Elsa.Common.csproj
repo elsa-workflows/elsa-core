@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <Import Project="..\..\..\common.props" />
-    <Import Project="..\..\..\configureawait.props" />
-    <Import Project="..\..\..\frameworks.props"/>
-
     <PropertyGroup>
         <Description>
             Provides services and utility functions common to Elsa modules.
@@ -17,18 +13,13 @@
         <ProjectReference Include="..\..\common\Elsa.Mediator\Elsa.Mediator.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
-        <PackageReference Include="System.Text.Json" Version="7.0.4" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
-        <PackageReference Include="System.Text.Json" Version="8.0.0" />
-    </ItemGroup>
-
     <ItemGroup>
-        <PackageReference Include="LinqKit.Core" Version="1.2.5" />
+        <PackageReference Include="DistributedLock.Core" />
+        <PackageReference Include="LinqKit.Core" />
     </ItemGroup>
-    
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
+        <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
 </Project>

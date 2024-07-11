@@ -1,4 +1,6 @@
+using System.Text;
 using Elsa.Common.Entities;
+using Elsa.Common.Models;
 using Elsa.Dapper.Contracts;
 
 namespace Elsa.Dapper.Abstractions;
@@ -53,10 +55,25 @@ public abstract class SqlDialectBase : ISqlDialect
     }
 
     /// <inheritdoc />
-    public virtual string Skip(int count) => $"offset {count}";
+    public virtual string Skip(int count) => $"offset {count} rows";
 
     /// <inheritdoc />
-    public virtual string Take(int count) => $"limit {count}";
+    public virtual string Take(int count) => $"fetch next {count} rows only";
+
+    /// <inheritdoc />
+    public virtual string Page(PageArgs pageArgs)
+    {
+        var sb = new StringBuilder();
+
+        // Attention: the order is important here for SQL Server (OFFSET before FETCH NEXT).
+        if (pageArgs.Offset != null)
+            sb.AppendLine(Skip(pageArgs.Offset.Value));
+
+        if (pageArgs.Limit != null)
+            sb.AppendLine(Take(pageArgs.Limit.Value));
+
+        return sb.ToString();
+    }
 
     /// <inheritdoc />
     public string Insert(string table, string[] fields, Func<string, string>? getParamName = default)
@@ -68,6 +85,13 @@ public abstract class SqlDialectBase : ISqlDialect
         return $"INSERT INTO {table} ({fieldList}) VALUES ({fieldParamList});";
     }
 
+    public string Update(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default)
+    {
+        getParamName ??= x => x;
+        var fieldList = string.Join(", ", fields.Select(x => $"{x} = @{getParamName(x)}"));
+        return $"UPDATE {table} SET {fieldList} WHERE {primaryKeyField} = @{getParamName(primaryKeyField)};";
+    }
+
     /// <inheritdoc />
     public virtual string Upsert(string table, string primaryKeyField, string[] fields, Func<string, string>? getParamName = default)
     {
@@ -75,6 +99,15 @@ public abstract class SqlDialectBase : ISqlDialect
         var fieldList = string.Join(", ", fields);
         var fieldParamNames = fields.Select(x => $"@{getParamName(x)}");
         var fieldParamList = string.Join(", ", fieldParamNames);
-        return $"INSERT OR REPLACE INTO {table} ({primaryKeyField}, {fieldList}) VALUES (@{getParamName(primaryKeyField)}, {fieldParamList});";
+        return @$"
+                      MERGE INTO {table} WITH (HOLDLOCK) AS Target
+                      USING (VALUES (@{getParamName(primaryKeyField)}, {fieldParamList}))
+                      AS Source ({primaryKeyField}, {fieldList})
+                      ON Target.{primaryKeyField} = Source.{primaryKeyField}
+                      WHEN MATCHED THEN 
+                      UPDATE SET {string.Join(", ", fields.Select(x => $"{x} = Source.{x}"))}
+                      WHEN NOT MATCHED THEN
+                      INSERT ({primaryKeyField}, {fieldList})
+                      VALUES (Source.{primaryKeyField}, {string.Join(", ", fields.Select(x => $"Source.{x}"))});";
     }
 }

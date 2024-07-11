@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Contracts;
+namespace Elsa.Workflows.Contracts;
 
 /// <summary>
 /// Creates instances of <see cref="ActivityDescriptor" /> for a given activity type.

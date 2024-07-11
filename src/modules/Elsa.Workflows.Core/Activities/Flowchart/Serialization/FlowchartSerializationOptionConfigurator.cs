@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Serialization;
+namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
 /// <summary>
 /// Add additional <see cref="JsonConverter"/> objects.

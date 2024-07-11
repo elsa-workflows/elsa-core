@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Core.Contracts;
+using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
+namespace Elsa.Workflows.Activities.Flowchart.Models;
 
 internal class FlowScope
 {
@@ -44,6 +44,11 @@ internal class FlowScope
         Activities.Add(activity.Id, state);
         return state;
 
+    }
+
+    public bool ContainsActivity(IActivity activity)
+    {
+        return Activities.ContainsKey(activity.Id);
     }
     
     public void RegisterActivityExecution(IActivity activity)

@@ -1,10 +1,12 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
+using JetBrains.Annotations;
 
 namespace Elsa.Expressions;
 
 /// <inheritdoc />
+[UsedImplicitly]
 public class LiteralExpressionHandler : IExpressionHandler
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;

@@ -6,15 +6,15 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Export;
@@ -121,7 +121,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var executionLogRecords = request.IncludeWorkflowExecutionLog ? await LoadWorkflowExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
         var activityExecutionLogRecords = request.IncludeActivityExecutionLog ? await LoadActivityExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
         var bookmarks = request.IncludeBookmarks ? await LoadBookmarksAsync(workflowState.Id, cancellationToken) : null;
-        var workflowStateElement = await _workflowStateSerializer.SerializeToElementAsync(workflowState, cancellationToken);
+        var workflowStateElement = _workflowStateSerializer.SerializeToElement(workflowState);
         var bookmarksElement = bookmarks != null ? SerializeBookmarks(bookmarks) : default(JsonElement?);
         var executionLogRecordsElement = executionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(executionLogRecords, cancellationToken) : default(JsonElement?);
         var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(activityExecutionLogRecords, cancellationToken) : default(JsonElement?);
@@ -133,7 +133,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     {
         var jsonBookmarkNodes = bookmarks.Select(x => new JsonObject
         {
-            ["id"] = x.BookmarkId,
+            ["id"] = x.Id,
             ["activityTypeName"] = x.ActivityTypeName,
             ["workflowInstanceId"] = x.WorkflowInstanceId,
             ["activityInstanceId"] = x.ActivityInstanceId,

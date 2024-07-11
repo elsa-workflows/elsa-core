@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Serialization.Converters;
-using Elsa.Workflows.Core.State;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-internal class Request
+public class Request
 {
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
@@ -17,12 +17,7 @@ internal class Request
     public object? Input { get; set; }
 }
 
-internal class Response
+public class Response(WorkflowState workflowState)
 {
-    public Response(WorkflowState workflowState)
-    {
-        WorkflowState = workflowState;
-    }
-
-    public WorkflowState WorkflowState { get; }
+    public WorkflowState WorkflowState { get; } = workflowState;
 }

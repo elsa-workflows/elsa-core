@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Core.Middleware.Activities;
+namespace Elsa.Workflows.Middleware.Activities;
 
 /// <summary>
 /// An activity execution middleware component that logs information about the activity being executed.
@@ -27,6 +27,12 @@ public class LoggingMiddleware : IActivityExecutionMiddleware
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
+        if (!_logger.IsEnabled(LogLevel.Information))
+        {
+            await _next(context);
+            return;
+        }
+
         var activity = context.Activity;
         _logger.LogInformation("Executing activity {ActivityId}", activity.Id);
         _stopwatch.Restart();

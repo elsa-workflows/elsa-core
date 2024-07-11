@@ -5,9 +5,10 @@ using Elsa.Telnyx.Client.Models;
 using Elsa.Telnyx.Client.Services;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 using Refit;
 
 namespace Elsa.Telnyx.Activities;
@@ -39,7 +40,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
     /// </summary>
     [Input(
         Description = "When 'dual', final audio file will be stereo recorded with the first leg on channel A, and the rest on channel B.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "single", "dual" },
         DefaultValue = "single"
     )]
@@ -50,7 +51,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
     /// </summary>
     [Input(
         Description = "The audio file format used when storing the call recording. Can be either 'mp3' or 'wav'.",
-        UIHint = InputUIHints.Dropdown,
+        UIHint = InputUIHints.DropDown,
         Options = new[] { "wav", "mp3" },
         DefaultValue = "wav"
     )]
@@ -79,7 +80,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
         {
             await telnyxClient.Calls.StartRecordingAsync(callControlId, request, context.CancellationToken);
             
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallRecordingSaved, callControlId), ResumeAsync, false);
+            context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallRecordingSaved, callControlId), ResumeAsync, false);
         }
         catch (ApiException e)
         {

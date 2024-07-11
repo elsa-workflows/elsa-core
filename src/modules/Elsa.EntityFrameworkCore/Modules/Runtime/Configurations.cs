@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core;
+using Elsa.KeyValues.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -13,7 +13,7 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
-    IEntityTypeConfiguration<WorkflowInboxMessage>
+    IEntityTypeConfiguration<SerializedKeyValuePair>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<StoredTrigger> builder)
@@ -24,6 +24,7 @@ public class Configurations :
         builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Name)}");
         builder.HasIndex(x => x.Hash).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.Hash)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(StoredTrigger)}_{nameof(StoredTrigger.TenantId)}");
     }
 
     /// <inheritdoc />
@@ -50,6 +51,7 @@ public class Configurations :
         builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.WorkflowVersion).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.WorkflowVersion)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.TenantId)}");
     }
 
     /// <inheritdoc />
@@ -59,10 +61,13 @@ public class Configurations :
         builder.Ignore(x => x.Exception);
         builder.Ignore(x => x.Payload);
         builder.Ignore(x => x.Outputs);
+        builder.Ignore(x => x.Properties);
         builder.Property<string>("SerializedActivityState");
+        builder.Property<string>("SerializedActivityStateCompressionAlgorithm");
         builder.Property<string>("SerializedException");
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedOutputs");
+        builder.Property<string>("SerializedProperties");
         builder.Property(x => x.Status).HasConversion<string>();
         
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
@@ -76,6 +81,7 @@ public class Configurations :
         builder.HasIndex(x => x.HasBookmarks).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.HasBookmarks)}");
         builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.Status)}");
         builder.HasIndex(x => x.CompletedAt).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.CompletedAt)}");
+        builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.TenantId)}");
     }
 
     /// <inheritdoc />
@@ -85,7 +91,7 @@ public class Configurations :
         builder.Ignore(x => x.Metadata);
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedMetadata");
-        builder.HasKey(x => x.BookmarkId);
+        builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
@@ -93,21 +99,12 @@ public class Configurations :
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.CreatedAt)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash, x.WorkflowInstanceId }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.TenantId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.TenantId)}");
     }
 
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<WorkflowInboxMessage> builder)
+    public void Configure(EntityTypeBuilder<SerializedKeyValuePair> builder)
     {
-        builder.Ignore(x => x.Input);
-        builder.Ignore(x => x.BookmarkPayload);
-        builder.Property<string>("SerializedInput");
-        builder.Property<string>("SerializedBookmarkPayload");
-        builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityTypeName)}");
-        builder.HasIndex(x => x.Hash, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.Hash)}");
-        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.WorkflowInstanceId)}");
-        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CorrelationId)}");
-        builder.HasIndex(x => x.ActivityInstanceId, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ActivityInstanceId)}");
-        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.CreatedAt)}");
-        builder.HasIndex(x => x.ExpiresAt, $"IX_{nameof(WorkflowInboxMessage)}_{nameof(WorkflowInboxMessage.ExpiresAt)}");
+        builder.HasIndex(x => x.TenantId, $"IX_{nameof(SerializedKeyValuePair)}_{nameof(SerializedKeyValuePair.TenantId)}");
     }
 }

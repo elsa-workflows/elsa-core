@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddSasTokens(this IServiceCollection services, Func<IServiceProvider, IDataProtectionProvider> dataProtectionProvider)
     {
-        services.AddSingleton<ITokenService>(sp =>
+        services.AddScoped<ITokenService>(sp =>
         {
             var protectionProvider = dataProtectionProvider(sp);
             return new DataProtectorTokenService(protectionProvider);

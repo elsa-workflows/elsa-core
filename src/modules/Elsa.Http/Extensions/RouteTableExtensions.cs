@@ -1,8 +1,8 @@
 using Elsa.Http;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Core.Helpers;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 
 // ReSharper disable once CheckNamespace

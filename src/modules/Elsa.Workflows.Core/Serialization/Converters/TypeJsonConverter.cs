@@ -4,7 +4,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Core.Serialization.Converters;
+namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing the type.

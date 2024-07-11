@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.Runtime.UIHints;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Activities;
@@ -28,6 +29,7 @@ public class DispatchWorkflow : Activity<object>
     /// The definition ID of the workflow to dispatch. 
     /// </summary>
     [Input(
+        DisplayName = "Workflow Definition",
         Description = "The definition ID of the workflow to dispatch.",
         UIHint = InputUIHints.WorkflowDefinitionPicker
     )]
@@ -36,7 +38,10 @@ public class DispatchWorkflow : Activity<object>
     /// <summary>
     /// The correlation ID to associate the workflow with. 
     /// </summary>
-    [Input(Description = "The correlation ID to associate the workflow with.")]
+    [Input(
+        DisplayName = "Correlation ID",
+        Description = "The correlation ID to associate the workflow with."
+    )]
     public Input<string?> CorrelationId { get; set; } = default!;
 
     /// <summary>
@@ -50,6 +55,17 @@ public class DispatchWorkflow : Activity<object>
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = default!;
+
+    /// <summary>
+    /// The channel to dispatch the workflow to.
+    /// </summary>
+    [Input(
+        DisplayName = "Channel",
+        Description = "The channel to dispatch the workflow to.",
+        UIHint = InputUIHints.DropDown,
+        UIHandler = typeof(DispatcherChannelOptionsProvider)
+    )]
+    public Input<string?> ChannelName { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -65,7 +81,7 @@ public class DispatchWorkflow : Activity<object>
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new DispatchWorkflowBookmark(instanceId),
+                Stimulus = new DispatchWorkflowStimulus(instanceId),
                 IncludeActivityInstanceId = false
             };
             context.CreateBookmark(bookmarkOptions);
@@ -81,24 +97,35 @@ public class DispatchWorkflow : Activity<object>
     {
         var workflowDefinitionId = WorkflowDefinitionId.Get(context);
         var input = Input.GetOrDefault(context) ?? new Dictionary<string, object>();
+        var channelName = ChannelName.GetOrDefault(context);
 
         input["ParentInstanceId"] = context.WorkflowExecutionContext.Id;
 
         var correlationId = CorrelationId.GetOrDefault(context);
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published, context.CancellationToken);
+        
+        if (workflowGraph == null)
+            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+        
         var instanceId = identityGenerator.GenerateId();
-        var request = new DispatchWorkflowDefinitionRequest
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
+            ParentWorkflowInstanceId = context.WorkflowExecutionContext.Id,
             Input = input,
             CorrelationId = correlationId,
-            InstanceId = instanceId
+            InstanceId = instanceId,
+        };
+        var options = new DispatchWorkflowOptions
+        {
+            Channel = channelName
         };
 
         // Dispatch the child workflow.
-        await workflowDispatcher.DispatchAsync(request, context.CancellationToken);
+        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
+        dispatchResponse.ThrowIfFailed();
 
         return instanceId;
     }

@@ -1,6 +1,6 @@
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Core.Options;
+namespace Elsa.Workflows.Options;
 
 /// <summary>
 /// Provides options for running a workflow.
@@ -10,12 +10,9 @@ public class RunWorkflowOptions
     public string? WorkflowInstanceId { get; set; }
     public string? CorrelationId { get; set; }
     public string? BookmarkId { get; set; }
-    public string? ActivityId { get; set; }
-    public string? ActivityNodeId { get; set; }
-    public string? ActivityInstanceId { get; set; }
-    public string? ActivityHash { get; set; }
+    public ActivityHandle? ActivityHandle { get; set; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
     public string? TriggerActivityId { get; set; }
-    public CancellationTokens CancellationTokens { get; set; }
+    public string? ParentWorkflowInstanceId { get; set; }
 }

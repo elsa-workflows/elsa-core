@@ -54,6 +54,11 @@ public class WorkflowState : Entity
     public ICollection<ActivityExecutionContextState> ActivityExecutionContexts { get; set; } = new List<ActivityExecutionContextState>();
     
     /// <summary>
+    /// A dictionary of inputs sent to the workflow.
+    /// </summary>
+    public IDictionary<string, object> Input { get; set; } = new Dictionary<string, object>();
+    
+    /// <summary>
     /// A dictionary of outputs produced by the workflow.
     /// </summary>
     public IDictionary<string, object> Output { get; set; } = new Dictionary<string, object>();

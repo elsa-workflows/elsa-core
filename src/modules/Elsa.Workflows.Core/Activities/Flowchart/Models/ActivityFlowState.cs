@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-namespace Elsa.Workflows.Core.Activities.Flowchart.Models;
+namespace Elsa.Workflows.Activities.Flowchart.Models;
 
 [DebuggerDisplay("ActivityId = {ActivityId}, ExecutionCount = {ExecutionCount}")]
 public class ActivityFlowState

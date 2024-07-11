@@ -1,0 +1,77 @@
+﻿version: '3.7'
+
+services:
+  postgres:
+    image: postgres:latest
+    command: -c 'max_connections=2000'
+    environment:
+      POSTGRES_USER: elsa
+      POSTGRES_PASSWORD: elsa
+      POSTGRES_DB: elsa
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  
+  cockroachdb:
+    image: cockroachdb/cockroach:v22.1.0
+    command: start-single-node --insecure
+    ports:
+      - "26257:26257" # CockroachDB SQL port
+      - "8080:8080"   # CockroachDB UI port
+    volumes:
+      - cockroachdb-data:/cockroach/cockroach-data
+    environment:
+      - COCKROACH_DATABASE=elsa
+  
+  rabbitmq:
+    image: "rabbitmq:3-management"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+  
+  redis:
+    image: redis:latest
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  elsa-server:
+    build:
+      context: ../.
+      dockerfile: ./docker/ElsaServer.Dockerfile
+    depends_on:
+      - postgres
+      - rabbitmq
+      - redis
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
+      PYTHONNET_RUNTIME: coreclr
+      CONNECTIONSTRINGS__POSTGRESQL: "Server=postgres;Username=elsa;Database=elsa;Port=5432;Password=elsa;SSLMode=Prefer"
+      CONNECTIONSTRINGS__RABBITMQ: "amqp://guest:guest@rabbitmq:5672/"
+      CONNECTIONSTRINGS__REDIS: "redis:6379"
+      DISTRIBUTEDLOCKPROVIDER: "Postgres"
+    ports:
+      - "13000:8080"
+  
+  elsa-studio:
+    build:
+      context: ../.
+      dockerfile: ./docker/ElsaStudio.Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ELSASERVER__URL: "http://localhost:13000/elsa/api"
+    ports:
+      - "14000:8080"
+
+volumes:
+  postgres-data:
+  cockroachdb-data:
+  mongodb_data:

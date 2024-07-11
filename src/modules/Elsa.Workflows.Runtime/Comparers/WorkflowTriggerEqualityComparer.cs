@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Elsa.Expressions.Services;
-using Elsa.Workflows.Core.Serialization.Converters;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Runtime.Comparers;
 
@@ -50,6 +50,7 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
             storedTrigger.Name,
             storedTrigger.ActivityId,
             storedTrigger.WorkflowDefinitionId,
+            storedTrigger.WorkflowDefinitionVersionId,
             storedTrigger.Hash
         };
         return JsonSerializer.Serialize(input, _settings);

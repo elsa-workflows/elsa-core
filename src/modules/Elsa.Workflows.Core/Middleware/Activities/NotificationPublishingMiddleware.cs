@@ -1,9 +1,9 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Notifications;
-using Elsa.Workflows.Core.Pipelines.ActivityExecution;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 
-namespace Elsa.Workflows.Core.Middleware.Activities;
+namespace Elsa.Workflows.Middleware.Activities;
 
 /// <summary>
 /// An activity execution middleware component that publishes <see cref="ActivityExecuting"/> and <see cref="ActivityExecuted"/> events as an activity executes.

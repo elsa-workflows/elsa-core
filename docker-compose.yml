@@ -28,7 +28,7 @@ services:
       - "8600:8600"
       - "8600:8600/udp"
     command: "agent -server -bootstrap-expect 3 -ui -client 0.0.0.0"
-    
+  
   sqlserver:
     image: "mcr.microsoft.com/mssql/server:2019-latest"
     ports:
@@ -38,6 +38,18 @@ services:
       ACCEPT_EULA: "Y"
     volumes:
       - c:\data\docker\sqlserver2019:/var/opt/mssql/data
+  
+  postgres:
+    image: postgres:13.3-alpine
+    container_name: elsa3-postgres
+    environment:
+      POSTGRES_USER: elsa
+      POSTGRES_PASSWORD: elsa
+      POSTGRES_DB: elsa
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-3:/var/lib/postgresql/data
 
   mongodb:
     image: mongo:latest
@@ -45,7 +57,7 @@ services:
       - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
-        
+  
   mysql:
     image: arm64v8/mysql
     restart: always
@@ -63,13 +75,13 @@ services:
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
-        
+  
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
       - "15672:15672"
       - "5672:5672"
-        
+  
   elasticsearch:
     image: "docker.elastic.co/elasticsearch/elasticsearch:8.5.0"
     environment:
@@ -98,17 +110,18 @@ services:
       - "5601:5601"
     depends_on:
       - elasticsearch
-        
+  
   smtp4dev:
     image: rnwood/smtp4dev:3.1.3-ci20211206101
     ports:
       - "4000:80"
       - "2525:25"
-
+  
 networks:
   consul:
 
 volumes:
   mongodb_data:
+  pgdata-3:
   elasticsearch-data:
     driver: local

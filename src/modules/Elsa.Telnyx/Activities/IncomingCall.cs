@@ -5,9 +5,10 @@ using Elsa.Telnyx.Bookmarks;
 using Elsa.Telnyx.Helpers;
 using Elsa.Telnyx.Models;
 using Elsa.Telnyx.Payloads.Call;
-using Elsa.Workflows.Core;
-using Elsa.Workflows.Core.Attributes;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows;
+using Elsa.Workflows.Attributes;
+using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Telnyx.Activities;
 
@@ -78,10 +79,10 @@ public class IncomingCall : Trigger<CallInitiatedPayload>
         var to = context.Get(To) ?? ArraySegment<string>.Empty;
         var catchAll = context.Get(CatchAll);
 
-        foreach (var phoneNumber in from) yield return new IncomingCallFromBookmarkPayload(phoneNumber);
-        foreach (var phoneNumber in to) yield return new IncomingCallToBookmarkPayload(phoneNumber);
+        foreach (var phoneNumber in from) yield return new IncomingCallFromStimulus(phoneNumber);
+        foreach (var phoneNumber in to) yield return new IncomingCallToStimulus(phoneNumber);
 
         if (catchAll)
-            yield return new IncomingCallCatchAllBookmarkPayload();
+            yield return new IncomingCallCatchAllStimulus();
     }
 }

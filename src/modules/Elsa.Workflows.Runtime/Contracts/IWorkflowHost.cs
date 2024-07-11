@@ -1,9 +1,9 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.State;
-using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Results;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a single workflow instance that can be executed and takes care of publishing various lifecycle events.
@@ -11,27 +11,42 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowHost
 {
     /// <summary>
-    /// The workflow definition.
+    /// The workflow graph.
     /// </summary>
-    Workflow Workflow { get; set; }
+    WorkflowGraph WorkflowGraph { get; }
+    
+    /// <summary>
+    /// The workflow.
+    /// </summary>
+    Workflow Workflow { get; }
 
     /// <summary>
-    /// The workflow state.
+    /// Gets or sets the workflow state.
     /// </summary>
     WorkflowState WorkflowState { get; set; }
+    
+    /// <summary>
+    /// Gets the last result of the workflow execution, if any.
+    /// </summary>
+    object? LastResult { get; }
 
     /// <summary>
-    /// Returns a value indicating whether or not the specified workflow can start a new instance or not.
+    /// Returns a value indicating whether the specified workflow can start a new instance or not.
     /// </summary>
-    Task<bool> CanStartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
-
+    Task<bool> CanStartWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default);
+    
     /// <summary>
-    /// Start a new workflow instance and execute it.
+    /// Starts a new workflow instance.
     /// </summary>
-    Task<StartWorkflowHostResult> StartWorkflowAsync(StartWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
-
+    Task<RunWorkflowResult> RunWorkflowAsync(RunWorkflowOptions? @params = default, CancellationToken cancellationToken = default);
+    
     /// <summary>
-    /// Resume an existing workflow instance.
+    /// Cancels the workflow instance.
     /// </summary>
-    Task<ResumeWorkflowHostResult> ResumeWorkflowAsync(ResumeWorkflowHostOptions? options = default, CancellationToken cancellationToken = default);
+    Task CancelWorkflowAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Persists the workflow state.
+    /// </summary>
+    Task PersistStateAsync(CancellationToken cancellationToken = default);
 }

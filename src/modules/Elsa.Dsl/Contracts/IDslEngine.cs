@@ -1,4 +1,4 @@
-using Elsa.Workflows.Core.Activities;
+using Elsa.Workflows.Activities;
 
 namespace Elsa.Dsl.Contracts;
 

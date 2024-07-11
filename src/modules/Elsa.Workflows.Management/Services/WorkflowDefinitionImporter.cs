@@ -1,11 +1,10 @@
 using Elsa.Common.Models;
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Management.Services
 {

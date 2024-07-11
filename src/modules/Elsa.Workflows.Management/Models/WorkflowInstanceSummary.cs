@@ -1,14 +1,11 @@
 using System.Linq.Expressions;
-using Elsa.Workflows.Core;
 using Elsa.Workflows.Management.Entities;
-using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Models;
 
 /// <summary>
 /// Represents a summary view of a <see cref="WorkflowInstance"/>.
 /// </summary>
-[PublicAPI]
 public class WorkflowInstanceSummary
 {
     /// <summary>
@@ -32,7 +29,7 @@ public class WorkflowInstanceSummary
             FinishedAt = workflowInstance.FinishedAt
         };
     }
-    
+
     /// <summary>
     /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
     /// </summary>
@@ -52,6 +49,7 @@ public class WorkflowInstanceSummary
             UpdatedAt = workflowInstance.UpdatedAt,
             FinishedAt = workflowInstance.FinishedAt
         };
+
 
     /// <summary>The ID of the workflow instance.</summary>
     public string Id { get; set; } = default!;
@@ -76,7 +74,7 @@ public class WorkflowInstanceSummary
 
     /// <summary>The name of the workflow instance.</summary>
     public string? Name { get; set; }
-    
+
     /// <summary>The number of incidents associated with the workflow instance.</summary>
     public int IncidentCount { get; set; }
 
@@ -88,5 +86,4 @@ public class WorkflowInstanceSummary
 
     /// <summary>The timestamp when the workflow instance was finished.</summary>
     public DateTimeOffset? FinishedAt { get; set; }
-    
 }

@@ -1,8 +1,7 @@
-using Elsa.Workflows.Core.Activities;
-using Elsa.Workflows.Core.Contracts;
-using Elsa.Workflows.Core.Models;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management.Materializers;

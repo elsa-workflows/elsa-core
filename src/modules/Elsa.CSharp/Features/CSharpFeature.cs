@@ -1,10 +1,8 @@
 using Elsa.Common.Features;
 using Elsa.CSharp.Contracts;
-using Elsa.CSharp.Expressions;
 using Elsa.CSharp.Options;
 using Elsa.CSharp.Providers;
 using Elsa.CSharp.Services;
-using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -25,26 +23,26 @@ public class CSharpFeature : FeatureBase
     public CSharpFeature(IModule module) : base(module)
     {
     }
-    
+
     /// <summary>
     /// Configures the <see cref="CSharpOptions"/>.
     /// </summary>
     public Action<CSharpOptions> CSharpOptions { get; set; } = _ => { };
-    
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(CSharpOptions);
-        
+
         // C# services.
         Services
             .AddExpressionDescriptorProvider<CSharpExpressionDescriptorProvider>()
-            .AddSingleton<ICSharpEvaluator, CSharpEvaluator>()
+            .AddScoped<ICSharpEvaluator, CSharpEvaluator>()
             ;
 
         // Handlers.
         Services.AddNotificationHandlersFrom<CSharpFeature>();
-        
+
         // Activities.
         Module.AddActivitiesFrom<CSharpFeature>();
     }

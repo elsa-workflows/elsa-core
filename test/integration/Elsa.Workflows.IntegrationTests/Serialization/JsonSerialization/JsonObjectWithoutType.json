@@ -1,0 +1,14 @@
+{
+  "StatusCode": "Created",
+  "Content": {
+    "file1": {
+      "script": [
+        {
+          "path": "folder1",
+          "command": "add"
+        }
+      ]
+    }
+  },
+  "_type": "ObjectMap"
+}

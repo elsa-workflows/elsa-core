@@ -24,7 +24,7 @@ public interface IJavaScriptEvaluator
         string expression, 
         Type returnType, 
         ExpressionExecutionContext context,
-        ExpressionEvaluatorOptions options,
+        ExpressionEvaluatorOptions? options = default,
         Action<Engine>? configureEngine = default, 
         CancellationToken cancellationToken = default);
 }

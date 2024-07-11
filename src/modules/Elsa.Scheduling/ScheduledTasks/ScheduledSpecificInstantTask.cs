@@ -1,7 +1,7 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
-using Elsa.Scheduling.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using Timer = System.Timers.Timer;
 
 namespace Elsa.Scheduling.ScheduledTasks;
@@ -13,20 +13,20 @@ public class ScheduledSpecificInstantTask : IScheduledTask
 {
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly DateTimeOffset _startAt;
-    private readonly ICommandSender _commandSender;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private Timer? _timer;
 
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
     /// </summary>
-    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ICommandSender commandSender, ISystemClock systemClock)
+    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ISystemClock systemClock, IServiceScopeFactory scopeFactory)
     {
         _task = task;
         _systemClock = systemClock;
+        _scopeFactory = scopeFactory;
         _startAt = startAt;
-        _commandSender = commandSender;
         _cancellationTokenSource = new CancellationTokenSource();
 
         Schedule();
@@ -50,9 +50,12 @@ public class ScheduledSpecificInstantTask : IScheduledTask
             _timer?.Dispose();
             _timer = null;
 
+            using var scope = _scopeFactory.CreateScope();
+            var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+
             var cancellationToken = _cancellationTokenSource.Token;
             if (!cancellationToken.IsCancellationRequested)
-                await _commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
+                await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
         };
     }
 }

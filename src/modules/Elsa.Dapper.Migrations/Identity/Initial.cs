@@ -1,10 +1,11 @@
 using FluentMigrator;
 using JetBrains.Annotations;
+using static System.Int32;
 
 namespace Elsa.Dapper.Migrations.Identity;
 
 /// <inheritdoc />
-[Migration(30001, "Elsa:Identity:Initial")]
+[Migration(30001, "Elsa:Identity:V3.0")]
 [PublicAPI]
 public class Initial : Migration
 {
@@ -17,13 +18,13 @@ public class Initial : Migration
             .WithColumn("Name").AsString().NotNullable()
             .WithColumn("HashedPassword").AsString().NotNullable()
             .WithColumn("HashedPasswordSalt").AsString().NotNullable()
-            .WithColumn("Roles").AsString().NotNullable();
+            .WithColumn("Roles").AsString(MaxValue).NotNullable();
         
         Create
             .Table("Roles")
             .WithColumn("Id").AsString().PrimaryKey()
             .WithColumn("Name").AsString().NotNullable()
-            .WithColumn("Permissions").AsString().NotNullable();
+            .WithColumn("Permissions").AsString(MaxValue).NotNullable();
 
         Create
             .Table("Applications")
@@ -34,7 +35,7 @@ public class Initial : Migration
             .WithColumn("Name").AsString().NotNullable()
             .WithColumn("HashedApiKey").AsString().NotNullable()
             .WithColumn("HashedApiKeySalt").AsString().NotNullable()
-            .WithColumn("Roles").AsString().NotNullable();
+            .WithColumn("Roles").AsString(MaxValue).NotNullable();
     }
 
     /// <inheritdoc />
