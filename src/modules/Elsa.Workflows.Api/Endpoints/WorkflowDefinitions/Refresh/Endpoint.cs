@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Responses;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Refresh;
@@ -18,13 +19,13 @@ internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefreshe
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        await RefreshWorkflowDefinitionsAsync(request.DefinitionIds, cancellationToken);
-        await SendOkAsync(cancellationToken);
+        var result = await RefreshWorkflowDefinitionsAsync(request.DefinitionIds, cancellationToken);
+        await SendOkAsync(new Response(result.Refreshed, result.NotFound), cancellationToken);
     }
 
-    private async Task RefreshWorkflowDefinitionsAsync(ICollection<string>? definitionIds, CancellationToken cancellationToken)
+    private async Task<RefreshWorkflowDefinitionsResponse> RefreshWorkflowDefinitionsAsync(ICollection<string>? definitionIds, CancellationToken cancellationToken)
     {
         var request = new RefreshWorkflowDefinitionsRequest(definitionIds, BatchSize);
-        await workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(request, cancellationToken);
+        return await workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(request, cancellationToken);
     }
 }

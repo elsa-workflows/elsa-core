@@ -49,21 +49,26 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public Task PopulateStoreAsync(CancellationToken cancellationToken = default)
+    public Task<ICollection<string>> PopulateStoreAsync(CancellationToken cancellationToken = default)
     {
         return PopulateStoreAsync(true, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
+    public async Task<ICollection<string>> PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
     {
         var providers = _workflowDefinitionProviders();
+        var workflowDefinitionIds = new List<string>();
         foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
+            workflowDefinitionIds.AddRange(results.Select(w => w.Workflow.Id));
+
             foreach (var result in results) await AddAsync(result, indexTriggers, cancellationToken);
         }
+
+        return workflowDefinitionIds;
     }
 
     /// <inheritdoc />
@@ -131,8 +136,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         if (existingDefinitionVersion != null)
         {
             workflowDefinitionsToSave.Add(existingDefinitionVersion);
-            
-            if(existingDefinitionVersion.Id != workflow.Identity.Id)
+
+            if (existingDefinitionVersion.Id != workflow.Identity.Id)
             {
                 // It's possible that the imported workflow definition has a different ID than the existing one in the store.
                 // In a future update, we might store this discrepancy in a "troubleshooting" table and provide tooling for managing these, and other, discrepancies.

@@ -15,17 +15,18 @@ namespace Elsa.Http.Handlers;
 /// A handler that invalidates the HTTP workflows cache when a workflow definition is published, retracted, or deleted or when triggers are indexed.
 /// </summary>
 [UsedImplicitly]
-public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflowsCacheManager,
-    ITriggerStore triggerStore,
-    IHttpWorkflowsCacheManager cacheManager) :
+public class InvalidateHttpWorkflowsCache(
+    IHttpWorkflowsCacheManager httpWorkflowsCacheManager,
+    ITriggerStore triggerStore) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
     INotificationHandler<WorkflowDefinitionVersionsUpdated>,
-    INotificationHandler<WorkflowDefinitionDeleted>, 
+    INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
-    INotificationHandler<WorkflowTriggersIndexed>
+    INotificationHandler<WorkflowTriggersIndexed>,
+    INotificationHandler<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
@@ -91,6 +92,15 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
         await InvalidateCacheAsync(notification.IndexedWorkflowTriggers.Workflow.Identity.DefinitionId);
     }
 
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
+    {
+        foreach (var workflowDefinitionId in notification.WorkflowDefinitionIds)
+        {
+            await InvalidateCacheAsync(workflowDefinitionId);
+        }
+    }
+
     private async Task InvalidateCacheAsync(string workflowDefinitionId)
     {
         await httpWorkflowsCacheManager.EvictWorkflowAsync(workflowDefinitionId);
@@ -103,7 +113,7 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
             WorkflowDefinitionVersionId = workflowDefinitionVersionId
         };
         var triggers = await triggerStore.FindManyAsync(filter, cancellationToken);
-        
+
         await InvalidateTriggerCacheAsync(triggers, cancellationToken);
     }
 
@@ -113,7 +123,7 @@ public class InvalidateHttpWorkflowsCache(IHttpWorkflowsCacheManager httpWorkflo
         {
             if (trigger?.Payload is HttpEndpointBookmarkPayload httpPayload)
             {
-                var hash = cacheManager.ComputeBookmarkHash(httpPayload.Path, httpPayload.Method);
+                var hash = httpWorkflowsCacheManager.ComputeBookmarkHash(httpPayload.Path, httpPayload.Method);
                 await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);
             }
         }
