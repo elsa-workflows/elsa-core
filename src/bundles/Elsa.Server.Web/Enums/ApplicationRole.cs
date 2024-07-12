@@ -5,5 +5,5 @@ public enum ApplicationRole
     Default,
     Api,
     Worker,
-    Monitoring    
+    Monitor    
 }

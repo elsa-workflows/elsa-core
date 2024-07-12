@@ -31,8 +31,8 @@ public static class WebApplicationExtensions
             config.Serializer.RequestDeserializer = DeserializeRequestAsync;
             config.Serializer.ResponseSerializer = SerializeRequestAsync;
             
-            config.Binding.ValueParserFor<DateTime>(s =>
-                new(DateTime.TryParse(s.ToString(),CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind, out var result), result));
+            config.Binding.ValueParserFor<DateTimeOffset>(s =>
+                new(DateTimeOffset.TryParse(s.ToString(),CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind, out var result), result));
         });
     
     /// <summary>

@@ -6,6 +6,6 @@ public class HasJournalUpdateRequest
     /// The unique identifier of a workflow instance.
     public string WorkflowInstanceId { get; set; } = default!;
 
-    /// The start date for checking for updates in the workflow instance.
-    public DateTime UpdatesSince { get; set; }
+    /// The start date for checking for updates in the workflow instance journal.
+    public DateTimeOffset UpdatesSince { get; set; }
 }
