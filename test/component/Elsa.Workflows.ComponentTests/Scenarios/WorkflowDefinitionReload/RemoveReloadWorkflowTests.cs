@@ -17,7 +17,7 @@ public class RemoveReloadWorkflowTests : AppComponentTest
     }
 
     [Fact]
-    public async Task RemovingTheWorkflowThenReload_WorflowShouldBeReachableAgain()
+    public async Task RemovingTheWorkflowThenReload_WorkflowShouldBeReachableAgain()
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
