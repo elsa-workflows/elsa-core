@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Contracts;
@@ -29,6 +30,9 @@ public static class WebApplicationExtensions
             config.Endpoints.RoutePrefix = routePrefix;
             config.Serializer.RequestDeserializer = DeserializeRequestAsync;
             config.Serializer.ResponseSerializer = SerializeRequestAsync;
+            
+            config.Binding.ValueParserFor<DateTimeOffset>(s =>
+                new(DateTimeOffset.TryParse(s.ToString(),CultureInfo.InvariantCulture,DateTimeStyles.RoundtripKind, out var result), result));
         });
     
     /// <summary>
