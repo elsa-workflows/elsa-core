@@ -27,6 +27,7 @@ public class TriggerBookmarkQueueWorker(IBookmarkQueueWorker bookmarkQueueWorker
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             await using var scope = scopeFactory.CreateAsyncScope();
             var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
             var lockAcquisitionTimeout = options.Value.LockAcquisitionTimeout;
