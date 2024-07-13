@@ -6,7 +6,7 @@ public class StoreCommitStateHandler(IWorkflowInstanceManager workflowInstanceMa
 {
     public async Task CommitAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
     {
-        await workflowExecutionContext.ExecuteDeferredTasksAsync();
         await workflowInstanceManager.SaveAsync(workflowExecutionContext, cancellationToken);
+        await workflowExecutionContext.ExecuteDeferredTasksAsync();
     }
 }
