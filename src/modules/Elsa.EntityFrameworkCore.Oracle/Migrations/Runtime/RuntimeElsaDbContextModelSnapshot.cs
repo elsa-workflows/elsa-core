@@ -144,6 +144,45 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("BookmarkHash")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "BookmarkHash" }, "IX_BookmarkQueueItem_BookmarkHash");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_BookmarkQueueItem_CreatedAt");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")

@@ -141,6 +141,45 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("BookmarkHash")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "BookmarkHash" }, "IX_BookmarkQueueItem_BookmarkHash");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_BookmarkQueueItem_CreatedAt");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")

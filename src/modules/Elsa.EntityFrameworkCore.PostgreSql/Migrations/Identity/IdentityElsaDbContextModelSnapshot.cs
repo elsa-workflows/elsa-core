@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
     partial class IdentityElsaDbContextModelSnapshot : ModelSnapshot

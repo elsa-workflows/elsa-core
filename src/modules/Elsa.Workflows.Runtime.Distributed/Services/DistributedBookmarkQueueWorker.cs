@@ -1,4 +1,5 @@
 using Medallion.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Distributed;
@@ -6,8 +7,8 @@ namespace Elsa.Workflows.Runtime.Distributed;
 public class DistributedBookmarkQueueWorker(
     IDistributedLockProvider distributedLockProvider,
     IBookmarkQueueWorkerSignaler signaler,
-    IBookmarkQueueProcessor processor,
-    ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, processor)
+    IServiceScopeFactory scopeFactory,
+    ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory)
 {
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {

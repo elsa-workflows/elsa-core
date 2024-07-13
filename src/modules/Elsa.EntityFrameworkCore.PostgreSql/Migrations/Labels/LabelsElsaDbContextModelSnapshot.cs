@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
     partial class LabelsElsaDbContextModelSnapshot : ModelSnapshot

@@ -1,6 +1,8 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IBookmarkQueueProcessor processor) : IBookmarkQueueWorker
+public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IServiceScopeFactory scopeFactory) : IBookmarkQueueWorker
 {
     private bool _running;
     private CancellationTokenSource _cts = default!;
@@ -33,6 +35,8 @@ public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IBookmar
     
     protected virtual async Task ProcessAsync(CancellationToken cancellationToken)
     {
+        using var scope = scopeFactory.CreateScope();
+        var processor = scope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>();
         await processor.ProcessAsync(cancellationToken);
     }
 }

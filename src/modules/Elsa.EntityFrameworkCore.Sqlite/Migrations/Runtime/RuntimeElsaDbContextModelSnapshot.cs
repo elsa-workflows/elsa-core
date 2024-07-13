@@ -138,6 +138,45 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BookmarkHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "BookmarkHash" }, "IX_BookmarkQueueItem_BookmarkHash");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_BookmarkQueueItem_CreatedAt");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueItems");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")

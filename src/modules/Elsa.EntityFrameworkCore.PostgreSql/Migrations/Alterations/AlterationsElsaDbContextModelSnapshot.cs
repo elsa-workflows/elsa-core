@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
     partial class AlterationsElsaDbContextModelSnapshot : ModelSnapshot

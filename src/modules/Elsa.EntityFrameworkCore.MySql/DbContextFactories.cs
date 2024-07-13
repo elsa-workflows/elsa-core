@@ -7,6 +7,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 
@@ -41,6 +42,6 @@ public class MySqlDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFa
 {
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)
     {
-        builder.UseElsaMySql(GetType().Assembly, connectionString);
+        builder.UseElsaMySql(GetType().Assembly, connectionString, serverVersion: ServerVersion.Parse("9.0.0"));
     }
 }

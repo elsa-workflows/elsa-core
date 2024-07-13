@@ -148,7 +148,9 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<PopulateRegistriesHostedService>(1);
+        Module
+            .ConfigureHostedService<PopulateRegistriesHostedService>(1)
+            .ConfigureHostedService<TriggerBookmarkQueueWorker>(1);
     }
 
     /// <inheritdoc />
@@ -179,6 +181,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
             .AddSingleton<IBookmarkQueueWorkerSignaler, BookmarkQueueWorkerSignaler>()
+            .AddSingleton<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -204,7 +207,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
-            .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<StoreCommitStateHandler>()
             

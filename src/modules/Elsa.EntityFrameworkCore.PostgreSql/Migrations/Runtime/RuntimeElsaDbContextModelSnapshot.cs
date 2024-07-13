@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
+namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
     partial class RuntimeElsaDbContextModelSnapshot : ModelSnapshot
@@ -142,6 +142,45 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion");
 
                     b.ToTable("ActivityExecutionRecords", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BookmarkHash")
+                        .HasColumnType("text");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "BookmarkHash" }, "IX_BookmarkQueueItem_BookmarkHash");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_BookmarkQueueItem_CreatedAt");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueItems", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
