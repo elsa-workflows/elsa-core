@@ -9,7 +9,7 @@ using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Represents a client for executing and managing local workflows.

@@ -4,7 +4,7 @@ using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// A simple implementation that queues the specified request for workflow execution on a non-durable background worker.

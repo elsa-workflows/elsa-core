@@ -5,7 +5,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Results;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class StimulusSender(

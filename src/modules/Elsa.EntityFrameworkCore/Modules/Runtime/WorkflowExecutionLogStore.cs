@@ -67,7 +67,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp), cancellationToken).LongCount();
-        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await _store.QueryAsync(queryable => Filter(queryable, filter).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
@@ -75,7 +75,7 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = await _store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
-        var results = await _store.QueryAsync(queryable => Paginate(Filter(queryable, filter), pageArgs).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+        var results = await _store.QueryAsync(queryable => Filter(queryable, filter).Paginate(pageArgs).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
@@ -114,11 +114,4 @@ public class EFCoreWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     }
 
     private static IQueryable<WorkflowExecutionLogRecord> Filter(IQueryable<WorkflowExecutionLogRecord> queryable, WorkflowExecutionLogRecordFilter filter) => filter.Apply(queryable);
-
-    private static IQueryable<WorkflowExecutionLogRecord> Paginate(IQueryable<WorkflowExecutionLogRecord> queryable, PageArgs? pageArgs)
-    {
-        if (pageArgs?.Offset != null) queryable = queryable.Skip(pageArgs.Offset.Value);
-        if (pageArgs?.Limit != null) queryable = queryable.Take(pageArgs.Limit.Value);
-        return queryable;
-    }
 }

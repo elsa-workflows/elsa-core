@@ -8,7 +8,7 @@ using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStorePopulator

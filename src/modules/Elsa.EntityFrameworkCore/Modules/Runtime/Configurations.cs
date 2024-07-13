@@ -13,6 +13,7 @@ public class Configurations :
     IEntityTypeConfiguration<WorkflowExecutionLogRecord>,
     IEntityTypeConfiguration<ActivityExecutionRecord>,
     IEntityTypeConfiguration<StoredBookmark>,
+    IEntityTypeConfiguration<BookmarkQueueItem>,
     IEntityTypeConfiguration<SerializedKeyValuePair>
 {
     /// <inheritdoc />
@@ -100,6 +101,18 @@ public class Configurations :
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => new { x.ActivityTypeName, x.Hash, x.WorkflowInstanceId }, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}_{nameof(StoredBookmark.Hash)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.TenantId)}");
+    }
+    
+    public void Configure(EntityTypeBuilder<BookmarkQueueItem> builder)
+    {
+        builder.Ignore(x => x.Options);
+        builder.Property<string>("SerializedOptions");
+        builder.HasKey(x => x.Id);
+        builder.HasIndex(x => x.BookmarkHash, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.BookmarkHash)}");
+        builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.BookmarkId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.BookmarkId)}");
+        builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CreatedAt)}");
+        builder.HasIndex(x => x.TenantId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.TenantId)}");
     }
 
     /// <inheritdoc />

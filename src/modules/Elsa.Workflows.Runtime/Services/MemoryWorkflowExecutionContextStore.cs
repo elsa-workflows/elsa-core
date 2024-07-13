@@ -1,7 +1,7 @@
 using Elsa.Common.Services;
 using Elsa.Workflows.Runtime.Stores;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Stores <see cref="WorkflowExecutionContext"/> in memory.

@@ -3,19 +3,18 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// An activity invoker that invokes activities detached from the workflow. This is useful for invoking activities from a background worker.
 /// </summary>
 public class BackgroundActivityInvoker(
-    IBookmarkResumer bookmarkResumer,
+    IBookmarkQueue bookmarkQueue,
     IWorkflowInstanceManager workflowInstanceManager,
     IWorkflowDefinitionService workflowDefinitionService,
     IVariablePersistenceManager variablePersistenceManager,
@@ -77,16 +76,17 @@ public class BackgroundActivityInvoker(
         if (outcomes != null) properties[outcomesKey] = outcomes;
         if (completed != null) properties[completedKey] = completed;
 
-        var bookmarkFilter = new BookmarkFilter
-        {
-            BookmarkId = scheduledBackgroundActivity.BookmarkId,
-            WorkflowInstanceId = workflowInstanceId
-        };
         var resumeBookmarkOptions = new ResumeBookmarkOptions
         {
             Properties = properties
         };
-        await bookmarkResumer.ResumeAsync(bookmarkFilter, resumeBookmarkOptions, cancellationToken);
+        var enqueuedBookmark = new NewBookmarkQueueItem
+        {
+            WorkflowInstanceId = workflowInstanceId,
+            BookmarkId = scheduledBackgroundActivity.BookmarkId,
+            Options = resumeBookmarkOptions,
+        };
+        await bookmarkQueue.EnqueueAsync(enqueuedBookmark, cancellationToken);
     }
 
     private IDictionary<string, object> ExtractActivityOutput(ActivityExecutionContext activityExecutionContext)

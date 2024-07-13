@@ -2,7 +2,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Contracts;
@@ -10,7 +9,7 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowDefinitionsRefresher(IWorkflowDefinitionStore store, ITriggerIndexer triggerIndexer, INotificationSender notificationSender) : IWorkflowDefinitionsRefresher

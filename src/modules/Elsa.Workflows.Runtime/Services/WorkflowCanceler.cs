@@ -4,7 +4,7 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowCanceler(IWorkflowExecutionPipeline workflowExecutionPipeline, IWorkflowStateExtractor workflowStateExtractor, IServiceProvider serviceProvider) : IWorkflowCanceler
