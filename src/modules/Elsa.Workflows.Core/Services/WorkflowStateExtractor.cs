@@ -3,7 +3,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class WorkflowStateExtractor : IWorkflowStateExtractor

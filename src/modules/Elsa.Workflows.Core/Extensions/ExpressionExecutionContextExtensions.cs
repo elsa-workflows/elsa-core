@@ -11,7 +11,6 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Services;
 using Humanizer;
 
 // ReSharper disable once CheckNamespace

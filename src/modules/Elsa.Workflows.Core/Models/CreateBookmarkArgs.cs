@@ -1,5 +1,3 @@
-using Elsa.Workflows.Services;
-
 namespace Elsa.Workflows.Models;
 
 /// Provides bookmark creation options.

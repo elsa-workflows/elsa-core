@@ -6,7 +6,7 @@ using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class Hasher : IHasher

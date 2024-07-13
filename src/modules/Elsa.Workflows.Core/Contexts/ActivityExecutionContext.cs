@@ -9,7 +9,6 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows;

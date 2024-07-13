@@ -18,7 +18,6 @@ using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
-using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
@@ -55,6 +54,11 @@ public class WorkflowsFeature : FeatureBase
     /// A factory that instantiates a concrete <see cref="IIdentityGenerator"/>.
     /// </summary>
     public Func<IServiceProvider, IIdentityGenerator> IdentityGenerator { get; set; } = sp => new RandomLongIdentityGenerator();
+    
+    /// <summary>
+    /// A handler for committing workflow execution state.
+    /// </summary>
+    public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
 
     /// <summary>
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
@@ -133,6 +137,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowGraphBuilder, WorkflowGraphBuilder>()
             .AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>()
             .AddScoped<IActivitySchedulerFactory, ActivitySchedulerFactory>()
+            .AddScoped(CommitStateHandler)
             .AddSingleton<IHasher, Hasher>()
             .AddSingleton<IStimulusHasher, StimulusHasher>()
             .AddSingleton(IdentityGenerator)

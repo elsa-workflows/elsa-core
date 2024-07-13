@@ -1,6 +1,6 @@
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class StimulusHasher(IHasher hasher) : IStimulusHasher

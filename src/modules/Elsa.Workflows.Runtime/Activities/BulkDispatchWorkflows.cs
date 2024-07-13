@@ -15,7 +15,6 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
-using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 

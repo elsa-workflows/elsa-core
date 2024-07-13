@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A storage driver that stores objects in memory.

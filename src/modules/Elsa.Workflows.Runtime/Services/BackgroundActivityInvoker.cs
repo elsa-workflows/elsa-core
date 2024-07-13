@@ -5,7 +5,6 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;

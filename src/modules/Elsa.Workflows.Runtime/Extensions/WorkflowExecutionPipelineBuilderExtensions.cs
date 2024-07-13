@@ -13,7 +13,7 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
-            .UseDeferredActivityTasks()
+            //.UseDeferredActivityTasks()
             //.UseBackgroundActivities()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
@@ -31,8 +31,8 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     /// Installs middleware that persists bookmarks after workflow execution.
     public static IWorkflowExecutionPipelineBuilder UseBookmarkPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistBookmarkMiddleware>();
 
-    /// Installs middleware that executes deferred activity tasks.
-    public static IWorkflowExecutionPipelineBuilder UseDeferredActivityTasks(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExecuteDeferredActivityTasks>();
+    // /// Installs middleware that executes deferred activity tasks.
+    // public static IWorkflowExecutionPipelineBuilder UseDeferredActivityTasks(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExecuteDeferredActivityTasks>();
 
     /// Installs middleware that persists the workflow execution journal.
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();

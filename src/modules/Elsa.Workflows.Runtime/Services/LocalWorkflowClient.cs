@@ -76,7 +76,6 @@ public class LocalWorkflowClient(
         var workflowResult = await workflowRunner.RunAsync(workflowGraph, workflowState, runWorkflowOptions, cancellationToken);
 
         workflowState = workflowResult.WorkflowState;
-        await workflowInstanceManager.SaveAsync(workflowState, cancellationToken);
 
         return new RunWorkflowInstanceResponse
         {

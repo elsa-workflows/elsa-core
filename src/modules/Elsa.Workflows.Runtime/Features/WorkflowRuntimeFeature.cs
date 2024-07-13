@@ -7,6 +7,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Handlers;
@@ -19,7 +20,6 @@ using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Stores;
-using Elsa.Workflows.Services;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -139,6 +139,10 @@ public class WorkflowRuntimeFeature : FeatureBase
     public override void Configure()
     {
         Module.AddActivitiesFrom<WorkflowRuntimeFeature>();
+        Module.Configure<WorkflowsFeature>(workflows =>
+        {
+            workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
+        });
     }
 
     /// <inheritdoc />
@@ -202,6 +206,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
+            .AddScoped<StoreCommitStateHandler>()
             
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
