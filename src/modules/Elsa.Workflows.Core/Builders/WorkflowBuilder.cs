@@ -214,7 +214,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = string.IsNullOrEmpty(DefinitionId) ? _identityGenerator.GenerateId() : DefinitionId;
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? identityGenerator.GenerateId() : DefinitionId;
         var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
         var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
