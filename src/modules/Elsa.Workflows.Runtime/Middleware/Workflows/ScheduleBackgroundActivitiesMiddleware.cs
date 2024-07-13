@@ -35,11 +35,11 @@ public class ScheduleBackgroundActivitiesMiddleware(
         if (scheduledBackgroundActivities.Count == 0)
             return;
         
+        // Commit state.
+        await workflowInstanceManager.SaveAsync(context, cancellationToken);
+        
         context.DeferTask(async () =>
         {
-            // Commit state.
-            await workflowInstanceManager.SaveAsync(context, cancellationToken);
-            
             foreach (var scheduledBackgroundActivity in scheduledBackgroundActivities)
             {
                 // Schedule the background activity.
