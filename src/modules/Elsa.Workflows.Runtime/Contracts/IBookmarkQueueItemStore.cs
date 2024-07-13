@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -7,9 +5,7 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime;
 
-/// <summary>
 /// Provides access to bookmark queue items.
-/// </summary>
 public interface IBookmarkQueueItemStore
 {
     /// <summary>

@@ -12,9 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
-/// <summary>
 /// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
-/// </summary>
 [UsedImplicitly]
 public class BackgroundActivityInvokerMiddleware(
     ActivityMiddlewareDelegate next,
@@ -28,10 +26,7 @@ public class BackgroundActivityInvokerMiddleware(
     internal static string GetBackgroundActivityCompletedKey(string activityNodeId) => $"__BackgroundActivityCompleted:{activityNodeId}";
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
     internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
-
     internal static string GetBackgroundActivityBookmarksKey(string activityNodeId) => $"__BackgroundActivityBookmarks:{activityNodeId}";
-
-    //internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
 
     /// <inheritdoc />

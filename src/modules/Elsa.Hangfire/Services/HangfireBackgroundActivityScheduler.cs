@@ -6,9 +6,7 @@ using Hangfire.States;
 
 namespace Elsa.Hangfire.Services;
 
-/// <summary>
 /// Invokes activities from a background worker within the context of its workflow instance using Hangfire.
-/// </summary>
 public class HangfireBackgroundActivityScheduler(IBackgroundJobClient backgroundJobClient) : IBackgroundActivityScheduler
 {
     public Task<string> CreateAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
