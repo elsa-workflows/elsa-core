@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IServiceScopeFactory scopeFactory) : IBookmarkQueueWorker
+public class BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory) : IBookmarkQueueWorker
 {
     private CancellationTokenSource _cts = default!;
     private bool _running;

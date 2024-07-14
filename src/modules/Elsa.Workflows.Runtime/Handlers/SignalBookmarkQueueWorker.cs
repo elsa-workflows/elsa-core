@@ -8,14 +8,14 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Signals the bookmark queue worker to process any queued work.
 /// </summary>
 [UsedImplicitly]
-public class SignalBookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler) : INotificationHandler<WorkflowBookmarksIndexed>, INotificationHandler<BookmarkSaved>
+public class SignalBookmarkQueueWorker(IBookmarkQueueSignaler signaler) : INotificationHandler<WorkflowBookmarksIndexed>, INotificationHandler<BookmarkSaved>
 {
-    public Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
+    public Task HandleAsync(BookmarkSaved notification, CancellationToken cancellationToken)
     {
         return Trigger();
     }
 
-    public Task HandleAsync(BookmarkSaved notification, CancellationToken cancellationToken)
+    public Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
         return Trigger();
     }

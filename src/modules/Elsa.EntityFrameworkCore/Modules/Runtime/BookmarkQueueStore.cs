@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
@@ -16,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
 /// An EF Core implementation of <see cref="IBookmarkQueueStore"/>.
 [UsedImplicitly]
-public class BookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueStore
+public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueStore
 {
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)

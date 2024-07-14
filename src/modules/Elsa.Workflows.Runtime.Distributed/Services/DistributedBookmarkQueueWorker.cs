@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedBookmarkQueueWorker(
     IDistributedLockProvider distributedLockProvider,
-    IBookmarkQueueWorkerSignaler signaler,
+    IBookmarkQueueSignaler signaler,
     IServiceScopeFactory scopeFactory,
     ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory)
 {

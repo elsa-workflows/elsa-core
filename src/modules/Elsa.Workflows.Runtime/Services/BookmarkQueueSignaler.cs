@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueWorkerSignaler : IBookmarkQueueWorkerSignaler
+public class BookmarkQueueSignaler : IBookmarkQueueSignaler
 {
     private TaskCompletionSource? _tsc;
 

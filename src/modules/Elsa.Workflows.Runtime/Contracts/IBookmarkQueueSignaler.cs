@@ -1,6 +1,6 @@
 namespace Elsa.Workflows.Runtime;
 
-public interface IBookmarkQueueWorkerSignaler
+public interface IBookmarkQueueSignaler
 {
     Task AwaitAsync();
     void Trigger();

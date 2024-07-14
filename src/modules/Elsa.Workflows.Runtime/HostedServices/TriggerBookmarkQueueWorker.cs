@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime.HostedServices;
 
 /// Periodically signals the bookmark queue processor to check for new items. This is a reliability measure that ensures stimuli never gets missed.
 [UsedImplicitly]
-public class TriggerBookmarkQueueWorker(IBookmarkQueueWorker bookmarkQueueWorker, IBookmarkQueueWorkerSignaler signaler, IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options) : BackgroundService
+public class TriggerBookmarkQueueWorker(IBookmarkQueueWorker bookmarkQueueWorker, IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options) : BackgroundService
 {
     public override Task StartAsync(CancellationToken cancellationToken)
     {

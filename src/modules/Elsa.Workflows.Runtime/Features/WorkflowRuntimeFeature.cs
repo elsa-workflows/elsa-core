@@ -36,75 +36,75 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
-    
+
     /// A list of workflow builders configured during application startup.
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
-    
+
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
     public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalWorkflowRuntime>(sp);
-    
+
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
     {
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
         return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
     };
-    
+
     /// A factory that instantiates an <see cref="IWorkflowCancellationDispatcher"/>.
     public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
 
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkStore>();
-    
+
     /// A factory that instantiates an <see cref="IBookmarkQueueStore"/>.
     public Func<IServiceProvider, IBookmarkQueueStore> BookmarkQueueStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueStore>();
-    
+
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
-    
+
     /// A factory that instantiates an <see cref="IWorkflowExecutionLogStore"/>.
     public Func<IServiceProvider, IWorkflowExecutionLogStore> WorkflowExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
-    
+
     /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
-    
+
     /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
     public Func<IServiceProvider, IWorkflowExecutionContextStore> WorkflowExecutionContextStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionContextStore>();
-    
+
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
-    
+
     /// A factory that instantiates an <see cref="ITaskDispatcher"/>.
     public Func<IServiceProvider, ITaskDispatcher> RunTaskDispatcher { get; set; } = sp => sp.GetRequiredService<BackgroundTaskDispatcher>();
-    
+
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
-    
+
     /// Represents a sink for workflow execution logs.
     public Func<IServiceProvider, IWorkflowExecutionLogSink> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
-    
+
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
     public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
-    
+
     public Func<IServiceProvider, IBookmarkQueueWorker> BookmarkQueueWorker { get; set; } = sp => sp.GetRequiredService<BookmarkQueueWorker>();
-    
+
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     public Action<DistributedLockingOptions> DistributedLockingOptions { get; set; } = _ => { };
-    
+
     /// A delegate to configure the <see cref="WorkflowInboxCleanupOptions"/>.
     [Obsolete("Will be removed in a future version")]
     public Action<WorkflowInboxCleanupOptions> WorkflowInboxCleanupOptions { get; set; } = _ => { };
-    
+
     /// A delegate to configure the <see cref="WorkflowDispatcherOptions"/>.
     public Action<WorkflowDispatcherOptions> WorkflowDispatcherOptions { get; set; } = _ => { };
-    
+
     /// Register the specified workflow type.
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         Workflows.Add<T>();
         return this;
     }
-    
+
     /// Register all workflows in the specified assembly.
     [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
@@ -118,7 +118,7 @@ public class WorkflowRuntimeFeature : FeatureBase
 
         return this;
     }
-    
+
     /// Adds a dispatcher channel.
     public WorkflowRuntimeFeature AddDispatcherChannel(string channel)
     {
@@ -127,7 +127,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             Name = channel
         });
     }
-    
+
     /// Adds a dispatcher channel.
     public WorkflowRuntimeFeature AddDispatcherChannel(DispatcherChannel channel)
     {
@@ -180,7 +180,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
-            .AddSingleton<IBookmarkQueueWorkerSignaler, BookmarkQueueWorkerSignaler>()
+            .AddSingleton<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
             .AddSingleton<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
@@ -209,10 +209,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<StoreCommitStateHandler>()
-            
+
             // Deprecated services.
             .AddScoped<IWorkflowInbox, StimulusProxyWorkflowInbox>()
-            
+
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(BookmarkQueueStore)
@@ -261,6 +261,5 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
-        
     }
 }

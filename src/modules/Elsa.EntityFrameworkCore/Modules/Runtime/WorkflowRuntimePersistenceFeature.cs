@@ -32,6 +32,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
+            feature.BookmarkQueueStore = sp => sp.GetRequiredService<EFBookmarkQueueStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
@@ -41,13 +42,14 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
     public override void Apply()
     {
         base.Apply();
-        
+
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
-        AddStore<StoredBookmark, EFCoreBookmarkStore>();
+        AddEntityStore<StoredBookmark, EFCoreBookmarkStore>();
+        AddEntityStore<BookmarkQueueItem, EFBookmarkQueueStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
-        AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
-        
+        AddEntityStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
+
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }
