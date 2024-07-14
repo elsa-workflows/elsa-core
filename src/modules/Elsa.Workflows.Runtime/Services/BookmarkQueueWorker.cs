@@ -4,23 +4,28 @@ namespace Elsa.Workflows.Runtime;
 
 public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IServiceScopeFactory scopeFactory) : IBookmarkQueueWorker
 {
-    private bool _running;
     private CancellationTokenSource _cts = default!;
-    
+    private bool _running;
+
     public void Start()
     {
-        if(_running)
+        if (_running)
             return;
 
         _cts = new();
         _running = true;
-        
+
         _ = Task.Run(AwaitSignalAsync);
     }
 
     public void Stop()
     {
-        _cts.Cancel();
+        if (_running)
+        {
+            _running = false;
+            _cts.Cancel();
+        }
+
         _cts.Dispose();
     }
 
@@ -32,7 +37,7 @@ public class BookmarkQueueWorker(IBookmarkQueueWorkerSignaler signaler, IService
             await ProcessAsync(_cts.Token);
         }
     }
-    
+
     protected virtual async Task ProcessAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
