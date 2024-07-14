@@ -25,7 +25,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     /// <inheritdoc />
     public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
     {
-        return store.AddAsync(record, cancellationToken);
+        return store.AddAsync(record, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />

@@ -27,7 +27,7 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkResumer
         if (string.IsNullOrWhiteSpace(parentInstanceId))
             return;
 
-        var activityTypeName = TypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
         var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId);
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus);
         var workflowInstanceId = workflowState.Id;
@@ -45,7 +45,7 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkResumer
         };
         var bookmarkQueueItem = new NewBookmarkQueueItem
         {
-            WorkflowInstanceId = workflowInstanceId,
+            WorkflowInstanceId = parentInstanceId,
             ActivityTypeName = activityTypeName,
             StimulusHash = stimulusHash,
             Options = resumeBookmarkOptions
