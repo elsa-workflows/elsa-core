@@ -69,8 +69,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     BookmarkId = table.Column<string>(type: "TEXT", nullable: true),
-                    BookmarkHash = table.Column<string>(type: "TEXT", nullable: true),
+                    StimulusHash = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
+                    ActivityTypeName = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     SerializedOptions = table.Column<string>(type: "TEXT", nullable: true),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true)
@@ -106,9 +107,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BookmarkQueueItem_BookmarkHash",
+                name: "IX_BookmarkQueueItem_StimulusHash",
                 table: "BookmarkQueueItems",
-                column: "BookmarkHash");
+                column: "StimulusHash");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueItem_BookmarkId",
@@ -129,6 +130,16 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 name: "IX_BookmarkQueueItem_WorkflowInstanceId",
                 table: "BookmarkQueueItems",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityInstanceId",
+                table: "BookmarkQueueItems",
+                column: "ActivityInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityTypeName",
+                table: "BookmarkQueueItems",
+                column: "ActivityTypeName");
         }
 
         /// <inheritdoc />

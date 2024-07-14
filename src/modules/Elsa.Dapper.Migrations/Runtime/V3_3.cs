@@ -28,8 +28,9 @@ public class V3_3 : Migration
             .WithColumn("WorkflowInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
-            .WithColumn("BookmarkHash").AsString().Nullable()
+            .WithColumn("StimulusHash").AsString().Nullable()
             .WithColumn("ActivityInstanceId").AsString().Nullable()
+            .WithColumn("ActivityTypeName").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
             ;
 
@@ -40,8 +41,9 @@ public class V3_3 : Migration
             .WithColumn("WorkflowInstanceId").AsString().Nullable()
             .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
-            .WithColumn("BookmarkHash").AsString().Nullable()
+            .WithColumn("StimulusHash").AsString().Nullable()
             .WithColumn("ActivityInstanceId").AsString().Nullable()
+            .WithColumn("ActivityTypeName").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable()
             ;
     }

@@ -636,8 +636,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                     Id = table.Column<string>(type: "text", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
                     BookmarkId = table.Column<string>(type: "text", nullable: true),
-                    BookmarkHash = table.Column<string>(type: "text", nullable: true),
+                    StimulusHash = table.Column<string>(type: "text", nullable: true),
                     ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
+                    ActivityTypeName = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SerializedOptions = table.Column<string>(type: "text", nullable: true),
                     TenantId = table.Column<string>(type: "text", nullable: true)
@@ -678,10 +679,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BookmarkQueueItem_BookmarkHash",
+                name: "IX_BookmarkQueueItem_StimulusHash",
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
-                column: "BookmarkHash");
+                column: "StimulusHash");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueItem_BookmarkId",
@@ -706,6 +707,18 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityInstanceId",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "ActivityInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityTypeName",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "ActivityTypeName");
         }
 
         /// <inheritdoc />

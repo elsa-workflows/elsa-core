@@ -88,9 +88,11 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                             .Annotation("MySql:CharSet", "utf8mb4"),
                         BookmarkId = table.Column<string>(type: "varchar(255)", nullable: true)
                             .Annotation("MySql:CharSet", "utf8mb4"),
-                        BookmarkHash = table.Column<string>(type: "varchar(255)", nullable: true)
+                        StimulusHash = table.Column<string>(type: "varchar(255)", nullable: true)
                             .Annotation("MySql:CharSet", "utf8mb4"),
                         ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: true)
                             .Annotation("MySql:CharSet", "utf8mb4"),
                         CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                         SerializedOptions = table.Column<string>(type: "longtext", nullable: true)
@@ -135,10 +137,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BookmarkQueueItem_BookmarkHash",
+                name: "IX_BookmarkQueueItem_StimulusHash",
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
-                column: "BookmarkHash");
+                column: "StimulusHash");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueItem_BookmarkId",
@@ -169,6 +171,18 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 column: "CorrelationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityInstanceId",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "ActivityInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_ActivityInstanceTypeName",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "ActivityInstanceTypeName");
         }
 
         /// <inheritdoc />

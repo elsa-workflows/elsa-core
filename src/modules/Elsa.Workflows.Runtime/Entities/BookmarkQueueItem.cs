@@ -17,10 +17,13 @@ public class BookmarkQueueItem : Entity
     public string? BookmarkId { get; set; }
 
     /// A bookmark payload hash of the bookmark to resume.
-    public string? BookmarkHash { get; set; }
+    public string? StimulusHash { get; set; }
 
     /// The ID of the activity instance associated with the bookmark.
     public string? ActivityInstanceId { get; set; }
+
+    // The type name of the activity associated with the bookmark.
+    public string? ActivityTypeName { get; set; }
 
     /// Any options to apply when resuming the bookmark.
     public ResumeBookmarkOptions? Options { get; set; }
@@ -36,7 +39,7 @@ public class BookmarkQueueItem : Entity
             WorkflowInstanceId = WorkflowInstanceId,
             CorrelationId = CorrelationId,
             BookmarkId = BookmarkId,
-            Hash = BookmarkHash,
+            Hash = StimulusHash,
             ActivityInstanceId = ActivityInstanceId
         };
     }

@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
@@ -95,14 +94,12 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    [Port]
-    public IActivity? ChildCompleted { get; set; }
+    [Port] public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    [Port]
-    public IActivity? ChildFaulted { get; set; }
+    [Port] public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -113,7 +110,8 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
-            context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            //context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            await DispatchChildWorkflowAsync(context, item);
             dispatchedInstancesCount++;
         }
 

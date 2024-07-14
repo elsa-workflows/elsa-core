@@ -56,8 +56,9 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
         query
             .Is(nameof(BookmarkQueueItemRecord.WorkflowInstanceId), filter.WorkflowInstanceId)
             .Is(nameof(BookmarkQueueItemRecord.BookmarkId), filter.BookmarkId)
-            .Is(nameof(BookmarkQueueItemRecord.BookmarkHash), filter.BookmarkHash)
+            .Is(nameof(BookmarkQueueItemRecord.StimulusHash), filter.BookmarkHash)
             .Is(nameof(BookmarkQueueItemRecord.ActivityInstanceId), filter.ActivityInstanceId)
+            .Is(nameof(BookmarkQueueItemRecord.ActivityTypeName), filter.ActivityTypeName)
             ;
     }
 
@@ -72,8 +73,9 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
             BookmarkId = source.BookmarkId,
-            BookmarkHash = source.BookmarkHash,
+            StimulusHash = source.StimulusHash,
             ActivityInstanceId = source.ActivityInstanceId,
+            ActivityTypeName = source.ActivityTypeName,
             SerializedOptions = source.Options != null ? payloadSerializer.Serialize(source.Options) : default,
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId
@@ -87,8 +89,9 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
             BookmarkId = source.BookmarkId,
-            BookmarkHash = source.BookmarkHash,
+            StimulusHash = source.StimulusHash,
             ActivityInstanceId = source.ActivityInstanceId,
+            ActivityTypeName = source.ActivityTypeName,
             Options = source.SerializedOptions != null ? payloadSerializer.Deserialize<ResumeBookmarkOptions>(source.SerializedOptions) : default,
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId

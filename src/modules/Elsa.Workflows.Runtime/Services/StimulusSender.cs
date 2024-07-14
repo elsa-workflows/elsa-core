@@ -123,7 +123,7 @@ public class StimulusSender(
                 {
                     WorkflowInstanceId = workflowInstanceId,
                     BookmarkId = metadata?.BookmarkId,
-                    BookmarkHash = stimulusHash,
+                    StimulusHash = stimulusHash,
                     Options = new ResumeBookmarkOptions
                     {
                         Input = input,

@@ -12,8 +12,9 @@ public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resu
         var filter = new BookmarkFilter
         {
             BookmarkId = item.BookmarkId,
-            Hash = item.BookmarkHash,
-            WorkflowInstanceId = item.WorkflowInstanceId
+            Hash = item.StimulusHash,
+            WorkflowInstanceId = item.WorkflowInstanceId,
+            ActivityTypeName = item.ActivityTypeName
         };
 
         var result = await resumer.ResumeAsync(filter, item.Options, cancellationToken);
@@ -27,8 +28,9 @@ public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resu
             Id = identityGenerator.GenerateId(),
             WorkflowInstanceId = item.WorkflowInstanceId,
             BookmarkId = item.BookmarkId,
-            BookmarkHash = item.BookmarkHash,
+            StimulusHash = item.StimulusHash,
             ActivityInstanceId = item.ActivityInstanceId,
+            ActivityTypeName = item.ActivityTypeName,
             Options = item.Options,
             CreatedAt = systemClock.UtcNow,
         };
