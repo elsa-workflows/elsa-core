@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -41,15 +41,17 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "StartedAt",
-                schema: _schema.Schema,
-                table: "AlterationPlans",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "StartedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationPlans",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationPlans", "StartedAt", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "SerializedWorkflowInstanceFilter",
@@ -71,24 +73,28 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CreatedAt",
-                schema: _schema.Schema,
-                table: "AlterationPlans",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CreatedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationPlans",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CompletedAt",
-                schema: _schema.Schema,
-                table: "AlterationPlans",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationPlans", "CreatedAt", false);
+
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CompletedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationPlans",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationPlans", "CompletedAt", true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Id",
@@ -124,15 +130,17 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "StartedAt",
-                schema: _schema.Schema,
-                table: "AlterationJobs",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "StartedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationJobs",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationJobs", "StartedAt", true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "SerializedLog",
@@ -153,24 +161,28 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CreatedAt",
-                schema: _schema.Schema,
-                table: "AlterationJobs",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CreatedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationJobs",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CompletedAt",
-                schema: _schema.Schema,
-                table: "AlterationJobs",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationJobs", "CreatedAt", false);
+
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CompletedAt",
+            //     schema: _schema.Schema,
+            //     table: "AlterationJobs",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "AlterationJobs", "CompletedAt", true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Id",

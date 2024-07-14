@@ -16,13 +16,13 @@ public class EFCoreKeyValueStore : IKeyValueStore
     {
         _store = store;
     }
-    
+
     /// <inheritdoc />
     public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken)
     {
-        return _store.SaveAsync(keyValuePair, x => x.Key, cancellationToken);
+        return _store.SaveAsync(keyValuePair, x => x.Id, cancellationToken);
     }
-    
+
     /// <inheritdoc />
     public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
@@ -38,6 +38,6 @@ public class EFCoreKeyValueStore : IKeyValueStore
     /// <inheritdoc />
     public Task DeleteAsync(string key, CancellationToken cancellationToken)
     {
-        return _store.DeleteWhereAsync(x => x.Key == key, cancellationToken);
+        return _store.DeleteWhereAsync(x => x.Id == key, cancellationToken);
     }
 }

@@ -1,6 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿#nullable disable
 
-#nullable disable
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
 {
@@ -23,7 +23,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
                     MaterializerName = table.Column<string>(type: "TEXT", nullable: false),
                     MaterializerContext = table.Column<string>(type: "TEXT", nullable: true),
                     StringData = table.Column<string>(type: "TEXT", nullable: true),
-                    BinaryData = table.Column<byte[]>(type: "BLOB", nullable: true),
+                    BinaryData = table.Column<byte[]>(type: "BYTEA", nullable: true),
                     IsReadonly = table.Column<bool>(type: "INTEGER", nullable: false),
                     Data = table.Column<string>(type: "TEXT", nullable: true),
                     UsableAsActivity = table.Column<bool>(type: "INTEGER", nullable: true),
@@ -63,7 +63,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowDefinition_DefinitionId_Version",
                 table: "WorkflowDefinitions",
-                columns: new[] { "DefinitionId", "Version" },
+                columns: new[]
+                {
+                    "DefinitionId", "Version"
+                },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -124,17 +127,26 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_DefinitionId",
                 table: "WorkflowInstances",
-                columns: new[] { "Status", "DefinitionId" });
+                columns: new[]
+                {
+                    "Status", "DefinitionId"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus",
                 table: "WorkflowInstances",
-                columns: new[] { "Status", "SubStatus" });
+                columns: new[]
+                {
+                    "Status", "SubStatus"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_Status_SubStatus_DefinitionId_Version",
                 table: "WorkflowInstances",
-                columns: new[] { "Status", "SubStatus", "DefinitionId", "Version" });
+                columns: new[]
+                {
+                    "Status", "SubStatus", "DefinitionId", "Version"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_SubStatus",
@@ -144,7 +156,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Management
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_SubStatus_DefinitionId",
                 table: "WorkflowInstances",
-                columns: new[] { "SubStatus", "DefinitionId" });
+                columns: new[]
+                {
+                    "SubStatus", "DefinitionId"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_UpdatedAt",

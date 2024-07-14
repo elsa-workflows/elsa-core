@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -41,14 +41,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "UpdatedAt",
-                schema: _schema.Schema,
-                table: "WorkflowInstances",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "UpdatedAt",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowInstances",
+            //     type: "timestamptz",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "WorkflowInstances", "UpdatedAt", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "SubStatus",
@@ -88,14 +90,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsSystem",
-                schema: _schema.Schema,
-                table: "WorkflowInstances",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "IsSystem",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowInstances",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
+
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowInstances", "IsSystem", false);
 
             migrationBuilder.AlterColumn<int>(
                 name: "IncidentCount",
@@ -106,15 +110,18 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "FinishedAt",
-                schema: _schema.Schema,
-                table: "WorkflowInstances",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "FinishedAt",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowInstances",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "WorkflowInstances", "FinishedAt", true);
+
 
             migrationBuilder.AlterColumn<string>(
                 name: "DefinitionVersionId",
@@ -154,14 +161,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CreatedAt",
-                schema: _schema.Schema,
-                table: "WorkflowInstances",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CreatedAt",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowInstances",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "WorkflowInstances", "CreatedAt", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
@@ -198,15 +207,17 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldClrType: typeof(int),
                 oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "UsableAsActivity",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "boolean",
-                nullable: true,
-                oldClrType: typeof(int),
-                oldType: "INTEGER",
-                oldNullable: true);
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "UsableAsActivity",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "boolean",
+            //     nullable: true,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowDefinitions", "UsableAsActivity", true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "ToolVersion",
@@ -267,41 +278,49 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsSystem",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "IsSystem",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsReadonly",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowDefinitions", "IsSystem", false);
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsPublished",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "IsReadonly",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "IsLatest",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowDefinitions", "IsReadonly", false);
+
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "IsPublished",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
+
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowDefinitions", "IsPublished", false);
+
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "IsLatest",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
+
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "WorkflowDefinitions", "IsLatest", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Description",
@@ -332,14 +351,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CreatedAt",
-                schema: _schema.Schema,
-                table: "WorkflowDefinitions",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CreatedAt",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowDefinitions",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "WorkflowDefinitions", "CreatedAt", false);
 
             migrationBuilder.AlterColumn<byte[]>(
                 name: "BinaryData",
@@ -348,7 +369,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 type: "bytea",
                 nullable: true,
                 oldClrType: typeof(byte[]),
-                oldType: "BLOB",
+                oldType: "BYTEA",
                 oldNullable: true);
 
             migrationBuilder.AlterColumn<string>(
@@ -427,7 +448,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                 type: "TEXT",
                 nullable: false,
                 oldClrType: typeof(DateTimeOffset),
-                oldType: "timestamp with time zone");
+                oldType: "timestamptz");
 
             migrationBuilder.AlterColumn<string>(
                 name: "SubStatus",
@@ -686,7 +707,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
             migrationBuilder.AlterColumn<byte[]>(
                 name: "BinaryData",
                 table: "WorkflowDefinitions",
-                type: "BLOB",
+                type: "BYTEA",
                 nullable: true,
                 oldClrType: typeof(byte[]),
                 oldType: "bytea",

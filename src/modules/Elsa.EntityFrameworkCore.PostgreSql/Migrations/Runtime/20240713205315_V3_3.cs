@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -102,14 +102,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "Timestamp",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "Timestamp",
+            //     schema: _schema.Schema,
+            //     table: "WorkflowExecutionLogRecords",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "WorkflowExecutionLogRecords", "Timestamp", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Source",
@@ -385,14 +387,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CreatedAt",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CreatedAt",
+            //     schema: _schema.Schema,
+            //     table: "Bookmarks",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "Bookmarks", "CreatedAt", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "CorrelationId",
@@ -456,14 +460,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 oldClrType: typeof(string),
                 oldType: "TEXT");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "StartedAt",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "timestamp with time zone",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "TEXT");
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "StartedAt",
+            //     schema: _schema.Schema,
+            //     table: "ActivityExecutionRecords",
+            //     type: "timestamp with time zone",
+            //     nullable: false,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT");
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "ActivityExecutionRecords", "StartedAt", false);
 
             migrationBuilder.AlterColumn<string>(
                 name: "SerializedProperties",
@@ -525,24 +531,28 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 oldType: "TEXT",
                 oldNullable: true);
 
-            migrationBuilder.AlterColumn<bool>(
-                name: "HasBookmarks",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "INTEGER");
+            // migrationBuilder.AlterColumn<bool>(
+            //     name: "HasBookmarks",
+            //     schema: _schema.Schema,
+            //     table: "ActivityExecutionRecords",
+            //     type: "boolean",
+            //     nullable: false,
+            //     oldClrType: typeof(int),
+            //     oldType: "INTEGER");
 
-            migrationBuilder.AlterColumn<DateTimeOffset>(
-                name: "CompletedAt",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "timestamp with time zone",
-                nullable: true,
-                oldClrType: typeof(string),
-                oldType: "TEXT",
-                oldNullable: true);
+            MigrationHelper.AlterColumnBoolean(migrationBuilder, _schema, "ActivityExecutionRecords", "HasBookmarks", false);
+
+            // migrationBuilder.AlterColumn<DateTimeOffset>(
+            //     name: "CompletedAt",
+            //     schema: _schema.Schema,
+            //     table: "ActivityExecutionRecords",
+            //     type: "timestamp with time zone",
+            //     nullable: true,
+            //     oldClrType: typeof(string),
+            //     oldType: "TEXT",
+            //     oldNullable: true);
+
+            MigrationHelper.AlterColumnDateTime(migrationBuilder, _schema, "ActivityExecutionRecords", "CompletedAt", true);
 
             migrationBuilder.AlterColumn<int>(
                 name: "ActivityTypeVersion",
