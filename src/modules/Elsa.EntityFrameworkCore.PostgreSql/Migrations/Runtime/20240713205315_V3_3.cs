@@ -635,6 +635,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
+                    CorrelationId = table.Column<string>(type: "text", nullable: true),
                     BookmarkId = table.Column<string>(type: "text", nullable: true),
                     StimulusHash = table.Column<string>(type: "text", nullable: true),
                     ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
@@ -707,6 +708,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_CorrelationId",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueItem_ActivityInstanceId",

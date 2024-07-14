@@ -44,11 +44,11 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
         base.Apply();
 
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
-        AddEntityStore<StoredBookmark, EFCoreBookmarkStore>();
-        AddEntityStore<BookmarkQueueItem, EFBookmarkQueueStore>();
+        AddStore<StoredBookmark, EFCoreBookmarkStore>();
+        AddStore<BookmarkQueueItem, EFBookmarkQueueStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
-        AddEntityStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
+        AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
 
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }

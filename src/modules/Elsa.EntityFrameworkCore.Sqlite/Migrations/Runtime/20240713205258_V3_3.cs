@@ -68,6 +68,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: true),
+                    CorrelationId = table.Column<string>(type: "TEXT", nullable: true),
                     BookmarkId = table.Column<string>(type: "TEXT", nullable: true),
                     StimulusHash = table.Column<string>(type: "TEXT", nullable: true),
                     ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
@@ -130,6 +131,11 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 name: "IX_BookmarkQueueItem_WorkflowInstanceId",
                 table: "BookmarkQueueItems",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_CorrelationId",
+                table: "BookmarkQueueItems",
+                column: "CorrelationId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookmarkQueueItem_ActivityInstanceId",
