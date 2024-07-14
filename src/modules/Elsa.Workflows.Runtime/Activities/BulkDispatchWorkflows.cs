@@ -126,6 +126,7 @@ public class BulkDispatchWorkflows : Activity
                 Callback = OnChildWorkflowCompletedAsync,
                 Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
+                    ParentInstanceId = context.WorkflowExecutionContext.Id,
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
                 IncludeActivityInstanceId = false,
