@@ -11,8 +11,8 @@ namespace Elsa.AzureServiceBus.ComponentTests;
 public class AzureServiceBusTests : AppComponentTest
 {
     private static readonly object WorkflowCompletedSignal = new();
-    private readonly IWorkflowEvents _workflowEvents;
     private readonly ISignalManager _signalManager;
+    private readonly IWorkflowEvents _workflowEvents;
 
     public AzureServiceBusTests(App app) : base(app)
     {
@@ -34,7 +34,7 @@ public class AzureServiceBusTests : AppComponentTest
     public async Task WorkflowReceivesMessage_WhenSendingMessageToTopic()
     {
         var client = Scope.ServiceProvider.GetRequiredService<ServiceBusClient>();
-        
+
         var topic = MessageReceivedTriggerWorkflow.Topic;
 
         // Generate a correlation ID so that we can find the workflow instance later.
@@ -49,17 +49,17 @@ public class AzureServiceBusTests : AppComponentTest
         });
 
         // Wait for the workflow to trigger the first signal.
-        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal1, 500000);
+        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal1);
 
         // Send another message to the topic. This should resume the workflow.
         await sender.SendMessageAsync(new ServiceBusMessage("Message 2"));
 
         // Wait for the workflow to trigger the second signal.
-        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal2, 500000);
+        await _signalManager.WaitAsync(MessageReceivedTriggerWorkflow.Signal2);
 
         // Wait for the workflow to complete.
-        await _signalManager.WaitAsync(WorkflowCompletedSignal, 500000);
-        
+        await _signalManager.WaitAsync(WorkflowCompletedSignal);
+
         // Find the workflow instance by correlation ID.
         var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var workflowInstanceFilter = new WorkflowInstanceFilter
@@ -74,7 +74,7 @@ public class AzureServiceBusTests : AppComponentTest
         Assert.Equal(WorkflowStatus.Finished, workflowInstance.Status);
         Assert.Equal(WorkflowSubStatus.Finished, workflowInstance.SubStatus);
     }
-    
+
     protected override void OnDispose()
     {
         _workflowEvents.WorkflowInstanceSaved -= OnWorkflowInstanceSaved;
