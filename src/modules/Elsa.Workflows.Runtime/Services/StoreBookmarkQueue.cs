@@ -5,7 +5,7 @@ using Elsa.Workflows.Runtime.Filters;
 
 namespace Elsa.Workflows.Runtime;
 
-public class StoreBookmarkQueue(IBookmarkQueueItemStore store, IBookmarkResumer resumer, ISystemClock systemClock, IIdentityGenerator identityGenerator) : IBookmarkQueue
+public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resumer, ISystemClock systemClock, IIdentityGenerator identityGenerator) : IBookmarkQueue
 {
     public async Task EnqueueAsync(NewBookmarkQueueItem item, CancellationToken cancellationToken = default)
     {

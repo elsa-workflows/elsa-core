@@ -3,7 +3,7 @@ using Elsa.Workflows.Runtime.Entities;
 namespace Elsa.Workflows.Runtime.Filters;
 
 /// A filter for bookmark queue items.
-public class BookmarkQueueItemFilter
+public class BookmarkQueueFilter
 {
     /// Gets or sets the ID of the bookmark queue item.
     public string? Id { get; set; }

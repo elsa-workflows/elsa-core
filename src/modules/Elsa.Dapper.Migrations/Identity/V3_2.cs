@@ -13,16 +13,10 @@ public class V3_2 : Migration
     /// <inheritdoc />
     public override void Up()
     {
-        Alter.Table("Users").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("Roles").AddColumn("TenantId").AsString().Nullable();
-        Alter.Table("Applications").AddColumn("TenantId").AsString().Nullable();
     }
 
     /// <inheritdoc />
     public override void Down()
     {
-        Delete.Column("TenantId").FromTable("Users");
-        Delete.Column("TenantId").FromTable("Roles");
-        Delete.Column("TenantId").FromTable("Applications");
     }
 }

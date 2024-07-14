@@ -14,9 +14,9 @@ using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 
-/// An EF Core implementation of <see cref="IBookmarkQueueItemStore"/>.
+/// An EF Core implementation of <see cref="IBookmarkQueueStore"/>.
 [UsedImplicitly]
-public class BookmarkQueueItemStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueItemStore
+public class BookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueStore
 {
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
@@ -31,7 +31,7 @@ public class BookmarkQueueItemStore(Store<RuntimeElsaDbContext, BookmarkQueueIte
     }
 
     /// <inheritdoc />
-    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueItemFilter filter, CancellationToken cancellationToken = default)
+    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         return store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
     }
@@ -44,7 +44,7 @@ public class BookmarkQueueItemStore(Store<RuntimeElsaDbContext, BookmarkQueueIte
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(BookmarkQueueItemFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
     }

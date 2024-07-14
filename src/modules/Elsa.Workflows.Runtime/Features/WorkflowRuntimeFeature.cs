@@ -56,8 +56,8 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkStore>();
     
-    /// A factory that instantiates an <see cref="IBookmarkQueueItemStore"/>.
-    public Func<IServiceProvider, IBookmarkQueueItemStore> BookmarkQueueItemStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueItemStore>();
+    /// A factory that instantiates an <see cref="IBookmarkQueueStore"/>.
+    public Func<IServiceProvider, IBookmarkQueueStore> BookmarkQueueStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueStore>();
     
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
     public Func<IServiceProvider, ITriggerStore> TriggerStore { get; set; } = sp => sp.GetRequiredService<MemoryTriggerStore>();
@@ -215,7 +215,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             
             // Stores.
             .AddScoped(BookmarkStore)
-            .AddScoped(BookmarkQueueItemStore)
+            .AddScoped(BookmarkQueueStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
@@ -231,7 +231,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             // Memory stores.
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
-            .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueItemStore>()
+            .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
             .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()

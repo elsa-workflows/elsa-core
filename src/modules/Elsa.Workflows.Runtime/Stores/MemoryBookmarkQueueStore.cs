@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class MemoryBookmarkQueueItemStore(MemoryStore<BookmarkQueueItem> store) : IBookmarkQueueItemStore
+public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store) : IBookmarkQueueStore
 {
     /// <inheritdoc />
     public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
@@ -27,7 +27,7 @@ public class MemoryBookmarkQueueItemStore(MemoryStore<BookmarkQueueItem> store) 
     }
 
     /// <inheritdoc />
-    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueItemFilter filter, CancellationToken cancellationToken = default)
+    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         var entity = store.Query(query => Filter(query, filter)).FirstOrDefault();
         return Task.FromResult(entity);
@@ -39,18 +39,18 @@ public class MemoryBookmarkQueueItemStore(MemoryStore<BookmarkQueueItem> store) 
         return Task.FromResult(entities);
     }
 
-    public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueItemFilter filter, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
         return Task.FromResult(entities);
     }
     
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(BookmarkQueueItemFilter filter, CancellationToken cancellationToken = default)
+    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
         return store.DeleteMany(ids);
     }
     
-    private static IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> query, BookmarkQueueItemFilter filter) => filter.Apply(query);
+    private static IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> query, BookmarkQueueFilter filter) => filter.Apply(query);
 }

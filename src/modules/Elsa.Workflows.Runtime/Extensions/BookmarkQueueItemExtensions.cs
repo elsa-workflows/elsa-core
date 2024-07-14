@@ -6,9 +6,9 @@ namespace Elsa.Extensions;
 
 public static class BookmarkQueueItemExtensions
 {
-    public static Task DeleteAsync(this IBookmarkQueueItemStore store, string id, CancellationToken cancellationToken = default)
+    public static Task DeleteAsync(this IBookmarkQueueStore store, string id, CancellationToken cancellationToken = default)
     {
-        var filter = new BookmarkQueueItemFilter
+        var filter = new BookmarkQueueFilter
         {
             Id = id
         };

@@ -6,7 +6,7 @@ using Elsa.Workflows.Runtime.OrderDefinitions;
 
 namespace Elsa.Workflows.Runtime;
 
-public class BookmarkQueueProcessor(IBookmarkQueueItemStore store, IBookmarkResumer bookmarkResumer) : IBookmarkQueueProcessor
+public class BookmarkQueueProcessor(IBookmarkQueueStore store, IBookmarkResumer bookmarkResumer) : IBookmarkQueueProcessor
 {
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
     {
