@@ -8,27 +8,36 @@ namespace Elsa.Workflows.Runtime.Entities;
 public class BookmarkQueueItem : Entity
 {
     /// The workflow instance ID owning the bookmark to resume.
-    public string WorkflowInstanceId { get; set; } = default!;
-    
+    public string? WorkflowInstanceId { get; set; }
+
+    /// The correlation ID associated with the workflow instance owning the bookmark to resume.
+    public string? CorrelationId { get; set; }
+
     /// The bookmark ID to resume.
-    public string? BookmarkId { get; set; } = default!;
-    
+    public string? BookmarkId { get; set; }
+
     /// A bookmark payload hash of the bookmark to resume.
     public string? BookmarkHash { get; set; }
-    
+
+    /// The ID of the activity instance associated with the bookmark.
+    public string? ActivityInstanceId { get; set; }
+
     /// Any options to apply when resuming the bookmark.
     public ResumeBookmarkOptions? Options { get; set; }
-    
+
     /// The timestamp that this entity was created.
     public DateTimeOffset CreatedAt { get; set; }
 
+    /// Creates a <see cref="BookmarkFilter"/> from this bookmark queue item.
     public BookmarkFilter CreateBookmarkFilter()
     {
         return new BookmarkFilter
         {
             WorkflowInstanceId = WorkflowInstanceId,
+            CorrelationId = CorrelationId,
             BookmarkId = BookmarkId,
             Hash = BookmarkHash,
+            ActivityInstanceId = ActivityInstanceId
         };
     }
 }

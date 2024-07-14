@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -36,68 +36,72 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 newName: "Id");
 
             migrationBuilder.AddColumn<string>(
-                name: "TenantId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords",
-                type: "varchar(255)",
-                nullable: true)
+                    name: "TenantId",
+                    schema: _schema.Schema,
+                    table: "WorkflowExecutionLogRecords",
+                    type: "varchar(255)",
+                    nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
-                name: "TenantId",
-                schema: _schema.Schema,
-                table: "Triggers",
-                type: "varchar(255)",
-                nullable: true)
+                    name: "TenantId",
+                    schema: _schema.Schema,
+                    table: "Triggers",
+                    type: "varchar(255)",
+                    nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
-                name: "TenantId",
-                schema: _schema.Schema,
-                table: "KeyValuePairs",
-                type: "varchar(255)",
-                nullable: true)
+                    name: "TenantId",
+                    schema: _schema.Schema,
+                    table: "KeyValuePairs",
+                    type: "varchar(255)",
+                    nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
-                name: "TenantId",
-                schema: _schema.Schema,
-                table: "Bookmarks",
-                type: "varchar(255)",
-                nullable: true)
+                    name: "TenantId",
+                    schema: _schema.Schema,
+                    table: "Bookmarks",
+                    type: "varchar(255)",
+                    nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AddColumn<string>(
-                name: "TenantId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "varchar(255)",
-                nullable: true)
+                    name: "TenantId",
+                    schema: _schema.Schema,
+                    table: "ActivityExecutionRecords",
+                    type: "varchar(255)",
+                    nullable: true)
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "BookmarkQueueItems",
-                schema: _schema.Schema,
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BookmarkId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    BookmarkHash = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    SerializedOptions = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BookmarkQueueItems", x => x.Id);
-                })
+                    name: "BookmarkQueueItems",
+                    schema: _schema.Schema,
+                    columns: table => new
+                    {
+                        Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        BookmarkId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        BookmarkHash = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                        SerializedOptions = table.Column<string>(type: "longtext", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        TenantId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4")
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_BookmarkQueueItems", x => x.Id);
+                    })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
@@ -159,6 +163,12 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 schema: _schema.Schema,
                 table: "BookmarkQueueItems",
                 column: "WorkflowInstanceId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_CorrelationId",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "CorrelationId");
         }
 
         /// <inheritdoc />
@@ -231,33 +241,33 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Runtime
                 newName: "BookmarkId");
 
             migrationBuilder.CreateTable(
-                name: "WorkflowInboxMessages",
-                schema: _schema.Schema,
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    Hash = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedBookmarkPayload = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SerializedInput = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
-                })
+                    name: "WorkflowInboxMessages",
+                    schema: _schema.Schema,
+                    columns: table => new
+                    {
+                        Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        ActivityInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        ActivityTypeName = table.Column<string>(type: "varchar(255)", nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        CorrelationId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        CreatedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                        ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                        Hash = table.Column<string>(type: "varchar(255)", nullable: false)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        SerializedBookmarkPayload = table.Column<string>(type: "longtext", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        SerializedInput = table.Column<string>(type: "longtext", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4"),
+                        WorkflowInstanceId = table.Column<string>(type: "varchar(255)", nullable: true)
+                            .Annotation("MySql:CharSet", "utf8mb4")
+                    },
+                    constraints: table =>
+                    {
+                        table.PrimaryKey("PK_WorkflowInboxMessages", x => x.Id);
+                    })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(

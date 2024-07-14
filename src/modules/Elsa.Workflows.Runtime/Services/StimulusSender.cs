@@ -12,6 +12,7 @@ public class StimulusSender(
     IStimulusHasher stimulusHasher,
     ITriggerBoundWorkflowService triggerBoundWorkflowService,
     IBookmarkBoundWorkflowService bookmarkBoundWorkflowService,
+    IBookmarkQueue bookmarkQueue,
     IWorkflowRuntime workflowRuntime) : IStimulusSender
 {
     /// <inheritdoc />
@@ -87,22 +88,49 @@ public class StimulusSender(
         var activityHandle = metadata?.ActivityInstanceId != null ? ActivityHandle.FromActivityInstanceId(metadata.ActivityInstanceId) : null;
         var responses = new List<RunWorkflowInstanceResponse>();
 
-        foreach (var bookmarkBoundWorkflow in bookmarkBoundWorkflows)
+        if (bookmarkBoundWorkflows.Count > 0)
         {
-            var workflowInstanceId = bookmarkBoundWorkflow.WorkflowInstanceId;
-            var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
-
-            foreach (var storedBookmark in bookmarkBoundWorkflow.Bookmarks)
+            foreach (var bookmarkBoundWorkflow in bookmarkBoundWorkflows)
             {
-                var request = new RunWorkflowInstanceRequest
+                var workflowInstanceId = bookmarkBoundWorkflow.WorkflowInstanceId;
+                var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
+
+                foreach (var storedBookmark in bookmarkBoundWorkflow.Bookmarks)
                 {
-                    Input = input,
-                    Properties = properties,
-                    ActivityHandle = activityHandle,
-                    BookmarkId = storedBookmark.Id,
+                    var request = new RunWorkflowInstanceRequest
+                    {
+                        Input = input,
+                        Properties = properties,
+                        ActivityHandle = activityHandle,
+                        BookmarkId = storedBookmark.Id,
+                    };
+                    var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
+                    responses.Add(response);
+                }
+            }
+        }
+        else
+        {
+            // If no bookmarks were matched, but bookmark-specific details were given, enqueue the request in case a matching bookmark is created in the near future.
+            var workflowInstanceId = metadata?.WorkflowInstanceId;
+            var bookmarkId = metadata?.BookmarkId;
+            var activityInstanceId = metadata?.ActivityInstanceId;
+            var correlationId = metadata?.CorrelationId;
+
+            if (workflowInstanceId != null || bookmarkId != null || activityInstanceId != null || correlationId != null)
+            {
+                var bookmarkQueueItem = new NewBookmarkQueueItem
+                {
+                    WorkflowInstanceId = workflowInstanceId,
+                    BookmarkId = metadata?.BookmarkId,
+                    BookmarkHash = stimulusHash,
+                    Options = new ResumeBookmarkOptions
+                    {
+                        Input = input,
+                        Properties = properties
+                    }
                 };
-                var response = await workflowClient.RunInstanceAsync(request, cancellationToken);
-                responses.Add(response);
+                await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
             }
         }
 

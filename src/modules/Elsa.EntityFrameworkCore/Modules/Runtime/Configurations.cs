@@ -57,6 +57,7 @@ public class Configurations :
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.BookmarkHash, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.BookmarkHash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.WorkflowInstanceId)}");
+        builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CorrelationId)}");
         builder.HasIndex(x => x.BookmarkId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.BookmarkId)}");
         builder.HasIndex(x => x.CreatedAt, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CreatedAt)}");
         builder.HasIndex(x => x.TenantId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.TenantId)}");

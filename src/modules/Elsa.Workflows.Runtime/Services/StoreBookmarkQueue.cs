@@ -28,6 +28,7 @@ public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resu
             WorkflowInstanceId = item.WorkflowInstanceId,
             BookmarkId = item.BookmarkId,
             BookmarkHash = item.BookmarkHash,
+            ActivityInstanceId = item.ActivityInstanceId,
             Options = item.Options,
             CreatedAt = systemClock.UtcNow,
         };

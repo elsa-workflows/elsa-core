@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -76,9 +76,10 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     BookmarkId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     BookmarkHash = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     SerializedOptions = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TenantId = table.Column<string>(type: "nvarchar(450)", nullable: true)

@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -67,9 +67,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     BookmarkId = table.Column<string>(type: "TEXT", nullable: true),
                     BookmarkHash = table.Column<string>(type: "TEXT", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
                     SerializedOptions = table.Column<string>(type: "TEXT", nullable: true),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true)

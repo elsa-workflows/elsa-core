@@ -634,9 +634,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "text", nullable: true),
                     BookmarkId = table.Column<string>(type: "text", nullable: true),
                     BookmarkHash = table.Column<string>(type: "text", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     SerializedOptions = table.Column<string>(type: "text", nullable: true),
                     TenantId = table.Column<string>(type: "text", nullable: true)

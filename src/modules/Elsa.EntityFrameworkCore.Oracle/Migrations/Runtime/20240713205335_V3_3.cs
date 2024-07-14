@@ -1,17 +1,17 @@
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
 #nullable disable
+
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 {
     /// <inheritdoc />
     public partial class V3_3 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_3(Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema schema)
+        public V3_3(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }
@@ -57,9 +57,11 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    WorkflowInstanceId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    WorkflowInstanceId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
+                    CorrelationId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
                     BookmarkId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
                     BookmarkHash = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
+                    ActivityInstanceId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
                     SerializedOptions = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: true)
@@ -182,7 +184,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 name: "IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                columns: new[] { "ActivityType", "ActivityTypeVersion" });
+                columns: new[]
+                {
+                    "ActivityType", "ActivityTypeVersion"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityTypeVersion",
@@ -257,6 +262,12 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 column: "WorkflowInstanceId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BookmarkQueueItem_CorrelationId",
+                schema: _schema.Schema,
+                table: "BookmarkQueueItems",
+                column: "CorrelationId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityInstanceId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
@@ -272,13 +283,19 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 name: "IX_StoredBookmark_ActivityTypeName_Hash",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                columns: new[] { "ActivityTypeName", "Hash" });
+                columns: new[]
+                {
+                    "ActivityTypeName", "Hash"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                columns: new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" });
+                columns: new[]
+                {
+                    "ActivityTypeName", "Hash", "WorkflowInstanceId"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_CreatedAt",
@@ -374,7 +391,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 name: "IX_WorkflowExecutionLogRecord_ActivityType_ActivityTypeVersion",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                columns: new[] { "ActivityType", "ActivityTypeVersion" });
+                columns: new[]
+                {
+                    "ActivityType", "ActivityTypeVersion"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_ActivityTypeVersion",
@@ -416,7 +436,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                 name: "IX_WorkflowExecutionLogRecord_Timestamp_Sequence",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                columns: new[] { "Timestamp", "Sequence" });
+                columns: new[]
+                {
+                    "Timestamp", "Sequence"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_WorkflowDefinitionId",

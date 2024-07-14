@@ -25,19 +25,23 @@ public class V3_3 : Migration
             .Create
             .Table("BookmarkQueueItems")
             .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().Nullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
             .WithColumn("BookmarkHash").AsString().Nullable()
+            .WithColumn("ActivityInstanceId").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTimeOffset().NotNullable()
             ;
-        
+
         IfDatabase("Sqlite")
             .Create
             .Table("BookmarkQueueItems")
             .WithColumn("Id").AsString().PrimaryKey()
-            .WithColumn("WorkflowInstanceId").AsString().NotNullable()
+            .WithColumn("WorkflowInstanceId").AsString().Nullable()
+            .WithColumn("CorrelationId").AsString().Nullable()
             .WithColumn("BookmarkId").AsString().Nullable()
             .WithColumn("BookmarkHash").AsString().Nullable()
+            .WithColumn("ActivityInstanceId").AsString().Nullable()
             .WithColumn("CreatedAt").AsDateTime2().NotNullable()
             ;
     }
@@ -80,7 +84,7 @@ public class V3_3 : Migration
             .WithColumn("CreatedAt").AsDateTime2().Indexed()
             .WithColumn("ExpiresAt").AsDateTime2().Indexed()
             ;
-        
+
         Delete.Table("BookmarkQueueItems");
     }
 }
