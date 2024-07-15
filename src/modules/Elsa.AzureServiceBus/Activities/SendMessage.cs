@@ -12,9 +12,7 @@ using JetBrains.Annotations;
 
 namespace Elsa.AzureServiceBus.Activities;
 
-/// <summary>
 /// Sends a message to a queue or topic in Azure Service Bus.
-/// </summary>
 [Activity("Elsa.AzureServiceBus.Send", "Azure Service Bus", "Send a message to a queue or topic")]
 [PublicAPI]
 public class SendMessage : CodeActivity

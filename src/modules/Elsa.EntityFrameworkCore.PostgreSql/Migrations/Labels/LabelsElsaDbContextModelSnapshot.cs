@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
     partial class LabelsElsaDbContextModelSnapshot : ModelSnapshot
@@ -41,9 +41,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.ToTable("Labels", "Elsa");
@@ -58,9 +55,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -73,9 +67,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("WorkflowDefinitionLabel_TenantId");
 
                     b.HasIndex("WorkflowDefinitionId")
                         .HasDatabaseName("WorkflowDefinitionLabel_WorkflowDefinitionId");

@@ -3,6 +3,7 @@ using System;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,14 +12,16 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
     [DbContext(typeof(RuntimeElsaDbContext))]
-    partial class RuntimeElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240329200711_V3_1")]
+    partial class V3_1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("ProductVersion", "7.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);

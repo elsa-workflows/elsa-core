@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
 {
     [DbContext(typeof(IdentityElsaDbContext))]
     partial class IdentityElsaDbContextModelSnapshot : ModelSnapshot
@@ -56,9 +56,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("text")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -68,9 +65,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_Application_TenantId");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -89,17 +83,11 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("text")
                         .HasColumnName("Permissions");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_Role_TenantId");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -126,17 +114,11 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("text")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users", "Elsa");
                 });

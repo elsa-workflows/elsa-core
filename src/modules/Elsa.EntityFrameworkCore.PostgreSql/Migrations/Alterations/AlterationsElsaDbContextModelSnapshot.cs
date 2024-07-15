@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
 {
     [DbContext(typeof(AlterationsElsaDbContext))]
     partial class AlterationsElsaDbContextModelSnapshot : ModelSnapshot
@@ -48,9 +48,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("text");
@@ -71,9 +68,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationJob_Status");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_AlterationJob_TenantId");
 
                     b.HasIndex("WorkflowInstanceId")
                         .HasDatabaseName("IX_AlterationJob_WorkflowInstanceId");
@@ -105,9 +99,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
@@ -121,9 +112,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Alterations
 
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_AlterationPlan_Status");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_AlterationPlan_TenantId");
 
                     b.ToTable("AlterationPlans", "Elsa");
                 });

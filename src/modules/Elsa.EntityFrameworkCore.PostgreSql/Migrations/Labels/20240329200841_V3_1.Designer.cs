@@ -2,41 +2,47 @@
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
+namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
-    partial class LabelsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240329200841_V3_1")]
+    partial class V3_1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "7.0.20")
-                .HasAnnotation("Relational:MaxIdentifierLength", 64);
+                .HasAnnotation("ProductVersion", "7.0.14")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Labels.Entities.Label", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Color")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -46,19 +52,19 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("LabelId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionVersionId")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
