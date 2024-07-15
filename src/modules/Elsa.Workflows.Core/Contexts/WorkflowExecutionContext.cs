@@ -10,7 +10,6 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

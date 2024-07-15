@@ -5,7 +5,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<IActivityDescriptorModifier> modifiers, ILogger<ActivityRegistry> logger) : IActivityRegistry

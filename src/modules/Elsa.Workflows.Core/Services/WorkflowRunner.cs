@@ -8,7 +8,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class WorkflowRunner(
@@ -19,6 +19,7 @@ public class WorkflowRunner(
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
     INotificationSender notificationSender,
+    ICommitStateHandler commitStateHandler,
     ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
 {
@@ -194,6 +195,7 @@ public class WorkflowRunner(
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await commitStateHandler.CommitAsync(workflowExecutionContext, cancellationToken);
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

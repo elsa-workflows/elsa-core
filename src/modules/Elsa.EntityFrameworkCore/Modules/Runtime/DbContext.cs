@@ -14,30 +14,23 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     public RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
-
-    /// <summary>
+    
     /// The workflow triggers.
-    /// </summary>
     public DbSet<StoredTrigger> Triggers { get; set; } = default!;
-
-    /// <summary>
+    
     /// The workflow execution log records.
-    /// </summary>
     public DbSet<WorkflowExecutionLogRecord> WorkflowExecutionLogRecords { get; set; } = default!;
-
-    /// <summary>
+    
     /// The activity execution records.
-    /// </summary>
     public DbSet<ActivityExecutionRecord> ActivityExecutionRecords { get; set; } = default!;
-
-    /// <summary>
+    
     /// The workflow bookmarks.
-    /// </summary>
     public DbSet<StoredBookmark> Bookmarks { get; set; } = default!;
     
-    /// <summary>
+    /// The bookmark queue items.
+    public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = default!;
+    
     /// The generic key value pairs.
-    /// </summary>
     public DbSet<SerializedKeyValuePair> KeyValuePairs { get; set; } = default!;
 
     /// <inheritdoc />
@@ -50,6 +43,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<WorkflowExecutionLogRecord>(config);
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
+        modelBuilder.ApplyConfiguration<BookmarkQueueItem>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
     }
 }

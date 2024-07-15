@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
@@ -15,7 +14,6 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
-using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -96,14 +94,12 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    [Port]
-    public IActivity? ChildCompleted { get; set; }
+    [Port] public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    [Port]
-    public IActivity? ChildFaulted { get; set; }
+    [Port] public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -114,7 +110,8 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
-            context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            //context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            await DispatchChildWorkflowAsync(context, item);
             dispatchedInstancesCount++;
         }
 
@@ -129,6 +126,7 @@ public class BulkDispatchWorkflows : Activity
                 Callback = OnChildWorkflowCompletedAsync,
                 Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
+                    ParentInstanceId = context.WorkflowExecutionContext.Id,
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
                 IncludeActivityInstanceId = false,

@@ -25,13 +25,16 @@ public class DistributedRuntimeFeature : FeatureBase
         Module.UseWorkflowRuntime(runtime =>
         {
             runtime.WorkflowRuntime = sp => sp.GetRequiredService<DistributedWorkflowRuntime>();
+            runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<DistributedBookmarkQueueWorker>();
         });
     }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddScoped<DistributedWorkflowRuntime>();
-        Services.AddCommandHandler<CancelWorkflowsCommandHandler>();
+        Services
+            .AddScoped<DistributedWorkflowRuntime>()
+            .AddScoped<DistributedBookmarkQueueWorker>()
+            .AddCommandHandler<CancelWorkflowsCommandHandler>();
     }
 }

@@ -12,7 +12,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Humanizer;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber

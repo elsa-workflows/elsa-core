@@ -17,7 +17,8 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
         return Task.WhenAll(
             CreateWorkflowExecutionLogIndices(scope, cancellationToken),
             CreateActivityExecutionLogIndices(scope, cancellationToken),
-            CreateWorkflowBookmarkIndices(scope, cancellationToken),
+            CreateBookmarkIndices(scope, cancellationToken),
+            CreateBookmarkQueueIndices(scope, cancellationToken),
             CreateWorkflowTriggerIndices(scope, cancellationToken),
             CreateKeyValueIndices(scope, cancellationToken)
         );
@@ -27,7 +28,7 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
     {
         return Task.CompletedTask;
     }
-    
+
     private static Task CreateWorkflowExecutionLogIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var workflowExecutionLogCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<WorkflowExecutionLogRecord>>();
@@ -83,13 +84,13 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                     cancellationToken));
     }
 
-    private static Task CreateWorkflowBookmarkIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
+    private static Task CreateBookmarkIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
-        var workflowBookmarkCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<StoredBookmark>>();
-        if (workflowBookmarkCollection == null) return Task.CompletedTask;
+        var bookmarkCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<StoredBookmark>>();
+        if (bookmarkCollection == null) return Task.CompletedTask;
 
         return IndexHelpers.CreateAsync(
-            workflowBookmarkCollection,
+            bookmarkCollection,
             async (collection, indexBuilder) =>
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<StoredBookmark>>
@@ -105,6 +106,29 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                         new(indexBuilder.Ascending(x => x.ActivityTypeName)),
                         new(indexBuilder.Ascending(x => x.Hash)),
                         new(indexBuilder.Ascending(x => x.TenantId))
+                    },
+                    cancellationToken));
+    }
+
+    private static Task CreateBookmarkQueueIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
+    {
+        var bookmarkQueueCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<BookmarkQueueItem>>();
+        if (bookmarkQueueCollection == null) return Task.CompletedTask;
+
+        return IndexHelpers.CreateAsync(
+            bookmarkQueueCollection,
+            async (collection, indexBuilder) =>
+                await collection.Indexes.CreateManyAsync(
+                    new List<CreateIndexModel<BookmarkQueueItem>>
+                    {
+                        new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
+                        new(indexBuilder.Ascending(x => x.CorrelationId)),
+                        new(indexBuilder.Ascending(x => x.ActivityTypeName)),
+                        new(indexBuilder.Ascending(x => x.ActivityInstanceId)),
+                        new(indexBuilder.Ascending(x => x.BookmarkId)),
+                        new(indexBuilder.Ascending(x => x.StimulusHash)),
+                        new(indexBuilder.Ascending(x => x.TenantId)),
+                        new(indexBuilder.Ascending(x => x.CreatedAt))
                     },
                     cancellationToken));
     }
@@ -128,12 +152,12 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                     },
                     cancellationToken));
     }
-    
+
     private Task CreateKeyValueIndices(IServiceScope serviceScope, CancellationToken cancellationToken)
     {
         var keyValuePairCollection = serviceScope.ServiceProvider.GetService<IMongoCollection<SerializedKeyValuePair>>();
         if (keyValuePairCollection == null) return Task.CompletedTask;
-        
+
         return IndexHelpers.CreateAsync(
             keyValuePairCollection,
             async (collection, indexBuilder) =>

@@ -6,16 +6,13 @@ using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
 namespace Elsa.AzureServiceBus.Activities;
 
-/// <summary>
-/// 
-/// </summary>
+/// Sends a message to a queue or topic in Azure Service Bus.
 [Activity("Elsa.AzureServiceBus.Send", "Azure Service Bus", "Send a message to a queue or topic")]
 [PublicAPI]
 public class SendMessage : CodeActivity
@@ -25,40 +22,26 @@ public class SendMessage : CodeActivity
     {
     }
 
-    /// <summary>
     /// The contents of the message to send.
-    /// </summary>
     [Input(Description = "The contents of the message to send.")]
     public Input<object> MessageBody { get; set; } = default!;
 
-    /// <summary>
     /// The queue or topic to send the message to.
-    /// </summary>
     public Input<string> QueueOrTopic { get; set; } = default!;
 
-    /// <summary>
     /// The content type of the message.
-    /// </summary>
     public Input<string>? ContentType { get; set; }
 
-    /// <summary>
     /// The subject of the message.
-    /// </summary>
     public Input<string>? Subject { get; set; }
 
-    /// <summary>
     /// The correlation ID of the message.
-    /// </summary>
     public Input<string>? CorrelationId { get; set; }
 
-    /// <summary>
     /// The formatter to use when serializing the message body.
-    /// </summary>
     public Input<Type?> FormatterType { get; set; } = default!;
 
-    /// <summary>
     /// The application properties to embed with the Service Bus Message
-    /// </summary>
     [Input(Category = "Advanced",
         DefaultSyntax = "Json",
         SupportedSyntaxes = ["JavaScript", "Json"],
@@ -79,8 +62,6 @@ public class SendMessage : CodeActivity
             ContentType = context.Get(ContentType),
             Subject = context.Get(Subject),
             CorrelationId = context.Get(CorrelationId)
-
-            // TODO: Maybe expose additional members?
         };
 
         var applicationProperties = ApplicationProperties.GetOrDefault(context);
@@ -89,13 +70,9 @@ public class SendMessage : CodeActivity
             foreach (var property in applicationProperties)
                 message.ApplicationProperties.Add(property.Key, ((JsonElement)property.Value).GetString());
 
-        context.DeferTask(async () =>
-        {
-            var client = context.GetRequiredService<ServiceBusClient>();
-
-            await using var sender = client.CreateSender(queueOrTopic);
-            await sender.SendMessageAsync(message, cancellationToken);
-        });
+        var client = context.GetRequiredService<ServiceBusClient>();
+        await using var sender = client.CreateSender(queueOrTopic);
+        await sender.SendMessageAsync(message, cancellationToken);
     }
 
     private async ValueTask<BinaryData> SerializeMessageBodyAsync(ActivityExecutionContext context, object value, CancellationToken cancellationToken)

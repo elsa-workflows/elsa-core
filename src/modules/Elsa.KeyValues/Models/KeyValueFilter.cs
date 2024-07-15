@@ -8,17 +8,17 @@ public class KeyValueFilter
     /// Gets or sets whether the <see cref="Key"/> needs to match the beginning of the key found.
     /// </summary>
     public bool StartsWith { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the key to filter for.
     /// </summary>
     public string? Key { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the keys to filter for.
     /// </summary>
     public ICollection<string>? Keys { get; set; }
-    
+
     /// <summary>
     /// Applies the filter to the specified queryable.
     /// </summary>
@@ -30,10 +30,11 @@ public class KeyValueFilter
         if (filter.Key != null)
         {
             queryable = StartsWith
-                ? queryable.Where(x => x.Key.StartsWith(filter.Key))
-                : queryable.Where(x => x.Key == filter.Key);
+                ? queryable.Where(x => x.Id.StartsWith(filter.Key))
+                : queryable.Where(x => x.Id == filter.Key);
         }
-        if (filter.Keys != null) queryable = queryable.Where(x => filter.Keys.Contains(x.Key));
+
+        if (filter.Keys != null) queryable = queryable.Where(x => filter.Keys.Contains(x.Id));
 
         return queryable;
     }

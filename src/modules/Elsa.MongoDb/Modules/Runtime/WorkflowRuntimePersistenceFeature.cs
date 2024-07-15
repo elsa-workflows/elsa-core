@@ -31,6 +31,7 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<MongoTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<MongoBookmarkStore>();
+            feature.BookmarkQueueStore = sp => sp.GetRequiredService<MongoBookmarkQueueStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MongoWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<MongoActivityExecutionLogStore>();
         });
@@ -43,12 +44,14 @@ public class MongoWorkflowRuntimePersistenceFeature : PersistenceFeatureBase
         
         AddCollection<StoredTrigger>("triggers");
         AddCollection<StoredBookmark>("bookmarks");
+        AddCollection<BookmarkQueueItem>("bookmark_queue_items");
         AddCollection<WorkflowExecutionLogRecord>("workflow_execution_logs");
         AddCollection<ActivityExecutionRecord>("activity_execution_logs");
         AddCollection<SerializedKeyValuePair>("key_value_pairs");
         
         AddStore<StoredTrigger, MongoTriggerStore>();
         AddStore<StoredBookmark, MongoBookmarkStore>();
+        AddStore<BookmarkQueueItem, MongoBookmarkQueueStore>();
         AddStore<WorkflowExecutionLogRecord, MongoWorkflowExecutionLogStore>();
         AddStore<ActivityExecutionRecord, MongoActivityExecutionLogStore>();
         AddStore<SerializedKeyValuePair, MongoKeyValueStore>();

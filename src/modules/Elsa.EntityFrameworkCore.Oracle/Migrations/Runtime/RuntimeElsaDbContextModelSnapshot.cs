@@ -144,6 +144,59 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueItem_CorrelationId");
+
+                    b.HasIndex(new[] { "CreatedAt" }, "IX_BookmarkQueueItem_CreatedAt");
+
+                    b.HasIndex(new[] { "StimulusHash" }, "IX_BookmarkQueueItem_StimulusHash");
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
                     b.Property<string>("Id")
