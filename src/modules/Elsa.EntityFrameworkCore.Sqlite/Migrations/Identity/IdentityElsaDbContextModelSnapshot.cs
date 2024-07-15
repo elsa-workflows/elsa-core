@@ -50,6 +50,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId")
@@ -59,6 +62,9 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Application_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Application_TenantId");
 
                     b.ToTable("Applications");
                 });
@@ -77,11 +83,17 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Permissions");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_Role_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_Role_TenantId");
 
                     b.ToTable("Roles");
                 });
@@ -108,11 +120,17 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
                         .HasDatabaseName("IX_User_Name");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users");
                 });
