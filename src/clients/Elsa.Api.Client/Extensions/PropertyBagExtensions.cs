@@ -22,7 +22,7 @@ public static class PropertyBagExtensions
         if (!propertyBag.TryGetValue(key, out var value))
             return defaultValue();
 
-        var json = (string)value;
+        var json = value.ToString();
         return JsonSerializer.Deserialize<T>(json);
     }
 
