@@ -76,6 +76,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         configureEngine?.Invoke(engine);
 
         // Add common functions.
+        engine.SetValue("getWorkflowDefinitionId", (Func<string>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.DefinitionId));
+        engine.SetValue("getWorkflowDefinitionVersionId", (Func<string>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.Id));
+        engine.SetValue("getWorkflowDefinitionVersion", (Func<int>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.Version));
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
