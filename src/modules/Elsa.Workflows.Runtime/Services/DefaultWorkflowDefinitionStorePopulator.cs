@@ -49,42 +49,47 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     }
 
     /// <inheritdoc />
-    public Task<ICollection<string>> PopulateStoreAsync(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<WorkflowDefinition>> PopulateStoreAsync(CancellationToken cancellationToken = default)
     {
         return PopulateStoreAsync(true, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<ICollection<string>> PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<WorkflowDefinition>> PopulateStoreAsync(bool indexTriggers, CancellationToken cancellationToken = default)
     {
         var providers = _workflowDefinitionProviders();
-        var workflowDefinitionIds = new List<string>();
+        var workflowDefinitions = new List<WorkflowDefinition>();
+        
         foreach (var provider in providers)
         {
             var results = await provider.GetWorkflowsAsync(cancellationToken).AsTask().ToList();
 
-            workflowDefinitionIds.AddRange(results.Select(w => w.Workflow.Id));
-
-            foreach (var result in results) await AddAsync(result, indexTriggers, cancellationToken);
+            foreach (var result in results)
+            {
+                var workflowDefinition = await AddAsync(result, indexTriggers, cancellationToken);
+                workflowDefinitions.Add(workflowDefinition);
+            }
         }
 
-        return workflowDefinitionIds;
+        return workflowDefinitions;
     }
 
     /// <inheritdoc />
-    public Task AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    public Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         return AddAsync(materializedWorkflow, true, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinition> AddAsync(MaterializedWorkflow materializedWorkflow, bool indexTriggers, CancellationToken cancellationToken = default)
     {
         await AssignIdentities(materializedWorkflow.Workflow, cancellationToken);
-        await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
+        var workflowDefinition = await AddOrUpdateAsync(materializedWorkflow, cancellationToken);
 
         if (indexTriggers)
             await IndexTriggersAsync(materializedWorkflow, cancellationToken);
+
+        return workflowDefinition;
     }
 
     private async Task AssignIdentities(Workflow workflow, CancellationToken cancellationToken)
@@ -92,13 +97,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         await _identityGraphService.AssignIdentitiesAsync(workflow, cancellationToken);
     }
 
-    private async Task AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    private async Task<WorkflowDefinition> AddOrUpdateAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         await _semaphore.WaitAsync(cancellationToken);
 
         try
         {
-            await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
+            return await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
         }
         finally
         {
@@ -106,7 +111,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         }
     }
 
-    private async Task AddOrUpdateCoreAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
+    private async Task<WorkflowDefinition> AddOrUpdateCoreAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken = default)
     {
         var workflow = materializedWorkflow.Workflow;
         var definitionId = workflow.Identity.DefinitionId;
@@ -178,7 +183,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         if (existingDefinitionVersion is null && workflowDefinitionsToSave.Any(w => w.Id == workflowDefinition.Id))
         {
             _logger.LogInformation("Workflow with ID {WorkflowId} already exists", workflowDefinition.Id);
-            return;
+            return workflowDefinition;
         }
 
         workflowDefinitionsToSave.Add(workflowDefinition);
@@ -194,7 +199,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         }
 
         await _workflowDefinitionStore.SaveManyAsync(workflowDefinitionsToSave, cancellationToken);
-        return;
+        return workflowDefinition;
 
         async Task UpdateIsLatest()
         {

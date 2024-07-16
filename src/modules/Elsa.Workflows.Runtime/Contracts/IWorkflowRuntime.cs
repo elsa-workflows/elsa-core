@@ -15,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Contracts;
 public interface IWorkflowRuntime
 {
     /// <summary>
-    /// Returns a value whether or not the specified workflow definition can create a new instance.
+    /// Returns a value whether the specified workflow definition can create a new instance.
     /// </summary>
     Task<CanStartWorkflowResult> CanStartWorkflowAsync(string definitionId, StartWorkflowRuntimeParams? options = default);
 

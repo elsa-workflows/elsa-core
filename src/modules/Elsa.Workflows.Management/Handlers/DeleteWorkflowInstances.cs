@@ -2,12 +2,14 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Notifications;
+using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Handlers;
 
 /// <summary>
 /// Deletes workflow instances when a workflow definition or version is deleted.
 /// </summary>
+[UsedImplicitly]
 public class DeleteWorkflowInstances :
     INotificationHandler<WorkflowDefinitionDeleting>,
     INotificationHandler<WorkflowDefinitionVersionDeleting>,

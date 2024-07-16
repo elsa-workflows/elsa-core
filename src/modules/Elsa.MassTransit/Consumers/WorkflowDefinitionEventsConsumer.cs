@@ -92,7 +92,7 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     public async Task Consume(ConsumeContext<WorkflowDefinitionsReloaded> context)
     {
         var message = context.Message;
-        var notification = new Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionsReloaded(message.WorkflowDefinitionIds);
+        var notification = new Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionsReloaded(message.ReloadedWorkflowDefinitions);
         AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = true;
         await notificationSender.SendAsync(notification, context.CancellationToken);
         AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = false;

@@ -95,10 +95,8 @@ public class InvalidateHttpWorkflowsCache(
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
     {
-        foreach (var workflowDefinitionId in notification.WorkflowDefinitionIds)
-        {
-            await InvalidateCacheAsync(workflowDefinitionId);
-        }
+        foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions) 
+            await InvalidateCacheAsync(reloadedWorkflowDefinition.DefinitionId);
     }
 
     private async Task InvalidateCacheAsync(string workflowDefinitionId)
@@ -119,9 +117,9 @@ public class InvalidateHttpWorkflowsCache(
 
     private async Task InvalidateTriggerCacheAsync(IEnumerable<StoredTrigger> triggers, CancellationToken cancellationToken)
     {
-        foreach (StoredTrigger trigger in triggers)
+        foreach (var trigger in triggers)
         {
-            if (trigger?.Payload is HttpEndpointBookmarkPayload httpPayload)
+            if (trigger.Payload is HttpEndpointBookmarkPayload httpPayload)
             {
                 var hash = httpWorkflowsCacheManager.ComputeBookmarkHash(httpPayload.Path, httpPayload.Method);
                 await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);

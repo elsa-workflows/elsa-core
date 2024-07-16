@@ -26,6 +26,7 @@ public class CachingWorkflowRuntimeFeature : FeatureBase
             .Decorate<ITriggerStore, CachingTriggerStore>()
 
             // Handlers.
-            .AddNotificationHandler<InvalidateTriggersCache>();
+            .AddNotificationHandler<InvalidateTriggersCache>()
+            .AddNotificationHandler<InvalidateWorkflowsCache>();
     }
 }
