@@ -7,7 +7,7 @@ public class Request
 {
     /// The unique identifier of a workflow instance.
     [BindFrom("id")] public string WorkflowInstanceId { get; set; } = default!;
-
-    /// The start date for checking for updates in the workflow instance journal.
-    public DateTimeOffset UpdatesSince { get; set; }
 }
+
+/// Represents the response containing the last updated timestamp of a workflow instance.
+public record Response(DateTimeOffset UpdatedAt);
