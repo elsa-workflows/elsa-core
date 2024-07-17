@@ -6,8 +6,11 @@ using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
 using Elsa.Workflows.ComponentTests.Services;
+using Elsa.Workflows.Management.Contracts;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -94,11 +97,15 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ISignalManager, SignalManager>();
-            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
-            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
-            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
-            services.AddNotificationHandlersFrom<WorkflowServer>();
+            services
+                .AddSingleton<ISignalManager, SignalManager>()
+                .AddSingleton<IWorkflowEvents, WorkflowEvents>()
+                .AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>()
+                .AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>()
+                .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
+                .AddNotificationHandlersFrom<WorkflowServer>()
+                .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                ;
         });
     }
 

@@ -88,8 +88,8 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
         if (AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer)
             return Task.CompletedTask;
 
-        var definitionIds = notification.WorkflowDefinitionIds;
-        var message = new Distributed.WorkflowDefinitionsReloaded(definitionIds);
+        var reloadedWorkflowDefinitions = notification.ReloadedWorkflowDefinitions;
+        var message = new Distributed.WorkflowDefinitionsReloaded(reloadedWorkflowDefinitions);
         return bus.Publish(message, cancellationToken);
     }
 }

@@ -7,7 +7,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Contracts;
@@ -272,12 +271,12 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()
-            .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<ReadWorkflowInboxMessage>()
             .AddNotificationHandler<DeliverWorkflowMessagesFromInbox>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
+            .AddNotificationHandler<RefreshActivityRegistry>()
 
             // Workflow activation strategies.
             .AddScoped<IWorkflowActivationStrategy, SingletonStrategy>()

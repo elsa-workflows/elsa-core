@@ -1,5 +1,6 @@
 ﻿using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime.Services;
@@ -10,8 +11,9 @@ public class WorkflowDefinitionsReloader(IWorkflowDefinitionStorePopulator workf
     /// <inheritdoc />
     public async Task ReloadWorkflowDefinitionsAsync(CancellationToken cancellationToken)
     {
-        var definitionIds = await workflowDefinitionStorePopulator.PopulateStoreAsync(true, cancellationToken);
-        var notification = new WorkflowDefinitionsReloaded(definitionIds);
+        var workflowDefinitions = await workflowDefinitionStorePopulator.PopulateStoreAsync(true, cancellationToken);
+        var reloadedWorkflowDefinitions = workflowDefinitions.Select(ReloadedWorkflowDefinition.FromDefinition).ToList();
+        var notification = new WorkflowDefinitionsReloaded(reloadedWorkflowDefinitions);
         await notificationSender.SendAsync(notification, cancellationToken);
     }
 }
