@@ -250,7 +250,7 @@ services
             {
                 api.AddFastEndpointsAssembly<Program>();
             })
-            .UseRealTimeWorkflows()
+            //.UseRealTimeWorkflows()
             .UseCSharp(options =>
             {
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
@@ -418,7 +418,7 @@ if (app.Environment.IsDevelopment())
 }
 
 // SignalR.
-app.UseWorkflowsSignalRHubs();
+//app.UseWorkflowsSignalRHubs();
 
 // Run.
 app.Run();
