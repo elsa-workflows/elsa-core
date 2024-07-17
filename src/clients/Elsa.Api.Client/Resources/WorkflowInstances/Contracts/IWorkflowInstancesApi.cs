@@ -48,13 +48,13 @@ public interface IWorkflowInstancesApi
     Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns the last-updated timestamp of the specified workflow instance.
+    /// Returns the execution state of the specified workflow instance.
     /// </summary>
-    /// <param name="workflowInstanceId">The ID of the workflow instance for which to return its last-updated timestamp.</param>
+    /// <param name="workflowInstanceId">The ID of the workflow instance for which to return its execution state.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>Returns a response containing the last-updated timestamp.</returns>
-    [Get("/workflow-instances/{workflowInstanceId}/updated-at")]
-    Task<GetUpdatedAtResponse> GetUpdatedAtAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
+    /// <returns>Returns a response containing the execution state.</returns>
+    [Get("/workflow-instances/{workflowInstanceId}/execution-state")]
+    Task<WorkflowInstanceExecutionStateResponse> GetExecutionStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow instance.
