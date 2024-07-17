@@ -3,9 +3,9 @@ using Elsa.Extensions;
 using Elsa.Workflows.Management.Contracts;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.ExecutionState;
+namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.ExecutionState;
 
-/// Endpoint that checks if there are updates for a workflow instance.
+/// Returns the execution state of the specified workflow instance.
 [PublicAPI]
 internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Response>
 {

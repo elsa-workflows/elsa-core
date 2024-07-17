@@ -1,6 +1,6 @@
 using FastEndpoints;
 
-namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.Journal.ExecutionState;
+namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.ExecutionState;
 
 /// The request to check the execution state of the workflow instance. 
 public class Request
