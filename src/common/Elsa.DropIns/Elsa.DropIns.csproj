@@ -15,6 +15,11 @@
         <PackageReference Include="ThrottleDebounce" />
     </ItemGroup>
 
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+        <PackageReference Include="System.Formats.Asn1" VersionOverride="8.0.1" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\Elsa.DropIns.Core\Elsa.DropIns.Core.csproj" />
     </ItemGroup>

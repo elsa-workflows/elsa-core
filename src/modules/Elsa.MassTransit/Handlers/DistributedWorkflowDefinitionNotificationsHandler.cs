@@ -17,7 +17,8 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsUpdated>,
-    INotificationHandler<WorkflowDefinitionsRefreshed>
+    INotificationHandler<WorkflowDefinitionsRefreshed>,
+    INotificationHandler<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
@@ -72,11 +73,23 @@ public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
     public Task HandleAsync(WorkflowDefinitionsRefreshed notification, CancellationToken cancellationToken)
     {
         // Prevent re-entrance.
-        if (AmbientConsumerScope.IsConsumerExecutionContext)
+        if (AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer)
             return Task.CompletedTask;
 
         var definitionIds = notification.WorkflowDefinitionIds;
         var message = new Distributed.WorkflowDefinitionsRefreshed(definitionIds);
+        return bus.Publish(message, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
+    {
+        // Prevent re-entrance.
+        if (AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer)
+            return Task.CompletedTask;
+
+        var reloadedWorkflowDefinitions = notification.ReloadedWorkflowDefinitions;
+        var message = new Distributed.WorkflowDefinitionsReloaded(reloadedWorkflowDefinitions);
         return bus.Publish(message, cancellationToken);
     }
 }

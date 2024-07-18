@@ -14,5 +14,9 @@
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
-
+    
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
+    </ItemGroup>
 </Project>

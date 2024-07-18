@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
 using Elsa.Common.Contracts;
@@ -15,6 +15,7 @@ using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
+using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
@@ -119,13 +120,16 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ISignalManager, SignalManager>();
-            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
-            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
-            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
-            services.AddScoped<ITenantResolutionStrategy, TestTenantResolutionStrategy>();
-            services.AddNotificationHandlersFrom<WorkflowServer>();
-            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
+            services
+                .AddSingleton<ISignalManager, SignalManager>()
+                .AddSingleton<IWorkflowEvents, WorkflowEvents>()
+                .AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>()
+                .AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>()
+                .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
+                .AddNotificationHandlersFrom<WorkflowServer>()
+                .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                .AddNotificationHandlersFrom<WorkflowEventHandlers>()
+                ;
         });
     }
 

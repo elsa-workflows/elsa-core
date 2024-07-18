@@ -10,7 +10,6 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Handlers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Contracts;
@@ -189,6 +188,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
+            .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
             .AddScoped<IWorkflowRegistry, DefaultWorkflowRegistry>()
             .AddScoped<IWorkflowMatcher, WorkflowMatcher>()
             .AddScoped<IWorkflowInvoker, WorkflowInvoker>()
@@ -207,6 +207,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
+            .AddScoped<IWorkflowExecutionLogRecordExtractor, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<StoreCommitStateHandler>()
 
@@ -250,10 +251,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<CancelBackgroundActivities>()
             .AddNotificationHandler<DeleteBookmarks>()
             .AddNotificationHandler<DeleteTriggers>()
-            .AddNotificationHandler<DeleteWorkflowInstances>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
             .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
+            .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<SignalBookmarkQueueWorker>()
 
             // Workflow activation strategies.

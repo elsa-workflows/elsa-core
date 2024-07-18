@@ -18,7 +18,8 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     global::MassTransit.IConsumer<WorkflowDefinitionVersionDeleted>,
     global::MassTransit.IConsumer<WorkflowDefinitionVersionsDeleted>,
     global::MassTransit.IConsumer<WorkflowDefinitionVersionsUpdated>,
-    global::MassTransit.IConsumer<WorkflowDefinitionsRefreshed>
+    global::MassTransit.IConsumer<WorkflowDefinitionsRefreshed>,
+    global::MassTransit.IConsumer<WorkflowDefinitionsReloaded>
 {
     /// <inheritdoc />
     public Task Consume(ConsumeContext<WorkflowDefinitionDeleted> context)
@@ -82,9 +83,19 @@ public class WorkflowDefinitionEventsConsumer(IWorkflowDefinitionActivityRegistr
     {
         var message = context.Message;
         var notification = new Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionsRefreshed(message.WorkflowDefinitionIds);
-        AmbientConsumerScope.IsConsumerExecutionContext = true;
+        AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = true;
         await notificationSender.SendAsync(notification, context.CancellationToken);
-        AmbientConsumerScope.IsConsumerExecutionContext = false;
+        AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = false;
+    }
+
+    /// <inheritdoc />
+    public async Task Consume(ConsumeContext<WorkflowDefinitionsReloaded> context)
+    {
+        var message = context.Message;
+        var notification = new Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionsReloaded(message.ReloadedWorkflowDefinitions);
+        AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = true;
+        await notificationSender.SendAsync(notification, context.CancellationToken);
+        AmbientConsumerScope.IsWorkflowDefinitionEventsConsumer = false;
     }
 
     private Task UpdateDefinition(string id, bool usableAsActivity)

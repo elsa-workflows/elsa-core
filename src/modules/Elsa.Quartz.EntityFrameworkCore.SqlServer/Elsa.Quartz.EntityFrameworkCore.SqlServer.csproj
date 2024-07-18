@@ -23,5 +23,7 @@
     <ItemGroup>
         <PackageReference Include="Azure.Identity" VersionOverride="1.11.4" />
         <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.61.3" />
+        <PackageReference Include="System.Formats.Asn1" VersionOverride="8.0.1" />
+        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
     </ItemGroup>
 </Project>

@@ -33,7 +33,7 @@
     <PackageVersion Include="FluentMigrator.Runner" Version="5.2.0" />
     <PackageVersion Include="FluentStorage" Version="5.4.3" />
     <PackageVersion Include="FluentStorage.Azure.Blobs" Version="5.2.3" />
-    <PackageVersion Include="Fluid.Core" Version="2.10.0" />
+    <PackageVersion Include="Fluid.Core" Version="2.11.0" />
     <PackageVersion Include="Fody" Version="6.8.1" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.27.2" />
@@ -44,9 +44,9 @@
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="IronCompress" Version="1.5.2" />
     <PackageVersion Include="JetBrains.Annotations" Version="2024.2.0" />
-    <PackageVersion Include="Jint" Version="3.1.4" />
+    <PackageVersion Include="Jint" Version="3.1.5" />
     <PackageVersion Include="LinqKit.Core" Version="1.2.5" />
-    <PackageVersion Include="MailKit" Version="4.7.0" />
+    <PackageVersion Include="MailKit" Version="4.7.1.1" />
     <PackageVersion Include="MassTransit" Version="8.2.3" />
     <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.2.3" />
     <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
@@ -81,6 +81,8 @@
     <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.11.0" />
     <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.11.0" />
     <PackageVersion Include="Quartz.Serialization.Json" Version="3.11.0" />
+    <PackageVersion Include="Refit" Version="7.1.2" />
+    <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="ShortGuid" Version="2.0.1" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.0" />
@@ -103,6 +105,7 @@
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1" />
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1" />
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.1" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
@@ -134,8 +137,6 @@
     <PackageVersion Include="Oracle.EntityFrameworkCore" Version="7.21.13" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
-    <PackageVersion Include="Refit" Version="7.0.0" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
     <PackageVersion Include="System.Text.Json" Version="7.0.4" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
@@ -168,8 +169,8 @@
     <PackageVersion Include="Oracle.EntityFrameworkCore" Version="8.23.40" />
     <PackageVersion Include="Polly" Version="8.4.1" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
+    <PackageVersion Include="System.Text.Json" Version="8.0.4" />
     <PackageVersion Include="Refit" Version="7.1.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="7.1.2" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
 </Project>

@@ -49,6 +49,7 @@ const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
+const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
@@ -258,7 +259,6 @@ services
             {
                 api.AddFastEndpointsAssembly<Program>();
             })
-            .UseRealTimeWorkflows()
             .UseCSharp(options =>
             {
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
@@ -328,6 +328,11 @@ services
         if (useQuartz)
         {
             elsa.UseQuartz(quartz => { quartz.UseSqlite(sqliteConnectionString); });
+        }
+
+        if (useSignalR)
+        {
+            elsa.UseRealTimeWorkflows();
         }
 
         if (useMassTransit)
@@ -443,19 +448,18 @@ if (app.Environment.IsDevelopment())
 }
 
 // SignalR.
-app.UseWorkflowsSignalRHubs();
+if (useSignalR)
+{
+    app.UseWorkflowsSignalRHubs();
+}
 
 // Run.
 app.Run();
 
-/// <summary>
 /// The main entry point for the application made public for end to end testing.
-/// </summary>
 [UsedImplicitly]
 public partial class Program
 {
-    /// <summary>
     /// Set by the test runner to configure the module for testing.
-    /// </summary>
     public static Action<IModule>? ConfigureForTest { get; set; }
 }

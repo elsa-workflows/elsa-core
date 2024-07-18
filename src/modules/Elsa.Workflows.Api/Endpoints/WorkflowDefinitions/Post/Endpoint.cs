@@ -80,6 +80,7 @@ internal class Post(
         draft.ToolVersion = model.ToolVersion;
         draft.Description = model.Description?.Trim();
         draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
+        draft.PropertyBag = model.PropertyBag ?? new PropertyBag();
         draft.Variables = variables;
         draft.Inputs = inputs;
         draft.Outputs = outputs;
