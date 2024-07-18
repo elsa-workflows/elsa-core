@@ -1,6 +1,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
+using Elsa.Api.Client.Resources.WorkflowInstances.Responses;
 using Elsa.Api.Client.Shared.Models;
 using Refit;
 
@@ -47,14 +48,13 @@ public interface IWorkflowInstancesApi
     Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Checks if there are updates in the journal for a specific workflow instance.
+    /// Returns the execution state of the specified workflow instance.
     /// </summary>
-    /// <param name="workflowInstanceId">The ID of the workflow instance for which to check for updates.</param>
-    /// <param name="request">The request containing the ID and time from which to check for updates.</param>
+    /// <param name="workflowInstanceId">The ID of the workflow instance for which to return its execution state.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>Returns whether updates are available for the journal.</returns>
-    [Get("/workflow-instances/{workflowInstanceId}/journal/has-updates")]
-    Task<bool> HasJournalUpdates(string workflowInstanceId, [Query]HasJournalUpdateRequest request, CancellationToken cancellationToken = default);
+    /// <returns>Returns a response containing the execution state.</returns>
+    [Get("/workflow-instances/{workflowInstanceId}/execution-state")]
+    Task<WorkflowInstanceExecutionStateResponse> GetExecutionStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow instance.
