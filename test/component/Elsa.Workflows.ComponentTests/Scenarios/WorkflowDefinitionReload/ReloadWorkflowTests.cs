@@ -9,6 +9,7 @@ using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
+using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowDefinitionReload;
@@ -71,7 +72,7 @@ public class ReloadWorkflowTests : AppComponentTest
         Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
     }
     
-    [Fact(Skip = "Not working as intended")]
+    [Fact]
     public async Task Reloading_AfterUpdatingSourceProvider_ShouldRefreshActivityRegistry()
     {
         var definitionId = Guid.NewGuid().ToString();
@@ -81,7 +82,8 @@ public class ReloadWorkflowTests : AppComponentTest
         // Set up the initial workflow version.
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1];
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
-        var activityV1 =  _activityRegistry.Find(workflowV1.Workflow.Name!);
+        var activityTypeName = workflowV1.Workflow.Name.Pascalize();
+        var activityV1 =  _activityRegistry.Find(activityTypeName);
         Assert.Equal(1, activityV1!.Version);
         
         // Simulate the workflow provider to have a new version available.
@@ -93,7 +95,7 @@ public class ReloadWorkflowTests : AppComponentTest
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         
         // Assert that the activity registry contains a new activity descriptor representing the new workflow version.
-        var activityV2 = _activityRegistry.Find(workflowV2.Workflow.Name!)!;
+        var activityV2 = _activityRegistry.Find(activityTypeName)!;
         Assert.Equal(2, activityV2.Version);
     }
     
@@ -103,11 +105,11 @@ public class ReloadWorkflowTests : AppComponentTest
         builder.DefinitionId = definitionId;
         builder.Id = definitionVersionId;
         builder.Version = version;
-        builder.Name = Guid.NewGuid().ToString();
+        builder.Name = definitionId;
         builder.Root = new WriteLine($"Version {version}");
         builder.WorkflowOptions.UsableAsActivity = true;
         var workflow = await builder.BuildWorkflowAsync();
-        workflow.Name = builder.Name;
+        workflow.Name = definitionId;
         return new MaterializedWorkflow(workflow, _testWorkflowProvider.Name, TestWorkflowMaterializer.MaterializerName);
     }
 }
