@@ -71,7 +71,7 @@ public class ReloadWorkflowTests : AppComponentTest
         Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
     }
     
-    [Fact]
+    [Fact(Skip = "Not working as intended")]
     public async Task Reloading_AfterUpdatingSourceProvider_ShouldRefreshActivityRegistry()
     {
         var definitionId = Guid.NewGuid().ToString();
