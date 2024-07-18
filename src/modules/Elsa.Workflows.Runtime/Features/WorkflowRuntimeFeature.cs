@@ -18,6 +18,7 @@ using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
+using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
@@ -66,9 +67,6 @@ public class WorkflowRuntimeFeature : FeatureBase
 
     /// A factory that instantiates an <see cref="IActivityExecutionStore"/>.
     public Func<IServiceProvider, IActivityExecutionStore> ActivityExecutionLogStore { get; set; } = sp => sp.GetRequiredService<MemoryActivityExecutionStore>();
-
-    /// A factory that instantiates an <see cref="IWorkflowExecutionContextStore"/>.
-    public Func<IServiceProvider, IWorkflowExecutionContextStore> WorkflowExecutionContextStore { get; set; } = sp => sp.GetRequiredService<MemoryWorkflowExecutionContextStore>();
 
     /// A factory that instantiates an <see cref="IDistributedLockProvider"/>.
     public Func<IServiceProvider, IDistributedLockProvider> DistributedLockProvider { get; set; } = _ => new FileDistributedSynchronizationProvider(new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "App_Data/locks")));
@@ -174,7 +172,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowRuntime)
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
-            .AddScoped(WorkflowExecutionContextStore)
             .AddScoped(RunTaskDispatcher)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
@@ -235,7 +232,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
-            .AddMemoryStore<WorkflowExecutionContext, MemoryWorkflowExecutionContextStore>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
@@ -253,7 +249,6 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddNotificationHandler<DeleteTriggers>()
             .AddNotificationHandler<DeleteActivityExecutionLogRecords>()
             .AddNotificationHandler<DeleteWorkflowExecutionLogRecords>()
-            .AddNotificationHandler<WorkflowExecutionContextNotificationsHandler>()
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<SignalBookmarkQueueWorker>()
 

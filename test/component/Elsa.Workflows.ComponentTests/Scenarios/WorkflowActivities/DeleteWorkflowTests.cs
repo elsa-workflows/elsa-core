@@ -1,20 +1,20 @@
 using Elsa.Testing.Shared;
+using Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
 
 public class DeleteWorkflowTests : AppComponentTest
 {
-    private readonly ISignalManager _signalManager;
-    private readonly IWorkflowDefinitionEvents _workflowDefinitionEvents;
+    private static readonly object WorkflowDeletedSignal = new();
     private readonly IServiceScope _scope1;
     private readonly IServiceScope _scope2;
     private readonly IServiceScope _scope3;
-    private static readonly object WorkflowDeletedSignal = new();
-    
+    private readonly ISignalManager _signalManager;
+    private readonly IWorkflowDefinitionEvents _workflowDefinitionEvents;
+
     public DeleteWorkflowTests(App app) : base(app)
     {
         _scope1 = app.Cluster.Pod1.Services.CreateScope();
@@ -30,28 +30,28 @@ public class DeleteWorkflowTests : AppComponentTest
     public async Task DeleteWorkflow()
     {
         EnsureWorkflowInRegistry(_scope1, Workflows.DeleteWorkflow.Type);
-        
+
         var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
         await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflow.DefinitionId);
-        
+
         WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflow.Type);
     }
-    
+
     [Fact(Skip = "Clustered tests are interfering with other event driven tests")]
     public async Task DeleteWorkflow_Clustered()
     {
-        EnsureWorkflowInRegistry(_scope1, Workflows.DeleteWorkflowClustered.Type);
-        EnsureWorkflowInRegistry(_scope2, Workflows.DeleteWorkflowClustered.Type);
-        EnsureWorkflowInRegistry(_scope3, Workflows.DeleteWorkflowClustered.Type);
-        
+        EnsureWorkflowInRegistry(_scope1, DeleteWorkflowClustered.Type);
+        EnsureWorkflowInRegistry(_scope2, DeleteWorkflowClustered.Type);
+        EnsureWorkflowInRegistry(_scope3, DeleteWorkflowClustered.Type);
+
         var workflowDefinitionManager = _scope1.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
-        await workflowDefinitionManager.DeleteByDefinitionIdAsync(Workflows.DeleteWorkflowClustered.DefinitionId);
-        
-        WorkflowTypeDeletedFromRegistry(_scope1, Workflows.DeleteWorkflowClustered.Type);
-        
+        await workflowDefinitionManager.DeleteByDefinitionIdAsync(DeleteWorkflowClustered.DefinitionId);
+
+        WorkflowTypeDeletedFromRegistry(_scope1, DeleteWorkflowClustered.Type);
+
         await _signalManager.WaitAsync<WorkflowDefinitionDeletedEventArgs>(WorkflowDeletedSignal);
-        WorkflowTypeDeletedFromRegistry(_scope2, Workflows.DeleteWorkflowClustered.Type);
-        WorkflowTypeDeletedFromRegistry(_scope3, Workflows.DeleteWorkflowClustered.Type);
+        WorkflowTypeDeletedFromRegistry(_scope2, DeleteWorkflowClustered.Type);
+        WorkflowTypeDeletedFromRegistry(_scope3, DeleteWorkflowClustered.Type);
     }
 
     private static void EnsureWorkflowInRegistry(IServiceScope scope, string type)

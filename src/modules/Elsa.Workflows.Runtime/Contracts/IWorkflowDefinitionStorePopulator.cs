@@ -1,4 +1,5 @@
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 
 namespace Elsa.Workflows.Runtime;
 

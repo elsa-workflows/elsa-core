@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;

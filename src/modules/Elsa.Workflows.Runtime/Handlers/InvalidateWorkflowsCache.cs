@@ -1,5 +1,5 @@
 ﻿using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 

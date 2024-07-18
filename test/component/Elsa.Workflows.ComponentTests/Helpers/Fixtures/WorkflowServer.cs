@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
-using Elsa.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -17,6 +16,8 @@ using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;

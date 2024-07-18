@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowInstances.ExecutionState;

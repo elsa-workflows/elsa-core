@@ -2,7 +2,6 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;

@@ -5,10 +5,8 @@ using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Materializers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,12 +14,12 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowDefinitionReload;
 
 public class ReloadWorkflowTests : AppComponentTest
 {
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly IWorkflowDefinitionsReloader _workflowDefinitionsReloader;
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private readonly TestWorkflowProvider _testWorkflowProvider;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
     private readonly IActivityRegistry _activityRegistry;
+    private readonly TestWorkflowProvider _testWorkflowProvider;
+    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
+    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
+    private readonly IWorkflowDefinitionService _workflowDefinitionService;
+    private readonly IWorkflowDefinitionsReloader _workflowDefinitionsReloader;
 
     public ReloadWorkflowTests(App app) : base(app)
     {
@@ -30,8 +28,8 @@ public class ReloadWorkflowTests : AppComponentTest
         _workflowBuilderFactory = Scope.ServiceProvider.GetRequiredService<IWorkflowBuilderFactory>();
         _workflowDefinitionService = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionService>();
         _activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        var workflowProviders = Scope.ServiceProvider.GetRequiredService<IEnumerable<IWorkflowProvider>>();
-        _testWorkflowProvider = (TestWorkflowProvider)workflowProviders.First(x => x is TestWorkflowProvider);
+        var workflowsProviders = Scope.ServiceProvider.GetRequiredService<IEnumerable<IWorkflowsProvider>>();
+        _testWorkflowProvider = (TestWorkflowProvider)workflowsProviders.First(x => x is TestWorkflowProvider);
     }
 
     [Fact]
@@ -52,53 +50,53 @@ public class ReloadWorkflowTests : AppComponentTest
         var definitionId = Guid.NewGuid().ToString();
         var definitionVersionId1 = Guid.NewGuid().ToString();
         var workflowV1 = await BuildWorkflowAsync(definitionId, definitionVersionId1, 1);
-        
+
         // Set up the initial workflow version.
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1];
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         var definitionV1 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
         Assert.Equal(definitionVersionId1, definitionV1!.Workflow.Identity.Id);
-        
+
         // Simulate the workflow provider to have a new version available.
         var definitionVersionId2 = Guid.NewGuid().ToString();
         var workflowV2 = await BuildWorkflowAsync(definitionId, definitionVersionId2, 2);
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1, workflowV2];
-        
+
         // Reload the workflow definitions.
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
-        
+
         // Assert that the workflow definition service finds the updated workflow version.
         var definitionV2 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
         Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
     }
-    
+
     [Fact]
     public async Task Reloading_AfterUpdatingSourceProvider_ShouldRefreshActivityRegistry()
     {
         var definitionId = Guid.NewGuid().ToString();
         var definitionVersionId1 = Guid.NewGuid().ToString();
         var workflowV1 = await BuildWorkflowAsync(definitionId, definitionVersionId1, 1);
-        
+
         // Set up the initial workflow version.
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1];
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         var activityTypeName = workflowV1.Workflow.Name.Pascalize();
-        var activityV1 =  _activityRegistry.Find(activityTypeName);
+        var activityV1 = _activityRegistry.Find(activityTypeName);
         Assert.Equal(1, activityV1!.Version);
-        
+
         // Simulate the workflow provider to have a new version available.
         var definitionVersionId2 = Guid.NewGuid().ToString();
         var workflowV2 = await BuildWorkflowAsync(definitionId, definitionVersionId2, 2);
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1, workflowV2];
-        
+
         // Reload the workflow definitions.
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
-        
+
         // Assert that the activity registry contains a new activity descriptor representing the new workflow version.
         var activityV2 = _activityRegistry.Find(activityTypeName)!;
         Assert.Equal(2, activityV2.Version);
     }
-    
+
     private async Task<MaterializedWorkflow> BuildWorkflowAsync(string definitionId, string definitionVersionId, int version)
     {
         var builder = _workflowBuilderFactory.CreateBuilder();

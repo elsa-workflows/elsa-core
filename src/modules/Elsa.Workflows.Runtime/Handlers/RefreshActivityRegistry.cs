@@ -2,7 +2,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 
@@ -15,7 +14,7 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionsReloaded notification, CancellationToken cancellationToken)
     {
-        foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions) 
+        foreach (var reloadedWorkflowDefinition in notification.ReloadedWorkflowDefinitions)
             await UpdateDefinition(reloadedWorkflowDefinition.DefinitionVersionId, reloadedWorkflowDefinition.UsableAsActivity);
     }
 
