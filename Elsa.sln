@@ -127,6 +127,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\docker-compose-datadog.yml = docker\docker-compose-datadog.yml
 		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
+		docker\init-db.sh = docker\init-db.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.RunTaskIntegration", "samples\aspnet\Elsa.Samples.AspNet.RunTaskIntegration\Elsa.Samples.AspNet.RunTaskIntegration.csproj", "{51050209-EC2F-4DC7-8F46-07E22B7811CD}"

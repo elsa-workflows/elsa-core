@@ -22,9 +22,7 @@ using Proto.Remote.GrpcNet;
 
 namespace Elsa.ProtoActor.Features;
 
-/// <summary>
 /// Installs the Proto Actor feature to host &amp; execute workflow instances.
-/// </summary>
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class ProtoActorFeature : FeatureBase
@@ -34,42 +32,36 @@ public class ProtoActorFeature : FeatureBase
     {
     }
 
+    /// The name of the cluster to configure.
+    public string ClusterName { get; set; } = "elsa-cluster";
+
+
+    public LogLevel DiagnosticsLogLevel { get; set; } = LogLevel.Information;
+
+    /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
+    public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
+
+    /// A delegate that configures an instance of <see cref="ConfigureActorSystemConfig"/>. 
+    public Action<IServiceProvider, ActorSystemConfig> ConfigureActorSystemConfig { get; set; } = SetupDefaultConfig;
+
+    /// A delegate that configures an instance of an <see cref="ConfigureActorSystem"/>. 
+    public Action<IServiceProvider, ActorSystem> ConfigureActorSystem { get; set; } = (_, _) => { };
+
+    /// A delegate that returns an instance of <see cref="GrpcNetRemoteConfig"/> to be used by the actor system. 
+    public Func<IServiceProvider, GrpcNetRemoteConfig> ConfigureRemoteConfig { get; set; } = CreateDefaultRemoteConfig;
+
+    /// A delegate that returns an instance of a concrete implementation of <see cref="IProvider"/> to use for persisting events and snapshots. 
+    public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
+
+    /// A delegate that configures an instance of <see cref="ClusterConfig"/>. 
+    public Action<IServiceProvider, ClusterConfig>? ConfigureClusterConfig { get; set; }
+
     /// <inheritdoc />
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
         Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorRuntime>(sp);
     }
-
-    /// <summary>
-    /// The name of the cluster to configure.
-    /// </summary>
-    public string ClusterName { get; set; } = "elsa-cluster";
-
-    /// <summary>
-    /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
-    /// </summary>
-    public Func<IServiceProvider, IClusterProvider> ClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
-
-    /// <summary>
-    /// A delegate that configures an instance of <see cref="ActorSystemConfig"/>. 
-    /// </summary>
-    public Action<IServiceProvider, ActorSystemConfig> ActorSystemConfig { get; set; } = SetupDefaultConfig;
-
-    /// <summary>
-    /// A delegate that configures an instance of an <see cref="ActorSystem"/>. 
-    /// </summary>
-    public Action<IServiceProvider, ActorSystem> ActorSystem { get; set; } = (_, _) => { };
-
-    /// <summary>
-    /// A delegate that returns an instance of <see cref="GrpcNetRemoteConfig"/> to be used by the actor system. 
-    /// </summary>
-    public Func<IServiceProvider, GrpcNetRemoteConfig> RemoteConfig { get; set; } = CreateDefaultRemoteConfig;
-
-    /// <summary>
-    /// A delegate that returns an instance of a concrete implementation of <see cref="IProvider"/> to use for persisting events and snapshots. 
-    /// </summary>
-    public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
 
     /// <inheritdoc />
     public override void ConfigureHostedServices()
@@ -85,13 +77,16 @@ public class ProtoActorFeature : FeatureBase
         // Register ActorSystem.
         services.AddSingleton(sp =>
         {
-            var systemConfig = Proto.ActorSystemConfig
+            var actorSystemConfig = ActorSystemConfig
                 .Setup()
-                .WithDiagnosticsLogLevel(LogLevel.Debug)
+                .WithDiagnosticsLogLevel(DiagnosticsLogLevel)
                 .WithMetrics();
 
-            var clusterProvider = ClusterProvider(sp);
-            var system = new ActorSystem(systemConfig).WithServiceProvider(sp);
+            ConfigureActorSystemConfig(sp, actorSystemConfig);
+
+            var clusterProvider = CreateClusterProvider(sp);
+            var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
+
             var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
 
             var clusterConfig = ClusterConfig
@@ -102,19 +97,18 @@ public class ProtoActorFeature : FeatureBase
                     .WithActorActivationTimeout(TimeSpan.FromHours(1))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                     .WithGossipRequestTimeout(TimeSpan.FromHours(1))
-                    //.WithLegacyRequestTimeoutBehavior()
                     .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
                 ;
 
-            ActorSystemConfig(sp, systemConfig);
-
-            var remoteConfig = RemoteConfig(sp);
+            ConfigureClusterConfig?.Invoke(sp, clusterConfig);
+            var remoteConfig = ConfigureRemoteConfig(sp);
 
             system
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
 
-            ActorSystem(sp, system);
+            ConfigureActorSystem(sp, system);
+
             return system;
         });
 
@@ -151,7 +145,7 @@ public class ProtoActorFeature : FeatureBase
         // Actors.
         services
             .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
-            
+
         // Distributed runtime.
         services.AddSingleton<ProtoActorRuntime>();
     }

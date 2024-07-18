@@ -32,8 +32,4 @@
         <ProtoGrain Include="Proto\WorkflowInstance.proto" AdditionalImportDirs="./Proto" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Models\" />
-    </ItemGroup>
-
 </Project>

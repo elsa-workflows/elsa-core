@@ -26,7 +26,7 @@ var protoActorClusterSection = protoActorSection.GetSection("Cluster");
 
 // Configure Proto Actor cluster provider services.
 services.AddAzureContainerAppsProvider(
-    ArmClientProviders.DefaultAzureCredential, 
+    ArmClientProviders.DefaultAzureCredential,
     sc => sc.AddRedisClusterMemberStore(redisConnectionString),
     options => protoActorClusterSection.GetSection("AzureContainerApps").Bind(options));
 
@@ -57,9 +57,9 @@ services
             {
                 var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
 
-                protoActor.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
+                protoActor.CreateClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
 
-                protoActor.RemoteConfig = _ => GrpcNetRemoteConfig
+                protoActor.ConfigureRemoteConfig = _ => GrpcNetRemoteConfig
                     .BindTo(advertisedHost)
                     .WithProtoMessages(EmptyReflection.Descriptor)
                     .WithProtoMessages(SharedReflection.Descriptor)
