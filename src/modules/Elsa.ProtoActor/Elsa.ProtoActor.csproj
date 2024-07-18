@@ -18,6 +18,7 @@
         <PackageReference Include="Proto.Cluster"/>
         <PackageReference Include="Proto.Cluster.CodeGen"/>
         <PackageReference Include="Proto.Cluster.TestProvider"/>
+        <PackageReference Include="Proto.OpenTelemetry"/>
         <PackageReference Include="Proto.Persistence"/>
         <PackageReference Include="Proto.Remote"/>
     </ItemGroup>

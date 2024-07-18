@@ -16,6 +16,7 @@ using Proto.Cluster;
 using Proto.Cluster.Partition;
 using Proto.Cluster.Testing;
 using Proto.DependencyInjection;
+using Proto.OpenTelemetry;
 using Proto.Persistence;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
@@ -87,7 +88,7 @@ public class ProtoActorFeature : FeatureBase
             var clusterProvider = CreateClusterProvider(sp);
             var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
 
-            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
+            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>().WithTracing();
 
             var clusterConfig = ClusterConfig
                     .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
