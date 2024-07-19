@@ -14,16 +14,16 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.MultiTenancy;
-using Elsa.MassTransit.Extensions;
 using Elsa.Identity.MultiTenancy;
+using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.Server.Web;
-using Elsa.Workflows;
 using Elsa.Tenants.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
@@ -37,6 +37,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
+using StackExchange.Redis;
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
 const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
@@ -125,7 +126,7 @@ services
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
-                
+
                 identity.TokenOptions = options => identityTokenSection.Bind(options);
                 identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
                 identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
@@ -196,12 +197,18 @@ services
 
                 if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
-                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+                    runtime.UseProtoActor(proto =>
                     {
-                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                            return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                        else
+                        proto
+                            .EnableMetrics()
+                            .EnableTracing();
+
+                        proto.PersistenceProvider = _ =>
+                        {
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                                return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                        };
                     });
                 }
 
@@ -221,7 +228,7 @@ services
                     runtime.UseCache();
 
                 runtime.DistributedLockingOptions = options => configuration.GetSection("Runtime:DistributedLocking").Bind(options);
-                
+
                 runtime.DistributedLockProvider = _ =>
                 {
                     switch (distributedLockProviderName)
@@ -234,7 +241,7 @@ services
                             });
                         case "Redis":
                             {
-                                var connectionMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnectionString);
+                                var connectionMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
                                 var database = connectionMultiplexer.GetDatabase();
                                 return new RedisDistributedSynchronizationProvider(database);
                             }
@@ -404,7 +411,6 @@ services
     });
 
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
-
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
