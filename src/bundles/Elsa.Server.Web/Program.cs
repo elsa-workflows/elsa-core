@@ -197,12 +197,18 @@ services
 
                 if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
-                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+                    runtime.UseProtoActor(proto =>
                     {
-                        if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                            return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                        else
+                        proto
+                            .EnableMetrics()
+                            .EnableTracing();
+
+                        proto.PersistenceProvider = _ =>
+                        {
+                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                                return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                             return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                        };
                     });
                 }
 

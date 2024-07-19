@@ -28,16 +28,15 @@ namespace Elsa.ProtoActor.Features;
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class ProtoActorFeature : FeatureBase
 {
+    private string _clusterName = "elsa-cluster";
+    private LogLevel _diagnosticsLogLevel = LogLevel.Information;
+    private bool _enableMetrics;
+    private bool _enableTracing;
+
     /// <inheritdoc />
     public ProtoActorFeature(IModule module) : base(module)
     {
     }
-
-    /// The name of the cluster to configure.
-    public string ClusterName { get; set; } = "elsa-cluster";
-
-
-    public LogLevel DiagnosticsLogLevel { get; set; } = LogLevel.Information;
 
     /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
@@ -56,6 +55,24 @@ public class ProtoActorFeature : FeatureBase
 
     /// A delegate that configures an instance of <see cref="ClusterConfig"/>. 
     public Action<IServiceProvider, ClusterConfig>? ConfigureClusterConfig { get; set; }
+
+    public ProtoActorFeature EnableMetrics(bool value = true)
+    {
+        _enableMetrics = value;
+        return this;
+    }
+
+    public ProtoActorFeature EnableTracing(bool value = true)
+    {
+        _enableTracing = value;
+        return this;
+    }
+
+    public ProtoActorFeature WithDiagnosticsLevel(LogLevel value)
+    {
+        _diagnosticsLogLevel = value;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -80,18 +97,22 @@ public class ProtoActorFeature : FeatureBase
         {
             var actorSystemConfig = ActorSystemConfig
                 .Setup()
-                .WithDiagnosticsLogLevel(DiagnosticsLogLevel)
-                .WithMetrics();
+                .WithDiagnosticsLogLevel(_diagnosticsLogLevel);
+
+            if (_enableMetrics)
+                actorSystemConfig = actorSystemConfig.WithMetrics();
 
             ConfigureActorSystemConfig(sp, actorSystemConfig);
 
             var clusterProvider = CreateClusterProvider(sp);
             var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
+            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
 
-            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>().WithTracing();
+            if (_enableTracing)
+                workflowGrainProps = workflowGrainProps.WithTracing();
 
             var clusterConfig = ClusterConfig
-                    .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
+                    .Setup(_clusterName, clusterProvider, new PartitionIdentityLookup())
                     .WithHeartbeatExpiration(TimeSpan.FromDays(1))
                     .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
                     .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))

@@ -106,7 +106,6 @@
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1" />
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite" Version="0.5.1" />
     <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" Version="0.5.1" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.4" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="7.0.0" />
@@ -171,8 +170,6 @@
     <PackageVersion Include="Polly" Version="8.4.1" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.4" />
-    <PackageVersion Include="Refit" Version="7.1.2" />
-    <PackageVersion Include="Refit.HttpClientFactory" Version="7.1.2" />
     <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.7.0"/>
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0"/>
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0"/>
