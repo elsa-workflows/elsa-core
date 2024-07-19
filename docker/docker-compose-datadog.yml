@@ -52,7 +52,6 @@ services:
       DD_TRACE_OTEL_ENABLED: true
       DD_SERVICE: "Elsa Server"
       DD_VERSION: "3.3.0"
-      # OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES: "Proto.Actor"
       ASPNETCORE_ENVIRONMENT: Development
       PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
       PYTHONNET_RUNTIME: coreclr
