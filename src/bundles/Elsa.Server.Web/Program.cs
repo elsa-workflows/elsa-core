@@ -405,10 +405,6 @@ services
     });
 
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
-
-// Open Telemetry
-
-
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
