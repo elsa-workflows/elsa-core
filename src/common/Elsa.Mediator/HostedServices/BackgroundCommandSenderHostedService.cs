@@ -9,23 +9,17 @@ namespace Elsa.Mediator.HostedServices;
 /// <summary>
 /// Continuously reads from a channel to which commands can be sent, executing each received command.
 /// </summary>
-public class BackgroundCommandSenderHostedService : BackgroundService
+/// <inheritdoc />
+public class BackgroundCommandSenderHostedService(int workerCount, 
+    ICommandsChannel commandsChannel,
+    IServiceScopeFactory scopeFactory,
+    ILogger<BackgroundCommandSenderHostedService> logger) : BackgroundService
 {
-    private readonly int _workerCount;
-    private readonly ICommandsChannel _commandsChannel;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly List<Channel<ICommand>> _outputs;
-    private readonly ILogger _logger;
-
-    /// <inheritdoc />
-    public BackgroundCommandSenderHostedService(int workerCount, ICommandsChannel commandsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundCommandSenderHostedService> logger)
-    {
-        _workerCount = workerCount;
-        _commandsChannel = commandsChannel;
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _outputs = new List<Channel<ICommand>>(workerCount);
-    }
+    private readonly int _workerCount = workerCount;
+    private readonly ICommandsChannel _commandsChannel = commandsChannel;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly List<Channel<ICommand>> _outputs = new List<Channel<ICommand>>(workerCount);
+    private readonly ILogger _logger = logger;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)

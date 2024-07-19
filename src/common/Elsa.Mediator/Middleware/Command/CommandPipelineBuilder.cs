@@ -11,10 +11,7 @@ public class CommandPipelineBuilder : ICommandPipelineBuilder
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandPipelineBuilder"/> class.
     /// </summary>
-    public CommandPipelineBuilder(IServiceProvider serviceProvider)
-    {
-        ApplicationServices = serviceProvider;
-    }
+    public CommandPipelineBuilder(IServiceProvider serviceProvider) => ApplicationServices = serviceProvider;
 
     /// <inheritdoc />
     public IDictionary<string, object?> Properties { get; } = new Dictionary<string, object?>();

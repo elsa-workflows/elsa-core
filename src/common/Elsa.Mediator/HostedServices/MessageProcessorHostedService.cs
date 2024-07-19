@@ -8,24 +8,17 @@ namespace Elsa.Mediator.HostedServices;
 /// <summary>
 /// Continuously reads from a channel to which commands can be sent, executing each received command.
 /// </summary>
-public class MessageProcessorHostedService<T> : BackgroundService where T : notnull
+/// <inheritdoc />
+public class MessageProcessorHostedService<T>(int workerCount,
+    Channel<T> channel, 
+    IEnumerable<IConsumer<T>> consumers,
+    ILogger<MessageProcessorHostedService<T>> logger) : BackgroundService where T : notnull
 {
-    private readonly int _workerCount;
-    private readonly Channel<T> _channel;
-    private readonly IEnumerable<IConsumer<T>> _consumers;
-    private readonly ILogger _logger;
-    private readonly List<MessageWorker<T>> _workers;
-
-    /// <inheritdoc />
-    // ReSharper disable once ContextualLoggerProblem
-    public MessageProcessorHostedService(int workerCount, Channel<T> channel, IEnumerable<IConsumer<T>> consumers, ILogger<MessageProcessorHostedService<T>> logger)
-    {
-        _workerCount = workerCount;
-        _channel = channel;
-        _consumers = consumers;
-        _logger = logger;
-        _workers = new List<MessageWorker<T>>(workerCount);
-    }
+    private readonly int _workerCount = workerCount;
+    private readonly Channel<T> _channel = channel;
+    private readonly IEnumerable<IConsumer<T>> _consumers = consumers;
+    private readonly ILogger _logger = logger;
+    private readonly List<MessageWorker<T>> _workers = new List<MessageWorker<T>>(workerCount);
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -57,24 +50,17 @@ public class MessageProcessorHostedService<T> : BackgroundService where T : notn
 /// Represents a worker that continuously reads from a channel and processes each received message.
 /// </summary>
 /// <typeparam name="T">The type of message to process.</typeparam>
-public class MessageWorker<T> where T : notnull
+/// <remarks>
+/// Initializes a new instance of the <see cref="MessageWorker{T}"/> class.
+/// </remarks>
+/// <param name="channel">The channel to read from.</param>
+/// <param name="consumers">The consumers that will process each received message.</param>
+/// <param name="logger">The logger.</param>
+public class MessageWorker<T>(Channel<T> channel, IEnumerable<IConsumer<T>> consumers, ILogger logger) where T : notnull
 {
-    private readonly Channel<T> _channel;
-    private readonly IEnumerable<IConsumer<T>> _consumers;
-    private readonly ILogger _logger;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MessageWorker{T}"/> class.
-    /// </summary>
-    /// <param name="channel">The channel to read from.</param>
-    /// <param name="consumers">The consumers that will process each received message.</param>
-    /// <param name="logger">The logger.</param>
-    public MessageWorker(Channel<T> channel, IEnumerable<IConsumer<T>> consumers, ILogger logger)
-    {
-        _channel = channel;
-        _consumers = consumers;
-        _logger = logger;
-    }
+    private readonly Channel<T> _channel = channel;
+    private readonly IEnumerable<IConsumer<T>> _consumers = consumers;
+    private readonly ILogger _logger = logger;
 
     /// <summary>
     /// Continuously reads from the channel and processes each received message.

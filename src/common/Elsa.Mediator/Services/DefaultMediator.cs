@@ -12,33 +12,24 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Mediator.Services;
 
 /// <inheritdoc />
-public class DefaultMediator : IMediator
+/// <summary>
+/// Initializes a new instance of the <see cref="DefaultMediator"/> class.
+/// </summary>
+/// <param name="requestPipeline">The request pipeline.</param>
+/// <param name="commandPipeline">The command pipeline.</param>
+/// <param name="notificationPipeline">The notification pipeline.</param>
+/// <param name="options">The mediator options.</param>
+public class DefaultMediator(
+    IRequestPipeline requestPipeline,
+    ICommandPipeline commandPipeline,
+    INotificationPipeline notificationPipeline,
+    IOptions<MediatorOptions> options) : IMediator
 {
-    private readonly IRequestPipeline _requestPipeline;
-    private readonly ICommandPipeline _commandPipeline;
-    private readonly INotificationPipeline _notificationPipeline;
-    private readonly IEventPublishingStrategy _defaultPublishingStrategy;
-    private readonly ICommandStrategy _defaultCommandStrategy;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultMediator"/> class.
-    /// </summary>
-    /// <param name="requestPipeline">The request pipeline.</param>
-    /// <param name="commandPipeline">The command pipeline.</param>
-    /// <param name="notificationPipeline">The notification pipeline.</param>
-    /// <param name="options">The mediator options.</param>
-    public DefaultMediator(
-        IRequestPipeline requestPipeline,
-        ICommandPipeline commandPipeline,
-        INotificationPipeline notificationPipeline,
-        IOptions<MediatorOptions> options)
-    {
-        _requestPipeline = requestPipeline;
-        _commandPipeline = commandPipeline;
-        _notificationPipeline = notificationPipeline;
-        _defaultPublishingStrategy = options.Value.DefaultPublishingStrategy;
-        _defaultCommandStrategy = options.Value.DefaultCommandStrategy;
-    }
+    private readonly IRequestPipeline _requestPipeline = requestPipeline;
+    private readonly ICommandPipeline _commandPipeline = commandPipeline;
+    private readonly INotificationPipeline _notificationPipeline = notificationPipeline;
+    private readonly IEventPublishingStrategy _defaultPublishingStrategy = options.Value.DefaultPublishingStrategy;
+    private readonly ICommandStrategy _defaultCommandStrategy = options.Value.DefaultCommandStrategy;
 
     /// <inheritdoc />
     public async Task<IEnumerable<T>> SendAsync<T>(IRequest<T> request, CancellationToken cancellationToken = default)

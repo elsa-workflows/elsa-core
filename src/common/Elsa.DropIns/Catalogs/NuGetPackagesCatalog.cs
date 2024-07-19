@@ -3,17 +3,10 @@ using Elsa.DropIns.Models;
 
 namespace Elsa.DropIns.Catalogs;
 
-public class NuGetPackagesCatalog : IDropInCatalog
+public class NuGetPackagesCatalog(IEnumerable<string> packagePaths) : IDropInCatalog
 {
-    private readonly IEnumerable<string> _packagePaths;
+    private readonly IEnumerable<string> _packagePaths = packagePaths;
 
-    public NuGetPackagesCatalog(IEnumerable<string> packagePaths)
-    {
-        _packagePaths = packagePaths;
-    }
-    
-    public IEnumerable<DropInDescriptor> List()
-    {
-        return _packagePaths.Select(packagePath => new NuGetPackageCatalog(packagePath)).SelectMany(catalog => catalog.List());
-    }
+    public IEnumerable<DropInDescriptor> List() 
+        => _packagePaths.Select(packagePath => new NuGetPackageCatalog(packagePath)).SelectMany(catalog => catalog.List());
 }

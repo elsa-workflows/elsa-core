@@ -8,17 +8,12 @@ using Microsoft.Extensions.Options;
 namespace Elsa.DropIns.Services;
 
 /// <inheritdoc />
-public class DropInInstaller : IDropInInstaller
+/// <summary>
+/// Initializes a new instance of the <see cref="DropInInstaller"/> class.
+/// </summary>
+public class DropInInstaller(IOptions<DropInOptions> options) : IDropInInstaller
 {
-    private readonly IOptions<DropInOptions> _options;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DropInInstaller"/> class.
-    /// </summary>
-    public DropInInstaller(IOptions<DropInOptions> options)
-    {
-        _options = options;
-    }
+    private readonly IOptions<DropInOptions> _options = options;
 
     /// <inheritdoc />
     public void Install(IModule module)

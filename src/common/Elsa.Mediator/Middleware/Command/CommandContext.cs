@@ -5,39 +5,34 @@ namespace Elsa.Mediator.Middleware.Command;
 /// <summary>
 /// Provides context for a command.
 /// </summary>
-public class CommandContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="CommandContext"/> class.
+/// </remarks>
+public class CommandContext(ICommand command,
+    ICommandStrategy commandStrategy,
+    Type resultType, CancellationToken cancellationToken)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CommandContext"/> class.
-    /// </summary>
-    public CommandContext(ICommand command, ICommandStrategy commandStrategy, Type resultType, CancellationToken cancellationToken)
-    {
-        Command = command;
-        CommandStrategy = commandStrategy;
-        ResultType = resultType;
-        CancellationToken = cancellationToken;
-    }
 
     /// <summary>
     /// Gets the command.
     /// </summary>
-    public ICommand Command { get; init; }
+    public ICommand Command { get; init; } = command;
 
     /// <summary>
     /// Gets the command strategy.
     /// </summary>
-    public ICommandStrategy CommandStrategy { get; }
+    public ICommandStrategy CommandStrategy { get; } = commandStrategy;
 
     /// <summary>
     /// Gets the result type.
     /// </summary>
-    public Type ResultType { get; init; }
-    
+    public Type ResultType { get; init; } = resultType;
+
     /// <summary>
     /// Gets the cancellation token.
     /// </summary>
-    public CancellationToken CancellationToken { get; init; }
-    
+    public CancellationToken CancellationToken { get; init; } = cancellationToken;
+
     /// <summary>
     /// Gets or sets the result.
     /// </summary>

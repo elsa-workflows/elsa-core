@@ -8,18 +8,13 @@ namespace Elsa.DropIns.Catalogs;
 /// <summary>
 /// A catalog that lists drop-ins from a directory.
 /// </summary>
-public class DirectoryDropInCatalog : IDropInCatalog
+/// <remarks>
+/// Initializes a new instance of the <see cref="DirectoryDropInCatalog"/> class.
+/// </remarks>
+/// <param name="directoryPath">The directory path to list drop-ins from.</param>
+public class DirectoryDropInCatalog(string directoryPath) : IDropInCatalog
 {
-    private readonly string _directoryPath;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DirectoryDropInCatalog"/> class.
-    /// </summary>
-    /// <param name="directoryPath">The directory path to list drop-ins from.</param>
-    public DirectoryDropInCatalog(string directoryPath)
-    {
-        _directoryPath = directoryPath;
-    }
+    private readonly string _directoryPath = directoryPath;
 
     /// <inheritdoc />
     public IEnumerable<DropInDescriptor> List()
@@ -50,13 +45,7 @@ public class DirectoryDropInCatalog : IDropInCatalog
         }
     }
 
-    private string[] ListPackages()
-    {
-        return Directory.GetFiles(_directoryPath, "*.nupkg", SearchOption.AllDirectories);
-    }
+    private string[] ListPackages() => Directory.GetFiles(_directoryPath, "*.nupkg", SearchOption.AllDirectories);
 
-    private static Assembly? LoadDropInAssembly(string path)
-    {
-        return !File.Exists(path) ? null : AssemblyLoader.LoadPath(path);
-    }
+    private static Assembly? LoadDropInAssembly(string path) => !File.Exists(path) ? null : AssemblyLoader.LoadPath(path);
 }

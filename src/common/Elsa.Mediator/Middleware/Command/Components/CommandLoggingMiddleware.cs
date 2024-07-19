@@ -7,19 +7,14 @@ namespace Elsa.Mediator.Middleware.Command.Components;
 /// <summary>
 /// A command middleware that logs the command being invoked.
 /// </summary>
-public class CommandLoggingMiddleware : ICommandMiddleware
+/// <remarks>
+/// Constructor.
+/// </remarks>
+public class CommandLoggingMiddleware(CommandMiddlewareDelegate next,
+    ILogger<CommandLoggingMiddleware> logger) : ICommandMiddleware
 {
-    private readonly CommandMiddlewareDelegate _next;
-    private readonly ILogger<CommandLoggingMiddleware> _logger;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public CommandLoggingMiddleware(CommandMiddlewareDelegate next, ILogger<CommandLoggingMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
+    private readonly CommandMiddlewareDelegate _next = next;
+    private readonly ILogger<CommandLoggingMiddleware> _logger = logger;
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(CommandContext context)

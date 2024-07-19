@@ -13,16 +13,11 @@ public class LocalHostRequirement : IAuthorizationRequirement
 }
 
 /// <inheritdoc />
+/// <inheritdoc />
 [PublicAPI]
-public class LocalHostRequirementHandler : AuthorizationHandler<LocalHostRequirement>
+public class LocalHostRequirementHandler(IHttpContextAccessor httpContextAccessor) : AuthorizationHandler<LocalHostRequirement>
 {
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    /// <inheritdoc />
-    public LocalHostRequirementHandler(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
+    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
     /// <inheritdoc />
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, LocalHostRequirement requirement)
