@@ -18,7 +18,21 @@ public static class ActivityExtensions
     /// <returns>The workflow context settings.</returns>
     public static IDictionary<Type, ActivityWorkflowContextSettings> GetWorkflowContextSettings(this IActivity activity)
     {
-        return activity.CustomProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new Dictionary<Type, ActivityWorkflowContextSettings>())!;
+        var contextSetttings =  activity.CustomProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new Dictionary<string, ActivityWorkflowContextSettings>())!;
+
+        var result = new Dictionary<Type, ActivityWorkflowContextSettings>();
+
+        foreach(var (key,value) in contextSetttings)
+        {
+            var targetType = Type.GetType(key);
+
+            if(targetType != null)
+            {
+                result.Add(targetType, value);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
