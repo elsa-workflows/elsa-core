@@ -59,6 +59,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Labels", "src\modules\Elsa.Labels\Elsa.Labels.csproj", "{80FF5821-E831-450D-AA0C-C76D07D878F4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bundles", "bundles", "{F06B9573-DF68-4606-866C-A7546A10A05A}"
+	ProjectSection(SolutionItems) = preProject
+		src\bundles\Directory.Build.props = src\bundles\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa", "src\bundles\Elsa\Elsa.csproj", "{FC5D2CE9-FFB0-478D-8D54-E4109D1FD202}"
 EndProject
