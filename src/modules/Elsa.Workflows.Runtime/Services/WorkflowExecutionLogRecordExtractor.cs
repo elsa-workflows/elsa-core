@@ -4,10 +4,10 @@ using Elsa.Workflows.Runtime.Entities;
 namespace Elsa.Workflows.Runtime.Services;
 
 /// <inheritdoc />
-public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGenerator) : IWorkflowExecutionLogRecordExtractor
+public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGenerator) : ILogRecordExtractor<WorkflowExecutionLogRecord>
 {
     /// <inheritdoc />
-    public IEnumerable<WorkflowExecutionLogRecord> ExtractWorkflowExecutionLogs(WorkflowExecutionContext context)
+    public IEnumerable<WorkflowExecutionLogRecord> ExtractLogRecords(WorkflowExecutionContext context)
     {
         return context.ExecutionLog.Select(x => new WorkflowExecutionLogRecord
         {

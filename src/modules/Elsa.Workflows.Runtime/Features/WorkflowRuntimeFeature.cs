@@ -108,15 +108,15 @@ public class WorkflowRuntimeFeature : FeatureBase
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
     /// <summary>
-    /// Represents a sink for workflow execution logs.
+    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="ActivityExecutionRecord"/>.
     /// </summary>
-    public Func<IServiceProvider, IWorkflowExecutionLogSink> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
+    public Func<IServiceProvider, ILogRecordSink<ActivityExecutionRecord>> ActivityExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreActivityExecutionLogSink>();
 
     /// <summary>
-    /// Represents a sink for workflow execution logs.
+    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="WorkflowExecutionLogRecord"/>.
     /// </summary>
-    public Func<IServiceProvider, IActivityExecutionLogSink> ActivityExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreActivityExecutionLogSink>();
-    
+    public Func<IServiceProvider, ILogRecordSink<WorkflowExecutionLogRecord>> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
+
     /// <summary>
     /// A delegate to configure the <see cref="DistributedLockingOptions"/>.
     /// </summary>
@@ -238,8 +238,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkUpdater, BookmarkUpdater>()
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
-            .AddScoped<IActivityExecutionRecordExtractor, ActivityExecutionRecordExtractor>()
-            .AddScoped<IWorkflowExecutionLogRecordExtractor, WorkflowExecutionLogRecordExtractor>()
+            .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
+            .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             
             // Stores.
             .AddScoped(BookmarkStore)
