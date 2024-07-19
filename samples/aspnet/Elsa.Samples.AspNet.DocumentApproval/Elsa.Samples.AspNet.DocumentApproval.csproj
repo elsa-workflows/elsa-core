@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\bundles\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Email\Elsa.Email.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj"/>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj"/>

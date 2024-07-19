@@ -5,7 +5,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
-        <ProjectReference Include="..\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations\Elsa.Alterations.csproj"/>
