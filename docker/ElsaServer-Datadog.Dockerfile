@@ -15,7 +15,7 @@ COPY ./NuGet.Config ./
 COPY *.props ./
 
 # restore packages.
-RUN dotnet restore "./src/bundles/Elsa.Server.Web/Elsa.Server.Web.csproj"
+RUN dotnet restore "./src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/src/apps/Elsa.Server.Web

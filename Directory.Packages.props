@@ -23,9 +23,9 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.2.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.14.6" />
-    <PackageVersion Include="Elsa.Studio" Version="$(ElsaStudioVersion)" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="$(ElsaStudioVersion)" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="$(ElsaStudioVersion)" />
+    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.466" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.466" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.466" />
     <PackageVersion Include="FastEndpoints" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.27.0" />
@@ -72,7 +72,7 @@
     <PackageVersion Include="Proto.Cluster.CodeGen" Version="1.6.0" />
     <PackageVersion Include="Proto.Cluster.TestProvider" Version="1.6.0" />
     <PackageVersion Include="Proto.Cluster.AzureContainerApps" Version="1.6.0" />
-    <PackageVersion Include="Proto.OpenTelemetry" Version="1.6.0"/>
+    <PackageVersion Include="Proto.OpenTelemetry" Version="1.6.0" />
     <PackageVersion Include="Proto.Persistence" Version="1.6.0" />
     <PackageVersion Include="Proto.Persistence.Sqlite" Version="1.6.0" />
     <PackageVersion Include="Proto.Persistence.SqlServer" Version="1.6.0" />
@@ -170,9 +170,9 @@
     <PackageVersion Include="Polly" Version="8.4.1" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.4" />
-    <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.7.0"/>
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0"/>
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0"/>
-    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.0.0-rc9.15"/>
+    <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.0.0-rc9.15" />
   </ItemGroup>
 </Project>

@@ -102,14 +102,17 @@ public class ProtoActorFeature : FeatureBase
             if (_enableMetrics)
                 actorSystemConfig = actorSystemConfig.WithMetrics();
 
+            if (_enableTracing)
+                actorSystemConfig = actorSystemConfig.WithConfigureProps(props => props.WithTracing());
+
             ConfigureActorSystemConfig(sp, actorSystemConfig);
 
             var clusterProvider = CreateClusterProvider(sp);
             var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
             var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
 
-            if (_enableTracing)
-                workflowGrainProps = workflowGrainProps.WithTracing();
+            // if (_enableTracing)
+            //     workflowGrainProps = workflowGrainProps.WithTracing();
 
             var clusterConfig = ClusterConfig
                     .Setup(_clusterName, clusterProvider, new PartitionIdentityLookup())
