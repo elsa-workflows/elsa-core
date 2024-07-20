@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
@@ -21,7 +22,9 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         activity?.AddTag("tenantId", workflow.Identity.TenantId);
         activity?.AddTag("workflowInstance.originalStatus", context.Status.ToString());
         activity?.AddTag("workflowInstance.originalSubStatus", context.SubStatus.ToString());
+        activity?.AddEvent(new ActivityEvent("Executing"));
         await Next(context);
+        activity?.AddEvent(new ActivityEvent("Executed"));
         activity?.AddTag("workflowInstance.newStatus", context.Status.ToString());
         activity?.AddTag("workflowInstance.newSubStatus", context.SubStatus.ToString());
     }
@@ -31,5 +34,5 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
 public static class OpenTelemetryWorkflowExecutionMiddlewareExtensions
 {
     /// Installs the <see cref="OpenTelemetryTracingWorkflowExecutionMiddleware"/> component in the workflow execution pipeline.
-    public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionTracing(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<OpenTelemetryTracingWorkflowExecutionMiddleware>();
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionTracing(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0);
 }

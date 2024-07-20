@@ -139,8 +139,8 @@ services
             .UseDefaultAuthentication()
             .UseWorkflows(workflows =>
             {
-                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0)); 
-                workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.Insert<OpenTelemetryTracingActivityExecutionMiddleware>(0));
+                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing()); 
+                workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
             })
             .UseWorkflowManagement(management =>
             {
