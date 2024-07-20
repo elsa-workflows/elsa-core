@@ -28,8 +28,10 @@ using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -137,12 +139,8 @@ services
             .UseDefaultAuthentication()
             .UseWorkflows(workflows =>
             {
-                workflows.WorkflowExecutionPipeline = pipelineBuilder =>
-                {
-                    pipelineBuilder
-                        .UseDefaultPipeline()
-                        .Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0);
-                };
+                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.Insert<OpenTelemetryTracingWorkflowExecutionMiddleware>(0)); 
+                workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.Insert<OpenTelemetryTracingActivityExecutionMiddleware>(0));
             })
             .UseWorkflowManagement(management =>
             {
