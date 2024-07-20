@@ -7,17 +7,12 @@ namespace Elsa.Api.Client.HttpMessageHandlers;
 /// <summary>
 /// An <see cref="HttpMessageHandler"/> that configures the outgoing HTTP request to use an API key as the authorization header.
 /// </summary>
-public class ApiKeyHttpMessageHandler : DelegatingHandler
+/// <remarks>
+/// Initializes a new instance of the <see cref="ApiKeyHttpMessageHandler"/> class.
+/// </remarks>
+public class ApiKeyHttpMessageHandler(IOptions<ElsaClientOptions> options) : DelegatingHandler
 {
-    private readonly ElsaClientOptions _options;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ApiKeyHttpMessageHandler"/> class.
-    /// </summary>
-    public ApiKeyHttpMessageHandler(IOptions<ElsaClientOptions> options)
-    {
-        _options = options.Value;
-    }
+    private readonly ElsaClientOptions _options = options.Value;
 
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

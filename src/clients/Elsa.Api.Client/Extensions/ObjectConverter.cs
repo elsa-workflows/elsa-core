@@ -207,9 +207,8 @@ public static class ObjectConverter
     /// <param name="targetType">Any of <see cref="DateTime"/> or <see cref="DateTimeOffset"/>.</param>
     /// <returns>The converted value.</returns>
     /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is not of type <see cref="DateTime"/> or <see cref="DateTimeOffset"/>.</exception>
-    private static object ConvertAnyDateType(object value, Type targetType)
-    {
-        return targetType switch
+    private static object ConvertAnyDateType(object value, Type targetType)=>
+         targetType switch
         {
             { } t when t == typeof(DateTime) => value switch
             {
@@ -225,5 +224,4 @@ public static class ObjectConverter
             },
             _ => throw new ArgumentException("Invalid target type.")
         };
-    }
 }

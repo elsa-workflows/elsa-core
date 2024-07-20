@@ -17,8 +17,5 @@ public class VersionOptionsJsonConverter : JsonConverter<VersionOptions>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, VersionOptions value, JsonSerializerOptions options)
-    {
-        writer.WriteStringValue(value.ToString());
-    }
+    public override void Write(Utf8JsonWriter writer, VersionOptions value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToString());
 }
