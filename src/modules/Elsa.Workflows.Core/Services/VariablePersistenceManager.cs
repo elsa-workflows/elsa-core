@@ -6,18 +6,8 @@ using Elsa.Workflows.Memory;
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class VariablePersistenceManager : IVariablePersistenceManager
+public class VariablePersistenceManager(IStorageDriverManager storageDriverManager) : IVariablePersistenceManager
 {
-    private readonly IStorageDriverManager _storageDriverManager;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public VariablePersistenceManager(IStorageDriverManager storageDriverManager)
-    {
-        _storageDriverManager = storageDriverManager;
-    }
-
     /// <inheritdoc />
     public async Task LoadVariablesAsync(WorkflowExecutionContext workflowExecutionContext)
     {
@@ -35,9 +25,12 @@ public class VariablePersistenceManager : IVariablePersistenceManager
                 var register = context.ExpressionExecutionContext.Memory;
                 var block = EnsureBlock(register, variable);
                 var metadata = (VariableBlockMetadata)block.Metadata!;
-                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+                var driver = storageDriverManager.Get(metadata.StorageDriverType!);
 
-                block.Metadata = metadata with { IsInitialized = true };
+                block.Metadata = metadata with
+                {
+                    IsInitialized = true
+                };
 
                 if (driver == null)
                     continue;
@@ -68,11 +61,11 @@ public class VariablePersistenceManager : IVariablePersistenceManager
             {
                 var block = variable.GetBlock(context.ExpressionExecutionContext);
                 var metadata = (VariableBlockMetadata)block.Metadata!;
-                var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+                var driver = storageDriverManager.Get(metadata.StorageDriverType!);
 
                 if (driver == null)
                     continue;
-                
+
                 var id = GetStateId(variable);
                 var value = block.Value;
 
@@ -83,7 +76,6 @@ public class VariablePersistenceManager : IVariablePersistenceManager
             }
         }
     }
-
 
     /// <inheritdoc />
     public async Task DeleteVariablesAsync(ActivityExecutionContext context)
@@ -99,7 +91,7 @@ public class VariablePersistenceManager : IVariablePersistenceManager
                 continue;
 
             var metadata = (VariableBlockMetadata)block.Metadata!;
-            var driver = _storageDriverManager.Get(metadata.StorageDriverType!);
+            var driver = storageDriverManager.Get(metadata.StorageDriverType!);
 
             if (driver == null)
                 continue;
