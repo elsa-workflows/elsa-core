@@ -14,5 +14,22 @@ public static class WorkflowExtensions
     /// </summary>
     /// <param name="workflow">The workflow to get the provider types from.</param>
     /// <returns>The workflow context provider types.</returns>
-    public static IEnumerable<Type> GetWorkflowContextProviderTypes(this Workflow workflow) => workflow.CustomProperties.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<Type>());
+    public static IEnumerable<Type> GetWorkflowContextProviderTypes(this Workflow workflow)
+    {
+        var contextProviderTypes = workflow.PropertyBag.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<String>());
+
+        var result = new List<Type>();
+
+        foreach (var type in contextProviderTypes)
+        {
+            var targetType = Type.GetType(type);
+
+            if (targetType != null)
+            {
+                result.Add(targetType);
+            }
+        }
+
+        return result;
+    }
 }
