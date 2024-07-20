@@ -2,6 +2,8 @@ using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using JetBrains.Annotations;
+using Activity = System.Diagnostics.Activity;
+using ActivityKind = System.Diagnostics.ActivityKind;
 
 namespace Elsa.OpenTelemetry.Middleware;
 
@@ -11,18 +13,23 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var workflowInstanceId = context.Id;
-        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution");
-        activity?.AddTag("workflow.instanceId", workflowInstanceId);
+        var workflow = context.Workflow;
+        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity($"WorkflowExecution {workflow.WorkflowMetadata.Name}", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        activity?.AddTag("workflowInstance.id", workflowInstanceId);
+        activity?.AddTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
+        activity?.AddTag("workflowDefinition.version", workflow.Identity.Version);
+        activity?.AddTag("tenantId", workflow.Identity.TenantId);
+        activity?.AddTag("workflowInstance.originalStatus", context.Status.ToString());
+        activity?.AddTag("workflowInstance.originalSubStatus", context.SubStatus.ToString());
         await Next(context);
-        activity?.AddTag("workflow.status", context.Status.ToString());
-        activity?.AddTag("workflow.subStatus", context.SubStatus.ToString());
+        activity?.AddTag("workflowInstance.newStatus", context.Status.ToString());
+        activity?.AddTag("workflowInstance.newSubStatus", context.SubStatus.ToString());
     }
 }
 
+[UsedImplicitly]
 public static class OpenTelemetryWorkflowExecutionMiddlewareExtensions
 {
-    /// <summary>
     /// Installs the <see cref="OpenTelemetryTracingWorkflowExecutionMiddleware"/> component in the workflow execution pipeline.
-    /// </summary>
-    public static IWorkflowExecutionPipelineBuilder UseExceptionHandling(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<OpenTelemetryTracingWorkflowExecutionMiddleware>();
+    public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionTracing(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<OpenTelemetryTracingWorkflowExecutionMiddleware>();
 }
