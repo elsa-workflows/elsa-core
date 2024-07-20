@@ -21,28 +21,16 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 public class ElasticWorkflowExecutionLogStore(ElasticStore<WorkflowExecutionLogRecord> store) : IWorkflowExecutionLogStore
 {
     /// <inheritdoc />
-    public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
-    {
-        await store.SaveAsync(record, cancellationToken);
-    }
+    public async Task AddAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, cancellationToken);
 
     /// <inheritdoc />
-    public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
-    {
-        await store.SaveManyAsync(records, cancellationToken);
-    }
+    public async Task AddManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default) => await store.SaveManyAsync(records, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default)
-    {
-        await store.SaveAsync(record, cancellationToken);
-    }
+    public async Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, cancellationToken);
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default)
-    {
-        await store.SaveManyAsync(records, cancellationToken);
-    }
+    public async Task SaveManyAsync(IEnumerable<WorkflowExecutionLogRecord> records, CancellationToken cancellationToken = default) => await store.SaveManyAsync(records, cancellationToken);
 
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
@@ -59,22 +47,13 @@ public class ElasticWorkflowExecutionLogStore(ElasticStore<WorkflowExecutionLogR
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await store.SearchAsync(d => Filter(d, filter), pageArgs, cancellationToken);
-    }
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => await store.SearchAsync(d => Filter(d, filter), pageArgs, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
-    }
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default) => await store.SearchAsync(d => Sort(Filter(d, filter), order), pageArgs, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
-    }
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default) => await store.DeleteByQueryAsync(d => Filter(d, filter), cancellationToken);
 
     private static SearchRequestDescriptor<WorkflowExecutionLogRecord> Sort<TProp>(SearchRequestDescriptor<WorkflowExecutionLogRecord> descriptor, WorkflowExecutionLogRecordOrder<TProp> order)
     {

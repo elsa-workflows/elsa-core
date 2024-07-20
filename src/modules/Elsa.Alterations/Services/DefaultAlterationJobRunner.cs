@@ -9,30 +9,21 @@ using Elsa.Mediator.Contracts;
 namespace Elsa.Alterations.Services;
 
 /// <inheritdoc />
-public class DefaultAlterationJobRunner : IAlterationJobRunner
+/// <summary>
+/// Initializes a new instance of the <see cref="DefaultAlterationJobRunner"/> class.
+/// </summary>
+public class DefaultAlterationJobRunner(
+    IAlterationPlanStore alterationPlanStore,
+    IAlterationJobStore alterationJobStore,
+    IAlterationRunner alterationRunner,
+    INotificationSender notificationSender,
+    ISystemClock systemClock) : IAlterationJobRunner
 {
-    private readonly IAlterationPlanStore _alterationPlanStore;
-    private readonly IAlterationJobStore _alterationJobStore;
-    private readonly IAlterationRunner _alterationRunner;
-    private readonly INotificationSender _notificationSender;
-    private readonly ISystemClock _systemClock;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultAlterationJobRunner"/> class.
-    /// </summary>
-    public DefaultAlterationJobRunner(
-        IAlterationPlanStore alterationPlanStore,
-        IAlterationJobStore alterationJobStore,
-        IAlterationRunner alterationRunner,
-        INotificationSender notificationSender,
-        ISystemClock systemClock)
-    {
-        _alterationPlanStore = alterationPlanStore;
-        _alterationJobStore = alterationJobStore;
-        _alterationRunner = alterationRunner;
-        _notificationSender = notificationSender;
-        _systemClock = systemClock;
-    }
+    private readonly IAlterationPlanStore _alterationPlanStore = alterationPlanStore;
+    private readonly IAlterationJobStore _alterationJobStore = alterationJobStore;
+    private readonly IAlterationRunner _alterationRunner = alterationRunner;
+    private readonly INotificationSender _notificationSender = notificationSender;
+    private readonly ISystemClock _systemClock = systemClock;
 
     /// <inheritdoc />
     public async Task<AlterationJob> RunAsync(string jobId, CancellationToken cancellationToken = default)

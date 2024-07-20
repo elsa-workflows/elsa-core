@@ -25,23 +25,17 @@ public class PostgreSqlDbConnectionProvider : IDbConnectionProvider
     /// Initializes a new instance of the <see cref="PostgreSqlDbConnectionProvider"/> class.
     /// </summary>
     /// <param name="connectionString">The connection string to use.</param>
-    public PostgreSqlDbConnectionProvider(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
+    public PostgreSqlDbConnectionProvider(string connectionString) => _connectionString = connectionString;
 
 
     /// <inheritdoc />
     public string GetConnectionString() => _connectionString;
 
     /// <inheritdoc />
-    public IDbConnection GetConnection()
+    public IDbConnection GetConnection() => new NpgsqlConnection
     {
-        return new NpgsqlConnection
-        {
-            ConnectionString = GetConnectionString()
-        };
-    }
+        ConnectionString = GetConnectionString()
+    };
 
     /// <inheritdoc />
     public ISqlDialect Dialect => new PostgreSqlDialect();

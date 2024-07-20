@@ -8,35 +8,24 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// <summary>
 /// An EF Core implementation of <see cref="IApplicationStore"/>.
 /// </summary>
-public class EFCoreApplicationStore : IApplicationStore
+/// <remarks>
+/// Initializes a new instance of <see cref="EFCoreApplicationStore"/>.
+/// </remarks>
+public class EFCoreApplicationStore(EntityStore<IdentityElsaDbContext, Application> applicationStore) : IApplicationStore
 {
-    private readonly EntityStore<IdentityElsaDbContext, Application> _applicationStore;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="EFCoreApplicationStore"/>.
-    /// </summary>
-    public EFCoreApplicationStore(EntityStore<IdentityElsaDbContext, Application> applicationStore)
-    {
-        _applicationStore = applicationStore;
-    }
+    private readonly EntityStore<IdentityElsaDbContext, Application> _applicationStore = applicationStore;
 
     /// <inheritdoc />
-    public async Task SaveAsync(Application application, CancellationToken cancellationToken = default)
-    {
+    public async Task SaveAsync(Application application, CancellationToken cancellationToken = default) =>
         await _applicationStore.SaveAsync(application, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
-    {
+    public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => 
         await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _applicationStore.FindAsync(query => Filter(query, filter), cancellationToken);
-    }
-    
+    public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) =>
+        await _applicationStore.FindAsync(query => Filter(query, filter), cancellationToken);
+
     private static IQueryable<Application> Filter(IQueryable<Application> query, ApplicationFilter filter) => filter.Apply(query);
 }

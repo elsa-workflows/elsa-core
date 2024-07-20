@@ -10,16 +10,11 @@ namespace Elsa.Elasticsearch.Modules.Management;
 /// <summary>
 /// Configures Elasticsearch with mappings for <see cref="WorkflowInstance"/>.
 /// </summary>
-public class WorkflowInstanceConfiguration : IndexConfiguration<WorkflowInstance>
+/// <inheritdoc />
+public class WorkflowInstanceConfiguration(IOptions<ElasticsearchOptions> options) : IndexConfiguration<WorkflowInstance>
 {
-    private readonly ElasticsearchOptions _options;
+    private readonly ElasticsearchOptions _options = options.Value;
 
-    /// <inheritdoc />
-    public WorkflowInstanceConfiguration(IOptions<ElasticsearchOptions> options)
-    {
-        _options = options.Value;
-    }
-    
     /// <inheritdoc />
     public override void ConfigureClientSettings(ElasticsearchClientSettings settings)
     {

@@ -13,8 +13,5 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the <see cref="MassTransitAlterationsFeature"/>.
     /// </summary>
-    public static IModule UseMassTransitDispatcher(this AlterationsFeature alterations, Action<MassTransitAlterationsFeature>? configure = default)
-    {
-        return alterations.Module.Use(configure);
-    }
+    public static IModule UseMassTransitDispatcher(this AlterationsFeature alterations, Action<MassTransitAlterationsFeature>? configure = default) => alterations.Module.Use(configure);
 }

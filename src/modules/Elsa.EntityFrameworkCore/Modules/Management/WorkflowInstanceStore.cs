@@ -19,34 +19,24 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// <summary>
 /// An EF Core implementation of <see cref="IWorkflowInstanceStore"/>.
 /// </summary>
+/// <remarks>
+/// Constructor.
+/// </remarks>
 [UsedImplicitly]
-public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
+public class EFCoreWorkflowInstanceStore(
+    EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
+    IWorkflowStateSerializer workflowStateSerializer,
+    ICompressionCodecResolver compressionCodecResolver,
+    IOptions<ManagementOptions> options) : IWorkflowInstanceStore
 {
-    private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store;
-    private readonly IWorkflowStateSerializer _workflowStateSerializer;
-    private readonly ICompressionCodecResolver _compressionCodecResolver;
-    private readonly IOptions<ManagementOptions> _options;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public EFCoreWorkflowInstanceStore(
-        EntityStore<ManagementElsaDbContext, WorkflowInstance> store,
-        IWorkflowStateSerializer workflowStateSerializer,
-        ICompressionCodecResolver compressionCodecResolver,
-        IOptions<ManagementOptions> options)
-    {
-        _store = store;
-        _workflowStateSerializer = workflowStateSerializer;
-        _compressionCodecResolver = compressionCodecResolver;
-        _options = options;
-    }
+    private readonly EntityStore<ManagementElsaDbContext, WorkflowInstance> _store = store;
+    private readonly IWorkflowStateSerializer _workflowStateSerializer = workflowStateSerializer;
+    private readonly ICompressionCodecResolver _compressionCodecResolver = compressionCodecResolver;
+    private readonly IOptions<ManagementOptions> _options = options;
 
     /// <inheritdoc />
-    public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).FirstOrDefault();
-    }
+    public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -65,23 +55,17 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
-    }
+    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => Filter(query, filter), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
-    }
+    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), OnLoadAsync, cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
-    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.CountAsync(filter.Apply, cancellationToken);
-    }
+    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await _store.CountAsync(filter.Apply, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -105,16 +89,12 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
-    }
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(query => Filter(query, filter), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
-    }
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+        await _store.QueryAsync(query => Filter(query, filter).OrderBy(order), WorkflowInstanceSummary.FromInstanceExpression(), cancellationToken).ToList().AsEnumerable();
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
@@ -147,35 +127,25 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
-    }
+    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
-    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(instance, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
         await _store.AddAsync(instance, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
         await _store.UpdateAsync(instance, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>
         await _store.SaveManyAsync(instances, OnSaveAsync, cancellationToken);
-    }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     private async ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowInstance entity, CancellationToken cancellationToken)
@@ -209,8 +179,5 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         entity.WorkflowState = data;
     }
 
-    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)
-    {
-        return filter.Apply(query);
-    }
+    private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) => filter.Apply(query);
 }

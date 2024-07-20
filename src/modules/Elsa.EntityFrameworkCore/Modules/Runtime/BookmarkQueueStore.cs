@@ -17,22 +17,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem> store, IPayloadSerializer serializer) : IBookmarkQueueStore
 {
     /// <inheritdoc />
-    public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
-    {
-        return store.SaveAsync(record, s => s.Id, OnSaveAsync, cancellationToken);
-    }
+    public Task SaveAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => store.SaveAsync(record, s => s.Id, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default)
-    {
-        return store.AddAsync(record, OnSaveAsync, cancellationToken);
-    }
+    public Task AddAsync(BookmarkQueueItem record, CancellationToken cancellationToken = default) => store.AddAsync(record, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
-    {
-        return store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
-    }
+    public Task<BookmarkQueueItem?> FindAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
@@ -42,10 +33,7 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
-    }
+    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => await store.DeleteWhereAsync(filter.Apply, cancellationToken);
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, BookmarkQueueItem entity, CancellationToken cancellationToken)
     {

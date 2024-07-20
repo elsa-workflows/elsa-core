@@ -41,9 +41,8 @@ internal class DapperUserStore(Store<UserRecord> store) : IUserStore
             ;
     }
 
-    private UserRecord Map(User source)
-    {
-        return new()
+    private UserRecord Map(User source) =>
+        new()
         {
             Id = source.Id,
             Name = source.Name,
@@ -52,11 +51,9 @@ internal class DapperUserStore(Store<UserRecord> store) : IUserStore
             Roles = string.Join(',', source.Roles),
             TenantId = source.TenantId
         };
-    }
 
-    private User Map(UserRecord source)
-    {
-        return new()
+    private User Map(UserRecord source) =>
+        new()
         {
             Id = source.Id,
             Name = source.Name,
@@ -65,5 +62,4 @@ internal class DapperUserStore(Store<UserRecord> store) : IUserStore
             Roles = source.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries),
             TenantId = source.TenantId
         };
-    }
 }

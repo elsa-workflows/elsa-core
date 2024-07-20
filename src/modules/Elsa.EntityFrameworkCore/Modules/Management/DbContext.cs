@@ -9,12 +9,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// <summary>
 /// The database context for the Management module.
 /// </summary>
-public class ManagementElsaDbContext : ElsaDbContextBase
+/// <inheritdoc />
+public class ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : ElsaDbContextBase(options, serviceProvider)
 {
-    /// <inheritdoc />
-    public ManagementElsaDbContext(DbContextOptions<ManagementElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
-    {
-    }
 
     /// <summary>
     /// The workflow definitions.

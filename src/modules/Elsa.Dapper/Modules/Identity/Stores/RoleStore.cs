@@ -29,10 +29,7 @@ internal class DapperRoleStore(Store<RoleRecord> store) : IRoleStore
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
-    {
-        await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
@@ -53,28 +50,24 @@ internal class DapperRoleStore(Store<RoleRecord> store) : IRoleStore
         query
             .Is(nameof(RoleRecord.Id), filter.Id)
             .In(nameof(RoleRecord.Name), filter.Ids)
-            ;   
+            ;
     }
-    
-    private RoleRecord Map(Role source)
-    {
-        return new()
+
+    private RoleRecord Map(Role source) =>
+        new()
         {
             Id = source.Id,
             Name = source.Name,
             Permissions = string.Join(',', source.Permissions),
             TenantId = source.TenantId
         };
-    }
-    
-    private Role Map(RoleRecord source)
-    {
-        return new()
+
+    private Role Map(RoleRecord source) =>
+        new()
         {
             Id = source.Id,
             Name = source.Name,
             Permissions = source.Permissions.Split(',', StringSplitOptions.RemoveEmptyEntries),
             TenantId = source.TenantId
         };
-    }
 }

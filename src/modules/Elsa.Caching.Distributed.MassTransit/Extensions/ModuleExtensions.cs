@@ -13,10 +13,8 @@ public static class ModuleExtensions
     /// <summary>
     /// Configures the distributed caching feature to use MassTransit.
     /// </summary>
-    public static MassTransitDistributedCacheFeature UseMassTransit(this DistributedCacheFeature distributedCacheFeature, Action<MassTransitDistributedCacheFeature>? configure = default)
-    {
-        return distributedCacheFeature.Module.Configure(configure);
-    }
+    public static MassTransitDistributedCacheFeature UseMassTransit(this DistributedCacheFeature distributedCacheFeature, Action<MassTransitDistributedCacheFeature>? configure = default) =>
+        distributedCacheFeature.Module.Configure(configure);
 
     /// <summary>
     /// Configures the memory caching feature with the distributed caching feature that uses MassTransit.

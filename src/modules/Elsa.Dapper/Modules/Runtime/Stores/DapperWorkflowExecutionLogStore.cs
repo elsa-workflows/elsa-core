@@ -63,14 +63,12 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(
+    public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
+        await FindManyAsync(
             filter,
             pageArgs,
             new WorkflowExecutionLogRecordOrder<DateTimeOffset>(x => x.Timestamp, OrderDirection.Descending),
             cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
@@ -80,10 +78,7 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<long> DeleteManyAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     private static void ApplyFilter(ParameterizedQuery query, WorkflowExecutionLogRecordFilter filter)
     {
@@ -102,14 +97,10 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
             ;
     }
 
-    private Page<WorkflowExecutionLogRecord> Map(Page<WorkflowExecutionLogRecordRecord> source)
-    {
-        return new Page<WorkflowExecutionLogRecord>(source.Items.Select(Map).ToList(), source.TotalCount);
-    }
+    private Page<WorkflowExecutionLogRecord> Map(Page<WorkflowExecutionLogRecordRecord> source) => new Page<WorkflowExecutionLogRecord>(source.Items.Select(Map).ToList(), source.TotalCount);
 
-    private WorkflowExecutionLogRecordRecord Map(WorkflowExecutionLogRecord source)
-    {
-        return new WorkflowExecutionLogRecordRecord
+    private WorkflowExecutionLogRecordRecord Map(WorkflowExecutionLogRecord source) =>
+        new WorkflowExecutionLogRecordRecord
         {
             Id = source.Id,
             WorkflowDefinitionId = source.WorkflowDefinitionId,
@@ -132,32 +123,29 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
             SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : null,
             TenantId = source.TenantId
         };
-    }
 
-    private WorkflowExecutionLogRecord Map(WorkflowExecutionLogRecordRecord source)
-    {
-        return new WorkflowExecutionLogRecord
+    private WorkflowExecutionLogRecord Map(WorkflowExecutionLogRecordRecord source) => 
+        new()
         {
-            Id = source.Id,
-            WorkflowDefinitionId = source.WorkflowDefinitionId,
-            WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
-            WorkflowInstanceId = source.WorkflowInstanceId,
-            WorkflowVersion = source.WorkflowVersion,
-            ActivityInstanceId = source.ActivityInstanceId,
-            ParentActivityInstanceId = source.ParentActivityInstanceId,
-            ActivityId = source.ActivityId,
-            ActivityType = source.ActivityType,
-            ActivityTypeVersion = source.ActivityTypeVersion,
-            ActivityName = source.ActivityName,
-            ActivityNodeId = source.ActivityNodeId,
-            Timestamp = source.Timestamp,
-            Sequence = source.Sequence,
-            EventName = source.EventName,
-            Message = source.Message,
-            Source = source.Source,
-            ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
-            Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : null,
-            TenantId = source.TenantId
-        };
-    }
+        Id = source.Id,
+        WorkflowDefinitionId = source.WorkflowDefinitionId,
+        WorkflowDefinitionVersionId = source.WorkflowDefinitionVersionId,
+        WorkflowInstanceId = source.WorkflowInstanceId,
+        WorkflowVersion = source.WorkflowVersion,
+        ActivityInstanceId = source.ActivityInstanceId,
+        ParentActivityInstanceId = source.ParentActivityInstanceId,
+        ActivityId = source.ActivityId,
+        ActivityType = source.ActivityType,
+        ActivityTypeVersion = source.ActivityTypeVersion,
+        ActivityName = source.ActivityName,
+        ActivityNodeId = source.ActivityNodeId,
+        Timestamp = source.Timestamp,
+        Sequence = source.Sequence,
+        EventName = source.EventName,
+        Message = source.Message,
+        Source = source.Source,
+        ActivityState = source.SerializedActivityState != null ? payloadSerializer.Deserialize<IDictionary<string, object>>(source.SerializedActivityState) : null,
+        Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : null,
+        TenantId = source.TenantId
+    };
 }

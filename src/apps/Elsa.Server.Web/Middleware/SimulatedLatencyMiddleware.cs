@@ -49,8 +49,5 @@ public static class AppBuilderExtensions
     public static IApplicationBuilder UseSimulatedLatency(
         this IApplicationBuilder app,
         TimeSpan min,
-        TimeSpan max)
-    {
-        return app.UseMiddleware<SimulatedLatencyMiddleware>(min, max);
-    }
+        TimeSpan max) => app.UseMiddleware<SimulatedLatencyMiddleware>(min, max);
 }

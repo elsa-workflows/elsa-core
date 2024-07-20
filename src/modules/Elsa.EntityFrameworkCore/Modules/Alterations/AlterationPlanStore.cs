@@ -11,38 +11,25 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// <summary>
 /// An EF Core implementation of <see cref="IAlterationPlanStore"/>.
 /// </summary>
-public class EFCoreAlterationPlanStore : IAlterationPlanStore
+/// <remarks>
+/// Constructor.
+/// </remarks>
+public class EFCoreAlterationPlanStore(EntityStore<AlterationsElsaDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer) : IAlterationPlanStore
 {
-    private readonly EntityStore<AlterationsElsaDbContext, AlterationPlan> _store;
-    private readonly IAlterationSerializer _alterationSerializer;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public EFCoreAlterationPlanStore(EntityStore<AlterationsElsaDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer)
-    {
-        _store = store;
-        _alterationSerializer = alterationSerializer;
-    }
+    private readonly EntityStore<AlterationsElsaDbContext, AlterationPlan> _store = store;
+    private readonly IAlterationSerializer _alterationSerializer = alterationSerializer;
 
     /// <inheritdoc />
-    public async Task SaveAsync(AlterationPlan record, CancellationToken cancellationToken = default)
-    {
-        await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
-    }
+    public async Task SaveAsync(AlterationPlan record, CancellationToken cancellationToken = default) => await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
-    public async Task<AlterationPlan?> FindAsync(AlterationPlanFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
-    }
+    public async Task<AlterationPlan?> FindAsync(AlterationPlanFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> CountAsync(AlterationPlanFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.CountAsync(filter.Apply, cancellationToken);
-    }
+    public async Task<long> CountAsync(AlterationPlanFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.CountAsync(filter.Apply, cancellationToken);
 
     private ValueTask OnSaveAsync(AlterationsElsaDbContext elsaDbContext, AlterationPlan entity, CancellationToken cancellationToken)
     {

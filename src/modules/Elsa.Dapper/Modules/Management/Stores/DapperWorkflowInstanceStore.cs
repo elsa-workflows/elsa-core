@@ -33,14 +33,12 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.FindManyAsync<TOrderBy>(WorkflowInstanceFilter, PageArgs, WorkflowInstanceOrder<TOrderBy>, CancellationToken)")]
-    public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(
+    public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => 
+        await FindManyAsync(
             filter,
             pageArgs,
             new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
             cancellationToken);
-    }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(Page<WorkflowInstanceRecord>)")]
@@ -67,38 +65,28 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.CountAsync(query => ApplyFilter(query, filter), cancellationToken);
-    }
+    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await store.CountAsync(query => ApplyFilter(query, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await SummarizeManyAsync(
+    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
+        await SummarizeManyAsync(
             filter,
             pageArgs,
             new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
             cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-    }
+    public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
+        await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await SummarizeManyAsync(filter, new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
-    }
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => 
+        await SummarizeManyAsync(filter, new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrder>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrder> order, CancellationToken cancellationToken = default)
-    {
-        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-    }
+    public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrder>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrder> order, CancellationToken cancellationToken = default) => 
+        await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
@@ -108,14 +96,12 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     }
 
     /// <inheritdoc />
-    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await FindManyIdsAsync(
+    public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => 
+        await FindManyIdsAsync(
             filter,
             pageArgs,
             new WorkflowInstanceOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
             cancellationToken);
-    }
 
     /// <inheritdoc />
     public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
@@ -156,13 +142,9 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
-    private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
-    {
+    private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)=>
         query
             .Is(nameof(WorkflowInstance.Id), filter.Id)
             .In(nameof(WorkflowInstance.Id), filter.Ids)
@@ -179,7 +161,6 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             .In(nameof(WorkflowInstance.Status), filter.WorkflowStatuses?.Select(x => x.ToString()))
             .In(nameof(WorkflowInstance.SubStatus), filter.WorkflowSubStatuses?.Select(x => x.ToString()))
             .AndWorkflowInstanceSearchTerm(filter.SearchTerm);
-    }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private Page<WorkflowInstance> Map(Page<WorkflowInstanceRecord> source)
@@ -189,16 +170,10 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
-    private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceRecord> source)
-    {
-        return source.Select( Map);
-    }
+    private IEnumerable<WorkflowInstance> Map(IEnumerable<WorkflowInstanceRecord> source) => source.Select(Map);
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
-    private IEnumerable<WorkflowInstanceRecord> Map(IEnumerable<WorkflowInstance> source)
-    {
-        return source.Select(Map);
-    }
+    private IEnumerable<WorkflowInstanceRecord> Map(IEnumerable<WorkflowInstance> source) => source.Select(Map);
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.DeserializeAsync(String, CancellationToken)")]
     private WorkflowInstance Map(WorkflowInstanceRecord source)

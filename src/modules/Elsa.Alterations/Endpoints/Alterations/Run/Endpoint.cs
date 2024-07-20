@@ -7,18 +7,12 @@ namespace Elsa.Alterations.Endpoints.Alterations.Run;
 /// <summary>
 /// Executes an alteration plan.
 /// </summary>
+/// <inheritdoc />
 [PublicAPI]
-public class Run : ElsaEndpoint<Request, Response>
+public class Run(IAlterationRunner alterationRunner, IAlteredWorkflowDispatcher workflowDispatcher) : ElsaEndpoint<Request, Response>
 {
-    private readonly IAlterationRunner _alterationRunner;
-    private readonly IAlteredWorkflowDispatcher _workflowDispatcher;
-
-    /// <inheritdoc />
-    public Run(IAlterationRunner alterationRunner, IAlteredWorkflowDispatcher workflowDispatcher)
-    {
-        _alterationRunner = alterationRunner;
-        _workflowDispatcher = workflowDispatcher;
-    }
+    private readonly IAlterationRunner _alterationRunner = alterationRunner;
+    private readonly IAlteredWorkflowDispatcher _workflowDispatcher = workflowDispatcher;
 
     /// <inheritdoc />
     public override void Configure()

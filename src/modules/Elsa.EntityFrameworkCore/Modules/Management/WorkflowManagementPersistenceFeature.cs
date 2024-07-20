@@ -11,16 +11,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> and <see cref="WorkflowDefinitionsFeature"/> features with an Entity Framework Core persistence provider.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [PublicAPI]
-public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>
+public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public WorkflowManagementPersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()

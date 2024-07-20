@@ -15,12 +15,9 @@ namespace Elsa.Alterations.Features;
 /// <summary>
 /// Adds the Elsa alterations services.
 /// </summary>
-public class AlterationsFeature : FeatureBase
+/// <inheritdoc />
+public class AlterationsFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public AlterationsFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// Gets or sets the factory for the alteration plan store.

@@ -22,16 +22,12 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
-    }
+    public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
+        await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
-    }
+    public async Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+        await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -50,16 +46,12 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
-    }
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => 
+        await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
-    }
+    public async Task<IEnumerable<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => 
+        await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The method 'FindSummariesAsync' is used for serialization and requires unreferenced code to be preserved.")]
@@ -125,22 +117,16 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
-    }
+    public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken) => 
+        await store.QueryAsync(queryable => Filter(queryable, filter).OrderByDescending(x => x.Version), OnLoadAsync, filter.TenantAgnostic, cancellationToken).FirstOrDefault();
 
     /// <inheritdoc />
-    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
-    {
+    public async Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
         await store.SaveAsync(definition, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
-    {
+    public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => 
         await store.SaveManyAsync(definitions, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -157,16 +143,12 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
-    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken).Any();
-    }
+    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
+        await store.QueryAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken).Any();
 
     /// <inheritdoc />
-    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
-    {
-        return await store.CountAsync(x => true, x => x.DefinitionId, false, cancellationToken);
-    }
+    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default) => 
+        await store.CountAsync(x => true, x => x.DefinitionId, false, cancellationToken);
 
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)

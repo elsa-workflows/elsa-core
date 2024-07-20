@@ -8,18 +8,12 @@ namespace Elsa.Alterations.Endpoints.Alterations.Get;
 /// <summary>
 /// Executes an alteration plan.
 /// </summary>
+/// <inheritdoc />
 [PublicAPI]
-public class Get : ElsaEndpointWithoutRequest<Response>
+public class Get(IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore) : ElsaEndpointWithoutRequest<Response>
 {
-    private readonly IAlterationPlanStore _alterationPlanStore;
-    private readonly IAlterationJobStore _alterationJobStore;
-
-    /// <inheritdoc />
-    public Get(IAlterationPlanStore alterationPlanStore, IAlterationJobStore alterationJobStore)
-    {
-        _alterationPlanStore = alterationPlanStore;
-        _alterationJobStore = alterationJobStore;
-    }
+    private readonly IAlterationPlanStore _alterationPlanStore = alterationPlanStore;
+    private readonly IAlterationJobStore _alterationJobStore = alterationJobStore;
 
     /// <inheritdoc />
     public override void Configure()

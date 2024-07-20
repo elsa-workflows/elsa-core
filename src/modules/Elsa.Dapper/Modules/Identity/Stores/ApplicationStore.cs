@@ -21,10 +21,7 @@ internal class DapperApplicationStore(Store<ApplicationRecord> store) : IApplica
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
-    {
-        await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     /// <inheritdoc />
     public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
@@ -32,7 +29,7 @@ internal class DapperApplicationStore(Store<ApplicationRecord> store) : IApplica
         var record = await store.FindAsync(query => ApplyFilter(query, filter), cancellationToken);
         return record == null ? null : Map(record);
     }
-    
+
     private void ApplyFilter(ParameterizedQuery query, ApplicationFilter filter)
     {
         query
@@ -41,10 +38,9 @@ internal class DapperApplicationStore(Store<ApplicationRecord> store) : IApplica
             .Is(nameof(ApplicationRecord.Name), filter.Name)
             ;
     }
-    
-    private ApplicationRecord Map(Application source)
-    {
-        return new()
+
+    private ApplicationRecord Map(Application source) =>
+        new()
         {
             Id = source.Id,
             ClientId = source.ClientId,
@@ -56,11 +52,9 @@ internal class DapperApplicationStore(Store<ApplicationRecord> store) : IApplica
             Roles = string.Join(',', source.Roles),
             TenantId = source.TenantId
         };
-    }
-    
-    private Application Map(ApplicationRecord source)
-    {
-        return new()
+
+    private Application Map(ApplicationRecord source) =>
+        new()
         {
             Id = source.Id,
             ClientId = source.ClientId,
@@ -72,5 +66,4 @@ internal class DapperApplicationStore(Store<ApplicationRecord> store) : IApplica
             Roles = source.Roles.Split(',', StringSplitOptions.RemoveEmptyEntries),
             TenantId = source.TenantId
         };
-    }
 }

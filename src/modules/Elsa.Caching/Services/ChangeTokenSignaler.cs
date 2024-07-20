@@ -9,9 +9,8 @@ public class ChangeTokenSignaler : IChangeTokenSignaler
     private readonly ConcurrentDictionary<string, ChangeTokenInfo> _changeTokens = new();
 
     /// <inheritdoc />
-    public IChangeToken GetToken(string key)
-    {
-        return _changeTokens.GetOrAdd(
+    public IChangeToken GetToken(string key) =>
+        _changeTokens.GetOrAdd(
             key,
             _ =>
             {
@@ -19,14 +18,13 @@ public class ChangeTokenSignaler : IChangeTokenSignaler
                 var changeToken = new CancellationChangeToken(cancellationTokenSource.Token);
                 return new ChangeTokenInfo(changeToken, cancellationTokenSource);
             }).ChangeToken;
-    }
 
     /// <inheritdoc />
     public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
     {
         if (_changeTokens.TryRemove(key, out var changeTokenInfo))
             changeTokenInfo.TokenSource.Cancel();
-        
+
         return default;
     }
 

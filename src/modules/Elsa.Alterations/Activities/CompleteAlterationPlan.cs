@@ -18,9 +18,7 @@ public class CompleteAlterationPlan : CodeActivity
 {
     /// <inheritdoc />
     public CompleteAlterationPlan(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-        PlanId = new Input<string>(planId);
-    }
+        => PlanId = new Input<string>(planId);
 
     /// <inheritdoc />
     public CompleteAlterationPlan([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

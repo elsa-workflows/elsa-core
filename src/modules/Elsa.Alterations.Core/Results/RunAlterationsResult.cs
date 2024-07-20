@@ -6,26 +6,21 @@ namespace Elsa.Alterations.Core.Results;
 /// <summary>
 /// The result of running a series of alterations.
 /// </summary>
-public class RunAlterationsResult
+/// <remarks>
+/// Initializes a new instance of the <see cref="RunAlterationsResult"/> class.
+/// </remarks>
+public class RunAlterationsResult(string workflowInstanceId, AlterationLog log)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RunAlterationsResult"/> class.
-    /// </summary>
-    public RunAlterationsResult(string workflowInstanceId, AlterationLog log)
-    {
-        WorkflowInstanceId = workflowInstanceId;
-        Log = log;
-    }
 
     /// <summary>
     /// The ID of the workflow instance that was altered.
     /// </summary>
-    public string WorkflowInstanceId { get; }
+    public string WorkflowInstanceId { get; } = workflowInstanceId;
 
     /// <summary>
     /// A log of the alterations that were run.
     /// </summary>
-    public AlterationLog Log { get; set; }
+    public AlterationLog Log { get; set; } = log;
 
     /// <summary>
     /// A flag indicating whether the workflow has scheduled work.

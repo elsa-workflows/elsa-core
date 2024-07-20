@@ -9,19 +9,13 @@ namespace Elsa.EntityFrameworkCore.Modules.Labels;
 /// <summary>
 /// An Entity Framework Core implementation of <see cref="ILabelStore"/>.
 /// </summary>
-public class EFCoreLabelStore : ILabelStore
+/// <remarks>
+/// Initializes a new instance of <see cref="EFCoreLabelStore"/>.
+/// </remarks>
+public class EFCoreLabelStore(EntityStore<LabelsElsaDbContext, Label> labelStore, EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore) : ILabelStore
 {
-    private readonly EntityStore<LabelsElsaDbContext, Label> _labelStore;
-    private readonly EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore;
-
-    /// <summary>
-    /// Initializes a new instance of <see cref="EFCoreLabelStore"/>.
-    /// </summary>
-    public EFCoreLabelStore(EntityStore<LabelsElsaDbContext, Label> labelStore, EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> workflowDefinitionLabelStore)
-    {
-        _labelStore = labelStore;
-        _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
-    }
+    private readonly EntityStore<LabelsElsaDbContext, Label> _labelStore = labelStore;
+    private readonly EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> _workflowDefinitionLabelStore = workflowDefinitionLabelStore;
 
     /// <inheritdoc />
     public async Task SaveAsync(Label record, CancellationToken cancellationToken = default) => await _labelStore.SaveAsync(record, cancellationToken);

@@ -25,22 +25,16 @@ public class SqlServerDbConnectionProvider : IDbConnectionProvider
     /// Initializes a new instance of the <see cref="SqlServerDbConnectionProvider"/> class.
     /// </summary>
     /// <param name="connectionString">The connection string to use.</param>
-    public SqlServerDbConnectionProvider(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
-    
+    public SqlServerDbConnectionProvider(string connectionString) => _connectionString = connectionString;
+
     /// <inheritdoc />
     public string GetConnectionString() =>_connectionString;
 
     /// <inheritdoc />
-    public IDbConnection GetConnection()
+    public IDbConnection GetConnection() => new SqlConnection
     {
-        return new SqlConnection
-        {
-            ConnectionString = GetConnectionString()
-        };
-    }
+        ConnectionString = GetConnectionString()
+    };
 
     /// <inheritdoc />
     public ISqlDialect Dialect => new SqlServerDialect();

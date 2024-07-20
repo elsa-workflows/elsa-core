@@ -10,21 +10,15 @@ namespace Elsa.Elasticsearch.Common;
 /// A thin wrapper around <see cref="ElasticsearchClient"/> for easy re-usability.
 /// </summary>
 /// <typeparam name="T">The document type.</typeparam>
+/// <remarks>
+/// Constructor.
+/// </remarks>
 [PublicAPI]
-public class ElasticStore<T> where T : class
+public class ElasticStore<T>(ElasticsearchClient elasticClient, ILogger<ElasticStore<T>> logger) where T : class
 {
-    private readonly ElasticsearchClient _elasticClient;
-    private readonly ILogger _logger;
+    private readonly ElasticsearchClient _elasticClient = elasticClient;
+    private readonly ILogger _logger = logger;
 
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ElasticStore(ElasticsearchClient elasticClient, ILogger<ElasticStore<T>> logger)
-    {
-        _elasticClient = elasticClient;
-        _logger = logger;
-    }
-    
     /// <summary>
     /// Searches the index using the specified search descriptor.
     /// </summary>

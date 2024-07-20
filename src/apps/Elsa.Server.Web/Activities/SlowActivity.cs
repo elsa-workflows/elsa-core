@@ -26,12 +26,10 @@ public class SlowActivity : CodeActivity, IActivityPropertyDefaultValueProvider
         await Task.Delay(delay, context.CancellationToken);
     }
 
-    object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property)
-    {
-        return property.Name switch
+    object IActivityPropertyDefaultValueProvider.GetDefaultValue(PropertyInfo property)=>
+        property.Name switch
         {
             nameof(Delay) => TimeSpan.FromSeconds(1),
             _ => default
         };
-    }
 }

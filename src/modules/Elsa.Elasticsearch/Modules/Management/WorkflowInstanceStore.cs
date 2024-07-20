@@ -15,17 +15,12 @@ namespace Elsa.Elasticsearch.Modules.Management;
 /// <summary>
 /// Stores and retrieves workflow instances from Elasticsearch.
 /// </summary>
-public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
+/// <remarks>
+/// Constructor.
+/// </remarks>
+public class ElasticWorkflowInstanceStore(ElasticStore<WorkflowInstance> store) : IWorkflowInstanceStore
 {
-    private readonly ElasticStore<WorkflowInstance> _store;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ElasticWorkflowInstanceStore(ElasticStore<WorkflowInstance> store)
-    {
-        _store = store;
-    }
+    private readonly ElasticStore<WorkflowInstance> _store = store;
 
     /// <inheritdoc />
     public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
@@ -47,16 +42,10 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         await _store.SearchAsync(d => Filter(d, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await _store.SearchAsync(d => Sort(Filter(d, filter), order), cancellationToken);
-    }
+    public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default) => await _store.SearchAsync(d => Sort(Filter(d, filter), order), cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.CountAsync(d => Filter(d, filter), cancellationToken);
-    }
+    public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => await _store.CountAsync(d => Filter(d, filter), cancellationToken);
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -110,21 +99,15 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) => 
         await _store.SaveAsync(instance, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(instance, cancellationToken);
-    }
 
-    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default) =>
         await _store.SaveAsync(instance, cancellationToken);
-    }
 
     /// <inheritdoc />
     public async ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default) =>

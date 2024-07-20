@@ -15,34 +15,19 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> store, IPayloadSerializer serializer) : IBookmarkStore
 {
     /// <inheritdoc />
-    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
-    {
-        await store.SaveAsync(record, s => s.Id, OnSaveAsync, cancellationToken);
-    }
+    public async ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default) => await store.SaveAsync(record, s => s.Id, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
-    {
-        await store.SaveManyAsync(records, s => s.Id, OnSaveAsync, cancellationToken);
-    }
+    public async ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken) => await store.SaveManyAsync(records, s => s.Id, OnSaveAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.FindAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
-    }
+    public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.FindAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
-    }
+    public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
-    }
+    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.DeleteWhereAsync(filter.Apply, cancellationToken);
 
     private ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, StoredBookmark entity, CancellationToken cancellationToken)
     {

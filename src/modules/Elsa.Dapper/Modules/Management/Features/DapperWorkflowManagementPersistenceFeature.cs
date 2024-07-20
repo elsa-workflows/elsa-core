@@ -14,17 +14,14 @@ namespace Elsa.Dapper.Modules.Management.Features;
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> and <see cref="WorkflowDefinitionsFeature"/> features with a Dapper persistence provider.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(DapperFeature))]
 [PublicAPI]
-public class DapperWorkflowManagementPersistenceFeature : FeatureBase
+public class DapperWorkflowManagementPersistenceFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperWorkflowManagementPersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()

@@ -30,9 +30,7 @@ public class GenerateAlterationJobs : CodeActivity<int>
 
     /// <inheritdoc />
     public GenerateAlterationJobs(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-        PlanId = new Input<string>(planId);
-    }
+        => PlanId = new Input<string>(planId);
 
     /// <summary>
     /// The ID of the submitted alteration plan.

@@ -7,17 +7,12 @@ namespace Elsa.Dapper.HostedServices;
 /// <summary>
 /// Runs database migrations on startup.
 /// </summary>
-public class RunMigrationsHostedService : IHostedService
+/// <remarks>
+/// Initializes a new instance of the <see cref="RunMigrationsHostedService"/> class.
+/// </remarks>
+public class RunMigrationsHostedService(IServiceScopeFactory scopeFactory) : IHostedService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RunMigrationsHostedService"/> class.
-    /// </summary>
-    public RunMigrationsHostedService(IServiceScopeFactory scopeFactory)
-    {
-        _scopeFactory = scopeFactory;
-    }
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)

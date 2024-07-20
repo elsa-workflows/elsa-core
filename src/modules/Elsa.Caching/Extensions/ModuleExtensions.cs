@@ -12,8 +12,5 @@ public static class ModuleExtensions
     /// <summary>
     /// Adds the <see cref="MemoryCacheFeature"/> feature to the system.
     /// </summary>
-    public static MemoryCacheFeature UseMemoryCache(this IModule module, Action<MemoryCacheFeature>? configure = default)
-    {
-        return module.Configure(configure);
-    }
+    public static MemoryCacheFeature UseMemoryCache(this IModule module, Action<MemoryCacheFeature>? configure = default) => module.Configure(configure);
 }

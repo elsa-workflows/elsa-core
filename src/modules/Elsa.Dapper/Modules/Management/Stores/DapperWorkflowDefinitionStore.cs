@@ -39,14 +39,12 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(
+    public async Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
+        await FindManyAsync(
             filter,
             new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
             pageArgs,
             cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task<Page<WorkflowDefinition>> FindManyAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
@@ -70,20 +68,16 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await FindSummariesAsync(
+    public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
+        await FindSummariesAsync(
             filter,
             new WorkflowDefinitionOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending),
             pageArgs,
             cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        return await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-    }
+    public async Task<Page<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, PageArgs pageArgs, CancellationToken cancellationToken = default) =>
+        await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -93,10 +87,8 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default)
-    {
-        return await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
-    }
+    public async Task<IEnumerable<WorkflowDefinitionSummary>> FindSummariesAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) =>
+        await store.FindManyAsync<WorkflowDefinitionSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindLastVersionAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken)
@@ -120,24 +112,18 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
+        await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) =>
+        await store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
-    {
-        return await store.CountAsync(
+    public async Task<long> CountDistinctAsync(CancellationToken cancellationToken = default) =>
+        await store.CountAsync(
             filter => filter.Count($"distinct {nameof(WorkflowDefinition.DefinitionId)}", store.TableName),
             cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
@@ -158,7 +144,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
         var definitionId = filter.DefinitionId ?? filter.DefinitionHandle?.DefinitionId;
         var versionOptions = filter.VersionOptions ?? filter.DefinitionHandle?.VersionOptions;
         var id = filter.Id ?? filter.DefinitionHandle?.DefinitionVersionId;
-        
+
         query
             .Is(nameof(WorkflowDefinition.DefinitionId), definitionId)
             .In(nameof(WorkflowDefinition.DefinitionId), filter.DefinitionIds)

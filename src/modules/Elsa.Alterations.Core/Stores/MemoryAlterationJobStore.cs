@@ -8,17 +8,12 @@ namespace Elsa.Alterations.Core.Stores;
 /// <summary>
 /// A memory-based store for alteration jobs.
 /// </summary>
-public class MemoryAlterationJobStore : IAlterationJobStore
+/// <remarks>
+/// Initializes a new instance of the <see cref="MemoryAlterationJobStore"/> class.
+/// </remarks>
+public class MemoryAlterationJobStore(MemoryStore<AlterationJob> store) : IAlterationJobStore
 {
-    private readonly MemoryStore<AlterationJob> _store;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryAlterationJobStore"/> class.
-    /// </summary>
-    public MemoryAlterationJobStore(MemoryStore<AlterationJob> store)
-    {
-        _store = store;
-    }
+    private readonly MemoryStore<AlterationJob> _store = store;
 
     /// <inheritdoc />
     public Task SaveAsync(AlterationJob job, CancellationToken cancellationToken = default)

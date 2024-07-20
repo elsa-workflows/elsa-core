@@ -8,12 +8,9 @@ namespace Elsa.Alterations.Core.Serialization;
 /// <summary>
 /// A serializer for <see cref="IAlteration"/> objects.
 /// </summary>
-public class AlterationSerializer : ConfigurableSerializer, IAlterationSerializer
+/// <inheritdoc />
+public class AlterationSerializer(IServiceProvider serviceProvider) : ConfigurableSerializer(serviceProvider), IAlterationSerializer
 {
-    /// <inheritdoc />
-    public AlterationSerializer(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-    }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type of the alteration must be known at compile time.")]

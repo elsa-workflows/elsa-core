@@ -11,14 +11,11 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// <summary>
 /// Configures the <see cref="IdentityFeature"/> feature with Entity Framework Core persistence providers.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(IdentityFeature))]
 [PublicAPI]
-public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>
+public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public EFCoreIdentityPersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()

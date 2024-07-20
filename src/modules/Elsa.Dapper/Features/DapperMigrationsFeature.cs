@@ -11,12 +11,9 @@ namespace Elsa.Dapper.Features;
 /// <summary>
 /// Configures migrations.
 /// </summary>
-public class DapperMigrationsFeature : FeatureBase
+/// <inheritdoc />
+public class DapperMigrationsFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperMigrationsFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// Configures migrations to use SQLite.
@@ -51,8 +48,5 @@ public class DapperMigrationsFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<RunMigrationsHostedService>(-1);
-    }
+    public override void ConfigureHostedServices() => ConfigureHostedService<RunMigrationsHostedService>(-1);
 }

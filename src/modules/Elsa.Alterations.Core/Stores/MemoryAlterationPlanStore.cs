@@ -8,18 +8,13 @@ namespace Elsa.Alterations.Core.Stores;
 /// <summary>
 /// A memory-based store for alteration plans.
 /// </summary>
-public class MemoryAlterationPlanStore : IAlterationPlanStore
+/// <remarks>
+/// Initializes a new instance of the <see cref="MemoryAlterationPlanStore"/> class.
+/// </remarks>
+public class MemoryAlterationPlanStore(MemoryStore<AlterationPlan> store) : IAlterationPlanStore
 {
-    private readonly MemoryStore<AlterationPlan> _store;
+    private readonly MemoryStore<AlterationPlan> _store = store;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryAlterationPlanStore"/> class.
-    /// </summary>
-    public MemoryAlterationPlanStore(MemoryStore<AlterationPlan> store)
-    {
-        _store = store;
-    }
-    
     /// <inheritdoc />
     public Task SaveAsync(AlterationPlan plan, CancellationToken cancellationToken = default)
     {

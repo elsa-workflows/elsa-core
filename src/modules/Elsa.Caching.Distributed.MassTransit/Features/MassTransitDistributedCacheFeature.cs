@@ -25,8 +25,5 @@ public class MassTransitDistributedCacheFeature(IModule module) : FeatureBase(mo
     }
 
     /// <inheritdoc />
-    public override void Apply()
-    {
-        Services.AddSingleton<MassTransitChangeTokenSignalPublisher>();
-    }
+    public override void Apply() => Services.AddSingleton<MassTransitChangeTokenSignalPublisher>();
 }

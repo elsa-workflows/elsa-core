@@ -34,22 +34,16 @@ public class SqliteDbConnectionProvider : IDbConnectionProvider
     /// Initializes a new instance of the <see cref="SqliteDbConnectionProvider"/> class.
     /// </summary>
     /// <param name="connectionString">The connection string to use.</param>
-    public SqliteDbConnectionProvider(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
+    public SqliteDbConnectionProvider(string connectionString) => _connectionString = connectionString;
 
     /// <inheritdoc />
     public string GetConnectionString() => _connectionString;
 
     /// <inheritdoc />
-    public IDbConnection GetConnection()
+    public IDbConnection GetConnection() => new SqliteConnection
     {
-        return new SqliteConnection
-        {
-            ConnectionString = GetConnectionString()
-        };
-    }
+        ConnectionString = GetConnectionString()
+    };
 
     /// <inheritdoc />
     public ISqlDialect Dialect => new SqliteDialect();
