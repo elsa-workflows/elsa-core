@@ -10,6 +10,7 @@ services:
       POSTGRES_DB: elsa
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh  # This will initialize the 'tracelens' database
     ports:
       - "5432:5432"
   
@@ -41,6 +42,22 @@ services:
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
+  
+  plantuml-server:
+    image: plantuml/plantuml-server:tomcat
+    container_name: plantuml-server
+    ports:
+      - 7080:8080
+
+  trace-lens:
+    image: docker.io/rogeralsing/tracelens:latest
+    pull_policy: always
+    ports:
+      - 7001:5001
+      - 4317:4317
+    environment:
+      - PlantUml__RemoteUrl=
+      - ConnectionStrings__DefaultConnection=USER ID=tracelens;PASSWORD=tracelenspass;HOST=postgres;PORT=5432;DATABASE=tracelens;POOLING=true;
 
   elsa-server:
     build:
