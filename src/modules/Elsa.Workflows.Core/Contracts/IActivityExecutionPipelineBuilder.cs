@@ -1,6 +1,6 @@
 using Elsa.Workflows.Pipelines.ActivityExecution;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Builds an activity execution pipeline.
