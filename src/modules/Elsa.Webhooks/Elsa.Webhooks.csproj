@@ -10,6 +10,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Http" />
         <PackageReference Include="Microsoft.Extensions.Http.Polly" />
+        <PackageReference Include="WebhooksCore" />
     </ItemGroup>
 
     <ItemGroup>
