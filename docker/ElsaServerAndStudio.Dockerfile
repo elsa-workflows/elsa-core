@@ -7,8 +7,8 @@ COPY ./NuGet.Config ./
 COPY *.props ./
 
 # restore packages.
-RUN dotnet restore "./src/bundles/ElsaStudioWebAssembly/ElsaStudioWebAssembly.csproj"
-RUN dotnet restore "./src/bundles/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj"
+RUN dotnet restore "./src/apps/ElsaStudioWebAssembly/ElsaStudioWebAssembly.csproj"
+RUN dotnet restore "./src/apps/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/src/bundles/Elsa.ServerAndStudio.Web

@@ -1,7 +1,7 @@
-﻿using Elsa.EntityFrameworkCore.Common.Contracts;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿#nullable disable
 
-#nullable disable
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
 {
@@ -9,10 +9,12 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
     public partial class Initial : Migration
     {
         private readonly IElsaDbContextSchema _schema;
+
         public Initial(IElsaDbContextSchema schema)
         {
             _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -162,7 +164,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "IX_ActivityExecutionRecord_ActivityType_ActivityTypeVersion",
                 schema: _schema.Schema,
                 table: "ActivityExecutionRecords",
-                columns: new[] { "ActivityType", "ActivityTypeVersion" });
+                columns: new[]
+                {
+                    "ActivityType", "ActivityTypeVersion"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityExecutionRecord_ActivityTypeVersion",
@@ -216,13 +221,19 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "IX_StoredBookmark_ActivityTypeName_Hash",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                columns: new[] { "ActivityTypeName", "Hash" });
+                columns: new[]
+                {
+                    "ActivityTypeName", "Hash"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_ActivityTypeName_Hash_WorkflowInstanceId",
                 schema: _schema.Schema,
                 table: "Bookmarks",
-                columns: new[] { "ActivityTypeName", "Hash", "WorkflowInstanceId" });
+                columns: new[]
+                {
+                    "ActivityTypeName", "Hash", "WorkflowInstanceId"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_StoredBookmark_CreatedAt",
@@ -300,7 +311,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "IX_WorkflowExecutionLogRecord_ActivityType_ActivityTypeVersion",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                columns: new[] { "ActivityType", "ActivityTypeVersion" });
+                columns: new[]
+                {
+                    "ActivityType", "ActivityTypeVersion"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_ActivityTypeVersion",
@@ -336,7 +350,10 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Runtime
                 name: "IX_WorkflowExecutionLogRecord_Timestamp_Sequence",
                 schema: _schema.Schema,
                 table: "WorkflowExecutionLogRecords",
-                columns: new[] { "Timestamp", "Sequence" });
+                columns: new[]
+                {
+                    "Timestamp", "Sequence"
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowExecutionLogRecord_WorkflowDefinitionId",

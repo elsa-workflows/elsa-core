@@ -1,12 +1,11 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Management.Models;
 
-/// <summary>
 /// Represents a serializable workflow definition.
-/// </summary>
 [PublicAPI]
 public record WorkflowDefinitionModel(
     string Id,
@@ -21,7 +20,9 @@ public record WorkflowDefinitionModel(
     ICollection<InputDefinition>? Inputs,
     ICollection<OutputDefinition>? Outputs,
     ICollection<string>? Outcomes,
+    [property: Obsolete("Use PropertyBag instead")]
     IDictionary<string, object>? CustomProperties,
+    PropertyBag? PropertyBag,
     bool IsReadonly,
     bool IsSystem,
     bool IsLatest,
@@ -45,7 +46,8 @@ public record WorkflowDefinitionModel(
         default!,
         default!,
         default!,
-        default!,
+        default,
+        default,
         default!,
         default!,
         default!,

@@ -63,6 +63,7 @@ namespace Elsa.Workflows.Management.Services
             draft.Name = model.Name?.Trim();
             draft.Description = model.Description?.Trim();
             draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
+            draft.PropertyBag = model.PropertyBag ?? new PropertyBag();
             draft.Variables = variables;
             draft.Inputs = model.Inputs ?? new List<InputDefinition>();
             draft.Outputs = model.Outputs ?? new List<OutputDefinition>();

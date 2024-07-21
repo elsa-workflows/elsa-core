@@ -1,7 +1,6 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,17 +11,17 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
 {
     [Theory(DisplayName = "Saving workflows updates ActivityRegistry")]
     [InlineData("Save1", true, true, true, true)]
-    [InlineData("Save2", true, false, true, false)]
+    [InlineData("Save2", true, false, false, false)]
     [InlineData("Save3", false, true, false, false)]
     [InlineData("Save4", false, false, false, false)]
     public async Task ActivityRegistry(string name, bool usableAsActivity, bool publish, bool expectedInRegistry, bool isBrowsable)
     {
         var activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
-        
+
         var descriptor = activityRegistry.Find(name);
         if (descriptor is not null)
             activityRegistry.Remove(typeof(WorkflowDefinitionActivityProvider), descriptor);
-        
+
         var importer = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionImporter>();
         var request = new SaveWorkflowDefinitionRequest
         {
@@ -39,7 +38,7 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
             Publish = publish
         };
         await importer.ImportAsync(request);
-        
+
         descriptor = activityRegistry.Find(name);
 
         if (expectedInRegistry)
@@ -49,7 +48,7 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
         }
         else
         {
-            Assert.Null(descriptor);    
+            Assert.Null(descriptor);
         }
     }
 }

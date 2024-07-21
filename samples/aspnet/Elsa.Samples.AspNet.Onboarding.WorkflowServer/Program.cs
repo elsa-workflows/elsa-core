@@ -43,7 +43,7 @@ builder.Services.AddElsa(elsa =>
     elsa.UseRealTimeWorkflows();
     
     // Use Webhooks feature.
-    elsa.UseWebhooks();
+    elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options));
 });
 
 builder.Services.Configure<WebhookSinksOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));

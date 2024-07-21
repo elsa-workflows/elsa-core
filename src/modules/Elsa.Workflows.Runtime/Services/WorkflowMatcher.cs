@@ -4,7 +4,7 @@ using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowMatcher(IStimulusHasher stimulusHasher, ITriggerStore triggerStore, IBookmarkStore bookmarkStore) : IWorkflowMatcher

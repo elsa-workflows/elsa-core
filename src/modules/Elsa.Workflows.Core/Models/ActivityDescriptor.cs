@@ -106,6 +106,24 @@ public class ActivityDescriptor
     /// Whether this activity type is a terminal activity.
     /// </summary>
     public bool IsTerminal { get; set; }
+
+    /// <summary>
+    /// Gets or sets a function that allows configuring the JsonSerializerOptions for the activity during serialization.
+    /// </summary>
+    /// <remarks>
+    /// This function can be used to customize the serialization options for an activity. It receives a JsonSerializerOptions
+    /// object as an argument and should return the modified JsonSerializerOptions.
+    /// <para>Example:</para>
+    /// <code>
+    /// activityDescriptor.ConfigureSerializerOptions = options =>
+    /// {
+    /// options.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
+    /// return options;
+    /// };
+    /// </code>
+    /// </remarks>
+    [JsonIgnore]
+    public Func<JsonSerializerOptions, JsonSerializerOptions>? ConfigureSerializerOptions { get; set; }
 }
 
 // TODO: Refactor this to remove the dependency on JsonElement and JsonSerializerOptions.

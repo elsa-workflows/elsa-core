@@ -13,8 +13,6 @@ public static class WorkflowExecutionPipelineBuilderExtensions
     public static IWorkflowExecutionPipelineBuilder UseDefaultPipeline(this IWorkflowExecutionPipelineBuilder pipelineBuilder) =>
         pipelineBuilder
             .Reset()
-            .UseBackgroundActivities()
-            .UseDeferredActivityTasks()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
@@ -23,16 +21,10 @@ public static class WorkflowExecutionPipelineBuilderExtensions
             .UseDefaultActivityScheduler();
 
     /// Installs middleware that persists the workflow instance before and after workflow execution.
-    public static IWorkflowExecutionPipelineBuilder UseBackgroundActivities(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ScheduleBackgroundActivitiesMiddleware>();
-
-    /// Installs middleware that persists the workflow instance before and after workflow execution.
     public static IWorkflowExecutionPipelineBuilder UsePersistentVariables(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistentVariablesMiddleware>();
 
     /// Installs middleware that persists bookmarks after workflow execution.
     public static IWorkflowExecutionPipelineBuilder UseBookmarkPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistBookmarkMiddleware>();
-
-    /// Installs middleware that executes deferred activity tasks.
-    public static IWorkflowExecutionPipelineBuilder UseDeferredActivityTasks(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<ExecuteDeferredActivityTasks>();
 
     /// Installs middleware that persists the workflow execution journal.
     public static IWorkflowExecutionPipelineBuilder UseWorkflowExecutionLogPersistence(this IWorkflowExecutionPipelineBuilder pipelineBuilder) => pipelineBuilder.UseMiddleware<PersistWorkflowExecutionLogMiddleware>();

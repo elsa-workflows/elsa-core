@@ -7,7 +7,7 @@ using Elsa.Workflows.State;
 using Humanizer;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options) : IActivityExecutionMapper

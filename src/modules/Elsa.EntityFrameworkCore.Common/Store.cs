@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
 using Elsa.Common.Contracts;
-using Elsa.Tenants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
@@ -70,7 +69,7 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
 
         if (onAdding != null)
             await onAdding(dbContext, entity, cancellationToken);
-                
+
         var set = dbContext.Set<TEntity>();
         await set.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -87,7 +86,7 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     {
         await AddManyAsync(entities, null, cancellationToken);
     }
-    
+
     /// <summary>
     /// Adds the specified entities.
     /// </summary>
@@ -181,7 +180,7 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
 
         await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
     }
-    
+
     /// <summary>
     /// Updates the entity.
     /// </summary>
@@ -309,32 +308,37 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default) =>
         await FindManyAsync(predicate, orderBy, orderDirection, pageArgs, default, cancellationToken);
-
-    /// <summary>
-    /// Finds a list of entities using a query
-    /// </summary>
+    
+    /// Returns a list of entities using a query
     public async Task<Page<TEntity>> FindManyAsync<TKey>(
-        Expression<Func<TEntity, bool>> predicate,
-        Expression<Func<TEntity, TKey>> orderBy,
+        Expression<Func<TEntity, bool>>? predicate,
+        Expression<Func<TEntity, TKey>>? orderBy,
         OrderDirection orderDirection = OrderDirection.Ascending,
         PageArgs? pageArgs = default,
         Func<TDbContext, TEntity?, TEntity?>? onLoading = default,
         CancellationToken cancellationToken = default)
     {
         await using var dbContext = await CreateDbContextAsync(cancellationToken);
-        var set = dbContext.Set<TEntity>().AsNoTracking().Where(predicate);
+        var set = dbContext.Set<TEntity>().AsNoTracking();
 
-        set = orderDirection switch
-        {
-            OrderDirection.Ascending => set.OrderBy(orderBy),
-            OrderDirection.Descending => set.OrderByDescending(orderBy),
-            _ => set.OrderBy(orderBy)
-        };
+        if (predicate != null)
+            set = set.Where(predicate);
+
+        if(orderBy != null)
+            set = orderDirection switch
+            {
+                OrderDirection.Ascending => set.OrderBy(orderBy),
+                OrderDirection.Descending => set.OrderByDescending(orderBy),
+                _ => set.OrderBy(orderBy)
+            };
 
         var page = await set.PaginateAsync(pageArgs);
 
         if (onLoading != null)
-            page = new Page<TEntity>(page.Items.Select(x => onLoading(dbContext, x)!).ToList(), page.TotalCount);
+            page = page with
+            {
+                Items = page.Items.Select(x => onLoading(dbContext, x)!).ToList()
+            };
 
         return page;
     }

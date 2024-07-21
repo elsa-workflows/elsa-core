@@ -3,15 +3,12 @@ using Elsa.Webhooks.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
 using WebhooksCore;
-using ISystemClock = Elsa.Common.Contracts.ISystemClock;
 
 namespace Elsa.Webhooks.Handlers;
 
-/// <summary>
 /// Handles the <see cref="RunTaskRequest"/> notification and asynchronously invokes all registered webhook endpoints.
-/// </summary>
 [UsedImplicitly]
-public class RunTaskHandler(IWebhookEventBroadcaster webhookEventBroadcaster, ISystemClock systemClock) : INotificationHandler<RunTaskRequest>
+public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotificationHandler<RunTaskRequest>
 {
     /// <inheritdoc />
     public async Task HandleAsync(RunTaskRequest notification, CancellationToken cancellationToken)
@@ -35,6 +32,6 @@ public class RunTaskHandler(IWebhookEventBroadcaster webhookEventBroadcaster, IS
         );
         
         var webhookEvent = new NewWebhookEvent("Elsa.RunTask", payload);
-        await webhookEventBroadcaster.BroadcastAsync(webhookEvent, cancellationToken);
+        await webhookDispatcher.BroadcastAsync(webhookEvent, cancellationToken);
     }
 }

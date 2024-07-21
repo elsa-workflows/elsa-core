@@ -101,7 +101,6 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
     /// </summary>
-    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
