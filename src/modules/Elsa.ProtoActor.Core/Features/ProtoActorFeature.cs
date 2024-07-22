@@ -101,7 +101,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 .WithActorActivationTimeout(TimeSpan.FromHours(1))
                 .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                 .WithGossipRequestTimeout(TimeSpan.FromHours(1));
-
+            
             var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
 
             var remoteConfig = ConfigureRemoteConfig(sp);

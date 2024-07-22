@@ -1,11 +1,13 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.ProtoActor;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.ProtoActor.Actors;
 using Elsa.Workflows.Runtime.ProtoActor.Mappers;
+using Elsa.Workflows.Runtime.ProtoActor.Providers;
 using Elsa.Workflows.Runtime.ProtoActor.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -51,6 +53,9 @@ public class ProtoActorWorkflowRuntimeFeature : FeatureBase
             .AddSingleton<RunWorkflowParamsMapper>()
             .AddSingleton<WorkflowStateJsonMapper>();
 
+        // Actor Providers.
+        services.AddSingleton<IVirtualActorsProvider, WorkflowInstanceVirtualActorProvider>();
+        
         // Actors.
         services
             .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));

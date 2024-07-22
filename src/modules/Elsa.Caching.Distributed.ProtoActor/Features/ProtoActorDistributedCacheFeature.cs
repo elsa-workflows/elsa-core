@@ -1,10 +1,13 @@
 using Elsa.Caching.Distributed.Features;
 using Elsa.Caching.Distributed.ProtoActor.Actors;
+using Elsa.Caching.Distributed.ProtoActor.HostedServices;
+using Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
+using Elsa.Caching.Distributed.ProtoActor.Providers;
 using Elsa.Caching.Distributed.ProtoActor.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+using Elsa.ProtoActor;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Caching.Distributed.ProtoActor.Features;
@@ -25,10 +28,18 @@ public class ProtoActorDistributedCacheFeature : FeatureBase
         Module.Configure<DistributedCacheFeature>().WithChangeTokenSignalPublisher(sp => ActivatorUtilities.CreateInstance<ProtoActorChangeTokenSignalPublisher>(sp));
     }
 
+    public override void ConfigureHostedServices()
+    {
+        ConfigureHostedService<StartLocalCacheActor>();
+    }
+
     /// <inheritdoc />
     public override void Apply()
     {
         var services = Services;
+        
+        // Actor providers.
+        services.AddSingleton<IVirtualActorsProvider, LocalCacheVirtualActorProvider>();
 
         // Actors.
         services
