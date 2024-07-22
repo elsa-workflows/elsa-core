@@ -21,13 +21,17 @@ using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -133,6 +137,11 @@ services
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
             .UseDefaultAuthentication()
+            .UseWorkflows(workflows =>
+            {
+                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing()); 
+                workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+            })
             .UseWorkflowManagement(management =>
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)

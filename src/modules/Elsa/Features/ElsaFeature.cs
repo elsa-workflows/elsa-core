@@ -37,7 +37,7 @@ public class ElsaFeature : FeatureBase
         Module
             .UseWorkflows(workflows => workflows
                 .WithDefaultWorkflowExecutionPipeline()
-                .WithBackgroundActivityExecutionPipeline())
+                .WithDefaultActivityExecutionPipeline())
             .UseWorkflowManagement(management =>
             {
                 if (!DisableAutomaticActivityRegistration)

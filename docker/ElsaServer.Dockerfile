@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/*
 
 # Set PYTHONNET_PYDLL environment variable
-ENV PYTHONNET_PYDLL /usr/lib/aarch64-linux-gnu/libpython3.11.so
+ENV PYTHONNET_PYDLL=/usr/lib/aarch64-linux-gnu/libpython3.11.so
 
 EXPOSE 80/tcp
 EXPOSE 443/tcp
