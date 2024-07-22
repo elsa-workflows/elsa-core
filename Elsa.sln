@@ -377,6 +377,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.OpenTelemetry", "src\m
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Core", "src\modules\Elsa.ProtoActor.Core\Elsa.ProtoActor.Core.csproj", "{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.ProtoActor", "src\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{47FBCB04-0C2D-453C-BE2F-7052CAC22524}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -897,6 +899,10 @@ Global
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47FBCB04-0C2D-453C-BE2F-7052CAC22524}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47FBCB04-0C2D-453C-BE2F-7052CAC22524}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47FBCB04-0C2D-453C-BE2F-7052CAC22524}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47FBCB04-0C2D-453C-BE2F-7052CAC22524}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1053,6 +1059,7 @@ Global
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {58C59255-281C-4595-8732-808158F1DC6E}
 		{0D4A88A1-8AEE-49ED-BC2E-ED68C96F60AD} = {58C59255-281C-4595-8732-808158F1DC6E}
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{47FBCB04-0C2D-453C-BE2F-7052CAC22524} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

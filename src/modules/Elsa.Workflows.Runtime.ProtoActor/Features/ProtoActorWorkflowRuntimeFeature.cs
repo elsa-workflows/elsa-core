@@ -25,7 +25,7 @@ public class ProtoActorWorkflowRuntimeFeature : FeatureBase
     public override void Configure()
     {
         // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorRuntime>(sp);
+        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorWorkflowRuntime>(sp);
     }
 
     /// <inheritdoc />
@@ -56,6 +56,6 @@ public class ProtoActorWorkflowRuntimeFeature : FeatureBase
             .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
 
         // Distributed runtime.
-        services.AddSingleton<ProtoActorRuntime>();
+        services.AddSingleton<ProtoActorWorkflowRuntime>();
     }
 }

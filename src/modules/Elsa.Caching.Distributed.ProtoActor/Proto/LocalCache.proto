@@ -1,0 +1,12 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.Workflows.Runtime.ProtoActor.ProtoBuf";
+package Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Shared.proto";
+import "localCache.Messages.proto";
+
+service LocalCache {
+  
+}

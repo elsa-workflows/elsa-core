@@ -178,6 +178,19 @@ services
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
             })
+            .UseProtoActor(proto =>
+            {
+                proto
+                    .EnableMetrics()
+                    .EnableTracing();
+
+                proto.PersistenceProvider = _ =>
+                {
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                        return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
+                    return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                };
+            })
             .UseWorkflowRuntime(runtime =>
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)
@@ -206,19 +219,7 @@ services
 
                 if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
-                    runtime.UseProtoActor(proto =>
-                    {
-                        proto
-                            .EnableMetrics()
-                            .EnableTracing();
-
-                        proto.PersistenceProvider = _ =>
-                        {
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                                return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                            return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                        };
-                    });
+                    runtime.UseProtoActor();
                 }
 
                 if (useMassTransit)

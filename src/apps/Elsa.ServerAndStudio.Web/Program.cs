@@ -79,10 +79,7 @@ services
                 
                 if (useProtoActor)
                 {
-                    runtime.UseProtoActor(proto => proto.PersistenceProvider = _ =>
-                    {
-                        return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                    });
+                    runtime.UseProtoActor();
                 }
 
                 if (useCaching)
@@ -111,6 +108,14 @@ services
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
 
+        if (useProtoActor)
+        {
+            elsa.UseProtoActor(proto => proto.PersistenceProvider = _ =>
+            {
+                return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+            });
+        }
+        
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>
