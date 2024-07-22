@@ -40,7 +40,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
 
     /// A delegate that configures an instance of <see cref="ClusterConfig"/>. 
-    public Action<IServiceProvider, ClusterConfig>? ConfigureClusterConfig { get; set; }
+    public Func<IServiceProvider, ClusterConfig, ClusterConfig>? ConfigureClusterConfig { get; set; }
 
     public ProtoActorFeature EnableMetrics(bool value = true)
     {
@@ -116,14 +116,15 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                     if (_enableTracing)
                         kind = kind.WithProps(props => props.WithTracing());
 
-                    clusterConfig.WithClusterKind(kind);
+                    clusterConfig = clusterConfig.WithClusterKind(kind);
                 }
 
                 var messageDescriptors = virtualActorProvider.GetFileDescriptors().ToArray();
-                remoteConfig.WithProtoMessages(messageDescriptors);
+                remoteConfig = remoteConfig.WithProtoMessages(messageDescriptors);
             }
 
-            ConfigureClusterConfig?.Invoke(sp, clusterConfig);
+            if(ConfigureClusterConfig != null)
+                clusterConfig = ConfigureClusterConfig(sp, clusterConfig);
             
             system
                 .WithRemote(remoteConfig)
