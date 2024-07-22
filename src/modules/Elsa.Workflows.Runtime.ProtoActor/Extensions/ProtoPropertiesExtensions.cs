@@ -2,7 +2,7 @@ using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Extensions;
 
-internal static class ProtoPropertiesExtensions
+public static class ProtoPropertiesExtensions
 {
     public static IDictionary<string, object> DeserializeProperties(this ProtoProperties properties) => properties.Data.Deserialize();
 

@@ -1,3 +1,4 @@
+using Elsa.ProtoActor.Features;
 using Elsa.Workflows.Runtime.ProtoActor.Features;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;

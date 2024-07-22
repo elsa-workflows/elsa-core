@@ -6,6 +6,41 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
+message ProtoActivityIncident {
+  string ActivityId = 1;
+  string ActivityType = 2;
+  string Message = 3;
+  optional ProtoExceptionState Exception = 4;
+  string Timestamp = 5; // ISO 8601
+}
+
+enum ProtoWorkflowStatus {
+  WorkflowStatusRunning = 0;
+  WorkflowStatusFinished = 1;
+}
+
+enum ProtoWorkflowSubStatus {
+  WorkflowSubStatusPending = 0;
+  WorkflowSubStatusExecuting = 1;
+  WorkflowSubStatusSuspended = 2;
+  WorkflowSubStatusFinished = 3;
+  WorkflowSubStatusCancelled = 4;
+  WorkflowSubStatusFaulted = 5;
+}
+
+message ProtoActivityHandle {
+  optional string ActivityId = 1;
+  optional string ActivityNodeId = 2;
+  optional string ActivityInstanceId = 3;
+  optional string ActivityHash = 4;
+}
+
+message ProtoWorkflowDefinitionHandle {
+  optional string DefinitionId = 1;
+  optional string VersionOptions = 2;
+  optional string DefinitionVersionId = 3;
+}
+
 message ProtoCreateWorkflowInstanceRequest{
   ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
   string WorkflowInstanceId = 2;
