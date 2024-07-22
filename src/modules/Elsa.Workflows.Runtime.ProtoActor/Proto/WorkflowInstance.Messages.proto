@@ -1,0 +1,52 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.Workflows.Runtime.ProtoActor.ProtoBuf";
+package Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Shared.proto";
+
+message ProtoCreateWorkflowInstanceRequest{
+  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+  string WorkflowInstanceId = 2;
+  optional string CorrelationId = 3;
+  optional string ParentId = 4;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
+}
+
+message ProtoCreateWorkflowInstanceResponse{
+}
+
+message ProtoRunWorkflowInstanceRequest{
+  optional string BookmarkId = 1;
+  optional ProtoActivityHandle ActivityHandle = 2;
+  optional ProtoInput input = 3;
+  optional ProtoProperties properties = 4;
+  optional string TriggerActivityId = 5;
+}
+
+message ProtoRunWorkflowInstanceResponse {
+  ProtoWorkflowStatus Status = 1;
+  ProtoWorkflowSubStatus SubStatus = 2;
+  repeated ProtoActivityIncident Incidents = 3;
+}
+
+message ProtoCreateAndRunWorkflowInstanceRequest{
+  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+  string WorkflowInstanceId = 2;
+  optional string CorrelationId = 3;
+  optional string ParentId = 4;
+  optional ProtoInput input = 5;
+  optional ProtoProperties properties = 6;
+  optional ProtoActivityHandle ActivityHandle = 7;
+  optional string TriggerActivityId = 8;
+}
+
+message ProtoExportWorkflowStateResponse {
+  ProtoJson SerializedWorkflowState = 1;
+}
+
+message ProtoImportWorkflowStateRequest {
+  ProtoJson SerializedWorkflowState = 1;
+}

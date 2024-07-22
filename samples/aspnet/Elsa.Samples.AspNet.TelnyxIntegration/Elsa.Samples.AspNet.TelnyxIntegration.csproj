@@ -10,7 +10,7 @@
       <ProjectReference Include="..\..\..\src\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Liquid\Elsa.Liquid.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
-      <ProjectReference Include="..\..\..\src\modules\Elsa.ProtoActor\Elsa.ProtoActor.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Telnyx\Elsa.Telnyx.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />

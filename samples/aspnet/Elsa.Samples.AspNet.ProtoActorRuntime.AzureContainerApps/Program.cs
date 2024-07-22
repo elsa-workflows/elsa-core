@@ -3,7 +3,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.ProtoActor.ProtoBuf;
+using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
