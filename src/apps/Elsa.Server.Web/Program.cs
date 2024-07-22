@@ -56,7 +56,7 @@ const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 
@@ -389,6 +389,7 @@ services
             elsa.UseDistributedCache(distributedCaching =>
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
+                if (distributedCachingTransport == DistributedCachingTransport.ProtoActor) distributedCaching.UseProtoActor();
             });
         }
 
