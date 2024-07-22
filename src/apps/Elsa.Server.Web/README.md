@@ -21,9 +21,8 @@ DOTNET_STARTUP_HOOKS=OpenTelemetry.AutoInstrumentation.StartupHook
 OTEL_DOTNET_AUTO_HOME=$INSTALL_DIR
 OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED=true
 OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED=true
-OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES=Proto.Actor
+OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES=Proto.Actor,Elsa.Workflows
 OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED=true
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-OTEL_RESOURCE_ATTRIBUTES=service.name=Elsa
-Server,service.version=3.3.0,service.instance.id=instance-123,deployment.environment=development
+OTEL_RESOURCE_ATTRIBUTES=service.name=Elsa Server,service.version=3.3.0,service.instance.id=instance-123,deployment.environment=development

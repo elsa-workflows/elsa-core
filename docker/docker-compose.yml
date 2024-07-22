@@ -52,6 +52,9 @@ services:
   trace-lens:
     image: docker.io/rogeralsing/tracelens:latest
     pull_policy: always
+    depends_on:
+      - plantuml-server
+      - postgres
     ports:
       - 7001:5001
       - 4317:4317
