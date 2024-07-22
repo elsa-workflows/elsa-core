@@ -105,7 +105,7 @@ services
                 http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
-            .UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options))
+            .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
