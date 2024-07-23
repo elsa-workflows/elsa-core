@@ -4,5 +4,5 @@ public interface ITriggerChangeTokenSignalEvents
 {
     event EventHandler<TriggerChangeTokenSignalEventArgs> ChangeTokenSignalTriggered;
     
-    void OnChangeTokenSignalTriggered(TriggerChangeTokenSignalEventArgs args);
+    void RaiseChangeTokenSignalTriggered(TriggerChangeTokenSignalEventArgs args);
 }

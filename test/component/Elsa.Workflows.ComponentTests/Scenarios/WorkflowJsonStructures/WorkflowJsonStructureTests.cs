@@ -1,4 +1,6 @@
 ﻿using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
+using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
+using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowJsonStructures;
 

@@ -1,5 +1,7 @@
 using Elsa.Http.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
+using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Filters;
@@ -48,11 +50,11 @@ public class AutoUpdateTests : AppComponentTest
     [Fact(DisplayName = "Updating a workflow with `auto update consuming workflows` should invalidate consuming workflows from cache")]
     public async Task UpdateWorkflowWithAutoUpdate()
     {
-        //Run workflow to make sure the all required items for running the workflow are in the cache
+        // Run workflow to make sure the all required items for running the workflow are in the cache.
         var client = WorkflowServer.CreateHttpWorkflowClient();
         await client.GetStringAsync("test-cache-invalidation");
 
-        //Make sure the items are in the cache
+        // Make sure the items are in the cache.
         var hash = _httpCacheManager.ComputeBookmarkHash("/test-cache-invalidation", "get");
         Assert.True(_cache.TryGetValue($"http-workflow:{hash}", out _));
 
@@ -66,15 +68,15 @@ public class AutoUpdateTests : AppComponentTest
         var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowVersionCacheKey(ParentDefinitionVersionId);
         Assert.True(_cache.TryGetValue(parentVersionCacheKey, out _));
 
-        //Set change tokens
+        // Set change tokens.
         _httpChangeToken = _workflowCacheManager.CreateWorkflowDefinitionChangeTokenKey(ParentDefinitionId);
         _triggerChangeToken = _httpCacheManager.GetTriggerChangeTokenKey(hash);
         _graphChangeToken = _workflowCacheManager.CreateWorkflowDefinitionChangeTokenKey(ParentDefinitionId);
 
-        //(Act) Save the draft version of the child workflow and update the references 
+        // (Act) Save the draft version of the child workflow and update the references.
         await _publisher.PublishAsync(ChildDefinitionId);
 
-        //Wait till the notifications for updating the cache have been send and check the cache.
+        // Wait until the notifications for updating the cache have been send and check the cache.
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(HttpChangeTokenSignal);
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(TriggerChangeTokenSignal);
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(GraphChangeTokenSignal);
@@ -86,19 +88,8 @@ public class AutoUpdateTests : AppComponentTest
 
     private void OnChangeTokenSignalTriggered(object? sender, TriggerChangeTokenSignalEventArgs args)
     {
-        if (args.Key == _httpChangeToken)
-        {
-            _signalManager.Trigger(HttpChangeTokenSignal, args);
-        }
-
-        if (args.Key == _triggerChangeToken)
-        {
-            _signalManager.Trigger(TriggerChangeTokenSignal, args);
-        }
-
-        if (args.Key == _graphChangeToken)
-        {
-            _signalManager.Trigger(GraphChangeTokenSignal, args);
-        }
+        if (args.Key == _httpChangeToken) _signalManager.Trigger(HttpChangeTokenSignal, args);
+        if (args.Key == _triggerChangeToken) _signalManager.Trigger(TriggerChangeTokenSignal, args);
+        if (args.Key == _graphChangeToken) _signalManager.Trigger(GraphChangeTokenSignal, args);
     }
 }

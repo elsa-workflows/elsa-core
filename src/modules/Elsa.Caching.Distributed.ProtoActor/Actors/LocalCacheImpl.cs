@@ -1,4 +1,3 @@
-using Elsa.Caching.Distributed.Contracts;
 using Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
 using Proto;
 using Proto.Cluster;
@@ -16,6 +15,6 @@ internal class LocalCacheImpl(IContext context, IChangeTokenSignalInvoker change
     public override async Task OnReceive()
     {
         if (Context.Message is ProtoTriggerChangeTokenSignal triggerChangeTokenSignal)
-            await changeTokenSignaler.InvokeAsync(triggerChangeTokenSignal.Key, Context.CancellationToken);
+            await changeTokenSignaler.TriggerTokenAsync(triggerChangeTokenSignal.Key, Context.CancellationToken);
     }
 }

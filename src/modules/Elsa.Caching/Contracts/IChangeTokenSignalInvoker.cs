@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching;
 
-/// Provides change tokens for memory caches, allowing code to evict cache entries by triggering a signal.
-public interface IChangeTokenSignaler
+/// Triggers the change token associated with the specified key.
+public interface IChangeTokenSignalInvoker
 {
     /// Gets a change token for the specified key.
     IChangeToken GetToken(string key);

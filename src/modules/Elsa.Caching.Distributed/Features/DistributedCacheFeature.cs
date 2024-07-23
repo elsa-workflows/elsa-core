@@ -2,6 +2,7 @@
 using Elsa.Caching.Distributed.Services;
 using Elsa.Caching.Features;
 using Elsa.Caching.Options;
+using Elsa.Caching.Services;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -34,6 +35,6 @@ public class DistributedCacheFeature(IModule module) : FeatureBase(module)
     {
         Services.AddSingleton(ChangeTokenSignalPublisherFactory);
         Services.Decorate<IChangeTokenSignaler, DistributedChangeTokenSignaler>();
-        Services.AddSingleton<IChangeTokenSignalInvoker>(sp => (DistributedChangeTokenSignaler)sp.GetRequiredService<IChangeTokenSignaler>());
+        Services.AddSingleton<IChangeTokenSignalInvoker, ChangeTokenSignalInvoker>();
     }
 }

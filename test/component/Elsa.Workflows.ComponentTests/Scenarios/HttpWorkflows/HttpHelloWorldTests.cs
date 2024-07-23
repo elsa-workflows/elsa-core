@@ -1,4 +1,7 @@
-﻿namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
+﻿using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
+using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+
+namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
 public class HttpHelloWorldTests(App app) : AppComponentTest(app)
 {

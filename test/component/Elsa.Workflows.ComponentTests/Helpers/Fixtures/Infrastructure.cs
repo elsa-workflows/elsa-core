@@ -1,7 +1,7 @@
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 
 public class Infrastructure : IAsyncLifetime
 {

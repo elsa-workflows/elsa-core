@@ -4,6 +4,8 @@ using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Common.Entities;
 using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
+using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
