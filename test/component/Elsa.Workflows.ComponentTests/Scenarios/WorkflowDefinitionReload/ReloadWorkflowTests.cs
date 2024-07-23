@@ -1,10 +1,7 @@
 ﻿using System.Net;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
-using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
-using Elsa.Workflows.ComponentTests.Helpers.Materializers;
-using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;

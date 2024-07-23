@@ -1,7 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
-using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
-using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;

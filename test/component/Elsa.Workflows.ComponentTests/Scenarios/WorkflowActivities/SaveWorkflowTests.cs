@@ -1,5 +1,4 @@
-using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
-using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;

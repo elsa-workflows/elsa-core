@@ -13,11 +13,7 @@ using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Consumers;
-using Elsa.Workflows.ComponentTests.Helpers.Decorators;
-using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
-using Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
@@ -79,7 +75,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
-                    //massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
@@ -93,8 +88,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
-                    //runtime.UseProtoActor();
-                    runtime.UseDistributedRuntime();
+                    runtime.UseProtoActor();
+                    //runtime.UseDistributedRuntime();
                 });
                 elsa.UseJavaScript(options =>
                 {

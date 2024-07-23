@@ -2,8 +2,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
-using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
-using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+using Elsa.Workflows.ComponentTests.Helpers;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowCompletion;
 
