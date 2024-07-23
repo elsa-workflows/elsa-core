@@ -2,10 +2,5 @@ syntax = "proto3";
 option csharp_namespace = "Elsa.Caching.Distributed.ProtoActor.ProtoBuf";
 package Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
 
-import "google/protobuf/empty.proto";
-import "google/protobuf/wrappers.proto";
-import "Shared.proto";
-import "LocalCache.Messages.proto";
-
 service LocalCache {
 }

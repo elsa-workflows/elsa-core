@@ -18,7 +18,6 @@ public class LocalCacheVirtualActorProvider : VirtualActorsProviderBase
 
     public override IEnumerable<FileDescriptor> GetFileDescriptors()
     {
-        yield return SharedReflection.Descriptor;
         yield return LocalCacheMessagesReflection.Descriptor;
     }
 }
