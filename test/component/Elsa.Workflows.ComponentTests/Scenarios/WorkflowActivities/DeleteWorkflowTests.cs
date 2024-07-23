@@ -1,4 +1,5 @@
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
 using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.Workflows;
@@ -14,8 +15,8 @@ public class DeleteWorkflowTests : AppComponentTest
     private readonly IServiceScope _scope1;
     private readonly IServiceScope _scope2;
     private readonly IServiceScope _scope3;
-    private readonly ISignalManager _signalManager;
-    private readonly IWorkflowDefinitionEvents _workflowDefinitionEvents;
+    private readonly SignalManager _signalManager;
+    private readonly WorkflowDefinitionEvents _workflowDefinitionEvents;
 
     public DeleteWorkflowTests(App app) : base(app)
     {
@@ -23,9 +24,9 @@ public class DeleteWorkflowTests : AppComponentTest
         // Disabled these scope creations since this prevents events from firing in other tests.
         // _scope2 = app.Cluster.Pod2.Services.CreateScope();
         // _scope3 = app.Cluster.Pod3.Services.CreateScope();
-        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
-        _workflowDefinitionEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionEvents>();
-        _workflowDefinitionEvents.WorkflowDefinitionDeleted += OnWorkflowDefinionDeleted;
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
+        _workflowDefinitionEvents = Scope.ServiceProvider.GetRequiredService<WorkflowDefinitionEvents>();
+        _workflowDefinitionEvents.WorkflowDefinitionDeleted += OnWorkflowDefinitionDeleted;
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class DeleteWorkflowTests : AppComponentTest
         Assert.Null(descriptor);
     }
 
-    private void OnWorkflowDefinionDeleted(object? sender, WorkflowDefinitionDeletedEventArgs args)
+    private void OnWorkflowDefinitionDeleted(object? sender, WorkflowDefinitionDeletedEventArgs args)
     {
         if (args.DefinitionId == Workflows.DeleteWorkflow.DefinitionId)
         {
@@ -81,6 +82,6 @@ public class DeleteWorkflowTests : AppComponentTest
 
     protected override void OnDispose()
     {
-        _workflowDefinitionEvents.WorkflowDefinitionDeleted -= OnWorkflowDefinionDeleted;
+        _workflowDefinitionEvents.WorkflowDefinitionDeleted -= OnWorkflowDefinitionDeleted;
     }
 }

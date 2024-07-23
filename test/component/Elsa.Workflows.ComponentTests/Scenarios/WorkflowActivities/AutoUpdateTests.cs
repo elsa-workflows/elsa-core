@@ -1,5 +1,6 @@
 using Elsa.Http.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers.Abstractions;
 using Elsa.Workflows.ComponentTests.Helpers.Fixtures;
 using Elsa.Workflows.Contracts;
@@ -20,12 +21,12 @@ public class AutoUpdateTests : AppComponentTest
     private static readonly object TriggerChangeTokenSignal = new();
     private static readonly object GraphChangeTokenSignal = new();
     private readonly IMemoryCache _cache;
-    private readonly ITriggerChangeTokenSignalEvents _changeTokenEvents;
+    private readonly TriggerChangeTokenSignalEvents _changeTokenEvents;
     private readonly IWorkflowDefinitionCacheManager _definitionCacheManager;
     private readonly IHasher _hasher;
     private readonly IHttpWorkflowsCacheManager _httpCacheManager;
     private readonly IWorkflowDefinitionPublisher _publisher;
-    private readonly ISignalManager _signalManager;
+    private readonly SignalManager _signalManager;
     private readonly IWorkflowDefinitionCacheManager _workflowCacheManager;
     private string? _graphChangeToken;
 
@@ -42,8 +43,8 @@ public class AutoUpdateTests : AppComponentTest
         _httpCacheManager = Scope.ServiceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
         _workflowCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
 
-        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
-        _changeTokenEvents = Scope.ServiceProvider.GetRequiredService<ITriggerChangeTokenSignalEvents>();
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
+        _changeTokenEvents = Scope.ServiceProvider.GetRequiredService<TriggerChangeTokenSignalEvents>();
         _changeTokenEvents.ChangeTokenSignalTriggered += OnChangeTokenSignalTriggered;
     }
 

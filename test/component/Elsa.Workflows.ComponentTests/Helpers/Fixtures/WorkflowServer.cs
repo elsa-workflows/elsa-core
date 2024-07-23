@@ -11,7 +11,6 @@ using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers.Consumers;
@@ -124,10 +123,10 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         builder.ConfigureTestServices(services =>
         {
             services
-                .AddSingleton<ISignalManager, SignalManager>()
-                .AddSingleton<IWorkflowEvents, WorkflowEvents>()
-                .AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>()
-                .AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>()
+                .AddSingleton<SignalManager>()
+                .AddSingleton<WorkflowEvents>()
+                .AddSingleton<WorkflowDefinitionEvents>()
+                .AddSingleton<TriggerChangeTokenSignalEvents>()
                 .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
                 .AddNotificationHandlersFrom<WorkflowServer>()
                 .AddWorkflowDefinitionProvider<TestWorkflowProvider>()

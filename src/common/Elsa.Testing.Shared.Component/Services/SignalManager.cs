@@ -2,7 +2,7 @@
 
 namespace Elsa.Testing.Shared.Services;
 
-public class SignalManager : ISignalManager
+public class SignalManager
 {
     private readonly ConcurrentDictionary<object, TaskCompletionSource<object?>> _signals = new();
 

@@ -1,6 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.ComponentTests.Workflows;
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -11,13 +12,13 @@ namespace Elsa.AzureServiceBus.ComponentTests;
 public class AzureServiceBusTests : AppComponentTest
 {
     private static readonly object WorkflowCompletedSignal = new();
-    private readonly ISignalManager _signalManager;
-    private readonly IWorkflowEvents _workflowEvents;
+    private readonly SignalManager _signalManager;
+    private readonly WorkflowEvents _workflowEvents;
 
     public AzureServiceBusTests(App app) : base(app)
     {
-        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
-        _workflowEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowEvents>();
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
+        _workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
 
