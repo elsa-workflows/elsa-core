@@ -157,7 +157,6 @@ internal class WorkflowInstanceImpl(
         var serviceProvider = scope.ServiceProvider;
         var workflowCanceler = serviceProvider.GetRequiredService<IWorkflowCanceler>();
         _workflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
-        await PersistStateAsync(scope, Context.CancellationToken);
     }
 
     public override async Task<ProtoExportWorkflowStateResponse> ExportState()
@@ -175,7 +174,6 @@ internal class WorkflowInstanceImpl(
         var workflowState = mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         await EnsureStateAsync();
         WorkflowState = workflowState;
-        await PersistStateAsync(Context.CancellationToken);
     }
 
     private async Task<RunWorkflowResult> RunAsync(RunWorkflowOptions runWorkflowOptions)
@@ -208,7 +206,6 @@ internal class WorkflowInstanceImpl(
         var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runWorkflowOptions, _linkedCancellationToken);
         WorkflowState = workflowResult.WorkflowState;
-        await PersistStateAsync(scope, Context.CancellationToken);
 
         return workflowResult;
     }
@@ -277,17 +274,5 @@ internal class WorkflowInstanceImpl(
             throw new InvalidOperationException($"Workflow {workflowDefinitionHandle} not found.");
 
         return workflow;
-    }
-
-    private async Task PersistStateAsync(CancellationToken cancellationToken = default)
-    {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        await PersistStateAsync(scope, cancellationToken);
-    }
-
-    private async Task PersistStateAsync(IServiceScope scope, CancellationToken cancellationToken = default)
-    {
-        var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        await workflowInstanceManager.UpdateAsync(WorkflowState, cancellationToken);
     }
 }
