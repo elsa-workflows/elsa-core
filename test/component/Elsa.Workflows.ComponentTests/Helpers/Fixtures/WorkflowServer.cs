@@ -13,7 +13,7 @@ using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers.Consumers;
+using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Helpers.Decorators;
 using Elsa.Workflows.ComponentTests.Helpers.Materializers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
@@ -29,7 +29,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>

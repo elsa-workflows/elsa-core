@@ -1,6 +1,6 @@
 using Hangfire.Annotations;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [UsedImplicitly]
 public class App : IAsyncLifetime

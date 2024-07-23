@@ -4,7 +4,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Materializers;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 /// A workflow materializer that deserializes workflows created from <see cref="TestWorkflowProvider"/>.
 public class TestWorkflowMaterializer(IEnumerable<IWorkflowsProvider> workflowProviders) : IWorkflowMaterializer
