@@ -43,7 +43,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     {
         var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
         var response = await _actorClient.Run(protoRequest, cancellationToken);
-        return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
     }
 
     /// <inheritdoc />
@@ -51,7 +51,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     {
         var protoRequest = _mappers.CreateAndRunWorkflowInstanceRequestMapper.Map(WorkflowInstanceId, request);
         var response = await _actorClient.CreateAndRun(protoRequest, cancellationToken);
-        return _mappers.RunWorkflowInstanceResponseMapper.Map(response!);
+        return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
     }
 
     /// <inheritdoc />

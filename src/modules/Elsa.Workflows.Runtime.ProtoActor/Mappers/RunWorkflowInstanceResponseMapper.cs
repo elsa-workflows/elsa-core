@@ -18,13 +18,13 @@ public class RunWorkflowInstanceResponseMapper(
     /// </summary>
     public ProtoRunWorkflowInstanceResponse Map(RunWorkflowResult source)
     {
-        if(source.WorkflowState == null)
+        if(source.WorkflowState == null!)
             return new ProtoRunWorkflowInstanceResponse();
         
         var response = new ProtoRunWorkflowInstanceResponse
         {
             Status = workflowStatusMapper.Map(source.WorkflowState.Status),
-            SubStatus = workflowSubStatusMapper.Map(source.WorkflowState.SubStatus),
+            SubStatus = workflowSubStatusMapper.Map(source.WorkflowState.SubStatus)
         };
 
         response.Incidents.AddRange(activityIncidentMapper.Map(source.WorkflowState.Incidents));
@@ -34,10 +34,11 @@ public class RunWorkflowInstanceResponseMapper(
     /// <summary>
     /// Maps <see cref="ProtoRunWorkflowInstanceResponse"/> to <see cref="RunWorkflowInstanceResponse"/>.
     /// </summary>
-    public RunWorkflowInstanceResponse Map(ProtoRunWorkflowInstanceResponse source)
+    public RunWorkflowInstanceResponse Map(string workflowInstanceId, ProtoRunWorkflowInstanceResponse source)
     {
         var response = new RunWorkflowInstanceResponse
         {
+            WorkflowInstanceId = workflowInstanceId,
             Status = workflowStatusMapper.Map(source.Status),
             SubStatus = workflowSubStatusMapper.Map(source.SubStatus),
         };
