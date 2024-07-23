@@ -4,14 +4,12 @@ using Proto.Cluster;
 
 namespace Elsa.ProtoActor;
 
-/// Implement this to provide a virtual actor to the actor system.
+/// Implement this to provide virtual actors to the actor system from other modules.
 public interface IVirtualActorsProvider
 {
-    /// The actor type name and props to activate the virtual actor.
+    /// Return a list of <see cref="ClusterKind"/> objects.
     IEnumerable<ClusterKind> GetClusterKinds(ActorSystem system);
     
-    /// <summary>
     /// Return all file descriptors for protobuf serialization.
-    /// </summary>
     IEnumerable<FileDescriptor> GetFileDescriptors();
 }

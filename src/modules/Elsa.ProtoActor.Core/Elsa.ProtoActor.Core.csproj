@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>
-            Provides ProtoActor to the system. Other modules can add actors to the ActorSystem.
+            Provides ProtoActor services to the system. Other modules can add actors to the ActorSystem.
         </Description>
         <PackageTags>elsa module runtime protoactor actors</PackageTags>
         <RootNamespace>Elsa.ProtoActor</RootNamespace>

@@ -9,9 +9,7 @@ namespace Elsa.Extensions;
 [PublicAPI]
 public static class ProtoActorDistributedCacheFeatureExtensions
 {
-    /// <summary>
     /// Configure the distributed cache feature using Proto.Actor.
-    /// </summary>
     public static DistributedCacheFeature UseProtoActor(this DistributedCacheFeature feature, Action<ProtoActorDistributedCacheFeature>? configure = default)
     {
         feature.Module.Configure(configure);

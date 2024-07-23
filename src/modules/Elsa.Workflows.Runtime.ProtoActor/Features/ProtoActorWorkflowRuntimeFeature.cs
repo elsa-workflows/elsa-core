@@ -2,6 +2,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.ProtoActor;
+using Elsa.ProtoActor.Features;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Runtime.Features;
@@ -16,6 +17,7 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Features;
 /// Installs the Proto Actor feature to host &amp; execute workflow instances.
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
+[DependsOn(typeof(ProtoActorFeature))]
 public class ProtoActorWorkflowRuntimeFeature : FeatureBase
 {
     /// <inheritdoc />

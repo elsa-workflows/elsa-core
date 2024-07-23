@@ -102,26 +102,8 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                 .WithGossipRequestTimeout(TimeSpan.FromHours(1));
             
-            var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
-
             var remoteConfig = ConfigureRemoteConfig(sp);
-            
-            foreach (var virtualActorProvider in virtualActorProviders)
-            {
-                var clusterKinds = virtualActorProvider.GetClusterKinds(system).ToList();
-
-                foreach (var clusterKind in clusterKinds)
-                {
-                    var kind = clusterKind;
-                    if (_enableTracing)
-                        kind = kind.WithProps(props => props.WithTracing());
-
-                    clusterConfig = clusterConfig.WithClusterKind(kind);
-                }
-
-                var messageDescriptors = virtualActorProvider.GetFileDescriptors().ToArray();
-                remoteConfig = remoteConfig.WithProtoMessages(messageDescriptors);
-            }
+            clusterConfig = AddVirtualActors(sp, system, clusterConfig);
 
             if(ConfigureClusterConfig != null)
                 clusterConfig = ConfigureClusterConfig(sp, clusterConfig);
@@ -143,6 +125,32 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
 
         // Cluster.
         services.AddSingleton(sp => sp.GetRequiredService<ActorSystem>().Cluster());
+    }
+
+    private ClusterConfig AddVirtualActors(IServiceProvider sp, ActorSystem system, ClusterConfig clusterConfig)
+    {
+        var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
+
+        var remoteConfig = ConfigureRemoteConfig(sp);
+            
+        foreach (var virtualActorProvider in virtualActorProviders)
+        {
+            var clusterKinds = virtualActorProvider.GetClusterKinds(system).ToList();
+
+            foreach (var clusterKind in clusterKinds)
+            {
+                var kind = clusterKind;
+                if (_enableTracing)
+                    kind = kind.WithProps(props => props.WithTracing());
+
+                clusterConfig = clusterConfig.WithClusterKind(kind);
+            }
+
+            var messageDescriptors = virtualActorProvider.GetFileDescriptors().ToArray();
+            remoteConfig = remoteConfig.WithProtoMessages(messageDescriptors);
+        }
+        
+        return clusterConfig;
     }
 
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)
