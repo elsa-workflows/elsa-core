@@ -1,24 +1,22 @@
 using Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
-using Elsa.Extensions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Hosting;
 using Proto.Cluster;
+using Proto.Cluster.PubSub;
 
 namespace Elsa.Caching.Distributed.ProtoActor.HostedServices;
 
+/// <summary>
+/// Subscribes the LocalCacheActor to the "change-token-signals" topic.
+/// </summary>
+[UsedImplicitly]
 public class StartLocalCacheActor(Cluster cluster) : BackgroundService
 {
-    private LocalCacheClient? _localCacheClient;
+    private static readonly string ActorName = Guid.NewGuid().ToString();
+    private readonly ClusterIdentity _clusterIdentity = ClusterIdentity.Create(ActorName, LocalCacheActor.Kind);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _localCacheClient = cluster.GetLocalCacheClient();
-        await _localCacheClient.Start(stoppingToken);
-    }
-
-    public override async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_localCacheClient != null)
-            await _localCacheClient.Stop(cancellationToken);
-        await base.StopAsync(cancellationToken);
+        await cluster.Subscribe(Topics.ChangeTokenSignals, _clusterIdentity, stoppingToken);
     }
 }

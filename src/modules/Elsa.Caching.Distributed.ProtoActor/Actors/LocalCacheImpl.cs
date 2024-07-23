@@ -1,25 +1,21 @@
 using Elsa.Caching.Distributed.Contracts;
 using Elsa.Caching.Distributed.ProtoActor.ProtoBuf;
 using Proto;
+using Proto.Cluster;
+using Proto.Cluster.PubSub;
 
 namespace Elsa.Caching.Distributed.ProtoActor.Actors;
 
 internal class LocalCacheImpl(IContext context, IChangeTokenSignalInvoker changeTokenSignaler) : LocalCacheBase(context)
 {
-    public override Task Start()
+    public override async Task OnStopped()
     {
-        Context.System.EventStream.Subscribe<ProtoTriggerChangeTokenSignal>(OnTriggerChangeTokenSignalAsync);
-        return Task.CompletedTask;
+        await Cluster.Unsubscribe(Topics.ChangeTokenSignals, Context.ClusterIdentity()!);
     }
 
-    public override Task Stop()
+    public override async Task OnReceive()
     {
-        Context.Poison(Context.Self);
-        return Task.CompletedTask;
-    }
-
-    private async Task OnTriggerChangeTokenSignalAsync(ProtoTriggerChangeTokenSignal message)
-    {
-        await changeTokenSignaler.InvokeAsync(message.Key, Context.CancellationToken);
+        if (Context.Message is ProtoTriggerChangeTokenSignal triggerChangeTokenSignal)
+            await changeTokenSignaler.InvokeAsync(triggerChangeTokenSignal.Key, Context.CancellationToken);
     }
 }

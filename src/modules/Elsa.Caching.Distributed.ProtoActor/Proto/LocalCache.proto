@@ -8,6 +8,4 @@ import "Shared.proto";
 import "LocalCache.Messages.proto";
 
 service LocalCache {
-  rpc Start(Empty) returns (Empty);
-  rpc Stop(Empty) returns (Empty);
 }
