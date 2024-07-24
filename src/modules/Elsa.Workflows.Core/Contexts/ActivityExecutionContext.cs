@@ -17,7 +17,7 @@ namespace Elsa.Workflows;
 /// Represents the context of an activity execution.
 /// </summary>
 [PublicAPI]
-public partial class ActivityExecutionContext : IExecutionContext
+public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = new();
@@ -675,5 +675,11 @@ public partial class ActivityExecutionContext : IExecutionContext
     private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference)
     {
         return ExpressionExecutionContext.TryGetBlock(locationBlockReference, out var memoryBlock) ? memoryBlock : default;
+    }
+
+    void IDisposable.Dispose()
+    {
+        _cancellationRegistration.Dispose();
+        _cancellationTokenSource.Dispose();
     }
 }
