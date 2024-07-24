@@ -99,7 +99,6 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
                 .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                 .WithActorActivationTimeout(TimeSpan.FromHours(1))
-                .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                 .WithGossipRequestTimeout(TimeSpan.FromHours(1));
             
             var remoteConfig = ConfigureRemoteConfig(sp);
