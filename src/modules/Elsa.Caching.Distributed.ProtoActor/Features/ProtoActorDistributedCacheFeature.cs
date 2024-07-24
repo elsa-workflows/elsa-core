@@ -43,7 +43,7 @@ public class ProtoActorDistributedCacheFeature : FeatureBase
 
         // Actors.
         services
-            .AddTransient(sp => new LocalCacheActor((context, _) => ActivatorUtilities.CreateInstance<LocalCacheImpl>(sp, context)));
+            .AddTransient(sp => new LocalCacheActor((context, _) => ActivatorUtilities.CreateInstance<LocalCache>(sp, context)));
 
         // Distributed runtime.
         services.AddSingleton<ProtoActorChangeTokenSignalPublisher>();
