@@ -42,6 +42,7 @@ using Microsoft.Extensions.Options;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
 using StackExchange.Redis;
+// ReSharper disable RedundantAssignment
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
 const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
@@ -74,7 +75,7 @@ var azureServiceBusConnectionString = configuration.GetConnectionString("AzureSe
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var redisConnectionString = configuration.GetConnectionString("Redis")!;
 var distributedLockProviderName = configuration.GetSection("Runtime:DistributedLocking")["Provider"];
-var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"]);
+var appRole = Enum.Parse<ApplicationRole>(configuration["AppRole"] ?? "Default");
 
 // Add Elsa services.
 services
@@ -223,8 +224,7 @@ services
 
                 if (useMassTransit)
                     runtime.UseMassTransitDispatcher();
-
-                runtime.WorkflowInboxCleanupOptions = options => configuration.GetSection("Runtime:WorkflowInboxCleanup").Bind(options);
+                
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
 
                 if (useMemoryStores)
