@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elsa-server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elsa-server
+  template:
+    metadata:
+      labels:
+        app: elsa-server
+    spec:
+      serviceAccountName: proto-cluster
+      containers:
+        - name: elsa-server
+          imagePullPolicy: Never
+          image: elsa-server:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: "ProtoActor__AdvertisedHost"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: "OTEL_DOTNET_AUTO_HOME"
+              value: "$INSTALL_DIR"
+            - name: "OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED"
+              value: "true"
+            - name: "OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED"
+              value: "true"
+            - name: "OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"
+              value: "Proto.Actor,Elsa.Workflows"
+            - name: "OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED"
+              value: "true"
+            - name: "OTEL_EXPORTER_OTLP_ENDPOINT"
+              value: "http://trace-lens:4317"
+            - name: "OTEL_EXPORTER_OTLP_PROTOCOL"
+              value: "grpc"
+            - name: "OTEL_RESOURCE_ATTRIBUTES"
+              value: "service.name=Elsa Server,service.version=3.3.0,service.instance.id=instance-123,deployment.environment=development"

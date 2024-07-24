@@ -380,12 +380,32 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.ProtoActor", "src\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{47FBCB04-0C2D-453C-BE2F-7052CAC22524}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deployment", "deployment", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server", "{454652D5-E1BB-4D4B-9B21-9CEFC900C4FB}"
 	ProjectSection(SolutionItems) = preProject
-		deployment\deployment.yaml = deployment\deployment.yaml
-		deployment\service.yaml = deployment\service.yaml
-		deployment\role.yaml = deployment\role.yaml
-		deployment\service-account.yml = deployment\service-account.yml
-		deployment\role-binding.yaml = deployment\role-binding.yaml
+		deployment\elsa-server\deployment.yaml = deployment\elsa-server\deployment.yaml
+		deployment\elsa-server\service.yaml = deployment\elsa-server\service.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{31089E79-694B-4F45-97AF-86D34A7B231E}"
+	ProjectSection(SolutionItems) = preProject
+		deployment\postgres\deployment.yaml = deployment\postgres\deployment.yaml
+		deployment\postgres\config-map.yaml = deployment\postgres\config-map.yaml
+		deployment\postgres\service.yml = deployment\postgres\service.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plant-uml", "plant-uml", "{6DDB9ECF-D454-4894-A262-A6BB3026E61E}"
+	ProjectSection(SolutionItems) = preProject
+		deployment\plant-uml\deployment.yaml = deployment\plant-uml\deployment.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{16B570BC-E293-4A19-B20E-5C97BAF8476B}"
+	ProjectSection(SolutionItems) = preProject
+		deployment\trace-lens\deployment.yaml = deployment\trace-lens\deployment.yaml
+		deployment\trace-lens\role-binding.yaml = deployment\trace-lens\role-binding.yaml
+		deployment\trace-lens\service-account.yml = deployment\trace-lens\service-account.yml
+		deployment\trace-lens\role.yaml = deployment\trace-lens\role.yaml
+		deployment\trace-lens\service.yml = deployment\trace-lens\service.yml
 	EndProjectSection
 EndProject
 Global
@@ -1069,6 +1089,10 @@ Global
 		{0D4A88A1-8AEE-49ED-BC2E-ED68C96F60AD} = {58C59255-281C-4595-8732-808158F1DC6E}
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{47FBCB04-0C2D-453C-BE2F-7052CAC22524} = {EB3A7401-0DE3-476F-9E6F-057F1F4590FB}
+		{454652D5-E1BB-4D4B-9B21-9CEFC900C4FB} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
+		{31089E79-694B-4F45-97AF-86D34A7B231E} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
+		{6DDB9ECF-D454-4894-A262-A6BB3026E61E} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
+		{16B570BC-E293-4A19-B20E-5C97BAF8476B} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
