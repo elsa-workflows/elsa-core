@@ -176,4 +176,4 @@ app.UseWorkflowsApi();
 app.UseWorkflows();
 app.UseWorkflowsSignalRHubs();
 app.MapFallbackToPage("/_Host");
-app.Run();
+await app.RunAsync();

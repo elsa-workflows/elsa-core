@@ -47,6 +47,12 @@ internal class WorkflowInstanceImpl(
         return Task.CompletedTask;
     }
 
+    public override Task OnStopped()
+    {
+        _linkedTokenSource.Dispose();
+        return Task.CompletedTask;
+    }
+
     public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
 
     public override Task Create(ProtoCreateWorkflowInstanceRequest request, Action<ProtoCreateWorkflowInstanceResponse> respond, Action<string> onError)

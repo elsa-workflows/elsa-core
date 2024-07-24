@@ -9,7 +9,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// <summary>
 /// A scheduled recurring task.
 /// </summary>
-public class ScheduledRecurringTask : IScheduledTask
+public class ScheduledRecurringTask : IScheduledTask, IDisposable
 {
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
@@ -86,5 +86,11 @@ public class ScheduledRecurringTask : IScheduledTask
             if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
             if (!cancellationToken.IsCancellationRequested) Schedule();
         };
+    }
+
+    void IDisposable.Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+        _timer?.Dispose();
     }
 }
