@@ -1,6 +1,6 @@
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.State;
+using ProtoJson = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.Json;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 

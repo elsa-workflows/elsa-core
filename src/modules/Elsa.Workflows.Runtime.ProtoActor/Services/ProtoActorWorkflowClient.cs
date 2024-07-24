@@ -1,10 +1,13 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Proto.Cluster;
+using CreateAndRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.Messages.CreateAndRunWorkflowInstanceRequest;
+using CreateWorkflowInstanceRequest = Elsa.Workflows.Runtime.Messages.CreateWorkflowInstanceRequest;
+using CreateWorkflowInstanceResponse = Elsa.Workflows.Runtime.Messages.CreateWorkflowInstanceResponse;
+using RunWorkflowInstanceRequest = Elsa.Workflows.Runtime.Messages.RunWorkflowInstanceRequest;
+using RunWorkflowInstanceResponse = Elsa.Workflows.Runtime.Messages.RunWorkflowInstanceResponse;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Services;
 
@@ -71,7 +74,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
     public async Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
         var protoJson = _mappers.WorkflowStateJsonMapper.Map(workflowState);
-        var request = new ProtoImportWorkflowStateRequest
+        var request = new ImportWorkflowStateRequest
         {
             SerializedWorkflowState = protoJson
         };

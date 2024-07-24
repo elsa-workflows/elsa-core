@@ -44,7 +44,6 @@ public class ProtoActorWorkflowRuntimeFeature : FeatureBase
             .AddSingleton<ActivityHandleMapper>()
             .AddSingleton<WorkflowDefinitionHandleMapper>()
             .AddSingleton<ActivityIncidentMapper>()
-            .AddSingleton<ActivityIncidentStateMapper>()
             .AddSingleton<WorkflowStatusMapper>()
             .AddSingleton<WorkflowSubStatusMapper>()
             .AddSingleton<CreateWorkflowInstanceRequestMapper>()

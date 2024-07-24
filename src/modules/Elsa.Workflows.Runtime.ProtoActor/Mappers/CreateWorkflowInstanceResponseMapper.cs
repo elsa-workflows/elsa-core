@@ -1,5 +1,5 @@
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Runtime.Messages;
+using ProtoCreateWorkflowInstanceResponse = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateWorkflowInstanceResponse;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 

@@ -1,6 +1,5 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -10,6 +9,7 @@ using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Proto;
 using Proto.Cluster;
+using WorkflowDefinitionHandle = Elsa.Workflows.Models.WorkflowDefinitionHandle;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Actors;
 
@@ -53,24 +53,24 @@ internal class WorkflowInstance(
         return Task.CompletedTask;
     }
 
-    public override Task<ProtoCreateWorkflowInstanceResponse> Create(ProtoCreateWorkflowInstanceRequest request) => throw new NotImplementedException();
+    public override Task<CreateWorkflowInstanceResponse> Create(CreateWorkflowInstanceRequest request) => throw new NotImplementedException();
 
-    public override Task Create(ProtoCreateWorkflowInstanceRequest request, Action<ProtoCreateWorkflowInstanceResponse> respond, Action<string> onError)
+    public override Task Create(CreateWorkflowInstanceRequest request, Action<CreateWorkflowInstanceResponse> respond, Action<string> onError)
     {
         Context.ReenterAfter(CreateAsync(request), result =>
         {
             if (result.IsFaulted)
                 onError(result.Exception.Message);
             else
-                respond(new ProtoCreateWorkflowInstanceResponse());
+                respond(new CreateWorkflowInstanceResponse());
         });
 
         return Task.CompletedTask;
     }
 
-    public override Task<ProtoRunWorkflowInstanceResponse> Run(ProtoRunWorkflowInstanceRequest request) => throw new NotImplementedException();
+    public override Task<RunWorkflowInstanceResponse> Run(RunWorkflowInstanceRequest request) => throw new NotImplementedException();
 
-    public override Task Run(ProtoRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
+    public override Task Run(RunWorkflowInstanceRequest request, Action<RunWorkflowInstanceResponse> respond, Action<string> onError)
     {
         var mappedRequest = mappers.RunWorkflowParamsMapper.Map(request);
         Context.ReenterAfter(RunAsync(mappedRequest), async completedTask =>
@@ -87,9 +87,9 @@ internal class WorkflowInstance(
         return Task.CompletedTask;
     }
 
-    public override Task<ProtoRunWorkflowInstanceResponse> CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request) => throw new NotImplementedException();
+    public override Task<RunWorkflowInstanceResponse> CreateAndRun(CreateAndRunWorkflowInstanceRequest request) => throw new NotImplementedException();
 
-    public override Task CreateAndRun(ProtoCreateAndRunWorkflowInstanceRequest request, Action<ProtoRunWorkflowInstanceResponse> respond, Action<string> onError)
+    public override Task CreateAndRun(CreateAndRunWorkflowInstanceRequest request, Action<RunWorkflowInstanceResponse> respond, Action<string> onError)
     {
         Context.ReenterAfter(CreateAndRunAsync(request), async completedTask =>
         {
@@ -104,7 +104,7 @@ internal class WorkflowInstance(
         return Task.CompletedTask;
     }
 
-    private async Task CreateAsync(ProtoCreateWorkflowInstanceRequest request)
+    private async Task CreateAsync(CreateWorkflowInstanceRequest request)
     {
         if (_workflowInstanceId != null)
         {
@@ -119,9 +119,9 @@ internal class WorkflowInstance(
         await CreateNewWorkflowInstanceAsync(request, Context.CancellationToken);
     }
 
-    private async Task<ProtoRunWorkflowInstanceResponse> CreateAndRunAsync(ProtoCreateAndRunWorkflowInstanceRequest request)
+    private async Task<RunWorkflowInstanceResponse> CreateAndRunAsync(CreateAndRunWorkflowInstanceRequest request)
     {
-        var createRequest = new ProtoCreateWorkflowInstanceRequest
+        var createRequest = new CreateWorkflowInstanceRequest
         {
             WorkflowInstanceId = request.WorkflowInstanceId,
             CorrelationId = request.CorrelationId,
@@ -165,17 +165,17 @@ internal class WorkflowInstance(
         _workflowState = await workflowCanceler.CancelWorkflowAsync(WorkflowGraph, WorkflowState, Context.CancellationToken);
     }
 
-    public override async Task<ProtoExportWorkflowStateResponse> ExportState()
+    public override async Task<ExportWorkflowStateResponse> ExportState()
     {
         await EnsureStateAsync();
         var json = mappers.WorkflowStateJsonMapper.Map(WorkflowState);
-        return new ProtoExportWorkflowStateResponse
+        return new ExportWorkflowStateResponse
         {
             SerializedWorkflowState = json
         };
     }
 
-    public override async Task ImportState(ProtoImportWorkflowStateRequest request)
+    public override async Task ImportState(ImportWorkflowStateRequest request)
     {
         var workflowState = mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         await EnsureStateAsync();
@@ -240,7 +240,7 @@ internal class WorkflowInstance(
         WorkflowState = workflowInstance.WorkflowState;
     }
 
-    private async Task CreateNewWorkflowInstanceAsync(ProtoCreateWorkflowInstanceRequest request, CancellationToken cancellationToken)
+    private async Task CreateNewWorkflowInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken)
     {
         var workflowDefinitionHandle = mappers.WorkflowDefinitionHandleMapper.Map(request.WorkflowDefinitionHandle);
         var workflowInstanceId = request.WorkflowInstanceId;

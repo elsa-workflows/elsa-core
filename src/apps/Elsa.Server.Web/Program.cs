@@ -49,7 +49,7 @@ using StackExchange.Redis;
 // ReSharper disable RedundantAssignment
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.PostgreSql;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
