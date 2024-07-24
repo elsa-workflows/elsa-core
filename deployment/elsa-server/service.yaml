@@ -4,6 +4,7 @@ metadata:
   name: elsa-server-service
 spec:
   type: LoadBalancer
+  sessionAffinity: None
   ports:
     - port: 8001
       targetPort: 8080

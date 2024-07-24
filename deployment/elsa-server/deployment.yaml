@@ -45,13 +45,13 @@ spec:
             - name: OTEL_DOTNET_AUTO_HOME
               value: "$INSTALL_DIR"
             - name: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
-              value: "true"
+              value: "false"
             - name: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
-              value: "true"
+              value: "false"
             - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
               value: "Proto.Actor,Elsa.Workflows"
             - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
-              value: "true"
+              value: "false"
             - name: OTEL_EXPORTER_OTLP_ENDPOINT
               value: "http://trace-lens-collector:4317"
             - name: OTEL_EXPORTER_OTLP_PROTOCOL
