@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elsa-server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elsa-server
+  template:
+    metadata:
+      labels:
+        app: elsa-server
+    spec:
+      containers:
+        - name: elsa-server
+          imagePullPolicy: Never
+          image: elsa-server:latest
+          ports:
+            - containerPort: 8080
