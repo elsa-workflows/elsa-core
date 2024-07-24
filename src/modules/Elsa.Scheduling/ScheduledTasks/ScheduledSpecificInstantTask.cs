@@ -9,7 +9,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// <summary>
 /// A task that is scheduled to execute at a specific instant.
 /// </summary>
-public class ScheduledSpecificInstantTask : IScheduledTask
+public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 {
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
@@ -57,5 +57,11 @@ public class ScheduledSpecificInstantTask : IScheduledTask
             if (!cancellationToken.IsCancellationRequested)
                 await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
         };
+    }
+
+    void IDisposable.Dispose()
+    {
+        _cancellationTokenSource.Dispose();
+        _timer?.Dispose();
     }
 }
