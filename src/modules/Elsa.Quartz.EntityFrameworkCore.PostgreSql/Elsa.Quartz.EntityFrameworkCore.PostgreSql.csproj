@@ -11,18 +11,8 @@
         <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
         <PackageReference Include="Quartz.Serialization.Json" />
-    </ItemGroup>
-
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="7.0.18" />
-    </ItemGroup>
-    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="8.0.4" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
     </ItemGroup>
 
     <ItemGroup>
