@@ -51,10 +51,5 @@
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
         <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis"/>
     </ItemGroup>
-    
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
-    </ItemGroup>
 
 </Project>

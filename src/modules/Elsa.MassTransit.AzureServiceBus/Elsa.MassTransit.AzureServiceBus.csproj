@@ -13,13 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Azure.Identity" />
         <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
-    </ItemGroup>
-
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="Azure.Identity" VersionOverride="1.11.4" />
-        <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.61.3" />
+        <PackageReference Include="Microsoft.Identity.Client" />
     </ItemGroup>
 
 </Project>
