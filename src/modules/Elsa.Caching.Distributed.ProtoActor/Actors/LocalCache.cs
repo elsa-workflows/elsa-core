@@ -16,7 +16,6 @@ internal class LocalCache(IContext context, IChangeTokenSignalInvoker changeToke
     {
         if (Context.Message is ProtoTriggerChangeTokenSignal triggerChangeTokenSignal)
         {
-            Console.WriteLine($"Received: {triggerChangeTokenSignal}");
             await changeTokenSignaler.TriggerTokenAsync(triggerChangeTokenSignal.Key, Context.CancellationToken);
         }
     }
