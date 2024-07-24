@@ -13,7 +13,7 @@ using Proto.Cluster;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Actors;
 
-internal class WorkflowInstanceImpl(
+internal class WorkflowInstance(
     IContext context,
     IServiceScopeFactory scopeFactory,
     Mappers.Mappers mappers)
@@ -263,7 +263,7 @@ internal class WorkflowInstanceImpl(
         WorkflowState = workflowInstance.WorkflowState;
     }
 
-    private async Task<WorkflowInstance?> FindWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
+    private async Task<Management.Entities.WorkflowInstance?> FindWorkflowInstanceAsync(string workflowInstanceId, CancellationToken cancellationToken)
     {
         var scope = scopeFactory.CreateScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();

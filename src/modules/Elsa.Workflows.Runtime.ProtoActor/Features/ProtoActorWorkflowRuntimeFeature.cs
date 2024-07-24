@@ -60,7 +60,7 @@ public class ProtoActorWorkflowRuntimeFeature : FeatureBase
         
         // Actors.
         services
-            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
+            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstance>(sp, context)));
 
         // Distributed runtime.
         services.AddSingleton<ProtoActorWorkflowRuntime>();
