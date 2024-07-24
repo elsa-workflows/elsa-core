@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: elsa-server-deployment
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: elsa-server
