@@ -1,7 +1,7 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Models;
+using ProtoWorkflowDefinitionHandle = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.WorkflowDefinitionHandle;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 

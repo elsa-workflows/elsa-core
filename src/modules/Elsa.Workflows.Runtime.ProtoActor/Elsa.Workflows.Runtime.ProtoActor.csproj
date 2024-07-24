@@ -10,20 +10,11 @@
     <ItemGroup>
         <PackageReference Include="Google.Protobuf"/>
         <PackageReference Include="Grpc.Tools" PrivateAssets="all"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
-    </ItemGroup>
-
-    <ItemGroup Label="ProtoActor">
-        <PackageReference Include="Proto.Actor"/>
-        <PackageReference Include="Proto.Cluster"/>
         <PackageReference Include="Proto.Cluster.CodeGen"/>
-        <PackageReference Include="Proto.Cluster.TestProvider"/>
-        <PackageReference Include="Proto.OpenTelemetry"/>
-        <PackageReference Include="Proto.Persistence"/>
-        <PackageReference Include="Proto.Remote"/>
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Elsa.ProtoActor.Core\Elsa.ProtoActor.Core.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
     </ItemGroup>
 

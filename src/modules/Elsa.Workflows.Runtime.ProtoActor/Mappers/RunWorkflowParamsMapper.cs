@@ -1,13 +1,13 @@
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+using ProtoRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.RunWorkflowInstanceRequest;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 
-/// Maps <see cref="RunWorkflowParams"/> to <see cref="ProtoRunWorkflowInstanceRequest"/>.
+/// Maps <see cref="ProtoRunWorkflowInstanceRequest"/> to <see cref="RunWorkflowOptions"/>.
 public class RunWorkflowParamsMapper(ActivityHandleMapper activityHandleMapper)
 {
-    /// Maps <see cref="RunWorkflowParams"/> to <see cref="ProtoRunWorkflowInstanceRequest"/>.
+    /// Maps <see cref="ProtoRunWorkflowInstanceRequest"/> to <see cref="RunWorkflowOptions"/>.
     public RunWorkflowOptions Map(ProtoRunWorkflowInstanceRequest source)
     {
         return new()

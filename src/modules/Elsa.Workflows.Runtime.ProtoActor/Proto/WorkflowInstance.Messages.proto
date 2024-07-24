@@ -6,47 +6,82 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
 import "Shared.proto";
 
-message ProtoCreateWorkflowInstanceRequest{
-  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+message ActivityIncident {
+  string ActivityId = 1;
+  string ActivityType = 2;
+  string Message = 3;
+  optional ExceptionState Exception = 4;
+  string Timestamp = 5; // ISO 8601
+}
+
+enum WorkflowStatus {
+  WorkflowStatusRunning = 0;
+  WorkflowStatusFinished = 1;
+}
+
+enum WorkflowSubStatus {
+  WorkflowSubStatusPending = 0;
+  WorkflowSubStatusExecuting = 1;
+  WorkflowSubStatusSuspended = 2;
+  WorkflowSubStatusFinished = 3;
+  WorkflowSubStatusCancelled = 4;
+  WorkflowSubStatusFaulted = 5;
+}
+
+message ActivityHandle {
+  optional string ActivityId = 1;
+  optional string ActivityNodeId = 2;
+  optional string ActivityInstanceId = 3;
+  optional string ActivityHash = 4;
+}
+
+message WorkflowDefinitionHandle {
+  optional string DefinitionId = 1;
+  optional string VersionOptions = 2;
+  optional string DefinitionVersionId = 3;
+}
+
+message CreateWorkflowInstanceRequest{
+  WorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
   string WorkflowInstanceId = 2;
   optional string CorrelationId = 3;
   optional string ParentId = 4;
-  optional ProtoInput input = 5;
-  optional ProtoProperties properties = 6;
+  optional Input input = 5;
+  optional Properties properties = 6;
 }
 
-message ProtoCreateWorkflowInstanceResponse{
+message CreateWorkflowInstanceResponse{
 }
 
-message ProtoRunWorkflowInstanceRequest{
+message RunWorkflowInstanceRequest{
   optional string BookmarkId = 1;
-  optional ProtoActivityHandle ActivityHandle = 2;
-  optional ProtoInput input = 3;
-  optional ProtoProperties properties = 4;
+  optional ActivityHandle ActivityHandle = 2;
+  optional Input input = 3;
+  optional Properties properties = 4;
   optional string TriggerActivityId = 5;
 }
 
-message ProtoRunWorkflowInstanceResponse {
-  ProtoWorkflowStatus Status = 1;
-  ProtoWorkflowSubStatus SubStatus = 2;
-  repeated ProtoActivityIncident Incidents = 3;
+message RunWorkflowInstanceResponse {
+  WorkflowStatus Status = 1;
+  WorkflowSubStatus SubStatus = 2;
+  repeated ActivityIncident Incidents = 3;
 }
 
-message ProtoCreateAndRunWorkflowInstanceRequest{
-  ProtoWorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
+message CreateAndRunWorkflowInstanceRequest{
+  WorkflowDefinitionHandle WorkflowDefinitionHandle = 1;
   string WorkflowInstanceId = 2;
   optional string CorrelationId = 3;
   optional string ParentId = 4;
-  optional ProtoInput input = 5;
-  optional ProtoProperties properties = 6;
-  optional ProtoActivityHandle ActivityHandle = 7;
+  optional Input input = 5;
+  optional Properties properties = 6;
+  optional ActivityHandle ActivityHandle = 7;
   optional string TriggerActivityId = 8;
 }
 
-message ProtoExportWorkflowStateResponse {
-  ProtoJson SerializedWorkflowState = 1;
+message ExportWorkflowStateResponse {
+  Json SerializedWorkflowState = 1;
 }
 
-message ProtoImportWorkflowStateRequest {
-  ProtoJson SerializedWorkflowState = 1;
+message ImportWorkflowStateRequest {
+  Json SerializedWorkflowState = 1;
 }

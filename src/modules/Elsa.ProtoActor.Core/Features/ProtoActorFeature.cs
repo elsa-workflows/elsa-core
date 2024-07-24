@@ -1,14 +1,7 @@
 using Elsa.Features.Abstractions;
-using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
-using Elsa.Workflows.Features;
-using Elsa.Workflows.Runtime.Features;
-using Elsa.Workflows.Runtime.ProtoActor.Actors;
-using Elsa.Workflows.Runtime.ProtoActor.HostedServices;
-using Elsa.Workflows.Runtime.ProtoActor.Mappers;
+using Elsa.ProtoActor.HostedServices;
 using Elsa.Workflows.Runtime.ProtoActor.Services;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Proto;
@@ -21,22 +14,15 @@ using Proto.Persistence;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 
-namespace Elsa.Workflows.Runtime.ProtoActor.Features;
+namespace Elsa.ProtoActor.Features;
 
-/// Installs the Proto Actor feature to host &amp; execute workflow instances.
-[DependsOn(typeof(WorkflowsFeature))]
-[DependsOn(typeof(WorkflowRuntimeFeature))]
-public class ProtoActorFeature : FeatureBase
+/// Installs the Proto Actor feature.
+public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
     private string _clusterName = "elsa-cluster";
     private LogLevel _diagnosticsLogLevel = LogLevel.Information;
     private bool _enableMetrics;
     private bool _enableTracing;
-
-    /// <inheritdoc />
-    public ProtoActorFeature(IModule module) : base(module)
-    {
-    }
 
     /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
@@ -54,7 +40,7 @@ public class ProtoActorFeature : FeatureBase
     public Func<IServiceProvider, IProvider> PersistenceProvider { get; set; } = _ => new InMemoryProvider();
 
     /// A delegate that configures an instance of <see cref="ClusterConfig"/>. 
-    public Action<IServiceProvider, ClusterConfig>? ConfigureClusterConfig { get; set; }
+    public Func<IServiceProvider, ClusterConfig, ClusterConfig>? ConfigureClusterConfig { get; set; }
 
     public ProtoActorFeature EnableMetrics(bool value = true)
     {
@@ -77,14 +63,12 @@ public class ProtoActorFeature : FeatureBase
     /// <inheritdoc />
     public override void Configure()
     {
-        // Configure runtime with ProtoActor workflow runtime.
-        Module.Configure<WorkflowRuntimeFeature>().WorkflowRuntime = sp => ActivatorUtilities.CreateInstance<ProtoActorRuntime>(sp);
     }
 
     /// <inheritdoc />
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<WorkflowSystemHost>();
+        Module.ConfigureHostedService<StartClusterMember>();
     }
 
     /// <inheritdoc />
@@ -109,25 +93,20 @@ public class ProtoActorFeature : FeatureBase
 
             var clusterProvider = CreateClusterProvider(sp);
             var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
-            var workflowGrainProps = system.DI().PropsFor<WorkflowInstanceActor>();
-
-            if (_enableTracing)
-                workflowGrainProps = workflowGrainProps.WithTracing();
-
             var clusterConfig = ClusterConfig
-                    .Setup(_clusterName, clusterProvider, new PartitionIdentityLookup())
-                    .WithHeartbeatExpiration(TimeSpan.FromDays(1))
-                    .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
-                    .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
-                    .WithActorActivationTimeout(TimeSpan.FromHours(1))
-                    .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
-                    .WithGossipRequestTimeout(TimeSpan.FromHours(1))
-                    .WithClusterKind(WorkflowInstanceActor.Kind, workflowGrainProps)
-                ;
-
-            ConfigureClusterConfig?.Invoke(sp, clusterConfig);
+                .Setup(_clusterName, clusterProvider, new PartitionIdentityLookup())
+                .WithHeartbeatExpiration(TimeSpan.FromDays(1))
+                .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
+                .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
+                .WithActorActivationTimeout(TimeSpan.FromHours(1))
+                .WithGossipRequestTimeout(TimeSpan.FromHours(1));
+            
             var remoteConfig = ConfigureRemoteConfig(sp);
+            clusterConfig = AddVirtualActors(sp, system, clusterConfig);
 
+            if(ConfigureClusterConfig != null)
+                clusterConfig = ConfigureClusterConfig(sp, clusterConfig);
+            
             system
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
@@ -143,44 +122,42 @@ public class ProtoActorFeature : FeatureBase
         // Persistence.
         services.AddTransient(PersistenceProvider);
 
-        // Mappers.
-        services
-            .AddSingleton<Mappers.Mappers>()
-            .AddSingleton<ActivityHandleMapper>()
-            .AddSingleton<WorkflowDefinitionHandleMapper>()
-            .AddSingleton<ActivityIncidentMapper>()
-            .AddSingleton<ExceptionMapper>()
-            .AddSingleton<ActivityIncidentStateMapper>()
-            .AddSingleton<WorkflowStatusMapper>()
-            .AddSingleton<WorkflowSubStatusMapper>()
-            .AddSingleton<CreateWorkflowInstanceRequestMapper>()
-            .AddSingleton<CreateWorkflowInstanceResponseMapper>()
-            .AddSingleton<RunWorkflowInstanceRequestMapper>()
-            .AddSingleton<RunWorkflowInstanceResponseMapper>()
-            .AddSingleton<CreateAndRunWorkflowInstanceRequestMapper>()
-            .AddSingleton<RunWorkflowParamsMapper>()
-            .AddSingleton<WorkflowStateJsonMapper>();
-
-        // Mediator handlers.
-        services.AddHandlersFrom<ProtoActorFeature>();
-
         // Cluster.
         services.AddSingleton(sp => sp.GetRequiredService<ActorSystem>().Cluster());
+    }
 
-        // Actors.
-        services
-            .AddTransient(sp => new WorkflowInstanceActor((context, _) => ActivatorUtilities.CreateInstance<WorkflowInstanceImpl>(sp, context)));
+    private ClusterConfig AddVirtualActors(IServiceProvider sp, ActorSystem system, ClusterConfig clusterConfig)
+    {
+        var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
 
-        // Distributed runtime.
-        services.AddSingleton<ProtoActorRuntime>();
+        var remoteConfig = ConfigureRemoteConfig(sp);
+            
+        foreach (var virtualActorProvider in virtualActorProviders)
+        {
+            var clusterKinds = virtualActorProvider.GetClusterKinds(system).ToList();
+
+            foreach (var clusterKind in clusterKinds)
+            {
+                var kind = clusterKind;
+                if (_enableTracing)
+                    kind = kind.WithProps(props => props.WithTracing());
+
+                clusterConfig = clusterConfig.WithClusterKind(kind);
+            }
+
+            var messageDescriptors = virtualActorProvider.GetFileDescriptors().ToArray();
+            remoteConfig = remoteConfig.WithProtoMessages(messageDescriptors);
+        }
+        
+        return clusterConfig;
     }
 
     private static void SetupDefaultConfig(IServiceProvider serviceProvider, ActorSystemConfig config)
     {
     }
 
-    private static GrpcNetRemoteConfig CreateDefaultRemoteConfig(IServiceProvider serviceProvider) =>
-        GrpcNetRemoteConfig.BindToLocalhost()
-            .WithProtoMessages(SharedReflection.Descriptor)
-            .WithProtoMessages(EmptyReflection.Descriptor);
+    private static GrpcNetRemoteConfig CreateDefaultRemoteConfig(IServiceProvider serviceProvider)
+    {
+        return GrpcNetRemoteConfig.BindToLocalhost();
+    }
 }

@@ -3,6 +3,7 @@
     <ItemGroup>
         <ProjectReference Include="..\..\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.PostgreSql\Elsa.EntityFrameworkCore.PostgreSql.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
@@ -43,6 +44,7 @@
         <PackageReference Include="DistributedLock.Postgres"/>
         <PackageReference Include="DistributedLock.Redis"/>
         <PackageReference Include="FluentStorage.Azure.Blobs"/>
+        <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
         <PackageReference Include="OpenTelemetry.AutoInstrumentation"/>

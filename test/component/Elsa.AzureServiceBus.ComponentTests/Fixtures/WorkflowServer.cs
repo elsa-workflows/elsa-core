@@ -9,7 +9,6 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using FluentStorage;
@@ -81,8 +80,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ISignalManager, SignalManager>();
-            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
+            services.AddSingleton<SignalManager>();
+            services.AddSingleton<WorkflowEvents>();
             services.AddNotificationHandlersFrom<WorkflowServer>();
             services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
             services.AddAzureServiceBusTestServices();

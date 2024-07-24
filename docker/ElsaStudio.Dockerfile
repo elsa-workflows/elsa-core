@@ -20,6 +20,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-EXPOSE 80/tcp
+EXPOSE 8080/tcp
 EXPOSE 443/tcp
 ENTRYPOINT ["dotnet", "Elsa.Studio.Web.dll"]

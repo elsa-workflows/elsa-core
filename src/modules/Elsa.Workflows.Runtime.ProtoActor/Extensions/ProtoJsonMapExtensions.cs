@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Extensions;
 
 internal static class ProtoJsonMapExtensions
 {
-    public static IDictionary<string, object> Deserialize(this MapField<string, ProtoJson> input)
+    public static IDictionary<string, object> Deserialize(this MapField<string, Json> input)
     {
         var jsonSerializerOptions = new JsonSerializerOptions();
         jsonSerializerOptions.Converters.Add(new ExpandoObjectConverterFactory());
@@ -15,11 +15,11 @@ internal static class ProtoJsonMapExtensions
         return input.ToDictionary(x => x.Key, x => JsonSerializer.Deserialize<object>(x.Value.Text, jsonSerializerOptions)!);
     }
 
-    public static void Serialize(this IDictionary<string, object> input, MapField<string, ProtoJson> target)
+    public static void Serialize(this IDictionary<string, object> input, MapField<string, Json> target)
     {
         foreach (var (key, value) in input)
         {
-            target[key] = new ProtoJson
+            target[key] = new Json
             {
                 Text = JsonSerializer.Serialize(value)
             };

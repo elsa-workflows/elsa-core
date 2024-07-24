@@ -1,7 +1,8 @@
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Runtime.Messages;
-
+using ProtoCreateAndRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateAndRunWorkflowInstanceRequest;
+using ProtoInput = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.Input;
+using ProtoProperties = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.Properties;
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 
 /// <summary>

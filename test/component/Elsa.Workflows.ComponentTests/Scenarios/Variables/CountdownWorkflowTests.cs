@@ -1,5 +1,6 @@
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
@@ -48,10 +49,8 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             {
                 BookmarkId = bookmark.Id,
             };
-            runResponse = await workflowClient.RunInstanceAsync(runRequest);
-
-            if (runResponse == null)
-                break;
+            
+            await workflowClient.RunInstanceAsync(runRequest);
 
             createdBookmarks = await bookmarkStore.FindManyAsync(new BookmarkFilter
             {
