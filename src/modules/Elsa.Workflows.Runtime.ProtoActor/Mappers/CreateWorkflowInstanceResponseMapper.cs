@@ -1,5 +1,5 @@
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Runtime.Messages;
+using ProtoCreateWorkflowInstanceResponse = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.CreateWorkflowInstanceResponse;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 
@@ -8,10 +8,8 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 /// </summary>
 public class CreateWorkflowInstanceResponseMapper
 {
-    /// <summary>
     /// Maps <see cref="CreateWorkflowInstanceResponse"/> to <see cref="ProtoCreateWorkflowInstanceResponse"/>.
-    /// </summary>
-    public ProtoCreateWorkflowInstanceResponse Map(string workflowInstanceId, CreateWorkflowInstanceResponse? source)
+    public ProtoCreateWorkflowInstanceResponse Map(CreateWorkflowInstanceResponse? source)
     {
         if(source == null)
             return new();   

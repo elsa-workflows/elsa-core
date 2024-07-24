@@ -2,12 +2,14 @@ using Elsa.MassTransit.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Runtime.Notifications;
+using JetBrains.Annotations;
 using MassTransit;
 using Distributed = Elsa.MassTransit.Messages;
 
 namespace Elsa.MassTransit.Handlers;
 
 /// Represents a handler for distributed workflow definition notifications.
+[UsedImplicitly]
 public class DistributedWorkflowDefinitionNotificationsHandler(IBus bus) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,

@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.WorkflowProviders;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 public class TestWorkflowProvider : IWorkflowsProvider
 {

@@ -1,5 +1,7 @@
 using Elsa.Http.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Filters;
@@ -18,12 +20,12 @@ public class AutoUpdateTests : AppComponentTest
     private static readonly object TriggerChangeTokenSignal = new();
     private static readonly object GraphChangeTokenSignal = new();
     private readonly IMemoryCache _cache;
-    private readonly ITriggerChangeTokenSignalEvents _changeTokenEvents;
+    private readonly TriggerChangeTokenSignalEvents _changeTokenEvents;
     private readonly IWorkflowDefinitionCacheManager _definitionCacheManager;
     private readonly IHasher _hasher;
     private readonly IHttpWorkflowsCacheManager _httpCacheManager;
     private readonly IWorkflowDefinitionPublisher _publisher;
-    private readonly ISignalManager _signalManager;
+    private readonly SignalManager _signalManager;
     private readonly IWorkflowDefinitionCacheManager _workflowCacheManager;
     private string? _graphChangeToken;
 
@@ -40,19 +42,19 @@ public class AutoUpdateTests : AppComponentTest
         _httpCacheManager = Scope.ServiceProvider.GetRequiredService<IHttpWorkflowsCacheManager>();
         _workflowCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
 
-        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
-        _changeTokenEvents = Scope.ServiceProvider.GetRequiredService<ITriggerChangeTokenSignalEvents>();
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
+        _changeTokenEvents = Scope.ServiceProvider.GetRequiredService<TriggerChangeTokenSignalEvents>();
         _changeTokenEvents.ChangeTokenSignalTriggered += OnChangeTokenSignalTriggered;
     }
 
     [Fact(DisplayName = "Updating a workflow with `auto update consuming workflows` should invalidate consuming workflows from cache")]
     public async Task UpdateWorkflowWithAutoUpdate()
     {
-        //Run workflow to make sure the all required items for running the workflow are in the cache
+        // Run workflow to make sure the all required items for running the workflow are in the cache.
         var client = WorkflowServer.CreateHttpWorkflowClient();
         await client.GetStringAsync("test-cache-invalidation");
 
-        //Make sure the items are in the cache
+        // Make sure the items are in the cache.
         var hash = _httpCacheManager.ComputeBookmarkHash("/test-cache-invalidation", "get");
         Assert.True(_cache.TryGetValue($"http-workflow:{hash}", out _));
 
@@ -66,15 +68,15 @@ public class AutoUpdateTests : AppComponentTest
         var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowVersionCacheKey(ParentDefinitionVersionId);
         Assert.True(_cache.TryGetValue(parentVersionCacheKey, out _));
 
-        //Set change tokens
+        // Set change tokens.
         _httpChangeToken = _workflowCacheManager.CreateWorkflowDefinitionChangeTokenKey(ParentDefinitionId);
         _triggerChangeToken = _httpCacheManager.GetTriggerChangeTokenKey(hash);
         _graphChangeToken = _workflowCacheManager.CreateWorkflowDefinitionChangeTokenKey(ParentDefinitionId);
 
-        //(Act) Save the draft version of the child workflow and update the references 
+        // (Act) Save the draft version of the child workflow and update the references.
         await _publisher.PublishAsync(ChildDefinitionId);
 
-        //Wait till the notifications for updating the cache have been send and check the cache.
+        // Wait until the notifications for updating the cache have been send and check the cache.
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(HttpChangeTokenSignal);
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(TriggerChangeTokenSignal);
         await _signalManager.WaitAsync<TriggerChangeTokenSignalEventArgs>(GraphChangeTokenSignal);
@@ -86,19 +88,8 @@ public class AutoUpdateTests : AppComponentTest
 
     private void OnChangeTokenSignalTriggered(object? sender, TriggerChangeTokenSignalEventArgs args)
     {
-        if (args.Key == _httpChangeToken)
-        {
-            _signalManager.Trigger(HttpChangeTokenSignal, args);
-        }
-
-        if (args.Key == _triggerChangeToken)
-        {
-            _signalManager.Trigger(TriggerChangeTokenSignal, args);
-        }
-
-        if (args.Key == _graphChangeToken)
-        {
-            _signalManager.Trigger(GraphChangeTokenSignal, args);
-        }
+        if (args.Key == _httpChangeToken) _signalManager.Trigger(HttpChangeTokenSignal, args);
+        if (args.Key == _triggerChangeToken) _signalManager.Trigger(TriggerChangeTokenSignal, args);
+        if (args.Key == _graphChangeToken) _signalManager.Trigger(GraphChangeTokenSignal, args);
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Elsa.Workflows.ComponentTests.Helpers.Services;
+﻿namespace Elsa.Testing.Shared.Services;
 
 public static class StaticValueHolder
 {

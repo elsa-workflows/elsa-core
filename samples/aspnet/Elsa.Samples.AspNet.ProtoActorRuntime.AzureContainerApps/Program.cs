@@ -47,27 +47,29 @@ services
             // Use EF core for workflow definitions and instances.
             management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
         })
+        // Configure Proto.Actor.
+        .UseProtoActor(protoActor =>
+        {
+            var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
+
+            protoActor.CreateClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
+
+            protoActor.ConfigureRemoteConfig = _ => GrpcNetRemoteConfig
+                .BindTo(advertisedHost)
+                .WithProtoMessages(EmptyReflection.Descriptor)
+                .WithProtoMessages(SharedReflection.Descriptor)
+                .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                .WithRemoteDiagnostics(true); // required by proto.actor dashboard
+
+            protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+        })
         .UseWorkflowRuntime(runtime =>
         {
             // Use EF core for triggers and bookmarks.
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 
             // Use Proto.Actor for workflow execution.
-            runtime.UseProtoActor(protoActor =>
-            {
-                var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
-
-                protoActor.CreateClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
-
-                protoActor.ConfigureRemoteConfig = _ => GrpcNetRemoteConfig
-                    .BindTo(advertisedHost)
-                    .WithProtoMessages(EmptyReflection.Descriptor)
-                    .WithProtoMessages(SharedReflection.Descriptor)
-                    .WithLogLevelForDeserializationErrors(LogLevel.Critical)
-                    .WithRemoteDiagnostics(true); // required by proto.actor dashboard
-
-                protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-            });
+            runtime.UseProtoActor();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseScheduling()

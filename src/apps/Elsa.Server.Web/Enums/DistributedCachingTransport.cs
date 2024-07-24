@@ -7,5 +7,6 @@ public enum DistributedCachingTransport
 {
     None,
     Memory,
-    MassTransit
+    MassTransit,
+    ProtoActor
 }

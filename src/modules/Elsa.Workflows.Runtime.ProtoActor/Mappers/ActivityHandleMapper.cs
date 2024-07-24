@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.ProtoActor.Extensions;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+using ProtoActivityHandle = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.ActivityHandle;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;
 

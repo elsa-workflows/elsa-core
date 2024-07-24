@@ -7,7 +7,7 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Services;
 /// <summary>
 /// Represents a Proto.Actor implementation of the workflows runtime.
 /// </summary>
-public class ProtoActorRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator) : IWorkflowRuntime
+public class ProtoActorWorkflowRuntime(IServiceProvider serviceProvider, IIdentityGenerator identityGenerator) : IWorkflowRuntime
 {
     /// <inheritdoc />
     public async ValueTask<IWorkflowClient> CreateClientAsync(CancellationToken cancellationToken = default)

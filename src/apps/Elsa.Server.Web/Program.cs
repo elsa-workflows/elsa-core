@@ -28,8 +28,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
-using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
@@ -39,13 +37,16 @@ using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using Proto.Cluster.Kubernetes;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
+using Proto.Remote;
+using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 // ReSharper disable RedundantAssignment
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
-const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.Sqlite;
+const SqlDatabaseProvider sqlDatabaseProvider = SqlDatabaseProvider.PostgreSql;
 const bool useHangfire = false;
 const bool useQuartz = true;
 const bool useMassTransit = true;
@@ -57,7 +58,7 @@ const bool useAzureServiceBusModule = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
-const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
+const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 
@@ -179,6 +180,34 @@ services
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
             })
+            .UseProtoActor(proto =>
+            {
+                proto
+                    .EnableMetrics()
+                    .EnableTracing();
+
+                proto.PersistenceProvider = _ =>
+                {
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
+                        return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
+                    return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+                };
+
+                if (configuration["KUBERNETES_SERVICE_HOST"] != null)
+                {
+                    Console.WriteLine("KUBERNETES_SERVICE_HOST: {0}", configuration["KUBERNETES_SERVICE_HOST"]);
+                    var kubernetesConfig = new KubernetesProviderConfig();
+                    var clusterProvider = new KubernetesProvider(kubernetesConfig);
+
+                    var remoteConfig = GrpcNetRemoteConfig
+                        .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
+                        .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                        .WithRemoteDiagnostics(true);
+
+                    proto.CreateClusterProvider = _ => clusterProvider;
+                    proto.ConfigureRemoteConfig = _ => remoteConfig;
+                }
+            })
             .UseWorkflowRuntime(runtime =>
             {
                 if (persistenceProvider == PersistenceProvider.MongoDb)
@@ -207,19 +236,7 @@ services
 
                 if (workflowRuntime == WorkflowRuntime.ProtoActor)
                 {
-                    runtime.UseProtoActor(proto =>
-                    {
-                        proto
-                            .EnableMetrics()
-                            .EnableTracing();
-
-                        proto.PersistenceProvider = _ =>
-                        {
-                            if (sqlDatabaseProvider == SqlDatabaseProvider.SqlServer)
-                                return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
-                            return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-                        };
-                    });
+                    runtime.UseProtoActor();
                 }
 
                 if (useMassTransit)
@@ -388,6 +405,7 @@ services
             elsa.UseDistributedCache(distributedCaching =>
             {
                 if (distributedCachingTransport == DistributedCachingTransport.MassTransit) distributedCaching.UseMassTransit();
+                if (distributedCachingTransport == DistributedCachingTransport.ProtoActor) distributedCaching.UseProtoActor();
             });
         }
 

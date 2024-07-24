@@ -1,4 +1,5 @@
 using Elsa.Mediator.Contracts;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Notifications;
 using JetBrains.Annotations;
@@ -6,7 +7,7 @@ using JetBrains.Annotations;
 namespace Elsa.Testing.Shared.Handlers;
 
 [UsedImplicitly]
-public class WorkflowEventHandlers(IWorkflowEvents workflowEvents) : 
+public class WorkflowEventHandlers(WorkflowEvents workflowEvents) : 
     INotificationHandler<WorkflowFinished>,
     INotificationHandler<WorkflowInstanceSaved>
 {
