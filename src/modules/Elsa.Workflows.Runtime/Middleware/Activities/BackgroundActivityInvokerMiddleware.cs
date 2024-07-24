@@ -5,7 +5,6 @@ using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Stimuli;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;

@@ -1,4 +1,3 @@
-using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;

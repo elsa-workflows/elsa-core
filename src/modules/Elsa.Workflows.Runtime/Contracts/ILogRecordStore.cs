@@ -1,6 +1,6 @@
 using Elsa.Common.Contracts;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// Represents a store of log records.
 public interface ILogRecordStore<in T> where T : ILogRecord

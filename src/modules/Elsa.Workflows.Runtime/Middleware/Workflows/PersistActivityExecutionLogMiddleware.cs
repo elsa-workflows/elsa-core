@@ -9,12 +9,7 @@ public class PersistActivityExecutionLogMiddleware(WorkflowMiddlewareDelegate ne
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        // Invoke next middleware.
         await Next(context);
-
-        // Get the managed cancellation token.
-        var cancellationToken = context.CancellationTokens.SystemCancellationToken;
-
-        await sink.PersistExecutionLogsAsync(context, cancellationToken);
+        await sink.PersistExecutionLogsAsync(context);
     }
 }

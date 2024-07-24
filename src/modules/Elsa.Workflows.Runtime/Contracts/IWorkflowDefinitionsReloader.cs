@@ -1,4 +1,4 @@
-﻿namespace Elsa.Workflows.Runtime.Contracts;
+﻿namespace Elsa.Workflows.Runtime;
 
 /// Reloads all workflows by invoking the populator.
 public interface IWorkflowDefinitionsReloader

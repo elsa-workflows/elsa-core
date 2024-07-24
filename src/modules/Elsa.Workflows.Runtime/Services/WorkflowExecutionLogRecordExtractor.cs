@@ -1,7 +1,7 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowExecutionLogRecordExtractor(IIdentityGenerator identityGenerator) : ILogRecordExtractor<WorkflowExecutionLogRecord>

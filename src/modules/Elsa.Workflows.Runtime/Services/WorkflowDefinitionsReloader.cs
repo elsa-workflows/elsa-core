@@ -1,9 +1,8 @@
 ﻿using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Notifications;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class WorkflowDefinitionsReloader(IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, INotificationSender notificationSender) : IWorkflowDefinitionsReloader
