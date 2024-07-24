@@ -44,6 +44,7 @@
         <PackageReference Include="DistributedLock.Postgres"/>
         <PackageReference Include="DistributedLock.Redis"/>
         <PackageReference Include="FluentStorage.Azure.Blobs"/>
+        <PackageReference Include="Proto.Cluster.Kubernetes" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
         <PackageReference Include="OpenTelemetry.AutoInstrumentation"/>

@@ -34,13 +34,17 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
+using k8s;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using Proto.Cluster.Kubernetes;
 using Proto.Persistence.Sqlite;
 using Proto.Persistence.SqlServer;
+using Proto.Remote;
+using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
 // ReSharper disable RedundantAssignment
 
@@ -191,6 +195,20 @@ services
                         return new SqlServerProvider(sqlServerConnectionString!, true, "", "proto_actor");
                     return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
                 };
+
+                if (configuration["KUBERNETES_SERVICE_HOST"] != null)
+                {
+                    var kubernetesConfig = new KubernetesProviderConfig();
+                    var clusterProvider = new KubernetesProvider(kubernetesConfig);
+
+                    var remoteConfig = GrpcNetRemoteConfig
+                        .BindToAllInterfaces(advertisedHost: configuration["ProtoActor:AdvertisedHost"]) // Environment variable to be provided by Kubernetes using pod.status.podIP.
+                        .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                        .WithRemoteDiagnostics(true);
+
+                    proto.CreateClusterProvider = _ => clusterProvider;
+                    proto.ConfigureRemoteConfig = _ => remoteConfig;
+                }
             })
             .UseWorkflowRuntime(runtime =>
             {

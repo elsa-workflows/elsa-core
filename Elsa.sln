@@ -383,6 +383,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deployment", "deployment", 
 	ProjectSection(SolutionItems) = preProject
 		deployment\deployment.yaml = deployment\deployment.yaml
 		deployment\service.yaml = deployment\service.yaml
+		deployment\role.yaml = deployment\role.yaml
+		deployment\service-account.yml = deployment\service-account.yml
+		deployment\role-binding.yaml = deployment\role-binding.yaml
 	EndProjectSection
 EndProject
 Global
