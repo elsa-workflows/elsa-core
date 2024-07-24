@@ -23,4 +23,4 @@ app.UseBlazorFrameworkFiles();
 app.UseRouting();
 app.UseStaticFiles();
 app.MapFallbackToPage("/_Host");
-app.Run();
+await app.RunAsync();

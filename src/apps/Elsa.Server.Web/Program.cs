@@ -469,7 +469,7 @@ if (useSignalR)
 }
 
 // Run.
-app.Run();
+await app.RunAsync();
 
 /// The main entry point for the application made public for end to end testing.
 [UsedImplicitly]
