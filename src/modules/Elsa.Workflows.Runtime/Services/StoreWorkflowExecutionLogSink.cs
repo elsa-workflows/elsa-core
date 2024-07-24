@@ -8,12 +8,12 @@ namespace Elsa.Workflows.Runtime.Services;
 /// <summary>
 /// This implementation saves <see cref="WorkflowExecutionLogRecord"/> directly through the store.
 /// </summary>
-public class StoreWorkflowExecutionLogSink(IWorkflowExecutionLogStore store, IWorkflowExecutionLogRecordExtractor extractor, INotificationSender notificationSender) : IWorkflowExecutionLogSink
+public class StoreWorkflowExecutionLogSink(IWorkflowExecutionLogStore store, ILogRecordExtractor<WorkflowExecutionLogRecord> extractor, INotificationSender notificationSender) : ILogRecordSink<WorkflowExecutionLogRecord>
 {
     /// <inheritdoc />
     public async Task PersistExecutionLogsAsync(WorkflowExecutionContext context, CancellationToken cancellationToken)
     {
-        var records = extractor.ExtractWorkflowExecutionLogs(context).ToList();
+        var records = extractor.ExtractLogRecords(context).ToList();
         await store.AddManyAsync(records, context.CancellationTokens.SystemCancellationToken);
         await notificationSender.SendAsync(new WorkflowExecutionLogUpdated(context), context.CancellationTokens.SystemCancellationToken);
     }
