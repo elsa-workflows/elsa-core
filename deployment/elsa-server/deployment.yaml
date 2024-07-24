@@ -26,19 +26,35 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
-            - name: "OTEL_DOTNET_AUTO_HOME"
+            - name: CONNECTIONSTRINGS__POSTGRESQL
+              value: "Server=postgres;Username=elsa;Database=elsa;Port=5432;Password=elsa;SSLMode=Prefer;MaxPoolSize=2000;Timeout=60"
+            - name: COR_ENABLE_PROFILING
+              value: "1"
+            - name: COR_PROFILER
+              value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+            - name: CORECLR_PROFILER_PATH
+              value: "$INSTALL_DIR/osx-x64/OpenTelemetry.AutoInstrumentation.Native.dylib"
+            - name: DOTNET_ADDITIONAL_DEPS
+              value: "$INSTALL_DIR/AdditionalDeps"
+            - name: DOTNET_EnableDiagnostics
+              value: "1"
+            - name: DOTNET_SHARED_STORE
+              value: "$INSTALL_DIR/store"
+            - name: DOTNET_STARTUP_HOOKS
+              value: "OpenTelemetry.AutoInstrumentation.StartupHook"
+            - name: OTEL_DOTNET_AUTO_HOME
               value: "$INSTALL_DIR"
-            - name: "OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED"
+            - name: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
               value: "true"
-            - name: "OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED"
+            - name: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
               value: "true"
-            - name: "OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES"
+            - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
               value: "Proto.Actor,Elsa.Workflows"
-            - name: "OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED"
+            - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
               value: "true"
-            - name: "OTEL_EXPORTER_OTLP_ENDPOINT"
-              value: "http://trace-lens:4317"
-            - name: "OTEL_EXPORTER_OTLP_PROTOCOL"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://trace-lens-collector:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
               value: "grpc"
-            - name: "OTEL_RESOURCE_ATTRIBUTES"
-              value: "service.name=Elsa Server,service.version=3.3.0,service.instance.id=instance-123,deployment.environment=development"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=Elsa Server,service.version=3.3.0"
