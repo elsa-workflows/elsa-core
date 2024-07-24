@@ -21,6 +21,9 @@
         <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
         <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
 
+        <NuGetAudit>enable</NuGetAudit>
+        <NuGetAuditMode>all</NuGetAuditMode>
+
         <!-- https://github.com/dotnet/sourcelink -->
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>

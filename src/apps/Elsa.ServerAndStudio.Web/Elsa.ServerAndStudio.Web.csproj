@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+        <TargetFramework>net8.0</TargetFramework>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
@@ -38,11 +38,6 @@
     <ItemGroup>
         <PackageReference Include="Elsa.Studio"/>
         <PackageReference Include="Elsa.Studio.Login.BlazorWasm"/>
-    </ItemGroup>
-
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
     </ItemGroup>
 
 </Project>

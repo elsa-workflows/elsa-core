@@ -12,11 +12,6 @@
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
     </ItemGroup>
 
-    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
-    </ItemGroup>
-    
     <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
