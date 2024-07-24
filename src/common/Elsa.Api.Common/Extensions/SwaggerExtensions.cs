@@ -41,10 +41,7 @@ namespace Elsa.Extensions
         /// <summary>
         /// Adds middleware to enable the Swagger UI at '/swagger'
         /// </summary>
-        public static IApplicationBuilder UseSwaggerUI(this IApplicationBuilder app)
-        {
-            return app.UseSwaggerGen();
-        }
+        public static IApplicationBuilder UseSwaggerUI(this IApplicationBuilder app) => app.UseSwaggerGen();
 
     }
 }

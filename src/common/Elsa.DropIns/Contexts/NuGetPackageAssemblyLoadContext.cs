@@ -24,8 +24,5 @@ internal sealed class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
         }
     }
 
-    protected override Assembly? Load(AssemblyName assemblyName)
-    {
-        return _loadedAssemblies.GetValueOrDefault(assemblyName.FullName);
-    }
+    protected override Assembly? Load(AssemblyName assemblyName) => _loadedAssemblies.GetValueOrDefault(assemblyName.FullName);
 }

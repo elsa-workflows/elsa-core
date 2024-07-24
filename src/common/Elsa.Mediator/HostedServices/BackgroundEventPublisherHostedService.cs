@@ -9,23 +9,17 @@ namespace Elsa.Mediator.HostedServices;
 /// <summary>
 /// Continuously reads from a channel to which notifications can be sent, publishing each received notification.
 /// </summary>
-public class BackgroundEventPublisherHostedService : BackgroundService
+/// <inheritdoc />
+public class BackgroundEventPublisherHostedService(int workerCount,
+    INotificationsChannel notificationsChannel, 
+    IServiceScopeFactory scopeFactory,
+    ILogger<BackgroundEventPublisherHostedService> logger) : BackgroundService
 {
-    private readonly int _workerCount;
-    private readonly INotificationsChannel _notificationsChannel;
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly List<Channel<INotification>> _outputs;
-    private readonly ILogger _logger;
-
-    /// <inheritdoc />
-    public BackgroundEventPublisherHostedService(int workerCount, INotificationsChannel notificationsChannel, IServiceScopeFactory scopeFactory, ILogger<BackgroundEventPublisherHostedService> logger)
-    {
-        _workerCount = workerCount;
-        _notificationsChannel = notificationsChannel;
-        _scopeFactory = scopeFactory;
-        _logger = logger;
-        _outputs = new List<Channel<INotification>>(workerCount);
-    }
+    private readonly int _workerCount = workerCount;
+    private readonly INotificationsChannel _notificationsChannel = notificationsChannel;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly List<Channel<INotification>> _outputs = new List<Channel<INotification>>(workerCount);
+    private readonly ILogger _logger = logger;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)

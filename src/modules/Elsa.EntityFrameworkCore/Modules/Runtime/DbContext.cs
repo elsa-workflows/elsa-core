@@ -8,13 +8,10 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// <summary>
 /// DB context for the runtime module.
 /// </summary>
-public class RuntimeElsaDbContext : ElsaDbContextBase
+/// <inheritdoc />
+public class RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : ElsaDbContextBase(options, serviceProvider)
 {
-    /// <inheritdoc />
-    public RuntimeElsaDbContext(DbContextOptions<RuntimeElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
-    {
-    }
-    
+
     /// The workflow triggers.
     public DbSet<StoredTrigger> Triggers { get; set; } = default!;
     

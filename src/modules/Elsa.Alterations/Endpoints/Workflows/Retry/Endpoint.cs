@@ -15,20 +15,13 @@ namespace Elsa.Alterations.Endpoints.Workflows.Retry;
 /// <summary>
 /// Retries the specified workflow instances.
 /// </summary>
+/// <inheritdoc />
 [PublicAPI]
-public class Retry : ElsaEndpoint<Request, Response>
+public class Retry(IAlterationRunner alterationRunner, IWorkflowDispatcher workflowDispatcher, IWorkflowInstanceStore workflowInstanceStore) : ElsaEndpoint<Request, Response>
 {
-    private readonly IAlterationRunner _alterationRunner;
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-
-    /// <inheritdoc />
-    public Retry(IAlterationRunner alterationRunner, IWorkflowDispatcher workflowDispatcher, IWorkflowInstanceStore workflowInstanceStore)
-    {
-        _alterationRunner = alterationRunner;
-        _workflowDispatcher = workflowDispatcher;
-        _workflowInstanceStore = workflowInstanceStore;
-    }
+    private readonly IAlterationRunner _alterationRunner = alterationRunner;
+    private readonly IWorkflowDispatcher _workflowDispatcher = workflowDispatcher;
+    private readonly IWorkflowInstanceStore _workflowInstanceStore = workflowInstanceStore;
 
     /// <inheritdoc />
     public override void Configure()
@@ -42,7 +35,7 @@ public class Retry : ElsaEndpoint<Request, Response>
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
         var allResults = new List<RunAlterationsResult>();
-        
+
         // Load each workflow instance.
         var workflowInstances = (await _workflowInstanceStore.FindManyAsync(new WorkflowInstanceFilter { Ids = request.WorkflowInstanceIds }, cancellationToken)).ToList();
 
@@ -51,15 +44,15 @@ public class Retry : ElsaEndpoint<Request, Response>
             // Setup an alteration plan.
             var activityIds = GetActivityIds(request, workflowInstance).ToList();
             var alterations = activityIds.Select(activityId => new ScheduleActivity { ActivityId = activityId }).Cast<IAlteration>().ToList();
-            
+
             // Run the plan.
             var results = await _alterationRunner.RunAsync(request.WorkflowInstanceIds, alterations, cancellationToken);
             allResults.AddRange(results);
-            
+
             // Schedule updated workflow.
             await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(workflowInstance.Id), cancellationToken: cancellationToken);
         }
-        
+
         // Write response.
         var response = new Response(allResults);
         await SendOkAsync(response, cancellationToken);

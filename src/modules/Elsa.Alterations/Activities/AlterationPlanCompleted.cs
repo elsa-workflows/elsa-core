@@ -18,10 +18,8 @@ public class AlterationPlanCompleted : Trigger
 {
     /// <inheritdoc />
     public AlterationPlanCompleted(Variable<string> planId, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
-    {
-        PlanId = new Input<string>(planId);
-    }
-    
+        => PlanId = new Input<string>(planId);
+
     /// <inheritdoc />
     public AlterationPlanCompleted([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {

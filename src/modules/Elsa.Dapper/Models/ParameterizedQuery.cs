@@ -7,21 +7,17 @@ namespace Elsa.Dapper.Models;
 /// <summary>
 /// Represents a parameterized SQL query.
 /// </summary>
-public class ParameterizedQuery
+/// <remarks>
+/// Initializes a new instance of the <see cref="ParameterizedQuery"/> class.
+/// </remarks>
+/// <param name="dialect">The SQL dialect.</param>
+public class ParameterizedQuery(ISqlDialect dialect)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ParameterizedQuery"/> class.
-    /// </summary>
-    /// <param name="dialect">The SQL dialect.</param>
-    public ParameterizedQuery(ISqlDialect dialect)
-    {
-        Dialect = dialect;
-    }
-    
+
     /// <summary>
     /// Gets the SQL dialect.
     /// </summary>
-    public ISqlDialect Dialect { get; }
+    public ISqlDialect Dialect { get; } = dialect;
 
     /// <summary>A <see cref="StringBuilder"/> containing the SQL query.</summary>
     public StringBuilder Sql { get; } = new();

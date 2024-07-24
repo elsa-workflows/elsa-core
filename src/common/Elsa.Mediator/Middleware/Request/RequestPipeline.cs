@@ -3,15 +3,13 @@ using Elsa.Mediator.Middleware.Request.Contracts;
 namespace Elsa.Mediator.Middleware.Request;
 
 /// <inheritdoc />
-public class RequestPipeline : IRequestPipeline
+/// <summary>
+/// Initializes a new instance of the <see cref="RequestPipeline"/> class.
+/// </summary>
+public class RequestPipeline(IServiceProvider serviceProvider) : IRequestPipeline
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
     private RequestMiddlewareDelegate? _pipeline;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RequestPipeline"/> class.
-    /// </summary>
-    public RequestPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
     /// <inheritdoc />
     public RequestMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();

@@ -12,20 +12,11 @@ public class CacheManager(IMemoryCache memoryCache, IChangeTokenSignaler changeT
     public IOptions<CachingOptions> CachingOptions => options;
 
     /// <inheritdoc />
-    public IChangeToken GetToken(string key)
-    {
-        return changeTokenSignaler.GetToken(key);
-    }
+    public IChangeToken GetToken(string key) => changeTokenSignaler.GetToken(key);
 
     /// <inheritdoc />
-    public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
-    {
-        return changeTokenSignaler.TriggerTokenAsync(key, cancellationToken);
-    }
-    
+    public ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default) => changeTokenSignaler.TriggerTokenAsync(key, cancellationToken);
+
     /// <inheritdoc />
-    public async Task<TItem?> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory)
-    {
-        return await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry));
-    }
+    public async Task<TItem?> GetOrCreateAsync<TItem>(object key, Func<ICacheEntry, Task<TItem>> factory) => await memoryCache.GetOrCreateAsync(key, async entry => await factory(entry));
 }

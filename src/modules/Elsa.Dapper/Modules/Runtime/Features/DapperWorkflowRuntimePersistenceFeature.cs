@@ -15,14 +15,11 @@ namespace Elsa.Dapper.Modules.Runtime.Features;
 /// <summary>
 /// Configures the default workflow runtime to use Dapper persistence providers.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(DapperFeature))]
 [PublicAPI]
-public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
+public class DapperWorkflowRuntimePersistenceFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperWorkflowRuntimePersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()

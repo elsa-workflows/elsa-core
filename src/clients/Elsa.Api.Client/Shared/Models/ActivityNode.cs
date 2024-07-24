@@ -19,12 +19,9 @@ public class ActivityNode
         Activity = activity;
         NodeId = activity.GetNodeId();
     }
-    
-    public ActivityNode(JsonObject activity, string port) : this(activity)
-    {
-        Port = port;
-    }
-    
+
+    public ActivityNode(JsonObject activity, string port) : this(activity) => Port = port;
+
     /// <summary>
     /// Gets the activity.
     /// </summary>

@@ -45,10 +45,7 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     private void ApplyFilter(ParameterizedQuery query, BookmarkFilter filter)
     {
@@ -67,9 +64,8 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
     private IEnumerable<StoredBookmark> Map(IEnumerable<StoredBookmarkRecord> source) => source.Select(Map);
     private IEnumerable<StoredBookmarkRecord> Map(IEnumerable<StoredBookmark> source) => source.Select(Map);
 
-    private StoredBookmarkRecord Map(StoredBookmark source)
-    {
-        return new StoredBookmarkRecord
+    private StoredBookmarkRecord Map(StoredBookmark source) =>
+        new StoredBookmarkRecord
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
@@ -82,11 +78,9 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId
         };
-    }
 
-    private StoredBookmark Map(StoredBookmarkRecord source)
-    {
-        return new StoredBookmark
+    private StoredBookmark Map(StoredBookmarkRecord source) =>
+        new StoredBookmark
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
@@ -99,5 +93,4 @@ internal class DapperBookmarkStore(Store<StoredBookmarkRecord> store, IPayloadSe
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId
         };
-    }
 }

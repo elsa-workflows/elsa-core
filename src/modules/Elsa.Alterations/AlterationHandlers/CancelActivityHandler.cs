@@ -44,10 +44,7 @@ public class CancelActivityHandler : AlterationHandlerBase<CancelActivity>
             await CancelAsync(activityExecutionContext);
     }
 
-    private async Task CancelAsync(ActivityExecutionContext activityExecutionContext)
-    {
-        await activityExecutionContext.CancelActivityAsync();
-    }
+    private async Task CancelAsync(ActivityExecutionContext activityExecutionContext) => await activityExecutionContext.CancelActivityAsync();
 
     private static IEnumerable<ActivityExecutionContext> GetActivityExecutionContexts(AlterationContext context, CancelActivity alteration)
     {

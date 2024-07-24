@@ -8,18 +8,13 @@ namespace Elsa.Elasticsearch.Strategies;
 /// <summary>
 /// Returns an index name based on the specified alias, current year and month.
 /// </summary>
+/// <remarks>
+/// Constructor.
+/// </remarks>
 [PublicAPI]
-public class YearAndMonthNaming : IIndexNamingStrategy
+public class YearAndMonthNaming(ISystemClock systemClock) : IIndexNamingStrategy
 {
-    private readonly ISystemClock _systemClock;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public YearAndMonthNaming(ISystemClock systemClock)
-    {
-        _systemClock = systemClock;
-    }
+    private readonly ISystemClock _systemClock = systemClock;
 
     /// <inheritdoc />
     public string GenerateName(string aliasName)

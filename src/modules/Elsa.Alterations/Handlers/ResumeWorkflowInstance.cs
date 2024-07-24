@@ -11,18 +11,13 @@ namespace Elsa.Alterations.Handlers;
 /// <summary>
 /// Resumes a workflow instance when an alteration job has been completed and the workflow contains scheduled work.
 /// </summary>
+/// <remarks>
+/// Initializes a new instance of the <see cref="ResumeWorkflowInstance"/> class.
+/// </remarks>
 [UsedImplicitly]
-public class ResumeWorkflowInstance : INotificationHandler<AlterationJobCompleted>
+public class ResumeWorkflowInstance(IWorkflowDispatcher workflowDispatcher) : INotificationHandler<AlterationJobCompleted>
 {
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ResumeWorkflowInstance"/> class.
-    /// </summary>
-    public ResumeWorkflowInstance(IWorkflowDispatcher workflowDispatcher)
-    {
-        _workflowDispatcher = workflowDispatcher;
-    }
+    private readonly IWorkflowDispatcher _workflowDispatcher = workflowDispatcher;
 
     /// <inheritdoc />
     public async Task HandleAsync(AlterationJobCompleted notification, CancellationToken cancellationToken)

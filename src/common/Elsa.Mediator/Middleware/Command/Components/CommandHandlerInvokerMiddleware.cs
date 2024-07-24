@@ -7,21 +7,16 @@ namespace Elsa.Mediator.Middleware.Command.Components;
 /// <summary>
 /// A command middleware that invokes the command.
 /// </summary>
-public class CommandHandlerInvokerMiddleware : ICommandMiddleware
+/// <remarks>
+/// Constructor.
+/// </remarks>
+public class CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next,
+    IEnumerable<ICommandHandler> commandHandlers,
+    IServiceProvider serviceProvider) : ICommandMiddleware
 {
-    private readonly CommandMiddlewareDelegate _next;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IEnumerable<ICommandHandler> _commandHandlers;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public CommandHandlerInvokerMiddleware(CommandMiddlewareDelegate next, IEnumerable<ICommandHandler> commandHandlers, IServiceProvider serviceProvider)
-    {
-        _next = next;
-        _serviceProvider = serviceProvider;
-        _commandHandlers = commandHandlers.DistinctBy(x => x.GetType()).ToList();
-    }
+    private readonly CommandMiddlewareDelegate _next = next;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly IEnumerable<ICommandHandler> _commandHandlers = commandHandlers.DistinctBy(x => x.GetType()).ToList();
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(CommandContext context)

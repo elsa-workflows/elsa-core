@@ -33,10 +33,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The record, if found.</returns>
-    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
-    {
-        return await FindAsync(filter, false, cancellationToken);
-    }
+    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default) => await FindAsync(filter, false, cancellationToken);
 
     /// <summary>
     /// Finds a single record.
@@ -45,10 +42,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The record, if found.</returns>
-    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
-    {
-        return await FindAsync(filter, null, null, tenantAgnostic, cancellationToken);
-    }
+    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic = false, CancellationToken cancellationToken = default) => await FindAsync(filter, null, null, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Finds a single record using the specified order key selector and order direction.
@@ -58,10 +52,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The record, if found.</returns>
-    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindAsync(filter, orderKey, orderDirection, false, cancellationToken);
-    }
+    public async Task<T?> FindAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) => await FindAsync(filter, orderKey, orderDirection, false, cancellationToken);
 
     /// <summary>
     /// Finds a single record using the specified order key selector and order direction.
@@ -93,11 +84,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> ListAsync(PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(null, pageArgs, orderKey, orderDirection, false, cancellationToken);
-    }
-    
+    public async Task<Page<T>> ListAsync(PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) => await FindManyAsync(null, pageArgs, orderKey, orderDirection, false, cancellationToken);
+
     /// <summary>
     /// Returns a page of records.
     /// </summary>
@@ -107,10 +95,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
-    }
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) => await FindManyAsync(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
 
     /// <summary>
     /// Returns a page of records.
@@ -122,10 +107,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<T>(filter, pageArgs, orderKey, orderDirection, tenantAgnostic, cancellationToken);
-    }
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default) =>
+        await FindManyAsync<T>(filter, pageArgs, orderKey, orderDirection, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -135,10 +118,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderFields">The fields by which to order the results.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(filter, pageArgs, orderFields, false, cancellationToken);
-    }
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default) =>
+        await FindManyAsync(filter, pageArgs, orderFields, false, cancellationToken);
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -149,10 +130,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<T>(filter, pageArgs, orderFields, tenantAgnostic, cancellationToken);
-    }
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default) =>
+        await FindManyAsync<T>(filter, pageArgs, orderFields, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -164,10 +143,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<TShape>(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
-    }
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) =>
+        await FindManyAsync<TShape>(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -180,13 +157,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<TShape>(filter, pageArgs, new[]
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default) =>
+        await FindManyAsync<TShape>(filter, pageArgs, new[]
         {
             new OrderField(orderKey, orderDirection)
         }, tenantAgnostic, cancellationToken);
-    }
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -197,10 +172,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<TShape>(filter, pageArgs, orderFields, false, cancellationToken);
-    }
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default) => 
+        await FindManyAsync<TShape>(filter, pageArgs, orderFields, false, cancellationToken);
 
     /// <summary>
     /// Returns a page of records in the specified shape.
@@ -234,10 +207,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(filter, false, cancellationToken);
-    }
+    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default) => await FindManyAsync(filter, false, cancellationToken);
 
     /// <summary>
     /// Returns a set of records.
@@ -246,10 +216,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<T>(filter, tenantAgnostic, cancellationToken);
-    }
+    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic = false, CancellationToken cancellationToken = default) => await FindManyAsync<T>(filter, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Returns a set of records in the specified shape.
@@ -258,10 +225,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<TShape>(filter, false, cancellationToken);
-    }
+    public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default) => await FindManyAsync<TShape>(filter, false, cancellationToken);
 
     /// <summary>
     /// Returns a set of records in the specified shape.
@@ -288,10 +252,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync(filter, orderKey, orderDirection, false, cancellationToken);
-    }
+    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) => await FindManyAsync(filter, orderKey, orderDirection, false, cancellationToken);
 
     /// <summary>
     /// Returns a set of records, ordered by the specified key selector in the specified direction.
@@ -302,10 +263,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<T>(filter, orderKey, orderDirection, tenantAgnostic, cancellationToken);
-    }
+    public async Task<IEnumerable<T>> FindManyAsync(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, bool tenantAgnostic = false, CancellationToken cancellationToken = default) => await FindManyAsync<T>(filter, orderKey, orderDirection, tenantAgnostic, cancellationToken);
 
     /// <summary>
     /// Returns a set of records in the specified shape, ordered by the specified key selector in the specified direction.
@@ -315,10 +273,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A set of records.</returns>
-    public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
-    {
-        return await FindManyAsync<TShape>(filter, orderKey, orderDirection, false, cancellationToken);
-    }
+    public async Task<IEnumerable<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default) => await FindManyAsync<TShape>(filter, orderKey, orderDirection, false, cancellationToken);
 
     /// <summary>
     /// Returns a set of records in the specified shape, ordered by the specified key selector in the specified direction.
@@ -417,7 +372,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
         using var connection = dbConnectionProvider.GetConnection();
         await query.ExecuteAsync(connection);
     }
-    
+
     /// <summary>
     /// Updates the specified record.
     /// </summary>

@@ -11,10 +11,7 @@ public class RequestPipelineBuilder : IRequestPipelineBuilder
     /// <summary>
     /// Initializes a new instance of the <see cref="RequestPipelineBuilder"/> class.
     /// </summary>
-    public RequestPipelineBuilder(IServiceProvider serviceProvider)
-    {
-        ApplicationServices = serviceProvider;
-    }
+    public RequestPipelineBuilder(IServiceProvider serviceProvider) => ApplicationServices = serviceProvider;
 
     /// <inheritdoc />
     public IDictionary<string, object?> Properties { get; } = new Dictionary<string, object?>();

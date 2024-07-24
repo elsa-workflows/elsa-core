@@ -15,14 +15,11 @@ namespace Elsa.Alterations.MassTransit.Features;
 /// <summary>
 /// A feature for enabling the Alterations MassTransit feature.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(MassTransitFeature))]
 [DependsOn(typeof(AlterationsFeature))]
-public class MassTransitAlterationsFeature : FeatureBase
+public class MassTransitAlterationsFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public MassTransitAlterationsFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -35,8 +32,5 @@ public class MassTransitAlterationsFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Apply()
-    {
-        Services.AddScoped<MassTransitAlterationJobDispatcher>();
-    }
+    public override void Apply() => Services.AddScoped<MassTransitAlterationJobDispatcher>();
 }

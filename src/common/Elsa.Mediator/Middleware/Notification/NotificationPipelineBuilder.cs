@@ -11,10 +11,7 @@ public class NotificationPipelineBuilder : INotificationPipelineBuilder
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationPipelineBuilder"/> class.
     /// </summary>
-    public NotificationPipelineBuilder(IServiceProvider serviceProvider)
-    {
-        ApplicationServices = serviceProvider;
-    }
+    public NotificationPipelineBuilder(IServiceProvider serviceProvider) => ApplicationServices = serviceProvider;
 
     /// <inheritdoc />
     public IDictionary<string, object?> Properties { get; } = new Dictionary<string, object?>();

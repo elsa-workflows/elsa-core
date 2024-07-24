@@ -10,20 +10,13 @@ namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 /// <summary>
 /// Executes an alteration plan.
 /// </summary>
+/// <inheritdoc />
 [PublicAPI]
-public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
+public class Submit(IAlterationPlanScheduler alterationPlanScheduler,IIdentityGenerator identityGenerator, ISystemClock systemClock) : ElsaEndpoint<AlterationPlanParams, Response>
 {
-    private readonly IAlterationPlanScheduler _alterationPlanScheduler;
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISystemClock _systemClock;
-
-    /// <inheritdoc />
-    public Submit(IAlterationPlanScheduler alterationPlanScheduler, IIdentityGenerator identityGenerator, ISystemClock systemClock)
-    {
-        _alterationPlanScheduler = alterationPlanScheduler;
-        _identityGenerator = identityGenerator;
-        _systemClock = systemClock;
-    }
+    private readonly IAlterationPlanScheduler _alterationPlanScheduler = alterationPlanScheduler;
+    private readonly IIdentityGenerator _identityGenerator = identityGenerator;
+    private readonly ISystemClock _systemClock = systemClock;
 
     /// <inheritdoc />
     public override void Configure()

@@ -13,23 +13,17 @@ namespace Elsa.Hosting.Management.HostedServices;
 /// <summary>
 /// Service to write heartbeat messages per running instance. 
 /// </summary>
+/// <remarks>
+/// Creates a new instance of the <see cref="InstanceHeartbeatService"/>
+/// </remarks>
 [UsedImplicitly]
-public class InstanceHeartbeatService : IHostedService, IDisposable
+public class InstanceHeartbeatService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions) : IHostedService, IDisposable
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly HeartbeatOptions _heartbeatOptions;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly HeartbeatOptions _heartbeatOptions = heartbeatOptions.Value;
     private Timer? _timer;
 
     internal const string HeartbeatKeyPrefix = "Heartbeat_";
-
-    /// <summary>
-    /// Creates a new instance of the <see cref="InstanceHeartbeatService"/>
-    /// </summary>
-    public InstanceHeartbeatService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions)
-    {
-        _serviceProvider = serviceProvider;
-        _heartbeatOptions = heartbeatOptions.Value;
-    }
 
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
@@ -46,15 +40,9 @@ public class InstanceHeartbeatService : IHostedService, IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        _timer?.Dispose();
-    }
+    public void Dispose() => _timer?.Dispose();
 
-    private void WriteHeartbeat(object? state)
-    {
-        _ = Task.Run(async () => await WriteHeartbeatAsync());
-    }
+    private void WriteHeartbeat(object? state) => _ = Task.Run(async () => await WriteHeartbeatAsync());
 
     private async Task WriteHeartbeatAsync()
     {

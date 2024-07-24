@@ -9,32 +9,25 @@ namespace Elsa.Alterations.Core.Contexts;
 /// <summary>
 /// Provides contextual information about an alteration.
 /// </summary>
-public class AlterationContext
+/// <remarks>
+/// Initializes a new instance of the <see cref="AlterationContext"/> class.
+/// </remarks>
+public class AlterationContext(
+    IAlteration alteration,
+    WorkflowExecutionContext workflowExecutionContext,
+    AlterationLog log,
+    CancellationToken cancellationToken)
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlterationContext"/> class.
-    /// </summary>
-    public AlterationContext(
-        IAlteration alteration,
-        WorkflowExecutionContext workflowExecutionContext,
-        AlterationLog log,
-        CancellationToken cancellationToken)
-    {
-        Alteration = alteration;
-        WorkflowExecutionContext = workflowExecutionContext;
-        AlterationLog = log;
-        CancellationToken = cancellationToken;
-    }
 
     /// <summary>
     /// The alteration being handled.
     /// </summary>
-    public IAlteration Alteration { get; }
+    public IAlteration Alteration { get; } = alteration;
 
     /// <summary>
     /// A workflow execution context of the workflow instance being altered. This offers maximum flexibility for altering the workflow state.
     /// </summary>
-    public WorkflowExecutionContext WorkflowExecutionContext { get; set; }
+    public WorkflowExecutionContext WorkflowExecutionContext { get; set; } = workflowExecutionContext;
 
     /// <summary>
     /// The workflow of the workflow instance being altered.
@@ -44,7 +37,7 @@ public class AlterationContext
     /// <summary>
     /// The cancellation token.
     /// </summary>
-    public CancellationToken CancellationToken { get; }
+    public CancellationToken CancellationToken { get; } = cancellationToken;
 
     /// <summary>
     /// The service provider.
@@ -54,7 +47,7 @@ public class AlterationContext
     /// <summary>
     /// The alteration log.
     /// </summary>
-    public AlterationLog AlterationLog { get; }
+    public AlterationLog AlterationLog { get; } = log;
 
     /// <summary>
     /// A flag indicating whether the alteration has succeeded.
@@ -84,10 +77,7 @@ public class AlterationContext
     /// <summary>
     /// Marks the alteration as succeeded.
     /// </summary>
-    public void Succeed()
-    {
-        Succeed($"{Alteration.GetType().Name} succeeded");
-    }
+    public void Succeed() => Succeed($"{Alteration.GetType().Name} succeeded");
 
     /// <summary>
     /// Marks the alteration as succeeded.

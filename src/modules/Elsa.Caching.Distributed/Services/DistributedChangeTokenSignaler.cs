@@ -11,10 +11,7 @@ namespace Elsa.Caching.Distributed.Services;
 public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher) : IChangeTokenSignaler, IChangeTokenSignalInvoker
 {
     /// <inheritdoc />
-    public IChangeToken GetToken(string key)
-    {
-        return decoratedSignaler.GetToken(key);
-    }
+    public IChangeToken GetToken(string key) => decoratedSignaler.GetToken(key);
 
     /// <inheritdoc />
     public async ValueTask TriggerTokenAsync(string key, CancellationToken cancellationToken = default)
@@ -24,8 +21,5 @@ public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignal
     }
 
     /// <inheritdoc />
-    async ValueTask IChangeTokenSignalInvoker.InvokeAsync(string key, CancellationToken cancellationToken)
-    {
-        await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
-    }
+    public async ValueTask InvokeAsync(string key, CancellationToken cancellationToken) => await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
 }

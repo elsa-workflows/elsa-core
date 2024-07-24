@@ -34,7 +34,7 @@ public static class HandlerExtensions
         var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, resultType);
         return handlerType.GetMethod("HandleAsync")!;
     }
-    
+
     /// <summary>
     /// Invokes the given handler for the given notification.
     /// </summary>
@@ -42,10 +42,8 @@ public static class HandlerExtensions
     /// <param name="handleMethod">The handle method.</param>
     /// <param name="notification">The notification to handle.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, INotification notification, CancellationToken cancellationToken)
-    {
-        return (Task)handleMethod.Invoke(handler, new object?[] { notification, cancellationToken })!;
-    }
+    public static Task InvokeAsync(this INotificationHandler handler, MethodBase handleMethod, INotification notification, CancellationToken cancellationToken) 
+        => (Task)handleMethod.Invoke(handler, new object?[] { notification, cancellationToken })!;
 
     /// <summary>
     /// Invokes the given handler for the given command.

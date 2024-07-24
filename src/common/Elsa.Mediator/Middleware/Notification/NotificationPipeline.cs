@@ -3,15 +3,13 @@ using Elsa.Mediator.Middleware.Notification.Contracts;
 namespace Elsa.Mediator.Middleware.Notification;
 
 /// <inheritdoc />
-public class NotificationPipeline : INotificationPipeline
+/// <summary>
+/// Initializes a new instance of the <see cref="NotificationPipeline"/> class.
+/// </summary>
+public class NotificationPipeline(IServiceProvider serviceProvider) : INotificationPipeline
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
     private NotificationMiddlewareDelegate? _pipeline;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NotificationPipeline"/> class.
-    /// </summary>
-    public NotificationPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
 
     /// <inheritdoc />
     public NotificationMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();

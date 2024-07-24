@@ -12,15 +12,12 @@ namespace Elsa.Elasticsearch.Modules.Runtime;
 /// <summary>
 /// Configures the <see cref="WorkflowRuntimeFeature"/> feature with Elasticsearch persistence. 
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 [DependsOn(typeof(ElasticsearchFeature))]
-public class ElasticExecutionLogRecordFeature : ElasticPersistenceFeatureBase
+public class ElasticExecutionLogRecordFeature(IModule module) : ElasticPersistenceFeatureBase(module)
 {
-    /// <inheritdoc />
-    public ElasticExecutionLogRecordFeature(IModule module) : base(module)
-    {
-    }
-    
+
     /// <summary>
     /// A delegate that creates an instance of a concrete implementation if <see cref="IIndexConfiguration"/> for <see cref="WorkflowExecutionLogRecord"/>.
     /// </summary>

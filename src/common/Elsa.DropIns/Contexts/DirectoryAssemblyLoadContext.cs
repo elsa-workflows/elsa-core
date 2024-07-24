@@ -3,14 +3,9 @@ using System.Runtime.Loader;
 
 namespace Elsa.DropIns.Contexts;
 
-internal sealed class DirectoryAssemblyLoadContext : AssemblyLoadContext
+internal sealed class DirectoryAssemblyLoadContext(string dropInPath) : AssemblyLoadContext
 {
-    private readonly AssemblyDependencyResolver _resolver;
-
-    public DirectoryAssemblyLoadContext(string dropInPath)
-    {
-        _resolver = new AssemblyDependencyResolver(dropInPath);
-    }
+    private readonly AssemblyDependencyResolver _resolver = new AssemblyDependencyResolver(dropInPath);
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {

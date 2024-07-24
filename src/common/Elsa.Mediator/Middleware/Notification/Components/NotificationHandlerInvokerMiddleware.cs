@@ -6,27 +6,19 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Mediator.Middleware.Notification.Components;
 
 /// <inheritdoc />
-public class NotificationHandlerInvokerMiddleware : INotificationMiddleware
+/// <summary>
+/// Initializes a new instance of the <see cref="NotificationHandlerInvokerMiddleware"/> class.
+/// </summary>
+public class NotificationHandlerInvokerMiddleware(
+    NotificationMiddlewareDelegate next,
+    ILogger<NotificationHandlerInvokerMiddleware> logger,
+    IServiceProvider serviceProvider,
+    IEnumerable<INotificationHandler> notificationHandlers) : INotificationMiddleware
 {
-    private readonly NotificationMiddlewareDelegate _next;
-    private readonly ILogger<NotificationHandlerInvokerMiddleware> _logger;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IEnumerable<INotificationHandler> _notificationHandlers;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="NotificationHandlerInvokerMiddleware"/> class.
-    /// </summary>
-    public NotificationHandlerInvokerMiddleware(
-        NotificationMiddlewareDelegate next,
-        ILogger<NotificationHandlerInvokerMiddleware> logger,
-        IServiceProvider serviceProvider,
-        IEnumerable<INotificationHandler> notificationHandlers)
-    {
-        _next = next;
-        _logger = logger;
-        _serviceProvider = serviceProvider;
-        _notificationHandlers = notificationHandlers;
-    }
+    private readonly NotificationMiddlewareDelegate _next = next;
+    private readonly ILogger<NotificationHandlerInvokerMiddleware> _logger = logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly IEnumerable<INotificationHandler> _notificationHandlers = notificationHandlers;
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(NotificationContext context)

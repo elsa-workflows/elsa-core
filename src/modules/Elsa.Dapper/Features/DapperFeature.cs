@@ -14,20 +14,15 @@ namespace Elsa.Dapper.Features;
 public class DapperFeature : FeatureBase
 {
     /// <inheritdoc />
-    public DapperFeature(IModule module) : base(module)
-    {
+    public DapperFeature(IModule module) : base(module) =>
         // See: https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/dapper-limitations#data-types
         SqlMapper.AddTypeHandler(new GuidHandler());
-    }
-    
+
     /// <summary>
     /// Gets or sets a factory that provides an <see cref="IDbConnectionProvider"/> instance.
     /// </summary>
     public Func<IServiceProvider, IDbConnectionProvider> DbConnectionProvider { get; set; } = _ => new SqliteDbConnectionProvider();
 
     /// <inheritdoc />
-    public override void Apply()
-    {
-        Services.AddSingleton(DbConnectionProvider);
-    }
+    public override void Apply() => Services.AddSingleton(DbConnectionProvider);
 }

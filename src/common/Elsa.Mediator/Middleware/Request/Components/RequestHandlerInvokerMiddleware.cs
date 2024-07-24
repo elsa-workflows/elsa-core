@@ -6,23 +6,17 @@ namespace Elsa.Mediator.Middleware.Request.Components;
 /// <summary>
 /// A middleware component that invokes request handlers.
 /// </summary>
-public class RequestHandlerInvokerMiddleware : IRequestMiddleware
+/// <remarks>
+/// Initializes a new instance of the <see cref="RequestHandlerInvokerMiddleware"/> class.
+/// </remarks>
+/// <param name="next">The next middleware in the pipeline.</param>
+/// <param name="requestHandlers"></param>
+public class RequestHandlerInvokerMiddleware(
+    RequestMiddlewareDelegate next,
+    IEnumerable<IRequestHandler> requestHandlers) : IRequestMiddleware
 {
-    private readonly RequestMiddlewareDelegate _next;
-    private readonly IEnumerable<IRequestHandler> _requestHandlers;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RequestHandlerInvokerMiddleware"/> class.
-    /// </summary>
-    /// <param name="next">The next middleware in the pipeline.</param>
-    /// <param name="requestHandlers"></param>
-    public RequestHandlerInvokerMiddleware(
-        RequestMiddlewareDelegate next,
-        IEnumerable<IRequestHandler> requestHandlers)
-    {
-        _next = next;
-        _requestHandlers = requestHandlers;
-    }
+    private readonly RequestMiddlewareDelegate _next = next;
+    private readonly IEnumerable<IRequestHandler> _requestHandlers = requestHandlers;
 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(RequestContext context)

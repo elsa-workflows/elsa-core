@@ -15,21 +15,15 @@ namespace Elsa.Hosting.Management.HostedServices;
 /// <summary>
 /// Service to check the heartbeats of all running instances and determine whether instances have stopped working. 
 /// </summary>
+/// <remarks>
+/// Creates a new instance of the <see cref="InstanceHeartbeatMonitorService"/>
+/// </remarks>
 [UsedImplicitly]
-public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
+public class InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions) : IHostedService, IDisposable
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly HeartbeatOptions _heartbeatOptions;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly HeartbeatOptions _heartbeatOptions = heartbeatOptions.Value;
     private Timer? _timer;
-
-    /// <summary>
-    /// Creates a new instance of the <see cref="InstanceHeartbeatMonitorService"/>
-    /// </summary>
-    public InstanceHeartbeatMonitorService(IServiceProvider serviceProvider, IOptions<HeartbeatOptions> heartbeatOptions)
-    {
-        _serviceProvider = serviceProvider;
-        _heartbeatOptions = heartbeatOptions.Value;
-    }
 
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
@@ -46,15 +40,9 @@ public class InstanceHeartbeatMonitorService : IHostedService, IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose()
-    {
-        _timer?.Dispose();
-    }
+    public void Dispose() => _timer?.Dispose();
 
-    private void MonitorHeartbeats(object? state)
-    {
-        _ = Task.Run(async () => await MonitorHeartbeatsAsync());
-    }
+    private void MonitorHeartbeats(object? state) => _ = Task.Run(async () => await MonitorHeartbeatsAsync());
 
     private async Task MonitorHeartbeatsAsync()
     {

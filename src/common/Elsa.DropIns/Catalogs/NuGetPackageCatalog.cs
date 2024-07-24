@@ -4,14 +4,9 @@ using Elsa.DropIns.Models;
 
 namespace Elsa.DropIns.Catalogs;
 
-public class NuGetPackageCatalog : IDropInCatalog
+public class NuGetPackageCatalog(string packagePath) : IDropInCatalog
 {
-    private readonly string _packagePath;
-
-    public NuGetPackageCatalog(string packagePath)
-    {
-        _packagePath = packagePath;
-    }
+    private readonly string _packagePath = packagePath;
 
     public IEnumerable<DropInDescriptor> List()
     {

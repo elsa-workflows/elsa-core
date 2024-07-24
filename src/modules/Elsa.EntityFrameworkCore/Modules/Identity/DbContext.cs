@@ -7,12 +7,9 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// <summary>
 /// The database context for the Identity module.
 /// </summary>
-public class IdentityElsaDbContext : ElsaDbContextBase
+/// <inheritdoc />
+public class IdentityElsaDbContext(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider serviceProvider) : ElsaDbContextBase(options, serviceProvider)
 {
-    /// <inheritdoc />
-    public IdentityElsaDbContext(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
-    {
-    }
 
     /// <summary>
     /// The users.

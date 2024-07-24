@@ -14,23 +14,15 @@ namespace Elsa.Alterations.Services;
 /// <summary>
 /// Stores the new plan and schedules it for immediate execution.
 /// </summary>
-public class DefaultAlterationPlanScheduler : IAlterationPlanScheduler
+/// <remarks>
+/// Initializes a new instance of the <see cref="DefaultAlterationPlanScheduler"/> class.
+/// </remarks>
+public class DefaultAlterationPlanScheduler(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator, IJsonSerializer jsonSerializer) : IAlterationPlanScheduler
 {
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly IJsonSerializer _jsonSerializer;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultAlterationPlanScheduler"/> class.
-    /// </summary>
-    public DefaultAlterationPlanScheduler(IWorkflowDefinitionService workflowDefinitionService, IWorkflowDispatcher workflowDispatcher, IIdentityGenerator identityGenerator, IJsonSerializer jsonSerializer)
-    {
-        _workflowDefinitionService = workflowDefinitionService;
-        _workflowDispatcher = workflowDispatcher;
-        _identityGenerator = identityGenerator;
-        _jsonSerializer = jsonSerializer;
-    }
+    private readonly IWorkflowDefinitionService _workflowDefinitionService = workflowDefinitionService;
+    private readonly IWorkflowDispatcher _workflowDispatcher = workflowDispatcher;
+    private readonly IIdentityGenerator _identityGenerator = identityGenerator;
+    private readonly IJsonSerializer _jsonSerializer = jsonSerializer;
 
     /// <inheritdoc />
     public async Task<string> SubmitAsync(AlterationPlanParams planParams, CancellationToken cancellationToken = default)

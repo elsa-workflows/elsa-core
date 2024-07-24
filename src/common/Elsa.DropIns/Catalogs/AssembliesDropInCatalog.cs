@@ -4,15 +4,10 @@ using Elsa.DropIns.Models;
 
 namespace Elsa.DropIns.Catalogs;
 
-public class AssembliesDropInCatalog : IDropInCatalog
+public class AssembliesDropInCatalog(IEnumerable<Assembly> assemblies) : IDropInCatalog
 {
-    private readonly IEnumerable<Assembly> _assemblies;
+    private readonly IEnumerable<Assembly> _assemblies = assemblies;
 
-    public AssembliesDropInCatalog(IEnumerable<Assembly> assemblies)
-    {
-        _assemblies = assemblies;
-    }
-    
     public IEnumerable<DropInDescriptor> List()
     {
         var allDropIns = new List<DropInDescriptor>();

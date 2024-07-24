@@ -10,13 +10,10 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// <summary>
 /// DB context for the runtime module.
 /// </summary>
+/// <inheritdoc />
 [UsedImplicitly]
-public class AlterationsElsaDbContext : ElsaDbContextBase
+public class AlterationsElsaDbContext(DbContextOptions<AlterationsElsaDbContext> options, IServiceProvider serviceProvider) : ElsaDbContextBase(options, serviceProvider)
 {
-    /// <inheritdoc />
-    public AlterationsElsaDbContext(DbContextOptions<AlterationsElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
-    {
-    }
 
     /// <summary>
     /// The alteration plans.

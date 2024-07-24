@@ -3,16 +3,14 @@ using Elsa.Mediator.Middleware.Command.Contracts;
 namespace Elsa.Mediator.Middleware.Command;
 
 /// <inheritdoc />
-public class CommandPipeline : ICommandPipeline
+/// <summary>
+/// Constructor.
+/// </summary>
+public class CommandPipeline(IServiceProvider serviceProvider) : ICommandPipeline
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
     private CommandMiddlewareDelegate? _pipeline;
 
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public CommandPipeline(IServiceProvider serviceProvider) => _serviceProvider = serviceProvider;
-    
     /// <inheritdoc />
     public CommandMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
 

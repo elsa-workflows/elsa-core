@@ -14,15 +14,12 @@ namespace Elsa.Dapper.Modules.Identity.Features;
 /// <summary>
 /// Configures the <see cref="IdentityFeature"/> feature with Dapper persistence providers.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(IdentityFeature))]
 [DependsOn(typeof(DapperFeature))]
 [PublicAPI]
-public class DapperIdentityPersistenceFeature : FeatureBase
+public class DapperIdentityPersistenceFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperIdentityPersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
     public override void Configure()

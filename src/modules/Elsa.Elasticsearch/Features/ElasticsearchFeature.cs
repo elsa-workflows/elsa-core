@@ -13,12 +13,9 @@ namespace Elsa.Elasticsearch.Features;
 /// <summary>
 /// Configures Elasticsearch.
 /// </summary>
-public class ElasticsearchFeature : FeatureBase
+/// <inheritdoc />
+public class ElasticsearchFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public ElasticsearchFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// A delegate that configures Elasticsearch.

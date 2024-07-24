@@ -49,8 +49,7 @@ public static class DependencyInjectionExtensions
     /// <param name="services"></param>
     /// <returns></returns>
     public static IServiceCollection AddMediatorHostedServices(this IServiceCollection services)
-    {
-        return services
+        => services
             .AddSingleton<INotificationsChannel, NotificationsChannel>()
             .AddSingleton<ICommandsChannel, CommandsChannel>()
             .AddSingleton<IJobsChannel, JobsChannel>()
@@ -70,7 +69,6 @@ public static class DependencyInjectionExtensions
                 var options = scope.ServiceProvider.GetRequiredService<IOptions<MediatorOptions>>().Value;
                 return ActivatorUtilities.CreateInstance<BackgroundEventPublisherHostedService>(scope.ServiceProvider, options.NotificationWorkerCount);
             });
-    }
 
     /// <summary>
     /// Adds a <see cref="Channel{T}"/> to the <see cref="IServiceCollection"/> and a hosted service that continuously reads from the channel and executes each received message.
@@ -92,10 +90,8 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds a channel consumer.
     /// </summary>
-    public static IServiceCollection AddMessageConsumer<T, TConsumer>(this IServiceCollection services) where TConsumer : class, IConsumer<T> where T : notnull
-    {
-        return services.AddScoped<IConsumer<T>, TConsumer>();
-    }
+    public static IServiceCollection AddMessageConsumer<T, TConsumer>(this IServiceCollection services) where TConsumer : class, IConsumer<T> where T : notnull 
+        => services.AddScoped<IConsumer<T>, TConsumer>();
 
     /// <summary>
     /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
@@ -115,19 +111,13 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static IServiceCollection AddCommandHandler<THandler, TCommand, TResult>(this IServiceCollection services)
         where THandler : class, ICommandHandler<TCommand, TResult>
-        where TCommand : ICommand<TResult>
-    {
-        return services.AddScoped<ICommandHandler, THandler>();
-    }
+        where TCommand : ICommand<TResult> => services.AddScoped<ICommandHandler, THandler>();
 
     /// <summary>
     /// Registers a <see cref="ICommandHandler{T}"/> with the service container.
     /// </summary>
     public static IServiceCollection AddNotificationHandler<THandler>(this IServiceCollection services)
-        where THandler : class, INotificationHandler
-    {
-        return services.AddScoped<INotificationHandler, THandler>();
-    }
+        where THandler : class, INotificationHandler => services.AddScoped<INotificationHandler, THandler>();
 
     /// <summary>
     /// Registers a <see cref="INotificationHandler{T}"/> with the service container.
@@ -150,10 +140,7 @@ public static class DependencyInjectionExtensions
     /// </summary>
     public static IServiceCollection AddRequestHandler<THandler, TRequest, TResponse>(this IServiceCollection services)
         where THandler : class, IRequestHandler<TRequest, TResponse>
-        where TRequest : IRequest<TResponse>?
-    {
-        return services.AddScoped<IRequestHandler, THandler>();
-    }
+        where TRequest : IRequest<TResponse>? => services.AddScoped<IRequestHandler, THandler>();
 
     /// <summary>
     /// Registers all handlers from the assembly of the specified <c>TMarker</c> type with the service container.
@@ -168,13 +155,11 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Registers all handlers from the specified assembly with the service container.
     /// </summary>
-    public static IServiceCollection AddHandlersFrom(this IServiceCollection services, Assembly assembly)
-    {
-        return services
+    public static IServiceCollection AddHandlersFrom(this IServiceCollection services, Assembly assembly) 
+        => services
             .AddNotificationHandlersFrom(assembly)
             .AddRequestHandlersFrom(assembly)
             .AddCommandHandlersFrom(assembly);
-    }
 
     /// <summary>
     /// Registers all handlers from the assembly of the specified <c>TMarker</c> type with the service container.

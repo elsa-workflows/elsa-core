@@ -7,18 +7,12 @@ namespace Elsa.Mediator.HostedServices;
 /// <summary>
 /// A hosted service that runs jobs.
 /// </summary>
-public class JobRunnerHostedService : BackgroundService
+/// <inheritdoc />
+public class JobRunnerHostedService(IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger) : BackgroundService
 {
     private const int WorkerCount = 4;
-    private readonly IJobsChannel _jobsChannel;
-    private readonly ILogger<JobRunnerHostedService> _logger;
-
-    /// <inheritdoc />
-    public JobRunnerHostedService(IJobsChannel jobsChannel, ILogger<JobRunnerHostedService> logger)
-    {
-        _jobsChannel = jobsChannel;
-        _logger = logger;
-    }
+    private readonly IJobsChannel _jobsChannel = jobsChannel;
+    private readonly ILogger<JobRunnerHostedService> _logger = logger;
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

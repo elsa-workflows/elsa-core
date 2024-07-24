@@ -71,9 +71,8 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
         return await workflowInstanceStore.FindManyIdsAsync(filter, cancellationToken);
     }
 
-    private bool WorkflowFilterIsEmpty(WorkflowInstanceFilter filter)
-    {
-        return filter.Id == null &&
+    private bool WorkflowFilterIsEmpty(WorkflowInstanceFilter filter) =>
+        filter.Id == null &&
                filter.Ids == null &&
                filter.DefinitionId == null &&
                filter.DefinitionVersionId == null &&
@@ -85,5 +84,4 @@ public class WorkflowInstanceFinder(IWorkflowInstanceStore workflowInstanceStore
                filter.HasIncidents == null &&
                filter.TimestampFilters == null
                && string.IsNullOrWhiteSpace(filter.SearchTerm);
-    }
 }

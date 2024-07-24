@@ -56,10 +56,7 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
     }
 
     /// <inheritdoc />
-    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async ValueTask<long> DeleteManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     private void ApplyFilter(ParameterizedQuery query, TriggerFilter filter)
     {
@@ -78,9 +75,8 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
 
     private IEnumerable<StoredTrigger> Map(IEnumerable<StoredTriggerRecord> source) => source.Select(Map);
 
-    private StoredTrigger Map(StoredTriggerRecord source)
-    {
-        return new StoredTrigger
+    private StoredTrigger Map(StoredTriggerRecord source) =>
+        new StoredTrigger
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -91,11 +87,9 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
             Payload = source.SerializedPayload != null ? payloadSerializer.Deserialize(source.SerializedPayload) : default,
             TenantId = source.TenantId
         };
-    }
 
-    private StoredTriggerRecord Map(StoredTrigger source)
-    {
-        return new StoredTriggerRecord
+    private StoredTriggerRecord Map(StoredTrigger source) =>
+        new StoredTriggerRecord
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -106,5 +100,4 @@ internal class DapperTriggerStore(Store<StoredTriggerRecord> store, IPayloadSeri
             SerializedPayload = source.Payload != null ? payloadSerializer.Serialize(source.Payload) : default,
             TenantId = source.TenantId
         };
-    }
 }

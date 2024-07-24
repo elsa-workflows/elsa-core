@@ -13,23 +13,19 @@ namespace Elsa.Dapper.Modules.Management.Features;
 /// <summary>
 /// Configures the <see cref="WorkflowDefinitionsFeature"/> feature with an Entity Framework Core persistence provider.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(DapperFeature))]
-public class DapperWorkflowDefinitionPersistenceFeature : FeatureBase
+public class DapperWorkflowDefinitionPersistenceFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public DapperWorkflowDefinitionPersistenceFeature(IModule module) : base(module)
-    {
-    }
 
     /// <inheritdoc />
-    public override void Configure()
-    {
+    public override void Configure()=>
         Module.Configure<WorkflowDefinitionsFeature>(feature =>
         {
             feature.WorkflowDefinitionStore = sp => sp.GetRequiredService<DapperWorkflowDefinitionStore>();
         });
-    }
+    
 
     /// <inheritdoc />
     public override void Apply()

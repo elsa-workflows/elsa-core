@@ -11,12 +11,9 @@ namespace Elsa.Hosting.Management.Features;
 /// <summary>
 /// Installs and configures the clustering feature.
 /// </summary>
-public class ClusteringFeature : FeatureBase
+/// <inheritdoc />
+public class ClusteringFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public ClusteringFeature(IModule module) : base(module)
-    {
-    }
 
     /// <summary>
     /// A factory that instantiates an <see cref="IApplicationInstanceNameProvider"/>.
@@ -39,10 +36,8 @@ public class ClusteringFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Apply()
-    {
+    public override void Apply() => 
         Services.Configure(HeartbeatOptions)
             .AddSingleton(InstanceNameProvider)
             .AddSingleton<RandomIntIdentityGenerator>();
-    }
 }

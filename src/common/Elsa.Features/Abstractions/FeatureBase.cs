@@ -12,10 +12,7 @@ public abstract class FeatureBase : IFeature
     /// <summary>
     /// Constructor.
     /// </summary>
-    protected FeatureBase(IModule module)
-    {
-        Module = module;
-    }
+    protected FeatureBase(IModule module) => Module = module;
 
     /// <summary>
     /// The module this feature is a part of.
@@ -53,8 +50,6 @@ public abstract class FeatureBase : IFeature
     /// </summary>
     /// <param name="priority">The priority.</param>
     /// <typeparam name="T">The type of hosted service to configure.</typeparam>
-    protected void ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService
-    {
-        Module.ConfigureHostedService<T>(priority);
-    }
+    protected void ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService 
+        => Module.ConfigureHostedService<T>(priority);
 }

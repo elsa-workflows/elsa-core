@@ -11,53 +11,36 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// <summary>
 /// An EF Core implementation of <see cref="IAlterationPlanStore"/>.
 /// </summary>
-public class EFCoreAlterationJobStore : IAlterationJobStore
+/// <remarks>
+/// Constructor.
+/// </remarks>
+public class EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store) : IAlterationJobStore
 {
-    private readonly EntityStore<AlterationsElsaDbContext, AlterationJob> _store;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store)
-    {
-        _store = store;
-    }
+    private readonly EntityStore<AlterationsElsaDbContext, AlterationJob> _store = store;
 
     /// <inheritdoc />
-    public async Task SaveAsync(AlterationJob record, CancellationToken cancellationToken = default)
-    {
+    public async Task SaveAsync(AlterationJob record, CancellationToken cancellationToken = default) => 
         await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task SaveManyAsync(IEnumerable<AlterationJob> jobs, CancellationToken cancellationToken = default)
-    {
+    public async Task SaveManyAsync(IEnumerable<AlterationJob> jobs, CancellationToken cancellationToken = default) => 
         await _store.SaveManyAsync(jobs, OnSaveAsync, cancellationToken);
-    }
 
     /// <inheritdoc />
-    public async Task<AlterationJob?> FindAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
-    }
+    public async Task<AlterationJob?> FindAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.FindAsync(filter.Apply, OnLoadAsync, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<IEnumerable<AlterationJob>> FindManyAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken).ToList();
-    }
+    public async Task<IEnumerable<AlterationJob>> FindManyAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken).ToList();
 
     /// <inheritdoc />
-    public async Task<IEnumerable<string>> FindManyIdsAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.QueryAsync(filter.Apply, x => x.Id, cancellationToken);
-    }
+    public async Task<IEnumerable<string>> FindManyIdsAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.QueryAsync(filter.Apply, x => x.Id, cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> CountAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
-    }
+    public async Task<long> CountAsync(AlterationJobFilter filter, CancellationToken cancellationToken = default) =>
+        await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
 
     private static ValueTask OnSaveAsync(AlterationsElsaDbContext elsaDbContext, AlterationJob entity, CancellationToken cancellationToken)
     {

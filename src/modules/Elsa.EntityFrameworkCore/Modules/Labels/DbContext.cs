@@ -4,12 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Modules.Labels;
 
-public class LabelsElsaDbContext : ElsaDbContextBase
+public class LabelsElsaDbContext(DbContextOptions<LabelsElsaDbContext> options, IServiceProvider serviceProvider) : ElsaDbContextBase(options, serviceProvider)
 {
-    public LabelsElsaDbContext(DbContextOptions<LabelsElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
-    {
-    }
-
     public DbSet<Label> Labels { get; set; } = default!;
     public DbSet<WorkflowDefinitionLabel> WorkflowDefinitionLabels { get; set; } = default!;
 

@@ -71,16 +71,10 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
     }
 
     /// <inheritdoc />
-    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.CountAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<long> CountAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await store.CountAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     /// <inheritdoc />
-    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<long> DeleteManyAsync(ActivityExecutionRecordFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     private static void ApplyFilter(ParameterizedQuery query, ActivityExecutionRecordFilter filter)
     {
@@ -101,9 +95,8 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
         }
     }
 
-    private async ValueTask<ActivityExecutionRecordRecord> Map(ActivityExecutionRecord source, CancellationToken cancellationToken)
-    {
-        return new ActivityExecutionRecordRecord
+    private async ValueTask<ActivityExecutionRecordRecord> Map(ActivityExecutionRecord source, CancellationToken cancellationToken) =>
+        new ActivityExecutionRecordRecord
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -123,11 +116,9 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             SerializedProperties = source.Properties.Any() ? await safeSerializer.SerializeAsync(source.Properties, cancellationToken) : null,
             TenantId = source.TenantId
         };
-    }
 
-    private async ValueTask<ActivityExecutionRecord> MapAsync(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
-    {
-        return new ActivityExecutionRecord
+    private async ValueTask<ActivityExecutionRecord> MapAsync(ActivityExecutionRecordRecord source, CancellationToken cancellationToken) =>
+        new ActivityExecutionRecord
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -147,11 +138,9 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             Properties = source.SerializedProperties != null ? await safeSerializer.DeserializeAsync<IDictionary<string, object>>(source.SerializedProperties, cancellationToken) : new Dictionary<string, object>(),
             TenantId = source.TenantId
         };
-    }
 
-    private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source)
-    {
-        return new ActivityExecutionRecordSummary
+    private ActivityExecutionRecordSummary MapSummary(ActivityExecutionSummaryRecord source) =>
+        new ActivityExecutionRecordSummary
         {
             Id = source.Id,
             ActivityId = source.ActivityId,
@@ -166,5 +155,4 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
             ActivityTypeVersion = source.ActivityTypeVersion,
             TenantId = source.TenantId
         };
-    }
 }

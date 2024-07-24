@@ -12,15 +12,12 @@ namespace Elsa.Elasticsearch.Modules.Management;
 /// <summary>
 /// Configures the <see cref="WorkflowInstancesFeature"/> feature with Elasticsearch.
 /// </summary>
+/// <inheritdoc />
 [DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(ElasticsearchFeature))]
-public class ElasticWorkflowInstanceFeature : ElasticPersistenceFeatureBase
+public class ElasticWorkflowInstanceFeature(IModule module) : ElasticPersistenceFeatureBase(module)
 {
-    /// <inheritdoc />
-    public ElasticWorkflowInstanceFeature(IModule module) : base(module)
-    {
-    }
-    
+
     /// <summary>
     /// A delegate that creates an instance of a concrete implementation if <see cref="IIndexConfiguration"/> for <see cref="WorkflowInstance"/>.
     /// </summary>

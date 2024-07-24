@@ -6,14 +6,9 @@ using Elsa.DropIns.Models;
 
 namespace Elsa.DropIns.Catalogs;
 
-public class AssemblyDropInCatalog : IDropInCatalog
+public class AssemblyDropInCatalog(Assembly assembly) : IDropInCatalog
 {
-    private readonly Assembly _assembly;
-
-    public AssemblyDropInCatalog(Assembly assembly)
-    {
-        _assembly = assembly;
-    }
+    private readonly Assembly _assembly = assembly;
 
     public IEnumerable<DropInDescriptor> List()
     {

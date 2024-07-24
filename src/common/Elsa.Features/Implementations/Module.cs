@@ -12,7 +12,10 @@ using Microsoft.Extensions.Hosting;
 namespace Elsa.Features.Implementations;
 
 /// <inheritdoc />
-public class Module : IModule
+/// <summary>
+/// Constructor.
+/// </summary>
+public class Module(IServiceCollection services) : IModule
 {
     private sealed record HostedServiceDescriptor(int Order, Type Type);
 
@@ -20,31 +23,17 @@ public class Module : IModule
     private readonly HashSet<IFeature> _configuredFeatures = new();
     private readonly List<HostedServiceDescriptor> _hostedServiceDescriptors = new();
 
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public Module(IServiceCollection services)
-    {
-        Services = services;
-    }
-
     /// <inheritdoc />
-    public IServiceCollection Services { get; }
+    public IServiceCollection Services { get; } = services;
 
     /// <inheritdoc />
     public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
 
     /// <inheritdoc />
-    public bool HasFeature<T>() where T : class, IFeature
-    {
-        return HasFeature(typeof(T));
-    }
+    public bool HasFeature<T>() where T : class, IFeature => HasFeature(typeof(T));
 
     /// <inheritdoc />
-    public bool HasFeature(Type featureType)
-    {
-        return _features.ContainsKey(featureType);
-    }
+    public bool HasFeature(Type featureType) => _features.ContainsKey(featureType);
 
     /// <inheritdoc />
     public T Configure<T>(Action<T>? configure = default) where T : class, IFeature
@@ -73,10 +62,8 @@ public class Module : IModule
     }
 
     /// <inheritdoc />
-    public IModule ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService
-    {
-        return ConfigureHostedService(typeof(T), priority);
-    }
+    public IModule ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService 
+        => ConfigureHostedService(typeof(T), priority);
 
     /// <inheritdoc />
     public IModule ConfigureHostedService(Type hostedServiceType, int priority = 0)
@@ -149,10 +136,8 @@ public class Module : IModule
         _configuredFeatures.Add(feature);
     }
 
-    private IFeature GetOrCreateFeature(Type featureType)
-    {
-        return _features.TryGetValue(featureType, out var existingFeature) ? existingFeature : (IFeature)Activator.CreateInstance(featureType, this)!;
-    }
+    private IFeature GetOrCreateFeature(Type featureType) 
+        => _features.TryGetValue(featureType, out var existingFeature) ? existingFeature : (IFeature)Activator.CreateInstance(featureType, this)!;
 
     private HashSet<Type> GetFeatureTypes()
     {

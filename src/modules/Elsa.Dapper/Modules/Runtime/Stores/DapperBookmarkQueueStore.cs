@@ -46,10 +46,7 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     }
 
     /// <inheritdoc />
-    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
-    {
-        return await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
-    }
+    public async Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default) => await store.DeleteAsync(q => ApplyFilter(q, filter), cancellationToken);
 
     private void ApplyFilter(ParameterizedQuery query, BookmarkQueueFilter filter)
     {
@@ -66,9 +63,8 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
     private IEnumerable<BookmarkQueueItem> Map(IEnumerable<BookmarkQueueItemRecord> source) => source.Select(Map);
     private IEnumerable<BookmarkQueueItemRecord> Map(IEnumerable<BookmarkQueueItem> source) => source.Select(Map);
 
-    private BookmarkQueueItemRecord Map(BookmarkQueueItem source)
-    {
-        return new BookmarkQueueItemRecord
+    private BookmarkQueueItemRecord Map(BookmarkQueueItem source) =>
+        new BookmarkQueueItemRecord
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
@@ -80,11 +76,9 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId
         };
-    }
 
-    private BookmarkQueueItem Map(BookmarkQueueItemRecord source)
-    {
-        return new BookmarkQueueItem
+    private BookmarkQueueItem Map(BookmarkQueueItemRecord source) =>
+        new BookmarkQueueItem
         {
             Id = source.Id,
             WorkflowInstanceId = source.WorkflowInstanceId,
@@ -96,5 +90,4 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
             CreatedAt = source.CreatedAt,
             TenantId = source.TenantId
         };
-    }
 }

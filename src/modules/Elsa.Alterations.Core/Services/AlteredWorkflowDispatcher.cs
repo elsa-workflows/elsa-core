@@ -7,18 +7,13 @@ using Elsa.Workflows.Runtime.Requests;
 namespace Elsa.Alterations.Core.Services;
 
 /// <inheritdoc />
-public class AlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
+/// <summary>
+/// Initializes a new instance of the <see cref="AlteredWorkflowDispatcher"/> class.
+/// </summary>
+public class AlteredWorkflowDispatcher(IWorkflowDispatcher workflowDispatcher) : IAlteredWorkflowDispatcher
 {
-    private readonly IWorkflowDispatcher _workflowDispatcher;
+    private readonly IWorkflowDispatcher _workflowDispatcher = workflowDispatcher;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="AlteredWorkflowDispatcher"/> class.
-    /// </summary>
-    public AlteredWorkflowDispatcher(IWorkflowDispatcher workflowDispatcher)
-    {
-        _workflowDispatcher = workflowDispatcher;
-    }
-    
     /// <inheritdoc />
     public async Task DispatchAsync(IEnumerable<RunAlterationsResult> results, CancellationToken cancellationToken = default)
     {
@@ -27,8 +22,6 @@ public class AlteredWorkflowDispatcher : IAlteredWorkflowDispatcher
     }
 
     /// <inheritdoc />
-    public async Task DispatchAsync(RunAlterationsResult result, CancellationToken cancellationToken = default)
-    {
+    public async Task DispatchAsync(RunAlterationsResult result, CancellationToken cancellationToken = default) => 
         await _workflowDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(result.WorkflowInstanceId), cancellationToken: cancellationToken);
-    }
 }

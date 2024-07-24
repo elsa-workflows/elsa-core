@@ -13,11 +13,8 @@ public abstract class ChannelBase<T>
     /// <summary>
     /// Initializes a new instance of the <see cref="ChannelBase{T}"/> class.
     /// </summary>
-    protected ChannelBase()
-    {
-        _channel = Channel.CreateUnbounded<T>();
-    }
-    
+    protected ChannelBase() => _channel = Channel.CreateUnbounded<T>();
+
     /// <summary>
     /// Gets the writer for the channel.
     /// </summary>

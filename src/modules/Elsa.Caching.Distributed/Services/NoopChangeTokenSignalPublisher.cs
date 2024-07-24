@@ -8,8 +8,5 @@ namespace Elsa.Caching.Distributed.Services;
 public class NoopChangeTokenSignalPublisher : IChangeTokenSignalPublisher
 {
     /// <inheritdoc />
-    public ValueTask PublishAsync(string key, CancellationToken cancellationToken = default)
-    {
-        return default;
-    }
+    public ValueTask PublishAsync(string key, CancellationToken cancellationToken = default) => default;
 }
