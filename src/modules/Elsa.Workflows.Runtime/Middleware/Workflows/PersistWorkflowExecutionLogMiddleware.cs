@@ -1,12 +1,12 @@
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Entities;
 
 namespace Elsa.Workflows.Runtime.Middleware.Workflows;
 
 /// <summary>
 /// Takes care of persisting workflow execution log entries.
 /// </summary>
-public class PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, IWorkflowExecutionLogSink sink) : WorkflowExecutionMiddleware(next)
+public class PersistWorkflowExecutionLogMiddleware(WorkflowMiddlewareDelegate next, ILogRecordSink<WorkflowExecutionLogRecord> sink) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)

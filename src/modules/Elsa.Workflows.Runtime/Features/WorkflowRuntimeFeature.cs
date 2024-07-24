@@ -77,8 +77,11 @@ public class WorkflowRuntimeFeature : FeatureBase
     /// A factory that instantiates an <see cref="IBackgroundActivityScheduler"/>.
     public Func<IServiceProvider, IBackgroundActivityScheduler> BackgroundActivityScheduler { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalBackgroundActivityScheduler>(sp);
 
-    /// Represents a sink for workflow execution logs.
-    public Func<IServiceProvider, IWorkflowExecutionLogSink> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
+    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="ActivityExecutionRecord"/>.
+    public Func<IServiceProvider, ILogRecordSink<ActivityExecutionRecord>> ActivityExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreActivityExecutionLogSink>();
+
+    /// A factory that instantiates an <see cref="ILogRecordSink"/> for an <see cref="WorkflowExecutionLogRecord"/>.
+    public Func<IServiceProvider, ILogRecordSink<WorkflowExecutionLogRecord>> WorkflowExecutionLogSink { get; set; } = sp => sp.GetRequiredService<StoreWorkflowExecutionLogSink>();
 
     /// A factory that instantiates an <see cref="ICommandHandler"/>.
     public Func<IServiceProvider, ICommandHandler> DispatchWorkflowCommandHandler { get; set; } = sp => sp.GetRequiredService<DispatchWorkflowCommandHandler>();
@@ -173,6 +176,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
@@ -195,6 +199,7 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<ITaskReporter, TaskReporter>()
             .AddScoped<SynchronousTaskDispatcher>()
             .AddScoped<BackgroundTaskDispatcher>()
+            .AddScoped<StoreActivityExecutionLogSink>()
             .AddScoped<StoreWorkflowExecutionLogSink>()
             .AddScoped<DispatchWorkflowCommandHandler>()
             .AddScoped<IEventPublisher, EventPublisher>()
@@ -204,7 +209,9 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
             .AddScoped<IWorkflowCanceler, WorkflowCanceler>()
             .AddScoped<IWorkflowCancellationService, WorkflowCancellationService>()
-            .AddScoped<IWorkflowExecutionLogRecordExtractor, WorkflowExecutionLogRecordExtractor>()
+            .AddScoped<ILogRecordExtractor<ActivityExecutionRecord>, ActivityExecutionRecordExtractor>()
+            .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
+            
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
             .AddScoped<StoreCommitStateHandler>()
 
