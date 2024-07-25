@@ -52,6 +52,20 @@ public static class PropertyBagExtensions
     }
 
     /// <summary>
+    /// Retrieves a value from the PropertyBag based on the provided key.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to retrieve.</typeparam>
+    /// <param name="propertyBag">The PropertyBag to retrieve the value from.</param>
+    /// <param name="key">The key of the value to retrieve.</param>
+    /// <param name="options">Optional JSON serializer options.</param>
+    /// <returns>The value associated with the key.</returns>
+    public static T GetValue<T>(this PropertyBag propertyBag, string key, JsonSerializerOptions? options = null)
+    {
+        var json = propertyBag[key].ToString();
+        return JsonSerializer.Deserialize<T>(json, options);
+    }
+
+    /// <summary>
     /// Sets a value in the PropertyBag based on the provided key.
     /// The value is serialized using JSON.
     /// </summary>

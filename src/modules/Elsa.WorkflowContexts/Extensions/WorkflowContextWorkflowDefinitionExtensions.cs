@@ -14,6 +14,17 @@ public static class WorkflowContextWorkflowDefinitionExtensions
     /// <returns>The workflow context provider types.</returns>
     public static IEnumerable<Type> GetWorkflowContextProviderTypes(this WorkflowDefinition workflowDefinition)
     {
-        return workflowDefinition.PropertyBag.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<Type>());
+        // Use customProperties for backward compatibility.
+        var key = Constants.WorkflowContextProviderTypesKey;
+        var bag = workflowDefinition.CustomProperties.ContainsKey(key) ? workflowDefinition.CustomProperties : workflowDefinition.PropertyBag;
+        var contextProviderTypes = bag.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<Type>());
+        
+        // Copy value into property-bag.
+        workflowDefinition.PropertyBag[key] = contextProviderTypes;
+        
+        // Delete value from custom properties.
+        workflowDefinition.CustomProperties.Remove(key);
+
+        return contextProviderTypes;
     }
 }

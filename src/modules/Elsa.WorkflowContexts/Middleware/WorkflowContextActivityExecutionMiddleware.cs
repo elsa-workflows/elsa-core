@@ -23,14 +23,20 @@ public class WorkflowContextActivityExecutionMiddleware(ActivityMiddlewareDelega
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
-        // Check if the workflow contains any workflow context providers.
-        if (!context.WorkflowExecutionContext.Workflow.PropertyBag.TryGetValue<ICollection<Type>>(Constants.WorkflowContextProviderTypesKey, out var providerTypes, _jsonSerializerOptions))
+        // Use customProperties for backward compatibility.
+        var key = Constants.WorkflowContextProviderTypesKey;
+        var workflow = context.WorkflowExecutionContext.Workflow;
+
+        if (!workflow.CustomProperties.ContainsKey(key) && !workflow.PropertyBag.ContainsKey(key))
         {
             await next(context);
             return;
         }
 
-        if (providerTypes.Count == 0)
+        // Check if the workflow contains any workflow context providers.
+        var providerTypes = workflow.CustomProperties.ContainsKey(key) ? workflow.CustomProperties.GetValue<ICollection<Type>>(key) : workflow.PropertyBag.GetValue<ICollection<Type>>(key, _jsonSerializerOptions);
+
+        if (providerTypes == null || providerTypes.Count == 0)
         {
             await next(context);
             return;
