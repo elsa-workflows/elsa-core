@@ -195,7 +195,6 @@ services
 
                 if (configuration["KUBERNETES_SERVICE_HOST"] != null)
                 {
-                    Console.WriteLine("KUBERNETES_SERVICE_HOST: {0}", configuration["KUBERNETES_SERVICE_HOST"]);
                     var kubernetesConfig = new KubernetesProviderConfig();
                     var clusterProvider = new KubernetesProvider(kubernetesConfig);
 
