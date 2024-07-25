@@ -19,11 +19,19 @@ namespace Elsa.ProtoActor.Features;
 /// Installs the Proto Actor feature.
 public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
-    private string _clusterName = "elsa-cluster";
     private LogLevel _diagnosticsLogLevel = LogLevel.Information;
     private bool _enableMetrics;
     private bool _enableTracing;
 
+    /// <summary>
+    /// Gets or sets the name of the cluster.
+    /// </summary>
+    /// <remarks>
+    /// The ClusterName property specifies the name of the cluster that will be used by the Proto Actor feature.
+    /// By default, the cluster name is set to "elsa-cluster".
+    /// </remarks>
+    public string ClusterName { get; set; } = "elsa-cluster";
+    
     /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
 
@@ -94,7 +102,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
             var clusterProvider = CreateClusterProvider(sp);
             var system = new ActorSystem(actorSystemConfig).WithServiceProvider(sp);
             var clusterConfig = ClusterConfig
-                .Setup(_clusterName, clusterProvider, new PartitionIdentityLookup())
+                .Setup(ClusterName, clusterProvider, new PartitionIdentityLookup())
                 .WithHeartbeatExpiration(TimeSpan.FromDays(1))
                 .WithActorRequestTimeout(TimeSpan.FromSeconds(1000))
                 .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
