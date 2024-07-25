@@ -7,7 +7,7 @@
     <PackageVersion Include="Antlr4.Runtime.Standard" Version="4.13.1" />
     <PackageVersion Include="AutoMapper" Version="13.0.1" PrivateAssets="All" />
     <PackageVersion Include="Azure.Identity" Version="1.12.0" />
-    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.17.5" />
+    <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.18.0" />
     <PackageVersion Include="Azure.ResourceManager" Version="1.12.0" />
     <PackageVersion Include="Azure.ResourceManager.AppContainers" Version="1.2.0" />
     <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.8.0" />
