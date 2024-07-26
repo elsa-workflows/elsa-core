@@ -383,6 +383,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server"
 	ProjectSection(SolutionItems) = preProject
 		deployment\elsa-server\deployment.yaml = deployment\elsa-server\deployment.yaml
 		deployment\elsa-server\service.yaml = deployment\elsa-server\service.yaml
+		deployment\elsa-server\service-account.yml = deployment\elsa-server\service-account.yml
+		deployment\elsa-server\role.yaml = deployment\elsa-server\role.yaml
+		deployment\elsa-server\role-binding.yaml = deployment\elsa-server\role-binding.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{31089E79-694B-4F45-97AF-86D34A7B231E}"
@@ -400,10 +403,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{16B570BC-E293-4A19-B20E-5C97BAF8476B}"
 	ProjectSection(SolutionItems) = preProject
 		deployment\trace-lens\deployment.yaml = deployment\trace-lens\deployment.yaml
-		deployment\trace-lens\role-binding.yaml = deployment\trace-lens\role-binding.yaml
-		deployment\trace-lens\service-account.yml = deployment\trace-lens\service-account.yml
-		deployment\trace-lens\role.yaml = deployment\trace-lens\role.yaml
-		deployment\trace-lens\service.yml = deployment\trace-lens\service.yml
+		deployment\trace-lens\service.yaml = deployment\trace-lens\service.yaml
 	EndProjectSection
 EndProject
 Global
