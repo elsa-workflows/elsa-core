@@ -1,6 +1,6 @@
-namespace Elsa.OrchardCore.Options;
+namespace Elsa.OrchardCore;
 
-public class OrchardOptions
+public class OrchardCoreOptions
 {
     public ISet<string> ContentTypes { get; set; } = new HashSet<string>();
 }

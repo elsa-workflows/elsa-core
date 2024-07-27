@@ -6,6 +6,10 @@
         </Description>
         <PackageTags>elsa module orchardcore</PackageTags>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="StrawberryShake.Server" />
+    </ItemGroup>
     
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Webhooks\Elsa.Webhooks.csproj" />
@@ -13,4 +17,5 @@
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
+    
 </Project>

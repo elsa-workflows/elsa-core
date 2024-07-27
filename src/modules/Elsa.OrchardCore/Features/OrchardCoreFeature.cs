@@ -3,7 +3,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.OrchardCore.ActivityProviders;
-using Elsa.OrchardCore.Options;
+using Elsa.OrchardCore.Client.Extensions;
 using Elsa.OrchardCore.WebhookPayloads;
 using Elsa.Webhooks.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,14 +16,16 @@ public class OrchardCoreFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Module.AddVariableTypeAndAlias<ContentItemPublishedPayload>("ContentItemPublished", "Orchard");
+        Module.AddActivitiesFrom<OrchardCoreFeature>();
         Services
-            .AddActivityProvider<OrchardActivityProvider>()
+            .AddActivityProvider<OrchardContentItemsEventActivityProvider>()
             .AddHandlersFrom<OrchardCoreFeature>()
             ;
     }
 
     public override void Apply()
     {
-        Services.AddOptions<OrchardOptions>();
+        Services.AddOrchardCoreClient();
+        Services.AddOptions<OrchardCoreOptions>();
     }
 }

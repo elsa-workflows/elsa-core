@@ -1,5 +1,4 @@
 using Elsa.OrchardCore.Activities;
-using Elsa.OrchardCore.Options;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -7,9 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.OrchardCore.ActivityProviders;
 
-/// An activity provider that generates activity types based on Orchard content types.
+/// An activity provider that generates activity types based on Orchard content type events.
 [UsedImplicitly]
-public class OrchardActivityProvider(IOptions<OrchardOptions> options, IActivityFactory activityFactory, IActivityDescriber activityDescriber) : IActivityProvider
+public class OrchardContentItemsEventActivityProvider(IOptions<OrchardCoreOptions> options, IActivityFactory activityFactory, IActivityDescriber activityDescriber) : IActivityProvider
 {
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {

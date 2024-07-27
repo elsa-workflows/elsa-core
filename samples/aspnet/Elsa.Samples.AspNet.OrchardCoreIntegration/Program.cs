@@ -2,7 +2,8 @@
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.OrchardCore.Options;
+using Elsa.OrchardCore;
+using Elsa.OrchardCore.Client;
 using Elsa.SemanticKernel.Api.Extensions;
 using Elsa.SemanticKernel.Options;
 using WebhooksCore.Options;
@@ -33,7 +34,8 @@ builder.Services.AddElsa(elsa =>
 
 builder.Services.Configure<SemanticKernelOptions>(options => builder.Configuration.GetSection("SemanticKernel").Bind(options));
 builder.Services.Configure<WebhookSourcesOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
-builder.Services.Configure<OrchardOptions>(options => builder.Configuration.GetSection("Orchard").Bind(options));
+builder.Services.Configure<OrchardCoreOptions>(options => builder.Configuration.GetSection("OrchardCore").Bind(options));
+builder.Services.Configure<OrchardCoreClientOptions>(options => builder.Configuration.GetSection("OrchardCore:Client").Bind(options));
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("*")));
 
 var app = builder.Build();
