@@ -199,7 +199,7 @@ public class ActivityDescriber : IActivityDescriber
         return await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
     }
     
-    public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
+    public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute = null)
     {
         if (inputAttribute?.UIHint != null)
             return inputAttribute.UIHint;

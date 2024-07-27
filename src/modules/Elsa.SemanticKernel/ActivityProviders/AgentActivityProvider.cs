@@ -75,7 +75,7 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                             ValueSetter = (activity, value) => activity.SyntheticProperties[inputName] = value!,
                             IsSynthetic = true,
                             IsWrapped = true,
-                            UIHint = InputUIHints.SingleLine // TODO: Replace with GetUIHint from ActivityDescriber once its made public (build is underway).
+                            UIHint = ActivityDescriber.GetUIHint(nakedInputType)
                         };
                         activityDescriptor.Inputs.Add(inputDescriptor);
                     }
