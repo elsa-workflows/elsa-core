@@ -12,7 +12,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Enables and configures the <see cref="OrchardCoreFeature"/> feature.
     /// </summary>
-    public static IModule UseOrchardWebhooks(this IModule module, Action<OrchardCoreFeature>? configure = default)
+    public static IModule UseOrchardCore(this IModule module, Action<OrchardCoreFeature>? configure = default)
     {
         module.Configure(configure);
         return module;

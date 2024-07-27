@@ -22,13 +22,13 @@ public class OrchardContentItemsEventActivityProvider(IOptions<OrchardCoreOption
         var description = $"Handles published events for {contentType} content items";
         var name = $"{contentType}Published";
         var displayName = $"{contentType} Published";
-        var fullTypeName = $"Orchard.ContentItem.{contentType}.Published";
+        var fullTypeName = $"OrchardCore.ContentItem.{contentType}.Published";
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(ContentItemPublished), cancellationToken);
         
         activityDescriptor.TypeName = fullTypeName;
         activityDescriptor.Name = name;
         activityDescriptor.DisplayName = displayName;
-        activityDescriptor.Category = "Orchard";
+        activityDescriptor.Category = "Orchard Core";
         activityDescriptor.Description = description;
         activityDescriptor.Constructor = context =>
         {

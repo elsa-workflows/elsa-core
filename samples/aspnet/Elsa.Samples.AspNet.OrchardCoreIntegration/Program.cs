@@ -19,7 +19,7 @@ builder.Services.AddElsa(elsa =>
         .UseScheduling()
         .UseJavaScript()
         .UseLiquid()
-        .UseOrchardWebhooks()
+        .UseOrchardCore()
         .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
         .AddActivitiesFrom<Program>()
         .AddWorkflowsFrom<Program>()
