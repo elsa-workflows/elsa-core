@@ -62,7 +62,7 @@ public class WebhooksFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddWebhooksCore();
+            .AddWebhooksCore()
             .AddActivityProvider<WebhookEventActivityProvider>();
     }
 }
