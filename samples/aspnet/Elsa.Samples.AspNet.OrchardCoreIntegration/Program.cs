@@ -3,6 +3,8 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.OrchardCore.Options;
+using Elsa.SemanticKernel.Api.Extensions;
+using Elsa.SemanticKernel.Options;
 using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,9 +26,12 @@ builder.Services.AddElsa(elsa =>
         {
             identity.UseAdminUserProvider();
             identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
-        });
+        })
+        .UseSemanticKernel()
+        .UseSemanticKernelApi();
 });
 
+builder.Services.Configure<SemanticKernelOptions>(options => builder.Configuration.GetSection("SemanticKernel").Bind(options));
 builder.Services.Configure<WebhookSourcesOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 builder.Services.Configure<OrchardOptions>(options => builder.Configuration.GetSection("Orchard").Bind(options));
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod().WithExposedHeaders("*")));

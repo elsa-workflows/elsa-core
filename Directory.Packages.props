@@ -57,6 +57,7 @@
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.61.3" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.16.1" />
     <PackageVersion Include="MongoDB.Driver" Version="2.27.0" />
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.4.0" />
     <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2" />
@@ -136,6 +137,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="7.0.20" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="7.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageVersion Include="Npgsql" Version="7.0.7" />
@@ -168,6 +170,7 @@
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="8.0.7" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageVersion Include="Npgsql" Version="8.0.3" />

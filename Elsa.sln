@@ -418,6 +418,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebhooksCore", "..\..\..\sf
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Samples.AspNet.OrchardCoreIntegration", "samples\aspnet\Elsa.Samples.AspNet.OrchardCoreIntegration\Elsa.Samples.AspNet.OrchardCoreIntegration.csproj", "{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "semantic-kernel", "semantic-kernel", "{50470834-4CD8-479A-8B58-0A1869BA5D37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SemanticKernel.Core", "src\modules\Elsa.SemanticKernel.Core\Elsa.SemanticKernel.Core.csproj", "{5BD671F0-9603-4C2F-8364-54B02986EAA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SemanticKernel.Api", "src\modules\Elsa.SemanticKernel.Api\Elsa.SemanticKernel.Api.csproj", "{154525CD-3726-45B7-9A9C-553BBC60EB10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.SemanticKernel", "src\modules\Elsa.SemanticKernel\Elsa.SemanticKernel.csproj", "{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -958,6 +966,18 @@ Global
 		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BD671F0-9603-4C2F-8364-54B02986EAA2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD671F0-9603-4C2F-8364-54B02986EAA2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD671F0-9603-4C2F-8364-54B02986EAA2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD671F0-9603-4C2F-8364-54B02986EAA2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{154525CD-3726-45B7-9A9C-553BBC60EB10}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{154525CD-3726-45B7-9A9C-553BBC60EB10}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{154525CD-3726-45B7-9A9C-553BBC60EB10}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{154525CD-3726-45B7-9A9C-553BBC60EB10}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1123,6 +1143,10 @@ Global
 		{FAB8DA28-D9E2-4577-B858-1846BF0092EB} = {31A0F0C9-2DC2-4B7E-84BA-AC8824632BB2}
 		{C16156BF-C32E-4DEB-A850-EF18A4F2E554} = {31A0F0C9-2DC2-4B7E-84BA-AC8824632BB2}
 		{1451B84D-F224-4D5D-9A0D-985A8BD23D7B} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
+		{50470834-4CD8-479A-8B58-0A1869BA5D37} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{5BD671F0-9603-4C2F-8364-54B02986EAA2} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{154525CD-3726-45B7-9A9C-553BBC60EB10} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{6A821D9F-5BF7-4D39-9367-A31E0FC0C7EF} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
