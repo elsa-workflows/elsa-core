@@ -31,7 +31,7 @@ public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotif
             notification.TaskPayload
         );
         
-        var webhookEvent = new NewWebhookEvent("RunTask", payload);
+        var webhookEvent = new NewWebhookEvent("Elsa.RunTask", payload);
         await webhookDispatcher.BroadcastAsync(webhookEvent, cancellationToken);
     }
 }
