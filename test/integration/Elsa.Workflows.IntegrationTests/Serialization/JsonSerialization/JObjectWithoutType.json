@@ -10,5 +10,5 @@
       ]
     }
   },
-  "_type": "System.Collections.Generic.Dictionary`2[[System.String, System.Private.CoreLib],[System.Object, System.Private.CoreLib]], System.Private.CoreLib"
+  "_type": "ObjectMap"
 }

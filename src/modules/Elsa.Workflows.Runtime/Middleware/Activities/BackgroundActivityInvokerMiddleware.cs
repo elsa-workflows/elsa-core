@@ -1,20 +1,24 @@
 using System.Text.Json;
 using Elsa.Extensions;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
-using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Stimuli;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Middleware.Activities;
 
-/// <summary>
 /// Collects the current activity for scheduling for execution from a background job if the activity is of kind <see cref="ActivityKind.Job"/> or <see cref="Task"/>.
-/// The actual scheduling of the activity happens in <see cref="ScheduleBackgroundActivitiesMiddleware"/>.
-/// </summary>
-public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddleware
+[UsedImplicitly]
+public class BackgroundActivityInvokerMiddleware(
+    ActivityMiddlewareDelegate next,
+    ILogger<BackgroundActivityInvokerMiddleware> logger,
+    IIdentityGenerator identityGenerator,
+    IBackgroundActivityScheduler backgroundActivityScheduler)
+    : DefaultActivityInvokerMiddleware(next, logger)
 {
     internal static string GetBackgroundActivityOutputKey(string activityNodeId) => $"__BackgroundActivityOutput:{activityNodeId}";
     internal static string GetBackgroundActivityOutcomesKey(string activityNodeId) => $"__BackgroundActivityOutcomes:{activityNodeId}";
@@ -22,13 +26,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     internal static string GetBackgroundActivityJournalDataKey(string activityNodeId) => $"__BackgroundActivityJournalData:{activityNodeId}";
     internal static string GetBackgroundActivityScheduledActivitiesKey(string activityNodeId) => $"__BackgroundActivityScheduledActivities:{activityNodeId}";
     internal static string GetBackgroundActivityBookmarksKey(string activityNodeId) => $"__BackgroundActivityBookmarks:{activityNodeId}";
-    internal static readonly object BackgroundActivitySchedulesKey = new();
     internal const string BackgroundActivityBookmarkName = "BackgroundActivity";
-
-    /// <inheritdoc />
-    public BackgroundActivityInvokerMiddleware(ActivityMiddlewareDelegate next, ILogger<BackgroundActivityInvokerMiddleware> logger) : base(next, logger)
-    {
-    }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteActivityAsync(ActivityExecutionContext context)
@@ -36,7 +34,7 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         var shouldRunInBackground = GetShouldRunInBackground(context);
 
         if (shouldRunInBackground)
-            ScheduleBackgroundActivity(context);
+            await ScheduleBackgroundActivityAsync(context);
         else
         {
             await base.ExecuteActivityAsync(context);
@@ -55,9 +53,35 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
         }
     }
 
-    /// <summary>
+    /// Schedules the current activity for execution in the background.
+    private async Task ScheduleBackgroundActivityAsync(ActivityExecutionContext context)
+    {
+        var cancellationToken = context.CancellationToken;
+        var workflowInstanceId = context.WorkflowExecutionContext.Id;
+        var activityNodeId = context.NodeId;
+        var bookmarkId = identityGenerator.GenerateId();
+        var scheduledBackgroundActivity = new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmarkId);
+        var jobId = await backgroundActivityScheduler.CreateAsync(scheduledBackgroundActivity, cancellationToken);
+        var stimulus = new BackgroundActivityStimulus
+        {
+            JobId = jobId
+        };
+        var bookmarkOptions = new CreateBookmarkArgs
+        {
+            BookmarkId = bookmarkId,
+            BookmarkName = BackgroundActivityBookmarkName,
+            Stimulus = stimulus,
+            AutoComplete = false
+        };
+        context.CreateBookmark(bookmarkOptions);
+
+        context.DeferTask(async () =>
+        {
+            await backgroundActivityScheduler.ScheduleAsync(jobId, cancellationToken);
+        });
+    }
+
     /// Determines whether the current activity should be executed in the background.
-    /// </summary>
     private static bool GetShouldRunInBackground(ActivityExecutionContext context)
     {
         var activity = context.Activity;
@@ -70,30 +94,8 @@ public class BackgroundActivityInvokerMiddleware : DefaultActivityInvokerMiddlew
     }
 
     private static bool GetIsBackgroundExecution(ActivityExecutionContext context) => context.TransientProperties.ContainsKey(BackgroundActivityExecutionContextExtensions.IsBackgroundExecution);
-
-    /// <summary>
-    /// Schedules the current activity for execution in the background.
-    /// </summary>
-    private static void ScheduleBackgroundActivity(ActivityExecutionContext context)
-    {
-        var scheduledBackgroundActivities = context.WorkflowExecutionContext.TransientProperties.GetOrAdd(BackgroundActivitySchedulesKey, () => new List<ScheduledBackgroundActivity>());
-        var workflowInstanceId = context.WorkflowExecutionContext.Id;
-        var activityNodeId = context.NodeId;
-        var bookmarkPayload = new BackgroundActivityStimulus();
-        var bookmarkOptions = new CreateBookmarkArgs
-        {
-            BookmarkName = BackgroundActivityBookmarkName,
-            Stimulus = bookmarkPayload,
-            AutoComplete = false
-        };
-        var bookmark = context.CreateBookmark(bookmarkOptions);
-        scheduledBackgroundActivities.Add(new ScheduledBackgroundActivity(workflowInstanceId, activityNodeId, bookmark.Id));
-    }
-
-    /// <summary>
+    
     /// If the input contains captured output from the background activity invoker, apply that to the execution context.
-    /// </summary>
-    /// <param name="context"></param>
     private static void CaptureOutputIfAny(ActivityExecutionContext context)
     {
         var activity = context.Activity;

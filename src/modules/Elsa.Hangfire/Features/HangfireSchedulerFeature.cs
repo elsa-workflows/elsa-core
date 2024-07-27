@@ -3,6 +3,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hangfire.Handlers;
 using Elsa.Hangfire.Services;
+using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
 using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;

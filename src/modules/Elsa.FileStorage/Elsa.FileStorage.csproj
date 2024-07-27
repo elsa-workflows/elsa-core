@@ -15,6 +15,11 @@
         <PackageReference Include="FluentStorage" />
     </ItemGroup>
 
+    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
     <ItemGroup>
       <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />

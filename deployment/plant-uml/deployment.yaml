@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plant-uml-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plant-uml
+  template:
+    metadata:
+      labels:
+        app: plant-uml
+    spec:
+      containers:
+        - name: plant-uml
+          imagePullPolicy: Always
+          image: plantuml/plantuml-server:tomcat
+          ports:
+            - containerPort: 8080

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-db-config
+data:
+  init-db.sh: |
+    #!/bin/bash
+    echo "Starting database initialization"
+  
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    GRANT ALL ON SCHEMA public TO elsa;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO elsa;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO elsa;
+    GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO elsa;
+    CREATE USER tracelens WITH PASSWORD 'tracelenspass';
+    CREATE DATABASE tracelens;
+    GRANT ALL PRIVILEGES ON DATABASE tracelens TO tracelens;
+    GRANT ALL ON SCHEMA public TO tracelens;
+    EOSQL
+    
+    echo "Database initialization completed"

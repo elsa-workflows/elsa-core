@@ -12,7 +12,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;
 using Humanizer;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityDescriber : IActivityDescriber
@@ -194,20 +194,12 @@ public class ActivityDescriber : IActivityDescriber
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default) =>
-        await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
-
-    private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] Type activityType, CancellationToken cancellationToken = default)
     {
-        return await Task.WhenAll(properties.Select(async x => await DescribeInputPropertyAsync(x, cancellationToken)));
+        return await DescribeOutputPropertiesAsync(GetOutputProperties(activityType), cancellationToken);
     }
-
-    private async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
-    {
-        return await Task.WhenAll(properties.Select(async x => await DescribeOutputPropertyAsync(x, cancellationToken)));
-    }
-
-    private static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
+    
+    public static string GetUIHint(Type wrappedPropertyType, InputAttribute? inputAttribute)
     {
         if (inputAttribute?.UIHint != null)
             return inputAttribute.UIHint;
@@ -231,5 +223,15 @@ public class ActivityDescriber : IActivityDescriber
             return InputUIHints.TypePicker;
 
         return InputUIHints.SingleLine;
+    }
+
+    private async Task<IEnumerable<InputDescriptor>> DescribeInputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(properties.Select(async x => await DescribeInputPropertyAsync(x, cancellationToken)));
+    }
+
+    private async Task<IEnumerable<OutputDescriptor>> DescribeOutputPropertiesAsync(IEnumerable<PropertyInfo> properties, CancellationToken cancellationToken = default)
+    {
+        return await Task.WhenAll(properties.Select(async x => await DescribeOutputPropertyAsync(x, cancellationToken)));
     }
 }

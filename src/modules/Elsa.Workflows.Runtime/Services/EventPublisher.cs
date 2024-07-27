@@ -1,7 +1,7 @@
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Stimuli;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class EventPublisher(IStimulusSender stimulusSender) : IEventPublisher

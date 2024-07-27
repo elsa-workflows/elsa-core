@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
@@ -12,7 +11,6 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Medallion.Threading;
 using Microsoft.AspNetCore.Authorization;
@@ -69,11 +67,7 @@ internal class Post(
 
         // Update the draft with the received model.
         var root = model.Root ?? new Sequence();
-        var serializerOptions = serializer.GetOptions().Clone();
-
-        // Ignore the root activity when serializing the workflow definition.
-        serializerOptions.Converters.Add(new JsonIgnoreCompositeRootConverterFactory());
-
+        var serializerOptions = serializer.GetOptions();
         var stringData = JsonSerializer.Serialize(root, serializerOptions);
         var variables = variableDefinitionMapper.Map(model.Variables).ToList();
         var inputs = model.Inputs ?? new List<InputDefinition>();
@@ -86,6 +80,7 @@ internal class Post(
         draft.ToolVersion = model.ToolVersion;
         draft.Description = model.Description?.Trim();
         draft.CustomProperties = model.CustomProperties ?? new Dictionary<string, object>();
+        draft.PropertyBag = model.PropertyBag ?? new PropertyBag();
         draft.Variables = variables;
         draft.Inputs = inputs;
         draft.Outputs = outputs;
@@ -93,7 +88,7 @@ internal class Post(
         draft.Options = model.Options ?? new WorkflowOptions();
 
         PublishWorkflowDefinitionResult? result = null;
-        
+
         if (request.Publish.GetValueOrDefault(false))
         {
             result = await workflowDefinitionPublisher.PublishAsync(draft, cancellationToken);

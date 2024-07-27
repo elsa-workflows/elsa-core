@@ -7,7 +7,6 @@ using Elsa.Dapper.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -98,6 +97,8 @@ internal class DapperWorkflowExecutionLogStore(Store<WorkflowExecutionLogRecordR
             .In(nameof(WorkflowExecutionLogRecordRecord.WorkflowInstanceId), filter.WorkflowInstanceIds)
             .Is(nameof(WorkflowExecutionLogRecordRecord.EventName), filter.EventName)
             .In(nameof(WorkflowExecutionLogRecordRecord.ActivityId), filter.EventNames)
+            .IsNot(nameof(WorkflowExecutionLogRecordRecord.ActivityType), filter.ExcludeActivityType)
+            .NotIn(nameof(WorkflowExecutionLogRecordRecord.ActivityType), filter.ExcludeActivityTypes)
             ;
     }
 

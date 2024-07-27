@@ -22,7 +22,7 @@ builder.Services.AddElsa(elsa =>
     })
     .UseWorkflowsApi()
     .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
-    .UseWebhooks();
+    .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options));
 });
 
 builder.Services.Configure<WebhookSinksOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));

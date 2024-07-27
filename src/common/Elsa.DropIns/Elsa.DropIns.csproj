@@ -12,7 +12,12 @@
         <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="NuGet.Packaging" />
         <PackageReference Include="NuGet.Protocol" />
+        <PackageReference Include="System.Formats.Asn1" />
         <PackageReference Include="ThrottleDebounce" />
+    </ItemGroup>
+
+    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
+    <ItemGroup>
     </ItemGroup>
 
     <ItemGroup>

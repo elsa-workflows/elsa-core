@@ -12,8 +12,9 @@ namespace Elsa.Api.Client.Resources.WorkflowInstances.Models;
 /// <param name="Payload">The data associated with the bookmark.</param>
 /// <param name="ActivityNodeId">The ID of the activity node associated with the bookmark.</param>
 /// <param name="ActivityInstanceId">The ID of the activity instance associated with the bookmark.</param>
-/// <param name="AutoBurn">Whether or not the bookmark should be automatically burned.</param>
+/// <param name="AutoBurn">Whether the bookmark should be automatically burned.</param>
 /// <param name="CallbackMethodName">The name of the method on the activity class to invoke when the bookmark is resumed.</param>
+/// <param name="Metadata">The metadata associated with this bookmark.</param>
 [PublicAPI]
 public record Bookmark(
     string Id,

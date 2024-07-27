@@ -1,6 +1,6 @@
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Generates a unique identifier using <see cref="Guid"/>.

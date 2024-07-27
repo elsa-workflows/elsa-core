@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Common.Entities;
 using Elsa.Workflows.State;
 
@@ -6,7 +7,7 @@ namespace Elsa.Workflows.Runtime.Entities;
 /// <summary>
 /// Represents a single activity execution of an activity instance.
 /// </summary>
-public class ActivityExecutionRecord : Entity
+public class ActivityExecutionRecord : Entity, ILogRecord
 {
     /// <summary>
     /// Gets or sets the workflow instance ID.

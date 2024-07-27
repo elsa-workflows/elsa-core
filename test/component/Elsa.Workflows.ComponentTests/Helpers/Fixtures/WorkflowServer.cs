@@ -1,7 +1,7 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Elsa.Alterations.Extensions;
-using Elsa.Common.Contracts;
+using Elsa.Caching;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -11,11 +11,10 @@ using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Consumers;
 using Elsa.Workflows.ComponentTests.Helpers.Services;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
@@ -26,7 +25,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Fixtures;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [UsedImplicitly]
 public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
@@ -76,7 +75,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     massTransit.UseRabbitMq(rabbitMqConnectionString);
                     massTransit.AddConsumer<WorkflowDefinitionEventConsumer>("elsa-test-workflow-definition-updates", true);
-                    massTransit.AddConsumer<TriggerChangeTokenSignalConsumer>("elsa-test-change-token-signal", true);
                 });
                 elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
                 elsa.UseWorkflowManagement(management =>
@@ -90,8 +88,16 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
-                    //runtime.UseProtoActor();
-                    runtime.UseDistributedRuntime();
+                    runtime.UseProtoActor();
+                    //runtime.UseDistributedRuntime();
+                });
+                elsa.UseJavaScript(options =>
+                {
+                    options.AllowClrAccess = true;
+                    options.ConfigureEngine(engine =>
+                    {
+                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                    });
                 });
                 elsa.UseAlterations(alterations =>
                 {
@@ -111,13 +117,17 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
         builder.ConfigureTestServices(services =>
         {
-            services.AddSingleton<ISignalManager, SignalManager>();
-            services.AddSingleton<IWorkflowEvents, WorkflowEvents>();
-            services.AddSingleton<IWorkflowDefinitionEvents, WorkflowDefinitionEvents>();
-            services.AddSingleton<ITriggerChangeTokenSignalEvents, TriggerChangeTokenSignalEvents>();
-            services.AddScoped<ITenantResolutionStrategy, TestTenantResolutionStrategy>();
-            services.AddNotificationHandlersFrom<WorkflowServer>();
-            services.AddNotificationHandlersFrom<WorkflowEventHandlers>();
+            services
+                .AddSingleton<SignalManager>()
+                .AddSingleton<WorkflowEvents>()
+                .AddSingleton<WorkflowDefinitionEvents>()
+                .AddSingleton<TriggerChangeTokenSignalEvents>()
+                .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
+                .AddNotificationHandlersFrom<WorkflowServer>()
+                .AddWorkflowDefinitionProvider<TestWorkflowProvider>()
+                .AddNotificationHandlersFrom<WorkflowEventHandlers>()
+                .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                ;
         });
     }
 

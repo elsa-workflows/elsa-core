@@ -1,6 +1,6 @@
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class StorageDriverManager : IStorageDriverManager

@@ -106,9 +106,13 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         foreach (var publishedAndOrLatestWorkflow in publishedWorkflows)
         {
+            var isPublished = publishedAndOrLatestWorkflow.IsPublished; 
             publishedAndOrLatestWorkflow.IsPublished = false;
             publishedAndOrLatestWorkflow.IsLatest = false;
             await _workflowDefinitionStore.SaveAsync(publishedAndOrLatestWorkflow, cancellationToken);
+            
+            if (isPublished)
+                await _notificationSender.SendAsync(new WorkflowDefinitionVersionRetracted(publishedAndOrLatestWorkflow), cancellationToken);
         }
 
         // Save the new published definition.
@@ -250,11 +254,9 @@ public class WorkflowDefinitionPublisher : IWorkflowDefinitionPublisher
 
         if (updatedWorkflowDefinitions.Any())
         {
-            var definitionVersionsUpdates = updatedWorkflowDefinitions.Select(x => 
-                new WorkflowDefinitionVersionUpdate(x.Id, x.DefinitionId, x.Options.UsableAsActivity.GetValueOrDefault())).ToList();
-            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(definitionVersionsUpdates), cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdating(updatedWorkflowDefinitions), cancellationToken);
             await _workflowDefinitionStore.SaveManyAsync(updatedWorkflowDefinitions, cancellationToken);
-            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(definitionVersionsUpdates), cancellationToken);
+            await _notificationSender.SendAsync(new WorkflowDefinitionVersionsUpdated(updatedWorkflowDefinitions), cancellationToken);
         }
 
         return updatedWorkflowDefinitions;

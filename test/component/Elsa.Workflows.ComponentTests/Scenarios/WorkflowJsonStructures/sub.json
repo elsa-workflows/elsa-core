@@ -1,0 +1,69 @@
+{
+  "id": "e91d58c7a7ca1861",
+  "definitionId": "497be45e7d647e8f",
+  "name": "Sub",
+  "createdAt": "2024-06-20T15:08:33.474045+00:00",
+  "version": 1,
+  "toolVersion": "3.3.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": []
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "usableAsActivity": true,
+    "autoUpdateConsumingWorkflows": true
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "dc487ec63d2e8520",
+    "nodeId": "Workflow1:dc487ec63d2e8520",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Test"
+          }
+        },
+        "id": "f0f7dfe68eda4744",
+        "nodeId": "Workflow1:dc487ec63d2e8520:f0f7dfe68eda4744",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": -55.796875,
+              "y": -171
+            },
+            "size": {
+              "width": 139.296875,
+              "height": 50
+            }
+          }
+        }
+      }
+    ],
+    "connections": []
+  }
+}

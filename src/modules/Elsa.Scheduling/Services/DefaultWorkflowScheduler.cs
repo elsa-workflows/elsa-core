@@ -6,22 +6,12 @@ namespace Elsa.Scheduling.Services;
 /// <summary>
 /// A default implementation of <see cref="IWorkflowScheduler"/> that uses the <see cref="LocalScheduler"/>.
 /// </summary>
-public class DefaultWorkflowScheduler : IWorkflowScheduler
+public class DefaultWorkflowScheduler(IScheduler scheduler) : IWorkflowScheduler
 {
-    private readonly IScheduler _scheduler;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultWorkflowScheduler"/> class.
-    /// </summary>
-    public DefaultWorkflowScheduler(IScheduler scheduler)
-    {
-        _scheduler = scheduler;
-    }
-
     /// <inheritdoc />
     public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
-        await _scheduler.ScheduleAsync(taskName, new RunWorkflowTask(request), new SpecificInstantSchedule(at), cancellationToken);
+        await scheduler.ScheduleAsync(taskName, new RunWorkflowTask(request), new SpecificInstantSchedule(at), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -29,7 +19,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new SpecificInstantSchedule(at);
-        await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
+        await scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -37,7 +27,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     {
         var task = new RunWorkflowTask(request);
         var schedule = new RecurringSchedule(startAt, interval);
-        await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
+        await scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -45,7 +35,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new RecurringSchedule(startAt, interval);
-        await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
+        await scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -53,7 +43,7 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     {
         var task = new RunWorkflowTask(request);
         var schedule = new CronSchedule(cronExpression);
-        await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
+        await scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -61,12 +51,12 @@ public class DefaultWorkflowScheduler : IWorkflowScheduler
     {
         var task = new ResumeWorkflowTask(request);
         var schedule = new CronSchedule(cronExpression);
-        await _scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
+        await scheduler.ScheduleAsync(taskName, task, schedule, cancellationToken);
     }
     
     /// <inheritdoc />
-    public async ValueTask UnscheduleAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async ValueTask UnscheduleAsync(string taskName, CancellationToken cancellationToken = default)
     {
-        await _scheduler.ClearScheduleAsync(workflowInstanceId, cancellationToken);
+        await scheduler.ClearScheduleAsync(taskName, cancellationToken);
     }
 }

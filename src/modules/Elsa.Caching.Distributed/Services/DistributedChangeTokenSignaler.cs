@@ -4,11 +4,9 @@ using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Caching.Distributed.Services;
 
-/// <summary>
 /// Decorates an <see cref="IChangeTokenSignaler"/> and publishes a signal after the signal has been triggered.
-/// </summary>
 [UsedImplicitly]
-public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher) : IChangeTokenSignaler, IChangeTokenSignalInvoker
+public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignaler, IChangeTokenSignalPublisher signalPublisher, IChangeTokenSignalInvoker invoker) : IChangeTokenSignaler
 {
     /// <inheritdoc />
     public IChangeToken GetToken(string key)
@@ -21,11 +19,5 @@ public class DistributedChangeTokenSignaler(IChangeTokenSignaler decoratedSignal
     {
         await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
         await signalPublisher.PublishAsync(key, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    async ValueTask IChangeTokenSignalInvoker.InvokeAsync(string key, CancellationToken cancellationToken)
-    {
-        await decoratedSignaler.TriggerTokenAsync(key, cancellationToken);
     }
 }
