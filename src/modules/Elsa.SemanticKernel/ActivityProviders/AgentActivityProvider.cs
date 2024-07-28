@@ -44,7 +44,7 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                     activityDescriptor.Name = $"{agent.Name}:{skillName}:{functionConfig.FunctionName}";
                     activityDescriptor.TypeName = activityTypeName;
                     activityDescriptor.Description = functionConfig.Description;
-                    activityDescriptor.DisplayName = functionConfig.FunctionName;
+                    activityDescriptor.DisplayName = $"{agent.Name}: {functionConfig.FunctionName.Humanize()}";
                     activityDescriptor.IsBrowsable = true;
                     activityDescriptor.Category = "Agent Skills";
                     activityDescriptor.Kind = ActivityKind.Task;
