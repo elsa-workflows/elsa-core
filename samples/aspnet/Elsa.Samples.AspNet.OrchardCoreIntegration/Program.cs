@@ -17,9 +17,17 @@ builder.Services.AddElsa(elsa =>
         {
             management.UseEntityFrameworkCore(ef => ef.UseSqlite());
             management.AddVariableType<ProofreaderResult>("Agents");
+            management.AddVariableType<TranslationResult>("Agents");
+            management.AddVariableType<FactCheckResult>("Agents");
+            management.AddVariableType<GenerateTagsResult>("Agents");
         })
-        .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+        .UseWorkflowRuntime(runtime =>
+        {
+            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
+            runtime.UseProtoActor();
+        })
         .UseWorkflowsApi()
+        .UseProtoActor()
         .UseHttp()
         .UseScheduling()
         .UseWorkflowContexts()
