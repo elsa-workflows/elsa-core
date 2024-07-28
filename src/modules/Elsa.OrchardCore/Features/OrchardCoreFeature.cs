@@ -15,7 +15,7 @@ public class OrchardCoreFeature(IModule module) : FeatureBase(module)
 {
     public override void Configure()
     {
-        Module.AddVariableTypeAndAlias<ContentItemPublishedPayload>("ContentItemPublished", "Orchard");
+        Module.AddVariableTypeAndAlias<ContentItemEventPayload>("ContentItemPublished", "Orchard");
         Module.AddActivitiesFrom<OrchardCoreFeature>();
         Services
             .AddActivityProvider<OrchardContentItemsEventActivityProvider>()

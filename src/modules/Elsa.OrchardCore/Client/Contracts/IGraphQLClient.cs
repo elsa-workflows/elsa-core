@@ -1,8 +1,6 @@
-using System.Text.Json;
-
 namespace Elsa.OrchardCore.Client;
 
 public interface IGraphQLClient
 {
-    Task<JsonElement> SendQueryAsync(string query, CancellationToken cancellationToken = default);
+    Task<object> SendQueryAsync(string query, Type? targetType, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,8 @@
 using Elsa.OrchardCore.Activities;
+using Elsa.OrchardCore.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
+using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
@@ -13,18 +15,29 @@ public class OrchardContentItemsEventActivityProvider(IOptions<OrchardCoreOption
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
         var contentTypes = options.Value.ContentTypes;
-        var activities = (await Task.WhenAll(contentTypes.Select(async x => await CreateActivityDescriptorAsync(x, cancellationToken)))).ToList();
+        var matrix =
+            from contentType in contentTypes
+            from eventType in WebhookEventTypes.GetWebhookEventDescriptors()
+            select new
+            {
+                contentType,
+                eventType
+            };
+        var activities = (await Task.WhenAll(matrix.Select(async x => await CreateActivityDescriptorAsync(x.contentType, x.eventType, cancellationToken)))).ToList();
         return activities;
     }
-    
-    private async Task<ActivityDescriptor> CreateActivityDescriptorAsync(string contentType, CancellationToken cancellationToken = default)
+
+    private async Task<ActivityDescriptor> CreateActivityDescriptorAsync(string contentType, WebhookEventDescriptor eventDescriptor, CancellationToken cancellationToken = default)
     {
-        var description = $"Handles published events for {contentType} content items";
-        var name = $"{contentType}Published";
-        var displayName = $"{contentType} Published";
-        var fullTypeName = $"OrchardCore.ContentItem.{contentType}.Published";
-        var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(ContentItemPublished), cancellationToken);
-        
+        var eventType = eventDescriptor.EventType;
+        var humanizedEventName = eventType.Humanize();
+        var description = $"Handles {humanizedEventName} events for {contentType} content items";
+        var name = $"{contentType}{eventType}";
+        var displayName = $"{contentType} {eventType}";
+        var fullTypeName = OrchardCoreActivityNameHelper.GetContentItemEventActivityFullTypeName(contentType, eventType);
+        var activityType = typeof(ContentItemEvent);
+        var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
+
         activityDescriptor.TypeName = fullTypeName;
         activityDescriptor.Name = name;
         activityDescriptor.DisplayName = displayName;
@@ -32,15 +45,16 @@ public class OrchardContentItemsEventActivityProvider(IOptions<OrchardCoreOption
         activityDescriptor.Description = description;
         activityDescriptor.Constructor = context =>
         {
-            var activity = (ContentItemPublished)activityFactory.Create(typeof(ContentItemPublished), context);
+            var activity = (ContentItemEvent)activityFactory.Create(activityType, context);
             activity.Type = fullTypeName;
             activity.ContentType = contentType;
+            activity.EventType = eventType;
             return activity;
         };
-        
-        var contentTypeDescriptor = activityDescriptor.Inputs.First(x => x.Name == nameof(ContentItemPublished.ContentType));
-        contentTypeDescriptor.IsBrowsable = false;
-        
+
+        foreach (var inputDescriptor in activityDescriptor.Inputs)
+            inputDescriptor.IsBrowsable = false;
+
         return activityDescriptor;
     }
 }

@@ -2,7 +2,7 @@ namespace Elsa.SemanticKernel;
 
 public class ExecutionSettingsConfig
 {
-    public int MaxTokens { get; set; }
+    public int? MaxTokens { get; set; }
     public double Temperature { get; set; }
     public double TopP { get; set; }
     public double PresencePenalty { get; set; }

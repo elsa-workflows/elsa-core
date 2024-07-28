@@ -4,6 +4,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
+using Elsa.Samples.AspNet.OrchardCoreIntegration;
 using Elsa.SemanticKernel.Api.Extensions;
 using Elsa.SemanticKernel.Options;
 using WebhooksCore.Options;
@@ -12,7 +13,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddElsa(elsa =>
 {
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()))
+    elsa.UseWorkflowManagement(management =>
+        {
+            management.UseEntityFrameworkCore(ef => ef.UseSqlite());
+            management.AddVariableType<ProofreaderResult>("Agents");
+        })
         .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite()))
         .UseWorkflowsApi()
         .UseHttp()

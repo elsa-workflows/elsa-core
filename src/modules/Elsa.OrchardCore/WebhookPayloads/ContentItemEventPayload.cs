@@ -1,9 +1,8 @@
 namespace Elsa.OrchardCore.WebhookPayloads;
 
-public record ContentItemPublishedPayload(
+public record ContentItemEventPayload(
     string ContentType,
     string DisplayText,
     string Author,
     string Owner,
-    string PublishedContentItemId,
-    string? PreviousContentItemId);
+    string ContentItemId);

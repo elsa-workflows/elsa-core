@@ -8,11 +8,15 @@ using Elsa.Workflows.Attributes;
 
 namespace Elsa.OrchardCore.Activities;
 
-public class ContentItemPublished : Trigger<ContentItemPublishedPayload>, INotification
+public class ContentItemEvent : Trigger<ContentItemEventPayload>, INotification
 {
     /// The content type to handle the event for.
     [Input(Description = "The content type to handle the event for.")]
     public string ContentType { get; set; } = default!;
+    
+    /// The event to handle.
+    [Input(Description = "The event to handle the event for.")]
+    public string EventType { get; set; } = default!;
 
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
@@ -25,13 +29,13 @@ public class ContentItemPublished : Trigger<ContentItemPublishedPayload>, INotif
         await ExecuteInternalAsync(context);
     }
 
-    protected override object GetTriggerPayload(TriggerIndexingContext context) => new ContentItemPublishedStimulus(ContentType);
+    protected override object GetTriggerPayload(TriggerIndexingContext context) => new ContentItemEventStimulus(ContentType, EventType);
     private async ValueTask OnResumeAsync(ActivityExecutionContext context) => await ExecuteInternalAsync(context);
-    private object GetStimulus(ExpressionExecutionContext context) => new ContentItemPublishedStimulus(ContentType);
+    private object GetStimulus(ExpressionExecutionContext context) => new ContentItemEventStimulus(ContentType, EventType);
 
     private async Task ExecuteInternalAsync(ActivityExecutionContext context)
     {
-        var payload = context.GetWorkflowInput<ContentItemPublishedPayload>();
+        var payload = context.GetWorkflowInput<ContentItemEventPayload>();
         context.SetResult(payload);
         await context.CompleteActivityAsync();
     }

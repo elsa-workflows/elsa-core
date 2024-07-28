@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.OrchardCore.Client;
 using Elsa.Workflows;
@@ -7,8 +6,8 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.OrchardCore.Activities;
 
-[Activity("OrchardCore", "Orchard Core", "Send a GraphQL query to Orchard Core")]
-public class SendGraphQLQuery : CodeActivity<JsonElement>
+[Activity("OrchardCore", "Orchard Core", "Send a GraphQL query to Orchard Core", DisplayName = "GraphQL Query")]
+public class SendGraphQLQuery : CodeActivity<object>
 {
     /// The content type to handle the event for.
     [Input(Description = "The GraphQL query string to send.")]
@@ -18,7 +17,8 @@ public class SendGraphQLQuery : CodeActivity<JsonElement>
     {
         var query = Query.Get(context);
         var client = context.GetRequiredService<IGraphQLClient>();
-        var element = await client.SendQueryAsync(query, context.CancellationToken);
-        context.SetResult(element);
+        var targetType = Result.GetTargetType(context);
+        var output = await client.SendQueryAsync(query, targetType, context.CancellationToken);
+        context.SetResult(output);
     }
 }

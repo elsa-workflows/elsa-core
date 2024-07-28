@@ -45,6 +45,7 @@ public class SkillExecutor(KernelConfig kernelConfig)
         
         var kernelFunction = kernel.CreateFunctionFromPrompt(promptTemplateConfig);
         var kernelArguments = new KernelArguments(input);
+        
         var result = await kernelFunction.InvokeAsync(kernel, kernelArguments, cancellationToken: cancellationToken);
         return new(function, result);
     }
