@@ -2,6 +2,7 @@ namespace Elsa.SemanticKernel.Options;
 
 public class SemanticKernelOptions
 {
+    public ICollection<ApiKeyConfig> ApiKeys { get; set; }
     public ICollection<ModelConfig> Models { get; set; }
     public ICollection<PluginConfig> Plugins { get; set; }
     public ICollection<SkillConfig> Skills { get; set; }

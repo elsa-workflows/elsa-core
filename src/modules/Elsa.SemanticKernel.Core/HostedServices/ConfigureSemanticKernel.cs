@@ -8,6 +8,7 @@ public class ConfigureSemanticKernel(KernelConfig kernelConfig, IOptions<Semanti
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        foreach (var apiKey in options.Value.ApiKeys) kernelConfig.ApiKeys[apiKey.Name] = apiKey;
         foreach (var model in options.Value.Models) kernelConfig.Models[model.Name] = model;
         foreach (var skill in options.Value.Skills) kernelConfig.Skills[skill.Name] = skill;
         foreach (var plugin in options.Value.Plugins) kernelConfig.Plugins[plugin.Name] = plugin;

@@ -59,7 +59,7 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
             {
                 case "OpenAIChatCompletion":
                     var modelId = (string)service.Settings["ModelId"];
-                    var apiKey = (string)service.Settings["ApiKey"];
+                    var apiKey = GetApiKey(service);
                     builder.AddOpenAIChatCompletion(modelId, apiKey);
                     break;
                 default:
@@ -67,6 +67,18 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
                     break;
             }
         }
+    }
+    
+    private string GetApiKey(ServiceConfig service)
+    {
+        var settings = service.Settings;
+        if(settings.TryGetValue("ApiKey", out var apiKey))
+            return (string)apiKey;
+        
+        if(settings.TryGetValue("ApiKeyRef", out var apiKeyRef))
+            return kernelConfig.ApiKeys[(string)apiKeyRef].Value;
+        
+        throw new KeyNotFoundException($"No api key found for service {service.Type}");
     }
 
     private void AddPlugins(IKernelBuilder builder, SkillConfig skill)

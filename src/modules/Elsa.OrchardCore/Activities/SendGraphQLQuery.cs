@@ -6,7 +6,7 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.OrchardCore.Activities;
 
-[Activity("OrchardCore", "Orchard Core", "Send a GraphQL query to Orchard Core", DisplayName = "GraphQL Query")]
+[Activity("OrchardCore", "Orchard Core", "Send a GraphQL query to Orchard Core", DisplayName = "GraphQL Query", Kind = ActivityKind.Task)]
 public class SendGraphQLQuery : CodeActivity<object>
 {
     /// The content type to handle the event for.
