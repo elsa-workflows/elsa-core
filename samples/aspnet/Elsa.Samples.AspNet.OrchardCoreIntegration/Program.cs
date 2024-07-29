@@ -7,6 +7,7 @@ using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
 using Elsa.SemanticKernel.Api.Extensions;
 using Elsa.SemanticKernel.Options;
+using Elsa.Workflows.Management;
 using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +17,11 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowManagement(management =>
         {
             management.UseEntityFrameworkCore(ef => ef.UseSqlite());
-            management.AddVariableType<ProofreaderResult>("Agents");
-            management.AddVariableType<TranslationResult>("Agents");
-            management.AddVariableType<FactCheckResult>("Agents");
-            management.AddVariableType<GenerateTagsResult>("Agents");
-            management.AddVariableType<TitleResult>("Agents");
+            management.AddVariableTypeAndAlias<ProofreaderResult>("Agents");
+            management.AddVariableTypeAndAlias<TranslationResult>("Agents");
+            management.AddVariableTypeAndAlias<FactCheckResult>("Agents");
+            management.AddVariableTypeAndAlias<GenerateTagsResult>("Agents");
+            management.AddVariableTypeAndAlias<TitleResult>("Agents");
         })
         .UseWorkflowRuntime(runtime =>
         {

@@ -83,7 +83,8 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
         new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
         new(typeof(JsonElement), DynamicCategory, "A JSON element for reading a JSON structure."),
-        new(typeof(JsonObject), DynamicCategory, "A JSON element for reading and writing a JSON structure."),
+        new(typeof(JsonNode), DynamicCategory, "A JSON node for reading and writing a JSON structure."),
+        new(typeof(JsonObject), DynamicCategory, "A JSON object for reading and writing a JSON structure."),
         new(typeof(byte[]), DataCategory, "A byte array."),
         new(typeof(Stream), DataCategory, "A stream.")
     ];

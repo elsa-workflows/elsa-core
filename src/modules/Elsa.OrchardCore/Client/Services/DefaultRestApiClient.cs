@@ -9,7 +9,7 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
     {
         var response = await httpClient.GetAsync($"api/content/{contentItemId}", cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<JsonObject>();
+        return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
     }
 
     public async Task<JsonNode> PatchContentItemAsync(string contentItemId, PatchContentItemRequest request, CancellationToken cancellationToken = default)
@@ -17,6 +17,6 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
         var content = JsonContent.Create(request);
         var response = await httpClient.PatchAsync($"api/content/{contentItemId}", content, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken);
+        return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
     }
 }
