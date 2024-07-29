@@ -17,7 +17,6 @@ builder.Services.AddElsa(elsa =>
     elsa.UseWorkflowManagement(management =>
         {
             management.UseEntityFrameworkCore(ef => ef.UseSqlite());
-            management.AddVariableTypeAndAlias<ProofreaderResult>("Agents");
             management.AddVariableTypeAndAlias<TranslationResult>("Agents");
             management.AddVariableTypeAndAlias<FactCheckResult>("Agents");
             management.AddVariableTypeAndAlias<GenerateTagsResult>("Agents");

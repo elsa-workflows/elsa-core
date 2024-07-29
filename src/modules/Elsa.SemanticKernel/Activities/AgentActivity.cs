@@ -25,9 +25,9 @@ public class AgentActivity : CodeActivity
             Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
         }.WithConverters(new ExpandoObjectConverterFactory());
 
-    public Agent Agent { get; set; } = default!;
-    public string Skill { get; set; } = default!;
-    public string Function { get; set; } = default!;
+    [JsonIgnore] internal Agent Agent { get; set; } = default!;
+    [JsonIgnore] internal string Skill { get; set; } = default!;
+    [JsonIgnore] internal string Function { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
