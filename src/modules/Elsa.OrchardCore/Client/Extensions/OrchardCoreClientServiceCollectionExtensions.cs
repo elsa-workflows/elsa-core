@@ -24,6 +24,12 @@ public static class OrchardCoreClientServiceCollectionExtensions
             httpClient.BaseAddress = options.BaseAddress;
         }).AddHttpMessageHandler<AuthenticatingDelegatingHandler>();
         
+        services.AddHttpClient<IRestApiClient, DefaultRestApiClient>((sp, httpClient) =>
+        {
+            var options = sp.GetRequiredService<IOptions<OrchardCoreClientOptions>>().Value;
+            httpClient.BaseAddress = options.BaseAddress;
+        }).AddHttpMessageHandler<AuthenticatingDelegatingHandler>();
+        
         return services;
     }
 }

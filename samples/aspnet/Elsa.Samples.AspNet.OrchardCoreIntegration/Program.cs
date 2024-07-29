@@ -20,6 +20,7 @@ builder.Services.AddElsa(elsa =>
             management.AddVariableType<TranslationResult>("Agents");
             management.AddVariableType<FactCheckResult>("Agents");
             management.AddVariableType<GenerateTagsResult>("Agents");
+            management.AddVariableType<TitleResult>("Agents");
         })
         .UseWorkflowRuntime(runtime =>
         {
