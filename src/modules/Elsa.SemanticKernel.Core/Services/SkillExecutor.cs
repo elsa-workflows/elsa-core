@@ -2,6 +2,7 @@ using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 #pragma warning disable SKEXP0010
+#pragma warning disable SKEXP0001
 
 namespace Elsa.SemanticKernel;
 
@@ -35,17 +36,18 @@ public class SkillExecutor(KernelConfig kernelConfig)
             Description = function.Description,
             Template = function.PromptTemplate,
             ExecutionSettings = promptExecutionSettingsDictionary,
+            AllowDangerouslySetContent = true,
             InputVariables = function.InputVariables.Select(x => new InputVariable
             {
                 Name = x.Name,
                 Description = x.Description,
-                IsRequired = true
+                IsRequired = true,
+                AllowDangerouslySetContent = true
             }).ToList()
         };
         
         var kernelFunction = kernel.CreateFunctionFromPrompt(promptTemplateConfig);
         var kernelArguments = new KernelArguments(input);
-        
         var result = await kernelFunction.InvokeAsync(kernel, kernelArguments, cancellationToken: cancellationToken);
         return new(function, result);
     }
