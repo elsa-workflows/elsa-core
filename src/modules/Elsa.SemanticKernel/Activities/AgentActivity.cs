@@ -22,7 +22,8 @@ public class AgentActivity : CodeActivity
     private static JsonSerializerOptions SerializerOptions =>
         _serializerOptions ??= new JsonSerializerOptions
         {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+            PropertyNameCaseInsensitive = true
         }.WithConverters(new ExpandoObjectConverterFactory());
 
     [JsonIgnore] internal Agent Agent { get; set; } = default!;

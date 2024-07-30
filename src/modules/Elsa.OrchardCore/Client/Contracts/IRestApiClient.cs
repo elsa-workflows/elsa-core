@@ -6,4 +6,5 @@ public interface IRestApiClient
 {
     Task<JsonNode> GetContentItemAsync(string contentItemId, CancellationToken cancellationToken = default);
     Task<JsonNode> PatchContentItemAsync(string contentItemId, PatchContentItemRequest request, CancellationToken cancellationToken = default);
+    Task<JsonNode> LocalizeContentItemAsync(string contentItemId, LocalizeContentItemRequest request, CancellationToken cancellationToken = default);
 }
