@@ -39,7 +39,7 @@ public class BackgroundActivityInvokerMiddleware(
         {
             await base.ExecuteActivityAsync(context);
 
-            // This part is either executed from the background, or in the foreground when the activity is resumed.
+            // This part is either executed from the background or in the foreground when the activity is resumed.
             var isResuming = !GetIsBackgroundExecution(context) && context.ActivityDescriptor.Kind is ActivityKind.Task or ActivityKind.Job;
             if (isResuming)
             {

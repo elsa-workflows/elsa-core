@@ -77,13 +77,13 @@ public class BackgroundActivityInvoker(
 
         var resumeBookmarkOptions = new ResumeBookmarkOptions
         {
-            Properties = properties
+            Properties = properties,
         };
         var enqueuedBookmark = new NewBookmarkQueueItem
         {
             WorkflowInstanceId = workflowInstanceId,
             BookmarkId = scheduledBackgroundActivity.BookmarkId,
-            Options = resumeBookmarkOptions,
+            Options = resumeBookmarkOptions
         };
         await bookmarkQueue.EnqueueAsync(enqueuedBookmark, cancellationToken);
     }
