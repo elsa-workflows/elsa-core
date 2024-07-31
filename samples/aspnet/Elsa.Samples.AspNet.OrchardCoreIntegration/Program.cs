@@ -5,8 +5,7 @@ using Elsa.Extensions;
 using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
-using Elsa.SemanticKernel.Api.Extensions;
-using Elsa.SemanticKernel.Options;
+using Elsa.Agents.Options;
 using Elsa.Workflows.Management;
 using WebhooksCore.Options;
 
@@ -44,11 +43,11 @@ builder.Services.AddElsa(elsa =>
             identity.UseAdminUserProvider();
             identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
         })
-        .UseSemanticKernel()
+        .UseAgents()
         .UseSemanticKernelApi();
 });
 
-builder.Services.Configure<SemanticKernelOptions>(options => builder.Configuration.GetSection("SemanticKernel").Bind(options));
+builder.Services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
 builder.Services.Configure<WebhookSourcesOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 builder.Services.Configure<OrchardCoreOptions>(options => builder.Configuration.GetSection("OrchardCore").Bind(options));
 builder.Services.Configure<OrchardCoreClientOptions>(options => builder.Configuration.GetSection("OrchardCore:Client").Bind(options));

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    
+    <PropertyGroup>
+        <Description>Provides Semantic Kernel integration</Description>
+        <PackageTags>elsa module semantic kernel llm ai</PackageTags>
+    </PropertyGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+    </ItemGroup>
+    
+</Project>

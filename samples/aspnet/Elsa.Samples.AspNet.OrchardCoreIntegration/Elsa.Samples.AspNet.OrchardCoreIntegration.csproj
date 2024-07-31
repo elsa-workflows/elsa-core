@@ -6,9 +6,8 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.SemanticKernel.Api\Elsa.SemanticKernel.Api.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.SemanticKernel.Core\Elsa.SemanticKernel.Core.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.SemanticKernel\Elsa.SemanticKernel.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
