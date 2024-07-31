@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Agents.HostedServices;
 
-public class ConfigureAgents(KernelConfig kernelConfig, IOptions<AgentsOptions> options) : IHostedService
+public class ConfigureKernel(KernelConfig kernelConfig, IOptions<AgentsOptions> options) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
     {

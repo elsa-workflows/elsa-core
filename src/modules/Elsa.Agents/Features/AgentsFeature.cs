@@ -16,7 +16,7 @@ public class AgentsFeature(IModule module) : FeatureBase(module)
 {
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<ConfigureAgents>(-2);
+        Module.ConfigureHostedService<ConfigureKernel>(-2);
         Module.ConfigureHostedService<ConfigureAgentManager>(-1);
     }
 

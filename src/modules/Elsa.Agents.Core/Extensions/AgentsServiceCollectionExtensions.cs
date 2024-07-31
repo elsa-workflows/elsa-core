@@ -15,7 +15,7 @@ public static class AgentsServiceCollectionExtensions
                 .AddSingleton<SkillExecutor>()
                 .AddSingleton<AgentManager>()
                 .AddSingleton<KernelConfig>()
-                .AddHostedService<ConfigureAgents>()
+                .AddHostedService<ConfigureKernel>()
                 .AddHostedService<ConfigureAgentManager>()
             ;
     }

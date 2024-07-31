@@ -16,7 +16,10 @@
     <ItemGroup>
         <Folder Include="Contracts\" />
         <Folder Include="Descriptors\" />
-        <Folder Include="Entities\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
     </ItemGroup>
 
 </Project>
