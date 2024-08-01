@@ -2,28 +2,34 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
-using FastEndpoints;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-public abstract class RequestBase
+public interface IExecutionRequest
+{
+    string DefinitionId { get; }
+    string? CorrelationId { get; }
+    string? TriggerActivityId { get; }
+    VersionOptions? VersionOptions { get; }
+}
+
+public class PostRequest : IExecutionRequest
 {
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
     public string? TriggerActivityId { get; set; }
-
     public VersionOptions? VersionOptions { get; set; }
-}
 
-public class PostRequest : RequestBase
-{
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
 }
 
-public class GetRequest : RequestBase
+public class GetRequest : IExecutionRequest
 {
-    [QueryParam]
+    public string DefinitionId { get; set; } = default!;
+    public string? CorrelationId { get; set; }
+    public string? TriggerActivityId { get; set; }
+    public VersionOptions? VersionOptions { get; set; }
     public string? Input { get; set; }
 }
 

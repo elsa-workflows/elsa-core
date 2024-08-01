@@ -19,7 +19,7 @@ internal abstract class EndpointBase<T>(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
     IApiSerializer apiSerializer)
-    : ElsaEndpoint<T, Response> where T : RequestBase, new()
+    : ElsaEndpoint<T, Response> where T : IExecutionRequest, new()
 {
     /// <inheritdoc />
     public override void Configure()
