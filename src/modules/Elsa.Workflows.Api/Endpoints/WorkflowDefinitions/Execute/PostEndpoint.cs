@@ -21,7 +21,4 @@ internal class PostEndpoint(
         base.Configure();
         Verbs(FastEndpoints.Http.POST);
     }
-
-    protected override IDictionary<string, object>? GetInput(PostRequest request) => 
-        (IDictionary<string, object>?)request.Input;
 }

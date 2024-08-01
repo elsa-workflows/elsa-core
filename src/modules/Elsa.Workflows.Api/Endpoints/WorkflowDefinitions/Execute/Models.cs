@@ -1,5 +1,8 @@
+using System.Dynamic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Common.Models;
+using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
 
@@ -11,6 +14,8 @@ public interface IExecutionRequest
     string? CorrelationId { get; }
     string? TriggerActivityId { get; }
     VersionOptions? VersionOptions { get; }
+
+    IDictionary<string, object>? GetInputAsDictionary();
 }
 
 public class PostRequest : IExecutionRequest
@@ -22,6 +27,8 @@ public class PostRequest : IExecutionRequest
 
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]
     public object? Input { get; set; }
+
+    public IDictionary<string, object>? GetInputAsDictionary() => (IDictionary<string, object>?)Input;
 }
 
 public class GetRequest : IExecutionRequest
@@ -31,6 +38,19 @@ public class GetRequest : IExecutionRequest
     public string? TriggerActivityId { get; set; }
     public VersionOptions? VersionOptions { get; set; }
     public string? Input { get; set; }
+
+    public IDictionary<string, object>? GetInputAsDictionary()
+    {
+        var result = Input?.TryConvertTo<ExpandoObject>(new ObjectConverterOptions
+        {
+            SerializerOptions = new JsonSerializerOptions
+            {
+                Converters = { new ExpandoObjectConverter() }
+            }
+        });
+
+        return result?.Success == true ? (IDictionary<string, object>?)result.Value : null;
+    }
 }
 
 public class Response(WorkflowState workflowState)

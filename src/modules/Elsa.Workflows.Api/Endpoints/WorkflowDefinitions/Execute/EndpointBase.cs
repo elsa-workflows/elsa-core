@@ -46,7 +46,7 @@ internal abstract class EndpointBase<T>(
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
-            Input = GetInput(request),
+            Input = request.GetInputAsDictionary(),
             TriggerActivityId = request.TriggerActivityId
         };
         
@@ -82,8 +82,6 @@ internal abstract class EndpointBase<T>(
             }
         }
     }
-
-    protected abstract IDictionary<string, object>? GetInput(T request);
 
     private async Task HandleFaultAsync(WorkflowState workflowState, CancellationToken cancellationToken)
     {
