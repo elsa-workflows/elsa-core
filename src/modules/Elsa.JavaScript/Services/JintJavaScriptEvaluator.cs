@@ -130,6 +130,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         engine.RegisterType<DateTimeOffset>();
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
+        engine.RegisterType<Random>();
 
         // Invoke registered configuration callback.
         _jintOptions.ConfigureEngineCallback(engine, context);
