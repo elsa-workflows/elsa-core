@@ -29,4 +29,12 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<JsonObject>(json);
     }
+
+    public async Task<JsonNode> CreateContentItemAsync(CreateContentItemRequest request, CancellationToken cancellationToken = default)
+    {
+        var content = JsonContent.Create(request);
+        var response = await httpClient.PostAsync($"api/content", content, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
+    }
 }
