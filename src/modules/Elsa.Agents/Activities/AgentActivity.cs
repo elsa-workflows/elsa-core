@@ -39,8 +39,8 @@ public class AgentActivity : CodeActivity
 
         foreach (var inputDescriptor in inputDescriptors)
         {
-            var input = (Input)inputDescriptor.ValueGetter(this)!;
-            var inputValue = context.Get(input.MemoryBlockReference());
+            var input = (Input?)inputDescriptor.ValueGetter(this);
+            var inputValue = input != null ? context.Get(input.MemoryBlockReference()) : default;
             functionInput[inputDescriptor.Name] = inputValue;
         }
 

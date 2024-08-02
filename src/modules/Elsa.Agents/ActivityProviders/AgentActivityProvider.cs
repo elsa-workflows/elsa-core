@@ -64,7 +64,8 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                     foreach (var inputVariable in functionConfig.InputVariables)
                     {
                         var inputName = inputVariable.Name;
-                        var nakedInputType = wellKnownTypeRegistry.GetTypeOrDefault(inputVariable.Type);
+                        var inputType = inputVariable.Type == null! ? "object" : inputVariable.Type;
+                        var nakedInputType = wellKnownTypeRegistry.GetTypeOrDefault(inputType);
                         var inputDescriptor = new InputDescriptor
                         {
                             Name = inputVariable.Name,
@@ -80,7 +81,8 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                     }
 
                     activityDescriptor.Outputs.Clear();
-                    var nakedOutputType = wellKnownTypeRegistry.GetTypeOrDefault(functionConfig.OutputVariable.Type);
+                    var outputType = functionConfig.OutputVariable.Type == null! ? "object" : functionConfig.OutputVariable.Type;
+                    var nakedOutputType = wellKnownTypeRegistry.GetTypeOrDefault(outputType);
                     var outputName = "Output";
                     var outputDescriptor = new OutputDescriptor
                     {
