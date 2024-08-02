@@ -16,7 +16,7 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
     public async Task<JsonNode> PatchContentItemAsync(string contentItemId, PatchContentItemRequest request, CancellationToken cancellationToken = default)
     {
         var content = JsonContent.Create(request);
-        var response = await httpClient.PatchAsync($"api/content/{contentItemId}", content, cancellationToken);
+        var response = await httpClient.PatchAsync($"api/content-items/{contentItemId}", content, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
     }
@@ -24,7 +24,7 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
     public async Task<JsonNode> LocalizeContentItemAsync(string contentItemId, LocalizeContentItemRequest request, CancellationToken cancellationToken = default)
     {
         var content = JsonContent.Create(request);
-        var response = await httpClient.PostAsync($"api/content/{contentItemId}/localize", content, cancellationToken);
+        var response = await httpClient.PostAsync($"api/content-items/{contentItemId}/localize", content, cancellationToken);
         response.EnsureSuccessStatusCode();
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         return JsonSerializer.Deserialize<JsonObject>(json);
@@ -33,7 +33,7 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
     public async Task<JsonNode> CreateContentItemAsync(CreateContentItemRequest request, CancellationToken cancellationToken = default)
     {
         var content = JsonContent.Create(request);
-        var response = await httpClient.PostAsync($"api/content", content, cancellationToken);
+        var response = await httpClient.PostAsync("api/content-items", content, cancellationToken);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
     }

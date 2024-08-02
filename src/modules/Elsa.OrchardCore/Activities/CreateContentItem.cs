@@ -32,7 +32,7 @@ public class CreateContentItem : CodeActivity<JsonObject>
             Properties = properties,
             Publish = publish
         };
-        var patchedContentItem = await apiClient.CreateContentItemAsync(request, context.CancellationToken);
-        context.SetResult(patchedContentItem);
+        var contentItem = await apiClient.CreateContentItemAsync(request, context.CancellationToken);
+        context.SetResult(contentItem);
     }
 }
