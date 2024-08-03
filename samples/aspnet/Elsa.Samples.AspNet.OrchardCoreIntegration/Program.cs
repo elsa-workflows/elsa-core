@@ -47,6 +47,7 @@ builder.Services.AddElsa(elsa =>
         .UseSemanticKernelApi();
 });
 
+builder.Services.AddControllers();
 builder.Services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("SemanticKernel").Bind(options));
 builder.Services.Configure<WebhookSourcesOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 builder.Services.Configure<OrchardCoreOptions>(options => builder.Configuration.GetSection("OrchardCore").Bind(options));

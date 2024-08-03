@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+#pragma warning disable SKEXP0010
 
 namespace Elsa.Agents;
 
@@ -16,6 +17,8 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
     {
         var builder = Kernel.CreateBuilder();
         builder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
+        builder.Services.AddSingleton(kernelConfig);
+        builder.Services.AddSingleton(agentConfig);
 
         AddModels(builder, agentConfig);
         AddSkills(builder, agentConfig);
@@ -58,10 +61,19 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
             switch (service.Type)
             {
                 case "OpenAIChatCompletion":
-                    var modelId = (string)service.Settings["ModelId"];
-                    var apiKey = GetApiKey(service);
-                    builder.AddOpenAIChatCompletion(modelId, apiKey);
-                    break;
+                    {
+                        var modelId = (string)service.Settings["ModelId"];
+                        var apiKey = GetApiKey(service);
+                        builder.AddOpenAIChatCompletion(modelId, apiKey);
+                        break;
+                    }
+                case "OpenAITextToImage":
+                    {
+                        var modelId = (string)service.Settings["ModelId"];
+                        var apiKey = GetApiKey(service);
+                        builder.AddOpenAITextToImage(apiKey, modelId: modelId);
+                        break;
+                    }
                 default:
                     logger.LogWarning($"Unknown service type {service.Type}");
                     break;

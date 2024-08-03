@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using Microsoft.SemanticKernel;
 
+#pragma warning disable SKEXP0001
+
 namespace Elsa.Agents.Plugins;
 
 [Description("Contains arithmetic operations")]
@@ -13,6 +15,4 @@ public class Arithmetics
     {
         return a + b;
     }
-
-    
 }
