@@ -15,7 +15,7 @@ public class PatchContentItem : CodeActivity<JsonObject>
     public Input<string> ContentItemId { get; set; } = default!;
 
     [Input(Description = "The patch to apply to the content item.")]
-    public Input<object> Patch { get; set; } = default!;
+    public Input<JsonObject> Patch { get; set; } = default!;
 
     [Input(Description = "Whether to publish the patched content item.")]
     public Input<bool> Publish { get; set; } = default!;
@@ -24,7 +24,7 @@ public class PatchContentItem : CodeActivity<JsonObject>
     {
         var contentItemId = ContentItemId.Get(context);
         var publish = Publish.Get(context);
-        var patch = Patch.Get(context).ConvertTo<JsonObject>()!;
+        var patch = Patch.Get(context);
         var apiClient = context.GetRequiredService<IRestApiClient>();
         var request = new PatchContentItemRequest
         {

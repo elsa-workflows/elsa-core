@@ -7,7 +7,7 @@ namespace Elsa.Workflows;
 /// <summary>
 /// A storage driver that stores objects in the workflow state itself.
 /// </summary>
-[Display(Name = "Workflow")]
+[Display(Name = "Workflow (deprecated)")]
 public class WorkflowStorageDriver : IStorageDriver
 {
     /// <summary>

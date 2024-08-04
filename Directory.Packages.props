@@ -90,7 +90,6 @@
     <PackageVersion Include="Scrutor" Version="4.2.2" />
     <PackageVersion Include="ShortGuid" Version="2.0.1" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.0" />
-    <PackageVersion Include="StrawberryShake.Server" Version="13.9.8" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Data.SqlClient" Version="4.8.6" />
     <PackageVersion Include="System.Formats.Asn1" Version="8.0.1" />
