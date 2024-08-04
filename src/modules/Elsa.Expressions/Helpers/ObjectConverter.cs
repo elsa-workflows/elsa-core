@@ -98,6 +98,9 @@ public static class ObjectConverter
 
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
+        
+        if(value is JsonNode jsonNode)
+            return jsonNode.Deserialize(targetType, serializerOptions);
 
         if (value is JsonObject jsonObject)
         {
