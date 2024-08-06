@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows;
@@ -17,18 +16,17 @@ public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddl
     {
         _serviceScopeFactory = serviceScopeFactory;
     }
-
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Check if the workflow contains any workflow context providers.
-        if (!context.Workflow.CustomProperties.TryGetValue<JsonArray>(Constants.WorkflowContextProviderTypesKey, out var providerTypeNodes))
+        if (!context.Workflow.CustomProperties.TryGetValue<ICollection<object>>(Constants.WorkflowContextProviderTypesKey, out var providerTypeObjects))
         {
             await Next(context);
             return;
         }
 
-        var providerTypes = providerTypeNodes.Select(x => Type.GetType(x.GetValue<string>())).Where(x => x != null).ToList();
+        var providerTypes = providerTypeObjects.Select(x => Type.GetType(x.ToString())).Where(x => x != null).ToList();
 
         // Invoke each workflow context provider.
         using (var scope = _serviceScopeFactory.CreateScope())

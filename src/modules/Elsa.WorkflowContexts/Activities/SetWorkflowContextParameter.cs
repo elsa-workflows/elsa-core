@@ -6,6 +6,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Activities;
 
@@ -100,13 +101,17 @@ public class SetWorkflowContextParameter : CodeActivity
     public Input<object> ParameterValue { get; set; } = default!;
 
     /// <inheritdoc />
-    protected override void Execute(ActivityExecutionContext context)
+    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var providerType = ProviderType.Get(context);
         var parameterName = ParameterName.GetOrDefault(context);
         var scopedParameterName = providerType.GetScopedParameterName(parameterName);
         var parameterValue = ParameterValue.Get(context);
 
+        // Update the parameter.
         context.WorkflowExecutionContext.SetProperty(scopedParameterName, parameterValue);
+        
+        // Load the context.
+        await context.WorkflowExecutionContext.LoadWorkflowContextAsync(providerType);
     }
 }

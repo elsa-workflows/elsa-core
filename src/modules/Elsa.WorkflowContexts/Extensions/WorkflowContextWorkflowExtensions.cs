@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Elsa.WorkflowContexts;
 using Elsa.Workflows.Activities;
 
@@ -17,8 +16,8 @@ public static class WorkflowContextWorkflowExtensions
     /// <returns>The workflow context provider types.</returns>
     public static IEnumerable<Type> GetWorkflowContextProviderTypes(this Workflow workflow)
     {
-        var contextProviderTypes = workflow.CustomProperties.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new JsonArray());
-        var providerTypes = contextProviderTypes.Select(x => Type.GetType(x.GetValue<string>())).Where(x => x != null).Select(x => x!).ToList();
+        var contextProviderTypes = workflow.CustomProperties.GetOrAdd(Constants.WorkflowContextProviderTypesKey, () => new List<object>());
+        var providerTypes = contextProviderTypes.Select(x => Type.GetType(x.ToString()!)).Where(x => x != null).Select(x => x!).ToList();
         
         return providerTypes;
     }
