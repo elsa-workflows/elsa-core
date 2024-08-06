@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.WorkflowContexts.Models;
 using Elsa.Workflows.Contracts;
 
@@ -10,6 +12,12 @@ namespace Elsa.Extensions;
 public static class ActivityExtensions
 {
     private const string ActivityWorkflowContextSettingsKey = "ActivityWorkflowContextSettingsKey";
+    
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase, 
+        PropertyNameCaseInsensitive = true
+    };
 
     /// <summary>
     /// Gets the workflow context settings for the specified activity.
@@ -18,16 +26,16 @@ public static class ActivityExtensions
     /// <returns>The workflow context settings.</returns>
     public static IDictionary<Type, ActivityWorkflowContextSettings> GetWorkflowContextSettings(this IActivity activity)
     {
-        var contextSetttings =  activity.CustomProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new Dictionary<string, ActivityWorkflowContextSettings>())!;
-
+        var contextSettings =  activity.CustomProperties.GetOrAdd(ActivityWorkflowContextSettingsKey, () => new JsonObject());
         var result = new Dictionary<Type, ActivityWorkflowContextSettings>();
 
-        foreach(var (key,value) in contextSetttings)
+        foreach(var (key, jsonNode) in contextSettings)
         {
             var targetType = Type.GetType(key);
 
             if(targetType != null)
             {
+                var value = jsonNode.Deserialize<ActivityWorkflowContextSettings>(JsonSerializerOptions)!;
                 result.Add(targetType, value);
             }
         }
@@ -72,7 +80,7 @@ public static class ActivityExtensions
     /// <returns>The workflow context settings.</returns>
     public static ActivityWorkflowContextSettings GetActivityWorkflowContextSettings<TActivity>(this TActivity activity, Type providerType) where TActivity: IActivity
     {
-        var dictionary = activity.GetWorkflowContextSettings()!;
+        var dictionary = activity.GetWorkflowContextSettings();
         return dictionary.GetActivityWorkflowContextSettings(providerType);
     }
 
@@ -84,7 +92,7 @@ public static class ActivityExtensions
     /// <returns>The workflow context settings.</returns>
     public static ActivityWorkflowContextSettings GetActivityWorkflowContextSettings(this IDictionary<Type, ActivityWorkflowContextSettings> dictionary, Type providerType)
     {
-        var settings = dictionary.ContainsKey(providerType) ? dictionary[providerType] : default;
+        var settings = dictionary.TryGetValue(providerType, out ActivityWorkflowContextSettings? value) ? value : default;
         
         if(settings == null)
         {

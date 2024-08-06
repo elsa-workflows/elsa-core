@@ -7,7 +7,7 @@ namespace Elsa.Extensions;
 /// <summary>
 /// Extension methods for <see cref="IServiceCollection"/> to add workflow context providers.
 /// </summary>
-public static class DependencyInjectionExtensions
+public static class WorkflowContextServiceCollectionExtensions
 {
     /// <summary>
     /// Adds a workflow context provider.
