@@ -8,6 +8,8 @@ Instead, the custom context provider would load the customer into memory once be
 
 In this sample project, we handle two custom objects: Customer and Order.
 
+To start the `CustomerCommunicationsWorkflow`, start it using the REST API or from Elsa Studio.
+
 ## Secrets
 The following are the secrets stored in hashed form in appsettings.json:
 
