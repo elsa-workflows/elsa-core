@@ -1,37 +1,37 @@
-using System.Text.Json;
-using Elsa.Expressions.Contracts;
+using System.Text.Json.Nodes;
 using Elsa.Extensions;
 using Elsa.WorkflowContexts.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
-using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.WorkflowContexts.Middleware;
 
-/// <summary>
 /// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
-/// </summary>
-/// <inheritdoc />
-public class WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IServiceScopeFactory serviceScopeFactory, IWellKnownTypeRegistry wellKnownTypeRegistry) : WorkflowExecutionMiddleware(next)
+public class WorkflowContextWorkflowExecutionMiddleware : WorkflowExecutionMiddleware
 {
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    /// <inheritdoc />
+    public WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, IServiceScopeFactory serviceScopeFactory) : base(next)
     {
-        PropertyNameCaseInsensitive = true
-    }.WithConverters(new TypeJsonConverter(wellKnownTypeRegistry));
+        _serviceScopeFactory = serviceScopeFactory;
+    }
 
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         // Check if the workflow contains any workflow context providers.
-        if (!context.Workflow.PropertyBag.TryGetValue<ICollection<Type>>(Constants.WorkflowContextProviderTypesKey, out var providerTypes, _jsonSerializerOptions))
+        if (!context.Workflow.CustomProperties.TryGetValue<JsonArray>(Constants.WorkflowContextProviderTypesKey, out var providerTypeNodes))
         {
             await Next(context);
             return;
         }
 
+        var providerTypes = providerTypeNodes.Select(x => Type.GetType(x.GetValue<string>())).Where(x => x != null).ToList();
+
         // Invoke each workflow context provider.
-        using (var scope = serviceScopeFactory.CreateScope())
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
             foreach (var providerType in providerTypes)
             {
@@ -47,7 +47,7 @@ public class WorkflowContextWorkflowExecutionMiddleware(WorkflowMiddlewareDelega
         await Next(context);
 
         // Invoke each workflow context provider to persists the context.
-        using (var scope = serviceScopeFactory.CreateScope())
+        using (var scope = _serviceScopeFactory.CreateScope())
         {
             foreach (var providerType in providerTypes)
             {

@@ -6,11 +6,9 @@ using JetBrains.Annotations;
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
-/// <summary>
 /// Adds extension methods to <see cref="WorkflowExecutionContext"/>.
-/// </summary>
 [PublicAPI]
-public static class WorkflowExecutionContextExtensions
+public static class TransientPropertiesExecutionContextExtensions
 {
     private static readonly object WorkflowContextsKey = new();
 
@@ -20,7 +18,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="context">The workflow execution context.</param>
     /// <param name="providerType">The type of the workflow context provider.</param>
     /// <param name="value">The value to set.</param>
-    public static void SetWorkflowContextParameter(this WorkflowExecutionContext context, Type providerType, object? value) => SetWorkflowContextParameter(context, providerType, null, value);
+    public static void SetWorkflowContextParameter(this WorkflowExecutionContext context, Type providerType, object? value)
+    {
+        SetWorkflowContextParameter(context, providerType, null, value);
+    }
 
     /// <summary>
     /// Sets a workflow context provider parameter.
@@ -28,7 +29,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="context">The workflow execution context.</param>
     /// <param name="value">The value to set.</param>
     /// <typeparam name="T">The type of the workflow context provider.</typeparam>
-    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, object? value) where T : IWorkflowContextProvider => SetWorkflowContextParameter(context, typeof(T), null, value);
+    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, object? value) where T : IWorkflowContextProvider
+    {
+        SetWorkflowContextParameter(context, typeof(T), null, value);
+    }
 
     /// <summary>
     /// Sets a workflow context provider parameter.
@@ -50,7 +54,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="parameterName">The name of the parameter.</param>
     /// <param name="value">The value to set.</param>
     /// <typeparam name="T">The type of the workflow context provider.</typeparam>
-    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, string? parameterName, object? value) => SetWorkflowContextParameter(context, typeof(T), parameterName, value);
+    public static void SetWorkflowContextParameter<T>(this WorkflowExecutionContext context, string? parameterName, object? value)
+    {
+        SetWorkflowContextParameter(context, typeof(T), parameterName, value);
+    }
 
     /// <summary>
     /// Gets a workflow context provider parameter.
@@ -75,7 +82,9 @@ public static class WorkflowExecutionContextExtensions
     /// <typeparam name="TParameter">The type of the parameter.</typeparam>
     /// <returns>The parameter value.</returns>
     public static TParameter? GetWorkflowContextParameter<TProvider, TParameter>(this WorkflowExecutionContext context, string? parameterName = default) where TProvider : IWorkflowContextProvider
-        => GetWorkflowContextParameter<TParameter>(context, typeof(TProvider), parameterName);
+    {
+        return GetWorkflowContextParameter<TParameter>(context, typeof(TProvider), parameterName);
+    }
 
     /// <summary>
     /// Sets the specified workflow context value.
@@ -83,7 +92,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="workflowExecutionContext">The workflow execution context.</param>
     /// <param name="providerType">The type of the workflow context provider.</param>
     /// <param name="value">The value to set.</param>
-    public static void SetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, Type providerType, object value) => workflowExecutionContext.TransientProperties.SetWorkflowContext(providerType, value);
+    public static void SetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, Type providerType, object value)
+    {
+        workflowExecutionContext.TransientProperties.SetWorkflowContext(providerType, value);
+    }
 
     /// <summary>
     /// Sets the specified workflow context value.
@@ -91,7 +103,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="expressionExecutionContext">The expression execution context.</param>
     /// <param name="providerType">The type of the workflow context provider.</param>
     /// <param name="value">The value to set.</param>
-    public static void SetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, Type providerType, object value) => expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.SetWorkflowContext(providerType, value);
+    public static void SetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, Type providerType, object value)
+    {
+        expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.SetWorkflowContext(providerType, value);
+    }
 
     /// <summary>
     /// Gets the workflow context value.
@@ -100,7 +115,10 @@ public static class WorkflowExecutionContextExtensions
     /// <typeparam name="T">The type of the workflow context value.</typeparam>
     /// <typeparam name="TProvider">The type of the workflow context provider.</typeparam>
     /// <returns>The workflow context value.</returns>
-    public static T? GetWorkflowContext<T, TProvider>(this WorkflowExecutionContext workflowExecutionContext) => (T?)workflowExecutionContext.TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider));
+    public static T? GetWorkflowContext<T, TProvider>(this WorkflowExecutionContext workflowExecutionContext)
+    {
+        return (T?)workflowExecutionContext.TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider));
+    }
 
     /// <summary>
     /// Gets the workflow context value.
@@ -109,7 +127,10 @@ public static class WorkflowExecutionContextExtensions
     /// <typeparam name="T">The type of the workflow context value.</typeparam>
     /// <typeparam name="TProvider">The type of the workflow context provider.</typeparam>
     /// <returns>The workflow context value.</returns>
-    public static T GetWorkflowContext<TProvider, T>(this ExpressionExecutionContext expressionExecutionContext) => (T)expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider))!;
+    public static T GetWorkflowContext<TProvider, T>(this ExpressionExecutionContext expressionExecutionContext)
+    {
+        return (T)expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContextByProviderType(typeof(TProvider))!;
+    }
 
     /// <summary>
     /// Gets the workflow context value.
@@ -117,7 +138,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="workflowExecutionContext">The workflow execution context.</param>
     /// <param name="providerType">The type of the workflow context provider.</param>
     /// <returns>The workflow context value.</returns>
-    public static object GetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, Type providerType) => workflowExecutionContext.TransientProperties.GetWorkflowContext(providerType);
+    public static object GetWorkflowContext(this WorkflowExecutionContext workflowExecutionContext, Type providerType)
+    {
+        return workflowExecutionContext.TransientProperties.GetWorkflowContext(providerType);
+    }
 
     /// <summary>
     /// Gets the workflow context value.
@@ -125,7 +149,10 @@ public static class WorkflowExecutionContextExtensions
     /// <param name="expressionExecutionContext">The expression execution context.</param>
     /// <param name="providerType">The type of the workflow context provider.</param>
     /// <returns>The workflow context value.</returns>
-    public static object? GetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, Type providerType) => expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContext(providerType);
+    public static object GetWorkflowContext(this ExpressionExecutionContext expressionExecutionContext, Type providerType)
+    {
+        return expressionExecutionContext.GetWorkflowExecutionContext().TransientProperties.GetWorkflowContext(providerType);
+    }
 
     private static void SetWorkflowContext(this IDictionary<object, object> transientProperties, Type providerType, object value)
     {
@@ -139,8 +166,10 @@ public static class WorkflowExecutionContextExtensions
         return contextDictionary[providerType];
     }
 
-    private static object? GetWorkflowContextByProviderType(this IDictionary<object, object> transientProperties, Type providerType) =>
-        transientProperties.FindWorkflowContext(x => x == providerType);
+    private static object? GetWorkflowContextByProviderType(this IDictionary<object, object> transientProperties, Type providerType)
+    {
+        return transientProperties.FindWorkflowContext(x => x == providerType);
+    }
 
     private static object? FindWorkflowContext(this IDictionary<object, object> transientProperties, Func<Type, bool> filter)
     {
@@ -154,6 +183,8 @@ public static class WorkflowExecutionContextExtensions
         return query.FirstOrDefault();
     }
 
-    private static IDictionary<Type, object> GetWorkflowContextDictionary(this IDictionary<object, object> transientProperties) =>
-        transientProperties.GetOrAdd(WorkflowContextsKey, () => new Dictionary<Type, object>());
+    private static IDictionary<Type, object> GetWorkflowContextDictionary(this IDictionary<object, object> transientProperties)
+    {
+        return transientProperties.GetOrAdd(WorkflowContextsKey, () => new Dictionary<Type, object>());
+    }
 }

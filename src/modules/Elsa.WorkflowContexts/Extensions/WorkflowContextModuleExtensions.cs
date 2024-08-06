@@ -9,7 +9,7 @@ namespace Elsa.Extensions;
 /// Extension methods for <see cref="IModule"/> to add workflow context providers.
 /// </summary>
 [PublicAPI]
-public static class ModuleExtensions
+public static class WorkflowContextModuleExtensions
 {
     /// <summary>
     /// Adds support for workflow context providers.
