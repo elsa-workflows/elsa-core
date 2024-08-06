@@ -26,7 +26,7 @@ public class CustomerCommunicationsWorkflow : WorkflowBase
             {
                 new Scheduling.Activities.Timer(TimeSpan.FromSeconds(5))
                 {
-                    CanStartWorkflow = true
+                    CanStartWorkflow = false
                 },
                 SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(CustomerId),
                 Delay.FromSeconds(5),

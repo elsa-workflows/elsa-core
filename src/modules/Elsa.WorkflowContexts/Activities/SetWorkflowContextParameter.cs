@@ -12,7 +12,7 @@ namespace Elsa.WorkflowContexts.Activities;
 /// <summary>
 /// Sets a workflow context parameter for a given workflow context provider.
 /// </summary>
-[Activity("Elsa", "Primitives", "Sets a workflow context parameter for a given workflow context provider.")]
+[Activity("Elsa", "Workflow Context", "Sets a workflow context parameter for a given workflow context provider.")]
 [PublicAPI]
 public class SetWorkflowContextParameter : CodeActivity
 {

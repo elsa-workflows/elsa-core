@@ -59,7 +59,7 @@ public class WorkflowDefinition : VersionedEntity
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
 
     /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
-    public PropertyBag PropertyBag { get; set; } = new();
+    //public PropertyBag PropertyBag { get; set; } = new();
 
     /// <summary>
     /// The name of the workflow provider that created this workflow, if any.

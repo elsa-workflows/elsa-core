@@ -1,4 +1,3 @@
-using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
@@ -52,9 +51,6 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
-
-    /// <inheritdoc />
-    public PropertyBag PropertyBag { get; set; } = new();
 
     /// <inheritdoc />
     public WorkflowOptions WorkflowOptions { get; } = new();
@@ -211,7 +207,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         var publication = WorkflowPublication.LatestAndPublished;
         var name = string.IsNullOrEmpty(Name) ? definitionId : Name;
         var workflowMetadata = new WorkflowMetadata(name, Description);
-        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, PropertyBag, IsReadonly, IsSystem);
+        var workflow = new Workflow(identity, publication, workflowMetadata, WorkflowOptions, root, Variables, Inputs, Outputs, Outcomes, CustomProperties, IsReadonly, IsSystem);
 
         // If a Result variable is defined, install it into the workflow, so we can capture the output into it.
         if (Result != null)
