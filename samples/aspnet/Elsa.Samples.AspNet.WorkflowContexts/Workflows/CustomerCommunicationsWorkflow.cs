@@ -10,11 +10,12 @@ using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Workflows;
 
-/// <summary>
 /// A workflow that sends helpful emails to customers.
-/// </summary>
 public class CustomerCommunicationsWorkflow : WorkflowBase
 {
+    private static string CustomerId = "2";
+
+    /// <inheritdoc />
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();
@@ -23,8 +24,11 @@ public class CustomerCommunicationsWorkflow : WorkflowBase
         {
             Activities =
             {
-                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(
-                    context => context.GetInput<string>("CustomerId")!),
+                new Scheduling.Activities.Timer(TimeSpan.FromSeconds(5))
+                {
+                    CanStartWorkflow = true
+                },
+                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(CustomerId),
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
