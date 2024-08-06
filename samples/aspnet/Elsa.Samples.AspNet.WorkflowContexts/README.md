@@ -1,6 +1,12 @@
 # Server
 
-This project represents an Elsa application that hosts workflows and exposes API endpoints to manage & execute workflows.
+This project demonstrates how to use Workflow Contexts.
+
+A Workflow Context represents a custom, application-specific object provided to the workflow at runtime.
+For example, if your workflow handles a Customer, a custom workflow context provider could provide this customer automatically to the workflow without the need for custom activities that load & persist updates to this customer.
+Instead, the custom context provider would load the customer into memory once before the workflow starts and persists changes made to the customer (if any) when the workflow execution ends.
+
+In this sample project, we handle two custom objects: Customer and Order.
 
 ## Secrets
 The following are the secrets stored in hashed form in appsettings.json:
