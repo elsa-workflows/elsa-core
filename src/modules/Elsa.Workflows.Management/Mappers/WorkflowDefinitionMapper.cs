@@ -45,7 +45,6 @@ public class WorkflowDefinitionMapper
             source.Outputs,
             source.Outcomes,
             source.CustomProperties,
-            source.PropertyBag,
             source.IsReadonly,
             source.IsSystem);
     }
@@ -78,7 +77,6 @@ public class WorkflowDefinitionMapper
             source.Outputs ?? new List<OutputDefinition>(),
             source.Outcomes ?? new List<string>(),
             source.CustomProperties ?? new Dictionary<string, object>(),
-            source.PropertyBag ?? new(),
             source.IsReadonly,
             source.IsSystem);
     }
@@ -118,7 +116,6 @@ public class WorkflowDefinitionMapper
             workflowDefinition.Outputs,
             workflowDefinition.Outcomes,
             workflowDefinition.CustomProperties,
-            workflowDefinition.PropertyBag,
             workflowDefinition.IsReadonly,
             workflowDefinition.IsSystem,
             workflowDefinition.IsLatest,
@@ -151,7 +148,6 @@ public class WorkflowDefinitionMapper
             workflow.Outputs,
             workflow.Outcomes,
             workflow.CustomProperties,
-            workflow.PropertyBag,
             workflow.IsReadonly,
             workflow.IsSystem,
             workflow.Publication.IsLatest,

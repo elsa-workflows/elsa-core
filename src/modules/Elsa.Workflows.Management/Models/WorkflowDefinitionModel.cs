@@ -20,9 +20,7 @@ public record WorkflowDefinitionModel(
     ICollection<InputDefinition>? Inputs,
     ICollection<OutputDefinition>? Outputs,
     ICollection<string>? Outcomes,
-    [property: Obsolete("Use PropertyBag instead")]
     IDictionary<string, object>? CustomProperties,
-    PropertyBag? PropertyBag,
     bool IsReadonly,
     bool IsSystem,
     bool IsLatest,
@@ -46,7 +44,6 @@ public record WorkflowDefinitionModel(
         default!,
         default!,
         default!,
-        default,
         default,
         default!,
         default!,

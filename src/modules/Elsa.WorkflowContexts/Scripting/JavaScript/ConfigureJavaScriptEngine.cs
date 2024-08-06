@@ -14,20 +14,8 @@ namespace Elsa.WorkflowContexts.Scripting.JavaScript;
 /// <summary>
 /// Configures the JavaScript engine with functions that allow access to workflow contexts.
 /// </summary>
-public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScript>, IFunctionDefinitionProvider, ITypeDefinitionProvider
+public class ConfigureJavaScriptEngine(ITypeAliasRegistry typeAliasRegistry, ITypeDescriber typeDescriber) : INotificationHandler<EvaluatingJavaScript>, IFunctionDefinitionProvider, ITypeDefinitionProvider
 {
-    private readonly ITypeAliasRegistry _typeAliasRegistry;
-    private readonly ITypeDescriber _typeDescriber;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ConfigureJavaScriptEngine"/> class.
-    /// </summary>
-    public ConfigureJavaScriptEngine(ITypeAliasRegistry typeAliasRegistry, ITypeDescriber typeDescriber)
-    {
-        _typeAliasRegistry = typeAliasRegistry;
-        _typeDescriber = typeDescriber;
-    }
-
     /// <inheritdoc />
     public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
@@ -52,7 +40,7 @@ public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScri
     {
         var providerTypes = GetProviderTypes(context.WorkflowGraph.Workflow);
         var contextTypes = providerTypes.Select(x => x.GetWorkflowContextType());
-        var typeDefinitions = contextTypes.Select(x => _typeDescriber.DescribeType(x));
+        var typeDefinitions = contextTypes.Select(x => typeDescriber.DescribeType(x));
         return new(typeDefinitions);
     }
 
@@ -72,7 +60,7 @@ public class ConfigureJavaScriptEngine : INotificationHandler<EvaluatingJavaScri
             var providerName = providerType.GetProviderName();
             var functionName = $"get{providerName}";
             var contextType = providerType.GetWorkflowContextType();
-            var contextTypeName = _typeAliasRegistry.GetAliasOrDefault(contextType, contextType.Name);
+            var contextTypeName = typeAliasRegistry.GetAliasOrDefault(contextType, contextType.Name);
             builder.Name(functionName).ReturnType(contextTypeName);
 
             yield return builder.BuildFunctionDefinition();
