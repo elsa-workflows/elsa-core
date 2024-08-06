@@ -9,7 +9,7 @@ namespace Elsa.WorkflowContexts.Middleware;
 /// Middleware that loads and save workflow context into the currently executing workflow using installed workflow context providers. 
 [UsedImplicitly]
 public class WorkflowContextActivityExecutionMiddleware(ActivityMiddlewareDelegate next) : IActivityExecutionMiddleware
-{
+{ 
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
