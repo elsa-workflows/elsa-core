@@ -529,7 +529,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
             WorkflowSubStatus.Suspended => WorkflowStatus.Running,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
-
+    
+    // TODO: Check if we should not use the target subStatus here instead.
     private bool ValidateStatusTransition()
     {
         var currentMainStatus = GetMainStatus(SubStatus);
