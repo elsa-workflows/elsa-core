@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>Provides an agentic framework using Semantic Kernel</Description>
-        <PackageTags>elsa module semantic kernel agents llm ai</PackageTags>
+        <PackageTags>elsa module agents semantic kernel llm ai</PackageTags>
         <RootNamespace>Elsa.Agents</RootNamespace>
     </PropertyGroup>
 
@@ -11,11 +11,6 @@
         <PackageReference Include="Microsoft.Extensions.Logging"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console"/>
         <PackageReference Include="Microsoft.SemanticKernel"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="Contracts\" />
-        <Folder Include="Descriptors\" />
     </ItemGroup>
 
     <ItemGroup>

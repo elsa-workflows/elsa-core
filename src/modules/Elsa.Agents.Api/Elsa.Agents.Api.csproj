@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Provides Semantic Kernel API endpoints</Description>
-        <PackageTags>elsa module semantic kernel api llm ai</PackageTags>
+        <Description>Provides Agents API endpoints</Description>
+        <PackageTags>elsa module agents semantic kernel api llm ai</PackageTags>
     </PropertyGroup>
 
     <ItemGroup>

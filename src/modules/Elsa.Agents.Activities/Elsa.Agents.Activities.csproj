@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
-        <Description>Provides Semantic Kernel integration</Description>
-        <PackageTags>elsa module semantic kernel llm ai</PackageTags>
+        <Description>Provides Agent activities</Description>
+        <PackageTags>elsa module agents semantic kernel llm ai</PackageTags>
     </PropertyGroup>
     
     <ItemGroup>
