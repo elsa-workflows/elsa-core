@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 using Elsa.Abstractions;
-using Elsa.Agents;
+using Elsa.Agents.Activities;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Execute;

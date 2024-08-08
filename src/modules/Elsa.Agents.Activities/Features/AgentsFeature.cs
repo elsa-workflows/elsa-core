@@ -1,4 +1,4 @@
-using Elsa.Agents.ActivityProviders;
+using Elsa.Agents.Activities.ActivityProviders;
 using Elsa.Agents.HostedServices;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -7,7 +7,7 @@ using Elsa.Workflows.Management.Features;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Agents.Features;
+namespace Elsa.Agents.Activities.Features;
 
 /// A feature that installs Semantic Kernel functionality.
 [DependsOn(typeof(WorkflowManagementFeature))]

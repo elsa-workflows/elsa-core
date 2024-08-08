@@ -1,4 +1,4 @@
-using Elsa.Agents.Features;
+using Elsa.Agents.Activities.Features;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;

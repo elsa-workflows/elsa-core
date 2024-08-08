@@ -418,7 +418,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Core", "src\mod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Api", "src\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj", "{154525CD-3726-45B7-9A9C-553BBC60EB10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents", "src\modules\Elsa.Agents\Elsa.Agents.csproj", "{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Activities", "src\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj", "{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Management", "src\modules\Elsa.Agents.Management\Elsa.Agents.Management.csproj", "{9BF476B6-24BA-4312-9DFF-9082B1577046}"
 EndProject

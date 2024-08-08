@@ -4,7 +4,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
-using Elsa.Agents.ActivityProviders;
+using Elsa.Agents.Activities.ActivityProviders;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows;

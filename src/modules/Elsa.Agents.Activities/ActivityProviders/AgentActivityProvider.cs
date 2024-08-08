@@ -1,4 +1,3 @@
-using Elsa.Agents.Activities;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
 using Elsa.Extensions;
@@ -9,7 +8,7 @@ using Humanizer;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Agents.ActivityProviders;
+namespace Elsa.Agents.Activities.ActivityProviders;
 
 /// Provides activities for each function of registered agents.
 [UsedImplicitly]
@@ -39,7 +38,7 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                 foreach (var functionConfig in functions)
                 {
                     var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(AgentActivity), cancellationToken);
-                    var activityTypeName = $"ElsaX.Agents.{agent.Name.Pascalize()}.{skillName.Pascalize()}.{functionConfig.FunctionName.Pascalize()}";
+                    var activityTypeName = $"Elsa.Agents.{agent.Name.Pascalize()}.{skillName.Pascalize()}.{functionConfig.FunctionName.Pascalize()}";
                     activityDescriptor.Name = $"{agent.Name}:{skillName}:{functionConfig.FunctionName}";
                     activityDescriptor.TypeName = activityTypeName;
                     activityDescriptor.Description = functionConfig.Description;
