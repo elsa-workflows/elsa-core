@@ -450,7 +450,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     internal void TransitionTo(WorkflowSubStatus subStatus)
     {
-        if (!ValidateStatusTransition(subStatus))
+        if (!ValidateStatusTransition())
             throw new Exception($"Cannot transition from {SubStatus} to {subStatus}");
 
         SubStatus = subStatus;

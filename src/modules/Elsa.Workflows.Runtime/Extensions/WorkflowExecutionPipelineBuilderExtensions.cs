@@ -14,7 +14,6 @@ public static class WorkflowExecutionPipelineBuilderExtensions
         pipelineBuilder
             .Reset()
             .UseEngineExceptionHandling()
-            .UseBackgroundActivities()
             .UseBookmarkPersistence()
             .UseActivityExecutionLogPersistence()
             .UseWorkflowExecutionLogPersistence()
