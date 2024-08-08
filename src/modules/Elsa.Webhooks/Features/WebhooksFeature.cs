@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Webhooks.ActivityProviders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using WebhooksCore;
@@ -39,10 +40,29 @@ public class WebhooksFeature : FeatureBase
         Services.Configure<WebhookSinksOptions>(options => options.Sinks.AddRange(sinks));
         return this;
     }
+    
+    /// Registers the specified webhook source with <see cref="WebhookSourcesOptions"/>
+    public WebhooksFeature RegisterWebhookSource(WebhookSource source) => RegisterWebhookSources(source);
+    
+    /// Registers the specified webhook sources with <see cref="WebhookSourcesOptions"/>
+    public WebhooksFeature RegisterWebhookSources(params WebhookSource[] sources)
+    {
+        Services.Configure<WebhookSourcesOptions>(options => options.Sources.AddRange(sources));
+        return this;
+    }
+
+    public override void Configure()
+    {
+        Module
+            .AddVariableTypeAndAlias<WebhookEvent>("WebhookEvent", "Webhooks")
+            .AddFastEndpointsAssembly(GetType());
+    }
 
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.AddWebhooksCore();
+        Services
+            .AddWebhooksCore()
+            .AddActivityProvider<WebhookEventActivityProvider>();
     }
 }

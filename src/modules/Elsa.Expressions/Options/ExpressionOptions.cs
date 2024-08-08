@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Dynamic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Extensions;
 
 namespace Elsa.Expressions.Options;
@@ -25,12 +27,15 @@ public class ExpressionOptions
         this.AddTypeAlias<decimal>("Decimal");
         this.AddTypeAlias<double>("Double");
         this.AddTypeAlias<byte[]>("ByteArray");
-        this.AddTypeAlias<Guid>("Guid");
-        this.AddTypeAlias<DateTime>("DateTime");
-        this.AddTypeAlias<DateTimeOffset>("DateTimeOffset");
-        this.AddTypeAlias<TimeSpan>("TimeSpan");
-        this.AddTypeAlias<Stream>("Stream");
+        this.AddTypeAlias<Guid>();
+        this.AddTypeAlias<DateTime>();
+        this.AddTypeAlias<DateTimeOffset>();
+        this.AddTypeAlias<TimeSpan>();
+        this.AddTypeAlias<Stream>();
         this.AddTypeAlias<ExpandoObject>("JSON");
+        this.AddTypeAlias<JsonElement>();
+        this.AddTypeAlias<JsonNode>();
+        this.AddTypeAlias<JsonObject>();
         this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
         this.AddTypeAlias<Dictionary<string, string>>("StringMap");

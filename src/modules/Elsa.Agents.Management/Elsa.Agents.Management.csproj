@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides a management layer of Agents</Description>
+        <PackageTags>elsa module agents semantic kernel llm ai</PackageTags>
+    </PropertyGroup>
+
+</Project>

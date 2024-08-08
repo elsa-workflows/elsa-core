@@ -86,7 +86,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
 
             using var scope = _scopeFactory.CreateScope();

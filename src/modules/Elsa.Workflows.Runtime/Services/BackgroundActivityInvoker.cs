@@ -77,13 +77,13 @@ public class BackgroundActivityInvoker(
 
         var resumeBookmarkOptions = new ResumeBookmarkOptions
         {
-            Properties = properties
+            Properties = properties,
         };
         var enqueuedBookmark = new NewBookmarkQueueItem
         {
             WorkflowInstanceId = workflowInstanceId,
             BookmarkId = scheduledBackgroundActivity.BookmarkId,
-            Options = resumeBookmarkOptions,
+            Options = resumeBookmarkOptions
         };
         await bookmarkQueue.EnqueueAsync(enqueuedBookmark, cancellationToken);
     }
@@ -109,7 +109,7 @@ public class BackgroundActivityInvoker(
             var driver = variableMetadata?.StorageDriverType;
 
             // We only capture output written to the workflow itself. Other drivers like blob storage, etc. will be ignored since the foreground context will be loading those.
-            if (driver != typeof(WorkflowStorageDriver))
+            if (driver != typeof(WorkflowStorageDriver) && driver != typeof(WorkflowInstanceStorageDriver))
                 continue;
 
             var outputValue = activityExecutionContext.Get(memoryBlockReference);
