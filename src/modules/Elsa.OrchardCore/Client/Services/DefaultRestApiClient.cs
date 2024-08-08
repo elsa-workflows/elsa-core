@@ -53,4 +53,12 @@ public class DefaultRestApiClient(HttpClient httpClient) : IRestApiClient
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
     }
+
+    public async Task<JsonObject> ResolveTagsAsync(ResolveTagsRequest request, CancellationToken cancellationToken = default)
+    {
+        var content = JsonContent.Create(request);
+        var response = await httpClient.PostAsync("api/tags/resolve", content, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<JsonObject>(cancellationToken: cancellationToken);
+    }
 }

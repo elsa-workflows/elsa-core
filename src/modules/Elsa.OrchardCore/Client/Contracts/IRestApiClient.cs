@@ -10,4 +10,5 @@ public interface IRestApiClient
     Task<JsonObject> LocalizeContentItemAsync(string contentItemId, LocalizeContentItemRequest request, CancellationToken cancellationToken = default);
     Task<JsonObject> CreateContentItemAsync(CreateContentItemRequest request, CancellationToken cancellationToken = default);
     Task<JsonObject> UploadFilesAsync(IEnumerable<HttpFile> files, string? folderPath = null, CancellationToken cancellationToken = default);
+    Task<JsonObject> ResolveTagsAsync(ResolveTagsRequest request, CancellationToken cancellationToken = default);
 }
