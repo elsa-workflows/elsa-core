@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -14,28 +15,18 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
 [PublicAPI]
-public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEntity : class, new()
+public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IDbExceptionHandler<TDbContext> exceptionHandler) where TDbContext : DbContext where TEntity : class, new()
 {
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
-
-    private readonly IDbContextFactory<TDbContext> _dbContextFactory;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Store{TDbContext, TEntity}"/> class.
-    /// </summary>
-    public Store(IDbContextFactory<TDbContext> dbContextFactory)
-    {
-        _dbContextFactory = dbContextFactory;
-    }
 
     /// <summary>
     /// Creates a new instance of the database context.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The database context.</returns>
-    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await _dbContextFactory.CreateDbContextAsync(cancellationToken);
+    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
     /// <summary>
     /// Adds the specified entity.
@@ -132,6 +123,10 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
             set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateException ex)
+        {
+            exceptionHandler.Handle(ex);
+        }
         finally
         {
             Semaphore.Release();
@@ -168,7 +163,14 @@ public class Store<TDbContext, TEntity> where TDbContext : DbContext where TEnti
             await Task.WhenAll(savingTasks);
         }
 
-        await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
+        try
+        {
+            await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            exceptionHandler.Handle(ex);
+        }
     }
 
     /// <summary>

@@ -1,4 +1,6 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;
@@ -11,12 +13,10 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 /// Configures the <see cref="WorkflowInstancesFeature"/> feature with an Entity Framework Core persistence provider.
 /// </summary>
 [DependsOn(typeof(WorkflowManagementFeature))]
-public class EFCoreWorkflowInstancePersistenceFeature : PersistenceFeatureBase<ManagementElsaDbContext>
+public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : PersistenceFeatureBase<ManagementElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public EFCoreWorkflowInstancePersistenceFeature(IModule module) : base(module)
-    {
-    }
+    /// Delegate for determining the exception handler.
+    public Func<IServiceProvider, IDbExceptionHandler<ManagementElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler(); 
 
     /// <inheritdoc />
     public override void Configure()
@@ -28,6 +28,8 @@ public class EFCoreWorkflowInstancePersistenceFeature : PersistenceFeatureBase<M
     public override void Apply()
     {
         base.Apply();
+
+        Services.AddScoped(DbExceptionHandler);
 
         AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
     }
