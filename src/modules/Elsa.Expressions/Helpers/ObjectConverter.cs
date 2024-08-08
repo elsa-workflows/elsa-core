@@ -98,17 +98,14 @@ public static class ObjectConverter
 
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
-        
-        if(value is JsonNode jsonNode)
-            return jsonNode.Deserialize(targetType, serializerOptions);
 
-        if (value is JsonObject jsonObject)
+        if (value is JsonNode jsonNode)
         {
             return underlyingTargetType switch
             {
-                { } t when t == typeof(string) => jsonObject.ToString(),
-                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
-                _ => jsonObject,
+                { } t when t == typeof(string) => jsonNode.ToString(),
+                { } t when t != typeof(object) => jsonNode.Deserialize(targetType, serializerOptions),
+                _ => jsonNode
             };
         }
 
