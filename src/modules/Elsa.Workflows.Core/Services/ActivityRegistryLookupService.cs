@@ -38,7 +38,7 @@ public class ActivityRegistryLookupService(IActivityRegistry activityRegistry, I
         if (descriptor is not null)
             return descriptor;
 
-        await activityRegistry.RefreshDescriptors(providers);
+        await activityRegistry.RefreshDescriptorsAsync(providers);
         return findPredicate.Invoke();
     }
 }

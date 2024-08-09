@@ -87,7 +87,7 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
 
     private Task UpdateDefinition(string id, bool? usableAsActivity)
     {
-        // Once a workflow has been published it should remain in the activity registry unless no longer being marked as an activity.
+        // Once a workflow has been published, it should remain in the activity registry unless no longer being marked as an activity.
         if (usableAsActivity.GetValueOrDefault())
             return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 

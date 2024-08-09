@@ -72,7 +72,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(_manualActivityDescriptors);
 
     /// <inheritdoc />
-    public async Task RefreshDescriptors(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
+    public async Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default)
     {
         var providersDictionary = new ConcurrentDictionary<Type, ICollection<ActivityDescriptor>>();
         var activityDescriptors = new ConcurrentDictionary<(string Type, int Version), ActivityDescriptor>();
