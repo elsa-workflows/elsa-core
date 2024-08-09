@@ -11,6 +11,6 @@ public class ActivityRegistryPopulator(IEnumerable<IActivityProvider> providers,
     /// <inheritdoc />
     public async Task PopulateRegistryAsync(CancellationToken cancellationToken)
     {
-        await registry.RefreshDescriptors(providers, cancellationToken);
+        await registry.RefreshDescriptorsAsync(providers, cancellationToken);
     }
 }
