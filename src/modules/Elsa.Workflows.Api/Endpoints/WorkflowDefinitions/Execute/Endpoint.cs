@@ -49,7 +49,8 @@ internal class Execute(
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
             Input = (IDictionary<string, object>?)request.Input,
-            TriggerActivityId = request.TriggerActivityId
+            TriggerActivityId = request.TriggerActivityId,
+            ActivityHandle = request.ActivityHandle
         };
         
         // Create and run the workflow instance.

@@ -75,7 +75,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
             _startAt = _systemClock.UtcNow + _interval;
 
