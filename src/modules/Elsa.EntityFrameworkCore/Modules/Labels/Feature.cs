@@ -14,7 +14,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Labels;
 /// Configures the <see cref="LabelsFeature"/> feature with an Entity Framework Core persistence provider.
 /// </summary>
 [DependsOn(typeof(LabelsFeature))]
-public class EFCoreLabelPersistenceFeature(IModule module) : PersistenceFeatureBase<LabelsElsaDbContext>(module)
+public class EFCoreLabelPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreLabelPersistenceFeature, LabelsElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
     public Func<IServiceProvider, IDbExceptionHandler<LabelsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();

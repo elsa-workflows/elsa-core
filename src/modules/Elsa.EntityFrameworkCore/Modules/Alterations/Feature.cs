@@ -13,7 +13,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(AlterationsFeature))]
-public class EFCoreAlterationsPersistenceFeature(IModule module) : PersistenceFeatureBase<AlterationsElsaDbContext>(module)
+public class EFCoreAlterationsPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreAlterationsPersistenceFeature, AlterationsElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
     public Func<IServiceProvider, IDbExceptionHandler<AlterationsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();

@@ -15,7 +15,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// </summary>
 [DependsOn(typeof(IdentityFeature))]
 [PublicAPI]
-public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<IdentityElsaDbContext>(module)
+public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
     public Func<IServiceProvider, IDbExceptionHandler<IdentityElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();
