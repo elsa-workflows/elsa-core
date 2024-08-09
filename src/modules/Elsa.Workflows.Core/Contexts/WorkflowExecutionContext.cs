@@ -165,7 +165,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
         Action<WorkflowExecutionContext>? statusUpdatedCallback = null,
         CancellationTokens cancellationTokens = default)
     {
-        // Setup a workflow execution context.
+        // Set up a workflow execution context.
         var workflowExecutionContext = new WorkflowExecutionContext(
             serviceProvider,
             workflowGraph,
