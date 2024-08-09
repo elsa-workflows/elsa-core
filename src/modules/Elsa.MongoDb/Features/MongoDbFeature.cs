@@ -66,7 +66,7 @@ public class MongoDbFeature : FeatureBase
                 .SetSerializer(new StringSerializer(BsonType.String));
         });
 
-        BsonClassMap.RegisterClassMap<SerializedKeyValuePair>(map =>
+        BsonClassMap.TryRegisterClassMap<SerializedKeyValuePair>(map =>
         {
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
