@@ -1,5 +1,6 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
 [PublicAPI]
-public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase where TEntity : class, new()
+public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IDbExceptionHandler<TDbContext> exceptionHandler) where TDbContext : DbContext where TEntity : class, new()
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -25,27 +26,11 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Store{TDbContext, TEntity}"/> class.
-    /// </summary>
-    public Store(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    /// <summary>
     /// Creates a new instance of the database context.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The database context.</returns>
-    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
-    {
-        var dbContextFactory = _serviceProvider.GetRequiredService<IDbContextFactory<TDbContext>>();
-        var tenantResolver = _serviceProvider.GetRequiredService<ITenantResolver>();
-        var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var tenant = await tenantResolver.GetTenantAsync(cancellationToken);
-        dbContext.TenantId = tenant?.Id;
-        return dbContext;
-    }
+    public async Task<TDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => await dbContextFactory.CreateDbContextAsync(cancellationToken);
 
     /// <summary>
     /// Adds the specified entity.
@@ -142,6 +127,10 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
             set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateException ex)
+        {
+            exceptionHandler.Handle(ex);
+        }
         finally
         {
             Semaphore.Release();
@@ -178,7 +167,14 @@ public class Store<TDbContext, TEntity> where TDbContext : ElsaDbContextBase whe
             await Task.WhenAll(savingTasks);
         }
 
-        await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
+        try
+        {
+            await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            exceptionHandler.Handle(ex);
+        }
     }
 
     /// <summary>
