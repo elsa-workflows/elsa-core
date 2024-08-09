@@ -112,7 +112,13 @@ public static class ObjectConverter
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
-
+            
+            if (underlyingTargetType == typeof(byte[]))
+            {
+                // Byte arrays are serialized to base64, so in this case, we convert the string back to the requested target type of byte[].
+                return Convert.FromBase64String(stringValue);
+            }
+            
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
