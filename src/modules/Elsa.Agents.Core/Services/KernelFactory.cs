@@ -28,9 +28,9 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
 
     private void AddModels(IKernelBuilder builder, AgentConfig agentConfig)
     {
-        foreach (string modelName in agentConfig.Models)
+        foreach (string modelName in agentConfig.ServiceProfiles)
         {
-            if (!kernelConfig.Models.TryGetValue(modelName, out var model))
+            if (!kernelConfig.ServiceProfiles.TryGetValue(modelName, out var model))
             {
                 logger.LogWarning($"Model {modelName} not found");
                 continue;
@@ -54,9 +54,9 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
         }
     }
 
-    private void AddServices(IKernelBuilder builder, ModelConfig model)
+    private void AddServices(IKernelBuilder builder, ServiceProfileConfig serviceProfile)
     {
-        foreach (var service in model.Services)
+        foreach (var service in serviceProfile.Services)
         {
             switch (service.Type)
             {

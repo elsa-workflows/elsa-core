@@ -9,7 +9,7 @@ public class ConfigureKernel(KernelConfig kernelConfig, IOptions<AgentsOptions> 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var apiKey in options.Value.ApiKeys) kernelConfig.ApiKeys[apiKey.Name] = apiKey;
-        foreach (var model in options.Value.Models) kernelConfig.Models[model.Name] = model;
+        foreach (var serviceProfile in options.Value.ServiceProfiles) kernelConfig.ServiceProfiles[serviceProfile.Name] = serviceProfile;
         foreach (var skill in options.Value.Skills) kernelConfig.Skills[skill.Name] = skill;
         foreach (var plugin in options.Value.Plugins) kernelConfig.Plugins[plugin.Name] = plugin;
         foreach (var agent in options.Value.Agents) kernelConfig.Agents[agent.Name] = agent;
