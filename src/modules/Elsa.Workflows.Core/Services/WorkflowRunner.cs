@@ -195,7 +195,7 @@ public class WorkflowRunner(
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
-        await commitStateHandler.CommitAsync(workflowExecutionContext, cancellationToken);
+        await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

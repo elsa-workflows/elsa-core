@@ -46,6 +46,7 @@ public class AgentActivityProvider(AgentManager agentManager, KernelConfig kerne
                     activityDescriptor.IsBrowsable = true;
                     activityDescriptor.Category = "Agent Skills";
                     activityDescriptor.Kind = ActivityKind.Task;
+                    activityDescriptor.CustomProperties["RootType"] = nameof(AgentActivity);
 
                     activityDescriptor.Constructor = context =>
                     {
