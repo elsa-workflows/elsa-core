@@ -8,7 +8,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class WorkflowRunner(
@@ -19,6 +19,7 @@ public class WorkflowRunner(
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
     INotificationSender notificationSender,
+    ICommitStateHandler commitStateHandler,
     ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
 {
@@ -46,9 +47,7 @@ public class WorkflowRunner(
     }
 
     /// <inheritdoc />
-    public async Task<RunWorkflowResult> RunAsync<T>(
-        RunWorkflowOptions? options = default,
-        CancellationToken cancellationToken = default) where T : IWorkflow, new()
+    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = default, CancellationToken cancellationToken = default) where T : IWorkflow, new()
     {
         var builder = workflowBuilderFactory.CreateBuilder();
         var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
@@ -109,7 +108,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        // Create workflow execution context.
+        // Create a workflow execution context.
         var input = options?.Input;
         var properties = options?.Properties;
         var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
@@ -196,6 +195,7 @@ public class WorkflowRunner(
 
         var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
         await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await commitStateHandler.CommitAsync(workflowExecutionContext, cancellationToken);
         return new RunWorkflowResult(workflowState, workflowExecutionContext.Workflow, result);
     }
 }

@@ -14,9 +14,7 @@ internal class ByteArrayConverter : IObjectConverter
     {
         if (value is byte[] bytes)
         {
-            // TODO: Temporary: Uint8Array creates a copy of the byte array. Instead, we want to create a view or a buffer referencing the byte array.
-            // See also: https://github.com/sebastienros/jint/pull/1590
-            result = engine.Intrinsics.Uint8Array.Construct(bytes);
+            result = engine.Intrinsics.ArrayBuffer.Construct(bytes);
             return true;
         }
 

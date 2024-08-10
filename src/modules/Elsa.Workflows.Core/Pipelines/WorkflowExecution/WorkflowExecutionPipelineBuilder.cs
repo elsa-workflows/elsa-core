@@ -1,5 +1,3 @@
-using Elsa.Workflows.Contracts;
-
 namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
 /// <inheritdoc />
@@ -51,6 +49,12 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     public IWorkflowExecutionPipelineBuilder Reset()
     {
         _components.Clear();
+        return this;
+    }
+
+    public IWorkflowExecutionPipelineBuilder Insert(int index, Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate> middleware)
+    {
+        _components.Insert(index, middleware);
         return this;
     }
 

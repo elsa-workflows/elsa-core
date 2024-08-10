@@ -3,7 +3,7 @@ using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
-using Elsa.ProtoActor.ProtoBuf;
+using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Data.Sqlite;
 using Proto.Cluster.AzureContainerApps;
@@ -26,7 +26,7 @@ var protoActorClusterSection = protoActorSection.GetSection("Cluster");
 
 // Configure Proto Actor cluster provider services.
 services.AddAzureContainerAppsProvider(
-    ArmClientProviders.DefaultAzureCredential, 
+    ArmClientProviders.DefaultAzureCredential,
     sc => sc.AddRedisClusterMemberStore(redisConnectionString),
     options => protoActorClusterSection.GetSection("AzureContainerApps").Bind(options));
 
@@ -47,27 +47,29 @@ services
             // Use EF core for workflow definitions and instances.
             management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
         })
+        // Configure Proto.Actor.
+        .UseProtoActor(protoActor =>
+        {
+            var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
+
+            protoActor.CreateClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
+
+            protoActor.ConfigureRemoteConfig = _ => GrpcNetRemoteConfig
+                .BindTo(advertisedHost)
+                .WithProtoMessages(EmptyReflection.Descriptor)
+                .WithProtoMessages(SharedReflection.Descriptor)
+                .WithLogLevelForDeserializationErrors(LogLevel.Critical)
+                .WithRemoteDiagnostics(true); // required by proto.actor dashboard
+
+            protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+        })
         .UseWorkflowRuntime(runtime =>
         {
             // Use EF core for triggers and bookmarks.
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 
             // Use Proto.Actor for workflow execution.
-            runtime.UseProtoActor(protoActor =>
-            {
-                var advertisedHost = IPUtils.FindSmallestIpAddress().ToString();
-
-                protoActor.ClusterProvider = sp => sp.GetRequiredService<AzureContainerAppsProvider>();
-
-                protoActor.RemoteConfig = _ => GrpcNetRemoteConfig
-                    .BindTo(advertisedHost)
-                    .WithProtoMessages(EmptyReflection.Descriptor)
-                    .WithProtoMessages(SharedReflection.Descriptor)
-                    .WithLogLevelForDeserializationErrors(LogLevel.Critical)
-                    .WithRemoteDiagnostics(true); // required by proto.actor dashboard
-
-                protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-            });
+            runtime.UseProtoActor();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseScheduling()

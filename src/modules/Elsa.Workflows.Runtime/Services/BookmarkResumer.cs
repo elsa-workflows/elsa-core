@@ -4,7 +4,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class BookmarkResumer(IWorkflowRuntime workflowRuntime, IBookmarkStore bookmarkStore, IStimulusHasher stimulusHasher) : IBookmarkResumer

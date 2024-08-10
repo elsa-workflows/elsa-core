@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 
@@ -9,7 +10,7 @@ public class TriggerSignal(object signal) : CodeActivity
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        var signalManager = context.GetRequiredService<ISignalManager>();
+        var signalManager = context.GetRequiredService<SignalManager>();
         context.DeferTask(() => signalManager.Trigger(Signal));
     }
 }

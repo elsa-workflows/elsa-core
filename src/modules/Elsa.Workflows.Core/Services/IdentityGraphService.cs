@@ -4,7 +4,7 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Humanizer;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class IdentityGraphService : IIdentityGraphService

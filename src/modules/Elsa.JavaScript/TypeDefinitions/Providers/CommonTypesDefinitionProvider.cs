@@ -21,5 +21,6 @@ internal class CommonTypeDefinitionProvider : TypeDefinitionProvider
     {
         yield return _typeDescriber.DescribeType(typeof(Guid));
         yield return _typeDescriber.DescribeType(typeof(JsonObject));
+        yield return _typeDescriber.DescribeType(typeof(Random));
     }
 }

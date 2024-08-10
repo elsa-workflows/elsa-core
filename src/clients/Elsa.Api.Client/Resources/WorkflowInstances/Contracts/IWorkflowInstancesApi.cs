@@ -1,6 +1,7 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
+using Elsa.Api.Client.Resources.WorkflowInstances.Responses;
 using Elsa.Api.Client.Shared.Models;
 using Refit;
 
@@ -45,6 +46,15 @@ public interface IWorkflowInstancesApi
     /// <param name="cancellationToken">The cancellation token.</param>
     [Post("/workflow-instances/{workflowInstanceId}/journal")]
     Task<PagedListResponse<WorkflowExecutionLogRecord>> GetFilteredJournalAsync(string workflowInstanceId, GetFilteredJournalRequest? filter, int? skip = default, int? take = default, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the execution state of the specified workflow instance.
+    /// </summary>
+    /// <param name="workflowInstanceId">The ID of the workflow instance for which to return its execution state.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Returns a response containing the execution state.</returns>
+    [Get("/workflow-instances/{workflowInstanceId}/execution-state")]
+    Task<WorkflowInstanceExecutionStateResponse> GetExecutionStateAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a workflow instance.

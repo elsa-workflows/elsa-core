@@ -6,7 +6,6 @@ using Elsa.Dapper.Contracts;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Models;
 using Elsa.Dapper.Records;
-using Elsa.Tenants;
 using JetBrains.Annotations;
 
 namespace Elsa.Dapper.Services;
@@ -89,13 +88,26 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <summary>
     /// Returns a page of records.
     /// </summary>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderKey">The order key selector.</param>
+    /// <param name="orderDirection">The order direction.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A page of records.</returns>
+    public async Task<Page<T>> ListAsync(PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
+    {
+        return await FindManyAsync(null, pageArgs, orderKey, orderDirection, false, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Returns a page of records.
+    /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
     /// <param name="pageArgs">The page arguments.</param>
     /// <param name="orderKey">The order key selector.</param>
     /// <param name="orderDirection">The order direction.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
     }
@@ -110,7 +122,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync<T>(filter, pageArgs, orderKey, orderDirection, tenantAgnostic, cancellationToken);
     }
@@ -123,7 +135,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="orderFields">The fields by which to order the results.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync(filter, pageArgs, orderFields, false, cancellationToken);
     }
@@ -137,7 +149,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A page of records.</returns>
-    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<Page<T>> FindManyAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync<T>(filter, pageArgs, orderFields, tenantAgnostic, cancellationToken);
     }
@@ -152,7 +164,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync<TShape>(filter, pageArgs, orderKey, orderDirection, false, cancellationToken);
     }
@@ -168,7 +180,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync<TShape>(filter, pageArgs, new[]
         {
@@ -185,7 +197,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, CancellationToken cancellationToken = default)
     {
         return await FindManyAsync<TShape>(filter, pageArgs, orderFields, false, cancellationToken);
     }
@@ -200,15 +212,15 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantResolve
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <typeparam name="TShape">The shape type.</typeparam>
     /// <returns>A page of records.</returns>
-    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery> filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    public async Task<Page<TShape>> FindManyAsync<TShape>(Action<ParameterizedQuery>? filter, PageArgs pageArgs, IEnumerable<OrderField> orderFields, bool tenantAgnostic, CancellationToken cancellationToken = default)
     {
         var query = dbConnectionProvider.CreateQuery().From(TableName);
         await ApplyTenantFilterAsync(query, tenantAgnostic, cancellationToken);
-        filter(query);
+        filter?.Invoke(query);
         query = query.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var countQuery = dbConnectionProvider.CreateQuery().Count(TableName);
-        filter(countQuery);
+        filter?.Invoke(countQuery);
 
         using var connection = dbConnectionProvider.GetConnection();
         var records = (await query.QueryAsync<TShape>(connection)).ToList();

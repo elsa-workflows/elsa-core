@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\bundles\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.JavaScript\Elsa.JavaScript.csproj" />

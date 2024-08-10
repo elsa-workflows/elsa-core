@@ -87,6 +87,7 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
+    [Obsolete("Use PropertyBag instead")]
     IDictionary<string, object> CustomProperties { get; }
     
     /// <summary>

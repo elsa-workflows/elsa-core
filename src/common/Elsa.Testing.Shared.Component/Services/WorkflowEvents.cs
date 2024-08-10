@@ -1,6 +1,6 @@
 namespace Elsa.Testing.Shared.Services;
 
-public class WorkflowEvents : IWorkflowEvents
+public class WorkflowEvents
 {
     public event EventHandler<WorkflowFinishedEventArgs>? WorkflowFinished;
     public event EventHandler<WorkflowInstanceSavedEventArgs>? WorkflowInstanceSaved;

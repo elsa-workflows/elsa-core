@@ -35,6 +35,7 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
         {
             feature.TriggerStore = sp => sp.GetRequiredService<DapperTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<DapperBookmarkStore>();
+            feature.BookmarkQueueStore = sp => sp.GetRequiredService<DapperBookmarkQueueStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<DapperWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<DapperActivityExecutionRecordStore>();
         });
@@ -47,6 +48,7 @@ public class DapperWorkflowRuntimePersistenceFeature : FeatureBase
 
         Services.AddDapperStore<DapperTriggerStore, StoredTriggerRecord>("Triggers");
         Services.AddDapperStore<DapperBookmarkStore, StoredBookmarkRecord>("Bookmarks");
+        Services.AddDapperStore<DapperBookmarkQueueStore, BookmarkQueueItemRecord>("BookmarkQueueItems");
         Services.AddDapperStore<DapperWorkflowExecutionLogStore, WorkflowExecutionLogRecordRecord>("WorkflowExecutionLogRecords");
         Services.AddDapperStore<DapperActivityExecutionRecordStore, ActivityExecutionRecordRecord>("ActivityExecutionRecords");
         Services.AddDapperStore<DapperKeyValueStore, KeyValuePairRecord>("KeyValues");

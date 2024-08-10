@@ -6,9 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.Features;
 
-/// <summary>
 /// Configures the system clock.
-/// </summary>
 public class SystemClockFeature : FeatureBase
 {
     /// <inheritdoc />

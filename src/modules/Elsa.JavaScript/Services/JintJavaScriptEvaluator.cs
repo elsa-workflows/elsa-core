@@ -17,6 +17,8 @@ using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Humanizer;
 using Jint;
+using Jint.Native;
+using Jint.Native.TypedArray;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -53,8 +55,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         options ??= new ExpressionEvaluatorOptions();
 
-        var engineOptions = new Jint.Options();;
-        
+        var engineOptions = new Jint.Options();
+        ;
+
         if (_jintOptions.AllowClrAccess)
             engineOptions.AllowClr();
 
@@ -70,13 +73,16 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         });
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
-            
+
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);
 
         // Add common functions.
+        engine.SetValue("getWorkflowDefinitionId", (Func<string>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.DefinitionId));
+        engine.SetValue("getWorkflowDefinitionVersionId", (Func<string>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.Id));
+        engine.SetValue("getWorkflowDefinitionVersion", (Func<int>)(() => context.GetWorkflowExecutionContext().Workflow.Identity.Version));
         engine.SetValue("getWorkflowInstanceId", (Func<string>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.Id));
         engine.SetValue("setCorrelationId", (Action<string?>)(value => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId = value));
         engine.SetValue("getCorrelationId", (Func<string?>)(() => context.GetActivityExecutionContext().WorkflowExecutionContext.CorrelationId));
@@ -124,6 +130,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         engine.RegisterType<DateTimeOffset>();
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
+        engine.RegisterType<Random>();
 
         // Invoke registered configuration callback.
         _jintOptions.ConfigureEngineCallback(engine, context);
@@ -203,7 +210,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         return JsonSerializer.Serialize(value, _jsonSerializerOptions);
     }
-    
+
     private static JsonSerializerOptions CreateJsonSerializerOptions()
     {
         var options = new JsonSerializerOptions
@@ -213,7 +220,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         options.Converters.Add(new JsonStringEnumConverter());
         return options;
     }
-    
+
     private string Hash(string input)
     {
         var bytes = Encoding.UTF8.GetBytes(input);

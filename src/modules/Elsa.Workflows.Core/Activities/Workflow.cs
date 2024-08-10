@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Elsa.Common.Models;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;

@@ -1,31 +1,26 @@
-using Elsa.Common.Models;
 using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Activities;
 using Humanizer;
+using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Providers;
 
-/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
-/// </summary>
-internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService)
-    : FunctionDefinitionProvider
+[UsedImplicitly]
+internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
 {
-    protected override async ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
+    protected override ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {
-        var cancellationToken = context.CancellationToken;
-        var workflow = context.Workflow;
-        var workflowDefinition = await workflowDefinitionService.FindWorkflowDefinitionAsync(workflow.Identity.DefinitionId, VersionOptions.SpecificVersion(workflow.Identity.Version), cancellationToken);
-        return workflowDefinition == null ? Array.Empty<FunctionDefinition>() : GetFunctionDefinitionsAsync(workflowDefinition);
+        var workflow = context.WorkflowGraph.Workflow;
+        return ValueTask.FromResult(GetFunctionDefinitionsAsync(workflow));
     }
     
-    private IEnumerable<FunctionDefinition> GetFunctionDefinitionsAsync(WorkflowDefinition workflowDefinition)
+    private IEnumerable<FunctionDefinition> GetFunctionDefinitionsAsync(Workflow workflow)
     {
         // Input argument getters.
-        foreach (var input in workflowDefinition.Inputs)
+        foreach (var input in workflow.Inputs)
         {
             var pascalName = input.Name.Pascalize();
             var variableType = input.Type;

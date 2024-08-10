@@ -1,4 +1,5 @@
-﻿using Elsa.Workflows.Contracts;
+﻿using Elsa.Workflows.ComponentTests.Helpers;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;

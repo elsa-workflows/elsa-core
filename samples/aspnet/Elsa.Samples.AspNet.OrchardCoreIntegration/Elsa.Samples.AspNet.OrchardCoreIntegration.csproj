@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowContexts\Elsa.WorkflowContexts.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.OrchardCore\Elsa.OrchardCore.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" />
+    </ItemGroup>
+    
+</Project>

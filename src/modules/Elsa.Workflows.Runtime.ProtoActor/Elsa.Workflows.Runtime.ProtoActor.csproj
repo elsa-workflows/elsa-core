@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides a workflow runtime using ProtoActor and its out-of-the-box memory provider.
+        </Description>
+        <PackageTags>elsa module runtime protoactor actors</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf"/>
+        <PackageReference Include="Grpc.Tools" PrivateAssets="all"/>
+        <PackageReference Include="Proto.Cluster.CodeGen"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ProtoActor.Core\Elsa.ProtoActor.Core.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf Include="Proto\Shared.proto" AdditionalImportDirs="./Proto"/>
+        <Protobuf Include="Proto\WorkflowInstance.Messages.proto" AdditionalImportDirs="./Proto" />
+        <ProtoGrain Include="Proto\WorkflowInstance.proto" AdditionalImportDirs="./Proto" />
+    </ItemGroup>
+
+</Project>

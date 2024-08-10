@@ -15,9 +15,9 @@ namespace Elsa.Workflows.Management.Handlers;
 public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater workflowDefinitionActivityRegistryUpdater) :
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
+    INotificationHandler<WorkflowDefinitionVersionRetracted>,
     INotificationHandler<WorkflowDefinitionDeleted>,
     INotificationHandler<WorkflowDefinitionsDeleted>,
-    INotificationHandler<WorkflowDefinitionCreated>,
     INotificationHandler<WorkflowDefinitionVersionDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsDeleted>,
     INotificationHandler<WorkflowDefinitionVersionsUpdated>
@@ -31,8 +31,13 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     /// <inheritdoc />
     public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
     { 
-        workflowDefinitionActivityRegistryUpdater.RemoveDefinitionVersionFromRegistry(notification.WorkflowDefinition.Id);
-        return Task.CompletedTask;
+        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionVersionRetracted notification, CancellationToken cancellationToken)
+    { 
+        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
     }
 
     /// <inheritdoc />
@@ -51,12 +56,6 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
         }
 
         return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task HandleAsync(WorkflowDefinitionCreated notification, CancellationToken cancellationToken)
-    {
-        return UpdateDefinition(notification.WorkflowDefinition.Id, notification.WorkflowDefinition.Options.UsableAsActivity);
     }
 
     /// <inheritdoc />
@@ -80,14 +79,15 @@ public class RefreshActivityRegistry(IWorkflowDefinitionActivityRegistryUpdater 
     /// <inheritdoc />
     public async Task HandleAsync(WorkflowDefinitionVersionsUpdated notification, CancellationToken cancellationToken)
     {
-        foreach (var definition in notification.VersionUpdates)
+        foreach (var definition in notification.WorkflowDefinitions)
         {
-            await UpdateDefinition(definition.Id, definition.UsableAsActivity);
+            await UpdateDefinition(definition.Id, definition.Options.UsableAsActivity);
         }
     }
 
     private Task UpdateDefinition(string id, bool? usableAsActivity)
     {
+        // Once a workflow has been published it should remain in the activity registry unless no longer being marked as an activity.
         if (usableAsActivity.GetValueOrDefault())
             return workflowDefinitionActivityRegistryUpdater.AddToRegistry(id);
 

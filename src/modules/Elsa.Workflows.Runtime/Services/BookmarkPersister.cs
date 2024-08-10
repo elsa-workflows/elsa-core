@@ -3,7 +3,7 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class BookmarksPersister(IBookmarkUpdater bookmarkUpdater, INotificationSender notificationSender) : IBookmarksPersister

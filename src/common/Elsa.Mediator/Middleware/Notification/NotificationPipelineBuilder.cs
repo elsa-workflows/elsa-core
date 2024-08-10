@@ -6,7 +6,7 @@ namespace Elsa.Mediator.Middleware.Notification;
 public class NotificationPipelineBuilder : INotificationPipelineBuilder
 {
     private const string ServicesKey = "mediator.Services";
-    private readonly IList<Func<NotificationMiddlewareDelegate, NotificationMiddlewareDelegate>> _components = new List<Func<NotificationMiddlewareDelegate, NotificationMiddlewareDelegate>>();
+    private readonly List<Func<NotificationMiddlewareDelegate, NotificationMiddlewareDelegate>> _components = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationPipelineBuilder"/> class.
@@ -38,8 +38,10 @@ public class NotificationPipelineBuilder : INotificationPipelineBuilder
     {
         NotificationMiddlewareDelegate pipeline = _ => new ValueTask();
 
-        foreach (var component in _components.Reverse())
-            pipeline = component(pipeline);
+        for (int i = _components.Count - 1; i >= 0; i--)
+        {
+            pipeline = _components[i](pipeline);
+        }
 
         return pipeline;
     }
