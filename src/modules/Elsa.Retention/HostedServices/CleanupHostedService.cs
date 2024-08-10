@@ -11,12 +11,11 @@ namespace Elsa.Retention.HostedServices;
 /// <summary>
 /// Periodically wipes workflow instances and their execution logs.
 /// </summary>
-public class CleanupHostedService : IHostedService
+public class CleanupHostedService : BackgroundService
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger<CleanupHostedService> _logger;
     private readonly TimeSpan _interval;
-    private bool _isStarted;
 
     /// <summary>
     /// Creates new Cleanup hosted service
@@ -31,17 +30,17 @@ public class CleanupHostedService : IHostedService
         _interval = options.Value.SweepInterval;
     }
 
-    private async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var scope = _serviceScopeFactory.CreateScope();
-        var job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
-
-        var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
-        
-        while (_isStarted)
+        while (!stoppingToken.IsCancellationRequested)
         {
+            using IServiceScope scope = _serviceScopeFactory.CreateScope();
+            CleanupJob job = scope.ServiceProvider.GetRequiredService<CleanupJob>();
+
+            IDistributedLockProvider distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
+            
             await Task.Delay(_interval, stoppingToken);
-            await using var handle = await distributedLockProvider.AcquireLockAsync(nameof(CleanupHostedService), cancellationToken: stoppingToken);
+            await using IDistributedSynchronizationHandle handle = await distributedLockProvider.AcquireLockAsync(nameof(CleanupHostedService), cancellationToken: stoppingToken);
             
             try
             {
@@ -52,20 +51,5 @@ public class CleanupHostedService : IHostedService
                 _logger.LogError(e, "Failed to perform cleanup this time around. Next cleanup attempt will happen in {Interval}", _interval);
             }
         }
-    }
-
-    /// <inheritdoc cref="IHostedService"/>
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        _isStarted = true;
-        ExecuteAsync(CancellationToken.None).ConfigureAwait(false);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc cref="IHostedService"/>
-    public Task StopAsync(CancellationToken cancellationToken)
-    {
-        _isStarted = false;
-        return Task.CompletedTask;
     }
 }
