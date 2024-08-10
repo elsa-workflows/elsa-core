@@ -5,7 +5,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Runtime.Distributed.Services;
+namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedWorkflowClient(
     string workflowInstanceId,
