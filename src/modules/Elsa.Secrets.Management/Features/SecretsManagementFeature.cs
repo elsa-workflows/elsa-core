@@ -1,9 +1,13 @@
 using Elsa.Features.Abstractions;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Features;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Management.Features;
 
+[DependsOn(typeof(SecretsFeature))]
 public class SecretsManagementFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, ISecretStore> _secretStoreFactory = sp => sp.GetRequiredService<MemorySecretStore>();
@@ -35,7 +39,15 @@ public class SecretsManagementFeature(IModule module) : FeatureBase(module)
         _algorithmResolver = algorithmResolverFactory;
         return this;
     }
-    
+
+    public override void Configure()
+    {
+        Module.UseSecrets(secrets =>
+        {
+            secrets.UseSecretsProvider(sp => sp.GetRequiredService<StoreSecretProvider>());
+        });
+    }
+
     public override void Apply()
     {
         Services
@@ -45,7 +57,8 @@ public class SecretsManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped(_encryptorFactory)
             .AddScoped(_encryptionKeyProvider)
             .AddScoped<DefaultEncryptor>()
+            .AddScoped<StoreSecretProvider>()
             .AddTransient<IAlgorithmProvider, DefaultAlgorithmProvider>()
-        ;
+            ;
     }
 }

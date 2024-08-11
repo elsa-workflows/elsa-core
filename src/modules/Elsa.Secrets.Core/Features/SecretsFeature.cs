@@ -9,7 +9,7 @@ public class SecretsFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, ISecretProvider> _secretProviderFactory = _ => new NullSecretProvider();
 
-    public SecretsFeature WithSecretsProvider(Func<IServiceProvider, ISecretProvider> secretProviderFactory)
+    public SecretsFeature UseSecretsProvider(Func<IServiceProvider, ISecretProvider> secretProviderFactory)
     {
         _secretProviderFactory = secretProviderFactory;
         return this;
