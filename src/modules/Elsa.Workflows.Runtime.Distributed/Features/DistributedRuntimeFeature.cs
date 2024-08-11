@@ -3,7 +3,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Runtime.Distributed.Handlers;
-using Elsa.Workflows.Runtime.Distributed.Services;
 using Elsa.Workflows.Runtime.Features;
 using Microsoft.Extensions.DependencyInjection;
 

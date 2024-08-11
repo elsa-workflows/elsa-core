@@ -1,4 +1,3 @@
-using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
@@ -17,6 +16,6 @@ public class BookmarksPersister(IBookmarkUpdater bookmarkUpdater, INotificationS
         await notificationSender.SendAsync(new WorkflowBookmarksIndexed(new IndexedWorkflowBookmarks(updateBookmarksRequest.WorkflowInstanceId, updateBookmarksRequest.Diff.Added, updateBookmarksRequest.Diff.Removed, updateBookmarksRequest.Diff.Unchanged)));
     
         // Publish domain event.
-        await notificationSender.SendAsync(new WorkflowBookmarksPersisted(updateBookmarksRequest.Diff), NotificationStrategy.Background);
+        await notificationSender.SendAsync(new WorkflowBookmarksPersisted(updateBookmarksRequest.Diff));
     }
 }
