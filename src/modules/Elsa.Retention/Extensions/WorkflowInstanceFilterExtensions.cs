@@ -6,9 +6,8 @@ namespace Elsa.Retention.Extensions;
 
 public static class WorkflowInstanceFilterExtensions
 {
-
     /// <summary>
-    /// Clone the current filter
+    ///     Clone the current filter
     /// </summary>
     /// <param name="filter"></param>
     /// <returns></returns>
