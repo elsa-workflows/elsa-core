@@ -1,6 +1,6 @@
-namespace Elsa.Secrets.Management.Contracts;
+namespace Elsa.Secrets.Management;
 
 public interface IEncryptionKeyProvider
 {
-    Task<byte[]> GetKeyAsync(string id, CancellationToken cancellationToken = default);
+    Task<EncryptionKey> GetAsync(string id, CancellationToken cancellationToken = default);
 }

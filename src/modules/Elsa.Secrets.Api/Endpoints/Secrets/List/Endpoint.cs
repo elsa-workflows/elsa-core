@@ -3,8 +3,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Models;
 using Elsa.Secrets.Management;
-using Elsa.Secrets.Management.Contracts;
-using Elsa.Secrets.Management.Entities;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets.List;

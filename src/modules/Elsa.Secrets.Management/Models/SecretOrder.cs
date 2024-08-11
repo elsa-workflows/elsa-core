@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Elsa.Common.Entities;
-using Elsa.Secrets.Management.Entities;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Management;
