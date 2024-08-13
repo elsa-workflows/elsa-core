@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<IdentityElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<IdentityElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();
+    public Func<IServiceProvider, IDbExceptionHandler<IdentityElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler();
 
     /// <inheritdoc />
     public override void Configure()

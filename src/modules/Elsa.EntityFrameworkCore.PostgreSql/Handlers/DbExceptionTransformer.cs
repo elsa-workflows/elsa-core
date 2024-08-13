@@ -10,16 +10,14 @@ using Npgsql;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Handlers;
 
-/// <summary>
-/// Handles database exceptions encountered when using a postgreSQL database.
-/// </summary>
-public class DbExceptionHandler : IDbExceptionHandler<AlterationsElsaDbContext>,
+/// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
+public class DbExceptionTransformer : IDbExceptionHandler<AlterationsElsaDbContext>,
     IDbExceptionHandler<IdentityElsaDbContext>,
     IDbExceptionHandler<LabelsElsaDbContext>,
     IDbExceptionHandler<ManagementElsaDbContext>,
     IDbExceptionHandler<RuntimeElsaDbContext>
 {
-    /// Handles database exceptions encountered when using a postgreSQL database.
+    /// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
     public void Handle(DbUpdateException exception)
     {
         var ex = exception.InnerException as PostgresException;
