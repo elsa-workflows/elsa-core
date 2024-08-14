@@ -14,15 +14,15 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionVersionId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionVersion")
             .ReturnType("number"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowInstanceId")
             .ReturnType("string"));
@@ -55,7 +55,7 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Parameter("activityId", "string")
             .Parameter("outputName", "string", true)
             .ReturnType("any"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getLastResult")
             .ReturnType("any"));
@@ -91,26 +91,36 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Name("toJson")
             .Parameter("value", "any")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("bytesToString")
             .Parameter("value", "Byte[]")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("bytesFromString")
             .Parameter("value", "string")
             .ReturnType("Byte[]"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("bytesToBase64")
             .Parameter("value", "Byte[]")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("bytesFromBase64")
             .Parameter("value", "string")
             .ReturnType("Byte[]"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("stringFromBase64")
+            .Parameter("value", "string")
+            .ReturnType("string"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("stringToBase64")
+            .Parameter("value", "string")
+            .ReturnType("string"));
 
         // Variable getter and setters.
         foreach (var variable in context.Workflow.Variables)

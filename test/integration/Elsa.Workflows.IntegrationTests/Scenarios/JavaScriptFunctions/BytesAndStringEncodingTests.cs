@@ -71,4 +71,30 @@ public class BytesAndStringEncodingTests
 
         Assert.Equal(bytes, result);
     }
+    
+    [Fact]
+    public async Task StringToBase64_ConvertsTo_Base64()
+    {
+        const string data = "Hello World!"; 
+        var bytes = Encoding.UTF8.GetBytes(data);
+        var base64 = Convert.ToBase64String(bytes);
+        var script = "stringToBase64(getData())";
+        _expressionContext.SetVariable("Data", data);
+        var result = (string)(await _evaluator.EvaluateAsync(script, typeof(string), _expressionContext))!;
+
+        Assert.Equal(base64, result);
+    }
+    
+    [Fact]
+    public async Task StringFromBase64_ConvertsTo_String()
+    {
+        const string data = "Hello World!"; 
+        var bytes = Encoding.UTF8.GetBytes(data);
+        var base64 = Convert.ToBase64String(bytes);
+        var script = "stringFromBase64(getData())";
+        _expressionContext.SetVariable("Data", base64);
+        var result = (string)(await _evaluator.EvaluateAsync(script, typeof(string), _expressionContext))!;
+
+        Assert.Equal(data, result);
+    }
 }

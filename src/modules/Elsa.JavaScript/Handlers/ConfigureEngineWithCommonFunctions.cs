@@ -46,6 +46,8 @@ public class ConfigureEngineWithCommonFunctions : INotificationHandler<Evaluatin
         engine.SetValue("bytesFromString", (Func<string, byte[]>)(value => Encoding.UTF8.GetBytes(value)));
         engine.SetValue("bytesToBase64", (Func<byte[], string>)(value => Convert.ToBase64String(value)));
         engine.SetValue("bytesFromBase64", (Func<string, byte[]>)(value => Convert.FromBase64String(value)));
+        engine.SetValue("stringToBase64", (Func<string, string>)(value =>  Convert.ToBase64String(Encoding.UTF8.GetBytes(value))));
+        engine.SetValue("stringFromBase64", (Func<string, string>)(value => Encoding.UTF8.GetString(Convert.FromBase64String(value))));
         
         // Deprecated, use newGuidString instead.
         engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
