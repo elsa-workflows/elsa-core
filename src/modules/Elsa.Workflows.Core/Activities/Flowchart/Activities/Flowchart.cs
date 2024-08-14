@@ -291,7 +291,7 @@ public class Flowchart : Container
 
     private async ValueTask OnActivityExceptionAsync(ExceptionSignal signal, SignalContext context)
     {
-        var activities = Activities.Where(a => a is Catch).Select(a => a as Catch).ToList();
+        var activities = Activities.Where(a => a is Catch).Cast<Catch>().ToList();
 
         if (activities.Count == 0)
             return;
