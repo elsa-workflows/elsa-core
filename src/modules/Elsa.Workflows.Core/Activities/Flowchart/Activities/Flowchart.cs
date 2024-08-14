@@ -144,6 +144,12 @@ public class Flowchart : Container
         var completedActivity = completedActivityContext.Activity;
         var result = context.Result;
 
+        bool isBreaking = flowchartContext.GetIsBreaking();
+        if (isBreaking) {
+            await flowchartContext.CompleteActivityAsync();
+            return;
+        }
+
         // If the complete activity's status is anything but "Completed", do not schedule its outbound activities.
         var scheduleChildren = completedActivityContext.Status == ActivityStatus.Completed;
         var outcomeNames = result is Outcomes outcomes
