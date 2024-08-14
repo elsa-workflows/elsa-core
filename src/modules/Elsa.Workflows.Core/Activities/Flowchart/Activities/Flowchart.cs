@@ -28,7 +28,7 @@ public class Flowchart : Container
         OnSignalReceived<ScheduleActivityOutcomes>(OnScheduleOutcomesAsync);
         OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
         OnSignalReceived<CancelSignal>(OnActivityCanceledAsync);
-        OnSignalCaptured<ExceptionSignal>(OnActivityExceptionAsync);
+        OnSignalReceived<ExceptionSignal>(OnActivityExceptionAsync);
     }
 
     /// <summary>
@@ -329,9 +329,9 @@ public class Flowchart : Container
 
     private async ValueTask OnActivityExceptionAsync(ExceptionSignal signal, SignalContext context)
     {
-        var avtivities = Activities.Where(a => a is Catch).Select(a => a as Catch).ToList();
+        var activities = Activities.Where(a => a is Catch).Select(a => a as Catch).ToList();
 
-        if (avtivities.Count == 0)
+        if (activities.Count == 0)
             return;
 
         var flowchartContext = context.ReceiverActivityExecutionContext;
@@ -344,13 +344,13 @@ public class Flowchart : Container
             Owner = flowchartContext
         };
 
-        foreach (var catchAvtivity in avtivities)
+        foreach (var catchActivity in activities)
         {
-            var catchContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == catchAvtivity!.Id);
+            var catchContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Activity.Id == catchActivity!.Id);
 
             if (catchContext == null)
             {
-                catchContext = workflowExecutionContext.CreateActivityExecutionContext(catchAvtivity!, options);
+                catchContext = workflowExecutionContext.CreateActivityExecutionContext(catchActivity!, options);
                 workflowExecutionContext.AddActivityExecutionContext(catchContext);
 
                 await catchContext.EvaluateInputPropertiesAsync();
@@ -362,18 +362,18 @@ public class Flowchart : Container
                 ExistingActivityExecutionContext = catchContext
             };
 
-            var catchAll = catchAvtivity!.CatchAll.Get(catchContext);
+            var catchAll = catchActivity!.CatchAll.Get(catchContext);
             if (catchAll)
             {
-                var connections = Connections.Descendants(catchAvtivity).ToList();
+                var connections = Connections.Descendants(catchActivity).ToList();
                 if (!connections.Any(x => x.Target.Activity == exceptionActivity || x.Source.Activity == exceptionActivity))
-                    await flowchartContext.ScheduleActivityAsync(catchAvtivity, scheduleWorkOptions);
+                    await flowchartContext.ScheduleActivityAsync(catchActivity, scheduleWorkOptions);
             }
             else
             {
-                var catchActivities = catchAvtivity.CatchActivities?.Get(catchContext);
+                var catchActivities = catchActivity.CatchActivities?.Get(catchContext);
                 if (catchActivities != null && catchActivities.Contains(exceptionActivity.Id))
-                    await flowchartContext.ScheduleActivityAsync(catchAvtivity, scheduleWorkOptions);
+                    await flowchartContext.ScheduleActivityAsync(catchActivity, scheduleWorkOptions);
             }
         }
     }

@@ -17,15 +17,15 @@ public class Catch : Activity
     }
 
     /// <summary>
-    /// Catch all the Exception.
+    /// A value indicating whether to catch all exceptions from all activities.
     /// </summary>
-    [Input(Description = "A value that is the tag a global catcher")]
+    [Input(Description = "A value indicating whether to catch all exceptions from all activities.")]
     public Input<bool> CatchAll { get; set; } = default!;
 
     /// <summary>
-    /// Catch the Activities.
+    /// The IDs of the activities to catch exceptions from.
     /// </summary>
-    [Input(Description = "The Activities will be catch",
+    [Input(Description = "The IDs of the activities to catch exceptions from.",
         UIHint = InputUIHints.MultiText)]
     public Input<ICollection<string>?> CatchActivities { get; set; } = default!;
 
