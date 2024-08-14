@@ -394,7 +394,7 @@ public static class ExpressionExecutionContextExtensions
     /// <returns>The value of the specified input.</returns>
     public static object? GetInput(this ExpressionExecutionContext context, string name)
     {
-        if (context.IsInsideCompositeActivity())
+        if (context.IsContainedWithinCompositeActivity())
         {
             // If there's a variable in the current scope with the specified name, return that.
             var variable = context.GetVariable(name);
@@ -469,7 +469,7 @@ public static class ExpressionExecutionContextExtensions
     /// <summary>
     /// Returns a value indicating whether the current activity is inside a composite activity.
     /// </summary>
-    public static bool IsInsideCompositeActivity(this ExpressionExecutionContext context)
+    public static bool IsContainedWithinCompositeActivity(this ExpressionExecutionContext context)
     {
         if (!context.TryGetActivityExecutionContext(out var activityExecutionContext))
             return false;
