@@ -62,4 +62,13 @@ public class BreakTests
         var lines = _capturingTextWriter.Lines.ToList();
         Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
     }
+
+    [Fact(DisplayName = "Break While whin a Flowchart")]
+    public async Task Test6()
+    {
+        await _services.PopulateRegistriesAsync();
+        await _workflowRunner.RunAsync<BreakWhileFlowchartWorkflow>();
+        var lines = _capturingTextWriter.Lines.ToList();
+        Assert.Equal(new[] { "start" }, lines);
+    }
 }
