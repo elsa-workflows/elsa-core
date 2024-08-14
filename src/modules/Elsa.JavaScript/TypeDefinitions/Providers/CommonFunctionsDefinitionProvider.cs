@@ -91,6 +91,26 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Name("toJson")
             .Parameter("value", "any")
             .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesToString")
+            .Parameter("value", "Byte[]")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesFromString")
+            .Parameter("value", "string")
+            .ReturnType("Byte[]"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesToBase64")
+            .Parameter("value", "Byte[]")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesFromBase64")
+            .Parameter("value", "string")
+            .ReturnType("Byte[]"));
 
         // Variable getter and setters.
         foreach (var variable in context.Workflow.Variables)

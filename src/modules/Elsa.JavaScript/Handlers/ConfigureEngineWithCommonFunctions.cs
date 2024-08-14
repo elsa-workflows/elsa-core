@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -43,6 +44,10 @@ public class ConfigureEngineWithCommonFunctions : INotificationHandler<Evaluatin
         engine.SetValue("newGuid", (Func<Guid>)(() => Guid.NewGuid()));
         engine.SetValue("newGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
         engine.SetValue("newShortGuid", (Func<string>)(() => Regex.Replace(Convert.ToBase64String(Guid.NewGuid().ToByteArray()), "[/+=]", "")));
+        engine.SetValue("bytesToString", (Func<byte[], string>)(value => Encoding.UTF8.GetString(value)));
+        engine.SetValue("bytesFromString", (Func<string, byte[]>)(value => Encoding.UTF8.GetBytes(value)));
+        engine.SetValue("bytesToBase64", (Func<byte[], string>)(value => Convert.ToBase64String(value)));
+        engine.SetValue("bytesFromBase64", (Func<string, byte[]>)(value => Convert.FromBase64String(value)));
         
         // Deprecated, use newGuidString instead.
         engine.SetValue("getGuidString", (Func<string>)(() => Guid.NewGuid().ToString()));
