@@ -6,7 +6,7 @@
     <RootNamespace/>
     <NoWarn>CS0649;CS0169;CA1050;CA1822;CA2211;IDE1006</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
-    <NukeScriptDirectory>../scripts/nuke/</NukeScriptDirectory>
+    <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
     <NukeExcludeLogs>true</NukeExcludeLogs>
     <NukeExcludeDirectoryBuild>true</NukeExcludeDirectoryBuild>
