@@ -40,6 +40,9 @@ builder.Services.AddElsa(elsa =>
     
     // Register custom activities.
     elsa.AddActivitiesFrom<Program>();
+    
+    // Register custom workflows.
+    elsa.AddWorkflowsFrom<Program>();
 });
 
 // Configure CORS to allow designer app hosted on a different origin to invoke the APIs.

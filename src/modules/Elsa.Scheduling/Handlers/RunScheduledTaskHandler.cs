@@ -1,7 +1,6 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
 using Elsa.Scheduling.Commands;
-using Elsa.Scheduling.Models;
 
 namespace Elsa.Scheduling.Handlers;
 

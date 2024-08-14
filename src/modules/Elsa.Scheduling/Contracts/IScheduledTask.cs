@@ -1,4 +1,4 @@
-namespace Elsa.Scheduling.Contracts;
+namespace Elsa.Scheduling;
 
 /// <summary>
 /// Represents a scheduled task.

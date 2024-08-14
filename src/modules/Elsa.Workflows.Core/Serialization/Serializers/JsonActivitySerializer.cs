@@ -9,8 +9,6 @@ namespace Elsa.Workflows.Serialization.Serializers;
 /// <inheritdoc cref="IActivitySerializer" />
 public class JsonActivitySerializer(IServiceProvider serviceProvider) : ConfigurableSerializer(serviceProvider), IActivitySerializer
 {
-    private JsonSerializerOptions? _options;
-    
     /// <inheritdoc />
     public string Serialize(IActivity activity)
     {
@@ -39,15 +37,7 @@ public class JsonActivitySerializer(IServiceProvider serviceProvider) : Configur
     {
         options.Converters.Add(CreateInstance<TypeJsonConverter>());
         options.Converters.Add(CreateInstance<InputJsonConverterFactory>());
-    }
-    
-    private JsonSerializerOptions GetOptionsInternal()
-    {
-        if(_options != null)
-            return _options;
-        
-        var options = GetOptions().Clone();
-        options.Converters.Add(CreateInstance<JsonIgnoreCompositeRootConverterFactory>());
-        return _options = options;
+        options.Converters.Add(CreateInstance<OutputJsonConverterFactory>());
+        options.Converters.Add(CreateInstance<ExpressionJsonConverterFactory>());
     }
 }

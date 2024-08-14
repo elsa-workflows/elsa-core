@@ -1,5 +1,3 @@
-using Elsa.Workflows.Models;
-
 namespace Elsa.Workflows.Runtime.Parameters;
 
 /// Represents options for starting a workflow host.
@@ -23,8 +21,8 @@ public class StartWorkflowHostParams
     /// The ID of the activity that triggered the workflow instance.
     public string? TriggerActivityId { get; set; }
 
-    /// Cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.
-    public CancellationTokens CancellationTokens { get; set; }
+    /// <summary>Cancellation tokens that can be used to cancel the workflow instance without cancelling system-level operations.</summary>
+    public CancellationToken CancellationToken { get; set; }
 
     /// Callback method that will be called when the status of the workflow has been updated
     public Action<WorkflowExecutionContext>? StatusUpdatedCallback { get; set; }

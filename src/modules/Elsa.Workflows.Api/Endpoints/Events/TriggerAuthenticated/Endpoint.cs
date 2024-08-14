@@ -1,7 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Http.Contracts;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Api.Endpoints.Events.TriggerAuthenticated;
@@ -13,13 +12,11 @@ namespace Elsa.Workflows.Api.Endpoints.Events.TriggerAuthenticated;
 internal class Trigger : ElsaEndpoint<Request>
 {
     private readonly IEventPublisher _eventPublisher;
-    private readonly IHttpBookmarkProcessor _httpBookmarkProcessor;
 
     /// <inheritdoc />
-    public Trigger(IEventPublisher eventPublisher, IHttpBookmarkProcessor httpBookmarkProcessor)
+    public Trigger(IEventPublisher eventPublisher)
     {
         _eventPublisher = eventPublisher;
-        _httpBookmarkProcessor = httpBookmarkProcessor;
     }
 
     /// <inheritdoc />
@@ -41,16 +38,13 @@ internal class Trigger : ElsaEndpoint<Request>
 
         if (workflowExecutionMode == WorkflowExecutionMode.Asynchronous)
         {
-            await _eventPublisher.DispatchAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
+            // TODO: Implement async dispatch
+            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
             await SendOkAsync(cancellationToken);
         }
         else
         {
-            var results = await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
-
-            // Resume any HTTP bookmarks.
-            foreach (var result in results)
-                await _httpBookmarkProcessor.ProcessBookmarks(new[] { result }, correlationId, default, cancellationToken);
+            await _eventPublisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, input, cancellationToken);
 
             if (!HttpContext.Response.HasStarted) 
                 await SendOkAsync(cancellationToken);

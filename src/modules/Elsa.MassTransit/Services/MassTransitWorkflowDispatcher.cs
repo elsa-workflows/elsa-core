@@ -1,17 +1,15 @@
-using Elsa.Extensions;
 using Elsa.MassTransit.Contracts;
 using Elsa.MassTransit.Messages;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Management.Contracts;
-using Elsa.Workflows.Management.Requests;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
-using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
@@ -24,25 +22,22 @@ public class MassTransitWorkflowDispatcher(
     IEndpointChannelFormatter endpointChannelFormatter,
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowInstanceManager workflowInstanceManager,
-    IBookmarkHasher bookmarkHasher,
+    IStimulusHasher stimulusHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
-    IDistributedLockProvider distributedLockProvider,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionId, request.VersionOptions, cancellationToken);
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(request.DefinitionVersionId, cancellationToken);
 
         if (workflowGraph == null)
-            throw new Exception($"Workflow definition with definition ID '{request.DefinitionId} and version {request.VersionOptions}' not found");
+            throw new Exception($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
 
-        var workflow = workflowGraph.Workflow;
-        var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+        var workflowInstanceOptions = new WorkflowInstanceOptions
         {
-            Workflow = workflow,
             WorkflowInstanceId = request.InstanceId,
             ParentWorkflowInstanceId = request.ParentWorkflowInstanceId,
             Input = request.Input,
@@ -50,7 +45,7 @@ public class MassTransitWorkflowDispatcher(
             CorrelationId = request.CorrelationId
         };
 
-        await DispatchWorkflowAsync(createWorkflowInstanceRequest, request.TriggerActivityId, options, cancellationToken);
+        await DispatchWorkflowAsync(workflowGraph.Workflow, workflowInstanceOptions, request.TriggerActivityId, options, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -62,11 +57,10 @@ public class MassTransitWorkflowDispatcher(
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
         {
             BookmarkId = request.BookmarkId,
-            ActivityId = request.ActivityId,
-            ActivityNodeId = request.ActivityNodeId,
-            ActivityInstanceId = request.ActivityInstanceId,
-            ActivityHash = request.ActivityHash,
-            CorrelationId = request.CorrelationId
+            ActivityHandle = request.ActivityHandle,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input,
+            Properties = request.Properties
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -82,7 +76,7 @@ public class MassTransitWorkflowDispatcher(
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var hash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, request.ActivityInstanceId);
+        var hash = stimulusHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, request.ActivityInstanceId);
         var correlationId = request.CorrelationId;
         var workflowInstanceId = request.WorkflowInstanceId;
         var activityInstanceId = request.ActivityInstanceId;
@@ -100,7 +94,7 @@ public class MassTransitWorkflowDispatcher(
 
     private async Task DispatchTriggersAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
-        var triggerHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload);
+        var triggerHash = stimulusHasher.Hash(request.ActivityTypeName, request.BookmarkPayload);
         var triggerFilter = new TriggerFilter
         {
             Hash = triggerHash
@@ -117,22 +111,21 @@ public class MassTransitWorkflowDispatcher(
                 continue;
             }
 
-            var createWorkflowInstanceRequest = new CreateWorkflowInstanceRequest
+            var workflowInstanceOptions = new WorkflowInstanceOptions()
             {
-                Workflow = workflowGraph.Workflow,
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
                 Properties = request.Properties,
                 CorrelationId = request.CorrelationId
             };
 
-            await DispatchWorkflowAsync(createWorkflowInstanceRequest, trigger.ActivityId, options, cancellationToken);
+            await DispatchWorkflowAsync(workflowGraph.Workflow, workflowInstanceOptions, trigger.ActivityId, options, cancellationToken);
         }
     }
 
-    private async Task DispatchWorkflowAsync(CreateWorkflowInstanceRequest createWorkflowInstanceRequest, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
+    private async Task DispatchWorkflowAsync(Workflow workflow, WorkflowInstanceOptions? workflowInstanceOptions, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
     {
-        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+        var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
         var sendEndpoint = await GetSendEndpointAsync(options);
         var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
         await sendEndpoint.Send(message, cancellationToken);
@@ -143,7 +136,7 @@ public class MassTransitWorkflowDispatcher(
         var correlationId = request.CorrelationId;
         var workflowInstanceId = request.WorkflowInstanceId;
         var activityInstanceId = request.ActivityInstanceId;
-        var bookmarkHash = bookmarkHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, activityInstanceId);
+        var bookmarkHash = stimulusHasher.Hash(request.ActivityTypeName, request.BookmarkPayload, activityInstanceId);
 
         var filter = new BookmarkFilter
         {
@@ -163,28 +156,12 @@ public class MassTransitWorkflowDispatcher(
         {
             var workflowInstanceId = bookmark.WorkflowInstanceId;
 
-            if (input != null || properties != null)
-            {
-                // Need to acquire a lock on the workflow instance to prevent concurrent updates.
-                await using var distributedLock = await distributedLockProvider.AcquireLockAsync(workflowInstanceId, TimeSpan.FromMinutes(2), cancellationToken);
-                var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowInstanceId, cancellationToken);
-
-                if (workflowInstance == null)
-                {
-                    logger.LogWarning("Workflow instance with ID '{WorkflowInstanceId}' not found", workflowInstanceId);
-                    continue;
-                }
-
-                if (input != null) workflowInstance.WorkflowState.Input.Merge(input);
-                if (properties != null) workflowInstance.WorkflowState.Properties.Merge(properties);
-
-                await workflowInstanceManager.SaveAsync(workflowInstance, cancellationToken);
-            }
-
             var dispatchInstanceRequest = new DispatchWorkflowInstanceRequest(workflowInstanceId)
             {
-                BookmarkId = bookmark.BookmarkId,
-                CorrelationId = bookmark.CorrelationId
+                BookmarkId = bookmark.Id,
+                CorrelationId = bookmark.CorrelationId,
+                Input = input,
+                Properties = properties
             };
             await DispatchAsync(dispatchInstanceRequest, options, cancellationToken);
         }

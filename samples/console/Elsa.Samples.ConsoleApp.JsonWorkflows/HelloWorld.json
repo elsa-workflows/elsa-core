@@ -1,6 +1,4 @@
 {
-  "id": "HelloWorld-v1",
-  "definitionId": "11e2b350dae8485498c16d1ce3843829",
   "name": "Hello World",
   "root": {
     "id": "Flowchart1",
@@ -14,9 +12,6 @@
           "expression": {
             "type": "Literal",
             "value": "Hello World!"
-          },
-          "memoryReference": {
-            "id": "WriteLine1:input-1"
           }
         }
       }

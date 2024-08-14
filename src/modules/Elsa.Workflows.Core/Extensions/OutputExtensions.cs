@@ -36,4 +36,30 @@ public static class OutputExtensions
     /// Sets the output to the specified value.
     /// </summary>
     public static void Set<T>(this Output<T>? output, ExpressionExecutionContext context, Variable<T> value) => context.Set(output, value.Get(context));
+    
+    /// <summary>
+    /// Gets the target type of the specified variable type, if any, linked to the output.
+    /// </summary>
+    public static Type? GetTargetType(this Output? output, ActivityExecutionContext context)
+    {
+        var memoryBlockReference = output?.MemoryBlockReference();
+        
+        if (memoryBlockReference is null)
+            return default;
+
+        if(!context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out var memoryBlock))
+            return default;
+        
+        var parsedContentVariableType = (memoryBlock.Metadata as VariableBlockMetadata)?.Variable.GetType();
+        return parsedContentVariableType?.GenericTypeArguments.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Returns a value indicating whether the output has a target.
+    /// </summary>
+    public static bool HasTarget(this Output? output, ActivityExecutionContext context)
+    {
+        var memoryBlockReference = output?.MemoryBlockReference();
+        return memoryBlockReference is not null && context.ExpressionExecutionContext.TryGetBlock(memoryBlockReference, out _);
+    }
 }

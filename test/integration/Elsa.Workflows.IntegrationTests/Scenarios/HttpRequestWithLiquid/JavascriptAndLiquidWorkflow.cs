@@ -3,9 +3,8 @@ using Elsa.JavaScript.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Services;
 
-namespace Elsa.Workflows.IntegrationTests.Scenarios.LiquidLists;
+namespace Elsa.Workflows.IntegrationTests.Scenarios.HttpRequestWithLiquid;
 
 /// <summary>
 /// A workflow that use javascript to get some data, use them with some liquid expressions

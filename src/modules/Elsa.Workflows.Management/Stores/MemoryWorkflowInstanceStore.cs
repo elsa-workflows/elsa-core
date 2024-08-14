@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -128,13 +127,25 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Add(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
+    {
+        _store.Update(instance, GetId);
+        return ValueTask.CompletedTask;
+    }
+
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
         _store.SaveMany(instances, GetId);
         return ValueTask.CompletedTask;
     }
-    
+
     /// <inheritdoc />
     public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {

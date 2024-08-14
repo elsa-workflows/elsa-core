@@ -1,0 +1,26 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.Workflows.Runtime.ProtoActor.ProtoBuf";
+package Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+
+// Shared.
+message Json {
+  string text = 1;
+}
+
+message Input {
+  map<string, Json> Data = 1;
+}
+
+message Properties {
+  map<string, Json> Data = 1;
+}
+
+message ExceptionState {
+  string Type = 1;
+  string Message = 2;
+  optional string StackTrace = 3;
+  optional ExceptionState InnerException = 4;
+}

@@ -1,13 +1,8 @@
 namespace Elsa.Workflows.Api.Endpoints.VariableTypes.List;
 
-internal class Response
+internal class Response(ICollection<VariableTypeDescriptor> items)
 {
-    public Response(ICollection<VariableTypeDescriptor> items)
-    {
-        Items = items;
-    }
-
-    public ICollection<VariableTypeDescriptor> Items { get; set; }
+    public ICollection<VariableTypeDescriptor> Items { get; set; } = items;
 }
 
 internal record VariableTypeDescriptor(string TypeName, string DisplayName, string Category, string? Description);

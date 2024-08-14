@@ -4,7 +4,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.JsonSerialization;

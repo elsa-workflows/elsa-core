@@ -1,4 +1,6 @@
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Entities;
@@ -13,12 +15,10 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 /// </summary>
 [DependsOn(typeof(IdentityFeature))]
 [PublicAPI]
-public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<IdentityElsaDbContext>
+public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreIdentityPersistenceFeature, IdentityElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public EFCoreIdentityPersistenceFeature(IModule module) : base(module)
-    {
-    }
+    /// Delegate for determining the exception handler.
+    public Func<IServiceProvider, IDbExceptionHandler<IdentityElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();
 
     /// <inheritdoc />
     public override void Configure()
@@ -35,6 +35,8 @@ public class EFCoreIdentityPersistenceFeature : PersistenceFeatureBase<IdentityE
     public override void Apply()
     {
         base.Apply();
+
+        Services.AddScoped(DbExceptionHandler);
 
         AddEntityStore<User, EFCoreUserStore>();
         AddEntityStore<Application, EFCoreApplicationStore>();

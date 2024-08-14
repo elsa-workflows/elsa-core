@@ -80,7 +80,7 @@ public abstract class StartRecordingBase : Activity<CallRecordingSavedPayload>
         {
             await telnyxClient.Calls.StartRecordingAsync(callControlId, request, context.CancellationToken);
             
-            context.CreateBookmark(new WebhookEventBookmarkPayload(WebhookEventTypes.CallRecordingSaved, callControlId), ResumeAsync, false);
+            context.CreateBookmark(new WebhookEventStimulus(WebhookEventTypes.CallRecordingSaved, callControlId), ResumeAsync, false);
         }
         catch (ApiException e)
         {

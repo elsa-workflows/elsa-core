@@ -1,0 +1,18 @@
+syntax = "proto3";
+option csharp_namespace = "Elsa.Workflows.Runtime.ProtoActor.ProtoBuf";
+package Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Shared.proto";
+import "WorkflowInstance.Messages.proto";
+
+service WorkflowInstance {
+  rpc Create (CreateWorkflowInstanceRequest) returns (CreateWorkflowInstanceResponse);
+  rpc Run (RunWorkflowInstanceRequest) returns (RunWorkflowInstanceResponse);
+  rpc CreateAndRun (CreateAndRunWorkflowInstanceRequest) returns (RunWorkflowInstanceResponse);
+  rpc Stop (Empty) returns (Empty);
+  rpc Cancel (Empty) returns (Empty);
+  rpc ExportState(Empty) returns (ExportWorkflowStateResponse);
+  rpc ImportState(ImportWorkflowStateRequest) returns (Empty);
+}

@@ -41,6 +41,6 @@ public class MySqlDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextFa
 {
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)
     {
-        builder.UseElsaMySql(GetType().Assembly, connectionString);
+        builder.UseElsaMySql(GetType().Assembly, connectionString, serverVersion: ServerVersion.Parse("9.0.0"));
     }
 }

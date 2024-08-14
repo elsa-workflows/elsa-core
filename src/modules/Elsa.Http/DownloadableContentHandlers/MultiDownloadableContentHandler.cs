@@ -11,7 +11,7 @@ namespace Elsa.Http.DownloadableContentHandlers;
 public class MultiDownloadableContentHandler : DownloadableContentHandlerBase
 {
     /// <inheritdoc />
-    public override bool GetSupportsContent(object content) => content is IEnumerable enumerable and not string;
+    public override bool GetSupportsContent(object content) => content is IEnumerable and not string and not byte[];
 
     /// <inheritdoc />
     protected override IEnumerable<Func<ValueTask<Downloadable>>> GetDownloadablesAsync(DownloadableContext context)

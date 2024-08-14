@@ -5,14 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\bundles\Elsa\Elsa.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" />
-      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" />
     </ItemGroup>
 
 </Project>

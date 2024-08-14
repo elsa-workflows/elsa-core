@@ -25,7 +25,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>
@@ -43,7 +44,8 @@ public class WorkflowDefinitionSummary
         IsPublished = workflowDefinition.IsPublished,
         ProviderName = workflowDefinition.ProviderName,
         MaterializerName = workflowDefinition.MaterializerName,
-        CreatedAt = workflowDefinition.CreatedAt
+        CreatedAt = workflowDefinition.CreatedAt,
+        IsReadonly = workflowDefinition.IsReadonly
     };
 
     /// <summary>

@@ -1,11 +1,15 @@
+using Elsa.Common;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime.Bookmarks;
 
 /// <summary>
 /// Bookmark payload for the <see cref="BulkDispatchWorkflows"/> activity.
 /// </summary>
+[Obsolete("Use BulkDispatchWorkflowsStimulus instead.")]
+[ForwardedType(typeof(BulkDispatchWorkflowsStimulus))]
 public class BulkDispatchWorkflowsBookmark(string parentInstanceId)
 {
     /// <summary>

@@ -2,31 +2,31 @@ using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;
 
 /// <summary>
-/// Processes messages received via a queue specified through the <see cref="MessageReceivedTriggerPayload"/>.
+/// Processes messages received via a queue specified through the <see cref="MessageReceivedStimulus"/>.
 /// When a message is received, the appropriate workflows are executed.
 /// </summary>
 public class Worker : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
-    private readonly IWorkflowInbox _workflowInbox;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger _logger;
-    private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IServiceScopeFactory serviceScopeFactory, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
-        _workflowInbox = workflowInbox;
+        _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -48,36 +48,11 @@ public class Worker : IAsyncDisposable
     public string? Subscription { get; }
 
     /// <summary>
-    /// Maintains the number of workflows that are relying on this worker. When it goes to zero, the worker will be removed.
-    /// </summary>
-    public int RefCount
-    {
-        get => _refCount;
-        private set
-        {
-            if (value < 0)
-                throw new ArgumentException("RefCount cannot be less than zero");
-
-            _refCount = value;
-        }
-    }
-
-    /// <summary>
     /// Starts the worker.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task StartAsync(CancellationToken cancellationToken = default) => await _processor.StartProcessingAsync(cancellationToken);
-
-    /// <summary>
-    /// Increments the ref count.
-    /// </summary>
-    public void IncrementRefCount() => RefCount++;
-
-    /// <summary>
-    /// Decrements the ref count.
-    /// </summary>
-    public void DecrementRefCount() => RefCount--;
-
+    
     /// <summary>
     /// Disposes the worker.
     /// </summary>
@@ -93,49 +68,52 @@ public class Worker : IAsyncDisposable
 
     private async Task InvokeWorkflowsAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
     {
-        var payload = new MessageReceivedTriggerPayload(QueueOrTopic, Subscription);
-        var correlationId = message.CorrelationId;
-        var messageModel = CreateMessageModel(message);
-        var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
-
-        var results = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var input = new Dictionary<string, object>
         {
-            ActivityTypeName = activityTypeName,
-            BookmarkPayload = payload,
-            Input = input,
-            CorrelationId = correlationId
-        }, cancellationToken);
+            [MessageReceived.InputKey] = CreateMessageModel(message)
+        };
 
-        _logger.LogDebug("{Count} workflow triggered by the service bus message", results.WorkflowExecutionResults.Count);
+        var metadata = new StimulusMetadata
+        {
+            CorrelationId = message.CorrelationId,
+            Input = input,
+        };
+        var stimulus = new MessageReceivedStimulus(QueueOrTopic, Subscription);
+        await using var scope = _serviceScopeFactory.CreateAsyncScope();
+        var stimulusSender = scope.ServiceProvider.GetRequiredService<IStimulusSender>();
+        var result = await stimulusSender.SendAsync<MessageReceived>(stimulus, metadata, cancellationToken);
+
+        _logger.LogDebug("{Count} workflow triggered by the service bus message", result.WorkflowInstanceResponses.Count);
     }
 
     private static ReceivedServiceBusMessageModel CreateMessageModel(ServiceBusReceivedMessage message)
     {
-        return new(
-            message.Body.ToArray(),
-            message.Subject,
-            message.ContentType,
-            message.To,
-            message.CorrelationId,
-            message.DeliveryCount,
-            message.EnqueuedTime,
-            message.ScheduledEnqueueTime,
-            message.ExpiresAt,
-            message.LockedUntil,
-            message.TimeToLive,
-            message.LockToken,
-            message.MessageId,
-            message.PartitionKey,
-            message.TransactionPartitionKey,
-            message.ReplyTo,
-            message.SequenceNumber,
-            message.EnqueuedSequenceNumber,
-            message.SessionId,
-            message.ReplyToSessionId,
-            message.DeadLetterReason,
-            message.DeadLetterSource,
-            message.DeadLetterErrorDescription,
-            message.ApplicationProperties);
+        return new ReceivedServiceBusMessageModel
+        {
+            Body = message.Body.ToArray(),
+            Subject = message.Subject,
+            ContentType = message.ContentType,
+            To = message.To,
+            CorrelationId = message.CorrelationId,
+            DeliveryCount = message.DeliveryCount,
+            EnqueuedTime = message.EnqueuedTime,
+            ScheduledEnqueuedTime = message.ScheduledEnqueueTime,
+            ExpiresAt = message.ExpiresAt,
+            LockedUntil = message.LockedUntil,
+            TimeToLive = message.TimeToLive,
+            LockToken = message.LockToken,
+            MessageId = message.MessageId,
+            PartitionKey = message.PartitionKey,
+            TransactionPartitionKey = message.TransactionPartitionKey,
+            ReplyTo = message.ReplyTo,
+            SequenceNumber = message.SequenceNumber,
+            EnqueuedSequenceNumber = message.EnqueuedSequenceNumber,
+            SessionId = message.SessionId,
+            ReplyToSessionId = message.ReplyToSessionId,
+            DeadLetterReason = message.DeadLetterReason,
+            DeadLetterSource = message.DeadLetterSource,
+            DeadLetterErrorDescription = message.DeadLetterErrorDescription,
+            ApplicationProperties = message.ApplicationProperties
+        };
     }
 }

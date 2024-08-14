@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Features;
 using Elsa.MassTransit.AzureServiceBus.Handlers;
+using Elsa.MassTransit.AzureServiceBus.HostedServices;
 using Elsa.MassTransit.AzureServiceBus.Models;
 using Elsa.MassTransit.AzureServiceBus.Options;
 using Elsa.MassTransit.AzureServiceBus.Services;
@@ -35,6 +36,16 @@ public class AzureServiceBusFeature : FeatureBase
     public string? ConnectionString { get; set; }
 
     /// <summary>
+    /// Delete subscriptions where their connected queues could not be found.
+    /// Topics without any subscriptions will be deleted as well.
+    /// </summary>
+    /// <remarks>
+    /// - All subscriptions will be cleaned up, including those that were not created by Elsa.
+    /// - Queues in other namespaces will not be found and the subscription will therefore be removed.
+    /// </remarks>
+    public bool EnableAutomatedSubscriptionCleanup { get; set; }
+
+    /// <summary>
     /// A delegate that configures the Azure Service Bus transport options.
     /// </summary>
     public Action<IServiceBusBusFactoryConfigurator>? ConfigureServiceBus { get; set; }
@@ -43,6 +54,11 @@ public class AzureServiceBusFeature : FeatureBase
     /// A delegate to configure <see cref="AzureServiceBusOptions"/>.
     /// </summary>
     public Action<AzureServiceBusOptions> AzureServiceBusOptions { get; set; } = _ => { };
+
+    /// <summary>
+    /// A delegate to configure <see cref="SubscriptionCleanupOptions"/>.
+    /// </summary>
+    public Action<SubscriptionCleanupOptions> SubscriptionCleanupOptions { get; set; } = _ => { };
 
     /// <summary>
     /// A delegate to create a <see cref="ServiceBusAdministrationClient"/> instance.
@@ -63,16 +79,16 @@ public class AzureServiceBusFeature : FeatureBase
 
                 RegisterConsumers(consumers);
                 configure.AddServiceBusMessageScheduler();
-                
+
                 // Consumers need to be added before the UsingAzureServiceBus statement to prevent exceptions.
                 foreach (var consumer in temporaryConsumers)
                     configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
 
                 configure.UsingAzureServiceBus((context, configurator) =>
                 {
-                    if (ConnectionString != null) 
+                    if (ConnectionString != null)
                         configurator.Host(ConnectionString);
-                    
+
                     var options = context.GetRequiredService<IOptions<MassTransitOptions>>().Value;
 
                     if (options.PrefetchCount is not null)
@@ -80,15 +96,16 @@ public class AzureServiceBusFeature : FeatureBase
                     if (options.MaxAutoRenewDuration is not null)
                         configurator.MaxAutoRenewDuration = options.MaxAutoRenewDuration.Value;
                     configurator.ConcurrentMessageLimit = options.ConcurrentMessageLimit;
-                    
+
                     configurator.UseServiceBusMessageScheduler();
-                    configurator.SetupWorkflowDispatcherEndpoints(context);
                     ConfigureServiceBus?.Invoke(configurator);
                     var instanceNameProvider = context.GetRequiredService<IApplicationInstanceNameProvider>();
-                    
+
                     foreach (var consumer in temporaryConsumers)
                     {
-                        var queueName = $"{consumer.Name}-{instanceNameProvider.GetName()}";
+                        // Start with the instance name since we will be using that to delete queues / subscriptions that are no longer needed.
+                        // This is the only way to guarantee we can match subscriptions to an application instance, since the Azure Service Bus transport for MassTransit trims names that are too large.
+                        var queueName = $"{instanceNameProvider.GetName()}-{consumer.Name}";
                         configurator.ReceiveEndpoint(queueName, endpointConfigurator =>
                         {
                             endpointConfigurator.AutoDeleteOnIdle = options.TemporaryQueueTtl ?? TimeSpan.FromHours(1);
@@ -97,17 +114,33 @@ public class AzureServiceBusFeature : FeatureBase
                         });
                     }
 
+                    if (!massTransitFeature.DisableConsumers)
+                    {
+                        if (Module.HasFeature<MassTransitWorkflowDispatcherFeature>())
+                            configurator.SetupWorkflowDispatcherEndpoints(context);
+                    }
+
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
                 });
             };
         });
     }
-    
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(AzureServiceBusOptions);
+        Services.Configure(SubscriptionCleanupOptions);
         Services.AddSingleton(ServiceBusAdministrationClientFactory);
+    }
+
+    /// <inheritdoc />
+    public override void ConfigureHostedServices()
+    {
+        if (EnableAutomatedSubscriptionCleanup)
+        {
+            Module.ConfigureHostedService<CleanSubscriptionsWithoutQueues>();
+        }
     }
 
     private static string GetConnectionString(IServiceProvider serviceProvider)
@@ -116,7 +149,7 @@ public class AzureServiceBusFeature : FeatureBase
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
         return configuration.GetConnectionString(options.ConnectionStringOrName) ?? options.ConnectionStringOrName;
     }
-    
+
     private void RegisterConsumers(List<ConsumerTypeDefinition> consumers)
     {
         var subscriptionTopology = (
@@ -130,6 +163,6 @@ public class AzureServiceBusFeature : FeatureBase
 
         Services.AddSingleton(new MessageTopologyProvider(subscriptionTopology));
         Services.AddNotificationHandler<RemoveOrphanedSubscriptions>();
+        Services.AddCommandHandler<CleanupOrphanedTopology>();
     }
-
 }

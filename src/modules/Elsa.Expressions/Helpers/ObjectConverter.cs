@@ -51,7 +51,6 @@ public static class ObjectConverter
     /// <summary>
     /// Attempts to convert the source value into the destination type.
     /// </summary>
-    [RequiresUnreferencedCode("The JsonSerializer type is not trim-compatible.")]
     public static T? ConvertTo<T>(this object? value, ObjectConverterOptions? converterOptions = null) => value != null ? (T?)value.ConvertTo(typeof(T), converterOptions) : default;
     
     private static JsonSerializerOptions? _defaultSerializerOptions;
@@ -100,20 +99,26 @@ public static class ObjectConverter
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
-        if (value is JsonObject jsonObject)
+        if (value is JsonNode jsonNode)
         {
             return underlyingTargetType switch
             {
-                { } t when t == typeof(string) => jsonObject.ToString(),
-                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
-                _ => jsonObject,
+                { } t when t == typeof(string) => jsonNode.ToString(),
+                { } t when t != typeof(object) => jsonNode.Deserialize(targetType, serializerOptions),
+                _ => jsonNode
             };
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
-
+            
+            if (underlyingTargetType == typeof(byte[]))
+            {
+                // Byte arrays are serialized to base64, so in this case, we convert the string back to the requested target type of byte[].
+                return Convert.FromBase64String(stringValue);
+            }
+            
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();
@@ -182,10 +187,10 @@ public static class ObjectConverter
                 return Enum.ToObject(underlyingTargetType, value);
 
             if (underlyingSourceType == typeof(double))
-                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
             
             if (underlyingSourceType == typeof(long))
-                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int)));
+                return Enum.ToObject(underlyingTargetType, Convert.ChangeType(value, typeof(int), CultureInfo.InvariantCulture));
         }
 
         if (value is string s)
@@ -226,7 +231,7 @@ public static class ObjectConverter
 
         try
         {
-            return Convert.ChangeType(value, underlyingTargetType);
+            return Convert.ChangeType(value, underlyingTargetType, CultureInfo.InvariantCulture);
         }
         catch (InvalidCastException e)
         {

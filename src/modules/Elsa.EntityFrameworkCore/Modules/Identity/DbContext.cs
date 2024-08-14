@@ -10,7 +10,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Identity;
 public class IdentityElsaDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public IdentityElsaDbContext(DbContextOptions options) : base(options)
+    public IdentityElsaDbContext(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
 
@@ -18,7 +18,7 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     /// The users.
     /// </summary>
     public DbSet<User> Users { get; set; } = default!;
-    
+
     /// <summary>
     /// The applications.
     /// </summary>
@@ -30,8 +30,10 @@ public class IdentityElsaDbContext : ElsaDbContextBase
     public DbSet<Role> Roles { get; set; } = default!;
 
     /// <inheritdoc />
-    protected override void ApplyEntityConfigurations(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        
         var config = new Configurations();
         modelBuilder.ApplyConfiguration<User>(config);
         modelBuilder.ApplyConfiguration<Application>(config);

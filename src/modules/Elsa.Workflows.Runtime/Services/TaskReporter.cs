@@ -1,36 +1,25 @@
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Stimuli;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter : ITaskReporter
+public class TaskReporter(IStimulusSender workflowDispatcher) : ITaskReporter
 {
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public TaskReporter(IWorkflowDispatcher workflowDispatcher)
-    {
-        _workflowDispatcher = workflowDispatcher;
-    }
-
     /// <inheritdoc />
     public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
     {
-        var bookmarkPayload = new RunTaskBookmarkPayload(taskId, default!);
+        var bookmarkPayload = new RunTaskStimulus(taskId, default!);
 
         var input = new Dictionary<string, object>
         {
             [RunTask.InputKey] = result!
         };
-        
-        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
-        var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmarkPayload, Input: input);
-        await _workflowDispatcher.DispatchAsync(request, cancellationToken: cancellationToken);
+
+        var sender = new StimulusMetadata
+        {
+            Input = input,
+        };
+        await workflowDispatcher.SendAsync<RunTask>(bookmarkPayload, sender, cancellationToken: cancellationToken);
     }
 }

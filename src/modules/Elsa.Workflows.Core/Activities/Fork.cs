@@ -49,7 +49,7 @@ public class Fork : Activity
 
         if (isBreaking)
         {
-            // Remove any and all bookmarks from other branches.
+            // Remove all bookmarks from other branches.
             RemoveBookmarks(targetContext);
 
             // Signal activity completion.
@@ -62,7 +62,7 @@ public class Fork : Activity
         var childContext = context.ChildContext;
         var completedChildActivityId = childContext.Activity.Id;
 
-        // Append activity to set of completed activities.
+        // Append activity to the set of completed activities.
         var completedActivityIds = targetContext.UpdateProperty<HashSet<string>>("Completed", set =>
         {
             set ??= new HashSet<string>();
@@ -77,7 +77,7 @@ public class Fork : Activity
         {
             case ForkJoinMode.WaitAny:
             {
-                // Remove any and all bookmarks from other branches.
+                // Remove all bookmarks from other branches.
                 RemoveBookmarks(targetContext);
 
                 // Signal activity completion.

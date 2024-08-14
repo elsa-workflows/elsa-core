@@ -1,6 +1,4 @@
-using Elsa.Workflows.Runtime.Models;
-
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// A service for reading activity execution logs.

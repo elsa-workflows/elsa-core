@@ -1,10 +1,9 @@
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Requests;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bookmarkStore) : IBookmarkUpdater
@@ -19,8 +18,12 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
     
     private async Task RemoveBookmarksAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken)
     {
-        var matchingHashes = bookmarks.Select(x => x.Hash).ToList();
-        var filter = new BookmarkFilter { Hashes = matchingHashes, WorkflowInstanceId = workflowInstanceId };
+        var matchingIds = bookmarks.Select(x => x.Id).ToList();
+        var filter = new BookmarkFilter
+        {
+            BookmarkIds = matchingIds,
+            WorkflowInstanceId = workflowInstanceId
+        };
         await bookmarkManager.DeleteManyAsync(filter, cancellationToken);
     }
     
@@ -28,7 +31,19 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
     {
         foreach (var bookmark in bookmarks)
         {
-            var storedBookmark = new StoredBookmark(bookmark.Id, bookmark.Name, bookmark.Hash, workflowInstanceId, bookmark.CreatedAt, bookmark.ActivityInstanceId, correlationId, bookmark.Payload, bookmark.Metadata);
+            var storedBookmark = new StoredBookmark
+            {
+                Id = bookmark.Id,
+                ActivityTypeName = bookmark.Name,
+                Hash = bookmark.Hash,
+                WorkflowInstanceId = workflowInstanceId,
+                CreatedAt = bookmark.CreatedAt,
+                ActivityInstanceId = bookmark.ActivityInstanceId,
+                CorrelationId = correlationId,
+                Payload = bookmark.Payload,
+                Metadata = bookmark.Metadata
+            };
+            
             await bookmarkStore.SaveAsync(storedBookmark, cancellationToken);
         }
     }

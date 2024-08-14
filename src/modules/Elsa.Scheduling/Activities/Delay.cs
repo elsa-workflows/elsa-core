@@ -78,7 +78,7 @@ public class Delay : Activity, IActivityPropertyDefaultValueProvider
         var resumeAt = clock.UtcNow.Add(timeSpan);
         var payload = new DelayPayload(resumeAt);
 
-        context.JournalData.Add("ResumeAt", resumeAt);
+        context.JournalData["ResumeAt"] = resumeAt;
         context.CreateBookmark(payload);
     }
 

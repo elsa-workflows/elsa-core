@@ -1,7 +1,7 @@
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Options;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityInvoker : IActivityInvoker
@@ -30,7 +30,7 @@ public class ActivityInvoker : IActivityInvoker
         if (activityExecutionContext == null)
         {
             // Create a new activity execution context.
-            activityExecutionContext = workflowExecutionContext.CreateActivityExecutionContext(activity, options);
+            activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity, options);
 
             // Add the activity context to the workflow context.
             workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);

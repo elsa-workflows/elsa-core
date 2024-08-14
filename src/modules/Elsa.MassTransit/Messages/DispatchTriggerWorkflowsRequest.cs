@@ -4,12 +4,12 @@ using Elsa.Workflows.Serialization.Converters;
 namespace Elsa.MassTransit.Messages;
 
 [Obsolete("This is no longer used and will be removed in a future version.")]
-public class DispatchTriggerWorkflows(string activityTypeName, object bookmarkPayload)
+public class DispatchTriggerWorkflows(string activityTypeName, object stimulus)
 {
     public string ActivityTypeName { get; init; } = activityTypeName;
 
     [JsonConverter(typeof(PolymorphicObjectConverterFactory))]
-    public object BookmarkPayload { get; init; } = bookmarkPayload;
+    public object BookmarkPayload { get; init; } = stimulus;
 
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }

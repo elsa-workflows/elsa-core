@@ -9,7 +9,6 @@ using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Services;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
@@ -18,7 +17,7 @@ namespace Elsa.Workflows;
 /// Represents the context of an activity execution.
 /// </summary>
 [PublicAPI]
-public partial class ActivityExecutionContext : IExecutionContext
+public partial class ActivityExecutionContext : IExecutionContext, IDisposable
 {
     private readonly ISystemClock _systemClock;
     private readonly List<Bookmark> _bookmarks = new();
@@ -344,7 +343,7 @@ public partial class ActivityExecutionContext : IExecutionContext
         foreach (var payload in payloads)
             CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = callback,
                 IncludeActivityInstanceId = includeActivityInstanceId
             });
@@ -380,16 +379,16 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time.
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="callback">An optional callback that is invoked when the bookmark is resumed.</param>
     /// <param name="includeActivityInstanceId">Whether or not the activity instance ID should be included in the bookmark payload.</param>
     /// <param name="customProperties">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
+    public Bookmark CreateBookmark(object stimulus, ExecuteActivityDelegate callback, bool includeActivityInstanceId = true, IDictionary<string, string>? customProperties = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = stimulus,
             Callback = callback,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
@@ -399,15 +398,15 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark for the current activity execution context.
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="includeActivityInstanceId">Specifies whether to include the activity instance ID in the bookmark information. Defaults to true.</param>
     /// <param name="customProperties">Additional custom properties to associate with the bookmark. Defaults to null.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
+    public Bookmark CreateBookmark(object stimulus, bool includeActivityInstanceId, IDictionary<string, string>? customProperties = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = stimulus,
             IncludeActivityInstanceId = includeActivityInstanceId,
             Metadata = customProperties
         });
@@ -416,14 +415,14 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// <summary>
     /// Creates a bookmark so that this activity can be resumed at a later time. 
     /// </summary>
-    /// <param name="payload">The payload to associate with the bookmark.</param>
+    /// <param name="stimulus">The payload to associate with the bookmark.</param>
     /// <param name="metadata">Custom properties to associate with the bookmark.</param>
     /// <returns>The created bookmark.</returns>
-    public Bookmark CreateBookmark(object payload, IDictionary<string, string>? metadata = default)
+    public Bookmark CreateBookmark(object stimulus, IDictionary<string, string>? metadata = default)
     {
         return CreateBookmark(new CreateBookmarkArgs
         {
-            Payload = payload,
+            Stimulus = stimulus,
             Metadata = metadata
         });
     }
@@ -434,16 +433,17 @@ public partial class ActivityExecutionContext : IExecutionContext
     /// </summary>
     public Bookmark CreateBookmark(CreateBookmarkArgs? options = default)
     {
-        var payload = options?.Payload;
+        var payload = options?.Stimulus;
         var callback = options?.Callback;
         var bookmarkName = options?.BookmarkName ?? Activity.Type;
-        var bookmarkHasher = GetRequiredService<IBookmarkHasher>();
+        var bookmarkHasher = GetRequiredService<IStimulusHasher>();
         var identityGenerator = GetRequiredService<IIdentityGenerator>();
         var includeActivityInstanceId = options?.IncludeActivityInstanceId ?? true;
         var hash = bookmarkHasher.Hash(bookmarkName, payload, includeActivityInstanceId ? Id : null);
+        var bookmarkId = options?.BookmarkId ?? identityGenerator.GenerateId();
 
         var bookmark = new Bookmark(
-            identityGenerator.GenerateId(),
+            bookmarkId,
             bookmarkName,
             hash,
             payload,
@@ -675,5 +675,11 @@ public partial class ActivityExecutionContext : IExecutionContext
     private MemoryBlock? GetMemoryBlock(MemoryBlockReference locationBlockReference)
     {
         return ExpressionExecutionContext.TryGetBlock(locationBlockReference, out var memoryBlock) ? memoryBlock : default;
+    }
+
+    void IDisposable.Dispose()
+    {
+        _cancellationRegistration.Dispose();
+        _cancellationTokenSource.Dispose();
     }
 }

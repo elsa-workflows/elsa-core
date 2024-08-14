@@ -49,7 +49,6 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
             var memoryBlockType = memoryBlockReference.GetType();
             var context = new ExpressionSerializationContext(expressionTypeName!, expressionElement, options, memoryBlockType);
             var expression = expressionDescriptor!.Deserialize(context);
-
             return (Input<T>)Activator.CreateInstance(typeof(Input<T>), expression, memoryBlockReference)!;
         }
 
@@ -61,14 +60,14 @@ public class InputJsonConverter<T> : JsonConverter<Input<T>>
     public override void Write(Utf8JsonWriter writer, Input<T> value, JsonSerializerOptions options)
     {
         var expression = value.Expression;
-        
-        if(expression == null)
+
+        if (expression == null)
         {
             writer.WriteNullValue();
             return;
         }
-        
-        var expressionType = expression?.Type;
+
+        var expressionType = expression.Type;
         var expressionDescriptor = expressionType != null ? _expressionDescriptorRegistry.Find(expressionType) : default;
 
         if (expressionDescriptor == null)

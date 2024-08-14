@@ -3,23 +3,28 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Humanizer;
+using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.TypeDefinitions.Providers;
 
-/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
-/// </summary>
-internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
+[UsedImplicitly]
+internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
 {
-    private readonly ITypeAliasRegistry _typeAliasRegistry;
-
-    public CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry)
-    {
-        _typeAliasRegistry = typeAliasRegistry;
-    }
-
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
     {
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getWorkflowDefinitionId")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getWorkflowDefinitionVersionId")
+            .ReturnType("string"));
+        
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("getWorkflowDefinitionVersion")
+            .ReturnType("number"));
+        
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowInstanceId")
             .ReturnType("string"));
@@ -90,11 +95,11 @@ internal class CommonFunctionsDefinitionProvider : FunctionDefinitionProvider
             .ReturnType("string"));
 
         // Variable getter and setters.
-        foreach (var variable in context.Workflow.Variables)
+        foreach (var variable in context.WorkflowGraph.Workflow.Variables)
         {
             var pascalName = variable.Name.Pascalize();
             var variableType = variable.GetVariableType();
-            var typeAlias = _typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
+            var typeAlias = typeAliasRegistry.TryGetAlias(variableType, out var alias) ? alias : "any";
 
             // get{Variable}.
             yield return CreateFunctionDefinition(builder => builder.Name($"get{pascalName}").ReturnType(typeAlias));

@@ -3,10 +3,10 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class WorkflowGraphBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IServiceProvider serviceProvider) : IWorkflowGraphBuilder
+public class WorkflowGraphBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService) : IWorkflowGraphBuilder
 {
     /// <inheritdoc />
     public async Task<WorkflowGraph> BuildAsync(Workflow workflow, CancellationToken cancellationToken = default)
@@ -14,7 +14,7 @@ public class WorkflowGraphBuilder(IActivityVisitor activityVisitor, IIdentityGra
         var graph = await activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
         
-        identityGraphService.AssignIdentities(nodes);
+        await identityGraphService.AssignIdentitiesAsync(nodes);
         return new WorkflowGraph(workflow, graph, nodes);
     }
 }

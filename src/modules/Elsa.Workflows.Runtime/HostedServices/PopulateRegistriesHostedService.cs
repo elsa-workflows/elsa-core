@@ -1,5 +1,4 @@
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
 using Medallion.Threading;
@@ -9,28 +8,16 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.HostedServices;
 
-/// <summary>
-/// Updates the workflow store from <see cref="IWorkflowProvider"/> implementations, creates triggers and updates the <see cref="IActivityRegistry"/>.
-/// </summary>
+/// Updates the workflow store from <see cref="IWorkflowsProvider"/> implementations, creates triggers and updates the <see cref="IActivityRegistry"/>.
 [UsedImplicitly]
-public class PopulateRegistriesHostedService : IHostedService
+public class PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options) : IHostedService
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-    private readonly DistributedLockingOptions _options;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PopulateRegistriesHostedService"/> class.
-    /// </summary>
-    public PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options)
-    {
-        _scopeFactory = scopeFactory;
-        _options = options.Value;
-    }
+    private readonly DistributedLockingOptions _options = options.Value;
 
     /// <inheritdoc />
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
+        await using var scope = scopeFactory.CreateAsyncScope();
         var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockAcquisitionTimeout = _options.LockAcquisitionTimeout;
         await using (await distributedLockProvider.AcquireLockAsync("PopulateRegistries", lockAcquisitionTimeout, cancellationToken))

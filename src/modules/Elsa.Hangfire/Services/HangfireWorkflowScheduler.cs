@@ -1,6 +1,6 @@
 using Elsa.Hangfire.Extensions;
 using Elsa.Hangfire.Jobs;
-using Elsa.Scheduling.Contracts;
+using Elsa.Scheduling;
 using Elsa.Workflows.Runtime.Requests;
 using Hangfire;
 using Hangfire.Storage;
@@ -8,7 +8,7 @@ using Hangfire.Storage;
 namespace Elsa.Hangfire.Services;
 
 /// <summary>
-/// An implementation of <see cref="Scheduling.Contracts.IWorkflowScheduler"/> that uses Hangfire.
+/// An implementation of <see cref="IWorkflowScheduler"/> that uses Hangfire.
 /// </summary>
 public class HangfireWorkflowScheduler : IWorkflowScheduler
 {
@@ -27,40 +27,40 @@ public class HangfireWorkflowScheduler : IWorkflowScheduler
     }
     
     /// <inheritdoc />
-    public ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         _backgroundJobClient.Schedule<RunWorkflowJob>(job => job.ExecuteAsync(taskName, request, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public ValueTask ScheduleAtAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
     {
         _backgroundJobClient.Schedule<ResumeWorkflowJob>(job => job.ExecuteAsync(taskName, request, CancellationToken.None), at);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowDefinitionRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         await ScheduleCronAsync(taskName, request, interval.ToCronExpression(), cancellationToken);
     }
 
     /// <inheritdoc />
-    public async ValueTask ScheduleRecurringAsync(string taskName, DispatchWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+    public async ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
     {
         await ScheduleCronAsync(taskName, request, interval.ToCronExpression(), cancellationToken);
     }
 
     /// <inheritdoc />
-    public ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowDefinitionRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         _recurringJobManager.AddOrUpdate<RunWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
-    public ValueTask ScheduleCronAsync(string taskName, DispatchWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
+    public ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default)
     {
         _recurringJobManager.AddOrUpdate<ResumeWorkflowJob>(taskName, job => job.ExecuteAsync(taskName, request, CancellationToken.None), cronExpression);
         return ValueTask.CompletedTask;

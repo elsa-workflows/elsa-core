@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Registers workflows.

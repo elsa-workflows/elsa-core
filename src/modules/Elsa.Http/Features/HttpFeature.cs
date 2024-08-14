@@ -1,3 +1,4 @@
+using Elsa.Common.Contracts;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -10,6 +11,7 @@ using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
+using Elsa.Http.MultiTenancy;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
@@ -114,7 +116,9 @@ public class HttpFeature : FeatureBase
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
                 typeof(HttpHeaders),
-                typeof(IFormFile)
+                typeof(IFormFile),
+                typeof(HttpFile),
+                typeof(Downloadable)
             }, "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
@@ -148,7 +152,6 @@ public class HttpFeature : FeatureBase
             .AddScoped<IRouteMatcher, RouteMatcher>()
             .AddScoped<IRouteTable, RouteTable>()
             .AddScoped<IAbsoluteUrlProvider, DefaultAbsoluteUrlProvider>()
-            .AddScoped<IHttpBookmarkProcessor, HttpBookmarkProcessor>()
             .AddScoped<IRouteTableUpdater, DefaultRouteTableUpdater>()
             .AddScoped<IHttpWorkflowLookupService, HttpWorkflowLookupService>()
             .AddScoped(ContentTypeProvider)
@@ -162,6 +165,8 @@ public class HttpFeature : FeatureBase
             .AddSingleton<IHttpContentParser, JsonHttpContentParser>()
             .AddSingleton<IHttpContentParser, XmlHttpContentParser>()
             .AddSingleton<IHttpContentParser, PlainTextHttpContentParser>()
+            .AddSingleton<IHttpContentParser, TextHtmlHttpContentParser>()
+            .AddSingleton<IHttpContentParser, FileHttpContentParser>()
 
             // HTTP content factories.
             .AddScoped<IHttpContentFactory, TextContentFactory>()
@@ -191,6 +196,7 @@ public class HttpFeature : FeatureBase
             .AddScoped<IDownloadableContentHandler, DownloadableDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, UrlDownloadableContentHandler>()
             .AddScoped<IDownloadableContentHandler, StringDownloadableContentHandler>()
+            .AddScoped<IDownloadableContentHandler, HttpFileDownloadableContentHandler>()
 
             // File caches.
             .AddScoped(FileCache)
@@ -202,6 +208,10 @@ public class HttpFeature : FeatureBase
 
         // HTTP clients.
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
+        
+        // Tenant resolvers.
+        Services.AddScoped<ITenantResolutionStrategy, HttpContextTenantResolver>();
+        Services.AddScoped<ITenantResolutionStrategy, RoutePrefixTenantResolver>();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)
@@ -212,8 +222,17 @@ public class HttpFeature : FeatureBase
 
         Services.Configure<ExpressionOptions>(options =>
         {
+            options.AddTypeAlias<HttpRequest>("HttpRequest");
+            options.AddTypeAlias<HttpResponse>("HttpResponse");
+            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
+            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
+            options.AddTypeAlias<RouteData>("RouteData");
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
+            options.AddTypeAlias<HttpFile>("HttpFile");
+            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
+            options.AddTypeAlias<Downloadable>("Downloadable");
+            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
         });
     }
 }

@@ -5,19 +5,12 @@ using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.Api.Serialization;
 
-internal class ArgumentJsonConverterFactory : JsonConverterFactory
+internal class ArgumentJsonConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverterFactory
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
-
-    public ArgumentJsonConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry)
-    {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
-    }
-    
     public override bool CanConvert(Type typeToConvert) => typeToConvert.IsAssignableTo(typeof(ArgumentDefinition));
 
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        return new ArgumentJsonConverter(_wellKnownTypeRegistry);
+        return new ArgumentJsonConverter(wellKnownTypeRegistry);
     }
 }

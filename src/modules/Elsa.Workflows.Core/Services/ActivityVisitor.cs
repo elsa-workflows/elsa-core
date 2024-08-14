@@ -1,7 +1,7 @@
 using Elsa.Workflows.Contracts;
 using ActivityNode = Elsa.Workflows.Models.ActivityNode;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class ActivityVisitor : IActivityVisitor
@@ -21,7 +21,7 @@ public class ActivityVisitor : IActivityVisitor
     /// <inheritdoc />
     public async Task<ActivityNode> VisitAsync(IActivity activity, CancellationToken cancellationToken = default)
     {
-        var graph = new ActivityNode(activity);
+        var graph = new ActivityNode(activity, "Root");
         var collectedNodes = new HashSet<ActivityNode>(new[]
         {
             graph
@@ -58,28 +58,31 @@ public class ActivityVisitor : IActivityVisitor
         if (resolver == null)
             return;
 
-        var activities = await resolver.GetActivitiesAsync(pair.Activity, cancellationToken);
+        var activityPorts = await resolver.GetActivityPortsAsync(pair.Activity, cancellationToken);
         var collectedActivities = visitorContext.CollectedActivities;
         var collectedNodes = visitorContext.CollectedNodes;
 
-        foreach (var activity in activities)
+        foreach (var activityPort in activityPorts)
         {
-            // Continue if the specified activity was already encountered.
-            if (collectedActivities.Contains(activity))
-                continue;
-
-            var childNode = collectedNodes.FirstOrDefault(x => x.Activity == activity);
-
-            if (childNode == null)
+            foreach (var activity in activityPort.GetActivities())
             {
-                childNode = new ActivityNode(activity);
-                collectedNodes.Add(childNode);
-            }
+                // Continue if the specified activity was already encountered.
+                if (collectedActivities.Contains(activity))
+                    continue;
 
-            childNode.Parents.Add(pair.Node);
-            pair.Node.Children.Add(childNode);
-            collectedActivities.Add(activity);
-            await VisitRecursiveAsync((childNode, activity), visitorContext, cancellationToken);
+                var childNode = collectedNodes.FirstOrDefault(x => x.Activity == activity);
+
+                if (childNode == null)
+                {
+                    childNode = new ActivityNode(activity, activityPort.PortName);
+                    collectedNodes.Add(childNode);
+                }
+
+                childNode.Parents.Add(pair.Node);
+                pair.Node.Children.Add(childNode);
+                collectedActivities.Add(activity);
+                await VisitRecursiveAsync((childNode, activity), visitorContext, cancellationToken);
+            }
         }
     }
 
