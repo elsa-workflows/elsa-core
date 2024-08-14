@@ -34,10 +34,10 @@ public class CallHangup : Activity<CallHangupPayload>
 
         foreach (var callControlId in callControlIds)
         {
-            var payload = new CallHangupBookmarkPayload(callControlId);
+            var payload = new CallHangupStimulus(callControlId);
             context.CreateBookmark(new CreateBookmarkArgs
             {
-                Payload = payload,
+                Stimulus = payload,
                 Callback = Resume,
                 BookmarkName = Type,
                 IncludeActivityInstanceId = false

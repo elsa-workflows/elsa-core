@@ -1,6 +1,6 @@
 using Hangfire.Annotations;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [UsedImplicitly]
 public class Cluster : IDisposable, IAsyncDisposable

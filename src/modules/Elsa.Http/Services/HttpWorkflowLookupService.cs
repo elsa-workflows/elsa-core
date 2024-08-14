@@ -1,8 +1,9 @@
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Open.Linq.AsyncExtensions;

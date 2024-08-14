@@ -1,15 +1,25 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Invokes activities from a background worker within the context of its workflow instance using a local background worker.
 /// </summary>
 public class LocalBackgroundActivityScheduler(IJobQueue jobQueue, IServiceScopeFactory scopeFactory) : IBackgroundActivityScheduler
 {
+    public Task<string> CreateAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
+    {
+        var jobId = jobQueue.Create(async ct => await InvokeBackgroundActivity(scheduledBackgroundActivity, ct));
+        return Task.FromResult(jobId);
+    }
+
+    public Task ScheduleAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        jobQueue.Enqueue(jobId);
+        return Task.CompletedTask;
+    }
+
     /// <inheritdoc />
     public Task<string> ScheduleAsync(ScheduledBackgroundActivity scheduledBackgroundActivity, CancellationToken cancellationToken = default)
     {

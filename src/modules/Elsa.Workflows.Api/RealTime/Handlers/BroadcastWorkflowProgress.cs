@@ -3,7 +3,7 @@ using Elsa.Workflows.Api.RealTime.Contracts;
 using Elsa.Workflows.Api.RealTime.Hubs;
 using Elsa.Workflows.Api.RealTime.Messages;
 using Elsa.Workflows.Management.Notifications;
-using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.AspNetCore.SignalR;
 
@@ -35,7 +35,7 @@ public class BroadcastWorkflowProgress :
     public async Task HandleAsync(ActivityExecutionLogUpdated notification, CancellationToken cancellationToken)
     {
         var workflowInstanceId = notification.WorkflowExecutionContext.Id;
-        var activityIds = notification.Records.Select(x => x.ActivityId).Distinct().ToList();
+        var activityIds = notification.Records.Select(x => x.ActivityNodeId).Distinct().ToList();
         var stats = (await _activityExecutionStatsService.GetStatsAsync(workflowInstanceId, activityIds, cancellationToken)).ToList();
         var clients = _hubContext.Clients.Group(workflowInstanceId);
         var message = new ActivityExecutionLogUpdatedMessage(stats);

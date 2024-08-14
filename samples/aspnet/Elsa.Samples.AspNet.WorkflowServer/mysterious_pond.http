@@ -1,0 +1,31 @@
+### POST 1000 rupees to the mysterious pond.
+POST https://localhost:5001/workflows/mysterious_pond
+Content-Type: application/json
+
+{
+  "rupees": 1000
+}
+
+### POST 500 rupees to the mysterious pond.
+POST https://localhost:5001/workflows/mysterious_pond
+Content-Type: application/json
+
+{
+  "rupees": 500
+}
+
+### POST 250 rupees to the mysterious pond.
+POST https://localhost:5001/workflows/mysterious_pond
+Content-Type: application/json
+
+{
+  "rupees": 250
+}
+
+### POST 100 rupees to the mysterious pond.
+POST https://localhost:5001/workflows/mysterious_pond
+Content-Type: application/json
+
+{
+  "rupees": 100
+}

@@ -7,19 +7,15 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Contracts;
-using Elsa.Workflows.Exceptions;
-using Elsa.Workflows.UIHints;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Elsa.Workflows.Runtime.Bookmarks;
-using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
-using Elsa.Workflows.Services;
+using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -98,36 +94,25 @@ public class BulkDispatchWorkflows : Activity
     /// <summary>
     /// An activity to execute when the child workflow finishes.
     /// </summary>
-    [Port]
-    public IActivity? ChildCompleted { get; set; }
+    [Port] public IActivity? ChildCompleted { get; set; }
 
     /// <summary>
     /// An activity to execute when the child workflow faults.
     /// </summary>
-    [Port]
-    public IActivity? ChildFaulted { get; set; }
-    
-    private List<string> _errors = new List<string>();
+    [Port] public IActivity? ChildFaulted { get; set; }
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
         var waitForCompletion = WaitForCompletion.GetOrDefault(context);
         var items = context.GetItemSource<object>(Items);
-        var dispatchedInstancesCount = 0L;
+        var dispatchedInstancesCount = 0;
 
         await foreach (var item in items)
         {
-            var dispatchedSuccessful = await ProcessItem(context, item);
-            if (dispatchedSuccessful)
-            {
-                dispatchedInstancesCount++;
-            }
-        }
-
-        if (_errors.Count > 1)
-        {
-            context.JournalData.Add("Error", _errors);
+            //context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
+            await DispatchChildWorkflowAsync(context, item);
+            dispatchedInstancesCount++;
         }
 
         context.SetProperty(DispatchedInstancesCountKey, dispatchedInstancesCount);
@@ -139,8 +124,9 @@ public class BulkDispatchWorkflows : Activity
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
-                Payload = new BulkDispatchWorkflowsBookmark(workflowInstanceId)
+                Stimulus = new BulkDispatchWorkflowsStimulus(workflowInstanceId)
                 {
+                    ParentInstanceId = context.WorkflowExecutionContext.Id,
                     ScheduledInstanceIdsCount = dispatchedInstancesCount
                 },
                 IncludeActivityInstanceId = false,
@@ -152,25 +138,6 @@ public class BulkDispatchWorkflows : Activity
         {
             // Otherwise, we can complete immediately.
             await context.CompleteActivityWithOutcomesAsync("Done");
-        }
-    }
-
-    private async Task<bool> ProcessItem(ActivityExecutionContext context, object item)
-    {
-        try
-        {
-            await DispatchChildWorkflowAsync(context, item);
-            return true;
-        }
-        catch (TaskCanceledException)
-        {
-            await context.CompleteActivityWithOutcomesAsync("Canceled");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            _errors.Add(ex.Message);
-            return false;
         }
     }
 
@@ -202,13 +169,17 @@ public class BulkDispatchWorkflows : Activity
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();
-        var instanceId = identityGenerator.GenerateId();
         var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+        var workflowDefinitionService = context.GetRequiredService<IWorkflowDefinitionService>();
+        var workflowGraph = await workflowDefinitionService.FindWorkflowGraphAsync(workflowDefinitionId, VersionOptions.Published);
+
+        if (workflowGraph == null)
+            throw new Exception($"No published version of workflow definition with ID {workflowDefinitionId} found.");
+
         var correlationId = CorrelationIdFunction != null ? await evaluator.EvaluateAsync<string>(CorrelationIdFunction!, context.ExpressionExecutionContext, evaluatorOptions) : null;
-        var request = new DispatchWorkflowDefinitionRequest
+        var instanceId = identityGenerator.GenerateId();
+        var request = new DispatchWorkflowDefinitionRequest(workflowGraph.Workflow.Identity.Id)
         {
-            DefinitionId = workflowDefinitionId,
-            VersionOptions = VersionOptions.Published,
             ParentWorkflowInstanceId = parentInstanceId,
             Input = input,
             Properties = properties,
@@ -220,19 +191,15 @@ public class BulkDispatchWorkflows : Activity
             Channel = channelName
         };
 
-        var dispatchResponse = await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
-        dispatchResponse.ThrowIfFailed();
-
+        await workflowDispatcher.DispatchAsync(request, options, context.CancellationToken);
         return instanceId;
     }
 
-    [RequiresUnreferencedCode("Calls Elsa.Expressions.Helpers.ObjectConverter.ConvertTo<T>(ObjectConverterOptions)")]
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
         var workflowInstanceId = input["WorkflowInstanceId"].ConvertTo<string>()!;
         var workflowSubStatus = input["WorkflowSubStatus"].ConvertTo<WorkflowSubStatus>();
-        var workflowOutput = input["WorkflowOutput"].ConvertTo<IDictionary<string, object>>();
         var finishedInstancesCount = context.GetProperty<long>(CompletedInstancesCountKey) + 1;
 
         context.SetProperty(CompletedInstancesCountKey, finishedInstancesCount);

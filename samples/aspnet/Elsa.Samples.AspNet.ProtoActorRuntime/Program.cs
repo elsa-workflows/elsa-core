@@ -19,7 +19,6 @@ services
         .AddActivitiesFrom<Program>()
         .UseIdentity(identity =>
         {
-            identity.IdentityOptions = options => identitySection.Bind(options);
             identity.TokenOptions = options => identityTokenSection.Bind(options);
             identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
             identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
@@ -31,16 +30,18 @@ services
             // Use EF core for workflow definitions and instances.
             management.UseEntityFrameworkCore(m => m.UseSqlite(sqliteConnectionString));
         })
+        // Use Proto.Actor.
+        .UseProtoActor(protoActor =>
+        {
+            protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
+        })
         .UseWorkflowRuntime(runtime =>
         {
             // Use EF core for triggers and bookmarks.
             runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             
-            // Use Proto.Actor for workflow execution.
-            runtime.UseProtoActor(protoActor =>
-            {
-                protoActor.PersistenceProvider = _ => new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
-            });
+            // Use the Proto Actor workflow runtime.
+            runtime.UseProtoActor();
         })
         .UseLabels(labels => labels.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseScheduling()

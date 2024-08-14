@@ -3,9 +3,10 @@ using System.Text.Json;
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
@@ -83,15 +84,15 @@ public class EFCoreActivityExecutionStore(
     {
         entity = entity.SanitizeLogMessage();
         var compressionAlgorithm = options.Value.CompressionAlgorithm ?? nameof(None);
-        var serializedActivityState = entity.ActivityState != null ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
-        var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : default;
+        var serializedActivityState = entity.ActivityState != null ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : null;
+        var compressedSerializedActivityState = serializedActivityState != null ? await compressionCodecResolver.Resolve(compressionAlgorithm).CompressAsync(serializedActivityState, cancellationToken) : null;
 
         dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = compressedSerializedActivityState;
         dbContext.Entry(entity).Property("SerializedActivityStateCompressionAlgorithm").CurrentValue = compressionAlgorithm;
-        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs != null && entity.Outputs.Any() ? await safeSerializer.SerializeAsync(entity.Outputs, cancellationToken) : default;
-        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue =entity.Properties.Any() ? payloadSerializer.Serialize(entity.Properties) : default;
-        dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? payloadSerializer.Serialize(entity.Exception) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? payloadSerializer.Serialize(entity.Payload) : default;
+        dbContext.Entry(entity).Property("SerializedOutputs").CurrentValue = entity.Outputs?.Any() == true ? await safeSerializer.SerializeAsync(entity.Outputs, cancellationToken) : null;
+        dbContext.Entry(entity).Property("SerializedProperties").CurrentValue = entity.Properties.Any() ? payloadSerializer.Serialize(entity.Properties) : null;
+        dbContext.Entry(entity).Property("SerializedException").CurrentValue = entity.Exception != null ? payloadSerializer.Serialize(entity.Exception) : null;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload?.Any() == true ? payloadSerializer.Serialize(entity.Payload) : null;
     }
 
     [RequiresUnreferencedCode("Calls Elsa.EntityFrameworkCore.Modules.Runtime.EFCoreActivityExecutionStore.DeserializeActivityState(RuntimeElsaDbContext, ActivityExecutionRecord, CancellationToken)")]

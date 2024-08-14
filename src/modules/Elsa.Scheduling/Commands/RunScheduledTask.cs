@@ -1,5 +1,4 @@
 using Elsa.Mediator.Contracts;
-using Elsa.Scheduling.Contracts;
 
 namespace Elsa.Scheduling.Commands;
 

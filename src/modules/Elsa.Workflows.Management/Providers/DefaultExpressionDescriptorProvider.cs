@@ -32,20 +32,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             deserialize: context =>
             {
                 var elementValue = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
-
-                var value = (object?)(elementValue.ValueKind switch
-                {
-                    JsonValueKind.String => elementValue.GetString(),
-                    JsonValueKind.Number => elementValue.GetDecimal(),
-                    JsonValueKind.True => true,
-                    JsonValueKind.False => false,
-                    JsonValueKind.Undefined => null,
-                    JsonValueKind.Null => null,
-                    JsonValueKind.Object => elementValue.GetRawText(),
-                    JsonValueKind.Array => elementValue.GetRawText(),
-                    _ => v.GetRawText()
-                });
-
+                var value = elementValue.GetValue();
                 return new Expression("Literal", value);
             });
     }
@@ -93,7 +80,7 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             MemoryBlockReferenceFactory = memoryBlockReferenceFactory ?? (() => new MemoryBlockReference())
         };
 
-        if (deserialize != null) 
+        if (deserialize != null)
             descriptor.Deserialize = deserialize;
 
         if (monacoLanguage != null)

@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Dynamic;
 using System.Reflection;
-using System.Runtime;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// <summary>
 /// Reads objects as primitive types rather than <see cref="JsonElement"/> values while also maintaining the .NET type name for reconstructing the actual type.
 /// </summary>
-public class PolymorphicObjectConverter : JsonConverter<object>
+public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverter<object>
 {
     private const string TypePropertyName = "_type";
     private const string ItemsPropertyName = "_items";
@@ -22,11 +22,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
-
-    /// <inheritdoc />
-    public PolymorphicObjectConverter()
-    {
-    }
 
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -145,10 +140,9 @@ public class PolymorphicObjectConverter : JsonConverter<object>
             }
             else if (isHashSet)
             {
-                addSetMethod.Invoke(collection, new[]
-                {
+                addSetMethod.Invoke(collection, [
                     deserializedElement
-                });
+                ]);
             }
             else if (collection is IList list)
             {
@@ -171,7 +165,33 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var newOptions = options.Clone();
         var type = value.GetType();
 
-        if (type.IsPrimitive || value is string or decimal or DateTimeOffset or DateTime or DateOnly or TimeOnly or JsonElement or Guid or TimeSpan or Uri or Version or Enum)
+        // If the type is a primitive type or an enumerable of a primitive type, serialize the value directly.
+        bool IsPrimitive(Type valueType)
+        {
+            return type.IsPrimitive
+                   || valueType == typeof(string)
+                   || valueType == typeof(decimal)
+                   || valueType == typeof(DateTimeOffset)
+                   || valueType == typeof(DateTime)
+                   || valueType == typeof(DateOnly)
+                   || valueType == typeof(TimeOnly)
+                   || valueType == typeof(JsonElement)
+                   || valueType == typeof(Guid)
+                   || valueType == typeof(TimeSpan)
+                   || valueType == typeof(Uri)
+                   || valueType == typeof(Version)
+                   || valueType.IsEnum;
+        }
+
+        bool IsListOfPrimitives(Type valueType)
+        {
+            var isEnumerable = typeof(IEnumerable).IsAssignableFrom(valueType)  && valueType.IsGenericType && valueType.GetGenericArguments().Length == 1;
+            if (!isEnumerable) return false;
+            var elementType = valueType.GetGenericArguments()[0];
+            return IsPrimitive(elementType);
+        }
+
+        if (IsPrimitive(type) || IsListOfPrimitives(type))
         {
             // Remove the converter so that we don't end up in an infinite loop.
             newOptions.Converters.RemoveWhere(x => x is PolymorphicObjectConverterFactory);
@@ -250,13 +270,26 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (type != typeof(ExpandoObject))
         {
             if (shouldWriteTypeField)
-                writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+            {
+                var typeOptions = newOptions.Clone();
+                typeOptions.Converters.RemoveWhere(c => c.GetType() != typeof(TypeJsonConverter));
+
+                if (typeOptions.Converters.Any())
+                {
+                    var typeValue = JsonSerializer.Serialize(type, typeOptions).Trim('"');
+                    writer.WriteString(TypePropertyName, typeValue);
+                }
+                else
+                {
+                    writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+                }
+            }
         }
 
         writer.WriteEndObject();
     }
 
-    private static Type? ReadType(Utf8JsonReader reader)
+    private Type? ReadType(Utf8JsonReader reader)
     {
         reader.Read(); // Move to the first token inside the object.
         string? typeName = null;
@@ -298,7 +331,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         // If we found the _type property, attempt to resolve the type.
-        var targetType = typeName != null ? Type.GetType(typeName) : default;
+        var targetType = typeName != null ? wellKnownTypeRegistry.TryGetType(typeName, out var type) ? type : Type.GetType(typeName) : default;
         return targetType;
     }
 

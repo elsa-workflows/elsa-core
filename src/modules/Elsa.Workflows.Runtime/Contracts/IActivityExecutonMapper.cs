@@ -1,6 +1,6 @@
 using Elsa.Workflows.Runtime.Entities;
 
-namespace Elsa.Workflows.Runtime.Contracts;
+namespace Elsa.Workflows.Runtime;
 
 /// <summary>
 /// Maps activity execution contexts to activity execution records.

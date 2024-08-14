@@ -1,5 +1,6 @@
 using System.Reflection;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.PortResolvers;
 
@@ -15,13 +16,12 @@ public class PropertyBasedActivityResolver : IActivityResolver
     public bool GetSupportsActivity(IActivity activity) => true;
 
     /// <inheritdoc />
-    public ValueTask<IEnumerable<IActivity>> GetActivitiesAsync(IActivity activity, CancellationToken cancellationToken = default) =>
-        new(GetActivities(activity)
-            .Where(x => x != null)
-            .Select(x => x!)
-            .ToHashSet());
-    
-    private static IEnumerable<IActivity?> GetActivities(IActivity activity)
+    public ValueTask<IEnumerable<ActivityPort>> GetActivityPortsAsync(IActivity activity, CancellationToken cancellationToken = default)
+    {
+        return new(GetActivityPortsInternal(activity));
+    }
+
+    private static IEnumerable<ActivityPort> GetActivityPortsInternal(IActivity activity)
     {
         var activityType = activity.GetType();
 
@@ -30,9 +30,11 @@ public class PropertyBasedActivityResolver : IActivityResolver
             where typeof(IActivity).IsAssignableFrom(prop.PropertyType) || typeof(IEnumerable<IActivity>).IsAssignableFrom(prop.PropertyType)
             let value = prop.GetValue(activity)
             let isCollection = GetPropertyIsCollection(prop.PropertyType)
-            select isCollection ? (IEnumerable<IActivity>)value : new[] { (IActivity)value };
+            let portName = prop.Name
+            where value != null
+            select isCollection ? ActivityPort.FromActivities((IEnumerable<IActivity>)value, portName) : ActivityPort.FromActivity((IActivity)value, portName);
 
-        return ports.SelectMany(x => x);
+        return ports.ToList();
     }
 
     private static bool GetPropertyIsCollection(Type propertyType) => typeof(IEnumerable<IActivity>).IsAssignableFrom(propertyType);

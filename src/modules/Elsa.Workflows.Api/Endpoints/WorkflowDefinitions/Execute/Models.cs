@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Elsa.Common.Models;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
 
@@ -10,6 +11,7 @@ public class Request
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
     public string? TriggerActivityId { get; set; }
+    public ActivityHandle? ActivityHandle { get; set; }
 
     public VersionOptions? VersionOptions { get; set; }
 
@@ -17,12 +19,7 @@ public class Request
     public object? Input { get; set; }
 }
 
-public class Response
+public class Response(WorkflowState workflowState)
 {
-    public Response(WorkflowState workflowState)
-    {
-        WorkflowState = workflowState;
-    }
-
-    public WorkflowState WorkflowState { get; }
+    public WorkflowState WorkflowState { get; } = workflowState;
 }

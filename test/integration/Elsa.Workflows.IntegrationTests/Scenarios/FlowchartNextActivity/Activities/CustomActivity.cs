@@ -1,5 +1,3 @@
-using Elsa.Extensions;
-
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity.Activities;
 
 public class CustomActivity : CodeActivity

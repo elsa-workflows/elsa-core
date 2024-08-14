@@ -2,7 +2,6 @@
 using Elsa.Http.Abstractions;
 using Elsa.Http.Contexts;
 using Elsa.Http.Models;
-using YamlDotNet.Core.Tokens;
 
 namespace Elsa.Http.DownloadableContentHandlers;
 

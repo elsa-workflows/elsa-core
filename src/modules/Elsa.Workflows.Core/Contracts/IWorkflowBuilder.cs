@@ -18,7 +18,12 @@ public interface IWorkflowBuilder
     /// The version ID to use for the workflow being built.
     /// </summary>
     string? Id { get; set; }
-    
+
+    /// <summary>
+    /// The ID of the tenant associated with the workflow being built.
+    /// </summary>
+    string? TenantId { get; set; }
+
     /// <summary>
     /// The version of the workflow being built.
     /// </summary>
@@ -82,6 +87,7 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A set of properties that can be used for storing application-specific information about the workflow being built.
     /// </summary>
+    [Obsolete("Use PropertyBag instead")]
     IDictionary<string, object> CustomProperties { get; }
     
     /// <summary>
@@ -89,7 +95,13 @@ public interface IWorkflowBuilder
     /// </summary>
     /// <param name="definitionId">The definition ID to use for the workflow being built.</param>
     IWorkflowBuilder WithDefinitionId(string definitionId);
-    
+
+    /// <summary>
+    /// A fluent method for setting the <see cref="TenantId"/> property.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID to use for the workflow being built.</param>
+    IWorkflowBuilder WithTenantId(string tenantId);
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>

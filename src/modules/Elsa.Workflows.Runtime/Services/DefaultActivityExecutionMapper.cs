@@ -2,13 +2,12 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.State;
 using Humanizer;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options) : IActivityExecutionMapper

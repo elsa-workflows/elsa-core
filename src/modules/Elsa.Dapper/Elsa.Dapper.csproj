@@ -10,17 +10,21 @@
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Dapper.Migrations\Elsa.Dapper.Migrations.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Azure.Identity" />
         <PackageReference Include="Dapper" />
         <PackageReference Include="FluentMigrator" />
         <PackageReference Include="FluentMigrator.Runner" />
         <PackageReference Include="Microsoft.Data.Sqlite.Core" />
+        <PackageReference Include="Microsoft.Identity.Client" />
         <PackageReference Include="Npgsql" />
         <PackageReference Include="System.Data.SqlClient" />
+        <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
 </Project>

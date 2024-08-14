@@ -5,17 +5,16 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Comparers;
-using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class TriggerIndexer : ITriggerIndexer
@@ -27,7 +26,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly ITriggerStore _triggerStore;
     private readonly INotificationSender _notificationSender;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IBookmarkHasher _hasher;
+    private readonly IStimulusHasher _hasher;
     private readonly ILogger _logger;
 
     /// <summary>
@@ -41,7 +40,7 @@ public class TriggerIndexer : ITriggerIndexer
         ITriggerStore triggerStore,
         INotificationSender notificationSender,
         IServiceProvider serviceProvider,
-        IBookmarkHasher hasher,
+        IStimulusHasher hasher,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
@@ -85,7 +84,7 @@ public class TriggerIndexer : ITriggerIndexer
         // Get current triggers
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
 
-        // Collect new triggers **if workflow is published**.
+        // Collect new triggers **if the workflow is published**.
         var newTriggers = workflow.Publication.IsPublished
             ? await GetTriggersInternalAsync(workflow, cancellationToken).ToListAsync(cancellationToken)
             : new List<StoredTrigger>(0);

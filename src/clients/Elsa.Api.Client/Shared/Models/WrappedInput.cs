@@ -22,3 +22,4 @@ public class WrappedInput
     /// </summary>
     public MemoryReference MemoryReference { get; set; } = default!;
 }
+

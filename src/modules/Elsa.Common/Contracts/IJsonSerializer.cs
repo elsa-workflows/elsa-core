@@ -31,6 +31,11 @@ public interface IJsonSerializer
     string Serialize(object value, Type type);
 
     /// <summary>
+    /// Serializes the specified value.
+    /// </summary>
+    string Serialize<T>(T value);
+
+    /// <summary>
     /// Deserializes the specified JSON.
     /// </summary>
     [RequiresUnreferencedCode("The type is not known at compile time.")]
@@ -41,4 +46,9 @@ public interface IJsonSerializer
     /// </summary>
     [RequiresUnreferencedCode("The type is not known at compile time.")]
     object Deserialize(string json, Type type);
+    
+    /// <summary>
+    /// Deserializes the specified JSON.
+    /// </summary>
+    T Deserialize<T>(string json);
 }

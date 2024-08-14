@@ -25,5 +25,6 @@ public class AzureServiceBusOptions
     /// <summary>
     /// A list of <see cref="SubscriptionDefinition"/>s to create.
     /// </summary>
+    [Obsolete("Use TopicDefinition.Subscriptions instead.")]
     public ICollection<SubscriptionDefinition> Subscriptions { get; set; } = new List<SubscriptionDefinition>();
 }

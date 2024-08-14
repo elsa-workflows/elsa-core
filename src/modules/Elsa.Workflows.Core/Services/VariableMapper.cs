@@ -8,7 +8,7 @@ using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Maps variables to and from <see cref="VariableModel"/> instances.

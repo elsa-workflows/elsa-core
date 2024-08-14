@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.ComponentTests;
+namespace Elsa.Workflows.ComponentTests.Helpers;
 
 [Collection(nameof(AppCollection))]
 public abstract class AppComponentTest(App app) : IDisposable
@@ -10,13 +10,13 @@ public abstract class AppComponentTest(App app) : IDisposable
     protected Infrastructure Infrastructure { get; } = app.Infrastructure;
     protected IServiceScope Scope { get; } = app.WorkflowServer.Services.CreateScope();
 
-    protected virtual void OnDispose()
-    {
-    }
-
     void IDisposable.Dispose()
     {
         Scope.Dispose();
         OnDispose();
+    }
+
+    protected virtual void OnDispose()
+    {
     }
 }

@@ -6,11 +6,8 @@ namespace Elsa.Workflows.Api.Middleware;
 /// <summary>
 /// Catches JSON serialization errors during POST requests and returns Bad Request responses.
 /// </summary>
-public class JsonSerializationErrorHandlerMiddleware
+public class JsonSerializationErrorHandlerMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
-    public JsonSerializationErrorHandlerMiddleware(RequestDelegate next) => _next = next;
-
     public async Task InvokeAsync(HttpContext httpContext)
     {
         var method = httpContext.Request.Method;
@@ -18,13 +15,13 @@ public class JsonSerializationErrorHandlerMiddleware
         // If the HTTP verb is anything but POST or PUT, do nothing.
         if (!string.Equals(method, "POST", StringComparison.InvariantCultureIgnoreCase) && !string.Equals(method, "PUT", StringComparison.InvariantCultureIgnoreCase))
         {
-            await _next(httpContext);
+            await next(httpContext);
             return;
         }
 
         try
         {
-            await _next(httpContext);
+            await next(httpContext);
         }
         catch (JsonException e)
         {

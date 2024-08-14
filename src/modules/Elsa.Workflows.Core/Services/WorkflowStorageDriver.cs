@@ -2,12 +2,13 @@ using System.ComponentModel.DataAnnotations;
 using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A storage driver that stores objects in the workflow state itself.
 /// </summary>
-[Display(Name = "Workflow")]
+[Display(Name = "Workflow (deprecated)")]
+[Obsolete("This class is no longer used and will be removed in a future version.")]
 public class WorkflowStorageDriver : IStorageDriver
 {
     /// <summary>

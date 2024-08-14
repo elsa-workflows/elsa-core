@@ -17,7 +17,7 @@ public class ExpressionsFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
         Services
             .AddScoped<IExpressionEvaluator, ExpressionEvaluator>()

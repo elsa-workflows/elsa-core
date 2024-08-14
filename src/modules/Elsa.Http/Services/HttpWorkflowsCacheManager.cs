@@ -1,10 +1,13 @@
 using Elsa.Caching;
+using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class HttpWorkflowsCacheManager(ICacheManager cache) : IHttpWorkflowsCacheManager
+public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHasher) : IHttpWorkflowsCacheManager
 {
     /// <inheritdoc />
     public ICacheManager Cache => cache;
@@ -28,4 +31,12 @@ public class HttpWorkflowsCacheManager(ICacheManager cache) : IHttpWorkflowsCach
 
     /// <inheritdoc />
     public string GetTriggerChangeTokenKey(string bookmarkHash) => $"{GetType().FullName}:trigger:{bookmarkHash}:changeToken";
+
+    /// <inheritdoc />
+    public string ComputeBookmarkHash(string path, string method)
+    {
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
+        var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
+        return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
+    }
 }

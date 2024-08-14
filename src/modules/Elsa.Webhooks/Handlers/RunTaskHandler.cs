@@ -1,30 +1,15 @@
-using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Webhooks.Models;
-using Elsa.Webhooks.Services;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
+using WebhooksCore;
 
 namespace Elsa.Webhooks.Handlers;
 
-/// <summary>
 /// Handles the <see cref="RunTaskRequest"/> notification and asynchronously invokes all registered webhook endpoints.
-/// </summary>
 [UsedImplicitly]
-public class RunTaskHandler : INotificationHandler<RunTaskRequest>
+public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotificationHandler<RunTaskRequest>
 {
-    private readonly IWebhookDispatcher _webhookDispatcher;
-    private readonly ISystemClock _systemClock;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public RunTaskHandler(IWebhookDispatcher webhookDispatcher, ISystemClock systemClock)
-    {
-        _webhookDispatcher = webhookDispatcher;
-        _systemClock = systemClock;
-    }
-    
     /// <inheritdoc />
     public async Task HandleAsync(RunTaskRequest notification, CancellationToken cancellationToken)
     {
@@ -36,7 +21,7 @@ public class RunTaskHandler : INotificationHandler<RunTaskRequest>
         var workflowDefinitionId = workflow.Identity.DefinitionId;
         var workflowName = workflow.WorkflowMetadata.Name;
         
-        var payload = new RunTaskWebhook(
+        var payload = new RunTaskWebhookPayload(
             workflowInstanceId,
             workflowDefinitionId,
             workflowName,
@@ -46,8 +31,7 @@ public class RunTaskHandler : INotificationHandler<RunTaskRequest>
             notification.TaskPayload
         );
         
-        var now = _systemClock.UtcNow;
-        var webhookEvent = new WebhookEvent("RunTask", payload, now);
-        await _webhookDispatcher.DispatchAsync(webhookEvent, cancellationToken);
+        var webhookEvent = new NewWebhookEvent("Elsa.RunTask", payload);
+        await webhookDispatcher.BroadcastAsync(webhookEvent, cancellationToken);
     }
 }

@@ -14,7 +14,7 @@ public class BackgroundEventPublisherHostedService : BackgroundService
     private readonly int _workerCount;
     private readonly INotificationsChannel _notificationsChannel;
     private readonly IServiceScopeFactory _scopeFactory;
-    private readonly IList<Channel<INotification>> _outputs;
+    private readonly List<Channel<INotification>> _outputs;
     private readonly ILogger _logger;
 
     /// <inheritdoc />
@@ -64,6 +64,10 @@ public class BackgroundEventPublisherHostedService : BackgroundService
             try
             {
                 await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, cancellationToken);
+            }
+            catch (OperationCanceledException e)
+            {
+                _logger.LogDebug(e, "An operation was cancelled while processing the queue");
             }
             catch (Exception e)
             {

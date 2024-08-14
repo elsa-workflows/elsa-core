@@ -1,5 +1,3 @@
-using Elsa.Scheduling.Contracts;
-using Elsa.Scheduling.Models;
 using Elsa.Scheduling.ScheduledTasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

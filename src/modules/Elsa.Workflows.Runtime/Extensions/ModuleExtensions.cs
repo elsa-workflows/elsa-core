@@ -19,15 +19,6 @@ public static class ModuleExtensions
         module.Configure(configure);
         return module;
     }
-    
-    /// <summary>
-    /// Enables the <see cref="WorkflowRuntimeFeature"/> and configures it to use the default workflow runtime.
-    /// </summary>
-    public static WorkflowRuntimeFeature UseDefaultWorkflowRuntime(this WorkflowRuntimeFeature runtime, Action<DefaultWorkflowRuntimeFeature>? configureDefaultRuntime = default)
-    {
-        runtime.Module.Configure(configureDefaultRuntime);
-        return runtime;
-    }
 
     /// <summary>
     /// Register the specified workflow type.

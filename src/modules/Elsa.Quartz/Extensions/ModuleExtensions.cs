@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.Quartz.Features;
-using Elsa.Scheduling.Contracts;
+using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
 
 // ReSharper disable once CheckNamespace
@@ -18,7 +18,7 @@ public static class ModuleExtensions
     {
         return module.Use(configure);
     }
-    
+
     /// <summary>
     /// Installs a Quartz.NET implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>

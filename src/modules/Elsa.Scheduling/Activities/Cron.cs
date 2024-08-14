@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
-using Elsa.Scheduling.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;

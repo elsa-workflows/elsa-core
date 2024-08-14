@@ -8,11 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj"/>
-        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj"/>
-        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj"/>
-        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj"/>
+        <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
     </ItemGroup>
-
+    
 </Project>

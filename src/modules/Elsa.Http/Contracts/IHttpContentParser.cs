@@ -1,3 +1,5 @@
+using Elsa.Http.Contexts;
+
 namespace Elsa.Http.Contracts;
 
 /// <summary>
@@ -14,10 +16,10 @@ public interface IHttpContentParser
     /// <summary>
     /// Returns a value indicating whether this reader supports the specified content type.
     /// </summary>
-    bool GetSupportsContentType(string contentType);
+    bool GetSupportsContentType(HttpResponseParserContext context);
     
     /// <summary>
     /// Reads the specified <c>stream</c> and returns a parsed object of the specified type. If no type is specified, a string is returned. 
     /// </summary>
-    Task<object> ReadAsync(Stream content, Type? returnType, CancellationToken cancellationToken);
+    Task<object> ReadAsync(HttpResponseParserContext context);
 }
