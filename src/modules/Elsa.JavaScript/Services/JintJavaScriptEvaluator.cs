@@ -70,7 +70,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
                 return instance;
             });
             
-            opts.Interop.ObjectConverters.Add(new ByteArrayConverter());
+            opts.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new ExpandoObjectConverter()]);
         });
 
         configureEngine?.Invoke(engine);
