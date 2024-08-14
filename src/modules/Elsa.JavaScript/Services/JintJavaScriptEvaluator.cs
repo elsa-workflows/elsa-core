@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
+using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.JavaScript.Contracts;
@@ -8,7 +10,6 @@ using Elsa.JavaScript.Notifications;
 using Elsa.JavaScript.ObjectConverters;
 using Elsa.JavaScript.Options;
 using Elsa.Mediator.Contracts;
-using Esprima.Ast;
 using Jint;
 using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
@@ -46,18 +47,13 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         options ??= new ExpressionEvaluatorOptions();
 
         var engineOptions = new Jint.Options();
-        ;
 
         if (_jintOptions.AllowClrAccess)
             engineOptions.AllowClr();
 
-        // Wrap objects in ObjectWrapper instances and set their prototype to Array.prototype if they are array-like.
-        engineOptions.SetWrapObjectHandler((engine, target, type) =>
-        {
-            ConfigureClrAccess(opts);
-            ConfigureObjectWrapper(opts);
-            ConfigureObjectConverters(opts);
-        });
+        ConfigureClrAccess(engineOptions);
+        ConfigureObjectWrapper(engineOptions);
+        ConfigureObjectConverters(engineOptions);
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
 

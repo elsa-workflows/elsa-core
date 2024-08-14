@@ -19,6 +19,7 @@ public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJav
         engine.RegisterType<DateTimeOffset>();
         engine.RegisterType<TimeSpan>();
         engine.RegisterType<Guid>();
+        engine.RegisterType<Random>();
         
         return Task.CompletedTask;
     }

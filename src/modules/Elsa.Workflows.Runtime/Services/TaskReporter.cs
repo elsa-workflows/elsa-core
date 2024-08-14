@@ -1,25 +1,36 @@
+using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter(IStimulusSender stimulusSender) : ITaskReporter
+public class TaskReporter(IBookmarkQueue stimulusSender, IStimulusHasher stimulusHasher) : ITaskReporter
 {
+    private static readonly string ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
+    
     /// <inheritdoc />
     public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
     {
-        var bookmarkPayload = new RunTaskStimulus(taskId, default!);
+        var stimulus = new RunTaskStimulus(taskId, default!);
 
         var input = new Dictionary<string, object>
         {
             [RunTask.InputKey] = result!
         };
 
-        var sender = new StimulusMetadata
+        var bookmarkQueueItem = new NewBookmarkQueueItem
         {
-            Input = input,
+            ActivityTypeName = ActivityTypeName,
+            StimulusHash = stimulusHasher.Hash(ActivityTypeName, stimulus),
+            Options = new ResumeBookmarkOptions
+            {
+                Input = input
+            }
         };
-        await stimulusSender.SendAsync<RunTask>(bookmarkPayload, sender, cancellationToken: cancellationToken);
+        
+        await stimulusSender.EnqueueAsync(bookmarkQueueItem, cancellationToken);
     }
 }

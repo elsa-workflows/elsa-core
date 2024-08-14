@@ -2,6 +2,7 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management;
 using Humanizer;
 using JetBrains.Annotations;
 
@@ -9,8 +10,7 @@ namespace Elsa.JavaScript.Providers;
 
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 [UsedImplicitly]
-internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService)
-    : FunctionDefinitionProvider
+internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
 {
     protected override ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {

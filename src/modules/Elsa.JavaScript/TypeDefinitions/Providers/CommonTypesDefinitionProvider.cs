@@ -12,8 +12,8 @@ internal class CommonTypeDefinitionProvider(ITypeDescriber typeDescriber) : Type
 {
     protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
-        yield return _typeDescriber.DescribeType(typeof(Guid));
-        yield return _typeDescriber.DescribeType(typeof(JsonObject));
-        yield return _typeDescriber.DescribeType(typeof(Random));
+        yield return typeDescriber.DescribeType(typeof(Guid));
+        yield return typeDescriber.DescribeType(typeof(JsonObject));
+        yield return typeDescriber.DescribeType(typeof(Random));
     }
 }
