@@ -2,6 +2,7 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
+using Humanizer;
 using JetBrains.Annotations;
 using Jint;
 
@@ -9,17 +10,32 @@ namespace Elsa.JavaScript.Handlers;
 
 /// A handler that configures the Jint engine with workflow input and output accessors.
 [UsedImplicitly]
-public class ConfigureEngineWithInputOutputAccessors : INotificationHandler<EvaluatingJavaScript>
+public class ConfigureEngineWithVariablesAndInputOutputAccessors : INotificationHandler<EvaluatingJavaScript>
 {
     /// <inheritdoc />
     public async Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
         var context = notification.Context;
+        
+        // The order of the next 3 lines is important. 
+        CreateVariableAccessors(engine, context);
         CreateWorkflowInputAccessors(engine, context);
         await CreateActivityOutputAccessorsAsync(engine, context);
     }
-    
+
+    private void CreateVariableAccessors(Engine engine, ExpressionExecutionContext context)
+    {
+        var variableNames = context.GetVariableNamesInScope().ToList();
+
+        foreach (var variableName in variableNames)
+        {
+            var pascalName = variableName.Pascalize();
+            engine.SetValue($"get{pascalName}", (Func<object?>)(() => context.GetVariableInScope(variableName)));
+            engine.SetValue($"set{pascalName}", (Action<object?>)(value => context.SetVariableInScope(variableName, value)));
+        }
+    }
+
     private void CreateWorkflowInputAccessors(Engine engine, ExpressionExecutionContext context)
     {
         // Create workflow input accessors - only if the current activity is not part of a composite activity definition.
