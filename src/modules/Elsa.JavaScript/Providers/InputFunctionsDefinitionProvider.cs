@@ -9,7 +9,8 @@ namespace Elsa.JavaScript.Providers;
 
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 [UsedImplicitly]
-internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
+internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService)
+    : FunctionDefinitionProvider
 {
     protected override ValueTask<IEnumerable<FunctionDefinition>> GetFunctionDefinitionsAsync(TypeDefinitionContext context)
     {

@@ -4,7 +4,7 @@ using Elsa.Workflows.Runtime.Stimuli;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter(IStimulusSender workflowDispatcher) : ITaskReporter
+public class TaskReporter(IStimulusSender stimulusSender) : ITaskReporter
 {
     /// <inheritdoc />
     public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
@@ -20,6 +20,6 @@ public class TaskReporter(IStimulusSender workflowDispatcher) : ITaskReporter
         {
             Input = input,
         };
-        await workflowDispatcher.SendAsync<RunTask>(bookmarkPayload, sender, cancellationToken: cancellationToken);
+        await stimulusSender.SendAsync<RunTask>(bookmarkPayload, sender, cancellationToken: cancellationToken);
     }
 }

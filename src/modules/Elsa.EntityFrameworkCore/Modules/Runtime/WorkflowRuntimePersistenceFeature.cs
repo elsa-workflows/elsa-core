@@ -18,7 +18,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<RuntimeElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler(); 
+    public Func<IServiceProvider, IDbExceptionHandler<RuntimeElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler(); 
 
     /// <inheritdoc />
     public override void Configure()
