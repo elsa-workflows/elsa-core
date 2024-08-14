@@ -7,9 +7,7 @@ using Jint;
 
 namespace Elsa.JavaScript.Handlers;
 
-/// <summary>
-/// 
-/// </summary>
+/// A handler that configures the Jint engine with workflow input and output accessors.
 [UsedImplicitly]
 public class ConfigureEngineWithInputOutputAccessors : INotificationHandler<EvaluatingJavaScript>
 {

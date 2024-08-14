@@ -11,10 +11,8 @@ using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Handlers;
 
-/// <summary>
-/// 
-/// </summary>
-[UsedImplicitly] 
+/// A handler that configures the Jint engine with common functions.
+[UsedImplicitly]
 public class ConfigureEngineWithCommonFunctions : INotificationHandler<EvaluatingJavaScript>
 {
     private readonly JsonSerializerOptions _jsonSerializerOptions = CreateJsonSerializerOptions();

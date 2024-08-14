@@ -6,9 +6,7 @@ using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Handlers;
 
-/// <summary>
-/// 
-/// </summary>
+/// A handler that configures the Jint engine with workflow variable accessor functions.
 [UsedImplicitly]
 public class ConfigureEngineWithVariableAccessors : INotificationHandler<EvaluatingJavaScript>
 {

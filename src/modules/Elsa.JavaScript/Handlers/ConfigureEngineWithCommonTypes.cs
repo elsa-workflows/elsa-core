@@ -5,9 +5,7 @@ using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Handlers;
 
-/// <summary>
-/// 
-/// </summary>
+/// A handler that configures the Jint engine with common types.
 [UsedImplicitly]
 public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJavaScript>
 {
