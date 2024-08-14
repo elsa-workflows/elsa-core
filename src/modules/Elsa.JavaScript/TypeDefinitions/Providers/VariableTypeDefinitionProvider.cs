@@ -9,15 +9,8 @@ namespace Elsa.JavaScript.TypeDefinitions.Providers;
 /// <summary>
 /// Produces <see cref="TypeDefinition"/>s for variable types.
 /// </summary>
-internal class VariableTypeDefinitionProvider : TypeDefinitionProvider
+internal class VariableTypeDefinitionProvider(ITypeDescriber typeDescriber) : TypeDefinitionProvider
 {
-    private readonly ITypeDescriber _typeDescriber;
-
-    public VariableTypeDefinitionProvider(ITypeDescriber typeDescriber)
-    {
-        _typeDescriber = typeDescriber;
-    }
-
     protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
         var excludedTypes = new Func<Type, bool>[]
@@ -39,7 +32,7 @@ internal class VariableTypeDefinitionProvider : TypeDefinitionProvider
 
         foreach (var variableType in variableTypes)
         {
-            yield return _typeDescriber.DescribeType(variableType);
+            yield return typeDescriber.DescribeType(variableType);
         }
     }
 }
