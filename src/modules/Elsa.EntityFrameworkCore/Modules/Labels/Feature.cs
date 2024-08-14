@@ -17,7 +17,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Labels;
 public class EFCoreLabelPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreLabelPersistenceFeature, LabelsElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<LabelsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();
+    public Func<IServiceProvider, IDbExceptionHandler<LabelsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler();
 
     public override void Configure()
     {
