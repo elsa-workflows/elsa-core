@@ -91,7 +91,7 @@ public class RunTask : Activity<object>
         var taskId = identityGenerator.GenerateId();
         var payload = new RunTaskBookmarkPayload(taskId, taskName);
         context.CreateBookmark(payload, ResumeAsync, includeActivityInstanceId: false);
-        
+
         // Dispatch task request.
         var taskParams = Payload.GetOrDefault(context);
         var runTaskRequest = new RunTaskRequest(context, taskId, taskName, taskParams);

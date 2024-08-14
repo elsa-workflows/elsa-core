@@ -2,23 +2,14 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Parameters;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter : ITaskReporter
+public class TaskReporter(IWorkflowInbox workflowInbox) : ITaskReporter
 {
-    private readonly IWorkflowDispatcher _workflowDispatcher;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public TaskReporter(IWorkflowDispatcher workflowDispatcher)
-    {
-        _workflowDispatcher = workflowDispatcher;
-    }
-
     /// <inheritdoc />
     public async Task ReportCompletionAsync(string taskId, object? result = default, CancellationToken cancellationToken = default)
     {
@@ -30,7 +21,16 @@ public class TaskReporter : ITaskReporter
         };
         
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
-        var request = new DispatchResumeWorkflowsRequest(activityTypeName, bookmarkPayload, Input: input);
-        await _workflowDispatcher.DispatchAsync(request, cancellationToken: cancellationToken);
+        var message = new NewWorkflowInboxMessage
+        {
+            ActivityTypeName = activityTypeName,
+            BookmarkPayload = bookmarkPayload,
+            Input = input,
+        };
+        var options = new WorkflowInboxMessageDeliveryParams
+        {
+            DispatchAsynchronously = true
+        };
+        await workflowInbox.SubmitAsync(message, options, cancellationToken);
     }
 }
