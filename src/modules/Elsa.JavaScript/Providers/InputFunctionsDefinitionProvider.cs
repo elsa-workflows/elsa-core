@@ -6,12 +6,12 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Humanizer;
+using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.Providers;
 
-/// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
-/// </summary>
+[UsedImplicitly]
 internal class InputFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry, IWorkflowDefinitionService workflowDefinitionService)
     : FunctionDefinitionProvider
 {
