@@ -312,7 +312,7 @@ public class Flowchart : Container
 
             if (catchContext == null)
             {
-                catchContext = workflowExecutionContext.CreateActivityExecutionContext(catchActivity!, options);
+                catchContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(catchActivity!, options);
                 workflowExecutionContext.AddActivityExecutionContext(catchContext);
 
                 await catchContext.EvaluateInputPropertiesAsync();
