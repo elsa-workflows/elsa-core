@@ -370,12 +370,31 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server", "{454652D5-E1BB-4D4B-9B21-9CEFC900C4FB}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\elsa-server\service-account.yml = scripts\k8s\elsa-server\service-account.yml
+		scripts\k8s\elsa-server\role.yaml = scripts\k8s\elsa-server\role.yaml
+		scripts\k8s\elsa-server\role-binding.yaml = scripts\k8s\elsa-server\role-binding.yaml
+		scripts\k8s\elsa-server\service.yaml = scripts\k8s\elsa-server\service.yaml
+		scripts\k8s\elsa-server\deployment.yaml = scripts\k8s\elsa-server\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{31089E79-694B-4F45-97AF-86D34A7B231E}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\postgres\service.yml = scripts\k8s\postgres\service.yml
+		scripts\k8s\postgres\deployment.yaml = scripts\k8s\postgres\deployment.yaml
+		scripts\k8s\postgres\config-map.yaml = scripts\k8s\postgres\config-map.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plant-uml", "plant-uml", "{6DDB9ECF-D454-4894-A262-A6BB3026E61E}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\plant-uml\deployment.yaml = scripts\k8s\plant-uml\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{16B570BC-E293-4A19-B20E-5C97BAF8476B}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\trace-lens\service.yaml = scripts\k8s\trace-lens\service.yaml
+		scripts\k8s\trace-lens\deployment.yaml = scripts\k8s\trace-lens\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}"
 EndProject
@@ -395,7 +414,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Management", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{6B921B30-0396-406E-9238-03ED6AC839EC}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9C6C-4BAB-AA51-15131C21ADCC}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\nuke\build.sh = scripts\nuke\build.sh
+		scripts\nuke\build.ps1 = scripts\nuke\build.ps1
+		scripts\nuke\build.cmd = scripts\nuke\build.cmd
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1119,7 +1143,7 @@ Global
 		{9BF476B6-24BA-4312-9DFF-9082B1577046} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
-		{6B921B30-0396-406E-9238-03ED6AC839EC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{57326431-9C6C-4BAB-AA51-15131C21ADCC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
