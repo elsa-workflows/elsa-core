@@ -8,19 +8,12 @@ namespace Elsa.JavaScript.TypeDefinitions.Providers;
 /// <summary>
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
 /// </summary>
-internal class CommonTypeDefinitionProvider : TypeDefinitionProvider
+internal class CommonTypeDefinitionProvider(ITypeDescriber typeDescriber) : TypeDefinitionProvider
 {
-    private readonly ITypeDescriber _typeDescriber;
-
-    public CommonTypeDefinitionProvider(ITypeDescriber typeDescriber)
-    {
-        _typeDescriber = typeDescriber;
-    }
-
     protected override IEnumerable<TypeDefinition> GetTypeDefinitions(TypeDefinitionContext context)
     {
-        yield return _typeDescriber.DescribeType(typeof(Guid));
-        yield return _typeDescriber.DescribeType(typeof(JsonObject));
-        yield return _typeDescriber.DescribeType(typeof(Random));
+        yield return typeDescriber.DescribeType(typeof(Guid));
+        yield return typeDescriber.DescribeType(typeof(JsonObject));
+        yield return typeDescriber.DescribeType(typeof(Random));
     }
 }
