@@ -370,12 +370,31 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server", "{454652D5-E1BB-4D4B-9B21-9CEFC900C4FB}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\elsa-server\service-account.yml = scripts\k8s\elsa-server\service-account.yml
+		scripts\k8s\elsa-server\role.yaml = scripts\k8s\elsa-server\role.yaml
+		scripts\k8s\elsa-server\role-binding.yaml = scripts\k8s\elsa-server\role-binding.yaml
+		scripts\k8s\elsa-server\service.yaml = scripts\k8s\elsa-server\service.yaml
+		scripts\k8s\elsa-server\deployment.yaml = scripts\k8s\elsa-server\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{31089E79-694B-4F45-97AF-86D34A7B231E}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\postgres\service.yml = scripts\k8s\postgres\service.yml
+		scripts\k8s\postgres\deployment.yaml = scripts\k8s\postgres\deployment.yaml
+		scripts\k8s\postgres\config-map.yaml = scripts\k8s\postgres\config-map.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plant-uml", "plant-uml", "{6DDB9ECF-D454-4894-A262-A6BB3026E61E}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\plant-uml\deployment.yaml = scripts\k8s\plant-uml\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{16B570BC-E293-4A19-B20E-5C97BAF8476B}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\trace-lens\service.yaml = scripts\k8s\trace-lens\service.yaml
+		scripts\k8s\trace-lens\deployment.yaml = scripts\k8s\trace-lens\deployment.yaml
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}"
 EndProject
