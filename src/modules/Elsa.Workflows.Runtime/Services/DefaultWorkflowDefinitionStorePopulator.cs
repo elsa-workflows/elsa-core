@@ -156,7 +156,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         {
             DefinitionId = workflow.Identity.DefinitionId,
             Id = workflow.Identity.Id,
-            Version = workflow.Identity.Version
+            Version = workflow.Identity.Version,
+            TenantId = workflow.Identity.TenantId,
         };
 
         workflowDefinition.Description = workflow.WorkflowMetadata.Description;

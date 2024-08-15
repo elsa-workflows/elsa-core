@@ -10,6 +10,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Proto.Persistence.Sqlite;
+using WebhooksCore.Options;
 
 const bool useMassTransit = true;
 const bool useProtoActor = false;
@@ -145,6 +146,8 @@ services
             });
         }
     });
+
+services.Configure<WebhookSinksOptions>(options => configuration.GetSection("Webhooks").Bind(options));
 
 services.AddHealthChecks();
 

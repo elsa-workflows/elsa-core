@@ -21,7 +21,7 @@ public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotif
         var workflowDefinitionId = workflow.Identity.DefinitionId;
         var workflowName = workflow.WorkflowMetadata.Name;
         
-        var payload = new RunTaskWebhook(
+        var payload = new RunTaskWebhookPayload(
             workflowInstanceId,
             workflowDefinitionId,
             workflowName,
@@ -31,7 +31,7 @@ public class RunTaskHandler(IWebhookEventBroadcaster webhookDispatcher) : INotif
             notification.TaskPayload
         );
         
-        var webhookEvent = new NewWebhookEvent("RunTask", payload);
+        var webhookEvent = new NewWebhookEvent("Elsa.RunTask", payload);
         await webhookDispatcher.BroadcastAsync(webhookEvent, cancellationToken);
     }
 }

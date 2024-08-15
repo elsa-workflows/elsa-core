@@ -13,6 +13,7 @@ public interface IExecutionRequest
     string DefinitionId { get; }
     string? CorrelationId { get; }
     string? TriggerActivityId { get; }
+    ActivityHandle? ActivityHandle { get; }
     VersionOptions? VersionOptions { get; }
 
     IDictionary<string, object>? GetInputAsDictionary();
@@ -23,6 +24,7 @@ public class PostRequest : IExecutionRequest
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
     public string? TriggerActivityId { get; set; }
+    public ActivityHandle? ActivityHandle { get; set; }
     public VersionOptions? VersionOptions { get; set; }
 
     [JsonConverter(typeof(ExpandoObjectConverterFactory))]
@@ -36,6 +38,7 @@ public class GetRequest : IExecutionRequest
     public string DefinitionId { get; set; } = default!;
     public string? CorrelationId { get; set; }
     public string? TriggerActivityId { get; set; }
+    public ActivityHandle? ActivityHandle { get; set; }
     public VersionOptions? VersionOptions { get; set; }
     public string? Input { get; set; }
 

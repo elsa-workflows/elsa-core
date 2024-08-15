@@ -56,11 +56,6 @@ public class WorkflowDefinitionModel : LinkedEntity
     public IDictionary<string, object>? CustomProperties { get; set; }
     
     /// <summary>
-    /// Stores custom information about the workflow. Can be used to store application-specific properties to associate with the workflow.
-    /// </summary>
-    public PropertyBag PropertyBag { get; set; } = new();
-    
-    /// <summary>
     /// Gets or sets whether the workflow definition is read-only.
     /// </summary>
     public bool IsReadonly { get; set; }

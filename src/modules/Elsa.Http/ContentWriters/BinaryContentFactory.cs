@@ -8,7 +8,7 @@ namespace Elsa.Http.ContentWriters;
 public class BinaryContentFactory : IHttpContentFactory
 {
     /// <inheritdoc />
-    public IEnumerable<string> SupportedContentTypes => new[] { MediaTypeNames.Application.Octet };
+    public IEnumerable<string> SupportedContentTypes => [MediaTypeNames.Application.Octet];
 
     /// <inheritdoc />
     public HttpContent CreateHttpContent(object content, string contentType)

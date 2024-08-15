@@ -10,11 +10,12 @@ using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Workflows;
 
-/// <summary>
-/// A workflow that sends annoying emails to customers.
-/// </summary>
+/// A workflow that sends helpful emails to customers.
 public class CustomerCommunicationsWorkflow : WorkflowBase
 {
+    private static string CustomerId = "2";
+
+    /// <inheritdoc />
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.AddWorkflowContextProvider<CustomerWorkflowContextProvider>();
@@ -23,35 +24,34 @@ public class CustomerCommunicationsWorkflow : WorkflowBase
         {
             Activities =
             {
-                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(
-                    context => context.GetInput<string>("CustomerId")!),
+                SetWorkflowContextParameter.For<CustomerWorkflowContextProvider>(CustomerId),
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
                     Subject = new(context => $"Welcome to our family, {context.GetCustomer().Name}!"),
                     Body = new("Welcome aboard!"),
-                    To = new(context => new[] { context.GetCustomer().Email })
+                    To = new(context => [context.GetCustomer().Email])
                 },
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
                     Subject = new(context => $"{context.GetCustomer().Name}, we got great deals for you!"),
                     Body = new("Get your creditcard ready!"),
-                    To = new(context => new[] { context.GetCustomer().Email })
+                    To = new(context => [context.GetCustomer().Email])
                 },
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
                     Subject = new(context => $"{context.GetCustomer().Name}, you're missing out!"),
                     Body = new("Sale ends in 2 hours!"),
-                    To = new(context => new[] { context.GetCustomer().Email })
+                    To = new(context => [context.GetCustomer().Email])
                 },
                 Delay.FromSeconds(5),
                 new SendEmail
                 {
                     Subject = new(context => $"{context.GetCustomer().Name}, the clock is ticking!"),
                     Body = new("Tick tik tick!"),
-                    To = new(context => new[] { context.GetCustomer().Email })
+                    To = new(context => [context.GetCustomer().Email])
                 },
             }
         };

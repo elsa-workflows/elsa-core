@@ -3,10 +3,12 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Humanizer;
+using JetBrains.Annotations;
 
 namespace Elsa.JavaScript.TypeDefinitions.Providers;
 
 /// Produces <see cref="FunctionDefinition"/>s for common functions.
+[UsedImplicitly]
 internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasRegistry) : FunctionDefinitionProvider
 {
     protected override IEnumerable<FunctionDefinition> GetFunctionDefinitions(TypeDefinitionContext context)
@@ -14,15 +16,15 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionVersionId")
             .ReturnType("string"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowDefinitionVersion")
             .ReturnType("number"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getWorkflowInstanceId")
             .ReturnType("string"));
@@ -55,7 +57,7 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Parameter("activityId", "string")
             .Parameter("outputName", "string", true)
             .ReturnType("any"));
-        
+
         yield return CreateFunctionDefinition(builder => builder
             .Name("getLastResult")
             .ReturnType("any"));
@@ -92,8 +94,38 @@ internal class CommonFunctionsDefinitionProvider(ITypeAliasRegistry typeAliasReg
             .Parameter("value", "any")
             .ReturnType("string"));
 
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesToString")
+            .Parameter("value", "Byte[]")
+            .ReturnType("string"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesFromString")
+            .Parameter("value", "string")
+            .ReturnType("Byte[]"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesToBase64")
+            .Parameter("value", "Byte[]")
+            .ReturnType("string"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("bytesFromBase64")
+            .Parameter("value", "string")
+            .ReturnType("Byte[]"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("stringFromBase64")
+            .Parameter("value", "string")
+            .ReturnType("string"));
+
+        yield return CreateFunctionDefinition(builder => builder
+            .Name("stringToBase64")
+            .Parameter("value", "string")
+            .ReturnType("string"));
+
         // Variable getter and setters.
-        foreach (var variable in context.Workflow.Variables)
+        foreach (var variable in context.WorkflowGraph.Workflow.Variables)
         {
             var pascalName = variable.Name.Pascalize();
             var variableType = variable.GetVariableType();

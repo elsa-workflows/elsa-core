@@ -33,6 +33,6 @@
         <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
     </PropertyGroup>
     <PropertyGroup>
-        <ElsaStudioVersion>3.2.0-rc3</ElsaStudioVersion>
+        <ElsaStudioVersion>3.3.0-preview.470</ElsaStudioVersion>
     </PropertyGroup>
 </Project>

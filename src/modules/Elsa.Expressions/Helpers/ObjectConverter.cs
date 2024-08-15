@@ -99,20 +99,26 @@ public static class ObjectConverter
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
-        if (value is JsonObject jsonObject)
+        if (value is JsonNode jsonNode)
         {
             return underlyingTargetType switch
             {
-                { } t when t == typeof(string) => jsonObject.ToString(),
-                { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
-                _ => jsonObject,
+                { } t when t == typeof(string) => jsonNode.ToString(),
+                { } t when t != typeof(object) => jsonNode.Deserialize(targetType, serializerOptions),
+                _ => jsonNode
             };
         }
 
         if (underlyingSourceType == typeof(string) && !underlyingTargetType.IsPrimitive && underlyingTargetType != typeof(object))
         {
             var stringValue = (string)value;
-
+            
+            if (underlyingTargetType == typeof(byte[]))
+            {
+                // Byte arrays are serialized to base64, so in this case, we convert the string back to the requested target type of byte[].
+                return Convert.FromBase64String(stringValue);
+            }
+            
             try
             {
                 var firstChar = stringValue.TrimStart().FirstOrDefault();

@@ -63,7 +63,7 @@ public class MongoDbFeature : FeatureBase
             cm.AutoMap(); // Automatically map other properties;
         });
 
-        BsonClassMap.RegisterClassMap<SerializedKeyValuePair>(map =>
+        BsonClassMap.TryRegisterClassMap<SerializedKeyValuePair>(map =>
         {
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property

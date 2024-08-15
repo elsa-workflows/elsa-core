@@ -154,6 +154,7 @@ public class WorkflowsFeature : FeatureBase
             // Storage drivers.
             .AddScoped<IStorageDriverManager, StorageDriverManager>()
             .AddStorageDriver<WorkflowStorageDriver>()
+            .AddStorageDriver<WorkflowInstanceStorageDriver>()
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.

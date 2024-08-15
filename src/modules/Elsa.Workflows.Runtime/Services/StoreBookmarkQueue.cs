@@ -2,10 +2,17 @@ using Elsa.Common.Contracts;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
-public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resumer, IBookmarkQueueSignaler bookmarkQueueSignaler, ISystemClock systemClock, IIdentityGenerator identityGenerator) : IBookmarkQueue
+public class StoreBookmarkQueue(
+    IBookmarkQueueStore store, 
+    IBookmarkResumer resumer, 
+    IBookmarkQueueSignaler bookmarkQueueSignaler, 
+    ISystemClock systemClock, 
+    IIdentityGenerator identityGenerator,
+    ILogger<StoreBookmarkQueue> logger) : IBookmarkQueue
 {
     public async Task EnqueueAsync(NewBookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
@@ -20,9 +27,14 @@ public class StoreBookmarkQueue(IBookmarkQueueStore store, IBookmarkResumer resu
         var result = await resumer.ResumeAsync(filter, item.Options, cancellationToken);
 
         if (result.Matched)
+        {
+            logger.LogDebug("Successfully resumed workflow instance {WorkflowInstance} using bookmark {BookmarkId}", item.WorkflowInstanceId, item.BookmarkId);
             return;
+        }
 
         // There was no matching bookmark yet. Store the queue item for the system to pick up whenever the bookmark becomes present.
+        logger.LogDebug("No bookmark with ID {BookmarkId} found for workflow {WorkflowInstance}. Adding the request to the bookmark queue", item.BookmarkId, item.WorkflowInstanceId);
+        
         var entity = new BookmarkQueueItem
         {
             Id = identityGenerator.GenerateId(),

@@ -1,7 +1,7 @@
 using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Workflows.Runtime.Distributed.Services;
+namespace Elsa.Workflows.Runtime.Distributed;
 
 /// <summary>
 /// Represents a distributed workflow runtime that can create <see cref="IWorkflowClient"/> instances connected to a workflow instance.
