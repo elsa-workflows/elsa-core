@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 using Elsa.Expressions.Helpers;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.State;
 

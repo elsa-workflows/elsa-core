@@ -46,7 +46,6 @@ internal abstract class EndpointBase<T>(
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
-            ActivityHandle = request.ActivityHandle
             Input = request.GetInputAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
