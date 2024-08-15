@@ -145,7 +145,8 @@ public class Flowchart : Container
         var result = context.Result;
 
         bool isBreaking = flowchartContext.GetIsBreaking();
-        if (isBreaking) {
+        if (isBreaking) 
+        {
             await flowchartContext.CompleteActivityAsync();
             return;
         }
