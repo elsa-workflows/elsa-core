@@ -30,9 +30,6 @@
         <None Update="Scenarios\WorkflowCompletion\fork.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
-        <None Update="Scenarios\HttpWorkflows\http-hello-world.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="Scenarios\LogPersistenceModes\input-output-logging-1.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
@@ -79,6 +76,9 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="Scenarios\WorkflowDefinitionReload\Workflows\http-workflow.json">
+          <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\HttpWorkflows\Workflows\http-hello-world.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
     </ItemGroup>
