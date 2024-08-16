@@ -46,6 +46,10 @@ internal class ConfigureLiquidEngine : INotificationHandler<RenderingLiquidTempl
         memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Variables", x => new LiquidPropertyAccessor(name => GetVariable(x, name, options)));
         memberAccessStrategy.Register<ExpressionExecutionContext, LiquidPropertyAccessor>("Input", x => new LiquidPropertyAccessor(name => GetInput(x, name, options)));
         memberAccessStrategy.Register<ExpressionExecutionContext, string?>("CorrelationId", x => x.GetWorkflowExecutionContext().CorrelationId);
+        memberAccessStrategy.Register<ExpressionExecutionContext, string>("WorkflowDefinitionId", x => x.GetWorkflowExecutionContext().Workflow.Identity.DefinitionId);
+        memberAccessStrategy.Register<ExpressionExecutionContext, string>("WorkflowDefinitionVersionId", x => x.GetWorkflowExecutionContext().Workflow.Identity.Id);
+        memberAccessStrategy.Register<ExpressionExecutionContext, int>("WorkflowDefinitionVersion", x => x.GetWorkflowExecutionContext().Workflow.Identity.Version);
+        memberAccessStrategy.Register<ExpressionExecutionContext, string>("WorkflowInstanceId", x => x.GetActivityExecutionContext().WorkflowExecutionContext.Id);
 
         if (_fluidOptions.AllowConfigurationAccess)
         {
