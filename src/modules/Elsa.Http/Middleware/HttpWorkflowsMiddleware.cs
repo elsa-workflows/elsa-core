@@ -66,6 +66,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var request = httpContext.Request;
         var method = request.Method.ToLowerInvariant();
         var httpWorkflowLookupService = serviceProvider.GetRequiredService<IHttpWorkflowLookupService>();
+        var workflowInstanceId = await GetWorkflowInstanceIdAsync(serviceProvider, httpContext, cancellationToken);
+        var correlationId = await GetCorrelationIdAsync(serviceProvider, httpContext, cancellationToken);
         var bookmarkHash = ComputeBookmarkHash(serviceProvider, matchingPath, method);
         var lookupResult = await httpWorkflowLookupService.FindWorkflowAsync(bookmarkHash, cancellationToken);
 
@@ -73,7 +75,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         {
             var triggers = lookupResult.Triggers;
 
-            if (triggers?.Count > 1)
+            if (triggers.Count > 1)
             {
                 await HandleMultipleWorkflowsFoundAsync(httpContext, () => triggers.Select(x => new
                 {
@@ -82,16 +84,16 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
                 return;
             }
 
-            var trigger = triggers?.FirstOrDefault();
+            var trigger = triggers.FirstOrDefault();
             if (trigger != null)
             {
                 var workflowGraph = lookupResult.WorkflowGraph!;
-                await StartWorkflowAsync(httpContext, trigger, workflowGraph, input);
+                await StartWorkflowAsync(httpContext, trigger, workflowGraph, workflowInstanceId, correlationId, input);
                 return;
             }
         }
 
-        var bookmarks = await FindBookmarksAsync(serviceProvider, bookmarkHash, cancellationToken).ToList();
+        var bookmarks = await FindBookmarksAsync(serviceProvider, bookmarkHash, workflowInstanceId, correlationId, cancellationToken).ToList();
 
         if (bookmarks.Count > 1)
         {
@@ -106,7 +108,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
 
         if (bookmark != null)
         {
-            await ResumeWorkflowAsync(httpContext, bookmark, input);
+            await ResumeWorkflowAsync(httpContext, bookmark, correlationId, input);
             return;
         }
 
@@ -166,7 +168,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         await ExecuteWorkflowAsync(httpContext, workflowOptions, bookmarkPayload, workflowGraph, input);
     }
 
-    private async Task ResumeWorkflowAsync(HttpContext httpContext, StoredBookmark bookmark, IDictionary<string, object> input)
+    private async Task ResumeWorkflowAsync(HttpContext httpContext, StoredBookmark bookmark, string? correlationId, IDictionary<string, object> input)
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
