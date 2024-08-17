@@ -1,11 +1,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+#pragma warning disable SKEXP0001
+
 #pragma warning disable SKEXP0010
 
 namespace Elsa.Agents;
 
-public class KernelFactory(KernelConfig kernelConfig, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
+public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
 {
     public Kernel CreateKernel(string agentName)
     {
@@ -20,82 +23,67 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
         builder.Services.AddSingleton(kernelConfig);
         builder.Services.AddSingleton(agentConfig);
 
-        AddModels(builder, agentConfig);
-        AddSkills(builder, agentConfig);
+        ApplyAgentConfig(builder, agentConfig);
 
         return builder.Build();
     }
 
-    private void AddModels(IKernelBuilder builder, AgentConfig agentConfig)
+    private void ApplyAgentConfig(IKernelBuilder builder, AgentConfig agentConfig)
     {
-        foreach (string modelName in agentConfig.ServiceProfiles)
+        foreach (string serviceName in agentConfig.Services)
         {
-            if (!kernelConfig.ServiceProfiles.TryGetValue(modelName, out var model))
+            if (!kernelConfig.Services.TryGetValue(serviceName, out var serviceConfig))
             {
-                logger.LogWarning($"Model {modelName} not found");
+                logger.LogWarning($"Service {serviceName} not found");
                 continue;
             }
 
-            AddServices(builder, model);
+            AddService(builder, serviceConfig);
         }
+        
+        AddPlugins(builder, agentConfig);
+        AddAgents(builder, agentConfig);
     }
     
-    private void AddSkills(IKernelBuilder builder, AgentConfig agentConfig)
+    private void AddService(IKernelBuilder builder, ServiceConfig serviceConfig)
     {
-        foreach (string skillName in agentConfig.Skills)
+        switch (serviceConfig.Type)
         {
-            if (!kernelConfig.Skills.TryGetValue(skillName, out var skill))
-            {
-                logger.LogWarning($"Skill {skillName} not found");
-                continue;
-            }
-
-            AddPlugins(builder, skill);
-        }
-    }
-
-    private void AddServices(IKernelBuilder builder, ServiceProfileConfig serviceProfile)
-    {
-        foreach (var service in serviceProfile.Services)
-        {
-            switch (service.Type)
-            {
-                case "OpenAIChatCompletion":
-                    {
-                        var modelId = (string)service.Settings["ModelId"];
-                        var apiKey = GetApiKey(service);
-                        builder.AddOpenAIChatCompletion(modelId, apiKey);
-                        break;
-                    }
-                case "OpenAITextToImage":
-                    {
-                        var modelId = (string)service.Settings["ModelId"];
-                        var apiKey = GetApiKey(service);
-                        builder.AddOpenAITextToImage(apiKey, modelId: modelId);
-                        break;
-                    }
-                default:
-                    logger.LogWarning($"Unknown service type {service.Type}");
+            case "OpenAIChatCompletion":
+                {
+                    var modelId = (string)serviceConfig.Settings["ModelId"];
+                    var apiKey = GetApiKey(serviceConfig);
+                    builder.AddOpenAIChatCompletion(modelId, apiKey);
                     break;
-            }
+                }
+            case "OpenAITextToImage":
+                {
+                    var modelId = (string)serviceConfig.Settings["ModelId"];
+                    var apiKey = GetApiKey(serviceConfig);
+                    builder.AddOpenAITextToImage(apiKey, modelId: modelId);
+                    break;
+                }
+            default:
+                logger.LogWarning($"Unknown service type {serviceConfig.Type}");
+                break;
         }
     }
-    
+
     private string GetApiKey(ServiceConfig service)
     {
         var settings = service.Settings;
-        if(settings.TryGetValue("ApiKey", out var apiKey))
+        if (settings.TryGetValue("ApiKey", out var apiKey))
             return (string)apiKey;
-        
-        if(settings.TryGetValue("ApiKeyRef", out var apiKeyRef))
+
+        if (settings.TryGetValue("ApiKeyRef", out var apiKeyRef))
             return kernelConfig.ApiKeys[(string)apiKeyRef].Value;
-        
+
         throw new KeyNotFoundException($"No api key found for service {service.Type}");
     }
 
-    private void AddPlugins(IKernelBuilder builder, SkillConfig skill)
+    private void AddPlugins(IKernelBuilder builder, AgentConfig agent)
     {
-        foreach (var pluginName in skill.Plugins)
+        foreach (var pluginName in agent.Plugins)
         {
             if (!kernelConfig.Plugins.TryGetValue(pluginName, out var plugin))
             {
@@ -116,4 +104,43 @@ public class KernelFactory(KernelConfig kernelConfig, IServiceProvider servicePr
             builder.Plugins.AddFromObject(pluginInstance, pluginName);
         }
     }
+
+    private void AddAgents(IKernelBuilder builder, AgentConfig agent)
+    {
+        foreach (var agentName in agent.Agents)
+        {
+            if (!kernelConfig.Agents.TryGetValue(agentName, out var subAgent))
+            { 
+                logger.LogWarning($"Agent {agentName} not found");
+                continue;
+            }
+            
+            var promptExecutionSettings = subAgent.ToOpenAIPromptExecutionSettings();
+            var promptExecutionSettingsDictionary = new Dictionary<string, PromptExecutionSettings>
+            {
+                [PromptExecutionSettings.DefaultServiceId] = promptExecutionSettings,
+            };
+            var promptTemplateConfig = new PromptTemplateConfig
+            {
+                Name = subAgent.FunctionName,
+                Description = subAgent.Description,
+                Template = subAgent.PromptTemplate,
+                ExecutionSettings = promptExecutionSettingsDictionary,
+                AllowDangerouslySetContent = true,
+                InputVariables = subAgent.InputVariables.Select(x => new InputVariable
+                {
+                    Name = x.Name,
+                    Description = x.Description,
+                    IsRequired = true,
+                    AllowDangerouslySetContent = true
+                }).ToList()
+            };
+            
+            var subAgentFunction = KernelFunctionFactory.CreateFromPrompt(promptTemplateConfig, loggerFactory: loggerFactory);
+            var agentPlugin = KernelPluginFactory.CreateFromFunctions(subAgent.Name, subAgent.Description, [subAgentFunction]);
+            builder.Plugins.Add(agentPlugin);
+        }
+    }
+    
+    
 }

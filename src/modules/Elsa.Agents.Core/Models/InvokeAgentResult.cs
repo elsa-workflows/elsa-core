@@ -3,7 +3,7 @@ using Microsoft.SemanticKernel;
 
 namespace Elsa.Agents;
 
-public record ExecuteFunctionResult(FunctionConfig Function, FunctionResult FunctionResult)
+public record InvokeAgentResult(AgentConfig Function, FunctionResult FunctionResult)
 {
     public object? ParseResult()
     {

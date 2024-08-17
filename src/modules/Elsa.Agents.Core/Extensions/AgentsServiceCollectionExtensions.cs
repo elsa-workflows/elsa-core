@@ -12,7 +12,7 @@ public static class AgentsServiceCollectionExtensions
         
         return services
                 .AddSingleton<KernelFactory>()
-                .AddSingleton<SkillExecutor>()
+                .AddSingleton<AgentInvoker>()
                 .AddSingleton<AgentManager>()
                 .AddSingleton<KernelConfig>()
                 .AddHostedService<ConfigureKernel>()

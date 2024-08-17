@@ -1,3 +1,5 @@
+#pragma warning disable SKEXP0010
+
 namespace Elsa.Agents;
 
 public class ExecutionSettingsConfig

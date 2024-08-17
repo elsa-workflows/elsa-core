@@ -27,8 +27,6 @@ public class AgentActivity : CodeActivity
         }.WithConverters(new ExpandoObjectConverterFactory());
 
     [JsonIgnore] internal Agent Agent { get; set; } = default!;
-    [JsonIgnore] internal string Skill { get; set; } = default!;
-    [JsonIgnore] internal string Function { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -44,7 +42,7 @@ public class AgentActivity : CodeActivity
             functionInput[inputDescriptor.Name] = inputValue;
         }
 
-        var result = await Agent.ExecuteAsync(Skill, Function, functionInput, context.CancellationToken);
+        var result = await Agent.ExecuteAsync(functionInput, context.CancellationToken);
         var json = result.FunctionResult.GetValue<string>();
         var outputType = context.ActivityDescriptor.Outputs.Single().Type;
 

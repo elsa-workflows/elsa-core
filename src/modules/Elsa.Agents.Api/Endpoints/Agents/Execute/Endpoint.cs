@@ -21,7 +21,7 @@ public class Execute(AgentManager agentManager) : ElsaEndpoint<Request, JsonElem
     public override async Task<JsonElement> ExecuteAsync(Request req, CancellationToken ct)
     {
         var agent = agentManager.GetAgent(req.Agent);
-        var result = await agent.ExecuteAsync(req.Skill, req.Function, req.Inputs, ct).AsJsonElementAsync();
+        var result = await agent.ExecuteAsync(req.Inputs, ct).AsJsonElementAsync();
         return result;
     }
 }

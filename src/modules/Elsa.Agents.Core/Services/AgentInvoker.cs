@@ -6,13 +6,12 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Elsa.Agents;
 
-public class SkillExecutor(KernelConfig kernelConfig)
+public class AgentInvoker(KernelConfig kernelConfig)
 {
-    public async Task<ExecuteFunctionResult> ExecuteFunctionAsync(Kernel kernel, string skillName, string functionName, IDictionary<string, object?> input, CancellationToken cancellationToken = default)
+    public async Task<InvokeAgentResult> InvokeAgentAsync(Kernel kernel, string agentName, IDictionary<string, object?> input, CancellationToken cancellationToken = default)
     {
-        var skill = kernelConfig.Skills[skillName];
-        var function = skill.Functions.First(f => f.FunctionName == functionName)!;
-        var executionSettings = function.ExecutionSettings;
+        var agentConfig = kernelConfig.Agents[agentName];
+        var executionSettings = agentConfig.ExecutionSettings;
         var promptExecutionSettings = new OpenAIPromptExecutionSettings
         {
             Temperature = executionSettings.Temperature,
@@ -22,7 +21,7 @@ public class SkillExecutor(KernelConfig kernelConfig)
             FrequencyPenalty = executionSettings.FrequencyPenalty,
             ToolCallBehavior = ToolCallBehavior.AutoInvokeKernelFunctions,
             ResponseFormat = executionSettings.ResponseFormat,
-            ChatSystemPrompt = function.PromptTemplate,
+            ChatSystemPrompt = agentConfig.PromptTemplate,
         };
         
         var promptExecutionSettingsDictionary = new Dictionary<string, PromptExecutionSettings>
@@ -32,12 +31,12 @@ public class SkillExecutor(KernelConfig kernelConfig)
         
         var promptTemplateConfig = new PromptTemplateConfig
         {
-            Name = functionName,
-            Description = function.Description,
-            Template = function.PromptTemplate,
+            Name = agentConfig.FunctionName,
+            Description = agentConfig.Description,
+            Template = agentConfig.PromptTemplate,
             ExecutionSettings = promptExecutionSettingsDictionary,
             AllowDangerouslySetContent = true,
-            InputVariables = function.InputVariables.Select(x => new InputVariable
+            InputVariables = agentConfig.InputVariables.Select(x => new InputVariable
             {
                 Name = x.Name,
                 Description = x.Description,
@@ -49,6 +48,6 @@ public class SkillExecutor(KernelConfig kernelConfig)
         var kernelFunction = kernel.CreateFunctionFromPrompt(promptTemplateConfig);
         var kernelArguments = new KernelArguments(input);
         var result = await kernelFunction.InvokeAsync(kernel, kernelArguments, cancellationToken: cancellationToken);
-        return new(function, result);
+        return new(agentConfig, result);
     }
 }
