@@ -19,6 +19,6 @@ public class End : CodeActivity, ITerminalNode
     
     protected async override ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
-        await context.SendSignalAsync(new BreakSignal());
+        await context.SendSignalAsync(new EndSignal());
     }
 }
