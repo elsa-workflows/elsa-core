@@ -1,6 +1,6 @@
 using Elsa.Common.Entities;
 
-namespace Elsa.Agents;
+namespace Elsa.Agents.Management;
 
 public class ApiKeyDefinition : Entity
 {

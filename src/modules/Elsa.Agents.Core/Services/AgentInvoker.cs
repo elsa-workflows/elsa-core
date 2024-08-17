@@ -6,10 +6,12 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Elsa.Agents;
 
-public class AgentInvoker(KernelConfig kernelConfig)
+public class AgentInvoker(KernelFactory kernelFactory, IKernelConfigProvider kernelConfigProvider)
 {
-    public async Task<InvokeAgentResult> InvokeAgentAsync(Kernel kernel, string agentName, IDictionary<string, object?> input, CancellationToken cancellationToken = default)
+    public async Task<InvokeAgentResult> InvokeAgentAsync(string agentName, IDictionary<string, object?> input, CancellationToken cancellationToken = default)
     {
+        var kernelConfig = await kernelConfigProvider.GetKernelConfigAsync(cancellationToken);
+        var kernel = kernelFactory.CreateKernel(kernelConfig, agentName);
         var agentConfig = kernelConfig.Agents[agentName];
         var executionSettings = agentConfig.ExecutionSettings;
         var promptExecutionSettings = new OpenAIPromptExecutionSettings

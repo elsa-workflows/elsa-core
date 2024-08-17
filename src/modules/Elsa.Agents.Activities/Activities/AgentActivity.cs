@@ -26,7 +26,7 @@ public class AgentActivity : CodeActivity
             PropertyNameCaseInsensitive = true
         }.WithConverters(new ExpandoObjectConverterFactory());
 
-    [JsonIgnore] internal Agent Agent { get; set; } = default!;
+    [JsonIgnore] internal string AgentName { get; set; } = default!;
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
@@ -42,7 +42,8 @@ public class AgentActivity : CodeActivity
             functionInput[inputDescriptor.Name] = inputValue;
         }
 
-        var result = await Agent.ExecuteAsync(functionInput, context.CancellationToken);
+        var agentInvoker = context.GetRequiredService<AgentInvoker>();
+        var result = await agentInvoker.InvokeAgentAsync(AgentName, functionInput, context.CancellationToken);
         var json = result.FunctionResult.GetValue<string>();
         var outputType = context.ActivityDescriptor.Outputs.Single().Type;
 

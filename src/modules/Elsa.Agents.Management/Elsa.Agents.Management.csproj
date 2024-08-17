@@ -5,4 +5,8 @@
         <PackageTags>elsa module agents semantic kernel llm ai</PackageTags>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+    </ItemGroup>
+
 </Project>

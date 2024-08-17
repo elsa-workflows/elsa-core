@@ -9,7 +9,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Execute;
 /// Executes a function of a skilled agent.
 /// </summary>
 [UsedImplicitly]
-public class Execute(AgentManager agentManager) : ElsaEndpoint<Request, JsonElement>
+public class Execute(AgentInvoker agentInvoker) : ElsaEndpoint<Request, JsonElement>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -20,8 +20,7 @@ public class Execute(AgentManager agentManager) : ElsaEndpoint<Request, JsonElem
     /// <inheritdoc />
     public override async Task<JsonElement> ExecuteAsync(Request req, CancellationToken ct)
     {
-        var agent = agentManager.GetAgent(req.Agent);
-        var result = await agent.ExecuteAsync(req.Inputs, ct).AsJsonElementAsync();
+        var result = await agentInvoker.InvokeAgentAsync(req.Agent, req.Inputs, ct).AsJsonElementAsync();
         return result;
     }
 }

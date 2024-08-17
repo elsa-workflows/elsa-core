@@ -13,7 +13,7 @@ namespace Elsa.Agents.Activities.ActivityProviders;
 /// Provides activities for each function of registered agents.
 [UsedImplicitly]
 public class AgentActivityProvider(
-    AgentManager agentManager,
+    IKernelConfigProvider kernelConfigProvider,
     IActivityDescriber activityDescriber,
     IActivityFactory activityFactory,
     IWellKnownTypeRegistry wellKnownTypeRegistry,
@@ -22,18 +22,19 @@ public class AgentActivityProvider(
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {
-        var agents = agentManager.GetAgents();
+        var kernelConfig = await kernelConfigProvider.GetKernelConfigAsync(cancellationToken);
+        var agents = kernelConfig.Agents;
         var activityDescriptors = new List<ActivityDescriptor>();
 
-        foreach (var agent in agents)
+        foreach (var kvp in agents)
         {
-            var agentConfig = agent.AgentConfig;
+            var agentConfig = kvp.Value;
             var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(AgentActivity), cancellationToken);
-            var activityTypeName = $"Elsa.Agents.{agent.Name.Pascalize()}.{agentConfig.FunctionName.Pascalize()}";
+            var activityTypeName = $"Elsa.Agents.{agentConfig.Name.Pascalize()}.{agentConfig.FunctionName.Pascalize()}";
             activityDescriptor.Name = agentConfig.FunctionName;
             activityDescriptor.TypeName = activityTypeName;
             activityDescriptor.Description = agentConfig.Description;
-            activityDescriptor.DisplayName = agent.Name.Humanize().Transform(To.TitleCase);
+            activityDescriptor.DisplayName = agentConfig.Name.Humanize().Transform(To.TitleCase);
             activityDescriptor.IsBrowsable = true;
             activityDescriptor.Category = "Agents";
             activityDescriptor.Kind = ActivityKind.Task;
@@ -43,7 +44,7 @@ public class AgentActivityProvider(
             {
                 var activity = (AgentActivity)activityFactory.Create(typeof(AgentActivity), context);
                 activity.Type = activityTypeName;
-                activity.Agent = agent;
+                activity.AgentName = agentConfig.Name;
                 return activity;
             };
 

@@ -1,34 +1,33 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Connectors.OpenAI;
+
 #pragma warning disable SKEXP0001
 
 #pragma warning disable SKEXP0010
 
 namespace Elsa.Agents;
 
-public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
+public class KernelFactory(IPluginsDiscoverer pluginsDiscoverer, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
 {
-    public Kernel CreateKernel(string agentName)
+    public Kernel CreateKernel(KernelConfig kernelConfig, string agentName)
     {
         var agent = kernelConfig.Agents[agentName];
-        return CreateKernel(agent);
+        return CreateKernel(kernelConfig, agent);
     }
 
-    public Kernel CreateKernel(AgentConfig agentConfig)
+    public Kernel CreateKernel(KernelConfig kernelConfig, AgentConfig agentConfig)
     {
         var builder = Kernel.CreateBuilder();
         builder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
-        builder.Services.AddSingleton(kernelConfig);
         builder.Services.AddSingleton(agentConfig);
 
-        ApplyAgentConfig(builder, agentConfig);
+        ApplyAgentConfig(builder, kernelConfig, agentConfig);
 
         return builder.Build();
     }
 
-    private void ApplyAgentConfig(IKernelBuilder builder, AgentConfig agentConfig)
+    private void ApplyAgentConfig(IKernelBuilder builder, KernelConfig kernelConfig, AgentConfig agentConfig)
     {
         foreach (string serviceName in agentConfig.Services)
         {
@@ -38,28 +37,28 @@ public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFacto
                 continue;
             }
 
-            AddService(builder, serviceConfig);
+            AddService(builder, kernelConfig, serviceConfig);
         }
-        
+
         AddPlugins(builder, agentConfig);
-        AddAgents(builder, agentConfig);
+        AddAgents(builder, kernelConfig, agentConfig);
     }
-    
-    private void AddService(IKernelBuilder builder, ServiceConfig serviceConfig)
+
+    private void AddService(IKernelBuilder builder, KernelConfig kernelConfig, ServiceConfig serviceConfig)
     {
         switch (serviceConfig.Type)
         {
             case "OpenAIChatCompletion":
                 {
                     var modelId = (string)serviceConfig.Settings["ModelId"];
-                    var apiKey = GetApiKey(serviceConfig);
+                    var apiKey = GetApiKey(kernelConfig, serviceConfig);
                     builder.AddOpenAIChatCompletion(modelId, apiKey);
                     break;
                 }
             case "OpenAITextToImage":
                 {
                     var modelId = (string)serviceConfig.Settings["ModelId"];
-                    var apiKey = GetApiKey(serviceConfig);
+                    var apiKey = GetApiKey(kernelConfig, serviceConfig);
                     builder.AddOpenAITextToImage(apiKey, modelId: modelId);
                     break;
                 }
@@ -69,7 +68,7 @@ public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFacto
         }
     }
 
-    private string GetApiKey(ServiceConfig service)
+    private string GetApiKey(KernelConfig kernelConfig, ServiceConfig service)
     {
         var settings = service.Settings;
         if (settings.TryGetValue("ApiKey", out var apiKey))
@@ -83,38 +82,31 @@ public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFacto
 
     private void AddPlugins(IKernelBuilder builder, AgentConfig agent)
     {
+        var plugins = pluginsDiscoverer.GetPluginDescriptors().ToDictionary(x => x.Name);
         foreach (var pluginName in agent.Plugins)
         {
-            if (!kernelConfig.Plugins.TryGetValue(pluginName, out var plugin))
+            if (!plugins.TryGetValue(pluginName, out var pluginDescriptor))
             {
                 logger.LogWarning($"Plugin {pluginName} not found");
                 continue;
             }
 
-            var pluginTypeName = plugin.Type;
-            var pluginType = Type.GetType(pluginTypeName);
-
-            if (pluginType == null)
-            {
-                logger.LogWarning($"Plugin type {pluginType} not found");
-                continue;
-            }
-
+            var pluginType = pluginDescriptor.PluginType;
             var pluginInstance = ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, pluginType);
             builder.Plugins.AddFromObject(pluginInstance, pluginName);
         }
     }
 
-    private void AddAgents(IKernelBuilder builder, AgentConfig agent)
+    private void AddAgents(IKernelBuilder builder, KernelConfig kernelConfig, AgentConfig agent)
     {
         foreach (var agentName in agent.Agents)
         {
             if (!kernelConfig.Agents.TryGetValue(agentName, out var subAgent))
-            { 
+            {
                 logger.LogWarning($"Agent {agentName} not found");
                 continue;
             }
-            
+
             var promptExecutionSettings = subAgent.ToOpenAIPromptExecutionSettings();
             var promptExecutionSettingsDictionary = new Dictionary<string, PromptExecutionSettings>
             {
@@ -135,12 +127,10 @@ public class KernelFactory(KernelConfig kernelConfig, ILoggerFactory loggerFacto
                     AllowDangerouslySetContent = true
                 }).ToList()
             };
-            
+
             var subAgentFunction = KernelFunctionFactory.CreateFromPrompt(promptTemplateConfig, loggerFactory: loggerFactory);
             var agentPlugin = KernelPluginFactory.CreateFromFunctions(subAgent.Name, subAgent.Description, [subAgentFunction]);
             builder.Plugins.Add(agentPlugin);
         }
     }
-    
-    
 }

@@ -1,5 +1,4 @@
 using Elsa.Agents.Activities.ActivityProviders;
-using Elsa.Agents.HostedServices;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -16,8 +15,6 @@ public class AgentsFeature(IModule module) : FeatureBase(module)
 {
     public override void ConfigureHostedServices()
     {
-        Module.ConfigureHostedService<ConfigureKernel>(-2);
-        Module.ConfigureHostedService<ConfigureAgentManager>(-1);
     }
 
     /// <inheritdoc />

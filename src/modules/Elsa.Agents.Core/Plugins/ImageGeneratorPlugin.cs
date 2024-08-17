@@ -9,7 +9,7 @@ namespace Elsa.Agents.Plugins;
 
 [Description("Generates an image from text")]
 [UsedImplicitly]
-public class ImageGenerator
+public class ImageGeneratorPlugin
 {
     [KernelFunction("generate_image_from_text")]
     [Description("Generates an image from text")]
@@ -26,5 +26,14 @@ public class ImageGenerator
         var dallE = kernel.GetRequiredService<ITextToImageService>();
         var imageUrl = await dallE.GenerateImageAsync(description.Trim(), width, height);
         return imageUrl;
+    }
+}
+
+[UsedImplicitly]
+public class ImageGeneratorPluginProvider : PluginProvider
+{
+    public override IEnumerable<PluginDescriptor> GetPlugins()
+    {
+        yield return PluginDescriptor.From<ImageGeneratorPlugin>();
     }
 }
