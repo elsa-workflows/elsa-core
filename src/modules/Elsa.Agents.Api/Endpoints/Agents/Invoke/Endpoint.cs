@@ -14,6 +14,7 @@ public class Execute(AgentInvoker agentInvoker) : ElsaEndpoint<Request, JsonElem
     public override void Configure()
     {
         Post("/agents/{agent}/invoke");
+        ConfigurePermissions("agents:invoke");
     }
 
     /// <inheritdoc />
