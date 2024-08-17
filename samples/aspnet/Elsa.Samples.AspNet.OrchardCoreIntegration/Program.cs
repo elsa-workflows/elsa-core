@@ -43,8 +43,8 @@ builder.Services.AddElsa(elsa =>
             identity.UseAdminUserProvider();
             identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
         })
-        .UseAgents()
-        .UseSemanticKernelApi();
+        .UseAgentActivities()
+        ;
 });
 
 builder.Services.AddControllers();

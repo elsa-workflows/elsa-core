@@ -5,10 +5,10 @@ using Elsa.Features.Services;
 namespace Elsa.Extensions;
 
 /// Extends <see cref="IModule"/> with methods to install Semantic Kernel API endpoints.  
-public static class SemanticKernelApiModuleExtensions
+public static class ModuleExtensions
 {
     /// Installs the Semantic Kernel API feature.
-    public static IModule UseSemanticKernelApi(this IModule module, Action<SemanticKernelApiFeature>? configure = null)
+    public static IModule UseAgentsApi(this IModule module, Action<AgentsApiFeature>? configure = null)
     {
         return module.Use(configure);
     }

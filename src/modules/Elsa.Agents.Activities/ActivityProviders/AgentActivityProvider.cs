@@ -16,8 +16,8 @@ public class AgentActivityProvider(
     IKernelConfigProvider kernelConfigProvider,
     IActivityDescriber activityDescriber,
     IActivityFactory activityFactory,
-    IWellKnownTypeRegistry wellKnownTypeRegistry,
-    ILogger<AgentActivityProvider> logger) : IActivityProvider
+    IWellKnownTypeRegistry wellKnownTypeRegistry
+) : IActivityProvider
 {
     /// <inheritdoc />
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)

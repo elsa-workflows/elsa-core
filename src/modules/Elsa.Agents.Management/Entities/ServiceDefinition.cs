@@ -7,4 +7,14 @@ public class ServiceDefinition : Entity
     public string Name { get; set; }
     public string Type { get; set; }
     public IDictionary<string, object> Settings { get; set; } = new Dictionary<string, object>();
+
+    public ServiceConfig ToServiceConfig()
+    {
+        return new ServiceConfig
+        {
+            Name = Name,
+            Type = Type,
+            Settings = Settings
+        };
+    }
 }
