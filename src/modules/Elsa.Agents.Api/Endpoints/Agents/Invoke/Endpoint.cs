@@ -1,9 +1,8 @@
 ﻿using System.Text.Json;
 using Elsa.Abstractions;
-using Elsa.Agents.Activities;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Api.Endpoints.Agents.Execute;
+namespace Elsa.Agents.Api.Endpoints.Agents.Invoke;
 
 /// <summary>
 /// Executes a function of a skilled agent.
@@ -14,7 +13,7 @@ public class Execute(AgentInvoker agentInvoker) : ElsaEndpoint<Request, JsonElem
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/agents/{agent}/execute/{skill}/{function}");
+        Post("/agents/{agent}/invoke");
     }
 
     /// <inheritdoc />

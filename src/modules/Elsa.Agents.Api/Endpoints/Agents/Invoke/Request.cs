@@ -1,4 +1,4 @@
-namespace Elsa.Agents.Api.Endpoints.Agents.Execute;
+namespace Elsa.Agents.Api.Endpoints.Agents.Invoke;
 
 public class Request
 {
