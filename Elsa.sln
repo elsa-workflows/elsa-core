@@ -410,9 +410,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Api", "src\modu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Activities", "src\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj", "{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Management", "src\modules\Elsa.Agents.Management\Elsa.Agents.Management.csproj", "{9BF476B6-24BA-4312-9DFF-9082B1577046}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore\Elsa.Agents.Persistence.EntityFrameworkCore.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9C6C-4BAB-AA51-15131C21ADCC}"
 	ProjectSection(SolutionItems) = preProject
@@ -420,6 +418,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9
 		scripts\nuke\build.ps1 = scripts\nuke\build.ps1
 		scripts\nuke\build.cmd = scripts\nuke\build.cmd
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{CFEC357F-0863-4458-A6C4-5D7AA0E44759}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -965,14 +965,14 @@ Global
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1140,10 +1140,10 @@ Global
 		{5BD671F0-9603-4C2F-8364-54B02986EAA2} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{154525CD-3726-45B7-9A9C-553BBC60EB10} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
-		{9BF476B6-24BA-4312-9DFF-9082B1577046} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 		{57326431-9C6C-4BAB-AA51-15131C21ADCC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

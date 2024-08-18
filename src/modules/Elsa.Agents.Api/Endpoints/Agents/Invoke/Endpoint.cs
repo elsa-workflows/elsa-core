@@ -4,17 +4,15 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Invoke;
 
-/// <summary>
-/// Executes a function of a skilled agent.
-/// </summary>
+/// Invokes an agent.
 [UsedImplicitly]
 public class Execute(AgentInvoker agentInvoker) : ElsaEndpoint<Request, JsonElement>
 {
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/agents/{agent}/invoke");
-        ConfigurePermissions("agents:invoke");
+        Post("/ai/agents/{agent}/invoke");
+        ConfigurePermissions("ai/agents:invoke");
     }
 
     /// <inheritdoc />

@@ -1,7 +1,9 @@
 using Elsa.Common.Entities;
+using JetBrains.Annotations;
 
-namespace Elsa.Agents.Management;
+namespace Elsa.Agents.Persistence.Entities;
 
+[UsedImplicitly]
 public class ApiKeyDefinition : Entity
 {
     public string Name { get; set; } = default!;

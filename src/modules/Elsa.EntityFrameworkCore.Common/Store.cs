@@ -6,8 +6,6 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
-using Elsa.Common.Contracts;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -176,7 +174,17 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             exceptionHandler.Handle(ex);
         }
     }
-
+    
+    /// <summary>
+    /// Updates the entity.
+    /// </summary>
+    /// <param name="entity">The entity to update.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task UpdateAsync(TEntity entity, CancellationToken cancellationToken = default)
+    {
+        return UpdateAsync(entity, null, cancellationToken);
+    }
+    
     /// <summary>
     /// Updates the entity.
     /// </summary>
@@ -337,6 +345,24 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             };
 
         return page;
+    }
+
+    public Task<IEnumerable<TEntity>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return ListAsync(null, cancellationToken);
+    }
+
+    public async Task<IEnumerable<TEntity>> ListAsync(Action<TDbContext, TEntity?>? onLoading = default, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await CreateDbContextAsync(cancellationToken);
+        var set = dbContext.Set<TEntity>().AsNoTracking();
+        var entities = await set.ToListAsync(cancellationToken);
+
+        if (onLoading != null)
+            foreach (var entity in entities)
+                onLoading(dbContext, entity);
+
+        return entities;
     }
 
     /// <summary>

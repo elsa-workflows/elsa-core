@@ -1,4 +1,6 @@
-namespace Elsa.Agents.Management;
+using Elsa.Agents.Persistence.Entities;
+
+namespace Elsa.Agents.Persistence.Contracts;
 
 public interface IAgentStore
 {

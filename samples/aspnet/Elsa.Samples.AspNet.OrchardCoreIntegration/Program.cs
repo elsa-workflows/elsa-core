@@ -6,10 +6,15 @@ using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
 using Elsa.Agents.Options;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Workflows.Management;
 using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var identitySection = configuration.GetSection("Identity");
+var identityTokenSection = identitySection.GetSection("Tokens");
 
 builder.Services.AddElsa(elsa =>
 {
@@ -35,15 +40,19 @@ builder.Services.AddElsa(elsa =>
         .UseCSharp()
         .UseLiquid()
         .UseOrchardCore()
-        .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
         .AddActivitiesFrom<Program>()
         .AddWorkflowsFrom<Program>()
         .UseIdentity(identity =>
         {
-            identity.UseAdminUserProvider();
-            identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
+            identity.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            identity.TokenOptions = options => identityTokenSection.Bind(options);
+            identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
+        .UseDefaultAuthentication()
         .UseAgentActivities()
+        .UseAgentsApi()
         ;
 });
 

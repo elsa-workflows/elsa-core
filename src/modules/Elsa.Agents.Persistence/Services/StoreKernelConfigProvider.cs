@@ -1,4 +1,6 @@
-namespace Elsa.Agents.Management;
+using Elsa.Agents.Persistence.Contracts;
+
+namespace Elsa.Agents.Persistence.Services;
 
 public class StoreKernelConfigProvider(IApiKeyStore apiKeyStore, IServiceStore serviceStore, IAgentStore agentStore) : IKernelConfigProvider
 {

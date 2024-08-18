@@ -1,6 +1,6 @@
 using Elsa.Common.Entities;
 
-namespace Elsa.Agents.Management;
+namespace Elsa.Agents.Persistence.Entities;
 
 public class ServiceDefinition : Entity
 {

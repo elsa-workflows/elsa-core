@@ -1,6 +1,8 @@
+using Elsa.Agents.Persistence.Contracts;
+using Elsa.Agents.Persistence.Entities;
 using Elsa.Common.Services;
 
-namespace Elsa.Agents.Management;
+namespace Elsa.Agents.Persistence.Services;
 
 public class MemoryAgentStore(MemoryStore<AgentDefinition> memoryStore) : IAgentStore
 {
