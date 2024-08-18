@@ -8,7 +8,7 @@ using Microsoft.SemanticKernel;
 
 namespace Elsa.Agents;
 
-public class KernelFactory(IPluginsDiscoverer pluginsDiscoverer, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
+public class KernelFactory(IPluginDiscoverer pluginDiscoverer, IServiceDiscoverer serviceDiscoverer, ILoggerFactory loggerFactory, IServiceProvider serviceProvider, ILogger<KernelFactory> logger)
 {
     public Kernel CreateKernel(KernelConfig kernelConfig, string agentName)
     {
@@ -29,6 +29,8 @@ public class KernelFactory(IPluginsDiscoverer pluginsDiscoverer, ILoggerFactory 
 
     private void ApplyAgentConfig(IKernelBuilder builder, KernelConfig kernelConfig, AgentConfig agentConfig)
     {
+        var services = serviceDiscoverer.Discover().ToDictionary(x => x.Name);
+        
         foreach (string serviceName in agentConfig.Services)
         {
             if (!kernelConfig.Services.TryGetValue(serviceName, out var serviceConfig))
@@ -37,52 +39,28 @@ public class KernelFactory(IPluginsDiscoverer pluginsDiscoverer, ILoggerFactory 
                 continue;
             }
 
-            AddService(builder, kernelConfig, serviceConfig);
+            AddService(builder, kernelConfig, serviceConfig, services);
         }
 
         AddPlugins(builder, agentConfig);
         AddAgents(builder, kernelConfig, agentConfig);
     }
 
-    private void AddService(IKernelBuilder builder, KernelConfig kernelConfig, ServiceConfig serviceConfig)
+    private void AddService(IKernelBuilder builder, KernelConfig kernelConfig, ServiceConfig serviceConfig, Dictionary<string, IAgentServiceProvider> services)
     {
-        switch (serviceConfig.Type)
+        if (!services.TryGetValue(serviceConfig.Type, out var serviceProvider))
         {
-            case "OpenAIChatCompletion":
-                {
-                    var modelId = (string)serviceConfig.Settings["ModelId"];
-                    var apiKey = GetApiKey(kernelConfig, serviceConfig);
-                    builder.AddOpenAIChatCompletion(modelId, apiKey);
-                    break;
-                }
-            case "OpenAITextToImage":
-                {
-                    var modelId = (string)serviceConfig.Settings["ModelId"];
-                    var apiKey = GetApiKey(kernelConfig, serviceConfig);
-                    builder.AddOpenAITextToImage(apiKey, modelId: modelId);
-                    break;
-                }
-            default:
-                logger.LogWarning($"Unknown service type {serviceConfig.Type}");
-                break;
+            logger.LogWarning($"Service provider {serviceConfig.Type} not found");
+            return;
         }
+        
+        var context = new KernelBuilderContext(builder, kernelConfig, serviceConfig);
+        serviceProvider.ConfigureKernel(context);
     }
-
-    private string GetApiKey(KernelConfig kernelConfig, ServiceConfig service)
-    {
-        var settings = service.Settings;
-        if (settings.TryGetValue("ApiKey", out var apiKey))
-            return (string)apiKey;
-
-        if (settings.TryGetValue("ApiKeyRef", out var apiKeyRef))
-            return kernelConfig.ApiKeys[(string)apiKeyRef].Value;
-
-        throw new KeyNotFoundException($"No api key found for service {service.Type}");
-    }
-
+    
     private void AddPlugins(IKernelBuilder builder, AgentConfig agent)
     {
-        var plugins = pluginsDiscoverer.GetPluginDescriptors().ToDictionary(x => x.Name);
+        var plugins = pluginDiscoverer.GetPluginDescriptors().ToDictionary(x => x.Name);
         foreach (var pluginName in agent.Plugins)
         {
             if (!plugins.TryGetValue(pluginName, out var pluginDescriptor))

@@ -27,10 +27,13 @@ public class AgentsFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<KernelFactory>()
             .AddScoped<AgentInvoker>()
-            .AddScoped<IPluginsDiscoverer, PluginsDiscoverer>()
+            .AddScoped<IPluginDiscoverer, PluginDiscoverer>()
+            .AddScoped<IServiceDiscoverer, ServiceDiscoverer>()
             .AddScoped(_kernelConfigProviderFactory)
             .AddScoped<ConfigurationKernelConfigProvider>()
             .AddPluginProvider<ImageGeneratorPluginProvider>()
+            .AddAgentServiceProvider<OpenAIChatCompletionProvider>()
+            .AddAgentServiceProvider<OpenAITextToImageProvider>()
             ;
     }
 }

@@ -1,6 +1,6 @@
 namespace Elsa.Agents;
 
-public class PluginsDiscoverer(IEnumerable<IPluginProvider> providers) : IPluginsDiscoverer
+public class PluginDiscoverer(IEnumerable<IPluginProvider> providers) : IPluginDiscoverer
 {
     public IEnumerable<PluginDescriptor> GetPluginDescriptors()
     {

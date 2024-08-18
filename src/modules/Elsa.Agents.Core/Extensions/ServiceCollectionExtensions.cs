@@ -8,4 +8,9 @@ public static class ServiceCollectionExtensions
     {
         return services.AddScoped<IPluginProvider, T>();
     }
+    
+    public static IServiceCollection AddAgentServiceProvider<T>(this IServiceCollection services) where T: class, IAgentServiceProvider
+    {
+        return services.AddScoped<IAgentServiceProvider, T>();
+    }
 }
