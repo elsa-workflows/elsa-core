@@ -7,31 +7,29 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
-using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
 /// <summary>
-/// An API endpoint that executes a given workflow definition.
+/// This abstract class provides the necessary infrastructure to handle the execution of workflows, including setup of routes, permissions,
+/// and processing of HTTP requests to execute workflows.
 /// </summary>
-[PublicAPI]
-internal class Execute(
+internal abstract class EndpointBase<T>(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
     IApiSerializer apiSerializer)
-    : ElsaEndpoint<Request, Response>
+    : ElsaEndpoint<T, Response> where T : IExecutionRequest, new()
 {
     /// <inheritdoc />
     public override void Configure()
     {
         Routes("/workflow-definitions/{definitionId}/execute");
-        Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         ConfigurePermissions("exec:workflow-definitions");
     }
 
     /// <inheritdoc />
-    public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
+    public override async Task HandleAsync(T request, CancellationToken cancellationToken)
     {
         var definitionId = request.DefinitionId;
         var versionOptions = request.VersionOptions ?? VersionOptions.Published;
@@ -48,7 +46,7 @@ internal class Execute(
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowGraph.Workflow.Identity.Id),
             CorrelationId = request.CorrelationId,
-            Input = (IDictionary<string, object>?)request.Input,
+            Input = request.GetInputAsDictionary(),
             TriggerActivityId = request.TriggerActivityId,
             ActivityHandle = request.ActivityHandle
         };
