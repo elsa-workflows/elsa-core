@@ -38,4 +38,10 @@ public class MemoryApiKeyStore(MemoryStore<ApiKeyDefinition> memoryStore) : IApi
         var entities = memoryStore.List();
         return Task.FromResult(entities);
     }
+
+    public Task DeleteAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
+    {
+        memoryStore.Delete(entity.Id);
+        return Task.CompletedTask;
+    }
 }

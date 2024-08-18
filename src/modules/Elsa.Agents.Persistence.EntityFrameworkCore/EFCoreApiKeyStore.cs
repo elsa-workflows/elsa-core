@@ -10,6 +10,11 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 [UsedImplicitly]
 public class EFCoreApiKeyStore(EntityStore<AgentsDbContext, ApiKeyDefinition> store) : IApiKeyStore
 {
+    public Task AddAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
+    {
+        return store.AddAsync(entity, cancellationToken);
+    }
+    
     public Task UpdateAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
     {
         return store.UpdateAsync(entity, cancellationToken);
@@ -35,8 +40,8 @@ public class EFCoreApiKeyStore(EntityStore<AgentsDbContext, ApiKeyDefinition> st
         return store.ListAsync(cancellationToken);
     }
 
-    public Task AddAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
     {
-        return store.AddAsync(entity, cancellationToken);
+        return store.DeleteAsync(entity, cancellationToken);
     }
 }

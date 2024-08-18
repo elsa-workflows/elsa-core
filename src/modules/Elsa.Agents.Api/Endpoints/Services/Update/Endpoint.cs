@@ -4,21 +4,21 @@ using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Api.Endpoints.ApiKeys.Update;
+namespace Elsa.Agents.Api.Endpoints.Services.Update;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefinition>
+public class Endpoint(IServiceStore store) : ElsaEndpoint<Request, ServiceDefinition>
 {
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/ai/api-keys/{id}");
-        ConfigurePermissions("ai/api-keys:write");
+        Post("/ai/services/{id}");
+        ConfigurePermissions("ai/services:write");
     }
 
     /// <inheritdoc />
-    public override async Task<ApiKeyDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ServiceDefinition> ExecuteAsync(Request req, CancellationToken ct)
     {
         var entity = await store.GetAsync(req.Id, ct);
         
@@ -32,13 +32,14 @@ public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefiniti
 
         if (isNameDuplicate)
         {
-            AddError("Another API key already exists with the specified name");
+            AddError("Another service already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
             return entity;
         }
 
         entity.Name = req.Name.Trim();
-        entity.Value = req.Value.Trim();
+        entity.Type = req.Type.Trim();
+        entity.Settings = req.Settings;
 
         await store.UpdateAsync(entity, ct);
         return entity;
@@ -46,7 +47,7 @@ public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefiniti
     
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)
     {
-        var filter = new ApiKeyDefinitionFilter
+        var filter = new ServiceDefinitionFilter
         {
             Name = name,
             NotId = id
