@@ -21,9 +21,16 @@ public static class SqliteProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
+        return feature.UseSqlite(Assembly, connectionString, options);
+    }
+    
+    public static TFeature UseSqlite<TFeature, TDbContext>(this PersistenceFeatureBase<TFeature, TDbContext> feature, Assembly migrationsAssembly, string? connectionString = null, ElsaDbContextOptions? options = null) 
+        where TDbContext : ElsaDbContextBase
+        where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
+    {
         connectionString ??= "Data Source=elsa.sqlite.db;Cache=Shared;";
         feature.Module.Services.AddScoped<IEntityModelCreatingHandler, SetupForSqlite>();
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(Assembly, connectionString, options);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlite(migrationsAssembly, connectionString, options);
         return (TFeature)feature;
     }
 }
