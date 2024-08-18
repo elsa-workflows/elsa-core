@@ -6,6 +6,7 @@ using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
 using Elsa.Agents.Options;
+using Elsa.Agents.Persistence;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Workflows.Management;
 using WebhooksCore.Options;
@@ -51,6 +52,7 @@ builder.Services.AddElsa(elsa =>
             identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
         .UseDefaultAuthentication()
+        .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
         .UseAgentActivities()
         .UseAgentsApi()
         ;

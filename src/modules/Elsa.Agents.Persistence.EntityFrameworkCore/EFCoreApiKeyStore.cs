@@ -8,7 +8,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
 /// An EF Core implementation of <see cref="IApiKeyStore"/>.
 [UsedImplicitly]
-public class EFCoreApiKeyStore(EntityStore<AgentsElsaDbContext, ApiKeyDefinition> store) : IApiKeyStore
+public class EFCoreApiKeyStore(EntityStore<AgentsDbContext, ApiKeyDefinition> store) : IApiKeyStore
 {
     public Task UpdateAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default)
     {

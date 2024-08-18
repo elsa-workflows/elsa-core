@@ -6,6 +6,7 @@ using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 using System.Linq.Expressions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.EntityFrameworkCore.Common;
 
@@ -15,10 +16,8 @@ namespace Elsa.EntityFrameworkCore.Common;
 /// <typeparam name="TDbContext">The type of the database context.</typeparam>
 /// <typeparam name="TEntity">The type of the entity.</typeparam>
 [PublicAPI]
-public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IDbExceptionHandler<TDbContext> exceptionHandler) where TDbContext : DbContext where TEntity : class, new()
+public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) where TDbContext : DbContext where TEntity : class, new()
 {
-    private readonly IServiceProvider _serviceProvider;
-
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
     private static readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -125,9 +124,17 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             set.Entry(entity).State = exists ? EntityState.Modified : EntityState.Added;
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
-            exceptionHandler.Handle(ex);
+            var handler = serviceProvider.GetService<IDbExceptionHandler>();
+
+            if (handler != null)
+            {
+                var context = new DbUpdateExceptionContext(ex, cancellationToken);
+                await handler.HandleAsync(context);
+            }
+
+            throw;
         }
         finally
         {
@@ -169,12 +176,20 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         {
             await dbContext.BulkUpsertAsync(entityList, keySelector, cancellationToken);
         }
-        catch (DbUpdateException ex)
+        catch (Exception ex)
         {
-            exceptionHandler.Handle(ex);
+            var handler = serviceProvider.GetService<IDbExceptionHandler>();
+
+            if (handler != null)
+            {
+                var context = new DbUpdateExceptionContext(ex, cancellationToken);
+                await handler.HandleAsync(context);
+            }
+
+            throw;
         }
     }
-    
+
     /// <summary>
     /// Updates the entity.
     /// </summary>
@@ -184,7 +199,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
     {
         return UpdateAsync(entity, null, cancellationToken);
     }
-    
+
     /// <summary>
     /// Updates the entity.
     /// </summary>
@@ -312,7 +327,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         PageArgs? pageArgs = default,
         CancellationToken cancellationToken = default) =>
         await FindManyAsync(predicate, orderBy, orderDirection, pageArgs, default, cancellationToken);
-    
+
     /// Returns a list of entities using a query
     public async Task<Page<TEntity>> FindManyAsync<TKey>(
         Expression<Func<TEntity, bool>>? predicate,
@@ -328,7 +343,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         if (predicate != null)
             set = set.Where(predicate);
 
-        if(orderBy != null)
+        if (orderBy != null)
             set = orderDirection switch
             {
                 OrderDirection.Ascending => set.OrderBy(orderBy),

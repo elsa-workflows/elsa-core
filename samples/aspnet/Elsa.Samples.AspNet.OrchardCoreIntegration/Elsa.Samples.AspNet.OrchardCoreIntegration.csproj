@@ -5,6 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Persistence.EntityFrameworkCore\Elsa.Agents.Persistence.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.CSharp\Elsa.CSharp.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />

@@ -7,10 +7,10 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
 /// DB context for the Agents module.
 [UsedImplicitly]
-public class AgentsElsaDbContext : ElsaDbContextBase
+public class AgentsDbContext : ElsaDbContextBase
 {
     /// <inheritdoc />
-    public AgentsElsaDbContext(DbContextOptions<AgentsElsaDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
+    public AgentsDbContext(DbContextOptions<AgentsDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
     {
     }
     

@@ -12,7 +12,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(AgentPersistenceFeature))]
-public class EFCoreAgentPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreAgentPersistenceFeature, AgentsElsaDbContext>(module)
+public class EFCoreAgentPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreAgentPersistenceFeature, AgentsDbContext>(module)
 {
     /// <inheritdoc />
     public override void Configure()

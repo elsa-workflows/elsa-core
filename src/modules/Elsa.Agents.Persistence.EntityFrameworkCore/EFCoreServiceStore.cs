@@ -8,7 +8,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
 /// An EF Core implementation of <see cref="IServiceStore"/>.
 [UsedImplicitly]
-public class EFCoreServiceStore(EntityStore<AgentsElsaDbContext, ServiceDefinition> store) : IServiceStore
+public class EFCoreServiceStore(EntityStore<AgentsDbContext, ServiceDefinition> store) : IServiceStore
 {
     public Task AddAsync(ServiceDefinition entity, CancellationToken cancellationToken = default)
     {

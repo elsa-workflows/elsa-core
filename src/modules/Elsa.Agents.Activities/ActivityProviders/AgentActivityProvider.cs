@@ -30,7 +30,7 @@ public class AgentActivityProvider(
         {
             var agentConfig = kvp.Value;
             var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(AgentActivity), cancellationToken);
-            var activityTypeName = $"Elsa.Agents.{agentConfig.Name.Pascalize()}.{agentConfig.FunctionName.Pascalize()}";
+            var activityTypeName = $"Elsa.Agents.{agentConfig.Name.Pascalize()}";
             activityDescriptor.Name = agentConfig.FunctionName;
             activityDescriptor.TypeName = activityTypeName;
             activityDescriptor.Description = agentConfig.Description;

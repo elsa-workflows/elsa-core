@@ -1,11 +1,11 @@
-﻿using Elsa.Agents.Persistence.Features;
+﻿using Elsa.Agents.Persistence.EntityFrameworkCore;
+using Elsa.Agents.Persistence.Features;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Agents.Persistence;
 
-/// <summary>
-/// Provides extensions to the <see cref="AlterationsFeature"/> feature.
-/// </summary>
+/// Provides extensions to the <see cref="AgentPersistenceFeature"/> feature.
 [PublicAPI]
 public static class Extensions
 {
