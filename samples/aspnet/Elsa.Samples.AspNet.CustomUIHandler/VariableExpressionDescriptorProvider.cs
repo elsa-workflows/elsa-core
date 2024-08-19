@@ -24,10 +24,8 @@ public class VariableExpressionHandler : IExpressionHandler
         , Type returnType, ExpressionExecutionContext context
         , ExpressionEvaluatorOptions options)
     {
-        var vs = context.GetVariablesInScope();
-        var v = vs.Where(v => v.Id == expression.Value?.ToString());
-
-        var result = v.FirstOrDefault()?.Value;
+        var variable = context.EnumerateVariablesInScope().FirstOrDefault(v=>v.Id == expression.Value?.ToString());
+        var result = variable?.Get(context);
         return ValueTask.FromResult(result) ;
     }
 }
