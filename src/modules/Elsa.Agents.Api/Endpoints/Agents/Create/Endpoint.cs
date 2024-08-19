@@ -2,6 +2,7 @@
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
+using Elsa.Extensions;
 using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
@@ -9,7 +10,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Create;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<AgentDto, AgentDefinition>
+public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<AgentInputModel, AgentModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,7 +20,7 @@ public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) :
     }
 
     /// <inheritdoc />
-    public override async Task<AgentDefinition> ExecuteAsync(AgentDto req, CancellationToken ct)
+    public override async Task<AgentModel> ExecuteAsync(AgentInputModel req, CancellationToken ct)
     {
         var isNameUnique = await IsNameUniqueAsync(req.Name, ct);
 
@@ -51,7 +52,7 @@ public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) :
         };
 
         await store.AddAsync(newEntity, ct);
-        return newEntity;
+        return newEntity.ToModel();
     }
     
     private async Task<bool> IsNameUniqueAsync(string name, CancellationToken ct)

@@ -8,7 +8,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Update;
 
 /// Updates an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentDto, AgentDefinition>
+public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentInputModel, AgentDefinition>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -18,7 +18,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentDto, AgentDefinitio
     }
 
     /// <inheritdoc />
-    public override async Task<AgentDefinition> ExecuteAsync(AgentDto req, CancellationToken ct)
+    public override async Task<AgentDefinition> ExecuteAsync(AgentInputModel req, CancellationToken ct)
     {
         var id = Route<string>("id")!;
         var entity = await store.GetAsync(id, ct);

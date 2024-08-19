@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Elsa.Agents.Api;
+namespace Elsa.Agents;
 
-public class AgentDto
+public class AgentInputModel
 {
     [Required] public string Name { get; set; } = default!;
     [Required] public string Description { get; set; } = "";

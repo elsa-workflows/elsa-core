@@ -14,6 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Elsa.Agents.Models\Elsa.Agents.Models.csproj" />
       <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
     </ItemGroup>
 

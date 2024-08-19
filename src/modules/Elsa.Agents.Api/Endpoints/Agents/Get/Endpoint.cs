@@ -1,13 +1,14 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Get;
 
 /// Gets an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentDefinition>
+public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -17,7 +18,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentDefinition
     }
 
     /// <inheritdoc />
-    public override async Task<AgentDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<AgentModel> ExecuteAsync(Request req, CancellationToken ct)
     {
         var entity = await store.GetAsync(req.Id, ct);
         
@@ -27,6 +28,6 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentDefinition
             return null!;
         }
         
-        return entity;
+        return entity.ToModel();
     }
 }
