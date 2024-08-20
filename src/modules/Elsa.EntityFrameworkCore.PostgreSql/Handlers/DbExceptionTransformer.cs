@@ -20,8 +20,9 @@ public class DbExceptionTransformer : IDbExceptionHandler<AlterationsElsaDbConte
     /// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
     public void Handle(DbUpdateException exception)
     {
-        var ex = exception.InnerException as PostgresException;
+        if (exception.InnerException is PostgresException { SqlState: "23505" })
+            throw new UniqueKeyConstraintViolationException("Unable to save data", exception);
 
-        throw new DataProcessingException(ex?.SqlState == "23505", "Unable to save data", exception);
+        throw new DataProcessingException("Unable to save data", exception);
     }
 }
