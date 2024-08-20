@@ -16,7 +16,7 @@ namespace Elsa.EntityFrameworkCore.Modules.Alterations;
 public class EFCoreAlterationsPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreAlterationsPersistenceFeature, AlterationsElsaDbContext>(module)
 {
     /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<AlterationsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler();
+    public Func<IServiceProvider, IDbExceptionHandler<AlterationsElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler();
 
     /// <inheritdoc />
     public override void Configure()
