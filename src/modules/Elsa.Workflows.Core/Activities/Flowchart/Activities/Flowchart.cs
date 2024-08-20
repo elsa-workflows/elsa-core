@@ -297,6 +297,8 @@ public class Flowchart : Container
 
     private void OnEndSignalReceived(EndSignal signal, SignalContext context)
     {
+        // Prevent bullbing.
+        context.StopPropagation();
         context.ReceverActivityExecutionContext.SetIsEnding();
     }
 }
