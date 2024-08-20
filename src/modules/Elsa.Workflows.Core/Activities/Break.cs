@@ -24,5 +24,6 @@ public class Break : CodeActivity, ITerminalNode
     {
         // Send a signal to the parent scope to break out of the loop.
         await context.SendSignalAsync(new BreakSignal());
+        await context.SendSignalAsync(new EndSignal());
     }
 }
