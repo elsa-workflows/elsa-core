@@ -49,12 +49,13 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
         return CreateDescriptor<VariableExpressionHandler>(
             "Variable",
             "Variable",
-            isBrowsable: false,
+            isBrowsable: true,
             memoryBlockReferenceFactory: () => new Variable(),
             deserialize: context =>
             {
                 var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
-                var value = valueElement.Deserialize(context.MemoryBlockType, context.Options);
+                var valueString = valueElement.GetValue()?.ToString();
+                var value = JsonSerializer.Deserialize(valueString, context.MemoryBlockType, context.Options);
                 return new Expression("Variable", value);
             }
         );
