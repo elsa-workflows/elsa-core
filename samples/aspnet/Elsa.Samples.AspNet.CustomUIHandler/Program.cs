@@ -33,7 +33,6 @@ builder.Services.AddElsa(elsa =>
 builder.Services.AddSingleton<VehicleUIHandler>();
 builder.Services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
-builder.Services.AddExpressionDescriptorProvider<VariableExpressionDescriptorProvider>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
