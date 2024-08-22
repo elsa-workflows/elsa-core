@@ -55,8 +55,17 @@ public class DefaultExpressionDescriptorProvider : IExpressionDescriptorProvider
             {
                 var valueElement = context.JsonElement.TryGetProperty("value", out var v) ? v : default;
                 var valueString = valueElement.GetValue()?.ToString();
-                var value = JsonSerializer.Deserialize(valueString, context.MemoryBlockType, context.Options);
-                return new Expression("Variable", value);
+                try
+                {
+                    var value = JsonSerializer.Deserialize(valueString, context.MemoryBlockType, context.Options);
+                    return new Expression("Variable", value);
+                }
+                catch (Exception)
+                {
+
+                    return new Expression("Variable", null);
+                }
+                
             }
         );
     }
