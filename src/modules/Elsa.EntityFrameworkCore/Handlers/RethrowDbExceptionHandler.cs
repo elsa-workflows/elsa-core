@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.EntityFrameworkCore.Handlers;
 
-/// A No-Op database exception handler.
-public class NoopDbExceptionHandler : IDbExceptionHandler<AlterationsElsaDbContext>,
+/// A database exception handler that rethrows the original exception.
+public class RethrowDbExceptionHandler : IDbExceptionHandler<AlterationsElsaDbContext>,
     IDbExceptionHandler<IdentityElsaDbContext>,
     IDbExceptionHandler<LabelsElsaDbContext>,
     IDbExceptionHandler<ManagementElsaDbContext>,
     IDbExceptionHandler<RuntimeElsaDbContext>
 {
-    /// Handles the given exception that occurs during database operations.
+    /// rethrows the given exception that occurs during database operations.
     public void Handle(DbUpdateException exception)
     {
         throw exception;

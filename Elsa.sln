@@ -15,10 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
-		build-and-run-all-in-one-web-docker.sh = build-and-run-all-in-one-web-docker.sh
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
-		docker-compose.yml = docker-compose.yml
 		icon.png = icon.png
 		NuGet.Config = NuGet.Config
 		README.md = README.md
@@ -283,7 +281,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "pipelines", "pipelines", "{
 		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
 		.github\workflows\elsa-studio.yml = .github\workflows\elsa-studio.yml
 		.github\workflows\packages.yml = .github\workflows\packages.yml
-		build.sh = build.sh
 		.github\workflows\bounty.yml = .github\workflows\bounty.yml
 		.github\workflows\pr.yml = .github\workflows\pr.yml
 	EndProjectSection
@@ -298,14 +295,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.Heartbe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.MassTransit.AzureServiceBus", "src\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj", "{AFEB799E-82C3-4D02-9D5C-766BB8DEF004}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
-	ProjectSection(SolutionItems) = preProject
-		migrations\README.md = migrations\README.md
-		migrations\efcore-3.1.sh = migrations\efcore-3.1.sh
-		migrations\efcore-3.2.sh = migrations\efcore-3.2.sh
-		migrations\efcore-3.0.sh = migrations\efcore-3.0.sh
-		migrations\efcore-3.3.sh = migrations\efcore-3.3.sh
-	EndProjectSection
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{C80C8231-D35C-4ACC-9ED6-9F3DB221535E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Alterations.IntegrationTests", "test\integration\Elsa.Alterations.IntegrationTests\Elsa.Alterations.IntegrationTests.csproj", "{F50336DA-42D1-4DD1-A107-67AFEB8A33EE}"
 EndProject
@@ -381,33 +371,33 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Core", "src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.ProtoActor", "src\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{47FBCB04-0C2D-453C-BE2F-7052CAC22524}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deployment", "deployment", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{B32DB9B2-AD6C-48A5-8682-4373CB045185}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server", "{454652D5-E1BB-4D4B-9B21-9CEFC900C4FB}"
 	ProjectSection(SolutionItems) = preProject
-		deployment\elsa-server\deployment.yaml = deployment\elsa-server\deployment.yaml
-		deployment\elsa-server\service.yaml = deployment\elsa-server\service.yaml
-		deployment\elsa-server\service-account.yml = deployment\elsa-server\service-account.yml
-		deployment\elsa-server\role.yaml = deployment\elsa-server\role.yaml
-		deployment\elsa-server\role-binding.yaml = deployment\elsa-server\role-binding.yaml
+		scripts\k8s\elsa-server\service-account.yml = scripts\k8s\elsa-server\service-account.yml
+		scripts\k8s\elsa-server\role.yaml = scripts\k8s\elsa-server\role.yaml
+		scripts\k8s\elsa-server\role-binding.yaml = scripts\k8s\elsa-server\role-binding.yaml
+		scripts\k8s\elsa-server\service.yaml = scripts\k8s\elsa-server\service.yaml
+		scripts\k8s\elsa-server\deployment.yaml = scripts\k8s\elsa-server\deployment.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{31089E79-694B-4F45-97AF-86D34A7B231E}"
 	ProjectSection(SolutionItems) = preProject
-		deployment\postgres\deployment.yaml = deployment\postgres\deployment.yaml
-		deployment\postgres\config-map.yaml = deployment\postgres\config-map.yaml
-		deployment\postgres\service.yml = deployment\postgres\service.yml
+		scripts\k8s\postgres\service.yml = scripts\k8s\postgres\service.yml
+		scripts\k8s\postgres\deployment.yaml = scripts\k8s\postgres\deployment.yaml
+		scripts\k8s\postgres\config-map.yaml = scripts\k8s\postgres\config-map.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plant-uml", "plant-uml", "{6DDB9ECF-D454-4894-A262-A6BB3026E61E}"
 	ProjectSection(SolutionItems) = preProject
-		deployment\plant-uml\deployment.yaml = deployment\plant-uml\deployment.yaml
+		scripts\k8s\plant-uml\deployment.yaml = scripts\k8s\plant-uml\deployment.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{16B570BC-E293-4A19-B20E-5C97BAF8476B}"
 	ProjectSection(SolutionItems) = preProject
-		deployment\trace-lens\deployment.yaml = deployment\trace-lens\deployment.yaml
-		deployment\trace-lens\service.yaml = deployment\trace-lens\service.yaml
+		scripts\k8s\trace-lens\service.yaml = scripts\k8s\trace-lens\service.yaml
+		scripts\k8s\trace-lens\deployment.yaml = scripts\k8s\trace-lens\deployment.yaml
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integrations", "{EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}"
@@ -427,6 +417,13 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Management", "src\modules\Elsa.Agents.Management\Elsa.Agents.Management.csproj", "{9BF476B6-24BA-4312-9DFF-9082B1577046}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9C6C-4BAB-AA51-15131C21ADCC}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\nuke\build.sh = scripts\nuke\build.sh
+		scripts\nuke\build.ps1 = scripts\nuke\build.ps1
+		scripts\nuke\build.cmd = scripts\nuke\build.cmd
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -819,7 +816,7 @@ Global
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-								{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99F2B1DA-2F69-4D70-A2A3-AC985AD91EC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0AAF5EF6-02E5-44F9-B2CB-B1401FC5EF66}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1155,6 +1152,8 @@ Global
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{9BF476B6-24BA-4312-9DFF-9082B1577046} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{57326431-9C6C-4BAB-AA51-15131C21ADCC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

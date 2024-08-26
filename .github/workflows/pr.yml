@@ -30,4 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: 'Run: Compile, Test, Pack'
-        run: ./build.cmd Compile Test Pack
+        run: ./scripts/nuke/build.cmd Compile Test Pack
