@@ -75,7 +75,8 @@ public class Event : Trigger<object?>
             var options = new CreateBookmarkArgs
             {
                 Stimulus = new EventStimulus(eventName),
-                IncludeActivityInstanceId = false
+                IncludeActivityInstanceId = false,
+                Callback = OnResumeAsync
             };
             context.CreateBookmark(options);
             return;
@@ -84,5 +85,12 @@ public class Event : Trigger<object?>
         var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
         context.SetResult(input);
         await context.CompleteActivityAsync();
+    }
+
+    private async ValueTask OnResumeAsync(ActivityExecutionContext context)
+    {
+        var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
+        context.SetResult(input);
+        await context.CompleteActivityAsync();  
     }
 }
