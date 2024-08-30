@@ -75,12 +75,18 @@ public class Event : Trigger<object?>
             var options = new CreateBookmarkArgs
             {
                 Stimulus = new EventStimulus(eventName),
-                IncludeActivityInstanceId = false
+                IncludeActivityInstanceId = false,
+                Callback = GetInputPayloadAndCompleteActivityAsync
             };
             context.CreateBookmark(options);
             return;
         }
 
+        await GetInputPayloadAndCompleteActivityAsync(context);
+    }
+
+    private async ValueTask GetInputPayloadAndCompleteActivityAsync(ActivityExecutionContext context)
+    {
         var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
         context.SetResult(input);
         await context.CompleteActivityAsync();
