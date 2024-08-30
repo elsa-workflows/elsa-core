@@ -27,8 +27,8 @@ public class FileHttpContentParser : IHttpContentParser
         var stream = context.Content;
         var filename = context.Headers.GetFilename() ?? "file.dat";
         var contentType = context.ContentType;
-        var eTag = context.Headers["ETag"].FirstOrDefault();
-        var file = new HttpFile(stream, filename, contentType, eTag);
+        context.Headers.TryGetValue("ETag", out var eTag);
+        var file = new HttpFile(stream, filename, contentType, eTag?.FirstOrDefault());
         return Task.FromResult<object>(file);
     }
 }
