@@ -43,6 +43,10 @@ public class MongoDbStore<TDocument>(IMongoCollection<TDocument> collection, ITe
     public async Task AddManyAsync(IEnumerable<TDocument> documents, CancellationToken cancellationToken = default)
     {
         var documentsList = documents.ToList();
+
+        if (!documentsList.Any())
+           return;
+
         await ApplyTenantIdAsync(documentsList, cancellationToken);
         await collection.InsertManyAsync(documentsList, new InsertManyOptions(), cancellationToken);
     }
