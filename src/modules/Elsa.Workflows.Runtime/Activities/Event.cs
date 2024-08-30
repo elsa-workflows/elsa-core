@@ -76,21 +76,19 @@ public class Event : Trigger<object?>
             {
                 Stimulus = new EventStimulus(eventName),
                 IncludeActivityInstanceId = false,
-                Callback = OnResumeAsync
+                Callback = GetInputPayloadAndCompleteActivityAsync
             };
             context.CreateBookmark(options);
             return;
         }
 
-        var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
-        context.SetResult(input);
-        await context.CompleteActivityAsync();
+        await GetInputPayloadAndCompleteActivityAsync(context);
     }
 
-    private async ValueTask OnResumeAsync(ActivityExecutionContext context)
+    private async ValueTask GetInputPayloadAndCompleteActivityAsync(ActivityExecutionContext context)
     {
-        var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
+        var input = context.GetWorkflowInput<object?>(EventPayloadWorkflowInputKey);
         context.SetResult(input);
-        await context.CompleteActivityAsync();  
+        await context.CompleteActivityAsync();
     }
 }
