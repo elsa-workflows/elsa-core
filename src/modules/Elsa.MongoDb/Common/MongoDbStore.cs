@@ -45,6 +45,9 @@ public class MongoDbStore<TDocument> where TDocument : class
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task AddManyAsync(IEnumerable<TDocument> documents, CancellationToken cancellationToken = default)
     {
+        if (!documents.Any())
+            return;
+
         await _collection.InsertManyAsync(documents, new InsertManyOptions(), cancellationToken);
     }
 

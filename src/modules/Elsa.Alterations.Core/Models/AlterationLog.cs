@@ -24,15 +24,16 @@ public class AlterationLog
     /// Gets the log entries.
     /// </summary>
     public IReadOnlyCollection<AlterationLogEntry> LogEntries => _logEntries.ToList().AsReadOnly();
-    
+
     /// <summary>
     /// Adds a log entry.
     /// </summary>
     /// <param name="message">The message.</param>
     /// <param name="logLevel">The log level.</param>
-    public void Add(string message, LogLevel logLevel = LogLevel.Information)
+    /// <param name="eventName">The event that generated the log entry.</param>
+    public void Add(string message, LogLevel logLevel = LogLevel.Information, string? eventName = null)
     {
-        var entry = new AlterationLogEntry(message, logLevel, _systemClock.UtcNow);
+        var entry = new AlterationLogEntry(message, logLevel, _systemClock.UtcNow, eventName);
         
         _logEntries.Add(entry);
     }
