@@ -14,6 +14,7 @@ using Elsa.Api.Client.Resources.WorkflowExecutionContexts.Contracts;
 using Elsa.Api.Client.Resources.WorkflowInstances.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Refit;
 using static Elsa.Api.Client.RefitSettingsHelper;
@@ -74,23 +75,23 @@ public static class DependencyInjectionExtensions
     /// <summary>
     /// Adds an API client to the service collection. Requires AddElsaClient to be called exactly once.
     /// </summary>
-    public static IServiceCollection AddApiClient<T>(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient) where T : class
+    public static IServiceCollection AddApiClient<T>(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null) where T : class
     {
         return services.AddApiClients(configureClient, builderOptions => services.AddApi<T>(builderOptions));
     }
 
     /// Adds the Elsa client to the service collection.
-    public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient, Action<ElsaClientBuilderOptions>? configureServices)
+    public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null, Action<ElsaClientBuilderOptions>? configureServices = null)
     {
-        var builderOptionsServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(ElsaClientBuilderOptions));
-
-        if (builderOptionsServiceDescriptor == null)
-        {
+        // var builderOptionsServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(ElsaClientBuilderOptions));
+        //
+        // if (builderOptionsServiceDescriptor == null)
+        // {
             var builderOptions = new ElsaClientBuilderOptions();
-            configureClient.Invoke(builderOptions);
+            configureClient?.Invoke(builderOptions);
             builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
 
-            services.AddScoped(builderOptions.AuthenticationHandler);
+            services.TryAddScoped(builderOptions.AuthenticationHandler);
 
             services.Configure<ElsaClientOptions>(options =>
             {
@@ -100,7 +101,7 @@ public static class DependencyInjectionExtensions
             });
 
             configureServices?.Invoke(builderOptions);
-        }
+        //}
 
         return services;
     }

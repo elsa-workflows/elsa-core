@@ -44,4 +44,9 @@ public class EFCoreAgentStore(EntityStore<AgentsDbContext, AgentDefinition> stor
     {
         return store.DeleteAsync(entity, cancellationToken);
     }
+
+    public Task<long> DeleteManyAsync(AgentDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
 }

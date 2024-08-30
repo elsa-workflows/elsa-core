@@ -22,4 +22,7 @@ public interface IAgentStore
 
     /// Deletes the entity from the store.
     Task DeleteAsync(AgentDefinition entity, CancellationToken cancellationToken = default);
+
+    /// Deletes all entities from the store matching the specified filter.
+    Task<long> DeleteManyAsync(AgentDefinitionFilter filter, CancellationToken cancellationToken = default);
 }
