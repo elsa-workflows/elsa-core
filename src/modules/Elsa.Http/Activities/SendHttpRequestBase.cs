@@ -175,7 +175,7 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
         var contentStream = await httpContent.ReadAsStreamAsync(cancellationToken);
         var responseHeaders = httpResponse.Headers;
         var contentHeaders = httpContent.Headers;
-        var contentType = contentHeaders.ContentType?.MediaType!;
+        var contentType = contentHeaders.ContentType?.MediaType ?? "application/octet-stream";
 
         targetType ??= contentType switch
         {
