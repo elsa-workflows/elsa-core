@@ -50,5 +50,9 @@ internal class RunAlterationsMiddleware(WorkflowMiddlewareDelegate next, IEnumer
         // Execute commit handlers.
         foreach (var commitAction in commitActions)
             await commitAction();
+
+        // Add alteration logs to the workflow execution log.
+        foreach (var alterationLogEntry in log.LogEntries)
+            workflowExecutionContext.AddExecutionLogEntry(alterationLogEntry.EventName ?? alterationLogEntry.Message, alterationLogEntry.Message);
     }
 }
