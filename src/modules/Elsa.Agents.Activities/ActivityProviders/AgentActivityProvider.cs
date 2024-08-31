@@ -31,7 +31,7 @@ public class AgentActivityProvider(
             var agentConfig = kvp.Value;
             var activityDescriptor = await activityDescriber.DescribeActivityAsync(typeof(AgentActivity), cancellationToken);
             var activityTypeName = $"Elsa.Agents.{agentConfig.Name.Pascalize()}";
-            activityDescriptor.Name = agentConfig.FunctionName;
+            activityDescriptor.Name = agentConfig.Name.Pascalize();
             activityDescriptor.TypeName = activityTypeName;
             activityDescriptor.Description = agentConfig.Description;
             activityDescriptor.DisplayName = agentConfig.Name.Humanize().Transform(To.TitleCase);
@@ -59,6 +59,7 @@ public class AgentActivityProvider(
                 var inputDescriptor = new InputDescriptor
                 {
                     Name = inputVariable.Name,
+                    DisplayName = inputVariable.Name.Humanize(),
                     Description = inputVariable.Description,
                     Type = nakedInputType,
                     ValueGetter = activity => activity.SyntheticProperties.GetValueOrDefault(inputName),
