@@ -8,7 +8,7 @@ namespace Elsa.Agents.Api.Endpoints.ApiKeys.Get;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefinition>
+public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -18,7 +18,7 @@ public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefiniti
     }
 
     /// <inheritdoc />
-    public override async Task<ApiKeyDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ApiKeyModel> ExecuteAsync(Request req, CancellationToken ct)
     {
         var entity = await store.GetAsync(req.Id, ct);
         
@@ -28,6 +28,6 @@ public class Endpoint(IApiKeyStore store) : ElsaEndpoint<Request, ApiKeyDefiniti
             return null!;
         }
         
-        return entity;
+        return entity.ToModel();
     }
 }

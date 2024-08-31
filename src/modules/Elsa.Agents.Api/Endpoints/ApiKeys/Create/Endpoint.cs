@@ -9,7 +9,7 @@ namespace Elsa.Agents.Api.Endpoints.ApiKeys.Create;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, ApiKeyDefinition>
+public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<ApiKeyInputModel, ApiKeyModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,7 +19,7 @@ public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) 
     }
 
     /// <inheritdoc />
-    public override async Task<ApiKeyDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ApiKeyModel> ExecuteAsync(ApiKeyInputModel req, CancellationToken ct)
     {
         var existingEntityFilter = new ApiKeyDefinitionFilter
         {
@@ -31,7 +31,7 @@ public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) 
         {
             AddError("An API key already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
-            return existingEntity;
+            return existingEntity.ToModel();
         }
 
         var newEntity = new ApiKeyDefinition
@@ -42,6 +42,6 @@ public class Endpoint(IApiKeyStore store, IIdentityGenerator identityGenerator) 
         };
 
         await store.AddAsync(newEntity, ct);
-        return newEntity;
+        return newEntity.ToModel();
     }
 }

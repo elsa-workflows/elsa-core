@@ -40,7 +40,7 @@ public static class DependencyInjectionExtensions
     }
 
     /// Adds default Elsa API clients.
-    public static IServiceCollection AddDefaultApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions> configureClient)
+    public static IServiceCollection AddDefaultApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null)
     {
         return services.AddApiClients(configureClient, builderOptions =>
         {
@@ -83,26 +83,20 @@ public static class DependencyInjectionExtensions
     /// Adds the Elsa client to the service collection.
     public static IServiceCollection AddApiClients(this IServiceCollection services, Action<ElsaClientBuilderOptions>? configureClient = null, Action<ElsaClientBuilderOptions>? configureServices = null)
     {
-        // var builderOptionsServiceDescriptor = services.FirstOrDefault(x => x.ServiceType == typeof(ElsaClientBuilderOptions));
-        //
-        // if (builderOptionsServiceDescriptor == null)
-        // {
-            var builderOptions = new ElsaClientBuilderOptions();
-            configureClient?.Invoke(builderOptions);
-            builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
+        var builderOptions = new ElsaClientBuilderOptions();
+        configureClient?.Invoke(builderOptions);
+        builderOptions.ConfigureHttpClientBuilder += builder => builder.AddHttpMessageHandler(sp => (DelegatingHandler)sp.GetRequiredService(builderOptions.AuthenticationHandler));
 
-            services.TryAddScoped(builderOptions.AuthenticationHandler);
+        services.TryAddScoped(builderOptions.AuthenticationHandler);
 
-            services.Configure<ElsaClientOptions>(options =>
-            {
-                options.BaseAddress = builderOptions.BaseAddress;
-                options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
-                options.ApiKey = builderOptions.ApiKey;
-            });
+        services.Configure<ElsaClientOptions>(options =>
+        {
+            options.BaseAddress = builderOptions.BaseAddress;
+            options.ConfigureHttpClient = builderOptions.ConfigureHttpClient;
+            options.ApiKey = builderOptions.ApiKey;
+        });
 
-            configureServices?.Invoke(builderOptions);
-        //}
-
+        configureServices?.Invoke(builderOptions);
         return services;
     }
 

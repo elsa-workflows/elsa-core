@@ -17,4 +17,14 @@ public class ApiKeyDefinition : Entity
             Value = Value
         };
     }
+    
+    public ApiKeyModel ToModel()
+    {
+        return new ApiKeyModel
+        {
+            Id = Id,
+            Name = Name,
+            Value = Value
+        };
+    }
 }

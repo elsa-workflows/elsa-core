@@ -71,7 +71,8 @@ public class AgentActivityProvider(
             }
 
             activityDescriptor.Outputs.Clear();
-            var outputType = agentConfig.OutputVariable.Type == null! ? "object" : agentConfig.OutputVariable.Type;
+            var outputVariable = agentConfig.OutputVariable;
+            var outputType = outputVariable.Type == null! ? "object" : outputVariable.Type;
             var nakedOutputType = wellKnownTypeRegistry.GetTypeOrDefault(outputType);
             var outputName = "Output";
             var outputDescriptor = new OutputDescriptor
