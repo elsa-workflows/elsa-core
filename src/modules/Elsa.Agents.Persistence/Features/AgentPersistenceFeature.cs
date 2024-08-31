@@ -1,7 +1,6 @@
 using Elsa.Agents.Features;
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
-using Elsa.Agents.Persistence.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -46,6 +45,9 @@ public class AgentPersistenceFeature(IModule module) : FeatureBase(module)
             .AddScoped(_apiKeyStoreFactory)
             .AddScoped(_serviceStoreFactory)
             .AddScoped(_agentStoreFactory);
+
+        Services
+            .AddScoped<IAgentManager, AgentManager>();
 
         Services
             .AddMemoryStore<ApiKeyDefinition, MemoryApiKeyStore>()

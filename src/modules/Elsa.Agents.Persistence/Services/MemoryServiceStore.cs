@@ -4,7 +4,7 @@ using Elsa.Agents.Persistence.Filters;
 using Elsa.Common.Services;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Persistence.Services;
+namespace Elsa.Agents.Persistence;
 
 [UsedImplicitly]
 public class MemoryServiceStore(MemoryStore<ServiceDefinition> memoryStore) : IServiceStore

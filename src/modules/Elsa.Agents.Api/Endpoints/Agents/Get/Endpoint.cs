@@ -8,7 +8,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Get;
 
 /// Gets an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentModel>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<Request, AgentModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -20,7 +20,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<Request, AgentModel>
     /// <inheritdoc />
     public override async Task<AgentModel> ExecuteAsync(Request req, CancellationToken ct)
     {
-        var entity = await store.GetAsync(req.Id, ct);
+        var entity = await agentManager.GetAsync(req.Id, ct);
         
         if(entity == null)
         {

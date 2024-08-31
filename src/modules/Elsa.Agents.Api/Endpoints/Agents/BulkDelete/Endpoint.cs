@@ -7,7 +7,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.BulkDelete;
 
 /// Deletes an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -24,7 +24,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<BulkDeleteRequest, BulkD
         {
             Ids = ids
         };
-        var count = await store.DeleteManyAsync(filter, ct);
+        var count = await agentManager.DeleteManyAsync(filter, ct);
         return new BulkDeleteResponse(count);
     }
 }

@@ -8,9 +8,9 @@ using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Create;
 
-/// Lists all registered API keys.
+/// Lists all registered agents.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<AgentInputModel, AgentModel>
+public class Endpoint(IAgentManager agentManager, IIdentityGenerator identityGenerator) : ElsaEndpoint<AgentInputModel, AgentModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -51,7 +51,7 @@ public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) :
             }
         };
 
-        await store.AddAsync(newEntity, ct);
+        await agentManager.AddAsync(newEntity, ct);
         return newEntity.ToModel();
     }
     
@@ -61,6 +61,6 @@ public class Endpoint(IAgentStore store, IIdentityGenerator identityGenerator) :
         {
             Name = name
         };
-        return await store.FindAsync(filter, ct) == null;
+        return await agentManager.FindAsync(filter, ct) == null;
     }
 }

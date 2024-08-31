@@ -6,6 +6,7 @@
     </PropertyGroup>
     
     <ItemGroup>
+      <ProjectReference Include="..\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj" />
       <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
       <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
     </ItemGroup>

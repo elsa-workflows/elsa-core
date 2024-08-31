@@ -9,7 +9,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Update;
 
 /// Updates an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentInputModel, AgentModel>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<AgentInputModel, AgentModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -22,7 +22,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentInputModel, AgentMo
     public override async Task<AgentModel> ExecuteAsync(AgentInputModel req, CancellationToken ct)
     {
         var id = Route<string>("id")!;
-        var entity = await store.GetAsync(id, ct);
+        var entity = await agentManager.GetAsync(id, ct);
 
         if (entity == null)
         {
@@ -55,19 +55,12 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<AgentInputModel, AgentMo
             Agents = req.Agents
         };
 
-        await store.UpdateAsync(entity, ct);
+        await agentManager.UpdateAsync(entity, ct);
         return entity.ToModel();
     }
 
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)
     {
-        var filter = new AgentDefinitionFilter
-        {
-            Name = name,
-            NotId = id
-        };
-
-        var entity = await store.FindAsync(filter, cancellationToken);
-        return entity != null;
+        return !await agentManager.IsNameUniqueAsync(name, id, cancellationToken);
     }
 }

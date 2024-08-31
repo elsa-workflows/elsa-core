@@ -6,7 +6,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.Delete;
 
 /// Deletes an Agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<Request>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<Request>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -18,7 +18,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<Request>
     /// <inheritdoc />
     public override async Task HandleAsync(Request req, CancellationToken ct)
     {
-        var entity = await store.GetAsync(req.Id, ct);
+        var entity = await agentManager.GetAsync(req.Id, ct);
         
         if(entity == null)
         {
@@ -26,6 +26,6 @@ public class Endpoint(IAgentStore store) : ElsaEndpoint<Request>
             return;
         }
         
-        await store.DeleteAsync(entity, ct);
+        await agentManager.DeleteAsync(entity, ct);
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Agents.Activities.ActivityProviders;
+using Elsa.Agents.Activities.Handlers;
 using Elsa.Agents.Features;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -20,6 +21,7 @@ public class AgentActivitiesFeature(IModule module) : FeatureBase(module)
     {
         Services
             .AddActivityProvider<AgentActivityProvider>()
+            .AddNotificationHandler<RefreshActivityRegistry>()
             ;
     }
 }

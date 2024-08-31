@@ -9,7 +9,7 @@ namespace Elsa.Agents.Api.Endpoints.Agents.List;
 
 /// Lists all agents.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpointWithoutRequest<ListResponse<AgentModel>>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpointWithoutRequest<ListResponse<AgentModel>>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -21,7 +21,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpointWithoutRequest<ListRespon
     /// <inheritdoc />
     public override async Task<ListResponse<AgentModel>> ExecuteAsync(CancellationToken ct)
     {
-        var entities = await store.ListAsync(ct);
+        var entities = await agentManager.ListAsync(ct);
         var models = entities.Select(x => x.ToModel()).ToList();
         return new ListResponse<AgentModel>(models);
     }

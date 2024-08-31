@@ -1,13 +1,12 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
-using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.GenerateUniqueName;
 
-/// Lists all registered API keys.
+/// Generates a unique name for an agent.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
+public class Endpoint(IAgentManager agentManager) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,33 +18,7 @@ public class Endpoint(IAgentStore store) : ElsaEndpointWithoutRequest<GenerateUn
     /// <inheritdoc />
     public override async Task<GenerateUniqueNameResponse> ExecuteAsync(CancellationToken ct)
     {
-        var newName = await GenerateUniqueNameAsync(ct);
+        var newName = await agentManager.GenerateUniqueNameAsync(ct);
         return new(newName);
-    }
-
-    private async Task<string> GenerateUniqueNameAsync(CancellationToken cancellationToken)
-    {
-        const int maxAttempts = 100;
-        var attempt = 0;
-
-        while (attempt < maxAttempts)
-        {
-            var name = $"Agent {++attempt}";
-            var isUnique = await IsNameUniqueAsync(name, cancellationToken);
-
-            if (isUnique)
-                return name;
-        }
-
-        throw new Exception($"Failed to generate a unique workflow name after {maxAttempts} attempts.");
-    }
-    
-    private async Task<bool> IsNameUniqueAsync(string name, CancellationToken ct)
-    {
-        var filter = new AgentDefinitionFilter
-        {
-            Name = name
-        };
-        return await store.FindAsync(filter, ct) == null;
     }
 }
