@@ -3,24 +3,24 @@ using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Api.Endpoints.Agents.BulkDelete;
+namespace Elsa.Agents.Api.Endpoints.ApiKeys.BulkDelete;
 
-/// Deletes an agent.
+/// Deletes an API key.
 [UsedImplicitly]
-public class Endpoint(IAgentStore store) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
+public class Endpoint(IApiKeyStore store) : ElsaEndpoint<BulkDeleteRequest, BulkDeleteResponse>
 {
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/ai/bulk-actions/agents/delete");
-        ConfigurePermissions("ai/agents:delete");
+        Post("/ai/bulk-actions/api-keys/delete");
+        ConfigurePermissions("ai/api-keys:delete");
     }
 
     /// <inheritdoc />
     public override async Task<BulkDeleteResponse> ExecuteAsync(BulkDeleteRequest req, CancellationToken ct)
     {
         var ids = req.Ids;
-        var filter = new AgentDefinitionFilter
+        var filter = new ApiKeyDefinitionFilter
         {
             Ids = ids
         };

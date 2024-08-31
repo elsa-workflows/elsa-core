@@ -8,7 +8,7 @@ namespace Elsa.Agents.Api.Endpoints.Services.List;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IServiceStore store) : ElsaEndpointWithoutRequest<ListResponse<ServiceDefinition>>
+public class Endpoint(IServiceStore store) : ElsaEndpointWithoutRequest<ListResponse<ServiceModel>>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -18,9 +18,10 @@ public class Endpoint(IServiceStore store) : ElsaEndpointWithoutRequest<ListResp
     }
 
     /// <inheritdoc />
-    public override async Task<ListResponse<ServiceDefinition>> ExecuteAsync(CancellationToken ct)
+    public override async Task<ListResponse<ServiceModel>> ExecuteAsync(CancellationToken ct)
     {
         var entities = await store.ListAsync(ct);
-        return new ListResponse<ServiceDefinition>(entities.ToList());
+        var models = entities.Select(x => x.ToModel()).ToList();
+        return new ListResponse<ServiceModel>(models);
     }
 }

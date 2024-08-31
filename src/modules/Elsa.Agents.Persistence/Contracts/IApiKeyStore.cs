@@ -22,4 +22,7 @@ public interface IApiKeyStore
 
     /// Deletes the entity from the store.
     Task DeleteAsync(ApiKeyDefinition entity, CancellationToken cancellationToken = default);
+
+    /// Deletes all entities from the store that match the specified filter.
+    Task<long> DeleteManyAsync(ApiKeyDefinitionFilter filter, CancellationToken cancellationToken = default);
 }

@@ -44,4 +44,9 @@ public class EFCoreApiKeyStore(EntityStore<AgentsDbContext, ApiKeyDefinition> st
     {
         return store.DeleteAsync(entity, cancellationToken);
     }
+    
+    public Task<long> DeleteManyAsync(ApiKeyDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
 }

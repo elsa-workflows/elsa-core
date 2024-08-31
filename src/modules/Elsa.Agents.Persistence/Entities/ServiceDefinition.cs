@@ -17,4 +17,15 @@ public class ServiceDefinition : Entity
             Settings = Settings
         };
     }
+    
+    public ServiceModel ToModel()
+    {
+        return new ServiceModel
+        {
+            Id = Id,
+            Name = Name,
+            Type = Type,
+            Settings = Settings
+        };
+    }
 }

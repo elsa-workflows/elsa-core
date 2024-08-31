@@ -44,4 +44,11 @@ public class MemoryServiceStore(MemoryStore<ServiceDefinition> memoryStore) : IS
         memoryStore.Delete(entity.Id);
         return Task.CompletedTask;
     }
+
+    public Task<long> DeleteManyAsync(ServiceDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        var agents = memoryStore.Query(filter.Apply).ToList();
+        memoryStore.DeleteMany(agents, x => x.Id);
+        return Task.FromResult<long>(agents.Count);
+    }
 }

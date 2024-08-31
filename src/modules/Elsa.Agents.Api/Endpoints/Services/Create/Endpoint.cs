@@ -9,7 +9,7 @@ namespace Elsa.Agents.Api.Endpoints.Services.Create;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IServiceStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<Request, ServiceDefinition>
+public class Endpoint(IServiceStore store, IIdentityGenerator identityGenerator) : ElsaEndpoint<ServiceInputModel, ServiceModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,7 +19,7 @@ public class Endpoint(IServiceStore store, IIdentityGenerator identityGenerator)
     }
 
     /// <inheritdoc />
-    public override async Task<ServiceDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ServiceModel> ExecuteAsync(ServiceInputModel req, CancellationToken ct)
     {
         var existingEntityFilter = new ServiceDefinitionFilter
         {
@@ -31,7 +31,7 @@ public class Endpoint(IServiceStore store, IIdentityGenerator identityGenerator)
         {
             AddError("A Service already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
-            return existingEntity;
+            return existingEntity.ToModel();
         }
 
         var newEntity = new ServiceDefinition
@@ -43,6 +43,6 @@ public class Endpoint(IServiceStore store, IIdentityGenerator identityGenerator)
         };
 
         await store.AddAsync(newEntity, ct);
-        return newEntity;
+        return newEntity.ToModel();
     }
 }

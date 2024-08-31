@@ -8,7 +8,7 @@ namespace Elsa.Agents.Api.Endpoints.Services.Update;
 
 /// Lists all registered API keys.
 [UsedImplicitly]
-public class Endpoint(IServiceStore store) : ElsaEndpoint<Request, ServiceDefinition>
+public class Endpoint(IServiceStore store) : ElsaEndpoint<ServiceModel, ServiceModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -18,7 +18,7 @@ public class Endpoint(IServiceStore store) : ElsaEndpoint<Request, ServiceDefini
     }
 
     /// <inheritdoc />
-    public override async Task<ServiceDefinition> ExecuteAsync(Request req, CancellationToken ct)
+    public override async Task<ServiceModel> ExecuteAsync(ServiceModel req, CancellationToken ct)
     {
         var entity = await store.GetAsync(req.Id, ct);
         
@@ -34,7 +34,7 @@ public class Endpoint(IServiceStore store) : ElsaEndpoint<Request, ServiceDefini
         {
             AddError("Another service already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
-            return entity;
+            return entity.ToModel();
         }
 
         entity.Name = req.Name.Trim();
@@ -42,7 +42,7 @@ public class Endpoint(IServiceStore store) : ElsaEndpoint<Request, ServiceDefini
         entity.Settings = req.Settings;
 
         await store.UpdateAsync(entity, ct);
-        return entity;
+        return entity.ToModel();
     }
     
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)

@@ -44,4 +44,9 @@ public class EFCoreServiceStore(EntityStore<AgentsDbContext, ServiceDefinition> 
     {
         return store.DeleteAsync(entity, cancellationToken);
     }
+
+    public Task<long> DeleteManyAsync(ServiceDefinitionFilter filter, CancellationToken cancellationToken = default)
+    {
+        return store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
 }
