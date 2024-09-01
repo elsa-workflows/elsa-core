@@ -19,7 +19,7 @@ public class AgentsFeature(IModule module) : FeatureBase(module)
     }
     
     /// <inheritdoc />
-    public override void Configure()
+    public override void Apply()
     {
         Services.AddOptions<AgentsOptions>();
 

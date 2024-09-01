@@ -3,7 +3,7 @@ using Elsa.Agents.Persistence.Features;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Agents.Persistence;
+namespace Elsa.Agents;
 
 /// Provides extensions to the <see cref="AgentPersistenceFeature"/> feature.
 [PublicAPI]

@@ -422,9 +422,9 @@ services
         if (useAgents)
         {
             elsa
-                //.UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
                 .UseAgentActivities()
-                //.UseAgentsApi()
+                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseAgentsApi()
                 ;
             
             services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
@@ -452,7 +452,7 @@ services
         ConfigureForTest?.Invoke(elsa);
     });
 
-services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+//services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
