@@ -91,4 +91,9 @@ public interface IActivityRegistry : IActivityProvider
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     Task RefreshDescriptorsAsync(IEnumerable<IActivityProvider> activityProviders, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Refreshes the activity descriptors in the registry by querying the specified activity provider.
+    /// </summary>
+    Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default);
 }

@@ -1,8 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Description>Provides a persistence layer of Agents</Description>
-        <PackageTags>elsa module agents semantic kernel llm ai</PackageTags>
+        <Description>Provides Agents persistence services</Description>
+        <PackageTags>elsa module agents semantic kernel persistence llm ai</PackageTags>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Agents.Core\Elsa.Agents.Core.csproj" />
+      <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+    </ItemGroup>
 
 </Project>

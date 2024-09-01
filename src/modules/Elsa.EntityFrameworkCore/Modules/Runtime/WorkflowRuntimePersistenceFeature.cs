@@ -1,6 +1,5 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
@@ -17,9 +16,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 [DependsOn(typeof(WorkflowRuntimeFeature))]
 public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>(module)
 {
-    /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<RuntimeElsaDbContext>> DbExceptionHandler { get; set; } = _ => new RethrowDbExceptionHandler(); 
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -41,16 +37,12 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
     public override void Apply()
     {
         base.Apply();
-        
-        Services.AddScoped(DbExceptionHandler);
-
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
         AddStore<BookmarkQueueItem, EFBookmarkQueueStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
-
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

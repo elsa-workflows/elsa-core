@@ -10,7 +10,7 @@ namespace Elsa.Extensions;
 public static class AgentActivitiesFeatureModuleExtensions
 {
     /// Installs the Agents feature.
-    public static IModule UseAgents(this IModule module, Action<AgentsFeature>? configure = null)
+    public static IModule UseAgentActivities(this IModule module, Action<AgentActivitiesFeature>? configure = null)
     {
         return module.Use(configure);
     }

@@ -1,25 +1,19 @@
+using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Modules.Alterations;
-using Elsa.EntityFrameworkCore.Modules.Identity;
-using Elsa.EntityFrameworkCore.Modules.Labels;
-using Elsa.EntityFrameworkCore.Modules.Management;
-using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Workflows.Exceptions;
-using Microsoft.EntityFrameworkCore;
+using JetBrains.Annotations;
 using Npgsql;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Handlers;
 
 /// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
-public class DbExceptionTransformer : IDbExceptionHandler<AlterationsElsaDbContext>,
-    IDbExceptionHandler<IdentityElsaDbContext>,
-    IDbExceptionHandler<LabelsElsaDbContext>,
-    IDbExceptionHandler<ManagementElsaDbContext>,
-    IDbExceptionHandler<RuntimeElsaDbContext>
+[UsedImplicitly]
+public class DbExceptionTransformer : IDbExceptionHandler
 {
-    /// Transforms database exceptions encountered when using a postgreSQL database into more generic exceptions.
-    public void Handle(DbUpdateException exception)
+    public Task HandleAsync(DbUpdateExceptionContext context)
     {
+        var exception = context.Exception;
+        
         if (exception.InnerException is PostgresException { SqlState: "23505" })
             throw new UniqueKeyConstraintViolationException("Unable to save data", exception);
 

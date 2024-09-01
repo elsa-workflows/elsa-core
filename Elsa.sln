@@ -410,9 +410,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Api", "src\modu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Activities", "src\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj", "{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Management", "src\modules\Elsa.Agents.Management\Elsa.Agents.Management.csproj", "{9BF476B6-24BA-4312-9DFF-9082B1577046}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore\Elsa.Agents.Persistence.EntityFrameworkCore.csproj", "{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9C6C-4BAB-AA51-15131C21ADCC}"
 	ProjectSection(SolutionItems) = preProject
@@ -420,6 +418,35 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9
 		scripts\nuke\build.ps1 = scripts\nuke\build.ps1
 		scripts\nuke\build.cmd = scripts\nuke\build.cmd
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{CFEC357F-0863-4458-A6C4-5D7AA0E44759}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj", "{E75762D2-FD12-4165-810B-628C28CB2562}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{3666CF13-1353-4620-9472-506670214A6A}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\migrations\README.md = scripts\migrations\README.md
+		scripts\migrations\efcore-3.0.sh = scripts\migrations\efcore-3.0.sh
+		scripts\migrations\efcore-3.1-sql.sh = scripts\migrations\efcore-3.1-sql.sh
+		scripts\migrations\efcore-3.1.sh = scripts\migrations\efcore-3.1.sh
+		scripts\migrations\efcore-3.2.sh = scripts\migrations\efcore-3.2.sh
+		scripts\migrations\efcore-3.3.sh = scripts\migrations\efcore-3.3.sh
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{AA5ACF15-8647-4AC9-B9F5-73FCB92BE7E3}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\docker\build-and-run-all-in-one-web-docker.sh = scripts\docker\build-and-run-all-in-one-web-docker.sh
+		scripts\docker\docker-compose.yml = scripts\docker\docker-compose.yml
+		scripts\docker\docker-run-all-in-one-web.ps1 = scripts\docker\docker-run-all-in-one-web.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-studio", "elsa-studio", "{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\elsa-studio\deployment.yaml = scripts\k8s\elsa-studio\deployment.yaml
+		scripts\k8s\elsa-studio\service.yaml = scripts\k8s\elsa-studio\service.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Models", "src\modules\Elsa.Agents.Models\Elsa.Agents.Models.csproj", "{052C4F97-5909-4D88-AA49-4B0D9058A0A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -965,14 +992,22 @@ Global
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9BF476B6-24BA-4312-9DFF-9082B1577046}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E75762D2-FD12-4165-810B-628C28CB2562}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E75762D2-FD12-4165-810B-628C28CB2562}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E75762D2-FD12-4165-810B-628C28CB2562}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E75762D2-FD12-4165-810B-628C28CB2562}.Release|Any CPU.Build.0 = Release|Any CPU
+		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1140,10 +1175,15 @@ Global
 		{5BD671F0-9603-4C2F-8364-54B02986EAA2} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{154525CD-3726-45B7-9A9C-553BBC60EB10} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
-		{9BF476B6-24BA-4312-9DFF-9082B1577046} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 		{57326431-9C6C-4BAB-AA51-15131C21ADCC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{CFEC357F-0863-4458-A6C4-5D7AA0E44759} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{E75762D2-FD12-4165-810B-628C28CB2562} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{3666CF13-1353-4620-9472-506670214A6A} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{AA5ACF15-8647-4AC9-B9F5-73FCB92BE7E3} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
+		{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
+		{052C4F97-5909-4D88-AA49-4B0D9058A0A9} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
