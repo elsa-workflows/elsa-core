@@ -15,6 +15,7 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
     private readonly IOptions<DropInOptions> _options;
     private readonly IServiceProvider _serviceProvider;
     private readonly RateLimitedFunc<string, Task> _debouncedLoader;
+    private readonly FileSystemWatcher _watcher;
 
     /// <inheritdoc />
     public DropInDirectoryMonitorHostedService(IOptions<DropInOptions> options, IServiceProvider serviceProvider)
@@ -22,24 +23,24 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
         _options = options;
         _serviceProvider = serviceProvider;
         _debouncedLoader = Debouncer.Debounce<string, Task>(LoadDropInAssemblyAsync, TimeSpan.FromSeconds(2));
-    }
 
-    /// <inheritdoc />
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
-    {
         var rootDirectoryPath = _options.Value.DropInRootDirectory;
 
-        if (!Directory.Exists(rootDirectoryPath)) 
+        if (!Directory.Exists(rootDirectoryPath))
             Directory.CreateDirectory(rootDirectoryPath);
 
-        var watcher = new FileSystemWatcher(rootDirectoryPath)
+        _watcher = new FileSystemWatcher(rootDirectoryPath)
         {
             EnableRaisingEvents = true,
             IncludeSubdirectories = true,
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName
         };
+    }
 
-        watcher.Changed += OnChanged;
+    /// <inheritdoc />
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        _watcher.Changed += OnChanged;
         return Task.CompletedTask;
     }
 

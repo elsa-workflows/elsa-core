@@ -23,9 +23,9 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.2.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.14.6" />
-    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.466" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.466" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.466" />
+    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.524" />
     <PackageVersion Include="FastEndpoints" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.27.0" />
@@ -44,7 +44,7 @@
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="IronCompress" Version="1.5.2" />
     <PackageVersion Include="JetBrains.Annotations" Version="2024.2.0" />
-    <PackageVersion Include="Jint" Version="4.0.0" />
+    <PackageVersion Include="Jint" Version="4.0.1" />
     <PackageVersion Include="LinqKit.Core" Version="1.2.5" />
     <PackageVersion Include="MailKit" Version="4.7.1.1" />
     <PackageVersion Include="MassTransit" Version="8.2.3" />
@@ -57,7 +57,7 @@
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.61.3" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.16.2" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.17.1" />
     <PackageVersion Include="MongoDB.Driver" Version="2.27.0" />
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.4.0" />
     <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2" />

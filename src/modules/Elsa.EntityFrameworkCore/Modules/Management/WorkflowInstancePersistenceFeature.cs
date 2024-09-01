@@ -1,6 +1,5 @@
 using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Handlers;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;
@@ -15,9 +14,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 [DependsOn(typeof(WorkflowManagementFeature))]
 public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowInstancePersistenceFeature, ManagementElsaDbContext>(module)
 {
-    /// Delegate for determining the exception handler.
-    public Func<IServiceProvider, IDbExceptionHandler<ManagementElsaDbContext>> DbExceptionHandler { get; set; } = _ => new NoopDbExceptionHandler(); 
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -28,9 +24,6 @@ public class EFCoreWorkflowInstancePersistenceFeature(IModule module) : Persiste
     public override void Apply()
     {
         base.Apply();
-
-        Services.AddScoped(DbExceptionHandler);
-
         AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
