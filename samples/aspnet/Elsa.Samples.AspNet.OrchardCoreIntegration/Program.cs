@@ -1,11 +1,11 @@
-﻿using Elsa.EntityFrameworkCore.Extensions;
+﻿using Elsa.Agents;
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
-using Elsa.Agents.Options;
 using Elsa.Agents.Persistence;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Workflows.Management;

@@ -1,4 +1,4 @@
-namespace Elsa.Agents.Options;
+namespace Elsa.Agents;
 
 public class AgentsOptions
 {

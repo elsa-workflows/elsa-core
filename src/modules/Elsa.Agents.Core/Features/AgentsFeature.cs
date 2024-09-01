@@ -1,4 +1,3 @@
-using Elsa.Agents.Options;
 using Elsa.Agents.Plugins;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;

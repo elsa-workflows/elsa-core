@@ -1,9 +1,10 @@
 using Elsa.Agents.Activities.Features;
+using Elsa.Extensions;
 using Elsa.Features.Services;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
-namespace Elsa.Extensions;
+namespace Elsa.Agents;
 
 /// An extension class that installs the Agents feature.
 [PublicAPI]
