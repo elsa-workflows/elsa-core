@@ -1,8 +1,12 @@
 using System.Dynamic;
 using Elsa.Extensions;
+using Elsa.JavaScript.Helpers;
+using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
 using JetBrains.Annotations;
+using Jint;
+using Jint.Native;
 
 namespace Elsa.JavaScript.Handlers;
 
@@ -29,8 +33,11 @@ public class ConfigureEngineWithVariables : INotificationHandler<EvaluatingJavaS
         var engine = notification.Engine;
         var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
         
-        foreach (var (variableName, variableValue) in variablesContainer) 
-            context.SetVariable(variableName, variableValue);
+        foreach (var (variableName, variableValue) in variablesContainer)
+        {
+            var processedValue = variableValue is JsObject jsObject ? jsObject.ToObject() : variableValue;
+            context.SetVariable(variableName, processedValue);
+        }
     }
 
     private void CopyVariablesIntoEngine(EvaluatingJavaScript notification)
@@ -42,9 +49,22 @@ public class ConfigureEngineWithVariables : INotificationHandler<EvaluatingJavaS
         
         foreach (var variableName in variableNames)
         {
-            variablesContainer[variableName] = context.GetVariableInScope(variableName);
+            var variableValue = context.GetVariableInScope(variableName);
+            variableValue = ProcessVariableValue(engine, variableValue);
+            variablesContainer[variableName] = variableValue;
         }
         
         engine.SetValue("variables", variablesContainer);
+    }
+
+    private object? ProcessVariableValue(Engine engine, object? variableValue)
+    {
+        if (variableValue == null)
+            return null;
+        
+        if(variableValue is not ExpandoObject expandoObject)
+            return variableValue;
+
+        return ObjectConverterHelper.ConvertToJsObject(engine, expandoObject);
     }
 }
