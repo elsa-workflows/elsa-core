@@ -24,6 +24,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Models;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
@@ -46,6 +47,7 @@ using Proto.Persistence.SqlServer;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
+using Order = Elsa.Server.Web.Models.Order;
 
 // ReSharper disable RedundantAssignment
 
@@ -184,7 +186,8 @@ services
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
-                management.AddVariableTypeAndAlias<JsObject>("Dynamic");
+                management.AddVariableTypeAndAlias<Customer>("CRM");
+                management.AddVariableTypeAndAlias<Order>("CRM");
             })
             .UseProtoActor(proto =>
             {
