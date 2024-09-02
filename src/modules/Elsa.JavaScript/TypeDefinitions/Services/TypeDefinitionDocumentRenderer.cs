@@ -18,6 +18,9 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
         foreach (var typeDefinition in document.Types)
             Render(typeDefinition, stringBuilder);
 
+        foreach (var variableDefinition in document.Variables) 
+            Render(variableDefinition, stringBuilder);
+
         return stringBuilder.ToString();
     }
 
@@ -41,4 +44,6 @@ public class TypeDefinitionDocumentRenderer : ITypeDefinitionDocumentRenderer
     }
 
     private void Render(PropertyDefinition property, StringBuilder output) => output.AppendLine($"{property.Name}{(property.IsOptional ? "?" : "")}: {property.Type};");
+    
+    private void Render(VariableDefinition variable, StringBuilder output) => output.AppendLine($"declare var {variable.Name}: {variable.Type};");
 }

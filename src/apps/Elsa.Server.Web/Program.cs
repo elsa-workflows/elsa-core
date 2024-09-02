@@ -27,12 +27,14 @@ using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
+using Jint.Native;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
@@ -182,6 +184,7 @@ services
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
+                management.AddVariableTypeAndAlias<JsObject>("Dynamic");
             })
             .UseProtoActor(proto =>
             {
