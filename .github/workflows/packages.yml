@@ -99,7 +99,7 @@ jobs:
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
@@ -114,7 +114,7 @@ jobs:
     if: ${{ github.event_name == 'prereleased' && github.event.action == 'published' }}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
@@ -129,7 +129,7 @@ jobs:
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
