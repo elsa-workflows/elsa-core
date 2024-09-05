@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
+using Elsa.Studio.Models;
 
 // Build the host.
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -24,9 +25,15 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.RootComponents.RegisterCustomElsaStudioElements();
 
 // Register shell services and modules.
+var backendApiConfig = new BackendApiConfig
+{
+    ConfigureBackendOptions = options => builder.Configuration.GetSection("Backend").Bind(options),
+    ConfigureHttpClientBuilder = options => options.AuthenticationHandler = typeof(AuthenticatingApiHttpMessageHandler)
+};
+
 builder.Services.AddCore();
 builder.Services.AddShell();
-builder.Services.AddRemoteBackend(elsaClient => elsaClient.AuthenticationHandler = typeof(AuthenticatingApiHttpMessageHandler));
+builder.Services.AddRemoteBackend(backendApiConfig);
 builder.Services.AddLoginModule();
 builder.Services.AddDashboardModule();
 builder.Services.AddWorkflowsModule();
