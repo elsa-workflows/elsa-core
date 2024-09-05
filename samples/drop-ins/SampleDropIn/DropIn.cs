@@ -1,9 +1,11 @@
 using Elsa.DropIns.Core;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using SampleDropIn.Activities;
 
 namespace SampleDropIn;
@@ -20,5 +22,19 @@ public class DropIn : IDropIn
     {
         var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
         await activityRegistry.RegisterAsync<SampleActivity>(cancellationToken: cancellationToken);
+    }
+
+    public void Unconfigure(IServiceProvider serviceProvider)
+    {
+        var logger = serviceProvider.GetRequiredService<ILogger<DropIn>>();
+        try
+        {
+            var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+            activityRegistry.Remove(typeof(ActivityRegistry), activityRegistry.Find<SampleActivity>()!);
+            logger.LogInformation("Drop-in unconfigured.");
+        }catch(Exception ex)
+        {
+            logger.LogError(ex, "Error unconfiguring drop-in.");
+        }
     }
 }
