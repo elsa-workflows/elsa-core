@@ -2,6 +2,7 @@ using Elsa.DropIns.Catalogs;
 using Elsa.DropIns.Core;
 using Elsa.DropIns.Options;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ThrottleDebounce;
 
@@ -13,6 +14,7 @@ namespace Elsa.DropIns.HostedServices;
 public class DropInDirectoryMonitorHostedService : BackgroundService
 {
     private readonly IOptions<DropInOptions> _options;
+    private readonly ILogger<DropInDirectoryMonitorHostedService> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly RateLimitedFunc<string, Task> _debouncedLoader;
     private readonly RateLimitedFunc<string, Task> _debouncedUnloader;
@@ -22,9 +24,14 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
 
 
     /// <inheritdoc />
-    public DropInDirectoryMonitorHostedService(IOptions<DropInOptions> options, IServiceProvider serviceProvider)
+    public DropInDirectoryMonitorHostedService(
+        IOptions<DropInOptions> options,
+        IServiceProvider serviceProvider,
+        ILogger<DropInDirectoryMonitorHostedService> logger
+        )
     {
         _options = options;
+        _logger = logger;
         _serviceProvider = serviceProvider;
         _debouncedLoader = Debouncer.Debounce<string, Task>(LoadDropInAssemblyAsync, TimeSpan.FromSeconds(2));
         _debouncedUnloader = Debouncer.Debounce<string, Task>(UnloadDropInAssemblyAsync, TimeSpan.FromSeconds(2));
@@ -82,7 +89,7 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
         foreach (var dropInDescriptor in dropInDescriptors)
         {
             var dropIn = (IDropIn)Activator.CreateInstance(dropInDescriptor.Type)!;
-            if(_installedDropIns.TryGetValue(fullPath, out var installedDropIns))
+            if (_installedDropIns.TryGetValue(fullPath, out var installedDropIns))
             {
                 installedDropIns.Add(dropIn);
             }
@@ -98,7 +105,17 @@ public class DropInDirectoryMonitorHostedService : BackgroundService
     {
         if (_installedDropIns.TryGetValue(fullPath, out var installedDropIn))
         {
-            installedDropIn.ForEach(dropIn => dropIn.Unconfigure(_serviceProvider));
+            installedDropIn.ForEach(dropIn =>
+            {
+                try
+                {
+                    dropIn.Unconfigure(_serviceProvider);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error unconfiguring drop-in {DropIn}", dropIn.GetType().Name);
+                }
+            });
             _installedDropIns.Remove(fullPath);
         }
         return Task.CompletedTask;

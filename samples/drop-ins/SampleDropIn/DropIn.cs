@@ -26,15 +26,7 @@ public class DropIn : IDropIn
 
     public void Unconfigure(IServiceProvider serviceProvider)
     {
-        var logger = serviceProvider.GetRequiredService<ILogger<DropIn>>();
-        try
-        {
-            var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-            activityRegistry.Remove(typeof(ActivityRegistry), activityRegistry.Find<SampleActivity>()!);
-            logger.LogInformation("Drop-in unconfigured.");
-        }catch(Exception ex)
-        {
-            logger.LogError(ex, "Error unconfiguring drop-in.");
-        }
+        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        activityRegistry.Remove(typeof(ActivityRegistry), activityRegistry.Find<SampleActivity>()!);
     }
 }
