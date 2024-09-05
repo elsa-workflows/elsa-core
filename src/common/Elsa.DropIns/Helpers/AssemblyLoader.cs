@@ -17,7 +17,7 @@ public static class AssemblyLoader
         fileStream.CopyTo(memoryStream);
         memoryStream.Seek(0, SeekOrigin.Begin);
         fileStream.Close();
-        var assembly = loadContext.LoadFromStream(fileStream);
+        var assembly = loadContext.LoadFromStream(memoryStream);
 
         return assembly;
     }
