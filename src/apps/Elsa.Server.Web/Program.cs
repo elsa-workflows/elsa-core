@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
-using Elsa.Caching.Options;
 using Elsa.Common.DistributedLocks.Noop;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
@@ -24,18 +23,15 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
-using Elsa.Server.Web.Models;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
-using Jint.Native;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
 using Medallion.Threading.Redis;
@@ -47,7 +43,6 @@ using Proto.Persistence.SqlServer;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
-using Order = Elsa.Server.Web.Models.Order;
 
 // ReSharper disable RedundantAssignment
 
@@ -186,8 +181,6 @@ services
 
                 management.SetDefaultLogPersistenceMode(LogPersistenceMode.Inherit);
                 management.UseReadOnlyMode(useReadOnlyMode);
-                management.AddVariableTypeAndAlias<Customer>("CRM");
-                management.AddVariableTypeAndAlias<Order>("CRM");
             })
             .UseProtoActor(proto =>
             {
