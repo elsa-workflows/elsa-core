@@ -74,11 +74,12 @@ public class AlterationContext
     /// <summary>
     /// Logs a message.
     /// </summary>
+    /// <param name="eventName">The event name to log.</param>
     /// <param name="message">The message to log.</param>
     /// <param name="logLevel">The log level.</param>
-    public void Log(string message, LogLevel logLevel = LogLevel.Information)
+    public void Log(string eventName, string message, LogLevel logLevel = LogLevel.Information)
     {
-        AlterationLog.Add(message, logLevel);
+        AlterationLog.Add(message, logLevel, eventName);
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ public class AlterationContext
     public void Succeed(string message)
     {
         HasSucceeded = true;
-        Log(message, LogLevel.Information);
+        Log($"Alteration {Alteration.GetType().Name} succeeded", message, LogLevel.Information);
     }
 
     /// <summary>
@@ -123,6 +124,6 @@ public class AlterationContext
     public void Fail(string? message = default)
     {
         HasFailed = true;
-        Log(message ?? $"{Alteration.GetType().Name} failed", LogLevel.Error);
+        Log($"Alteration {Alteration.GetType().Name} failed", message ?? $"{Alteration.GetType().Name} failed", LogLevel.Error);
     }
 }

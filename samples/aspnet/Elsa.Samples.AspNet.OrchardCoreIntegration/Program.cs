@@ -1,21 +1,27 @@
-﻿using Elsa.EntityFrameworkCore.Extensions;
+﻿using Elsa.Agents;
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
-using Elsa.Agents.Options;
+using Elsa.Agents.Persistence;
+using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Workflows.Management;
 using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuration = builder.Configuration;
+var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
+var identitySection = configuration.GetSection("Identity");
+var identityTokenSection = identitySection.GetSection("Tokens");
 
 builder.Services.AddElsa(elsa =>
 {
     elsa.UseWorkflowManagement(management =>
         {
-            management.UseEntityFrameworkCore(ef => ef.UseSqlite());
+            management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             management.AddVariableTypeAndAlias<TranslationResult>("Agents");
             management.AddVariableTypeAndAlias<FactCheckResult>("Agents");
             management.AddVariableTypeAndAlias<GenerateTagsResult>("Agents");
@@ -23,7 +29,7 @@ builder.Services.AddElsa(elsa =>
         })
         .UseWorkflowRuntime(runtime =>
         {
-            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
+            runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             runtime.UseProtoActor();
         })
         .UseWorkflowsApi()
@@ -35,20 +41,25 @@ builder.Services.AddElsa(elsa =>
         .UseCSharp()
         .UseLiquid()
         .UseOrchardCore()
-        .UseDefaultAuthentication(auth => auth.UseAdminApiKey())
         .AddActivitiesFrom<Program>()
         .AddWorkflowsFrom<Program>()
         .UseIdentity(identity =>
         {
-            identity.UseAdminUserProvider();
-            identity.TokenOptions = options => options.SigningKey = "super-secret-tamper-free-token-signing-key";
+            identity.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+            identity.TokenOptions = options => identityTokenSection.Bind(options);
+            identity.UseConfigurationBasedUserProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedApplicationProvider(options => identitySection.Bind(options));
+            identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
         })
-        .UseAgents()
-        .UseSemanticKernelApi();
+        .UseDefaultAuthentication()
+        .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+        .UseAgentActivities()
+        .UseAgentsApi()
+        ;
 });
 
 builder.Services.AddControllers();
-builder.Services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("SemanticKernel").Bind(options));
+builder.Services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
 builder.Services.Configure<WebhookSourcesOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 builder.Services.Configure<OrchardCoreOptions>(options => builder.Configuration.GetSection("OrchardCore").Bind(options));
 builder.Services.Configure<OrchardCoreClientOptions>(options => builder.Configuration.GetSection("OrchardCore:Client").Bind(options));
