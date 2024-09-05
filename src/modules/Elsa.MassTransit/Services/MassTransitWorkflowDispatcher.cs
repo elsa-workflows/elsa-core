@@ -55,13 +55,17 @@ public class MassTransitWorkflowDispatcher(
         var sendEndpoint = await GetSendEndpointAsync(options);
 
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
-        {
-            BookmarkId = request.BookmarkId,
-            ActivityHandle = request.ActivityHandle,
-            CorrelationId = request.CorrelationId,
-            Input = request.Input,
-            Properties = request.Properties
-        }, cancellationToken);
+            {
+                BookmarkId = request.BookmarkId,
+                ActivityHandle = request.ActivityHandle,
+                CorrelationId = request.CorrelationId,
+                Input = request.Input,
+                Properties = request.Properties
+            },
+            x =>
+            {
+                if (request.CorrelationId != null) x.Headers.Set("X-Correlation-ID", request.CorrelationId);
+            }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
@@ -111,7 +115,7 @@ public class MassTransitWorkflowDispatcher(
                 continue;
             }
 
-            var workflowInstanceOptions = new WorkflowInstanceOptions()
+            var workflowInstanceOptions = new WorkflowInstanceOptions
             {
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
@@ -128,7 +132,10 @@ public class MassTransitWorkflowDispatcher(
         var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
         var sendEndpoint = await GetSendEndpointAsync(options);
         var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
-        await sendEndpoint.Send(message, cancellationToken);
+        await sendEndpoint.Send(message, x =>
+        {
+            if (workflowInstanceOptions?.CorrelationId != null) x.Headers.Set("X-Correlation-ID", workflowInstanceOptions.CorrelationId);
+        }, cancellationToken);
     }
 
     private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
