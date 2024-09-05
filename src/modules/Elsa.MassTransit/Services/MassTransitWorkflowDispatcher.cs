@@ -61,10 +61,6 @@ public class MassTransitWorkflowDispatcher(
                 CorrelationId = request.CorrelationId,
                 Input = request.Input,
                 Properties = request.Properties
-            },
-            x =>
-            {
-                if (request.CorrelationId != null) x.Headers.Set("X-Correlation-ID", request.CorrelationId);
             }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -132,10 +128,7 @@ public class MassTransitWorkflowDispatcher(
         var workflowInstance = await workflowInstanceManager.CreateWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
         var sendEndpoint = await GetSendEndpointAsync(options);
         var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
-        await sendEndpoint.Send(message, x =>
-        {
-            if (workflowInstanceOptions?.CorrelationId != null) x.Headers.Set("X-Correlation-ID", workflowInstanceOptions.CorrelationId);
-        }, cancellationToken);
+        await sendEndpoint.Send(message, cancellationToken);
     }
 
     private async Task DispatchBookmarksAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
