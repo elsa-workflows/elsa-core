@@ -300,8 +300,6 @@ public class Flowchart : Container
 
     private void OnBreakSignalReceived(BreakSignal signal, SignalContext context)
     {
-        // Prevent Bubbling
-        context.StopPropagation();
         context.ReceiverActivityExecutionContext.SetIsBreaking();
     }
 
