@@ -55,13 +55,13 @@ public class MassTransitWorkflowDispatcher(
         var sendEndpoint = await GetSendEndpointAsync(options);
 
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
-            {
-                BookmarkId = request.BookmarkId,
-                ActivityHandle = request.ActivityHandle,
-                CorrelationId = request.CorrelationId,
-                Input = request.Input,
-                Properties = request.Properties
-            }, cancellationToken);
+        {
+            BookmarkId = request.BookmarkId,
+            ActivityHandle = request.ActivityHandle,
+            CorrelationId = request.CorrelationId,
+            Input = request.Input,
+            Properties = request.Properties
+        }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
 
