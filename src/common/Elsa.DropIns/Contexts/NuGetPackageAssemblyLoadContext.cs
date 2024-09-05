@@ -22,6 +22,8 @@ internal sealed class NuGetPackageAssemblyLoadContext : AssemblyLoadContext
 
             _loadedAssemblies[assembly.FullName!] = assembly;
         }
+        //Closes the package reader, closing the .nupkg file
+        packageReader.Dispose();
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
