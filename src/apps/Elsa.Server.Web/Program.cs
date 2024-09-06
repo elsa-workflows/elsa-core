@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
-using Elsa.Caching.Options;
 using Elsa.Common.DistributedLocks.Noop;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;

@@ -67,6 +67,7 @@
     <PackageVersion Include="NuGet.Protocol" Version="6.10.1" />
     <PackageVersion Include="Nuke.Components" Version="8.0.0" />
     <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.9.0" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.14.1" />
     <PackageVersion Include="Proto.Actor" Version="1.6.0" />

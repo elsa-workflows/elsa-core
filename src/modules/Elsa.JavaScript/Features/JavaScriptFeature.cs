@@ -72,6 +72,8 @@ public class JavaScriptFeature : FeatureBase
             .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
             .AddTypeDefinitionProvider<CommonTypeDefinitionProvider>()
             .AddTypeDefinitionProvider<VariableTypeDefinitionProvider>()
+            .AddTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()
+            .AddVariableDefinitionProvider<WorkflowVariablesVariableProvider>()
             ;
 
         // Handlers.
