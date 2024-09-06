@@ -1,3 +1,4 @@
+using Elsa.Agents;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -13,7 +14,7 @@ using Proto.Persistence.Sqlite;
 using WebhooksCore.Options;
 
 const bool useMassTransit = true;
-const bool useProtoActor = false;
+const bool useProtoActor = true;
 const bool useCaching = true;
 const bool useMySql = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
@@ -105,6 +106,8 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
+            .UseAgentsApi()
+            .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
