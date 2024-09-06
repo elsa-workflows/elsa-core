@@ -100,7 +100,7 @@ services
                 if (useCaching)
                     http.UseCache();
 
-                http.ConfigureHttpOptions = options => configuration.GetSection("Http").Bind(options);
+                http.ConfigureHttpOptions = options => configuration.GetSection("Hosting").Bind(options);
             })
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
