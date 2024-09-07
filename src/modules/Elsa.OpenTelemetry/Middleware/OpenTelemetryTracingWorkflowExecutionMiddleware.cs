@@ -16,6 +16,10 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
         using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity($"WorkflowExecution {workflow.WorkflowMetadata.Name}", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        
+        if(!string.IsNullOrWhiteSpace(context.CorrelationId))
+            activity?.AddTag("correlationId", context.CorrelationId);
+        
         activity?.AddTag("workflowInstance.id", workflowInstanceId);
         activity?.AddTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
         activity?.AddTag("workflowDefinition.version", workflow.Identity.Version);

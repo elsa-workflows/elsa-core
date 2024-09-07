@@ -111,7 +111,7 @@ public class MassTransitWorkflowDispatcher(
                 continue;
             }
 
-            var workflowInstanceOptions = new WorkflowInstanceOptions()
+            var workflowInstanceOptions = new WorkflowInstanceOptions
             {
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
