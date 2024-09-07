@@ -1,7 +1,8 @@
 using Elsa.Agents.Persistence.Entities;
+using Elsa.EntityFrameworkCore;
+using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 
@@ -30,6 +31,3 @@ public class Configurations : IEntityTypeConfiguration<ApiKeyDefinition>, IEntit
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AgentDefinition)}_{nameof(AgentDefinition.TenantId)}");
     }
 }
-
-public class JsonValueConverter<T>() : ValueConverter<T, string>(v => JsonValueConverterHelper.Serialize(v), v => JsonValueConverterHelper.Deserialize<T>(v))
-    where T : class;

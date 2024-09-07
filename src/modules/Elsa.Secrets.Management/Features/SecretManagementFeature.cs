@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Secrets.Management.Features;
 
 [DependsOn(typeof(SecretsFeature))]
-public class SecretsManagementFeature(IModule module) : FeatureBase(module)
+public class SecretManagementFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, ISecretStore> _secretStoreFactory = sp => sp.GetRequiredService<MemorySecretStore>();
     private Func<IServiceProvider, IAlgorithmResolver> _algorithmResolver = sp => sp.GetRequiredService<DefaultAlgorithmResolver>();
@@ -16,25 +16,25 @@ public class SecretsManagementFeature(IModule module) : FeatureBase(module)
     private Func<IServiceProvider, IEncryptor> _encryptorFactory = sp => sp.GetRequiredService<DefaultEncryptor>();
     private Func<IServiceProvider, IEncryptionKeyProvider> _encryptionKeyProvider = sp => sp.GetRequiredService<OptionsEncryptionKeyProvider>();
 
-    public SecretsManagementFeature UseOptionsEncryptionKeyProvider()
+    public SecretManagementFeature UseOptionsEncryptionKeyProvider()
     {
         _encryptionKeyProvider = sp => sp.GetRequiredService<OptionsEncryptionKeyProvider>();
         return this;
     }
 
-    public SecretsManagementFeature UseStoreEncryptionKeyProvider()
+    public SecretManagementFeature UseStoreEncryptionKeyProvider()
     {
         _encryptionKeyProvider = sp => sp.GetRequiredService<StoreEncryptionKeyProvider>();
         return this;
     }
 
-    public SecretsManagementFeature UseSecretsStore(Func<IServiceProvider, ISecretStore> secretStoreFactory)
+    public SecretManagementFeature UseSecretsStore(Func<IServiceProvider, ISecretStore> secretStoreFactory)
     {
         _secretStoreFactory = secretStoreFactory;
         return this;
     }
 
-    public SecretsManagementFeature UseAlgorithmResolver(Func<IServiceProvider, IAlgorithmResolver> algorithmResolverFactory)
+    public SecretManagementFeature UseAlgorithmResolver(Func<IServiceProvider, IAlgorithmResolver> algorithmResolverFactory)
     {
         _algorithmResolver = algorithmResolverFactory;
         return this;
