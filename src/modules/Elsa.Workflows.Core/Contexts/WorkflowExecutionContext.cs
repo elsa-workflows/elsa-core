@@ -280,7 +280,8 @@ public partial class WorkflowExecutionContext : IExecutionContext
     public Diff<Bookmark> BookmarksDiff => Diff.For(OriginalBookmarks, Bookmarks);
 
     /// <summary>
-    /// A dictionary of inputs provided at the start of the current workflow execution. 
+    /// A dictionary of inputs provided at the start of the current workflow execution.
+    /// </summary>
     public IDictionary<string, object> Input { get; set; }
 
     /// A dictionary of outputs provided by the current workflow execution. 
@@ -398,6 +399,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
 
     /// <summary>
     /// Returns the <see cref="ActivityNode"/> with the specified activity ID from the workflow graph.
+    /// </summary>
     public ActivityNode? FindNodeById(string nodeId) => NodeIdLookup.TryGetValue(nodeId, out var node) ? node : default;
 
     /// Returns the <see cref="ActivityNode"/> with the specified hash of the activity node ID from the workflow graph.

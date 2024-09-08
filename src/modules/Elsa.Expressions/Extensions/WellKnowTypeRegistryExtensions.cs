@@ -9,7 +9,7 @@ namespace Elsa.Expressions.Extensions;
 public static class WellKnowTypeRegistryExtensions
 {
     /// <summary>
-    /// Register type <see cref="T"/> with the specified alias.
+    /// Register type <typeparamref name="T"/> with the specified alias.
     /// </summary>
     public static void RegisterType<T>(this IWellKnownTypeRegistry registry, string alias) => registry.RegisterType(typeof(T), alias);
 

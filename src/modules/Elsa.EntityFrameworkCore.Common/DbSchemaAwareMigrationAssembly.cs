@@ -32,7 +32,7 @@ public class DbSchemaAwareMigrationAssembly : MigrationsAssembly
 
         if (hasCtorWithSchema && _context is IElsaDbContextSchema schema)
         {
-            var instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema);
+            var instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
             instance.ActiveProvider = activeProvider;
             return instance;
         }
