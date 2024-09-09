@@ -9,7 +9,7 @@ public sealed class TypeDefinition
     /// <summary>
     /// The keyword that declares this type. E.g. "class", "type" or "interface".
     /// </summary>
-    public string DeclarationKeyword { get; set; } = default!;
+    public string DeclarationKeyword { get; set; } = "class";
 
     /// <summary>
     /// The name of the type.

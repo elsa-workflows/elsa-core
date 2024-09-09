@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Contracts;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 
@@ -80,7 +81,7 @@ public class For : Activity
 
     private async ValueTask HandleIteration(ActivityExecutionContext context)
     {
-        var iterateNode = Body!;
+        var iterateNode = Body;
         var end = context.Get(End);
         var currentValue = context.GetProperty<int?>(CurrentStepProperty);
         var start = context.Get(Start);
@@ -100,7 +101,15 @@ public class For : Activity
 
         if (loop)
         {
-            await context.ScheduleActivityAsync(iterateNode, OnChildComplete);
+            if (iterateNode != null)
+            {
+                var variables = new[]
+                {
+                    new Variable("CurrentValue", currentValue)
+                };
+                await context.ScheduleActivityAsync(iterateNode, OnChildComplete, variables: variables);
+            }
+            
 
             // Update internal step.
             context.SetProperty(CurrentStepProperty, currentValue);

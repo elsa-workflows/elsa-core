@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Runtime.Handlers;
 /// Resumes any blocking <see cref="BulkDispatchWorkflows"/> activities when its child workflows complete.
 /// </summary>
 [PublicAPI]
-internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkResumer, IStimulusHasher stimulusHasher) : INotificationHandler<WorkflowExecuted>
+internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulusHasher) : INotificationHandler<WorkflowExecuted>
 {
     public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
     {
@@ -50,6 +50,6 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkResumer
             StimulusHash = stimulusHash,
             Options = resumeBookmarkOptions
         };
-        await bookmarkResumer.EnqueueAsync(bookmarkQueueItem, cancellationToken);
+        await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
     }
 }
