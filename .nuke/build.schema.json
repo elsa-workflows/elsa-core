@@ -1,21 +1,71 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/build",
-  "title": "Build Schema",
+  "properties": {
+    "AnalyseCode": {
+      "type": "boolean"
+    },
+    "Configuration": {
+      "type": "string",
+      "enum": [
+        "Debug",
+        "Release"
+      ]
+    },
+    "IgnoreFailedSources": {
+      "type": "boolean",
+      "description": "Ignore unreachable sources during Restore"
+    },
+    "Solution": {
+      "type": "string",
+      "description": "Path to a solution file that is automatically loaded"
+    },
+    "Version": {
+      "type": "string"
+    }
+  },
   "definitions": {
-    "build": {
-      "type": "object",
+    "Host": {
+      "type": "string",
+      "enum": [
+        "AppVeyor",
+        "AzurePipelines",
+        "Bamboo",
+        "Bitbucket",
+        "Bitrise",
+        "GitHubActions",
+        "GitLab",
+        "Jenkins",
+        "Rider",
+        "SpaceAutomation",
+        "TeamCity",
+        "Terminal",
+        "TravisCI",
+        "VisualStudio",
+        "VSCode"
+      ]
+    },
+    "ExecutableTarget": {
+      "type": "string",
+      "enum": [
+        "Clean",
+        "Compile",
+        "Pack",
+        "Restore",
+        "Test"
+      ]
+    },
+    "Verbosity": {
+      "type": "string",
+      "description": "",
+      "enum": [
+        "Verbose",
+        "Normal",
+        "Minimal",
+        "Quiet"
+      ]
+    },
+    "NukeBuild": {
       "properties": {
-        "AnalyseCode": {
-          "type": "boolean"
-        },
-        "Configuration": {
-          "type": "string",
-          "enum": [
-            "Debug",
-            "Release"
-          ]
-        },
         "Continue": {
           "type": "boolean",
           "description": "Indicates to continue a previously failed build attempt"
@@ -25,29 +75,8 @@
           "description": "Shows the help text for this build assembly"
         },
         "Host": {
-          "type": "string",
           "description": "Host for execution. Default is 'automatic'",
-          "enum": [
-            "AppVeyor",
-            "AzurePipelines",
-            "Bamboo",
-            "Bitbucket",
-            "Bitrise",
-            "GitHubActions",
-            "GitLab",
-            "Jenkins",
-            "Rider",
-            "SpaceAutomation",
-            "TeamCity",
-            "Terminal",
-            "TravisCI",
-            "VisualStudio",
-            "VSCode"
-          ]
-        },
-        "IgnoreFailedSources": {
-          "type": "boolean",
-          "description": "Ignore unreachable sources during Restore"
+          "$ref": "#/definitions/Host"
         },
         "NoLogo": {
           "type": "boolean",
@@ -76,48 +105,22 @@
           "type": "array",
           "description": "List of targets to be skipped. Empty list skips all dependencies",
           "items": {
-            "type": "string",
-            "enum": [
-              "Clean",
-              "Compile",
-              "Pack",
-              "Restore",
-              "Test"
-            ]
+            "$ref": "#/definitions/ExecutableTarget"
           }
-        },
-        "Solution": {
-          "type": "string",
-          "description": "Path to a solution file that is automatically loaded"
         },
         "Target": {
           "type": "array",
           "description": "List of targets to be invoked. Default is '{default_target}'",
           "items": {
-            "type": "string",
-            "enum": [
-              "Clean",
-              "Compile",
-              "Pack",
-              "Restore",
-              "Test"
-            ]
+            "$ref": "#/definitions/ExecutableTarget"
           }
         },
         "Verbosity": {
-          "type": "string",
           "description": "Logging verbosity during build execution. Default is 'Normal'",
-          "enum": [
-            "Minimal",
-            "Normal",
-            "Quiet",
-            "Verbose"
-          ]
-        },
-        "Version": {
-          "type": "string"
+          "$ref": "#/definitions/Verbosity"
         }
       }
     }
-  }
+  },
+  "$ref": "#/definitions/NukeBuild"
 }
