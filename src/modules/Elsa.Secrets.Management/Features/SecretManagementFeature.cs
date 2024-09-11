@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -58,7 +59,7 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped(_encryptionKeyProvider)
             .AddScoped<DefaultEncryptor>()
             .AddScoped<StoreSecretProvider>()
-            .AddScoped<MemorySecretStore>()
+            .AddMemoryStore<Secret, MemorySecretStore>()
             .AddScoped<OptionsEncryptionKeyProvider>()
             .AddScoped<StoreEncryptionKeyProvider>()
             .AddScoped<DefaultAlgorithmResolver>()
