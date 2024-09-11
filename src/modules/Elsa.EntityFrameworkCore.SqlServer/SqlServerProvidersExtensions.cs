@@ -22,7 +22,7 @@ public static class SqlServerProvidersExtensions
         where TDbContext : ElsaDbContextBase
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
-        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(Assembly, connectionString, options);
+        feature.DbContextOptionsBuilder = (_, db) => db.UseElsaSqlServer(migrationsAssembly, connectionString, options);
         return (TFeature)feature;
     }
 }

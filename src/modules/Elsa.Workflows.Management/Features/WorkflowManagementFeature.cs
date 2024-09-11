@@ -145,10 +145,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[]
-    {
-        type
-    }, category);
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes([type], category);
 
     /// <summary>
     /// Adds the specified variable types to the system.
