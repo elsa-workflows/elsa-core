@@ -108,6 +108,7 @@ services
             .UseWorkflowsApi()
             .UseAgentsApi()
             .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+            .UseAgentActivities()
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();
