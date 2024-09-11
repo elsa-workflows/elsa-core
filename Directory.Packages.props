@@ -26,6 +26,7 @@
     <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.524" />
     <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.524" />
     <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.524" />
     <PackageVersion Include="FastEndpoints" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.27.0" />
