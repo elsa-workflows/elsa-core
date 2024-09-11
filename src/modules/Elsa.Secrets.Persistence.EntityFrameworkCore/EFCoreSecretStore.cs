@@ -22,6 +22,45 @@ public class EFCoreSecretStore(EntityStore<SecretsDbContext, Secret> store) : IS
     {
         return await store.QueryAsync(query => Filter(query, filter).OrderBy(order), cancellationToken).FirstOrDefault();
     }
-    
+
+    public async Task AddAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        await store.AddAsync(entity, cancellationToken);
+    }
+
+    public async Task UpdateAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        await store.UpdateAsync(entity, cancellationToken);
+    }
+
+    public async Task<Secret?> GetAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var filter = new SecretFilter
+        {
+            Id = id
+        };
+        return await FindAsync(filter, cancellationToken);
+    }
+
+    public Task<Secret?> FindAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        return store.FindAsync(filter.Apply, cancellationToken);
+    }
+
+    public async Task<IEnumerable<Secret>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        return await store.ListAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        await store.DeleteAsync(entity, cancellationToken);
+    }
+
+    public async Task<long> DeleteManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.DeleteWhereAsync(filter.Apply, cancellationToken);
+    }
+
     private static IQueryable<Secret> Filter(IQueryable<Secret> queryable, SecretFilter filter) => filter.Apply(queryable);
 }

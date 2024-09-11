@@ -21,5 +21,48 @@ public class MemorySecretStore(MemoryStore<Secret> memoryStore) : ISecretStore
         return Task.FromResult(result);
     }
 
+    public Task AddAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        memoryStore.Add(entity, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    public Task UpdateAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        memoryStore.Update(entity, x => x.Id);
+        return Task.CompletedTask;
+    }
+
+    public Task<Secret?> GetAsync(string id, CancellationToken cancellationToken = default)
+    {
+        var result = memoryStore.Find(x => x.Id == id);
+        return Task.FromResult(result);
+    }
+
+    public Task<Secret?> FindAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = memoryStore.Query(query => Filter(query, filter)).FirstOrDefault();
+        return Task.FromResult(result);
+    }
+
+    public Task<IEnumerable<Secret>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        var result = memoryStore.List();
+        return Task.FromResult(result);
+    }
+
+    public Task DeleteAsync(Secret entity, CancellationToken cancellationToken = default)
+    {
+        memoryStore.Delete(entity.Id);
+        return Task.CompletedTask;
+    }
+
+    public Task<long> DeleteManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        var agents = memoryStore.Query(filter.Apply).ToList();
+        memoryStore.DeleteMany(agents, x => x.Id);
+        return Task.FromResult<long>(agents.Count);
+    }
+
     private IQueryable<Secret> Filter(IQueryable<Secret> queryable, SecretFilter filter) => filter.Apply(queryable);
 }

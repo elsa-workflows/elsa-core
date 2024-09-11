@@ -58,6 +58,11 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped(_encryptionKeyProvider)
             .AddScoped<DefaultEncryptor>()
             .AddScoped<StoreSecretProvider>()
+            .AddScoped<MemorySecretStore>()
+            .AddScoped<OptionsEncryptionKeyProvider>()
+            .AddScoped<StoreEncryptionKeyProvider>()
+            .AddScoped<DefaultAlgorithmResolver>()
+            .AddScoped<ISecretManager, DefaultSecretManager>()
             .AddTransient<IAlgorithmProvider, DefaultAlgorithmProvider>()
             ;
     }

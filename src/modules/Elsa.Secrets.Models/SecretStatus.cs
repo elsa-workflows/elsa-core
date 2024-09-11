@@ -1,4 +1,4 @@
-namespace Elsa.Secrets.Management;
+namespace Elsa.Secrets;
 
 public enum SecretStatus
 {

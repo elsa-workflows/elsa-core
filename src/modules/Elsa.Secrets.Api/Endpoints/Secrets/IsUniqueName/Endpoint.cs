@@ -1,19 +1,19 @@
 ﻿using Elsa.Abstractions;
-using Elsa.Agents.Persistence.Contracts;
-using Elsa.Agents.Persistence.Filters;
+using Elsa.Secrets.Management;
+using Elsa.Secrets.UniqueName;
 using JetBrains.Annotations;
 
-namespace Elsa.Agents.Api.Endpoints.Agents.IsUniqueName;
+namespace Elsa.Secrets.Api.Endpoints.Secrets.IsUniqueName;
 
 /// Checks if a name is unique.
 [UsedImplicitly]
-public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
+public class Endpoint(ISecretManager agentManager) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
 {
     /// <inheritdoc />
     public override void Configure()
     {
-        Post("/ai/queries/agents/is-unique-name");
-        ConfigurePermissions("ai/agents:read");
+        Post("/queries/secrets/is-unique-name");
+        ConfigurePermissions("secrets:write");
     }
 
     /// <inheritdoc />
