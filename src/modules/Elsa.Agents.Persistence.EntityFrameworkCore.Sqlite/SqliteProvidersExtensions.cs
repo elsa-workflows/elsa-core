@@ -1,9 +1,6 @@
 ﻿using System.Reflection;
 using Elsa.Agents.Persistence.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
-using Elsa.EntityFrameworkCore.Common.EntityHandlers;
-using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;

@@ -460,6 +460,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.En
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj", "{44A03CF6-4EB6-434C-90D1-FF8142FE394E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.csproj", "{A9140976-DFF9-432A-B1DC-E188A07C49E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.MySql", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj", "{B3046301-6F00-4885-8B01-080BD489055C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1040,6 +1044,14 @@ Global
 		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1222,6 +1234,8 @@ Global
 		{052C4F97-5909-4D88-AA49-4B0D9058A0A9} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{9A6D67DE-51B1-456D-B25D-19E0356C8F60} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{44A03CF6-4EB6-434C-90D1-FF8142FE394E} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{B3046301-6F00-4885-8B01-080BD489055C} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
