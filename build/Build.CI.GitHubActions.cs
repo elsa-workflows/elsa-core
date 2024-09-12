@@ -8,7 +8,8 @@ using Nuke.Components;
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test), nameof(IPack.Pack)],
-        CacheKeyFiles = []
+        CacheKeyFiles = [],
+        ConcurrencyCancelInProgress = true
     )
 ]
 public partial class Build;
