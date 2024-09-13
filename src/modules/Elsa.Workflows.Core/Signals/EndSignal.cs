@@ -1,3 +1,3 @@
-namespaces Elsa.Workflows.Signals;
+namespace Elsa.Workflows.Signals;
 
 public record EndSignal;
