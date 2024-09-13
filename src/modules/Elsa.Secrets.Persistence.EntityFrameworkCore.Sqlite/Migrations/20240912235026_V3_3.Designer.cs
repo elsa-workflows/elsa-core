@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(SecretsDbContext))]
-    [Migration("20240907202340_V3_3")]
+    [Migration("20240912235026_V3_3")]
     partial class V3_3
     {
         /// <inheritdoc />
@@ -25,9 +25,6 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Algorithm")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -39,15 +36,7 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("EncryptionKeyId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("ExpiresAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("IV")
-                        .IsRequired()
+                    b.Property<DateTimeOffset?>("ExpiresAt")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset?>("LastAccessedAt")
@@ -60,7 +49,7 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("Owner")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("RotationPolicy")
+                    b.Property<string>("Scope")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SecretId")
@@ -73,9 +62,6 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Type")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TEXT");
 
@@ -83,12 +69,6 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Algorithm")
-                        .HasDatabaseName("IX_Secret_Algorithm");
-
-                    b.HasIndex("EncryptionKeyId")
-                        .HasDatabaseName("IX_Secret_EncryptionKeyId");
 
                     b.HasIndex("ExpiresAt")
                         .HasDatabaseName("IX_Secret_ExpiresAt");
@@ -99,14 +79,14 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_Secret_Name");
 
+                    b.HasIndex("Scope")
+                        .HasDatabaseName("IX_Secret_Scope");
+
                     b.HasIndex("Status")
                         .HasDatabaseName("IX_Secret_Status");
 
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Secret_TenantId");
-
-                    b.HasIndex("Type")
-                        .HasDatabaseName("IX_Secret_Type");
 
                     b.HasIndex("Version")
                         .HasDatabaseName("IX_Secret_Version");

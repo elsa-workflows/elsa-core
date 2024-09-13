@@ -12,32 +12,12 @@ namespace Elsa.Secrets.Management.Features;
 public class SecretManagementFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, ISecretStore> _secretStoreFactory = sp => sp.GetRequiredService<MemorySecretStore>();
-    private Func<IServiceProvider, IAlgorithmResolver> _algorithmResolver = sp => sp.GetRequiredService<DefaultAlgorithmResolver>();
-    private Func<IServiceProvider, IDecryptor> _decryptorFactory = sp => sp.GetRequiredService<DefaultEncryptor>();
-    private Func<IServiceProvider, IEncryptor> _encryptorFactory = sp => sp.GetRequiredService<DefaultEncryptor>();
-    private Func<IServiceProvider, IEncryptionKeyProvider> _encryptionKeyProvider = sp => sp.GetRequiredService<OptionsEncryptionKeyProvider>();
-
-    public SecretManagementFeature UseOptionsEncryptionKeyProvider()
-    {
-        _encryptionKeyProvider = sp => sp.GetRequiredService<OptionsEncryptionKeyProvider>();
-        return this;
-    }
-
-    public SecretManagementFeature UseStoreEncryptionKeyProvider()
-    {
-        _encryptionKeyProvider = sp => sp.GetRequiredService<StoreEncryptionKeyProvider>();
-        return this;
-    }
+    private Func<IServiceProvider, IDecryptor> _decryptorFactory = sp => sp.GetRequiredService<DataProtectionEncryptor>();
+    private Func<IServiceProvider, IEncryptor> _encryptorFactory = sp => sp.GetRequiredService<DataProtectionEncryptor>();
 
     public SecretManagementFeature UseSecretsStore(Func<IServiceProvider, ISecretStore> secretStoreFactory)
     {
         _secretStoreFactory = secretStoreFactory;
-        return this;
-    }
-
-    public SecretManagementFeature UseAlgorithmResolver(Func<IServiceProvider, IAlgorithmResolver> algorithmResolverFactory)
-    {
-        _algorithmResolver = algorithmResolverFactory;
         return this;
     }
 
@@ -53,18 +33,12 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
     {
         Services
             .AddScoped(_secretStoreFactory)
-            .AddScoped(_algorithmResolver)
             .AddScoped(_decryptorFactory)
             .AddScoped(_encryptorFactory)
-            .AddScoped(_encryptionKeyProvider)
-            .AddScoped<DefaultEncryptor>()
+            .AddScoped<DataProtectionEncryptor>()
             .AddScoped<StoreSecretProvider>()
             .AddMemoryStore<Secret, MemorySecretStore>()
-            .AddScoped<OptionsEncryptionKeyProvider>()
-            .AddScoped<StoreEncryptionKeyProvider>()
-            .AddScoped<DefaultAlgorithmResolver>()
             .AddScoped<ISecretManager, DefaultSecretManager>()
-            .AddTransient<IAlgorithmProvider, DefaultAlgorithmProvider>()
             ;
     }
 }

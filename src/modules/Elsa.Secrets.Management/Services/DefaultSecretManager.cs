@@ -47,7 +47,7 @@ public class DefaultSecretManager(ISecretStore store, INotificationSender notifi
 
     public async Task<string> GenerateUniqueNameAsync(CancellationToken cancellationToken)
     {
-        const int maxAttempts = 100;
+        const int maxAttempts = 1000;
         var attempt = 0;
 
         while (attempt < maxAttempts)

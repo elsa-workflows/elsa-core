@@ -19,7 +19,7 @@ public class StoreSecretProvider(ISecretStore store, IDecryptor decryptor) : ISe
         if (secret == null)
             return null;
         
-        var encryptedValue = secret.GetEncryptedValue();
+        var encryptedValue = secret.EncryptedValue;
         return await decryptor.DecryptAsync(encryptedValue, cancellationToken);
     }
 }

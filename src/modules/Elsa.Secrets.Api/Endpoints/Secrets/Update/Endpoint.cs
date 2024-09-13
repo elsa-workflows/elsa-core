@@ -7,7 +7,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets.Update;
 
 /// Updates an agent.
 [UsedImplicitly]
-public class Endpoint(ISecretManager agentManager, ISystemClock systemClock) : ElsaEndpoint<SecretInputModel, SecretModel>
+public class Endpoint(ISecretManager manager, ISecretEncryptor secretEncryptor) : ElsaEndpoint<SecretInputModel, SecretModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -20,7 +20,7 @@ public class Endpoint(ISecretManager agentManager, ISystemClock systemClock) : E
     public override async Task<SecretModel> ExecuteAsync(SecretInputModel req, CancellationToken ct)
     {
         var id = Route<string>("id")!;
-        var entity = await agentManager.GetAsync(id, ct);
+        var entity = await manager.GetAsync(id, ct);
 
         if (entity == null)
         {
@@ -37,23 +37,14 @@ public class Endpoint(ISecretManager agentManager, ISystemClock systemClock) : E
             return entity.ToModel();
         }
 
-        entity.Name = req.Name.Trim();
-        entity.Description = req.Description.Trim();
-        entity.Algorithm = req.Algorithm;
-        entity.Type = req.Type;
-        entity.EncryptedValue = req.EncryptedValue;
-        entity.IV = req.IV;
-        entity.ExpiresAt = req.ExpiresAt;
-        entity.RotationPolicy = req.RotationPolicy;
-        entity.EncryptionKeyId = req.EncryptionKeyId;
-        entity.UpdatedAt = systemClock.UtcNow;
+        await secretEncryptor.EncryptAsync(entity, req, ct);
 
-        await agentManager.UpdateAsync(entity, ct);
+        await manager.UpdateAsync(entity, ct);
         return entity.ToModel();
     }
 
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)
     {
-        return !await agentManager.IsNameUniqueAsync(name, id, cancellationToken);
+        return !await manager.IsNameUniqueAsync(name, id, cancellationToken);
     }
 }

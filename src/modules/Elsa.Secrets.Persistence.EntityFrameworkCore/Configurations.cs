@@ -12,9 +12,7 @@ public class Configurations : IEntityTypeConfiguration<Secret>
     public void Configure(EntityTypeBuilder<Secret> builder)
     {
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Name)}");
-        builder.HasIndex(x => x.Type).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Type)}");
-        builder.HasIndex(x => x.EncryptionKeyId).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.EncryptionKeyId)}");
-        builder.HasIndex(x => x.Algorithm).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Algorithm)}");
+        builder.HasIndex(x => x.Scope).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Scope)}");
         builder.HasIndex(x => x.Version).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Version)}");
         builder.HasIndex(x => x.Status).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Status)}");
         builder.HasIndex(x => x.ExpiresAt).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.ExpiresAt)}");

@@ -26,16 +26,12 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     SecretId = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
-                    Type = table.Column<string>(type: "TEXT", nullable: true),
+                    Scope = table.Column<string>(type: "TEXT", nullable: true),
                     EncryptedValue = table.Column<string>(type: "TEXT", nullable: false),
-                    IV = table.Column<string>(type: "TEXT", nullable: false),
-                    EncryptionKeyId = table.Column<string>(type: "TEXT", nullable: false),
-                    Algorithm = table.Column<string>(type: "TEXT", nullable: true),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
                     Version = table.Column<int>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
-                    RotationPolicy = table.Column<string>(type: "TEXT", nullable: true),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     LastAccessedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false),
@@ -46,16 +42,6 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 {
                     table.PrimaryKey("PK_Secrets", x => x.Id);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Secret_Algorithm",
-                table: "Secrets",
-                column: "Algorithm");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Secret_EncryptionKeyId",
-                table: "Secrets",
-                column: "EncryptionKeyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_ExpiresAt",
@@ -73,6 +59,11 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 column: "Name");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Secret_Scope",
+                table: "Secrets",
+                column: "Scope");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Secret_Status",
                 table: "Secrets",
                 column: "Status");
@@ -81,11 +72,6 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                 name: "IX_Secret_TenantId",
                 table: "Secrets",
                 column: "TenantId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Secret_Type",
-                table: "Secrets",
-                column: "Type");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_Version",
