@@ -37,10 +37,16 @@ public class Endpoint(ISecretManager manager, ISecretEncryptor secretEncryptor) 
             return entity.ToModel();
         }
 
-        await secretEncryptor.EncryptAsync(entity, req, ct);
-
+        entity.IsLatest = false;
+        entity.Status = SecretStatus.Retired;
+        var newVersion = entity.Clone();
+        newVersion.IsLatest = true;
+        newVersion.Version = entity.Version + 1;
+        
+        await secretEncryptor.EncryptAsync(newVersion, req, ct);
         await manager.UpdateAsync(entity, ct);
-        return entity.ToModel();
+        await manager.UpdateAsync(newVersion, ct);
+        return newVersion.ToModel();
     }
 
     private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)

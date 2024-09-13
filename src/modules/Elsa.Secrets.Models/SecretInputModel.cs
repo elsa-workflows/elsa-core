@@ -17,5 +17,5 @@ public class SecretInputModel
     /// <summary>
     /// The expiration date of the secret. Leave null for no expiration.
     /// </summary>
-    public DateTimeOffset? ExpiresAt { get; set; }
+    public TimeSpan? ExpiresIn { get; set; }
 }

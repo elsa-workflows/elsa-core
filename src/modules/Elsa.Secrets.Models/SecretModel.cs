@@ -11,8 +11,8 @@ public class SecretModel
     
     public string Name { get; set; } = default!;
     
-    /// An optional type of the secret. Examples: "API Key", "ConnectionString", "JWT", "Password", "EncryptionKey", etc.
-    public string? Type { get; set; } = default!;
+    /// An optional scope of the secret. Examples: "API Key", "ConnectionString", "JWT", "Password", "EncryptionKey", etc.
+    public string? Scope { get; set; } = default!;
     
     /// The encrypted value of the secret using the encryption key referenced by <see cref="EncryptionKeyId"/>.
     public string EncryptedValue { get; set; } = default!;

@@ -23,10 +23,36 @@ public class Secret : ManagedEntity
     
     /// The version of the secret. Increments after each update or rotation.
     public int Version { get; set; }
+
+    /// <summary>
+    /// Whether this secret is the latest version.
+    /// </summary>
+    public bool IsLatest { get; set; }
     
     /// The status of the secret.
     public SecretStatus Status { get; set; }
     
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset? LastAccessedAt { get; set; }
+
+    public Secret Clone()
+    {
+        return new Secret
+        {
+            Id = Id,
+            SecretId = SecretId,
+            Name = Name,
+            Scope = Scope,
+            EncryptedValue = EncryptedValue,
+            Description = Description,
+            Version = Version,
+            IsLatest = IsLatest,
+            Status = Status,
+            ExpiresAt = ExpiresAt,
+            LastAccessedAt = LastAccessedAt,
+            CreatedAt = CreatedAt,
+            UpdatedAt = UpdatedAt,
+            Owner = Owner
+        };
+    }
 }

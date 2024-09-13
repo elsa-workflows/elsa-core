@@ -28,6 +28,7 @@ internal class Endpoint(ISecretStore store) : ElsaEndpoint<Request, PagedListRes
     {
         return new SecretFilter
         {
+            IsLatest = true,
             SearchTerm = request.SearchTerm?.Trim()
         };
     }

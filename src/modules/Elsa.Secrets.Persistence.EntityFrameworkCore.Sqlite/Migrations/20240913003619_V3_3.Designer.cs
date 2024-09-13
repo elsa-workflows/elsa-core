@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
 {
     [DbContext(typeof(SecretsDbContext))]
-    [Migration("20240912235026_V3_3")]
+    [Migration("20240913003619_V3_3")]
     partial class V3_3
     {
         /// <inheritdoc />
@@ -38,6 +38,9 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
 
                     b.Property<DateTimeOffset?>("ExpiresAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsLatest")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTimeOffset?>("LastAccessedAt")
                         .HasColumnType("TEXT");

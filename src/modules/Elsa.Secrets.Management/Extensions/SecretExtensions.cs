@@ -24,4 +24,16 @@ public static class SecretExtensions
             LastAccessedAt = secret.LastAccessedAt
         };
     }
+    
+    public static SecretInputModel ToInputModel(this Secret secret, string clearTextValue)
+    {
+        return new SecretInputModel
+        {
+            Name = secret.Name,
+            Description = secret.Description,
+            Value = clearTextValue,
+            ExpiresAt = secret.ExpiresAt,
+            Scope = secret.Scope
+        };
+    }
 }

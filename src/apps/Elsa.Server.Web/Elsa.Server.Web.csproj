@@ -58,4 +58,8 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="App_Data\" />
+    </ItemGroup>
+
 </Project>

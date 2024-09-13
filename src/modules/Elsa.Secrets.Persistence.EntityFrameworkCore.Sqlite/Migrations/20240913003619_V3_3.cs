@@ -30,6 +30,7 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     EncryptedValue = table.Column<string>(type: "TEXT", nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: false),
                     Version = table.Column<int>(type: "INTEGER", nullable: false),
+                    IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     LastAccessedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
