@@ -1,23 +1,31 @@
 using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Secrets.Management.Notifications;
+using Elsa.Workflows.Contracts;
 
 namespace Elsa.Secrets.Management;
 
-public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISecretUpdater secretUpdater, ISystemClock systemClock, INotificationSender notificationSender) : ISecretManager
+public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISecretUpdater secretUpdater, IIdentityGenerator identityGenerator, ISystemClock systemClock, INotificationSender notificationSender) : ISecretManager
 {
     public async Task<Secret> CreateAsync(SecretInputModel input, CancellationToken cancellationToken = default)
     {
         var encryptedValue = await encryptor.EncryptAsync(input.Value, cancellationToken);
+        var now = systemClock.UtcNow;
         var secret = new Secret
         {
+            Id = identityGenerator.GenerateId(),
+            SecretId = identityGenerator.GenerateId(),
             Name = input.Name.Trim(),
             Scope = input.Scope?.Trim(),
             Description = input.Description.Trim(),
             EncryptedValue = encryptedValue,
             ExpiresIn = input.ExpiresIn,
-            ExpiresAt = input.ExpiresIn != null ? systemClock.UtcNow + input.ExpiresIn.Value : null,
-            Status = SecretStatus.Active
+            ExpiresAt = now + input.ExpiresIn,
+            Status = SecretStatus.Active,
+            Version = 1,
+            CreatedAt = now,
+            UpdatedAt = now,
+            IsLatest = true
         };
         
         await store.AddAsync(secret, cancellationToken);

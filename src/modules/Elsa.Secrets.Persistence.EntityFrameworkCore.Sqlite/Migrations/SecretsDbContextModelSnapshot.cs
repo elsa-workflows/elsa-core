@@ -36,6 +36,9 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.Property<DateTimeOffset?>("ExpiresAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<TimeSpan?>("ExpiresIn")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsLatest")
                         .HasColumnType("INTEGER");
 

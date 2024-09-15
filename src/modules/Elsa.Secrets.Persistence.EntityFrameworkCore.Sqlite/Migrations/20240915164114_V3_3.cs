@@ -32,6 +32,7 @@ namespace Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     Version = table.Column<int>(type: "INTEGER", nullable: false),
                     IsLatest = table.Column<bool>(type: "INTEGER", nullable: false),
                     Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    ExpiresIn = table.Column<TimeSpan>(type: "TEXT", nullable: true),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     LastAccessedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: true),
                     TenantId = table.Column<string>(type: "TEXT", nullable: true),
