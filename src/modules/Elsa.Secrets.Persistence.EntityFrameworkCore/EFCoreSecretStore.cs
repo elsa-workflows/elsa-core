@@ -18,6 +18,11 @@ public class EFCoreSecretStore(EntityStore<SecretsDbContext, Secret> store) : IS
         return new(secrets, count);
     }
 
+    public async Task<IEnumerable<Secret>> FindManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        return await store.QueryAsync(query => Filter(query, filter), cancellationToken).ToList();
+    }
+
     public async Task<Secret?> FindAsync<TOrderBy>(SecretFilter filter, SecretOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         return await store.QueryAsync(query => Filter(query, filter).OrderBy(order), cancellationToken).FirstOrDefault();

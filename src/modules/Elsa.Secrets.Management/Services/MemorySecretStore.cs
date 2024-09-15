@@ -15,6 +15,12 @@ public class MemorySecretStore(MemoryStore<Secret> memoryStore) : ISecretStore
         return Task.FromResult(Page.Of(result, count));
     }
 
+    public Task<IEnumerable<Secret>> FindManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        var result = memoryStore.Query(query => Filter(query, filter)).ToList();
+        return Task.FromResult<IEnumerable<Secret>>(result);
+    }
+
     public Task<Secret?> FindAsync<TOrderBy>(SecretFilter filter, SecretOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var result = memoryStore.Query(query => Filter(query, filter).OrderBy(order)).FirstOrDefault();

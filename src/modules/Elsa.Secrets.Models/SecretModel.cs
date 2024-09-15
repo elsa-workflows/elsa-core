@@ -20,6 +20,7 @@ public class SecretModel
     /// An optional description of the secret.
     public string Description { get; set; } = "";
     
+    public TimeSpan? ExpiresIn { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }
     
     /// The version of the secret. Increments after each update or rotation.

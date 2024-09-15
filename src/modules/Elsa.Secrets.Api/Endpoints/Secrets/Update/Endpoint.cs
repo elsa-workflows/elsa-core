@@ -7,7 +7,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets.Update;
 
 /// Updates an agent.
 [UsedImplicitly]
-public class Endpoint(ISecretManager manager, ISecretEncryptor secretEncryptor) : ElsaEndpoint<SecretInputModel, SecretModel>
+public class Endpoint(ISecretManager manager, ISecretNameValidator nameValidator) : ElsaEndpoint<SecretInputModel, SecretModel>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -28,7 +28,7 @@ public class Endpoint(ISecretManager manager, ISecretEncryptor secretEncryptor) 
             return null!;
         }
 
-        var isNameDuplicate = await IsNameDuplicateAsync(req.Name, id, ct);
+        var isNameDuplicate = !await nameValidator.IsNameUniqueAsync(req.Name, id, ct);
 
         if (isNameDuplicate)
         {
@@ -36,21 +36,8 @@ public class Endpoint(ISecretManager manager, ISecretEncryptor secretEncryptor) 
             await SendErrorsAsync(cancellation: ct);
             return entity.ToModel();
         }
-
-        entity.IsLatest = false;
-        entity.Status = SecretStatus.Retired;
-        var newVersion = entity.Clone();
-        newVersion.IsLatest = true;
-        newVersion.Version = entity.Version + 1;
         
-        await secretEncryptor.EncryptAsync(newVersion, req, ct);
-        await manager.UpdateAsync(entity, ct);
-        await manager.UpdateAsync(newVersion, ct);
+        var newVersion = await manager.UpdateAsync(entity, req, ct);
         return newVersion.ToModel();
-    }
-
-    private async Task<bool> IsNameDuplicateAsync(string name, string id, CancellationToken cancellationToken)
-    {
-        return !await manager.IsNameUniqueAsync(name, id, cancellationToken);
     }
 }

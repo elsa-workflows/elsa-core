@@ -14,9 +14,10 @@ public static class SecretExtensions
             Name = secret.Name,
             Description = secret.Description,
             EncryptedValue = secret.EncryptedValue,
+            ExpiresIn = secret.ExpiresIn,
             ExpiresAt = secret.ExpiresAt,
             Status = secret.Status,
-            Type = secret.Scope,
+            Scope = secret.Scope,
             Version = secret.Version,
             Owner = secret.Owner,
             CreatedAt = secret.CreatedAt,
@@ -32,7 +33,7 @@ public static class SecretExtensions
             Name = secret.Name,
             Description = secret.Description,
             Value = clearTextValue,
-            ExpiresAt = secret.ExpiresAt,
+            ExpiresIn = secret.ExpiresIn,
             Scope = secret.Scope
         };
     }

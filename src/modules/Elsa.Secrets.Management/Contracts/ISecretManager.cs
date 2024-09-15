@@ -2,11 +2,13 @@ namespace Elsa.Secrets.Management;
 
 public interface ISecretManager
 {
-    /// Adds a new entity to the store.
-    Task AddAsync(Secret entity, CancellationToken cancellationToken = default);
+    /// <summary>
+    ///  Creates a new entity from the specified input.
+    /// </summary>
+    Task<Secret> CreateAsync(SecretInputModel input, CancellationToken cancellationToken = default);
     
-    /// Updates the entity to the store.
-    Task UpdateAsync(Secret entity, CancellationToken cancellationToken = default);
+    /// Creates a new, updated version of the specified secret.
+    Task<Secret> UpdateAsync(Secret entity, SecretInputModel input, CancellationToken cancellationToken = default);
     
     /// Gets the entity from the store.
     Task<Secret?> GetAsync(string id, CancellationToken cancellationToken = default);
@@ -22,10 +24,4 @@ public interface ISecretManager
 
     /// Deletes all entities from the store matching the specified filter.
     Task<long> DeleteManyAsync(SecretFilter filter, CancellationToken cancellationToken = default);
-    
-    /// Generates a unique name.
-    Task<string> GenerateUniqueNameAsync(CancellationToken cancellationToken = default);
-    
-    /// Checks if a name is unique.
-    Task<bool> IsNameUniqueAsync(string name, string? notId, CancellationToken cancellationToken = default);
 }

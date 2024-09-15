@@ -7,7 +7,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets.GenerateUniqueName;
 
 /// Generates a unique name for a secret.
 [UsedImplicitly]
-public class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
+public class Endpoint(ISecretNameGenerator nameGenerator) : ElsaEndpointWithoutRequest<GenerateUniqueNameResponse>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,7 +19,7 @@ public class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<Gener
     /// <inheritdoc />
     public override async Task<GenerateUniqueNameResponse> ExecuteAsync(CancellationToken ct)
     {
-        var newName = await manager.GenerateUniqueNameAsync(ct);
+        var newName = await nameGenerator.GenerateUniqueNameAsync(ct);
         return new(newName);
     }
 }

@@ -6,6 +6,7 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
+using Elsa.JavaScript.Activities;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.Contracts;
@@ -174,6 +175,9 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
+            
+            // Property UI handlers.
+            .AddScoped<IPropertyUIHandler, DisableSyntaxSelection>()
 
             // Logging
             .AddLogging();

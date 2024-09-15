@@ -39,6 +39,9 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped<DataProtectionEncryptor>()
             .AddScoped<StoreSecretProvider>()
             .AddMemoryStore<Secret, MemorySecretStore>()
+            .AddScoped<ISecretNameGenerator, DefaultSecretNameGenerator>()
+            .AddScoped<ISecretNameValidator, DefaultSecretNameValidator>()
+            .AddScoped<ISecretUpdater, DefaultSecretUpdater>()
             .AddScoped<ISecretManager, DefaultSecretManager>()
             ;
     }

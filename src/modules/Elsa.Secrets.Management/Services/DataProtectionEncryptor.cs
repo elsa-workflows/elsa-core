@@ -9,6 +9,9 @@ public class DataProtectionEncryptor(IDataProtectionProvider dataProtectionProvi
     /// <inheritdoc />
     public Task<string> EncryptAsync(string value, CancellationToken cancellationToken = default)
     {
+        if(string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(value);
+        
         var protector = GetDataProtector();
         return Task.FromResult(protector.Protect(value));
     }
@@ -16,6 +19,9 @@ public class DataProtectionEncryptor(IDataProtectionProvider dataProtectionProvi
     /// <inheritdoc />
     public Task<string> DecryptAsync(string encryptedValue, CancellationToken cancellationToken = default)
     {
+        if(string.IsNullOrWhiteSpace(encryptedValue))
+            return Task.FromResult(encryptedValue);
+        
         var protector = GetDataProtector();
         var decryptedValue = protector.Unprotect(encryptedValue);
         return Task.FromResult(decryptedValue);

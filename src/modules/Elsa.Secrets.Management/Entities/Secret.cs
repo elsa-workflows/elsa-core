@@ -31,7 +31,8 @@ public class Secret : ManagedEntity
     
     /// The status of the secret.
     public SecretStatus Status { get; set; }
-    
+
+    public TimeSpan? ExpiresIn { get; set; }
     public DateTimeOffset? ExpiresAt { get; set; }
     public DateTimeOffset? LastAccessedAt { get; set; }
 
@@ -48,6 +49,7 @@ public class Secret : ManagedEntity
             Version = Version,
             IsLatest = IsLatest,
             Status = Status,
+            ExpiresIn = ExpiresIn,
             ExpiresAt = ExpiresAt,
             LastAccessedAt = LastAccessedAt,
             CreatedAt = CreatedAt,

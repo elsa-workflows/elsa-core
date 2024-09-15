@@ -1,20 +1,36 @@
+using Elsa.Common.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Secrets.Management.Notifications;
 
 namespace Elsa.Secrets.Management;
 
-public class DefaultSecretManager(ISecretStore store, INotificationSender notificationSender) : ISecretManager
+public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISecretUpdater secretUpdater, ISystemClock systemClock, INotificationSender notificationSender) : ISecretManager
 {
-    public async Task AddAsync(Secret entity, CancellationToken cancellationToken = default)
+    public async Task<Secret> CreateAsync(SecretInputModel input, CancellationToken cancellationToken = default)
     {
-        await store.AddAsync(entity, cancellationToken);
-        await notificationSender.SendAsync(new SecretCreated(entity), cancellationToken);
+        var encryptedValue = await encryptor.EncryptAsync(input.Value, cancellationToken);
+        var secret = new Secret
+        {
+            Name = input.Name.Trim(),
+            Scope = input.Scope?.Trim(),
+            Description = input.Description.Trim(),
+            EncryptedValue = encryptedValue,
+            ExpiresIn = input.ExpiresIn,
+            ExpiresAt = input.ExpiresIn != null ? systemClock.UtcNow + input.ExpiresIn.Value : null,
+            Status = SecretStatus.Active
+        };
+        
+        await store.AddAsync(secret, cancellationToken);
+        await notificationSender.SendAsync(new SecretCreated(secret), cancellationToken);
+
+        return secret;
     }
 
-    public async Task UpdateAsync(Secret entity, CancellationToken cancellationToken = default)
+    public async Task<Secret> UpdateAsync(Secret entity, SecretInputModel input, CancellationToken cancellationToken = default)
     {
-        await store.UpdateAsync(entity, cancellationToken);
+        var updatedEntity = await secretUpdater.UpdateAsync(entity, input, cancellationToken);
         await notificationSender.SendAsync(new SecretUpdated(entity), cancellationToken);
+        return updatedEntity;
     }
 
     public Task<Secret?> GetAsync(string id, CancellationToken cancellationToken = default)
@@ -43,32 +59,5 @@ public class DefaultSecretManager(ISecretStore store, INotificationSender notifi
         var count = await store.DeleteManyAsync(filter, cancellationToken);
         await notificationSender.SendAsync(new SecretsDeletedInBulk(), cancellationToken);
         return count;
-    }
-
-    public async Task<string> GenerateUniqueNameAsync(CancellationToken cancellationToken)
-    {
-        const int maxAttempts = 1000;
-        var attempt = 0;
-
-        while (attempt < maxAttempts)
-        {
-            var name = $"Secret {++attempt}";
-            var isUnique = await IsNameUniqueAsync(name, cancellationToken: cancellationToken);
-
-            if (isUnique)
-                return name;
-        }
-
-        throw new Exception($"Failed to generate a unique workflow name after {maxAttempts} attempts.");
-    }
-
-    public async Task<bool> IsNameUniqueAsync(string name, string? notId = null, CancellationToken cancellationToken = default)
-    {
-        var filter = new SecretFilter
-        {
-            Name = name,
-            NotId = notId
-        };
-        return await FindAsync(filter, cancellationToken) == null;
     }
 }

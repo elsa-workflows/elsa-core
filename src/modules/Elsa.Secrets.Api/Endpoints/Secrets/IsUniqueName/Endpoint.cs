@@ -7,7 +7,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets.IsUniqueName;
 
 /// Checks if a name is unique.
 [UsedImplicitly]
-public class Endpoint(ISecretManager agentManager) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
+public class Endpoint(ISecretNameValidator nameValidator) : ElsaEndpoint<IsUniqueNameRequest, IsUniqueNameResponse>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -19,7 +19,7 @@ public class Endpoint(ISecretManager agentManager) : ElsaEndpoint<IsUniqueNameRe
     /// <inheritdoc />
     public override async Task<IsUniqueNameResponse> ExecuteAsync(IsUniqueNameRequest req, CancellationToken ct)
     {
-        var isUnique = await agentManager.IsNameUniqueAsync(req.Name, req.Id, ct);
+        var isUnique = await nameValidator.IsNameUniqueAsync(req.Name, req.Id, ct);
         return new(isUnique);
     }
 }
