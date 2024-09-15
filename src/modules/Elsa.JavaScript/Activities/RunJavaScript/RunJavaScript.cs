@@ -41,7 +41,7 @@ public class RunJavaScript : CodeActivity<object?>
     /// <summary>
     /// A list of possible outcomes. Use "setOutcome()" to set the outcome. Use "setOutcomes" to set multiple outcomes.
     /// </summary>
-    [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes, UIHandler = typeof(DisableSyntaxSelection))]
+    [Input(Description = "A list of possible outcomes.", UIHint = InputUIHints.DynamicOutcomes)]
     public Input<ICollection<string>> PossibleOutcomes { get; set; } = default!;
 
     /// <inheritdoc />
