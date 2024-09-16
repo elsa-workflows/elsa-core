@@ -24,7 +24,7 @@ public class StandardJsonSerializer : ConfigurableSerializer, IJsonSerializer
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type is not known at compile time.")]
-    public string Serialize(object value, Type type)
+    public string Serialize(object? value, Type type)
     {
         var options = GetOptions();
         return JsonSerializer.Serialize(value, type, options);

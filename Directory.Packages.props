@@ -82,10 +82,8 @@
     <PackageVersion Include="Proto.Persistence.SqlServer" Version="1.6.0" />
     <PackageVersion Include="Proto.Remote" Version="1.6.0" />
     <PackageVersion Include="pythonnet" Version="3.0.3" />
-    <PackageVersion Include="Quartz" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Serialization.Json" Version="3.11.0" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Serialization.Json" Version="3.13.0" />
     <PackageVersion Include="Refit" Version="7.1.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
     <PackageVersion Include="Scrutor" Version="4.2.2" />
