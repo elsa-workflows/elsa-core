@@ -37,7 +37,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         CancellationToken cancellationToken = default)
     {
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
+        await mediator.SendAsync(new EvaluatedJavaScript(engine, context, result), cancellationToken);
 
         return result.ConvertTo(returnType);
     }
@@ -64,8 +66,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         ConfigureArgumentGetters(engine, options);
         ConfigureConfigurationAccess(engine);
         _jintOptions.ConfigureEngineCallback(engine, context);
-        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
-
+        
         return engine;
     }
 
@@ -90,7 +91,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new ExpandoObjectConverter()]);
+        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter()]);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)

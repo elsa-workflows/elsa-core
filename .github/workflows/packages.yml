@@ -79,13 +79,13 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner begin /k:"elsa-workflows_elsa-core" /o:"elsa-workflows" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.exclusions=**/obj/**,**/*.dll,build/**,samples/**,src/apps/** /d:"sonar.verbose=true" /d:sonar.cs.opencover.reportsPaths=**/testresults/**/coverage.opencover.xml
       - name: Compile+Test+Pack
-        run: ./scripts/nuke/build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
+        run: ./build.sh Compile+Test+Pack --version ${VERSION} --analyseCode true
       - name: End SonarCloud analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
@@ -99,7 +99,7 @@ jobs:
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
@@ -114,7 +114,7 @@ jobs:
     if: ${{ github.event_name == 'prereleased' && github.event.action == 'published' }}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
@@ -129,7 +129,7 @@ jobs:
     if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
     steps:
       - name: Download Packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 

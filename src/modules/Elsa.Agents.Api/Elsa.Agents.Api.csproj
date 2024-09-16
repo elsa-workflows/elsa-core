@@ -8,6 +8,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
       <ProjectReference Include="..\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj" />
+      <ProjectReference Include="..\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj" />
     </ItemGroup>
 
 </Project>

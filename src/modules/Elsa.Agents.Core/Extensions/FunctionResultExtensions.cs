@@ -5,7 +5,7 @@ namespace Elsa.Agents;
 
 public static class FunctionResultExtensions
 {
-    public static async Task<JsonElement> AsJsonElementAsync(this Task<ExecuteFunctionResult> resultTask)
+    public static async Task<JsonElement> AsJsonElementAsync(this Task<InvokeAgentResult> resultTask)
     {
         var result = await resultTask;
         return result.FunctionResult.AsJsonElement();

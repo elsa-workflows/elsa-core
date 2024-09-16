@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides models that can be shared between the API and API clients</Description>
+        <PackageTags>elsa module agents semantic kernel llm ai api</PackageTags>
+        <RootNamespace>Elsa.Agents</RootNamespace>
+    </PropertyGroup>
+
+</Project>

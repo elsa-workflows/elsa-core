@@ -1,3 +1,4 @@
+using Elsa.Agents;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
@@ -13,9 +14,8 @@ using Proto.Persistence.Sqlite;
 using WebhooksCore.Options;
 
 const bool useMassTransit = true;
-const bool useProtoActor = false;
+const bool useProtoActor = true;
 const bool useCaching = true;
-const bool useMySql = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -23,8 +23,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseStaticWebAssets();
 var services = builder.Services;
 var configuration = builder.Configuration;
+var featuresSection = configuration.GetSection("Features");
+var databaseProvider = featuresSection.GetValue<string>("DatabaseProvider");
 var sqliteConnectionString = configuration.GetConnectionString("Sqlite")!;
 var mySqlConnectionString = configuration.GetConnectionString("MySql")!;
+var sqlServerConnectionString = configuration.GetConnectionString("SqlServer")!;
 var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMq")!;
 var azureServiceBusConnectionString = configuration.GetConnectionString("AzureServiceBus")!;
 var identitySection = configuration.GetSection("Identity");
@@ -61,16 +64,20 @@ services
                 if (useCaching)
                     management.UseCache();
 
-                if (useMySql)
+                if (databaseProvider == "MySql")
                     management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else
+                else if (databaseProvider == "SqlServer")
+                    management.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
+                else if (databaseProvider == "Sqlite")
                     management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
             })
             .UseWorkflowRuntime(runtime =>
             {
-                if (useMySql)
+                if (databaseProvider == "MySql")
                     runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
-                else
+                else if (databaseProvider == "SqlServer")
+                    runtime.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
+                else if (databaseProvider == "Sqlite")
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
                 
                 if (useMassTransit)
@@ -105,6 +112,17 @@ services
             .UseEmail(email => email.ConfigureOptions = options => configuration.GetSection("Smtp").Bind(options))
             .UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options))
             .UseWorkflowsApi()
+            .UseAgentsApi()
+            .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef =>
+            {
+                if (databaseProvider == "MySql")
+                    ef.UseMySql(mySqlConnectionString);
+                else if (databaseProvider == "SqlServer")
+                    ef.UseSqlServer(sqlServerConnectionString);
+                else if (databaseProvider == "Sqlite")
+                    ef.UseSqlite(sqliteConnectionString);
+            }))
+            .UseAgentActivities()
             .UseRealTimeWorkflows()
             .AddActivitiesFrom<Program>()
             .AddWorkflowsFrom<Program>();

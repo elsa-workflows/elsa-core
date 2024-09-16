@@ -3,7 +3,7 @@ namespace Elsa.Common.Results;
 /// <summary>
 /// Represents the result of a tenant resolution.
 /// </summary>
-/// <param name="Tenant">The resolved tenant.</param>
+/// <param name="TenantId">The resolved tenant.</param>
 public record TenantResolutionResult(string? TenantId)
 {
     /// <summary>

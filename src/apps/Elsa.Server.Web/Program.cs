@@ -1,7 +1,7 @@
 using System.Text.Encodings.Web;
+using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
-using Elsa.Caching.Options;
 using Elsa.Common.DistributedLocks.Noop;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
@@ -22,6 +22,8 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
@@ -43,6 +45,7 @@ using Proto.Persistence.SqlServer;
 using Proto.Remote;
 using Proto.Remote.GrpcNet;
 using StackExchange.Redis;
+
 // ReSharper disable RedundantAssignment
 
 const PersistenceProvider persistenceProvider = PersistenceProvider.EntityFrameworkCore;
@@ -61,6 +64,8 @@ const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
+const bool useAgents = true;
+const bool useSecrets = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -141,7 +146,7 @@ services
             .UseDefaultAuthentication()
             .UseWorkflows(workflows =>
             {
-                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing()); 
+                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
                 workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
             })
             .UseWorkflowManagement(management =>
@@ -240,7 +245,7 @@ services
 
                 if (useMassTransit)
                     runtime.UseMassTransitDispatcher();
-                
+
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
 
                 if (useMemoryStores)
@@ -416,7 +421,28 @@ services
             });
         }
 
+        if (useAgents)
+        {
+            elsa
+                .UseAgentActivities()
+                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseAgentsApi()
+                ;
+            
+            services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
+        }
+        
+        if (useSecrets)
+        {
+            elsa
+                .UseSecrets()
+                .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseSecretsApi()
+                ;
+        }
+
         if (useMultitenancy)
+        {
             elsa.UseTenants(tenants =>
             {
                 tenants.TenantsOptions = options =>
@@ -429,6 +455,7 @@ services
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
+        }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
         elsa.AddSwagger();
@@ -436,7 +463,7 @@ services
         ConfigureForTest?.Invoke(elsa);
     });
 
-services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
+//services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));

@@ -43,4 +43,15 @@ public static class DependencyInjectionExtensions
     /// <returns>The service collection.</returns>
     public static IServiceCollection AddTypeDefinitionProvider<T>(this IServiceCollection services, Func<IServiceProvider, T> factory) where T: class, ITypeDefinitionProvider => 
         services.AddScoped<ITypeDefinitionProvider, T>();
+
+    /// <summary>
+    /// Adds a <see cref="IVariableDefinitionProvider"/> to the service collection.
+    /// </summary>
+    public static IServiceCollection AddVariableDefinitionProvider<T>(this IServiceCollection services) where T: class, IVariableDefinitionProvider => services.AddScoped<IVariableDefinitionProvider, T>();
+    
+    /// <summary>
+    /// Adds a <see cref="IVariableDefinitionProvider"/> to the service collection.
+    /// </summary>
+    public static IServiceCollection AddVariableDefinitionProvider<T>(this IServiceCollection services, Func<IServiceProvider, T> factory) where T: class, IVariableDefinitionProvider => 
+        services.AddScoped<IVariableDefinitionProvider, T>(factory);
 }

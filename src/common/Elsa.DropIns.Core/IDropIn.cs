@@ -17,4 +17,9 @@ public interface IDropIn
     /// Called when the drop-in is being configured.
     /// </summary>
     ValueTask ConfigureAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Unconfigure the drop-in when it's deleted.
+    /// </summary>
+    void Unconfigure(IServiceProvider serviceProvider);
 }

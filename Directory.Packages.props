@@ -23,9 +23,10 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.2.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.14.6" />
-    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.508" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.508" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.508" />
+    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.524" />
     <PackageVersion Include="FastEndpoints" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.27.0" />
@@ -49,7 +50,6 @@
     <PackageVersion Include="MailKit" Version="4.7.1.1" />
     <PackageVersion Include="MassTransit" Version="8.2.3" />
     <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.2.3" />
-    <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
     <PackageVersion Include="MassTransit.RabbitMQ" Version="8.2.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.7" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.10.0" />
@@ -57,7 +57,7 @@
     <PackageVersion Include="Microsoft.Identity.Client" Version="4.61.3" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.16.2" />
+    <PackageVersion Include="Microsoft.SemanticKernel" Version="1.18.2" />
     <PackageVersion Include="MongoDB.Driver" Version="2.27.0" />
     <PackageVersion Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" Version="1.4.0" />
     <PackageVersion Include="MongoDB.Driver.Extensions" Version="2.0.2" />
@@ -67,6 +67,7 @@
     <PackageVersion Include="NuGet.Protocol" Version="6.10.1" />
     <PackageVersion Include="Nuke.Components" Version="8.0.0" />
     <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.9.0" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.14.1" />
     <PackageVersion Include="Proto.Actor" Version="1.6.0" />
@@ -81,10 +82,8 @@
     <PackageVersion Include="Proto.Persistence.SqlServer" Version="1.6.0" />
     <PackageVersion Include="Proto.Remote" Version="1.6.0" />
     <PackageVersion Include="pythonnet" Version="3.0.3" />
-    <PackageVersion Include="Quartz" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Extensions.DependencyInjection" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.11.0" />
-    <PackageVersion Include="Quartz.Serialization.Json" Version="3.11.0" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.13.0" />
+    <PackageVersion Include="Quartz.Serialization.Json" Version="3.13.0" />
     <PackageVersion Include="Refit" Version="7.1.2" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="7.0.0" />
     <PackageVersion Include="Scrutor" Version="4.2.2" />
@@ -120,6 +119,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.20" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.20" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.20" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="7.0.20" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="7.0.20" />
     <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="7.0.20" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="7.0.20" />
@@ -149,17 +149,18 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.7" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.7" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
@@ -167,15 +168,15 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="8.0.7" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="8.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
-    <PackageVersion Include="Npgsql" Version="8.0.3" />
+    <PackageVersion Include="Npgsql" Version="8.0.4" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
-    <PackageVersion Include="Oracle.EntityFrameworkCore" Version="8.23.40" />
+    <PackageVersion Include="Oracle.EntityFrameworkCore" Version="8.23.50" />
     <PackageVersion Include="Polly" Version="8.4.1" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.2" />
     <PackageVersion Include="System.Text.Json" Version="8.0.4" />

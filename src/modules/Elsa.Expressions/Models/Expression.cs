@@ -47,7 +47,6 @@ public partial class Expression
     /// Creates an expression that represents a delegate.
     /// </summary>
     /// <param name="value">The delegate.</param>
-    /// <typeparam name="T">The return type of the delegate.</typeparam>
     /// <returns>An expression that represents a delegate.</returns>
     public static Expression DelegateExpression(Func<ExpressionExecutionContext, ValueTask<object?>> value) => new()
     {

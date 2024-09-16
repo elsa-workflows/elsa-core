@@ -7,7 +7,7 @@ using Elsa.Workflows.Runtime.Stimuli;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class TaskReporter(IBookmarkQueue stimulusSender, IStimulusHasher stimulusHasher) : ITaskReporter
+public class TaskReporter(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulusHasher) : ITaskReporter
 {
     private static readonly string ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<RunTask>();
     
@@ -31,6 +31,6 @@ public class TaskReporter(IBookmarkQueue stimulusSender, IStimulusHasher stimulu
             }
         };
         
-        await stimulusSender.EnqueueAsync(bookmarkQueueItem, cancellationToken);
+        await bookmarkQueue.EnqueueAsync(bookmarkQueueItem, cancellationToken);
     }
 }
