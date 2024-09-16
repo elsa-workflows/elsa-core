@@ -44,9 +44,6 @@ public class ParallelForEach<T> : Activity
         var tags = new List<Guid>();
         var currentIndex = 0;
         
-        SetTagList(context, ScheduledTagsProperty, tags);
-        SetTagList(context, CompletedTagsProperty, new List<Guid>());
-        
         await foreach (var item in items)
         {
             // For each item, declare a new variable for the work to be scheduled.
@@ -64,6 +61,9 @@ public class ParallelForEach<T> : Activity
             tags.Add(tag);
             await context.ScheduleActivityAsync(Body, OnChildCompleted, tag, variables);
         }
+        
+        SetTagList(context, ScheduledTagsProperty, tags);
+        SetTagList(context, CompletedTagsProperty, new List<Guid>());
         
         // If there were no items, we're done.
         if (tags.Count == 0)

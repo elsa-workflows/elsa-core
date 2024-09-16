@@ -1,7 +1,8 @@
 using System.Text.Json;
+using Elsa.EntityFrameworkCore.Converters;
 using Elsa.Extensions;
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore;
 
 internal static class JsonValueConverterHelper
 {

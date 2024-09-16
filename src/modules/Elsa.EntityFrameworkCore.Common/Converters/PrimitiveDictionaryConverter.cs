@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Converters;
 
 public class PrimitiveDictionaryConverter : JsonConverter<IDictionary<string, object>>
 {

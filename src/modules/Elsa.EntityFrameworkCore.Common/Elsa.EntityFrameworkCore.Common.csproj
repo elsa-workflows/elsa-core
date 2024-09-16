@@ -1,10 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿    <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
             Provides common Entity Framework Core types for implementing EF Core persistence of varipus ELsa modules.
         </Description>
         <PackageTags>elsa module persistence efcore</PackageTags>
+        <RootNamespace>Elsa.EntityFrameworkCore</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

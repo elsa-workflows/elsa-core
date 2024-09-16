@@ -6,7 +6,6 @@ using Elsa.Extensions;
 using Elsa.OrchardCore;
 using Elsa.OrchardCore.Client;
 using Elsa.Samples.AspNet.OrchardCoreIntegration;
-using Elsa.Agents.Persistence;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.Workflows.Management;
 using WebhooksCore.Options;
