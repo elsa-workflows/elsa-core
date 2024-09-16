@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feature/secrets
+      - main
 
 jobs:
   push_to_registry:
@@ -29,7 +29,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            elsaworkflows/elsa-server-v3-3-0-secrets
+            elsaworkflows/elsa-server-v3-3-0-preview
           flavor: |
             latest=true
           # generate Docker tags based on the following events/attributes
