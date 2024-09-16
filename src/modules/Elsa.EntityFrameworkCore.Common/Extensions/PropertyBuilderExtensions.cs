@@ -1,6 +1,7 @@
+using Elsa.EntityFrameworkCore.Converters;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore.Extensions;
 
 public static class PropertyBuilderExtensions {
 

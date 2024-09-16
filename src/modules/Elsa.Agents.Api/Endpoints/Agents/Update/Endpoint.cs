@@ -34,7 +34,7 @@ public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<AgentInputModel
 
         if (isNameDuplicate)
         {
-            AddError("Another service already exists with the specified name");
+            AddError("Another agent already exists with the specified name");
             await SendErrorsAsync(cancellation: ct);
             return entity.ToModel();
         }

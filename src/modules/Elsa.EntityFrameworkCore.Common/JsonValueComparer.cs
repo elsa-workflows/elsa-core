@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Compares two objects.
@@ -13,7 +13,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore;
 /// For plain objects, fall back to deep equality comparison using JSON serialization
 /// (safe, but inefficient).
 /// </remarks>
-internal class JsonValueComparer<T> : ValueComparer<T> {
+public class JsonValueComparer<T> : ValueComparer<T> {
 
     private static string Json(T instance) {
         return JsonSerializer.Serialize(instance);

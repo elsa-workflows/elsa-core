@@ -70,6 +70,7 @@ public class JavaScriptFeature : FeatureBase
             .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
             .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
+            .AddFunctionDefinitionProvider<RunJavaScriptFunctionsDefinitionProvider>()
             .AddTypeDefinitionProvider<CommonTypeDefinitionProvider>()
             .AddTypeDefinitionProvider<VariableTypeDefinitionProvider>()
             .AddTypeDefinitionProvider<WorkflowVariablesTypeDefinitionProvider>()

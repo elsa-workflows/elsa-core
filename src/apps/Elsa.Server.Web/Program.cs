@@ -22,6 +22,8 @@ using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
+using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
@@ -63,6 +65,7 @@ const DistributedCachingTransport distributedCachingTransport = DistributedCachi
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = true;
+const bool useSecrets = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -427,6 +430,15 @@ services
                 ;
             
             services.Configure<AgentsOptions>(options => builder.Configuration.GetSection("Agents").Bind(options));
+        }
+        
+        if (useSecrets)
+        {
+            elsa
+                .UseSecrets()
+                .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseSecretsApi()
+                ;
         }
 
         if (useMultitenancy)
