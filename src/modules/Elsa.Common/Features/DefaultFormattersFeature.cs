@@ -10,6 +10,6 @@ public class DefaultFormattersFeature(IModule module) : FeatureBase(module)
 {
     public override void Configure()
     {
-        module.Services.AddSingleton<IFormatter, JsonFormatter>();
+        Module.Services.AddSingleton<IFormatter, JsonFormatter>();
     }
 }

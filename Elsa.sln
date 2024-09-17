@@ -419,6 +419,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "nuke", "nuke", "{57326431-9
 		scripts\nuke\build.cmd = scripts\nuke\build.cmd
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Core", "src\modules\Elsa.Secrets.Core\Elsa.Secrets.Core.csproj", "{34FAB60D-7259-47B9-B50E-B533C7C3CFEC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "secrets", "secrets", "{8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Management", "src\modules\Elsa.Secrets.Management\Elsa.Secrets.Management.csproj", "{19329441-2A59-4BAC-A1BE-BBAB70C93CA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Api", "src\modules\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj", "{37D16EAF-ACD8-4105-8BD3-B2745819CFF8}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence", "src\modules\Elsa.Agents.Persistence\Elsa.Agents.Persistence.csproj", "{CFEC357F-0863-4458-A6C4-5D7AA0E44759}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj", "{E75762D2-FD12-4165-810B-628C28CB2562}"
@@ -447,6 +455,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-studio", "elsa-studio"
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Models", "src\modules\Elsa.Agents.Models\Elsa.Agents.Models.csproj", "{052C4F97-5909-4D88-AA49-4B0D9058A0A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore\Elsa.Secrets.Persistence.EntityFrameworkCore.csproj", "{9A6D67DE-51B1-456D-B25D-19E0356C8F60}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj", "{44A03CF6-4EB6-434C-90D1-FF8142FE394E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.csproj", "{A9140976-DFF9-432A-B1DC-E188A07C49E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Agents.Persistence.EntityFrameworkCore.MySql", "src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj", "{B3046301-6F00-4885-8B01-080BD489055C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Models", "src\modules\Elsa.Secrets.Models\Elsa.Secrets.Models.csproj", "{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -996,6 +1014,18 @@ Global
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34FAB60D-7259-47B9-B50E-B533C7C3CFEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34FAB60D-7259-47B9-B50E-B533C7C3CFEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34FAB60D-7259-47B9-B50E-B533C7C3CFEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34FAB60D-7259-47B9-B50E-B533C7C3CFEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19329441-2A59-4BAC-A1BE-BBAB70C93CA0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19329441-2A59-4BAC-A1BE-BBAB70C93CA0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19329441-2A59-4BAC-A1BE-BBAB70C93CA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19329441-2A59-4BAC-A1BE-BBAB70C93CA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37D16EAF-ACD8-4105-8BD3-B2745819CFF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37D16EAF-ACD8-4105-8BD3-B2745819CFF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37D16EAF-ACD8-4105-8BD3-B2745819CFF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37D16EAF-ACD8-4105-8BD3-B2745819CFF8}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CFEC357F-0863-4458-A6C4-5D7AA0E44759}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1008,6 +1038,26 @@ Global
 		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{052C4F97-5909-4D88-AA49-4B0D9058A0A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A6D67DE-51B1-456D-B25D-19E0356C8F60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A6D67DE-51B1-456D-B25D-19E0356C8F60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A6D67DE-51B1-456D-B25D-19E0356C8F60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A6D67DE-51B1-456D-B25D-19E0356C8F60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44A03CF6-4EB6-434C-90D1-FF8142FE394E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3046301-6F00-4885-8B01-080BD489055C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1176,6 +1226,10 @@ Global
 		{154525CD-3726-45B7-9A9C-553BBC60EB10} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{F620D7DC-B58D-4BD0-81A2-E88A2C1E4833} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
 		{6FE60BB4-DE6A-485C-A38A-1317C56AF2DA} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{34FAB60D-7259-47B9-B50E-B533C7C3CFEC} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
+		{19329441-2A59-4BAC-A1BE-BBAB70C93CA0} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
+		{37D16EAF-ACD8-4105-8BD3-B2745819CFF8} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{B32DB9B2-AD6C-48A5-8682-4373CB045185} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 		{57326431-9C6C-4BAB-AA51-15131C21ADCC} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 		{CFEC357F-0863-4458-A6C4-5D7AA0E44759} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
@@ -1184,6 +1238,11 @@ Global
 		{AA5ACF15-8647-4AC9-B9F5-73FCB92BE7E3} = {C80C8231-D35C-4ACC-9ED6-9F3DB221535E}
 		{DFFE6199-B5A7-4BA8-A5E1-77D0426C6468} = {B32DB9B2-AD6C-48A5-8682-4373CB045185}
 		{052C4F97-5909-4D88-AA49-4B0D9058A0A9} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{9A6D67DE-51B1-456D-B25D-19E0356C8F60} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
+		{44A03CF6-4EB6-434C-90D1-FF8142FE394E} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
+		{A9140976-DFF9-432A-B1DC-E188A07C49E5} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{B3046301-6F00-4885-8B01-080BD489055C} = {50470834-4CD8-479A-8B58-0A1869BA5D37}
+		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

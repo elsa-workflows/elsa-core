@@ -13,7 +13,7 @@ public class Endpoint(IAgentManager agentManager) : ElsaEndpoint<IsUniqueNameReq
     public override void Configure()
     {
         Post("/ai/queries/agents/is-unique-name");
-        ConfigurePermissions("ai/agents:write");
+        ConfigurePermissions("ai/agents:read");
     }
 
     /// <inheritdoc />

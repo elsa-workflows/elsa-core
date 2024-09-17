@@ -10,7 +10,7 @@ namespace Elsa.Tenants.Extensions;
 public static class ModuleExtensions
 {
     /// <summary>
-    /// Installs & configures the <see cref="TenantsFeature"/> feature.
+    /// Installs and configures the <see cref="TenantsFeature"/> feature.
     /// </summary>
     public static IModule UseTenants(this IModule module, Action<TenantsFeature>? configure = default)
     {
