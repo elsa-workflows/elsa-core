@@ -1,10 +1,10 @@
+using Elsa.Common.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Features;
-using Elsa.MassTransit.Consumers;
 using Elsa.MassTransit.Extensions;
 using Elsa.MassTransit.Features;
 using Elsa.MassTransit.Options;
@@ -88,6 +88,13 @@ public class RabbitMqServiceBusFeature : FeatureBase
                     }
 
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    
+                    configurator.ConfigureJsonSerializerOptions(serializerOptions =>
+                    {
+                        var serializer = context.GetRequiredService<IJsonSerializer>();
+                        serializer.ApplyOptions(serializerOptions);
+                        return serializerOptions;
+                    });
                 });
             };
         });

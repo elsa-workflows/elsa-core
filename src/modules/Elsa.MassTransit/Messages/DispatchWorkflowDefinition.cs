@@ -1,4 +1,3 @@
-using System.Text.Json.Serialization;
 using Elsa.Common.Models;
 
 namespace Elsa.MassTransit.Messages;
@@ -36,7 +35,7 @@ public record DispatchWorkflowDefinition
         string? definitionId,
         VersionOptions? versionOptions,
         string? parentWorkflowInstanceId,
-        IDictionary<string, object>? input,
+        string? serializedInput,
         IDictionary<string, object>? properties,
         string? correlationId,
         string? instanceId,
@@ -47,7 +46,7 @@ public record DispatchWorkflowDefinition
             DefinitionId = definitionId,
             VersionOptions = versionOptions,
             ParentWorkflowInstanceId = parentWorkflowInstanceId,
-            Input = input,
+            SerializedInput = serializedInput,
             Properties = properties,
             CorrelationId = correlationId,
             InstanceId = instanceId,
@@ -64,8 +63,14 @@ public record DispatchWorkflowDefinition
     /// The ID of the parent workflow instance.
     public string? ParentWorkflowInstanceId { get; init; }
 
+    /// Deprecated. Use the <see cref="SerializedInput"/> property instead.
+    [Obsolete("This property is no longer used and will be removed in a future version. Use the SerializedInput property instead.")]
+    public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
     /// Any input to pass to the workflow.
-    public IDictionary<string, object>? Input { get; init; }
+    /// </summary>
+    public string? SerializedInput { get; set; }
 
     /// Any properties to attach to the workflow.
     public IDictionary<string, object>? Properties { get; init; }
