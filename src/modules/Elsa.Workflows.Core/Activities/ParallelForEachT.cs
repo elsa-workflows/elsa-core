@@ -53,10 +53,10 @@ public class ParallelForEach<T> : Activity
             var currentValueVariable = new Variable<T>("CurrentValue", item)
             {
                 // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
-                StorageDriverType = typeof(WorkflowStorageDriver)
+                StorageDriverType = typeof(WorkflowInstanceStorageDriver)
             };
 
-            var currentIndexVariable = new Variable<int>("CurrentIndex", currentIndex++) { StorageDriverType = typeof(WorkflowStorageDriver) };
+            var currentIndexVariable = new Variable<int>("CurrentIndex", currentIndex++) { StorageDriverType = typeof(WorkflowInstanceStorageDriver) };
             var variables = new List<Variable> { currentValueVariable, currentIndexVariable };
 
             // Schedule a body of work for each item.
