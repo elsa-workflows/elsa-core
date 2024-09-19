@@ -26,7 +26,7 @@ public record DispatchWorkflowDefinition
     /// <param name="definitionId">The ID of the workflow definition to dispatch.</param>
     /// <param name="versionOptions">The version options to use when dispatching the workflow definition.</param>
     /// <param name="parentWorkflowInstanceId">The ID of the parent workflow instance.</param>
-    /// <param name="input">Any input to pass to the workflow.</param>
+    /// <param name="serializedInput">Any input to pass to the workflow.</param>
     /// <param name="properties">Any properties to attach to the workflow.</param>
     /// <param name="correlationId">A correlation ID to associate the workflow with.</param>
     /// <param name="instanceId">The ID to use when creating an instance of the workflow to dispatch.</param>
