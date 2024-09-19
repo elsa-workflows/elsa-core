@@ -9,23 +9,8 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// <summary>
 /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
 /// </summary>
-public class PolymorphicObjectConverterFactory : JsonConverterFactory
+public class PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry) : JsonConverterFactory
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
-    
-    /// <inheritdoc />
-    public PolymorphicObjectConverterFactory() : this(WellKnownTypeRegistry.CreateDefault())
-    {
-    }
-
-    /// <summary>
-    /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
-    /// </summary>
-    public PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry)
-    {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
-    }
-
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert)
     {
@@ -42,8 +27,8 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         if (typeof(IDictionary<string, object>).IsAssignableFrom(typeToConvert))
-            return new PolymorphicDictionaryConverter(options, _wellKnownTypeRegistry);
+            return new PolymorphicDictionaryConverter(options, wellKnownTypeRegistry);
 
-        return new PolymorphicObjectConverter(_wellKnownTypeRegistry);
+        return new PolymorphicObjectConverter(wellKnownTypeRegistry);
     }
 }
