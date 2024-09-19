@@ -8,12 +8,16 @@ namespace Elsa.Workflows.Services;
 /// A storage driver that stores objects in the workflow state itself.
 /// </summary>
 [Display(Name = "Workflow")]
+[Obsolete("This is no longer used and will be removed in a future version. Use the WorkflowInstanceStorageDriver instead.")]
 public class WorkflowStorageDriver : IStorageDriver
 {
     /// <summary>
     /// The key used to store the variables in the workflow state.
     /// </summary>
     public const string VariablesDictionaryStateKey = "PersistentVariablesDictionary";
+
+    /// <inheritdoc />
+    public double Priority => -1;
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)

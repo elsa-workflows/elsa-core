@@ -16,6 +16,9 @@ public class WorkflowInstanceStorageDriver : IStorageDriver
     public const string VariablesDictionaryStateKey = "Variables";
 
     /// <inheritdoc />
+    public double Priority => 1;
+
+    /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)
     {
         UpdateVariablesDictionary(context, dictionary =>
