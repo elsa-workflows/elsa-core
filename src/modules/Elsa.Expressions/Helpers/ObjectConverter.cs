@@ -99,13 +99,13 @@ public static class ObjectConverter
             return jsonElement.Deserialize(targetType, serializerOptions);
         }
 
-        if (value is JsonObject jsonObject)
+        if (value is JsonNode jsonObject)
         {
             return underlyingTargetType switch
             {
                 { } t when t == typeof(string) => jsonObject.ToString(),
                 { } t when t != typeof(object) => jsonObject.Deserialize(targetType, serializerOptions),
-                _ => jsonObject,
+                _ => jsonObject
             };
         }
 
@@ -240,7 +240,7 @@ public static class ObjectConverter
     }
 
     /// <summary>
-    /// Returns true if the specified type is date-like type, false otherwise.
+    /// Returns true if the specified type is a date-like type, false otherwise.
     /// </summary>
     private static bool IsDateType(Type type)
     {

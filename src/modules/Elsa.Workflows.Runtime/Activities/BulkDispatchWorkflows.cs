@@ -237,7 +237,7 @@ public class BulkDispatchWorkflows : Activity
 
         var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
-            StorageDriverType = typeof(WorkflowStorageDriver)
+            StorageDriverType = typeof(WorkflowInstanceStorageDriver)
         };
 
         var variables = new List<Variable>

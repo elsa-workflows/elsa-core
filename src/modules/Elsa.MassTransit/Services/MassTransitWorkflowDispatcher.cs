@@ -11,7 +11,6 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
 using MassTransit;
-using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.MassTransit.Services;
@@ -27,6 +26,7 @@ public class MassTransitWorkflowDispatcher(
     IBookmarkHasher bookmarkHasher,
     ITriggerStore triggerStore,
     IBookmarkStore bookmarkStore,
+    IPayloadSerializer jsonSerializer,
     ILogger<MassTransitWorkflowDispatcher> logger)
     : IWorkflowDispatcher
 {
@@ -57,6 +57,7 @@ public class MassTransitWorkflowDispatcher(
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = default, CancellationToken cancellationToken = default)
     {
         var sendEndpoint = await GetSendEndpointAsync(options);
+        var serializedInput = SerializeInput(request.Input);
 
         await sendEndpoint.Send(new DispatchWorkflowInstance(request.InstanceId)
         {
@@ -66,7 +67,7 @@ public class MassTransitWorkflowDispatcher(
             ActivityInstanceId = request.ActivityInstanceId,
             ActivityHash = request.ActivityHash,
             CorrelationId = request.CorrelationId,
-            Input = request.Input
+            SerializedInput = serializedInput,
         }, cancellationToken);
         return DispatchWorkflowResponse.Success();
     }
@@ -179,5 +180,10 @@ public class MassTransitWorkflowDispatcher(
         var endpointName = endpointChannelFormatter.FormatEndpointName(options?.Channel);
         var sendEndpoint = await bus.GetSendEndpoint(new Uri($"queue:{endpointName}"));
         return sendEndpoint;
+    }
+    
+    private string? SerializeInput(object? input)
+    {
+        return input != null ? jsonSerializer.Serialize(input) : null;
     }
 }

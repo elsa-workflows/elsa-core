@@ -11,6 +11,8 @@ public class MemoryStorageDriver : IStorageDriver
 {
     private readonly IDictionary<string, object> _dictionary = new Dictionary<string, object>();
 
+    public double Priority => 0;
+
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)
     {
