@@ -1,5 +1,5 @@
 using Elsa.MassTransit.Messages;
-using Elsa.Workflows.Management.Contracts;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Parameters;
@@ -12,22 +12,12 @@ namespace Elsa.MassTransit.Consumers;
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
 [UsedImplicitly]
-public class DispatchWorkflowRequestConsumer :
+public class DispatchWorkflowRequestConsumer(IWorkflowRuntime workflowRuntime, IPayloadSerializer jsonSerializer) :
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>,
     IConsumer<DispatchTriggerWorkflows>,
     IConsumer<DispatchResumeWorkflows>
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DispatchWorkflowRequestConsumer"/> class.
-    /// </summary>
-    public DispatchWorkflowRequestConsumer(IWorkflowRuntime workflowRuntime, IWorkflowInstanceManager workflowInstanceManager)
-    {
-        _workflowRuntime = workflowRuntime;
-    }
-
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
     {
@@ -42,6 +32,7 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
+        var input = message.Input ?? DeserializeInput(message.SerializedInput);
 
         var options = new ResumeWorkflowRuntimeParams
         {
@@ -51,12 +42,12 @@ public class DispatchWorkflowRequestConsumer :
             ActivityNodeId = message.ActivityNodeId,
             ActivityInstanceId = message.ActivityInstanceId,
             ActivityHash = message.ActivityHash,
-            Input = message.Input,
+            Input = input,
             Properties = message.Properties,
             CancellationTokens = cancellationToken
         };
 
-        await _workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
+        await workflowRuntime.ResumeWorkflowAsync(message.InstanceId, options);
     }
 
     /// <inheritdoc />
@@ -64,16 +55,17 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
+        var input = message.Input ?? DeserializeInput(message.SerializedInput);
         var options = new TriggerWorkflowsOptions
         {
             CorrelationId = message.CorrelationId,
             WorkflowInstanceId = message.WorkflowInstanceId,
             ActivityInstanceId = message.ActivityInstanceId,
-            Input = message.Input,
+            Input = input,
             Properties = message.Properties,
             CancellationTokens = cancellationToken
         };
-        await _workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
+        await workflowRuntime.TriggerWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
 
     /// <inheritdoc />
@@ -81,29 +73,31 @@ public class DispatchWorkflowRequestConsumer :
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
+        var input = message.Input ?? DeserializeInput(message.SerializedInput);
 
         var options = new TriggerWorkflowsOptions
         {
             CorrelationId = message.CorrelationId,
             WorkflowInstanceId = message.WorkflowInstanceId,
-            Input = message.Input,
+            Input = input,
             Properties = message.Properties,
             CancellationTokens = cancellationToken
         };
 
-        await _workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
+        await workflowRuntime.ResumeWorkflowsAsync(message.ActivityTypeName, message.BookmarkPayload, options);
     }
-    
+
     private async Task DispatchNewWorkflowInstanceAsync(DispatchWorkflowDefinition message, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(message.DefinitionId)) throw new ArgumentException("The definition ID is required when dispatching a workflow definition.");
         if (message.VersionOptions == null) throw new ArgumentException("The version options are required when dispatching a workflow definition.");
+        var input = message.Input ?? DeserializeInput(message.SerializedInput);
 
         var options = new StartWorkflowRuntimeParams
         {
             ParentWorkflowInstanceId = message.ParentWorkflowInstanceId,
             CorrelationId = message.CorrelationId,
-            Input = message.Input,
+            Input = input,
             Properties = message.Properties,
             VersionOptions = message.VersionOptions.Value,
             TriggerActivityId = message.TriggerActivityId,
@@ -111,7 +105,7 @@ public class DispatchWorkflowRequestConsumer :
             CancellationTokens = cancellationToken
         };
 
-        await _workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
+        await workflowRuntime.TryStartWorkflowAsync(message.DefinitionId, options);
     }
 
     private async Task DispatchExistingWorkflowInstanceAsync(DispatchWorkflowDefinition message, CancellationToken cancellationToken)
@@ -126,6 +120,14 @@ public class DispatchWorkflowRequestConsumer :
             CancellationTokens = cancellationToken
         };
 
-        await _workflowRuntime.StartWorkflowAsync(message.InstanceId, options);
+        await workflowRuntime.StartWorkflowAsync(message.InstanceId, options);
+    }
+
+    private IDictionary<string, object>? DeserializeInput(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        return jsonSerializer.Deserialize<IDictionary<string, object>>(json);
     }
 }

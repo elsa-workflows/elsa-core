@@ -29,7 +29,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            elsaworkflows/elsa-server-and-studio-v3-2-0-rc3
+            elsaworkflows/elsa-server-and-studio-v3-2-1-preview
           flavor: |
             latest=true
           # generate Docker tags based on the following events/attributes

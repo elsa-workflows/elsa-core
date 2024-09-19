@@ -2,6 +2,7 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Services;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -16,7 +17,8 @@ public class PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownT
         var canConvert = typeToConvert.IsClass
                && typeToConvert == typeof(object)
                || typeToConvert == typeof(ExpandoObject)
-               || typeToConvert == typeof(Dictionary<string, object>);
+               || typeToConvert == typeof(Dictionary<string, object>)
+               || typeToConvert == typeof(IDictionary<string, object>);
         
         return canConvert;
     }

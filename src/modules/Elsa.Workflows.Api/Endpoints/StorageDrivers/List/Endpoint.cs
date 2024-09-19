@@ -31,7 +31,7 @@ public class List : ElsaEndpointWithoutRequest<Response>
     public override Task<Response> ExecuteAsync(CancellationToken ct)
     {
         var drivers = _registry.List();
-        var descriptors = drivers.Select(FromDriver).ToList();
+        var descriptors = drivers.Select(FromDriver).OrderByDescending(x => x.Priority).ToList();
         var response = new Response(descriptors);
 
         return Task.FromResult(response);
@@ -40,7 +40,9 @@ public class List : ElsaEndpointWithoutRequest<Response>
     private static StorageDriverDescriptor FromDriver(IStorageDriver driver)
     {
         var type = driver.GetType();
+        var deprecated = type.GetCustomAttribute<ObsoleteAttribute>() != null;
         var displayName = type.GetCustomAttribute<DisplayAttribute>()?.Name ?? type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? type.Name.Replace("StorageDriver", "");
-        return new StorageDriverDescriptor(type.GetSimpleAssemblyQualifiedName(), displayName);
+        var priority = driver.Priority;
+        return new StorageDriverDescriptor(type.GetSimpleAssemblyQualifiedName(), displayName, priority, deprecated);
     }
 }

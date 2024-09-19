@@ -5,4 +5,4 @@ namespace Elsa.Api.Client.Resources.StorageDrivers.Models;
 /// </summary>
 /// <param name="TypeName">The type name of the storage driver.</param>
 /// <param name="DisplayName">The display name of the storage driver.</param>
-public record StorageDriverDescriptor(string TypeName, string DisplayName);
+public record StorageDriverDescriptor(string TypeName, string DisplayName, double Priority = 0, bool Deprecated = false);

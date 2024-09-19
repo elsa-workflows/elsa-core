@@ -6,6 +6,11 @@ namespace Elsa.Workflows.Contracts;
 public interface IStorageDriver
 {
     /// <summary>
+    /// The priority of the storage driver. Drivers with higher priority are used before drivers with lower priority.
+    /// </summary>
+    double Priority { get; }
+    
+    /// <summary>
     /// Writes a value to the storage driver.
     /// </summary>
     /// <param name="id">The ID of the value to write.</param>
