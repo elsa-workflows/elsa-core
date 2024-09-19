@@ -316,7 +316,6 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
-            .UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options))
             .UseWorkflowContexts();
 
         if (useQuartz)
