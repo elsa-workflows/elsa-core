@@ -51,7 +51,7 @@ const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const bool useAzureServiceBus = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
