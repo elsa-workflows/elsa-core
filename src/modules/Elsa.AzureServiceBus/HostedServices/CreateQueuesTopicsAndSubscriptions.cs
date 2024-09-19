@@ -1,4 +1,6 @@
 using Elsa.AzureServiceBus.Contracts;
+using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.AzureServiceBus.HostedServices;
@@ -6,16 +8,16 @@ namespace Elsa.AzureServiceBus.HostedServices;
 /// <summary>
 /// A blocking hosted service that creates queues, topics and subscriptions.
 /// </summary>
-public class CreateQueuesTopicsAndSubscriptions : IHostedService
+[UsedImplicitly]
+public class CreateQueuesTopicsAndSubscriptions(IServiceScopeFactory scopeFactory) : IHostedService
 {
-    private readonly IServiceBusInitializer _serviceBusInitializer;
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public CreateQueuesTopicsAndSubscriptions(IServiceBusInitializer serviceBusInitializer) => _serviceBusInitializer = serviceBusInitializer;
-
     /// <inheritdoc />
-    public Task StartAsync(CancellationToken cancellationToken) => _serviceBusInitializer.InitializeAsync(cancellationToken);
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var initializer = scope.ServiceProvider.GetRequiredService<IServiceBusInitializer>();
+        await initializer.InitializeAsync(cancellationToken);
+    }
 
     /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

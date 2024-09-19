@@ -49,6 +49,7 @@ const bool useMemoryStores = false;
 const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
+const bool useAzureServiceBus = false;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
 const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
 
@@ -326,6 +327,9 @@ services
         {
             elsa.UseRealTimeWorkflows();
         }
+
+        if (useAzureServiceBus)
+            elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
 
         if (useMassTransit)
         {

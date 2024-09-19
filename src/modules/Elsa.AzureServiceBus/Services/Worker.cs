@@ -4,6 +4,7 @@ using Elsa.AzureServiceBus.Models;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Contracts;
 using Elsa.Workflows.Runtime.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.AzureServiceBus.Services;
@@ -15,18 +16,18 @@ namespace Elsa.AzureServiceBus.Services;
 public class Worker : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
-    private readonly IWorkflowInbox _workflowInbox;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger _logger;
     private int _refCount = 1;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IWorkflowInbox workflowInbox, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IServiceScopeFactory scopeFactory, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
-        _workflowInbox = workflowInbox;
+        _scopeFactory = scopeFactory;
         _logger = logger;
 
         var options = new ServiceBusProcessorOptions();
@@ -98,8 +99,10 @@ public class Worker : IAsyncDisposable
         var messageModel = CreateMessageModel(message);
         var input = new Dictionary<string, object> { [MessageReceived.InputKey] = messageModel };
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<MessageReceived>();
+        await using var scope = _scopeFactory.CreateAsyncScope();
+        var workflowInbox = scope.ServiceProvider.GetRequiredService<IWorkflowInbox>();
 
-        var results = await _workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
+        var results = await workflowInbox.SubmitAsync(new NewWorkflowInboxMessage
         {
             ActivityTypeName = activityTypeName,
             BookmarkPayload = payload,
