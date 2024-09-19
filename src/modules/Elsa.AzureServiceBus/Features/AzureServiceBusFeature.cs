@@ -71,7 +71,7 @@ public class AzureServiceBusFeature : FeatureBase
             .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
             .AddSingleton<IWorkerManager, WorkerManager>()
-            .AddTransient<IServiceBusInitializer, ServiceBusInitializer>();
+            .AddScoped<IServiceBusInitializer, ServiceBusInitializer>();
 
         // Definition providers.
         Services

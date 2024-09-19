@@ -50,7 +50,7 @@ const bool useCaching = true;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.MassTransit;
-const MassTransitBroker useMassTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker useMassTransitBroker = MassTransitBroker.AzureServiceBus;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -315,6 +315,7 @@ services
                     alterations.UseMassTransitDispatcher();
                 }
             })
+            .UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options))
             .UseWorkflowContexts();
 
         if (useQuartz)
