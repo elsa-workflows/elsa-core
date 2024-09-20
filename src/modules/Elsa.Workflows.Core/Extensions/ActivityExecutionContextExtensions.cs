@@ -142,11 +142,11 @@ public static class ActivityExecutionContextExtensions
     {
         var activity = context.Activity;
         var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
-        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception($"Activity descriptor \"{activity.Type}\" not found");
         var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
 
         if (inputDescriptor == null)
-            throw new Exception($"No input with name {inputName} could be found");
+            throw new Exception($"No input with name \"{inputName}\" could be found");
 
         return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
     }

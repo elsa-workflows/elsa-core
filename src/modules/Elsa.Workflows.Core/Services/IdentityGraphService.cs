@@ -56,7 +56,7 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignInputOutputsAsync(IActivity activity)
     {
-        var activityDescriptor = await _activityRegistryLookup.FindAsync(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await _activityRegistryLookup.FindAsync(activity.Type, activity.Version) ?? throw new Exception($"Activity descriptor \"{activity.Type}\" with version \"{activity.Version}\" not found");
         var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
         foreach (var (inputName, input) in inputDictionary)
