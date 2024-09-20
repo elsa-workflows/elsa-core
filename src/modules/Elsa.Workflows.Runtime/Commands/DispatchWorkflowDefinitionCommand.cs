@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Runtime.Commands;
 /// </summary>
 public class DispatchWorkflowDefinitionCommand(string definitionVersionId) : ICommand<Unit>
 {
-    public string DefinitionVersionId { get; init; }
+    public string DefinitionVersionId { get; init; } = definitionVersionId;
     public string? ParentWorkflowInstanceId { get; init; }
     public IDictionary<string, object>? Input { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
