@@ -357,6 +357,43 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.MongoDb.UnitTests", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.OpenTelemetry", "src\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj", "{25880971-403E-4872-93A1-D33089E07C91}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{FE1AFEC0-7C63-4EF8-8E24-D9703590A778}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "k8s", "k8s", "{924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-server", "elsa-server", "{A2743EC6-7117-46E2-8AC1-8CDD52C8AAEF}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\elsa-server\deployment.yaml = scripts\k8s\elsa-server\deployment.yaml
+		scripts\k8s\elsa-server\role-binding.yaml = scripts\k8s\elsa-server\role-binding.yaml
+		scripts\k8s\elsa-server\role.yaml = scripts\k8s\elsa-server\role.yaml
+		scripts\k8s\elsa-server\service-account.yml = scripts\k8s\elsa-server\service-account.yml
+		scripts\k8s\elsa-server\service.yaml = scripts\k8s\elsa-server\service.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "elsa-studio", "elsa-studio", "{A782913B-142F-4EA8-A2C7-82679CD2ABC1}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\elsa-studio\deployment.yaml = scripts\k8s\elsa-studio\deployment.yaml
+		scripts\k8s\elsa-studio\service.yaml = scripts\k8s\elsa-studio\service.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plant-uml", "plant-uml", "{BFB87B50-3FE9-4AB1-8F18-96BE667C953D}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\plant-uml\deployment.yaml = scripts\k8s\plant-uml\deployment.yaml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "postgres", "postgres", "{399C61BC-A51B-4B57-AA32-46BC24D4AE1C}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\postgres\config-map.yaml = scripts\k8s\postgres\config-map.yaml
+		scripts\k8s\postgres\deployment.yaml = scripts\k8s\postgres\deployment.yaml
+		scripts\k8s\postgres\service.yml = scripts\k8s\postgres\service.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trace-lens", "trace-lens", "{2FDF67FD-2BD3-4F73-9A24-DA255641ED25}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\k8s\trace-lens\deployment.yaml = scripts\k8s\trace-lens\deployment.yaml
+		scripts\k8s\trace-lens\service.yaml = scripts\k8s\trace-lens\service.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -998,6 +1035,12 @@ Global
 		{90CD37A9-C866-4D90-A3B1-8C87F53B845E} = {CBB515F3-A0EF-43B5-A907-FD4E652DD66E}
 		{56CAA9F2-1882-4EFA-BAC0-9C3D804553F1} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{25880971-403E-4872-93A1-D33089E07C91} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{924BA0AE-46B1-40B5-992C-CFB4EB14EDB0} = {FE1AFEC0-7C63-4EF8-8E24-D9703590A778}
+		{A2743EC6-7117-46E2-8AC1-8CDD52C8AAEF} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
+		{A782913B-142F-4EA8-A2C7-82679CD2ABC1} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
+		{BFB87B50-3FE9-4AB1-8F18-96BE667C953D} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
+		{399C61BC-A51B-4B57-AA32-46BC24D4AE1C} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
+		{2FDF67FD-2BD3-4F73-9A24-DA255641ED25} = {924BA0AE-46B1-40B5-992C-CFB4EB14EDB0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

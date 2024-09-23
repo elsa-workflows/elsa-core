@@ -12,7 +12,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-        
+  
   cockroachdb:
     image: cockroachdb/cockroach:v22.1.0
     command: start-single-node --insecure
@@ -23,19 +23,20 @@ services:
       - cockroachdb-data:/cockroach/cockroach-data
     environment:
       - COCKROACH_DATABASE=elsa
-    
+  
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
       - "15672:15672"
       - "5672:5672"
-        
+  
   redis:
     image: redis:latest
     ports:
       - "127.0.0.1:6379:6379"
 
   elsa-server:
+    pull_policy: always
     build:
       context: ../.
       dockerfile: ./docker/ElsaServer-Datadog.Dockerfile
@@ -46,6 +47,11 @@ services:
       - datadog-agent
     environment:
       DD_AGENT_HOST: datadog-agent
+      DD_ENV: development
+      DD_TRACE_DEBUG: true
+      DD_TRACE_OTEL_ENABLED: true
+      DD_SERVICE: "elsa-server-local"
+      DD_VERSION: "3.2.1-blueberry"
       ASPNETCORE_ENVIRONMENT: Development
       PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
       PYTHONNET_RUNTIME: coreclr
@@ -55,11 +61,12 @@ services:
       DISTRIBUTEDLOCKPROVIDER: "Postgres"
     ports:
       - "13000:8080"
-        
+  
   elsa-studio:
+    pull_policy: always
     build:
       context: ../.
-      dockerfile: ./docker/ElsaStudio-Datadog.Dockerfile
+      dockerfile: ./docker/ElsaStudio.Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ELSASERVER__URL: "http://localhost:13000/elsa/api"
@@ -67,16 +74,60 @@ services:
       - "14000:8080"
   
   datadog-agent:
-    image: datadog/agent:7
+    image: datadog/agent:7.42.0
     environment:
       DD_API_KEY: "YOUR_API_KEY"
       DD_SITE: "datadoghq.eu"
       DD_LOGS_ENABLED: "true"
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
       DD_APM_ENABLED: "true"
+      DD_REMOTE_CONFIGURATION_ENABLED: "true"
       DD_APM_NON_LOCAL_TRAFFIC: "true"
+      
+      # Service autodiscovery
       DD_AC_INCLUDE: "name:postgres,name:rabbitmq,name:redis,name:elsa-server"
       DD_AC_EXCLUDE: "name:datadog-agent"
+      
+      # Enable priority sampling
+      DD_TRACE_SAMPLING_PRIORITY: "true"
+      
+      # Global rate limiting of traces (number of spans per second)
+      DD_TRACE_RATE_LIMIT: 100
+      
+      # Global sample rate for all traces (applies to spans that do not match a specific sampling rule)
+      DD_TRACE_SAMPLE_RATE: 1.0  # Keep 100% of the traces globally (adjust as needed)
+      
+      # Sampling rules for controlling sampling of specific services and errors
+      DD_TRACE_SAMPLING_RULES: >
+        [
+          {
+            "service": "elsa-server-local",
+            "name": "WorkflowExecution",
+            "sample_rate": 0.5
+          },
+          {
+            "service": "elsa-server-local",
+            "name": "WorkflowExecution",
+            "sample_rate": 1.0,
+            "condition": {"tags": {"hasIncidents": "true"}}
+          }
+          {
+            "service": "elsa-server-local",
+            "name": "ActivityExecution",
+            "sample_rate": 1.0,
+            "condition": {"tags": {"hasIncidents": "true"}}
+          },
+          {
+            "service": "elsa-server-local",
+            "name": "ActivityExecution",
+            "sample_rate": 0.3
+          },
+          {
+            "service": "elsa-server-local",
+            "sample_rate": 1.0,
+            "condition": {"error": true}
+          }
+        ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc/:/host/proc/:ro

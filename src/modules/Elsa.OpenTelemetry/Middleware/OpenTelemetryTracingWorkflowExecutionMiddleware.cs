@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Text.Json;
+using Elsa.Common.Contracts;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
@@ -13,28 +15,58 @@ namespace Elsa.OpenTelemetry.Middleware;
 /// Middleware that traces workflow execution using OpenTelemetry.
 /// </summary>
 [UsedImplicitly]
-public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next) : WorkflowExecutionMiddleware(next)
+public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
 {
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity($"WorkflowExecution {workflow.WorkflowMetadata.Name}", ActivityKind.Internal, Activity.Current?.Context ?? default);
-        
-        if(!string.IsNullOrWhiteSpace(context.CorrelationId))
-            activity?.AddTag("correlationId", context.CorrelationId);
-        
-        activity?.AddTag("workflowInstance.id", workflowInstanceId);
-        activity?.AddTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
-        activity?.AddTag("workflowDefinition.version", workflow.Identity.Version);
-        activity?.AddTag("workflowInstance.originalStatus", context.Status.ToString());
-        activity?.AddTag("workflowInstance.originalSubStatus", context.SubStatus.ToString());
-        activity?.AddEvent(new ActivityEvent("Executing"));
+        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity($"WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+
+        if (activity == null)
+        {
+            await Next(context);
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+            activity.SetTag("correlationId", context.CorrelationId);
+
+        activity.SetTag("workflowInstance.id", workflowInstanceId);
+        activity.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
+        activity.SetTag("workflowDefinition.version", workflow.Identity.Version);
+        activity.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
+        activity.AddEvent(new ActivityEvent("Executing", tags: new ActivityTagsCollection(new Dictionary<string, object?>
+        {
+            ["workflowInstance.status"] = context.Status.ToString(),
+            ["workflowInstance.subStatus"] = context.SubStatus.ToString()
+        })));
         await Next(context);
-        activity?.AddEvent(new ActivityEvent("Executed"));
-        activity?.AddTag("workflowInstance.newStatus", context.Status.ToString());
-        activity?.AddTag("workflowInstance.newSubStatus", context.SubStatus.ToString());
+
+        if (context.SubStatus == WorkflowSubStatus.Faulted)
+        {
+            activity.AddEvent(new ActivityEvent("Faulted"));
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("error", true);
+            activity.SetTag("hasIncidents", true);
+            
+            if (context.Incidents.Count > 0)
+                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents));
+        }
+        else
+        {
+            activity.AddEvent(new ActivityEvent("Executed", tags: new ActivityTagsCollection(new Dictionary<string, object?>
+            {
+                ["workflowInstance.status"] = context.Status.ToString(),
+                ["workflowInstance.subStatus"] = context.SubStatus.ToString()
+            })));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
+            activity.SetTag("correlationId", context.CorrelationId);
+        
+        activity.SetTag("workflowExecution.durationMs", (systemClock.UtcNow - activity.StartTimeUtc).TotalMilliseconds);
     }
 }
 
