@@ -36,6 +36,9 @@ public interface IWorkflowExecutionPipelineBuilder
     /// Clears the current pipeline.
     /// </summary>
     IWorkflowExecutionPipelineBuilder Reset();
+    
+    /// Inserts the middleware component at the specified index.
+    IWorkflowExecutionPipelineBuilder Insert(int index, Func<WorkflowMiddlewareDelegate, WorkflowMiddlewareDelegate> middleware);
 
     /// <summary>
     /// Replaces the middleware component at the specified index with the specified delegate.

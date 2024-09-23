@@ -20,6 +20,7 @@ using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.OpenTelemetry.Middleware;
 using Elsa.Server.Web;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Compression;
@@ -131,6 +132,11 @@ services
                 identity.UseConfigurationBasedRoleProvider(options => identitySection.Bind(options));
             })
             .UseDefaultAuthentication()
+            .UseWorkflows(workflows =>
+            {
+                workflows.WithDefaultWorkflowExecutionPipeline(pipeline => pipeline.UseWorkflowExecutionTracing());
+                workflows.WithDefaultActivityExecutionPipeline(pipeline => pipeline.UseActivityExecutionTracing());
+            })
             .UseWorkflowManagement(management =>
             {
                 if (useMongoDb)
