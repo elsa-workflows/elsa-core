@@ -52,6 +52,33 @@ services:
       DD_TRACE_OTEL_ENABLED: true
       DD_SERVICE: "elsa-server-local"
       DD_VERSION: "3.2.1-blueberry"
+      
+      # Enable priority sampling
+      DD_TRACE_SAMPLING_PRIORITY: "true"
+
+      # Global rate limiting of traces (number of spans per second)
+      DD_TRACE_RATE_LIMIT: 100
+
+      # Global sample rate for all traces (applies to spans that do not match a specific sampling rule)
+      DD_TRACE_SAMPLE_RATE: 1.0  # Keep 100% of the traces globally (adjust as needed)
+
+      # Sampling rules for controlling sampling of specific services and errors
+      DD_TRACE_SAMPLING_RULES: >
+        [
+          {
+            "service": "elsa-server-local",
+            "name": "WorkflowExecution",
+            "sample_rate": 1.0,
+            "condition": {"tags": {"hasIncidents": "true"}}
+          },
+          {
+            "service": "elsa-server-local",
+            "name": "ActivityExecution",
+            "sample_rate": 1.0,
+            "condition": {"tags": {"hasIncidents": "true"}}
+          }
+        ]
+      
       ASPNETCORE_ENVIRONMENT: Development
       PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
       PYTHONNET_RUNTIME: coreclr
@@ -74,7 +101,7 @@ services:
       - "14000:8080"
   
   datadog-agent:
-    image: datadog/agent:7.42.0
+    image: datadog/agent:7.57.1
     environment:
       DD_API_KEY: "YOUR_API_KEY"
       DD_SITE: "datadoghq.eu"
@@ -88,46 +115,6 @@ services:
       DD_AC_INCLUDE: "name:postgres,name:rabbitmq,name:redis,name:elsa-server"
       DD_AC_EXCLUDE: "name:datadog-agent"
       
-      # Enable priority sampling
-      DD_TRACE_SAMPLING_PRIORITY: "true"
-      
-      # Global rate limiting of traces (number of spans per second)
-      DD_TRACE_RATE_LIMIT: 100
-      
-      # Global sample rate for all traces (applies to spans that do not match a specific sampling rule)
-      DD_TRACE_SAMPLE_RATE: 1.0  # Keep 100% of the traces globally (adjust as needed)
-      
-      # Sampling rules for controlling sampling of specific services and errors
-      DD_TRACE_SAMPLING_RULES: >
-        [
-          {
-            "service": "elsa-server-local",
-            "name": "WorkflowExecution",
-            "sample_rate": 0.5
-          },
-          {
-            "service": "elsa-server-local",
-            "name": "WorkflowExecution",
-            "sample_rate": 1.0,
-            "condition": {"tags": {"hasIncidents": "true"}}
-          }
-          {
-            "service": "elsa-server-local",
-            "name": "ActivityExecution",
-            "sample_rate": 1.0,
-            "condition": {"tags": {"hasIncidents": "true"}}
-          },
-          {
-            "service": "elsa-server-local",
-            "name": "ActivityExecution",
-            "sample_rate": 0.3
-          },
-          {
-            "service": "elsa-server-local",
-            "sample_rate": 1.0,
-            "condition": {"error": true}
-          }
-        ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /proc/:/host/proc/:ro

@@ -1,10 +1,13 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Elsa.Common.Contracts;
+using Elsa.Expressions.Services;
+using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Activity = System.Diagnostics.Activity;
 using ActivityKind = System.Diagnostics.ActivityKind;
@@ -17,6 +20,8 @@ namespace Elsa.OpenTelemetry.Middleware;
 [UsedImplicitly]
 public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareDelegate next, ISystemClock systemClock) : WorkflowExecutionMiddleware(next)
 {
+    private readonly JsonSerializerOptions? _incidentSerializerOptions = new JsonSerializerOptions().WithConverters(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
+
     /// <inheritdoc />
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
@@ -52,7 +57,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             activity.SetTag("hasIncidents", true);
             
             if (context.Incidents.Count > 0)
-                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents));
+                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
         }
         else
         {
