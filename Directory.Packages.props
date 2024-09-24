@@ -37,7 +37,8 @@
     <PackageVersion Include="Fody" Version="6.8.1" />
     <PackageVersion Include="GitHubActionsTestLogger" Version="2.4.1" />
     <PackageVersion Include="Google.Protobuf" Version="3.27.2" />
-    <PackageVersion Include="Grpc.Tools" Version="2.64.0" />
+    <PackageVersion Include="Grpc.Net.Client" Version="2.66.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.66.0" />
     <PackageVersion Include="Hangfire" Version="1.8.14" />
     <PackageVersion Include="Hangfire.MemoryStorage" Version="1.8.1.1" />
     <PackageVersion Include="Hangfire.Storage.SQLite" Version="0.4.2" />
@@ -65,6 +66,9 @@
     <PackageVersion Include="NuGet.Protocol" Version="6.10.1" />
     <PackageVersion Include="Nuke.Components" Version="8.0.0" />
     <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
+    <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.9.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.0.0-rc9.15" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="PolySharp" Version="1.14.1" />
     <PackageVersion Include="Proto.Actor" Version="1.6.0" />

@@ -384,18 +384,12 @@ services
     });
 
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
-
 services.AddHealthChecks();
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
 // Build the web application.
 var app = builder.Build();
-
-// app.UseSimulatedLatency(
-//     TimeSpan.FromMilliseconds(1000),
-//     TimeSpan.FromMilliseconds(3000)
-// );
 
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())

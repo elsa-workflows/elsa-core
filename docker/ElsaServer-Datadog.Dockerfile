@@ -4,25 +4,20 @@
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim AS build
 WORKDIR /source
 
-# Determine the architecture and download the appropriate version of the tracer
-RUN ARCH=$(if [ "$(uname -m)" = "x86_64" ]; then echo "amd64"; elif [ "$(uname -m)" = "aarch64" ]; then echo "arm64"; else echo "amd64"; fi) \
-    && TRACER_VERSION=$(curl -s https://api.github.com/repos/DataDog/dd-trace-dotnet/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c2-) \
-    && curl -Lo /tmp/datadog-dotnet-apm.deb https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_${ARCH}.deb
-
-# copy sources.
+# Copy sources.
 COPY src/. ./src
 COPY ./NuGet.Config ./
 COPY *.props ./
 
-# restore packages.
+# Restore packages.
 RUN dotnet restore "./src/bundles/Elsa.Server.Web/Elsa.Server.Web.csproj"
 
-# build and publish (UseAppHost=false creates platform independent binaries).
+# Build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/src/bundles/Elsa.Server.Web
 RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net8.0
 
-# move binaries into smaller base image.
+# Move binaries into smaller base image.
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim AS base
 WORKDIR /app
 COPY --from=build /app/publish ./
@@ -38,21 +33,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Set PYTHONNET_PYDLL environment variable
 ENV PYTHONNET_PYDLL=/usr/lib/aarch64-linux-gnu/libpython3.11.so
 
-# Copy the tracer from build target
-COPY --from=build /tmp/datadog-dotnet-apm.deb /tmp/datadog-dotnet-apm.deb
-# Install the tracer
-RUN mkdir -p /opt/datadog \
-    && mkdir -p /var/log/datadog \
-    && dpkg -i /tmp/datadog-dotnet-apm.deb \
-    && rm /tmp/datadog-dotnet-apm.deb
- 
-# Enable the tracer
-ENV CORECLR_ENABLE_PROFILING=1
-ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
-ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
-ENV DD_DOTNET_TRACER_HOME=/opt/datadog
-ENV DD_INTEGRATIONS=/opt/datadog/integrations.json
+# Install dependencies
+RUN apt-get update && apt-get install -y wget unzip curl
+
+# Set environment variables for OpenTelemetry Auto-Instrumentation
+ENV OTEL_DOTNET_AUTO_HOME=/otel
+ENV OTEL_LOG_LEVEL="debug"
+
+# Download and extract OpenTelemetry Auto-Instrumentation
+ARG OTEL_VERSION=1.7.0
+RUN mkdir /otel
+RUN curl -L -o /otel/otel-dotnet-install.sh https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation/releases/download/v${OTEL_VERSION}/otel-dotnet-auto-install.sh
+RUN chmod +x /otel/otel-dotnet-install.sh
+RUN /bin/bash /otel/otel-dotnet-install.sh
+
+# Provide necessary permissions for the script to execute
+RUN chmod +x /otel/instrument.sh
 
 EXPOSE 8080/tcp
 EXPOSE 443/tcp
-ENTRYPOINT ["dotnet", "Elsa.Server.Web.dll"]
+
+# Instrument the application and start it
+ENTRYPOINT ["/bin/bash", "-c", "source /otel/instrument.sh && dotnet Elsa.Server.Web.dll"]

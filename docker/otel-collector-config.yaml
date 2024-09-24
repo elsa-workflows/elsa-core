@@ -1,0 +1,79 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      paging:
+        metrics:
+          system.paging.utilization:
+            enabled: true
+      cpu:
+        metrics:
+          system.cpu.utilization:
+            enabled: true
+      disk:
+      filesystem:
+        metrics:
+          system.filesystem.utilization:
+            enabled: true
+      load:
+      memory:
+      network:
+      processes:
+  docker_stats:
+    metrics:
+      container.network.io.usage.rx_packets:
+        enabled: true
+      container.network.io.usage.tx_packets:
+        enabled: true
+      container.cpu.usage.system:
+        enabled: true
+      container.memory.rss:
+        enabled: true
+      container.blockio.io_serviced_recursive:
+        enabled: true
+
+processors:
+  batch:
+    send_batch_max_size: 100
+    send_batch_size: 10
+    timeout: 1s
+
+connectors:
+  datadog/connector:
+
+exporters:
+  debug:
+    verbosity: detailed
+  datadog:
+    api:
+      site: ${env:DD_SITE}
+      key: ${env:DD_API_KEY}
+
+service:
+  pipelines:
+    metrics:
+      receivers: [ hostmetrics, otlp, datadog/connector ]
+      processors: [ batch ]
+      exporters: [ datadog ]
+    traces:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ datadog/connector ]
+    traces/sampling:
+      # This pipeline has a Datadog connector, a batch processor and a Datadog exporter.
+      # It receivers all traces from the Datadog connector and sends them to Datadog.
+      # Add any sampling here, so that the generated trace metrics account for all traces.
+      receivers: [ datadog/connector ]
+      # Add any sampling here
+      processors: [ ]
+      exporters: [ datadog ]
+    logs:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ datadog ]
