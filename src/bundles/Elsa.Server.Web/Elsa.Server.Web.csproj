@@ -52,8 +52,6 @@
         <PackageReference Include="DistributedLock.Redis"/>
         <PackageReference Include="FluentStorage.Azure.Blobs"/>
         <PackageReference Include="Grpc.Net.Client" />
-        <PackageReference Include="OpenTelemetry.AutoInstrumentation" />
-        <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
     </ItemGroup>
