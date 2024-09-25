@@ -15,13 +15,8 @@ namespace Elsa.EntityFrameworkCore.Modules.Management;
 [DependsOn(typeof(WorkflowInstancesFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [PublicAPI]
-public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>
+public class WorkflowManagementPersistenceFeature(IModule module) : PersistenceFeatureBase<WorkflowManagementPersistenceFeature, ManagementElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public WorkflowManagementPersistenceFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -33,7 +28,6 @@ public class WorkflowManagementPersistenceFeature : PersistenceFeatureBase<Workf
     public override void Apply()
     {
         base.Apply();
-
         AddEntityStore<WorkflowInstance, EFCoreWorkflowInstanceStore>();
         AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
     }

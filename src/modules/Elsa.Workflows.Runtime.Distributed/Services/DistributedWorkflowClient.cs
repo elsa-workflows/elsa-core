@@ -1,12 +1,11 @@
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
-using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Runtime.Distributed.Services;
+namespace Elsa.Workflows.Runtime.Distributed;
 
 public class DistributedWorkflowClient(
     string workflowInstanceId,

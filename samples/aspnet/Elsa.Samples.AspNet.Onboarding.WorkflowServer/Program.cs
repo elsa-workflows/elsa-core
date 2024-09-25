@@ -2,6 +2,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Samples.AspNet.Onboarding.WorkflowServer.Workflows;
+using WebhooksCore.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,8 +43,10 @@ builder.Services.AddElsa(elsa =>
     elsa.UseRealTimeWorkflows();
     
     // Use Webhooks feature.
-    elsa.UseWebhooks(webhooks => webhooks.WebhookOptions = options => builder.Configuration.GetSection("Webhooks").Bind(options));
+    elsa.UseWebhooks(webhooks => webhooks.ConfigureSinks = options => builder.Configuration.GetSection("Webhooks:Sinks").Bind(options));
 });
+
+builder.Services.Configure<WebhookSinksOptions>(options => builder.Configuration.GetSection("Webhooks").Bind(options));
 
 builder.Services.AddHealthChecks();
 builder.Services.AddControllers();

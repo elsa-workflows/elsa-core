@@ -13,7 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Azure.Identity" />
         <PackageReference Include="MassTransit.Azure.ServiceBus.Core" />
+        <PackageReference Include="Microsoft.Identity.Client" />
     </ItemGroup>
 
 </Project>

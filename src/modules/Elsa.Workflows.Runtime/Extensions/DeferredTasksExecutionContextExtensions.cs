@@ -36,7 +36,7 @@ public static class DeferredTasksExecutionContextExtensions
     }
 
     /// Executes all deferred tasks within the workflow execution context.
-    internal static async Task ExecuteDeferredTasksAsync(this WorkflowExecutionContext context)
+    public static async Task ExecuteDeferredTasksAsync(this WorkflowExecutionContext context)
     {
         var deferredTasks = context.GetDeferredTasksInternal();
         var tasks = deferredTasks.Select(x => x()).ToList();

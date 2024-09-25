@@ -25,7 +25,7 @@ public class TenantResolutionContext
     /// <summary>
     /// Gets the cancellation token.
     /// </summary>
-    public CancellationToken CancellationToken { get; } = default;
+    public CancellationToken CancellationToken { get; }
 
     /// <summary>
     /// Finds a tenant based on the provided tenant ID.

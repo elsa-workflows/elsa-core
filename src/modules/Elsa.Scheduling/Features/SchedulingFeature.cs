@@ -41,12 +41,15 @@ public class SchedulingFeature : FeatureBase
     public override void Apply()
     {
         Services
+            .AddSingleton<IScheduler, LocalScheduler>()
+            .AddSingleton<CronosCronParser>()
+            .AddSingleton(CronParser)
             .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
-            .AddScoped<IScheduler, LocalScheduler>()
+            .AddSingleton<IScheduler, LocalScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
-            .AddScoped<CronosCronParser>()
-            .AddScoped(CronParser)
+            .AddSingleton<CronosCronParser>()
+            .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
             .AddHandlersFrom<ScheduleWorkflows>();
 

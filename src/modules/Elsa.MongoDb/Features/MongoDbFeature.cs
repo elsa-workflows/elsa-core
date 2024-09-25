@@ -63,7 +63,7 @@ public class MongoDbFeature : FeatureBase
             cm.AutoMap(); // Automatically map other properties;
         });
 
-        BsonClassMap.RegisterClassMap<SerializedKeyValuePair>(map =>
+        BsonClassMap.TryRegisterClassMap<SerializedKeyValuePair>(map =>
         {
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
@@ -98,7 +98,7 @@ public class MongoDbFeature : FeatureBase
         settings.SslSettings = options.SslSettings;
 
         var mongoClient = new MongoClient(settings);
-        return mongoClient.GetDatabase(mongoUrl.DatabaseName);
+        return mongoClient.GetDatabase(options.DatabaseName ?? mongoUrl.DatabaseName);
     }
 
     private static string GetApplicationName(MongoClientSettings settings) =>

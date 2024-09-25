@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Dynamic;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
@@ -80,6 +82,9 @@ public class WorkflowManagementFeature : FeatureBase
         new(typeof(IDictionary<string, string>), LookupsCategory, "A dictionary with string key and values."),
         new(typeof(IDictionary<string, object>), LookupsCategory, "A dictionary with string key and object values."),
         new(typeof(ExpandoObject), DynamicCategory, "A dictionary that can be typed as dynamic to access members using dot notation."),
+        new(typeof(JsonElement), DynamicCategory, "A JSON element for reading a JSON structure."),
+        new(typeof(JsonNode), DynamicCategory, "A JSON node for reading and writing a JSON structure."),
+        new(typeof(JsonObject), DynamicCategory, "A JSON object for reading and writing a JSON structure."),
         new(typeof(byte[]), DataCategory, "A byte array."),
         new(typeof(Stream), DataCategory, "A stream.")
     ];
@@ -101,7 +106,6 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds all types implementing <see cref="IActivity"/> to the system.
     /// </summary>
-    [RequiresUnreferencedCode("The assembly containing the specified marker type will be scanned for activity types.")]
     public WorkflowManagementFeature AddActivitiesFrom<TMarker>()
     {
         var activityTypes = typeof(TMarker).Assembly.GetExportedTypes()
@@ -141,10 +145,7 @@ public class WorkflowManagementFeature : FeatureBase
     /// <summary>
     /// Adds the specified variable type to the system.
     /// </summary>
-    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes(new[]
-    {
-        type
-    }, category);
+    public WorkflowManagementFeature AddVariableType(Type type, string category) => AddVariableTypes([type], category);
 
     /// <summary>
     /// Adds the specified variable types to the system.

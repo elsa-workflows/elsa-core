@@ -1,3 +1,4 @@
+using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
@@ -7,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddElsa(elsa =>
 {
-    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore());
-    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore());
+    elsa.UseWorkflowManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite()));
+    elsa.UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef=>ef.UseSqlite()));
     
     elsa.UseWorkflowsApi();
     elsa.UseHttp();
@@ -42,3 +43,4 @@ app.UseAuthorization();
 app.UseWorkflowsApi();
 app.Map("/test",c=> c.UseWorkflows());
 app.Run();
+

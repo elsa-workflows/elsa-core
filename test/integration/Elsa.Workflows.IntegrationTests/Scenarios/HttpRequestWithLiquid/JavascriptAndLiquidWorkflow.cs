@@ -3,7 +3,6 @@ using Elsa.JavaScript.Activities;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
-using Elsa.Workflows.Services;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.HttpRequestWithLiquid;
 
@@ -14,8 +13,8 @@ public class JavascriptAndLiquidWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var products = new Variable<object> { Name = "Products", StorageDriverType = typeof(WorkflowStorageDriver) };
-        var product = new Variable<object> { Name = "Product", StorageDriverType = typeof(WorkflowStorageDriver) };
+        var products = new Variable<object> { Name = "Products", StorageDriverType = typeof(WorkflowInstanceStorageDriver) };
+        var product = new Variable<object> { Name = "Product", StorageDriverType = typeof(WorkflowInstanceStorageDriver) };
 
         builder.Root = new Sequence
         {
@@ -32,7 +31,7 @@ public class JavascriptAndLiquidWorkflow : WorkflowBase
                 new WriteLine(new Expression("Liquid", "Second product id: {{ Variables.Products[1].id }}")),
                 new RunJavaScript
                 {
-                    Script = new(@"setProduct({""id"":2, ""price"":10})")
+                    Script = new(@"variables.Product = {""id"":2, ""price"":10}")
                 },
                 new WriteLine(new Expression("Liquid", "Single product id: {{ Variables.Product.id }}")),
                 new WriteLine(new Expression("Liquid", "Single product as json: {{ Variables.Product | json }}")),

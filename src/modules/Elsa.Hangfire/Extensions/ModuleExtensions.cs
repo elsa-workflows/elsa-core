@@ -1,5 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.Hangfire.Features;
+using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
 using Elsa.Workflows.Runtime.Features;
 using JetBrains.Annotations;
@@ -20,7 +21,7 @@ public static class ModuleExtensions
     {
         return module.Use(configure);
     }
-    
+
     /// <summary>
     /// Configures Hangfire to use SQL Server storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
@@ -29,7 +30,7 @@ public static class ModuleExtensions
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Configures Hangfire to use SQLite storage. Only use this feature if you are not configuring Hangfire yourself.
     /// </summary>
@@ -38,7 +39,7 @@ public static class ModuleExtensions
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Installs a Hangfire implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>
@@ -47,7 +48,7 @@ public static class ModuleExtensions
         feature.Module.Use(configure);
         return feature;
     }
-    
+
     /// <summary>
     /// Installs a Hangfire implementation for <see cref="IWorkflowScheduler"/>.
     /// </summary>

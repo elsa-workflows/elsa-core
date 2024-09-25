@@ -19,7 +19,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Activities;
 [Browsable(false)]
 public class Flowchart : Container
 {
-    internal const string ScopeProperty = "Scope";
+    public const string ScopeProperty = "Scope";
 
     /// <inheritdoc />
     public Flowchart([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)

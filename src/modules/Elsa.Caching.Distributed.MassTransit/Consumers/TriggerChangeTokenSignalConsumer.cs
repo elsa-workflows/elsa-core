@@ -1,4 +1,3 @@
-using Elsa.Caching.Distributed.Contracts;
 using Elsa.Caching.Distributed.MassTransit.Messages;
 using JetBrains.Annotations;
 using MassTransit;
@@ -16,6 +15,6 @@ public class TriggerChangeTokenSignalConsumer(IChangeTokenSignalInvoker changeTo
     {
         var message = context.Message;
         var cancellationToken = context.CancellationToken;
-        await changeTokenSignalInvoker.InvokeAsync(message.Key, cancellationToken);
+        await changeTokenSignalInvoker.TriggerTokenAsync(message.Key, cancellationToken);
     }
 }

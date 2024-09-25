@@ -14,13 +14,8 @@ namespace Elsa.EntityFrameworkCore.Modules.Runtime;
 /// Configures the default workflow runtime to use EF Core persistence providers.
 /// </summary>
 [DependsOn(typeof(WorkflowRuntimeFeature))]
-public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>
+public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreWorkflowRuntimePersistenceFeature, RuntimeElsaDbContext>(module)
 {
-    /// <inheritdoc />
-    public EFCoreWorkflowRuntimePersistenceFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -32,6 +27,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
         {
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
+            feature.BookmarkQueueStore = sp => sp.GetRequiredService<EFBookmarkQueueStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
@@ -41,13 +37,12 @@ public class EFCoreWorkflowRuntimePersistenceFeature : PersistenceFeatureBase<EF
     public override void Apply()
     {
         base.Apply();
-        
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
+        AddStore<BookmarkQueueItem, EFBookmarkQueueStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();
-        
         Services.AddScoped<IEntityModelCreatingHandler, SetupForOracle>();
     }
 }

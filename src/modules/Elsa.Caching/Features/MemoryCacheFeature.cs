@@ -20,8 +20,12 @@ public class MemoryCacheFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         Services.Configure(CachingOptions);
-        Services.AddMemoryCache();
-        Services.AddSingleton<ICacheManager, CacheManager>();
-        Services.AddSingleton<IChangeTokenSignaler, ChangeTokenSignaler>();
+
+        Services
+            .AddMemoryCache()
+            .AddSingleton<ICacheManager, CacheManager>()
+            .AddSingleton<IChangeTokenSignalInvoker, ChangeTokenSignalInvoker>()
+            .AddSingleton<IChangeTokenSignaler, ChangeTokenSignaler>()
+            ;
     }
 }

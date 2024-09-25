@@ -4,13 +4,12 @@ using Nuke.Components;
 [GitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        On = [GitHubActionsTrigger.Push, GitHubActionsTrigger.PullRequest, GitHubActionsTrigger.WorkflowDispatch],
-        OnPushBranches = ["main", "feature/*", "patch/*", "fix/*", "enhancement/*"],
-        OnPullRequestBranches = ["main", "feature/*", "patch/*", "fix/*", "enhancement/*"],
+        OnPullRequestBranches = ["main"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test), nameof(IPack.Pack)],
-        CacheKeyFiles = []
+        CacheKeyFiles = [],
+        ConcurrencyCancelInProgress = true
     )
 ]
 public partial class Build;

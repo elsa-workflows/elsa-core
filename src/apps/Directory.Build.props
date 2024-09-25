@@ -1,0 +1,16 @@
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
+    </PropertyGroup>
+  
+    <ItemGroup>
+        <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All"/>
+        <PackageReference Include="Fody" PrivateAssets="All"/>
+        <PackageReference Include="JetBrains.Annotations" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
+    </ItemGroup>
+</Project>

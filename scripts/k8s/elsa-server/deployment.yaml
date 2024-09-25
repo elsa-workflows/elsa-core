@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elsa-server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elsa-server
+  template:
+    metadata:
+      labels:
+        app: elsa-server
+    spec:
+      serviceAccountName: proto-cluster
+      containers:
+        - name: elsa-server
+          imagePullPolicy: Never
+          image: elsa-server:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Development
+            - name: "ProtoActor__AdvertisedHost"
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: CONNECTIONSTRINGS__POSTGRESQL
+              value: "Server=postgres;Username=elsa;Database=elsa;Port=5432;Password=elsa;SSLMode=Prefer;MaxPoolSize=2000;Timeout=60"
+            - name: COR_ENABLE_PROFILING
+              value: "1"
+            - name: COR_PROFILER
+              value: "{918728DD-259F-4A6A-AC2B-B85E1B658318}"
+            - name: CORECLR_PROFILER_PATH
+              value: "$INSTALL_DIR/osx-x64/OpenTelemetry.AutoInstrumentation.Native.dylib"
+            - name: DOTNET_ADDITIONAL_DEPS
+              value: "$INSTALL_DIR/AdditionalDeps"
+            - name: DOTNET_EnableDiagnostics
+              value: "1"
+            - name: DOTNET_SHARED_STORE
+              value: "$INSTALL_DIR/store"
+            - name: DOTNET_STARTUP_HOOKS
+              value: "OpenTelemetry.AutoInstrumentation.StartupHook"
+            - name: OTEL_DOTNET_AUTO_HOME
+              value: "$INSTALL_DIR"
+            - name: OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED
+              value: "false"
+            - name: OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED
+              value: "false"
+            - name: OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES
+              value: "Proto.Actor,Elsa.Workflows"
+            - name: OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED
+              value: "false"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://trace-lens-collector:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: "service.name=Elsa Server,service.version=3.3.0"

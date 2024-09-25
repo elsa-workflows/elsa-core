@@ -1,6 +1,6 @@
 # ELSA 3.0
 
-![Elsa Workflows](./design/artwork/elsa-logo-art.png)
+![Elsa Workflows](./design/artwork/elsa-v3-avatar.png)
 
 [![Elsa 3 Prerelease](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml/badge.svg)](https://github.com/elsa-workflows/elsa-core/actions/workflows/packages.yml)
 [![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/Elsa)](https://www.nuget.org/packages/Elsa/)
@@ -153,12 +153,12 @@ git clone https://github.com/YOUR_USERNAME/elsa-core.git
 ```
 Replace `YOUR_USERNAME` with your GitHub username. For more information on forking a repo, check out the GitHub documentation [here](https://docs.github.com/en/github/getting-started-with-github/fork-a-repo).
 
-Incorporating the details about the "bundles" folder and its projects into the second point about opening the `Elsa.sln` using your favorite IDE, we can expand the instructions to guide developers on where to start and what projects they might want to explore first. Here's an updated version of that section with the additional information:
+Incorporating the details about the "apps" folder and its projects into the second point about opening the `Elsa.sln` using your favorite IDE, we can expand the instructions to guide developers on where to start and what projects they might want to explore first. Here's an updated version of that section with the additional information:
 
 ### 2. Open `Elsa.sln` Using Your Favorite IDE
 After cloning the repository, navigate to the cloned directory and open the `Elsa.sln` solution file with your preferred IDE that supports .NET development, such as Visual Studio, JetBrains Rider, or Visual Studio Code with the appropriate extensions.
 
-Within the solution, you will find a "bundles" folder containing three projects designed to help you get started and explore the capabilities of Elsa Workflow:
+Within the solution, you will find an "apps" folder containing three projects designed to help you get started and explore the capabilities of Elsa Workflow:
 
 - **Elsa.Server.Web**: This project is a reference ASP.NET Core application that acts as a workflow server. It's a great starting point if you want to understand how Elsa functions as a server-side workflow engine.
 

@@ -1,3 +1,5 @@
+using Elsa.Workflows.Attributes;
+
 namespace Elsa.Workflows.Runtime.Stimuli;
 
 /// <summary>
@@ -8,5 +10,5 @@ public class BackgroundActivityStimulus
     /// <summary>
     /// Set retroactively after the job has been scheduled. It is used to cancel the job when the bookmark is deleted.
     /// </summary>
-    public string? JobId { get; set; }
+    [ExcludeFromHash]public string? JobId { get; set; }
 }

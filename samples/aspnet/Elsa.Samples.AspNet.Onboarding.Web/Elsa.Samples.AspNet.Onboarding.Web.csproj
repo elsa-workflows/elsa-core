@@ -18,4 +18,10 @@
       <ProjectReference Include="..\..\..\src\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
 
+    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+      <PackageReference Include="System.Net.Http" />
+      <PackageReference Include="System.Text.RegularExpressions" />
+    </ItemGroup>
+
 </Project>

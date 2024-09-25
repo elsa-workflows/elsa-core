@@ -2,7 +2,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class TriggerBoundWorkflowService(IWorkflowMatcher workflowMatcher, IWorkflowDefinitionService workflowDefinitionService, ILogger<TriggerBoundWorkflowService> logger) : ITriggerBoundWorkflowService

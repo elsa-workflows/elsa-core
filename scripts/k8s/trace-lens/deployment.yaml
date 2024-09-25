@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracelens-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trace-lens
+  template:
+    metadata:
+      labels:
+        app: trace-lens
+    spec:
+      containers:
+        - name: trace-lens
+          imagePullPolicy: Always
+          image: docker.io/rogeralsing/tracelens:latest
+          ports:
+            - containerPort: 5001
+            - containerPort: 4317
+          env:
+            - name: PlantUml__RemoteUrl
+              value: ""
+            - name: ConnectionStrings__DefaultConnection
+              value: "USER ID=tracelens;PASSWORD=tracelenspass;HOST=postgres;PORT=5432;DATABASE=tracelens;POOLING=true;"

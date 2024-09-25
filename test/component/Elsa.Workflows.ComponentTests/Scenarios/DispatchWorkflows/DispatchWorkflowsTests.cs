@@ -1,5 +1,7 @@
 ﻿using Elsa.Common.Models;
 using Elsa.Testing.Shared;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -10,8 +12,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DispatchWorkflows;
 
 public class DispatchWorkflowsTests : AppComponentTest
 {
-    private readonly IWorkflowEvents _workflowEvents;
-    private readonly ISignalManager _signalManager;
+    private readonly WorkflowEvents _workflowEvents;
+    private readonly SignalManager _signalManager;
     private readonly IWorkflowRuntime _workflowRuntime;
 
     private static readonly object ChildWorkflowCompletedSignal = new();
@@ -20,8 +22,8 @@ public class DispatchWorkflowsTests : AppComponentTest
     public DispatchWorkflowsTests(App app) : base(app)
     {
         _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
-        _workflowEvents = Scope.ServiceProvider.GetRequiredService<IWorkflowEvents>();
-        _signalManager = Scope.ServiceProvider.GetRequiredService<ISignalManager>();
+        _workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
 

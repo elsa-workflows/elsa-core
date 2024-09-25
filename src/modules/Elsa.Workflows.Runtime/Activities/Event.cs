@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Runtime.Activities;
 public class Event : Trigger<object?>
 {
     internal const string EventInputWorkflowInputKey = "__EventPayloadWorkflowInput";
-    
+
     /// <inheritdoc />
     internal Event([CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) : base(source, line)
     {
@@ -28,7 +28,7 @@ public class Event : Trigger<object?>
         : this(new Literal<string>(eventName), source, line)
     {
     }
-    
+
     /// <inheritdoc />
     public Event(Func<string> eventName, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default)
         : this(new Input<string>(Expression.DelegateExpression(eventName), new MemoryBlockReference()), source, line)
@@ -75,14 +75,21 @@ public class Event : Trigger<object?>
             var options = new CreateBookmarkArgs
             {
                 Stimulus = new EventStimulus(eventName),
-                IncludeActivityInstanceId = false
+                IncludeActivityInstanceId = false,
+                Callback = CompleteInternalAsync
             };
             context.CreateBookmark(options);
             return;
         }
 
-        var input = context.GetWorkflowInput<object?>(EventInputWorkflowInputKey);
-        context.SetResult(input);
+        await CompleteInternalAsync(context);
+    }
+
+    private async ValueTask CompleteInternalAsync(ActivityExecutionContext context)
+    {
+        if (context.TryGetWorkflowInput<object?>(EventInputWorkflowInputKey, out var input))
+            context.SetResult(input);
+
         await context.CompleteActivityAsync();
     }
 }

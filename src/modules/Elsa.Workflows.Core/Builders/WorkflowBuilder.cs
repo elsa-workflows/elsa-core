@@ -7,25 +7,9 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows.Builders;
 
 /// <inheritdoc />
-public class WorkflowBuilder : IWorkflowBuilder
+public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
+    : IWorkflowBuilder
 {
-    private readonly IActivityVisitor _activityVisitor;
-    private readonly IIdentityGraphService _identityGraphService;
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly IIdentityGenerator _identityGenerator;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphService identityGraphService, IActivityRegistry activityRegistry, IIdentityGenerator identityGenerator)
-    {
-        _activityVisitor = activityVisitor;
-        _identityGraphService = identityGraphService;
-        _activityRegistry = activityRegistry;
-        _identityGenerator = identityGenerator;
-        Result = new Variable();
-    }
-
     /// <inheritdoc />
     public string? Id { get; set; }
 
@@ -66,7 +50,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     public ICollection<string> Outcomes { get; set; } = new List<string>();
 
     /// <inheritdoc />
-    public Variable? Result { get; set; }
+    public Variable? Result { get; set; } = new();
 
     /// <inheritdoc />
     public IDictionary<string, object> CustomProperties { get; set; } = new Dictionary<string, object>();
@@ -226,7 +210,7 @@ public class WorkflowBuilder : IWorkflowBuilder
     /// <inheritdoc />
     public async Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default)
     {
-        var definitionId = string.IsNullOrEmpty(DefinitionId) ? _identityGenerator.GenerateId() : DefinitionId;
+        var definitionId = string.IsNullOrEmpty(DefinitionId) ? identityGenerator.GenerateId() : DefinitionId;
         var id = string.IsNullOrEmpty(Id) ? $"{definitionId}:{Version}" : Id;
         var tenantId = string.IsNullOrEmpty(TenantId) ? null : TenantId;
         var root = Root ?? new Sequence();
@@ -243,15 +227,15 @@ public class WorkflowBuilder : IWorkflowBuilder
             workflow.Result = new Output<object>(Result);
         }
 
-        var graph = await _activityVisitor.VisitAsync(workflow, cancellationToken);
+        var graph = await activityVisitor.VisitAsync(workflow, cancellationToken);
         var nodes = graph.Flatten().ToList();
 
         // Register all activity types first. The identity graph service will need to know about all activity types.
         var distinctActivityTypes = nodes.Select(x => x.Activity.GetType()).Distinct().ToList();
-        await _activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
+        await activityRegistry.RegisterAsync(distinctActivityTypes, cancellationToken);
 
         // Assign identities to all activities.
-        await _identityGraphService.AssignIdentitiesAsync(nodes);
+        await identityGraphService.AssignIdentitiesAsync(nodes);
 
         // Give unnamed variables in each variable container a predictable name.
         var variableContainers = nodes.Where(x => x.Activity is IVariableContainer).Select(x => (IVariableContainer)x.Activity).ToList();

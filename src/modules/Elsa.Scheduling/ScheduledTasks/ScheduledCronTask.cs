@@ -10,7 +10,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// <summary>
 /// A task that is scheduled using a given cron expression.
 /// </summary>
-public class ScheduledCronTask : IScheduledTask
+public class ScheduledCronTask : IScheduledTask, IDisposable
 {
     private readonly ISystemClock _systemClock;
     private readonly ILogger _logger;
@@ -86,7 +86,7 @@ public class ScheduledCronTask : IScheduledTask
 
         _timer.Elapsed += async (_, _) =>
         {
-            _timer.Dispose();
+            _timer?.Dispose();
             _timer = null;
 
             using var scope = _scopeFactory.CreateScope();
@@ -96,5 +96,11 @@ public class ScheduledCronTask : IScheduledTask
             if (!cancellationToken.IsCancellationRequested) await commandSender.SendAsync(new RunScheduledTask(_task), cancellationToken);
             if (!cancellationToken.IsCancellationRequested) Schedule();
         };
+    }
+
+    void IDisposable.Dispose()
+    {
+        _timer?.Dispose();
+        _cancellationTokenSource.Dispose();
     }
 }

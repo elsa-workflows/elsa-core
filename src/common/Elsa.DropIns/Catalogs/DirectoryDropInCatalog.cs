@@ -50,12 +50,12 @@ public class DirectoryDropInCatalog : IDropInCatalog
         }
     }
 
-    private IEnumerable<string> ListPackages()
+    private string[] ListPackages()
     {
         return Directory.GetFiles(_directoryPath, "*.nupkg", SearchOption.AllDirectories);
     }
 
-    private Assembly? LoadDropInAssembly(string path)
+    private static Assembly? LoadDropInAssembly(string path)
     {
         return !File.Exists(path) ? null : AssemblyLoader.LoadPath(path);
     }

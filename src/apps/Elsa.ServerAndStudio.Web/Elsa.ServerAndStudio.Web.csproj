@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Activities\Elsa.Agents.Activities.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Api\Elsa.Agents.Api.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.MySql\Elsa.Agents.Persistence.EntityFrameworkCore.MySql.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.SqlServer\Elsa.Quartz.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed\Elsa.Caching.Distributed.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.CSharp\Elsa.CSharp.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Email\Elsa.Email.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.MySql\Elsa.EntityFrameworkCore.MySql.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.Sqlite\Elsa.EntityFrameworkCore.Sqlite.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Hangfire\Elsa.Hangfire.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Liquid\Elsa.Liquid.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit.RabbitMq\Elsa.MassTransit.RabbitMq.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.MassTransit\Elsa.MassTransit.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Python\Elsa.Python.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Quartz\Elsa.Quartz.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Webhooks\Elsa.Webhooks.csproj"/>
+        <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj"/>
+        <ProjectReference Include="..\ElsaStudioWebAssembly\ElsaStudioWebAssembly.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server"/>
+        <PackageReference Include="Proto.Persistence.Sqlite"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Studio"/>
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm"/>
+    </ItemGroup>
+
+</Project>

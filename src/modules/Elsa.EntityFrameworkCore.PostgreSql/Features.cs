@@ -1,10 +1,14 @@
 ﻿using System.Reflection;
 using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;
 using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
+using Elsa.EntityFrameworkCore.PostgreSql.Handlers;
+using Elsa.Extensions;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -22,6 +26,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreIdentityPersistenceFeature UsePostgreSql(this EFCoreIdentityPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -31,6 +36,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreAlterationsPersistenceFeature UsePostgreSql(this EFCoreAlterationsPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -40,6 +46,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreLabelPersistenceFeature UsePostgreSql(this EFCoreLabelPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -49,6 +56,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreWorkflowDefinitionPersistenceFeature UsePostgreSql(this EFCoreWorkflowDefinitionPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -58,6 +66,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreWorkflowInstancePersistenceFeature UsePostgreSql(this EFCoreWorkflowInstancePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -67,6 +76,7 @@ public static class PostgreSqlProvidersExtensions
     public static WorkflowManagementPersistenceFeature UsePostgreSql(this WorkflowManagementPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
     
@@ -76,6 +86,7 @@ public static class PostgreSqlProvidersExtensions
     public static EFCoreWorkflowRuntimePersistenceFeature UsePostgreSql(this EFCoreWorkflowRuntimePersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = default)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
+        feature.Module.Services.TryAddScoped<IDbExceptionHandler, DbExceptionTransformer>();
         return feature;
     }
 }

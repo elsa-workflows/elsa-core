@@ -14,7 +14,6 @@ namespace Elsa.EntityFrameworkCore.Modules.Labels;
 [DependsOn(typeof(LabelsFeature))]
 public class EFCoreLabelPersistenceFeature(IModule module) : PersistenceFeatureBase<EFCoreLabelPersistenceFeature, LabelsElsaDbContext>(module)
 {
-    /// <inheritdoc />
     public override void Configure()
     {
         Module.UseLabels(labels =>
@@ -28,7 +27,6 @@ public class EFCoreLabelPersistenceFeature(IModule module) : PersistenceFeatureB
     public override void Apply()
     {
         base.Apply();
-
         AddEntityStore<Label, EFCoreLabelStore>();
         AddEntityStore<WorkflowDefinitionLabel, EFCoreWorkflowDefinitionLabelStore>();
     }

@@ -15,4 +15,9 @@
       <PackageReference Include="FluentStorage" />
     </ItemGroup>
 
+    <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" />
+    </ItemGroup>
+
 </Project>

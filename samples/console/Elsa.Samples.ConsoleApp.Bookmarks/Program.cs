@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 var services = new ServiceCollection();
 
 // Add Elsa services.
-services.AddElsa();
+services.AddElsa().AddActivity<MyEvent>();
 
 // Build service container.
 var serviceProvider = services.BuildServiceProvider();

@@ -36,6 +36,7 @@ services:
       - "127.0.0.1:6379:6379"
 
   elsa-server:
+    pull_policy: always
     build:
       context: ../.
       dockerfile: ./docker/ElsaServer-Datadog.Dockerfile
@@ -46,6 +47,11 @@ services:
       - datadog-agent
     environment:
       DD_AGENT_HOST: datadog-agent
+      DD_ENV: development
+      DD_TRACE_DEBUG: true
+      DD_TRACE_OTEL_ENABLED: true
+      DD_SERVICE: "Elsa Server"
+      DD_VERSION: "3.3.0"
       ASPNETCORE_ENVIRONMENT: Development
       PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
       PYTHONNET_RUNTIME: coreclr
@@ -57,9 +63,10 @@ services:
       - "13000:8080"
         
   elsa-studio:
+    pull_policy: always
     build:
       context: ../.
-      dockerfile: ./docker/ElsaStudio-Datadog.Dockerfile
+      dockerfile: ./docker/ElsaStudio.Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ELSASERVER__URL: "http://localhost:13000/elsa/api"
@@ -69,7 +76,7 @@ services:
   datadog-agent:
     image: datadog/agent:7
     environment:
-      DD_API_KEY: "YOUR_API_KEY"
+      DD_API_KEY: "<HIDDEN>"
       DD_SITE: "datadoghq.eu"
       DD_LOGS_ENABLED: "true"
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"

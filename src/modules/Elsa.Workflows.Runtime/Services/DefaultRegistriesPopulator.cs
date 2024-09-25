@@ -1,7 +1,7 @@
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.HostedServices;
 
-namespace Elsa.Workflows.Runtime.Services;
+namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 public class DefaultRegistriesPopulator : IRegistriesPopulator

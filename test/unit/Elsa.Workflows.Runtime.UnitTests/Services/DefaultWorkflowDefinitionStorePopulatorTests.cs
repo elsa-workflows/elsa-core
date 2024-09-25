@@ -6,7 +6,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Contracts;
-using Elsa.Workflows.Runtime.Services;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 

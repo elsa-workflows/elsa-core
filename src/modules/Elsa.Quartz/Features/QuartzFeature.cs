@@ -52,9 +52,6 @@ public class QuartzFeature : FeatureBase
 
     private static void ConfigureQuartzInternal(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
     {
-        quartz.UseMicrosoftDependencyInjectionJobFactory();
-        quartz.UseSimpleTypeLoader();
-        quartz.UseInMemoryStore();
         configureQuartz?.Invoke(quartz);
     }
 }

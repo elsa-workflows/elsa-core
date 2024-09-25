@@ -1,14 +1,12 @@
-using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Contracts;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Workflows;
 
 /// <inheritdoc />
 public class StimulusHasher(IHasher hasher) : IStimulusHasher
 {
     /// <inheritdoc />
-    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize(Object, Type, JsonSerializerOptions)")]
-    public string Hash(string activityTypeName, object? payload, string? activityInstanceId = default)
+    public string Hash(string activityTypeName, object? payload = null, string? activityInstanceId = null)
     {
         return hasher.Hash(activityTypeName, payload, activityInstanceId);
     }
