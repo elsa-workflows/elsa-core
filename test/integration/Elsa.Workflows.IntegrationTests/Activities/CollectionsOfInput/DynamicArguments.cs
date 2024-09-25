@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Services;
 
 namespace Elsa.Workflows.IntegrationTests.Activities.CollectionInputs;
 
