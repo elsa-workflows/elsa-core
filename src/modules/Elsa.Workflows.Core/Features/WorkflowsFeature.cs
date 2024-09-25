@@ -18,6 +18,7 @@ using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
@@ -129,6 +130,8 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddScoped<IVariablePersistenceManager, VariablePersistenceManager>()
             .AddScoped<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
+            .AddSingleton<ILoggerStateGenerator<WorkflowExecutionContext>, WorkflowLoggerStateGenerator>()
+            .AddSingleton<ILoggerStateGenerator<ActivityExecutionContext>, ActivityLoggerStateGenerator>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()
