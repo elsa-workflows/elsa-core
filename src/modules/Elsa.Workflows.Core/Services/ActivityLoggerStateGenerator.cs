@@ -16,7 +16,7 @@ public class ActivityLoggerStateGenerator : ILoggerStateGenerator<ActivityExecut
     {
         return new Dictionary<string, object>
         {
-            ["ActivityId"] = activityExecutionContext.Id
+            ["ActivityInstanceId"] = activityExecutionContext.Id
         };
     }
 }
