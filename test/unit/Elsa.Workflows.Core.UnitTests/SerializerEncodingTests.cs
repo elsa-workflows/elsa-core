@@ -32,17 +32,17 @@ public class SerializerUnicodeEncodingTests(ITestOutputHelper testOutputHelper)
     }
 
     [Fact]
-    public async Task TestSafeSerializer()
+    public void TestSafeSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<ISafeSerializer>();
-        await TestSerializerAsync(input => serializer.SerializeAsync(input).AsTask());
+        TestSerializer(input => serializer.Serialize(input));
     }
     
     [Fact]
-    public async Task TestWorkflowStateSerializer()
+    public void TestWorkflowStateSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
-        await TestSerializerAsync(input => serializer.SerializeAsync(input));
+        TestSerializer(input => serializer.Serialize(input));
     }
 
     private void TestSerializer(Func<object, string> serialize)
@@ -53,18 +53,6 @@ public class SerializerUnicodeEncodingTests(ITestOutputHelper testOutputHelper)
             Text = unicodeString
         };
         var serializedJson = serialize(anonymousObject);
-        var serializedStringValue = GetSerializedTextValue(serializedJson);
-        Assert.Equal(unicodeString, serializedStringValue);
-    }
-
-    private async Task TestSerializerAsync(Func<object, Task<string>> serialize)
-    {
-        var unicodeString = UnicodeRangeGenerator.GenerateUnicodeString();
-        var anonymousObject = new
-        {
-            Text = unicodeString
-        };
-        var serializedJson = await serialize(anonymousObject);
         var serializedStringValue = GetSerializedTextValue(serializedJson);
         Assert.Equal(unicodeString, serializedStringValue);
     }

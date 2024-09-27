@@ -121,10 +121,10 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var executionLogRecords = request.IncludeWorkflowExecutionLog ? await LoadWorkflowExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
         var activityExecutionLogRecords = request.IncludeActivityExecutionLog ? await LoadActivityExecutionLogRecordsAsync(workflowState.Id, cancellationToken) : default;
         var bookmarks = request.IncludeBookmarks ? await LoadBookmarksAsync(workflowState.Id, cancellationToken) : null;
-        var workflowStateElement = await _workflowStateSerializer.SerializeToElementAsync(workflowState, cancellationToken);
+        var workflowStateElement = _workflowStateSerializer.SerializeToElement(workflowState, cancellationToken);
         var bookmarksElement = bookmarks != null ? SerializeBookmarks(bookmarks) : default(JsonElement?);
-        var executionLogRecordsElement = executionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(executionLogRecords, cancellationToken) : default(JsonElement?);
-        var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? await _safeSerializer.SerializeToElementAsync(activityExecutionLogRecords, cancellationToken) : default(JsonElement?);
+        var executionLogRecordsElement = executionLogRecords != null ? _safeSerializer.SerializeToElement(executionLogRecords, cancellationToken) : default(JsonElement?);
+        var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? _safeSerializer.SerializeToElement(activityExecutionLogRecords, cancellationToken) : default(JsonElement?);
         var model = new ExportedWorkflowState(workflowStateElement, bookmarksElement, activityExecutionLogRecordsElement, executionLogRecordsElement);
         return model;
     }

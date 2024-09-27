@@ -31,62 +31,100 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
+    [Obsolete("Use the non-async version Serialize instead.")]
     public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return Task.FromResult(JsonSerializer.Serialize(workflowState, options));
+        return Task.FromResult(Serialize(workflowState, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
+    [Obsolete("Use the non-async version SerializeToUtfBytes instead.")]
     public Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return Task.FromResult(JsonSerializer.SerializeToUtf8Bytes(workflowState, options));
+        return Task.FromResult(SerializeToUtfBytes(workflowState, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
+    [Obsolete("Use the non-async version SerializeToElement instead.")]
     public Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return Task.FromResult(JsonSerializer.SerializeToElement(workflowState, options));
+        return Task.FromResult(SerializeToElement(workflowState, cancellationToken));
     }
 
     /// <inheritdoc />
-    [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
+    [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The serialization process may require access to the type.")]
+    [Obsolete("Use the non-async version Serialize instead.")]
     public Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        var json = JsonSerializer.Serialize(workflowState, workflowState.GetType(), options);
-        return Task.FromResult(json);
+        return Task.FromResult(Serialize(workflowState, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
+    [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        var workflowState = JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
-        return Task.FromResult(workflowState);
+        return Task.FromResult(Deserialize(serializedState, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
+    [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        var workflowState = serializedState.Deserialize<WorkflowState>(options)!;
-        return Task.FromResult(workflowState);
+        return Task.FromResult(Deserialize(serializedState, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type 'T' may be trimmed from the output. The deserialization process may require access to the type.")]
+    [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default)
     {
+        return Task.FromResult(Deserialize<T>(serializedState, cancellationToken));
+    }
+
+    public string Serialize(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
         var options = GetOptions();
-        var workflowState = JsonSerializer.Deserialize<T>(serializedState, options)!;
-        return Task.FromResult(workflowState);
+        return JsonSerializer.Serialize(workflowState, options);
+    }
+
+    public byte[] SerializeToUtfBytes(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.SerializeToUtf8Bytes(workflowState, options);
+    }
+
+    public JsonElement SerializeToElement(WorkflowState workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.SerializeToElement(workflowState, options);
+    }
+
+    public string Serialize(object workflowState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Serialize(workflowState, workflowState.GetType(), options);
+    }
+
+    public WorkflowState Deserialize(string serializedState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Deserialize<WorkflowState>(serializedState, options)!;
+    }
+
+    public WorkflowState Deserialize(JsonElement serializedState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return serializedState.Deserialize<WorkflowState>(options)!;
+    }
+
+    public T Deserialize<T>(string serializedState, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Deserialize<T>(serializedState, options)!;
     }
 
     /// <inheritdoc />
