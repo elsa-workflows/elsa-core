@@ -59,4 +59,9 @@ public interface ISafeSerializer
     /// </summary>
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     T Deserialize<T>(JsonElement element, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets the JSON serializer options.
+    /// </summary>
+    JsonSerializerOptions GetOptions();
 }
