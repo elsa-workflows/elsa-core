@@ -48,4 +48,9 @@ public interface IPayloadSerializer
     /// <param name="serializedData">The serialized state.</param>
     /// <returns>The deserialized state.</returns>
     T Deserialize<T>(JsonElement serializedData);
+    
+    /// <summary>
+    /// Gets the JSON serializer options.
+    /// </summary>
+    JsonSerializerOptions GetOptions();
 }
