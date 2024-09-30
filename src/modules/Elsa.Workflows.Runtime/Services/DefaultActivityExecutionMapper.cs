@@ -44,6 +44,7 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
         var expressionExecutionContext = source.ExpressionExecutionContext;
         var activityDescriptor = source.ActivityDescriptor;
         var outputDescriptors = activityDescriptor.Outputs;
+        var inputDescriptors = activityDescriptor.Inputs;
 
         var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
         {
@@ -62,8 +63,8 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
         });
 
         outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-        var activityState = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-
+        var inputs = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+        
         return new ActivityExecutionRecord
         {
             Id = source.Id,
@@ -72,7 +73,7 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
             ActivityType = source.Activity.Type,
             ActivityName = source.Activity.Name,
-            ActivityState = activityState,
+            ActivityState = inputs,
             Outputs = outputs,
             Properties = source.Properties,
             Payload = payload,
@@ -95,18 +96,16 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
         return persistencePropertyDefault;
     }
 
-    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> inputs,
-        IDictionary<string, object> persistenceModeConfiguration,
-        LogPersistenceMode defaultLogPersistenceMode)
+    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> state, IDictionary<string, object> persistenceModeConfiguration, LogPersistenceMode defaultLogPersistenceMode)
     {
         var result = new Dictionary<string, object?>();
 
-        foreach (var input in inputs)
+        foreach (var value in state)
         {
-            var persistence = persistenceModeConfiguration.GetValueOrDefault(input.Key.Camelize(), () => defaultLogPersistenceMode);
+            var persistence = persistenceModeConfiguration.GetValueOrDefault(value.Key.Camelize(), () => defaultLogPersistenceMode);
             if (persistence.Equals(LogPersistenceMode.Include)
                 || (persistence.Equals(LogPersistenceMode.Inherit) && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit))
-                result.Add(input.Key, input.Value);
+                result.Add(value.Key, value.Value);
         }
 
         return result;

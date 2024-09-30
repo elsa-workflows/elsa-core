@@ -90,6 +90,12 @@ public class InputDescriptor : PropertyDescriptor
     public bool? IsReadOnly { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether this input can contain secrets.
+    /// When set to true, the input will be treated as a secret and will be encrypted, masked or otherwise protected, depending on the configured policy.
+    /// </summary>
+    public bool IsSensitive { get; set; }
+
+    /// <summary>
     /// The storage driver type to use for persistence.
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>

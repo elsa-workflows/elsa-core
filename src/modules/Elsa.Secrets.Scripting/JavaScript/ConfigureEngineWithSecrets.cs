@@ -16,16 +16,16 @@ public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, ID
     {
         await CopySecretsIntoEngineAsync(notification, cancellationToken);
     }
-    
+
     private async Task CopySecretsIntoEngineAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
     {
         var engine = notification.Engine;
         var expression = notification.Expression;
         var secretNames = GetSecretNamesFromExpression(expression);
-        
+
         if (secretNames.Count == 0)
             return;
-        
+
         var filter = new SecretFilter
         {
             Names = secretNames,
@@ -46,13 +46,22 @@ public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, ID
     private ICollection<string> GetSecretNamesFromExpression(string expression)
     {
         var secretNames = new List<string>();
-        
-        foreach (Match match in SecretsRegex().Matches(expression)) 
+
+#if NET6_0
+        const string pattern = @"(?<=secrets\.)\w+";
+        var matches = Regex.Matches(expression, pattern);
+#elif NET7_0_OR_GREATER
+        var matches = SecretsRegex().Matches(expression);
+#endif
+
+        foreach (Match match in matches)
             secretNames.Add(match.Value);
 
         return secretNames;
     }
 
+#if NET7_0_OR_GREATER
     [GeneratedRegex(@"(?<=secrets\.)\w+")]
     private static partial Regex SecretsRegex();
+#endif
 }
