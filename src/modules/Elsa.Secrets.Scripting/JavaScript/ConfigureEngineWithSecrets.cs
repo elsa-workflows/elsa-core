@@ -21,11 +21,8 @@ public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, ID
     {
         var engine = notification.Engine;
         var expression = notification.Expression;
-        var secretNames = new List<string>();
+        var secretNames = GetSecretNamesFromExpression(expression);
         
-        foreach (Match match in SecretsRegex().Matches(expression)) 
-            secretNames.Add(match.Value);
-
         if (secretNames.Count == 0)
             return;
         
@@ -44,6 +41,16 @@ public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, ID
         }
 
         engine.SetValue("secrets", secretsContainer);
+    }
+
+    private ICollection<string> GetSecretNamesFromExpression(string expression)
+    {
+        var secretNames = new List<string>();
+        
+        foreach (Match match in SecretsRegex().Matches(expression)) 
+            secretNames.Add(match.Value);
+
+        return secretNames;
     }
 
     [GeneratedRegex(@"(?<=secrets\.)\w+")]
