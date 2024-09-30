@@ -51,6 +51,11 @@ public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISec
         return store.FindAsync(filter, cancellationToken);
     }
 
+    public Task<IEnumerable<Secret>> FindManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
+    {
+        return store.FindManyAsync(filter, cancellationToken);
+    }
+
     public Task<IEnumerable<Secret>> ListAsync(CancellationToken cancellationToken = default)
     {
         return store.ListAsync(cancellationToken);
@@ -58,13 +63,24 @@ public class DefaultSecretManager(ISecretStore store, IEncryptor encryptor, ISec
 
     public async Task DeleteAsync(Secret entity, CancellationToken cancellationToken = default)
     {
-        await store.DeleteAsync(entity, cancellationToken);
+        var filter = new SecretFilter
+        {
+            SecretId =  entity.SecretId
+        };
+        await store.DeleteManyAsync(filter, cancellationToken);
         await notificationSender.SendAsync(new SecretDeleted(entity), cancellationToken);
     }
 
     public async Task<long> DeleteManyAsync(SecretFilter filter, CancellationToken cancellationToken = default)
     {
-        var count = await store.DeleteManyAsync(filter, cancellationToken);
+        var secretVersions = await store.FindManyAsync(filter, cancellationToken);
+        var secretIds = secretVersions.Select(x => x.Id).Distinct().ToList();
+        var allSecretsAndVersionsFilter = new SecretFilter
+        {
+            SecretIds = secretIds
+        };
+        
+        var count = await store.DeleteManyAsync(allSecretsAndVersionsFilter, cancellationToken);
         await notificationSender.SendAsync(new SecretsDeletedInBulk(), cancellationToken);
         return count;
     }

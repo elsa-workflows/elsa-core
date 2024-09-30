@@ -438,6 +438,7 @@ services
                 .UseSecrets()
                 .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
                 .UseSecretsApi()
+                .UseSecretsScripting()
                 ;
         }
 
