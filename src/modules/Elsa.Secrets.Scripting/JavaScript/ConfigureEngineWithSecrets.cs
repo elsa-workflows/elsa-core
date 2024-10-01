@@ -32,7 +32,7 @@ public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, ID
             Status = SecretStatus.Active
         };
         var secrets = await secretManager.FindManyAsync(filter, cancellationToken);
-        var secretsContainer = (IDictionary<string, object?>)new ExpandoObject();
+        IDictionary<string, object?> secretsContainer = new ExpandoObject();
 
         foreach (var secret in secrets)
         {

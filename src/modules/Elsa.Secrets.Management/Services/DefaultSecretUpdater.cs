@@ -21,7 +21,10 @@ public class DefaultSecretUpdater(ISecretStore store, IEncryptor encryptor, IIde
         foreach (var version in currentLatestVersions)
         {
             version.IsLatest = false;
-            version.Status = SecretStatus.Retired;
+            
+            // Only retire the version if it's active.
+            if(version.Status == SecretStatus.Active)
+                version.Status = SecretStatus.Retired;
             await store.UpdateAsync(version, cancellationToken);
         }
         

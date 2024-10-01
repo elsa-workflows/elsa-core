@@ -437,7 +437,11 @@ services
         {
             elsa
                 .UseSecrets()
-                .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseSecretsManagement(management =>
+                {
+                    management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
+                    management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                })
                 .UseSecretsApi()
                 .UseSecretsScripting()
                 ;
