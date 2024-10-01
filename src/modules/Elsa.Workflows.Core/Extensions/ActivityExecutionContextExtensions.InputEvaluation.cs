@@ -111,14 +111,22 @@ public static partial class ActivityExecutionContextExtensions
             value = input;
         }
 
+        await StoreInputValueAsync(context, inputDescriptor, value);
+
+        return value;
+    }
+    
+    private static async Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object? value)
+    {
         // Store the serialized input value in the activity state.
         // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
         if (inputDescriptor.IsSerializable != false)
         {
             var serializedValue = await context.GetRequiredService<ISafeSerializer>().SerializeToElementAsync(value);
-            context.ActivityState[inputDescriptor.Name] = serializedValue;
+            var manager = context.GetRequiredService<IActivityStateFilterManager>();
+            var filterContext = new ActivityStateFilterContext(context, inputDescriptor, serializedValue, context.CancellationToken);
+            var filterResult = await manager.RunFiltersAsync(filterContext);
+            context.ActivityState[inputDescriptor.Name] = filterResult;
         }
-
-        return value;
     }
 }
