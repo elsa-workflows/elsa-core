@@ -44,7 +44,6 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
         var expressionExecutionContext = source.ExpressionExecutionContext;
         var activityDescriptor = source.ActivityDescriptor;
         var outputDescriptors = activityDescriptor.Outputs;
-        var inputDescriptors = activityDescriptor.Inputs;
 
         var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
         {
@@ -64,7 +63,7 @@ public class DefaultActivityExecutionMapper(IOptions<ManagementOptions> options)
 
         outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
         var inputs = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-        
+
         return new ActivityExecutionRecord
         {
             Id = source.Id,
