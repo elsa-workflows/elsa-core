@@ -23,6 +23,6 @@ public abstract class VariableDefinitionProvider : IVariableDefinitionProvider
     {
         var builder = new VariableDefinitionBuilder();
         setup(builder);
-        return builder.BuildVariableDefinition();
+        return builder.Build();
     }
 }

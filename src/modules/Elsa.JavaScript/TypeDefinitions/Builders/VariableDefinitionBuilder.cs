@@ -18,5 +18,5 @@ public class VariableDefinitionBuilder
         return this;
     }
 
-    public VariableDefinition BuildVariableDefinition() => new(_variableDefinition.Name, _variableDefinition.Type);
+    public VariableDefinition Build() => new(_variableDefinition.Name, _variableDefinition.Type);
 }

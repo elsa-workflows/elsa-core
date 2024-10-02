@@ -25,6 +25,7 @@ using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Filters;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Api;
@@ -436,8 +437,13 @@ services
         {
             elsa
                 .UseSecrets()
-                .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseSecretsManagement(management =>
+                {
+                    management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
+                    management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                })
                 .UseSecretsApi()
+                .UseSecretsScripting()
                 ;
         }
 
@@ -462,6 +468,9 @@ services
         elsa.AddFastEndpointsAssembly<Program>();
         ConfigureForTest?.Invoke(elsa);
     });
+
+// Obfuscate HTTP request headers.
+services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();

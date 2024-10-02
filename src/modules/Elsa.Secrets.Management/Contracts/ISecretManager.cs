@@ -16,6 +16,9 @@ public interface ISecretManager
     /// Finds the entity from the store.
     Task<Secret?> FindAsync(SecretFilter filter, CancellationToken cancellationToken = default);
     
+    /// Finds all entities from the store matching the specified filter.
+    Task<IEnumerable<Secret>> FindManyAsync(SecretFilter filter, CancellationToken cancellationToken = default);
+    
     /// Gets all entities from the store.
     Task<IEnumerable<Secret>> ListAsync(CancellationToken cancellationToken = default);
 
