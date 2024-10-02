@@ -4,22 +4,22 @@ using Elsa.ResourceManagement.Serialization.Extensions;
 
 namespace Elsa.ResourceManagement.Metadata.Builders;
 
-public abstract class ContentPartFieldDefinitionBuilder(ContentPartFieldDefinition field)
+public abstract class ResourcePartFieldDefinitionBuilder(ResourcePartFieldDefinition field)
 {
     protected readonly JsonObject Settings = field.Settings?.Clone() ?? new JsonObject();
 
-    public ContentPartFieldDefinition Current { get; private set; } = field;
+    public ResourcePartFieldDefinition Current { get; private set; } = field;
     public abstract string Name { get; }
     public abstract string FieldType { get; }
     public abstract string PartName { get; }
 
-    public ContentPartFieldDefinitionBuilder MergeSettings(JsonObject settings)
+    public ResourcePartFieldDefinitionBuilder MergeSettings(JsonObject settings)
     {
         Settings.Merge(settings, ResourceBuilderSettings.JsonMergeSettings);
         return this;
     }
 
-    public ContentPartFieldDefinitionBuilder MergeSettings<T>(Action<T> setting) where T : class, new()
+    public ResourcePartFieldDefinitionBuilder MergeSettings<T>(Action<T> setting) where T : class, new()
     {
         var existingJObject = Settings[typeof(T).Name] as JsonObject;
         
@@ -35,7 +35,7 @@ public abstract class ContentPartFieldDefinitionBuilder(ContentPartFieldDefiniti
         return this;
     }
 
-    public ContentPartFieldDefinitionBuilder WithSettings<T>(T settings)
+    public ResourcePartFieldDefinitionBuilder WithSettings<T>(T settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -44,16 +44,16 @@ public abstract class ContentPartFieldDefinitionBuilder(ContentPartFieldDefiniti
         return this;
     }
 
-    public ContentPartFieldDefinitionBuilder WithSettings<T>() where T : class, new()
+    public ResourcePartFieldDefinitionBuilder WithSettings<T>() where T : class, new()
     {
         Settings[typeof(T).Name] = ToJsonObject(new T());
 
         return this;
     }
 
-    public abstract ContentPartFieldDefinitionBuilder OfType(ContentFieldDefinition fieldDefinition);
-    public abstract ContentPartFieldDefinitionBuilder OfType(string fieldType);
-    public abstract ContentPartFieldDefinition Build();
+    public abstract ResourcePartFieldDefinitionBuilder OfType(ResourceFieldDefinition fieldDefinition);
+    public abstract ResourcePartFieldDefinitionBuilder OfType(string fieldType);
+    public abstract ResourcePartFieldDefinition Build();
 
     private static JsonObject ToJsonObject(object obj) => JsonObjectEx.FromObject(obj, ResourceBuilderSettings.IgnoreDefaultValuesSerializer)!;
 }

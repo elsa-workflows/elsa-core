@@ -4,9 +4,9 @@ using Elsa.ResourceManagement.Serialization.Extensions;
 
 namespace Elsa.ResourceManagement.Metadata.Models;
 
-public class ContentTypeDefinition : ContentDefinition
+public class ResourceTypeDefinition : ResourceDefinition
 {
-    public ContentTypeDefinition(string name, string displayName, IEnumerable<ContentTypePartDefinition> parts, JsonObject settings)
+    public ResourceTypeDefinition(string name, string displayName, IEnumerable<ResourceTypePartDefinition> parts, JsonObject settings)
     {
         Name = name;
         DisplayName = displayName;
@@ -15,11 +15,11 @@ public class ContentTypeDefinition : ContentDefinition
 
         foreach (var part in Parts)
         {
-            part.ContentTypeDefinition = this;
+            part.ResourceTypeDefinition = this;
         }
     }
 
-    public ContentTypeDefinition(string name, string displayName)
+    public ResourceTypeDefinition(string name, string displayName)
     {
         Name = name;
         DisplayName = displayName;
@@ -29,11 +29,11 @@ public class ContentTypeDefinition : ContentDefinition
 
     [Required, StringLength(1024)] public string DisplayName { get; private set; }
 
-    public IEnumerable<ContentTypePartDefinition> Parts { get; private set; }
+    public IEnumerable<ResourceTypePartDefinition> Parts { get; private set; }
 
     /// <summary>
     /// Returns the <see cref="DisplayName"/> value of the type if defined,
-    /// or the <see cref="ContentDefinition.Name"/> otherwise.
+    /// or the <see cref="ResourceDefinition.Name"/> otherwise.
     /// </summary>
     /// <returns></returns>
     public override string ToString()

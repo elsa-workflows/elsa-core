@@ -20,7 +20,7 @@ public class ResourceElement : IResource
     protected internal Dictionary<string, ResourceElement> Elements => _elements ??= [];
 
     // [JsonIgnore]
-    // public dynamic Content => _dynamicObject ??= Data;
+    // public dynamic Resource => _dynamicObject ??= Data;
 
     [JsonIgnore]
     internal JsonObject Data

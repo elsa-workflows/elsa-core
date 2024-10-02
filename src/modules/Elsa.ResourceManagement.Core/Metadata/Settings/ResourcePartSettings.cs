@@ -1,14 +1,14 @@
 namespace Elsa.ResourceManagement.Metadata.Settings;
 
-public class ContentPartSettings
+public class ResourcePartSettings
 {
     /// <summary>
-    /// Gets or sets whether this part can be manually attached to a content type.
+    /// Gets or sets whether this part can be manually attached to a resource type.
     /// </summary>
     public bool Attachable { get; set; }
 
     /// <summary>
-    /// Gets or sets whether the part can be attached multiple times to a content type.
+    /// Gets or sets whether the part can be attached multiple times to a resource type.
     /// </summary>
     public bool Reusable { get; set; }
 

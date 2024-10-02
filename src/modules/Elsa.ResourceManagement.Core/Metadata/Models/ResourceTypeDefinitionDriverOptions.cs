@@ -1,6 +1,6 @@
 namespace Elsa.ResourceManagement.Metadata.Models;
 
-public class ContentTypeDefinitionDriverOptions
+public class ResourceTypeDefinitionDriverOptions
 {
     public bool ShowCreatable { get; set; } = true;
 

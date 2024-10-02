@@ -27,11 +27,11 @@ public static class JsonArrayEx
     }
     
     /// <summary>
-    /// Merge the specified content into this <see cref="JsonArray"/> using <see cref="JsonMergeSettings"/>.
+    /// Merge the specified resource into this <see cref="JsonArray"/> using <see cref="JsonMergeSettings"/>.
     /// </summary>
-    internal static JsonArray? Merge(this JsonArray? jsonArray, JsonNode? content, JsonMergeSettings? settings = null)
+    internal static JsonArray? Merge(this JsonArray? jsonArray, JsonNode? resource, JsonMergeSettings? settings = null)
     {
-        if (jsonArray is null || content is not JsonArray jsonContent)
+        if (jsonArray is null || resource is not JsonArray jsonResource)
         {
             return jsonArray;
         }
@@ -42,7 +42,7 @@ public static class JsonArrayEx
         {
             case MergeArrayHandling.Concat:
 
-                foreach (var item in jsonContent) 
+                foreach (var item in jsonResource) 
                     jsonArray.Add(item.Clone());
 
                 break;
@@ -51,7 +51,7 @@ public static class JsonArrayEx
             // this to prevent many expensive 'DeepEquals()' on more complex items.
             case MergeArrayHandling.Union:
 
-                foreach (var item in jsonContent)
+                foreach (var item in jsonResource)
                 {
                     // Only checking for existing 'JsonValue'.
                     if (item is JsonValue jsonValue && jsonArray.ContainsValue(jsonValue))
@@ -64,21 +64,21 @@ public static class JsonArrayEx
 
             case MergeArrayHandling.Replace:
 
-                if (jsonArray == jsonContent)
+                if (jsonArray == jsonResource)
                     break;
 
                 jsonArray.Clear();
                 
-                foreach (var item in jsonContent) 
+                foreach (var item in jsonResource) 
                     jsonArray.Add(item.Clone());
 
                 break;
 
             case MergeArrayHandling.Merge:
 
-                for (var i = 0; i < jsonContent.Count; i++)
+                for (var i = 0; i < jsonResource.Count; i++)
                 {
-                    var item = jsonContent[i];
+                    var item = jsonResource[i];
                     if (item is null)
                     {
                         continue;

@@ -6,12 +6,12 @@ namespace Elsa.ResourceManagement.Serialization.Settings;
 public enum MergeNullValueHandling
 {
     /// <summary>
-    /// The content's null value properties will be ignored during merging.
+    /// The resource's null value properties will be ignored during merging.
     /// </summary>
     Ignore = 0,
 
     /// <summary>
-    /// The content's null value properties will be merged.
+    /// The resource's null value properties will be merged.
     /// </summary>
     Merge = 1
 }

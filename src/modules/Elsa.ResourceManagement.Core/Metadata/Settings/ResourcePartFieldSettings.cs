@@ -1,6 +1,6 @@
 namespace Elsa.ResourceManagement.Metadata.Settings;
 
-public class ContentPartFieldSettings
+public class ResourcePartFieldSettings
 {
     /// <summary>
     /// Gets or sets the displayed name of the part field.

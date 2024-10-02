@@ -3,16 +3,16 @@ using Elsa.ResourceManagement.Serialization.Extensions;
 
 namespace Elsa.ResourceManagement.Metadata.Models;
 
-public class ContentPartDefinition : ContentDefinition
+public class ResourcePartDefinition : ResourceDefinition
 {
-    public ContentPartDefinition(string? name)
+    public ResourcePartDefinition(string? name)
     {
         Name = name ?? string.Empty;
         Fields = [];
         Settings = [];
     }
 
-    public ContentPartDefinition(string name, IEnumerable<ContentPartFieldDefinition> fields, JsonObject settings)
+    public ResourcePartDefinition(string name, IEnumerable<ResourcePartFieldDefinition> fields, JsonObject settings)
     {
         Name = name;
         Fields = fields.ToList();
@@ -22,5 +22,5 @@ public class ContentPartDefinition : ContentDefinition
             field.PartDefinition = this;
     }
 
-    public IEnumerable<ContentPartFieldDefinition> Fields { get; private set; }
+    public IEnumerable<ResourcePartFieldDefinition> Fields { get; private set; }
 }

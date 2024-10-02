@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace Elsa.ResourceManagement.Metadata.Models;
 
-public abstract class ContentDefinition
+public abstract class ResourceDefinition
 {
     private Dictionary<Type, object> _namedSettings = [];
     public JsonObject? Settings { get; set; }

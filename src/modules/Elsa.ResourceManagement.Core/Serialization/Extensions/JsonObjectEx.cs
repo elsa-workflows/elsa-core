@@ -13,7 +13,7 @@ public static class JsonObjectEx
         
         if (existingObj == null)
         {
-            existingObj = JsonObjectEx.FromObject(new T(), ResourceBuilderSettings.IgnoreDefaultValuesSerializer);
+            existingObj = FromObject(new T(), ResourceBuilderSettings.IgnoreDefaultValuesSerializer);
             obj[typeof(T).Name] = existingObj;
         }
 
@@ -24,21 +24,21 @@ public static class JsonObjectEx
     
     public static void SetProperty<T>(this JsonObject obj, T value)
     {
-        var jObject = JsonObjectEx.FromObject(value, ResourceBuilderSettings.IgnoreDefaultValuesSerializer);
+        var jObject = FromObject(value, ResourceBuilderSettings.IgnoreDefaultValuesSerializer);
         obj[typeof(T).Name] = jObject;
     }
     
     public static JsonObject Clone(this JsonObject value) => (JsonObject)value.DeepClone();
     public static JsonNode? Clone(this JsonNode? jsonNode) => jsonNode?.DeepClone();
 
-    public static JsonObject? Merge(this JsonObject? jsonObject, JsonNode? content, JsonMergeSettings? settings = null)
+    public static JsonObject? Merge(this JsonObject? jsonObject, JsonNode? resource, JsonMergeSettings? settings = null)
     {
-        if (jsonObject is null || content is not JsonObject jsonContent)
+        if (jsonObject is null || resource is not JsonObject jsonResource)
             return jsonObject;
 
         settings ??= new JsonMergeSettings();
 
-        foreach (var item in jsonContent)
+        foreach (var item in jsonResource)
         {
             if (item.Value is null)
                 continue;

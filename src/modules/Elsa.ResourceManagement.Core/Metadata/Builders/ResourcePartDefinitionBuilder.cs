@@ -5,19 +5,19 @@ using Elsa.ResourceManagement.Serialization.Extensions;
 
 namespace Elsa.ResourceManagement.Metadata.Builders;
 
-public class ContentPartDefinitionBuilder
+public class ResourcePartDefinitionBuilder
 {
-    private readonly ContentPartDefinition? _part;
-    private readonly List<ContentPartFieldDefinition> _fields;
+    private readonly ResourcePartDefinition? _part;
+    private readonly List<ResourcePartFieldDefinition> _fields;
     private readonly JsonObject _settings;
 
-    public ContentPartDefinition Current { get; private set; }
+    public ResourcePartDefinition Current { get; private set; }
 
-    public ContentPartDefinitionBuilder() : this(new ContentPartDefinition(null))
+    public ResourcePartDefinitionBuilder() : this(new ResourcePartDefinition(null))
     {
     }
 
-    public ContentPartDefinitionBuilder(ContentPartDefinition? existing)
+    public ResourcePartDefinitionBuilder(ResourcePartDefinition? existing)
     {
         _part = existing;
 
@@ -36,31 +36,31 @@ public class ContentPartDefinitionBuilder
 
     public string? Name { get; private set; }
 
-    public ContentPartDefinition Build()
+    public ResourcePartDefinition Build()
     {
         if(Name == null)
             throw new InvalidOperationException("Name is required");
             
         if (!char.IsLetter(Name[0]))
-            throw new InvalidOperationException("Content part name must start with a letter");
+            throw new InvalidOperationException("Resource part name must start with a letter");
             
         if (!string.Equals(Name, Name.ToSafeName(), StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Content part name contains invalid characters");
+            throw new InvalidOperationException("Resource part name contains invalid characters");
             
         if (Name.IsReservedResourceName())
-            throw new InvalidOperationException("Content part name is reserved for internal use");
+            throw new InvalidOperationException("Resource part name is reserved for internal use");
 
-        return new ContentPartDefinition(Name, _fields, _settings);
+        return new ResourcePartDefinition(Name, _fields, _settings);
     }
 
-    public ContentPartDefinitionBuilder Named(string name)
+    public ResourcePartDefinitionBuilder Named(string name)
     {
         Name = name;
 
         return this;
     }
 
-    public ContentPartDefinitionBuilder RemoveField(string fieldName)
+    public ResourcePartDefinitionBuilder RemoveField(string fieldName)
     {
         var existingField = _fields.SingleOrDefault(x => string.Equals(x.Name, fieldName, StringComparison.OrdinalIgnoreCase));
         if (existingField != null) 
@@ -69,28 +69,28 @@ public class ContentPartDefinitionBuilder
         return this;
     }
 
-    public ContentPartDefinitionBuilder MergeSettings(JsonObject settings)
+    public ResourcePartDefinitionBuilder MergeSettings(JsonObject settings)
     {
         _settings.Merge(settings, ResourceBuilderSettings.JsonMergeSettings);
 
         return this;
     }
 
-    public ContentPartDefinitionBuilder MergeSettings<T>(Action<T> mergeAction) where T : class, new()
+    public ResourcePartDefinitionBuilder MergeSettings<T>(Action<T> mergeAction) where T : class, new()
     {
         _settings.Merge(mergeAction);
         return this;
     }
 
-    public ContentPartDefinitionBuilder WithSettings<T>(T settings)
+    public ResourcePartDefinitionBuilder WithSettings<T>(T settings)
     {
         _settings.SetProperty(settings);
         return this;
     }
 
-    public ContentPartDefinitionBuilder WithField(string fieldName) => WithField(fieldName, configuration => { });
+    public ResourcePartDefinitionBuilder WithField(string fieldName) => WithField(fieldName, configuration => { });
 
-    public ContentPartDefinitionBuilder WithField(string fieldName, Action<ContentPartFieldDefinitionBuilder> configuration)
+    public ResourcePartDefinitionBuilder WithField(string fieldName, Action<ResourcePartFieldDefinitionBuilder> configuration)
     {
         var existingField = _fields.FirstOrDefault(x => string.Equals(x.Name, fieldName, StringComparison.OrdinalIgnoreCase));
         if (existingField != null)
@@ -103,7 +103,7 @@ public class ContentPartDefinitionBuilder
         }
         else
         {
-            existingField = new ContentPartFieldDefinition(null, fieldName, []);
+            existingField = new ResourcePartFieldDefinition(null, fieldName, []);
         }
 
         var configurer = new FieldConfigurerImpl(existingField, _part);
@@ -112,14 +112,14 @@ public class ContentPartDefinitionBuilder
 
         var fieldDefinition = configurer.Build();
 
-        var settings = fieldDefinition.GetSettings<ContentPartFieldSettings>();
+        var settings = fieldDefinition.GetSettings<ResourcePartFieldSettings>();
 
         if (string.IsNullOrEmpty(settings.DisplayName))
         {
             // If there is no display name, let's use the field name by default.
             settings.DisplayName = fieldName;
-            fieldDefinition.Settings?.Remove(nameof(ContentPartFieldSettings));
-            fieldDefinition.Settings?.Add(nameof(ContentPartFieldSettings), JsonNodeEx.FromObject(settings));
+            fieldDefinition.Settings?.Remove(nameof(ResourcePartFieldSettings));
+            fieldDefinition.Settings?.Add(nameof(ResourcePartFieldSettings), JsonNodeEx.FromObject(settings));
         }
 
         _fields.Add(fieldDefinition);
@@ -127,9 +127,9 @@ public class ContentPartDefinitionBuilder
         return this;
     }
 
-    public ContentPartDefinitionBuilder WithField<TField>(string fieldName) => WithField(fieldName, configuration => configuration.OfType(typeof(TField).Name));
+    public ResourcePartDefinitionBuilder WithField<TField>(string fieldName) => WithField(fieldName, configuration => configuration.OfType(typeof(TField).Name));
 
-    public ContentPartDefinitionBuilder WithField<TField>(string fieldName, Action<ContentPartFieldDefinitionBuilder> configuration)
+    public ResourcePartDefinitionBuilder WithField<TField>(string fieldName, Action<ResourcePartFieldDefinitionBuilder> configuration)
     {
         return WithField(fieldName, field =>
         {
@@ -138,7 +138,7 @@ public class ContentPartDefinitionBuilder
         });
     }
 
-    public Task<ContentPartDefinitionBuilder> WithFieldAsync<TField>(string fieldName, Func<ContentPartFieldDefinitionBuilder, Task> configuration)
+    public Task<ResourcePartDefinitionBuilder> WithFieldAsync<TField>(string fieldName, Func<ResourcePartFieldDefinitionBuilder, Task> configuration)
     {
         return WithFieldAsync(fieldName, async field =>
         {
@@ -147,7 +147,7 @@ public class ContentPartDefinitionBuilder
         });
     }
 
-    public async Task<ContentPartDefinitionBuilder> WithFieldAsync(string fieldName, Func<ContentPartFieldDefinitionBuilder, Task> configurationAsync)
+    public async Task<ResourcePartDefinitionBuilder> WithFieldAsync(string fieldName, Func<ResourcePartFieldDefinitionBuilder, Task> configurationAsync)
     {
         var existingField = _fields.FirstOrDefault(x => string.Equals(x.Name, fieldName, StringComparison.OrdinalIgnoreCase));
 
@@ -161,7 +161,7 @@ public class ContentPartDefinitionBuilder
         }
         else
         {
-            existingField = new ContentPartFieldDefinition(null, fieldName, []);
+            existingField = new ResourcePartFieldDefinition(null, fieldName, []);
         }
 
         var configurer = new FieldConfigurerImpl(existingField, _part);
@@ -169,14 +169,14 @@ public class ContentPartDefinitionBuilder
 
         var fieldDefinition = configurer.Build();
 
-        var settings = fieldDefinition.GetSettings<ContentPartFieldSettings>();
+        var settings = fieldDefinition.GetSettings<ResourcePartFieldSettings>();
 
         if (string.IsNullOrEmpty(settings.DisplayName))
         {
             // If there is no display name, let's use the field name by default.
             settings.DisplayName = fieldName;
-            fieldDefinition.Settings?.Remove(nameof(ContentPartFieldSettings));
-            fieldDefinition.Settings?.Add(nameof(ContentPartFieldSettings), JsonNodeEx.FromObject(settings));
+            fieldDefinition.Settings?.Remove(nameof(ResourcePartFieldSettings));
+            fieldDefinition.Settings?.Add(nameof(ResourcePartFieldSettings), JsonNodeEx.FromObject(settings));
         }
 
         _fields.Add(fieldDefinition);
@@ -184,34 +184,34 @@ public class ContentPartDefinitionBuilder
         return this;
     }
 
-    private sealed class FieldConfigurerImpl(ContentPartFieldDefinition field, ContentPartDefinition part) : ContentPartFieldDefinitionBuilder(field)
+    private sealed class FieldConfigurerImpl(ResourcePartFieldDefinition field, ResourcePartDefinition part) : ResourcePartFieldDefinitionBuilder(field)
     {
-        private ContentFieldDefinition _fieldDefinition = field.FieldDefinition;
+        private ResourceFieldDefinition _fieldDefinition = field.FieldDefinition;
         private readonly string _fieldName = field.Name;
 
-        public override ContentPartFieldDefinition Build()
+        public override ResourcePartFieldDefinition Build()
         {
             if (!char.IsLetter(_fieldName[0]))
-                throw new InvalidOperationException("Content field name must start with a letter");
+                throw new InvalidOperationException("Resource field name must start with a letter");
             if (!string.Equals(_fieldName, _fieldName.ToSafeName(), StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Content field name contains invalid characters");
+                throw new InvalidOperationException("Resource field name contains invalid characters");
 
-            return new ContentPartFieldDefinition(_fieldDefinition, _fieldName, Settings);
+            return new ResourcePartFieldDefinition(_fieldDefinition, _fieldName, Settings);
         }
 
         public override string Name => _fieldName;
         public override string FieldType => _fieldDefinition.Name;
         public override string PartName => part.Name;
 
-        public override ContentPartFieldDefinitionBuilder OfType(ContentFieldDefinition fieldDefinition)
+        public override ResourcePartFieldDefinitionBuilder OfType(ResourceFieldDefinition fieldDefinition)
         {
             _fieldDefinition = fieldDefinition;
             return this;
         }
 
-        public override ContentPartFieldDefinitionBuilder OfType(string fieldType)
+        public override ResourcePartFieldDefinitionBuilder OfType(string fieldType)
         {
-            _fieldDefinition = new ContentFieldDefinition(fieldType);
+            _fieldDefinition = new ResourceFieldDefinition(fieldType);
             return this;
         }
     }

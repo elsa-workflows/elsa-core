@@ -1,6 +1,6 @@
 namespace Elsa.ResourceManagement.Metadata.Settings;
 
-public class ContentTypePartSettings
+public class ResourceTypePartSettings
 {
     /// <summary>
     /// Gets or sets the displayed name of the type part.
