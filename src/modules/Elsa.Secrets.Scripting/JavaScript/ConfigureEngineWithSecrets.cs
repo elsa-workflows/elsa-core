@@ -7,7 +7,7 @@ using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Scripting.JavaScript;
 
-/// A handler that configures the Jint engine with workflow variables.
+/// A handler that configures the Jint engine with secrets.
 [UsedImplicitly]
 public partial class ConfigureEngineWithSecrets(ISecretManager secretManager, IDecryptor decryptor) : INotificationHandler<EvaluatingJavaScript>
 {
