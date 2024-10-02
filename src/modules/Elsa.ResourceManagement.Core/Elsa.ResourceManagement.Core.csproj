@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>
+            Provides Resource and Resource Type Definitions primitives and services for Elsa Workflows.
+        </Description>
+        <PackageTags>elsa module resource-types</PackageTags>
+        <RootNamespace>Elsa.ResourceManagement</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="JsonPath.Net" />
+    </ItemGroup>
+</Project>
