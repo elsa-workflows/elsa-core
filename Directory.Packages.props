@@ -100,7 +100,7 @@
     <PackageVersion Include="Testcontainers.Redis" Version="3.9.0" />
     <PackageVersion Include="Testcontainers.PostgreSql" Version="3.9.0" />
     <PackageVersion Include="ThrottleDebounce" Version="2.0.0" />
-    <PackageVersion Include="WebhooksCore" Version="0.0.1-preview.16" />
+    <PackageVersion Include="WebhooksCore" Version="0.0.1-preview.17" />
     <PackageVersion Include="xunit" Version="2.9.0" />
     <PackageVersion Include="xunit.abstractions" Version="2.0.3" />
     <PackageVersion Include="xunit.extensibility.core" Version="2.9.0" />
