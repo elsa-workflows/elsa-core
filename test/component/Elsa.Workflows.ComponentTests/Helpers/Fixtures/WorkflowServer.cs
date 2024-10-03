@@ -31,7 +31,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         var client = CreateClient();
         client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
-        return RestService.For<TClient>(client, CreateRefitSettings());
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
 
     public HttpClient CreateHttpWorkflowClient()
