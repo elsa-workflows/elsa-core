@@ -15,5 +15,5 @@ public interface ITasksApi
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The response.</returns>
     [Post("/tasks/{taskId}/complete")]
-    Task ReportTaskCompletedRequestAsync([Body] ReportTaskCompletedRequest request, CancellationToken cancellationToken = default);
+    Task ReportTaskCompletedAsync([Body] ReportTaskCompletedRequest request, CancellationToken cancellationToken = default);
 }
