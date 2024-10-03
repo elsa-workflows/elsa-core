@@ -124,7 +124,7 @@ public static class DependencyInjectionExtensions
     /// <param name="httpClientBuilderOptions">An options object that can be used to configure the HTTP client builder.</param>
     public static IServiceCollection AddApi(this IServiceCollection services, Type apiType, ElsaClientBuilderOptions? httpClientBuilderOptions = default)
     {
-        var builder = services.AddRefitClient(apiType, _ => CreateRefitSettings(), apiType.Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
+        var builder = services.AddRefitClient(apiType, sp => CreateRefitSettings(sp, httpClientBuilderOptions?.ConfigureJsonSerializerOptions), apiType.Name).ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
         httpClientBuilderOptions?.ConfigureRetryPolicy?.Invoke(builder);
         return services;
@@ -139,7 +139,7 @@ public static class DependencyInjectionExtensions
     public static void AddApiWithoutRetryPolicy<T>(this IServiceCollection services, ElsaClientBuilderOptions? httpClientBuilderOptions = default) where T : class
     {
         var builder = services
-            .AddRefitClient<T>(_ => CreateRefitSettings(), typeof(T).Name)
+            .AddRefitClient<T>(sp => CreateRefitSettings(sp), typeof(T).Name)
             .ConfigureHttpClient(ConfigureElsaApiHttpClient);
         httpClientBuilderOptions?.ConfigureHttpClientBuilder(builder);
     }
@@ -156,7 +156,7 @@ public static class DependencyInjectionExtensions
     /// Creates an API client for the specified API type.
     public static T CreateApi<T>(this IServiceProvider serviceProvider, HttpClient httpClient) where T : class
     {
-        return RestService.For<T>(httpClient, CreateRefitSettings());
+        return RestService.For<T>(httpClient, CreateRefitSettings(serviceProvider));
     }
 
     private static void ConfigureElsaApiHttpClient(IServiceProvider serviceProvider, HttpClient httpClient)
