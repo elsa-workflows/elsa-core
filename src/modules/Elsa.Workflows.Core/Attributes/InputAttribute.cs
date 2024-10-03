@@ -84,6 +84,12 @@ public class InputAttribute : Attribute
     /// A value indicating whether this input can be serialized as part of the workflow instance,
     /// </summary>
     public bool IsSerializable { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets a value indicating whether this input can contain secrets.
+    /// When set to true, the input will be treated as a secret and will be encrypted, masked or otherwise protected, depending on the configured policy.
+    /// </summary>
+    public bool CanContainSecrets { get; set; }
 
     /// <summary>
     /// A <see cref="IPropertyUIHandler"/> type that can be used to customize the UI for this property.
