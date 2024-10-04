@@ -2,11 +2,14 @@ using System.Text.Json;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
+using Elsa.MongoDb.Contracts;
+using Elsa.MongoDb.NamingStrategies;
 using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
@@ -36,12 +39,20 @@ public class MongoDbFeature : FeatureBase
     /// </summary>
     public Action<MongoDbOptions> Options { get; set; } = _ => { };
 
+    /// <summary>
+    /// A delegate that creates an instance of an implementation of <see cref="ICollectionNamingStrategy"/>.
+    /// </summary>
+    public Func<IServiceProvider, ICollectionNamingStrategy> CollectionNamingStrategy { get; set; } = sp => sp.GetRequiredService<DefaultNamingStrategy>();
+
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(Options);
 
         Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
+        
+        Services.TryAddScoped<DefaultNamingStrategy>();
+        Services.AddScoped(CollectionNamingStrategy);
 
         RegisterSerializers();
         RegisterClassMaps();
