@@ -27,49 +27,53 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        using var span = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
 
-        if (activity == null) // No listener is registered.
+        if (span == null) // No listener is registered.
         {
             await Next(context);
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            activity.SetTag("correlationId", context.CorrelationId);
+            span.SetTag("correlationId", context.CorrelationId);
 
-        activity.SetTag("workflowInstance.id", workflowInstanceId);
-        activity.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
-        activity.SetTag("workflowDefinition.version", workflow.Identity.Version);
-        activity.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
-        activity.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
+        span.SetTag("workflowInstance.id", workflowInstanceId);
+        span.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
+        span.SetTag("workflowDefinition.version", workflow.Identity.Version);
+        span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
+        span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
+        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
         await Next(context);
 
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
-            activity.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
-            activity.SetStatus(ActivityStatusCode.Error);
-            activity.SetTag("error", true);
+            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
+            span.SetStatus(ActivityStatusCode.Error);
+            span.SetTag("error", true);
         }
         else
         {
-            activity.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.SetStatus(ActivityStatusCode.Ok);
         }
         
         if(context.Incidents.Any())
         {
-            activity.SetStatus(ActivityStatusCode.Error);
-            activity.SetTag("hasIncidents", true);
-            activity.SetTag("error", true);
+            span.SetStatus(ActivityStatusCode.Error);
+            span.SetTag("hasIncidents", true);
+            span.SetTag("error", true);
 
             if (context.Incidents.Count > 0)
-                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
+                span.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
         }
         
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            activity.SetTag("correlationId", context.CorrelationId);
+            span.SetTag("correlationId", context.CorrelationId);
         
-        activity.SetTag("workflowExecution.durationMs", (systemClock.UtcNow - activity.StartTimeUtc).TotalMilliseconds);
+        var now = systemClock.UtcNow;
+        span.SetTag("workflowExecution.endTimeUtc", now);
+        span.SetTag("workflowExecution.durationMs", (now - span.StartTimeUtc).TotalMilliseconds);
     }
     
     private ActivityTagsCollection CreateStatusTags(WorkflowExecutionContext context)

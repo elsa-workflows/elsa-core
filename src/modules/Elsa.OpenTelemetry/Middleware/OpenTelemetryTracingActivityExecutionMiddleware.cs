@@ -32,17 +32,15 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
         span.SetTag("activity.type", activity.Type);
         span.SetTag("activity.name", activity.Name);
         span.SetTag("activityInstance.id", context.Id);
+        span.SetTag("activityExecution.startTimeUtc", span.StartTimeUtc);
         
-        span.AddEvent(new ActivityEvent("Executing", tags: new ActivityTagsCollection(new Dictionary<string, object?>
-        {
-            ["activityInstance.status"] = context.Status.ToString(),
-        })));
+        span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
         
         await next(context);
 
         if (context.Status == ActivityStatus.Faulted)
         {
-            span.AddEvent(new ActivityEvent("Faulted"));
+            span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Error);
             span.SetTag("error", true);
             span.SetTag("hasIncidents", true);
@@ -54,12 +52,22 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
                 span.SetTag("error.stackTrace", context.Exception.StackTrace);
         }
         else
-            span.AddEvent(new ActivityEvent("Executed", tags: new ActivityTagsCollection(new Dictionary<string, object?>
-            {
-                ["activityInstance.status"] = context.Status.ToString(),
-            })));
+        {
+            span.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
+            span.SetStatus(ActivityStatusCode.Ok);
+        }
         
-        span.SetTag("activityExecution.durationMs", (systemClock.UtcNow - span.StartTimeUtc).TotalMilliseconds);
+        var now = systemClock.UtcNow;
+        span.SetTag("activityExecution.endTimeUtc", now);
+        span.SetTag("activityExecution.durationMs", (now - span.StartTimeUtc).TotalMilliseconds);
+    }
+    
+    private ActivityTagsCollection CreateStatusTags(ActivityExecutionContext context)
+    {
+        return new ActivityTagsCollection(new Dictionary<string, object?>
+        {
+            ["activityInstance.status"] = context.Status.ToString()
+        });
     }
 }
 
