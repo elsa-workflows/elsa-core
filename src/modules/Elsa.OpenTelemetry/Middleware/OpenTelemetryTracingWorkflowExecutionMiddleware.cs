@@ -54,10 +54,6 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             activity.AddEvent(new ActivityEvent("Faulted"));
             activity.SetStatus(ActivityStatusCode.Error);
             activity.SetTag("error", true);
-            activity.SetTag("hasIncidents", true);
-            
-            if (context.Incidents.Count > 0)
-                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
         }
         else
         {
@@ -66,6 +62,16 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
                 ["workflowInstance.status"] = context.Status.ToString(),
                 ["workflowInstance.subStatus"] = context.SubStatus.ToString()
             })));
+        }
+        
+        if(context.Incidents.Any())
+        {
+            activity.SetStatus(ActivityStatusCode.Error);
+            activity.SetTag("hasIncidents", true);
+            activity.SetTag("error", true);
+
+            if (context.Incidents.Count > 0)
+                activity.SetTag("error.message", JsonSerializer.Serialize(context.Incidents, _incidentSerializerOptions));
         }
         
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
