@@ -43,7 +43,7 @@ public class OpenTelemetryTracingActivityExecutionMiddleware(ActivityMiddlewareD
             span.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
             span.SetStatus(ActivityStatusCode.Error);
             span.SetTag("error", true);
-            span.SetTag("hasIncidents", true);
+            span.SetTag("activityInstance.hasIncidents", true);
 
             var errorMessage = string.IsNullOrWhiteSpace(context.Exception?.Message) ? "Unknown error" : context.Exception.Message;
             span.SetTag("error.message", errorMessage);

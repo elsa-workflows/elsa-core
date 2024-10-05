@@ -41,7 +41,7 @@ service:
       exporters: [ datadog ]
     traces:
       receivers: [ otlp ]
-      processors: [ batch, tail_sampling ]  # Added tail_sampling to the main traces pipeline
+      processors: [ batch ]  # Added tail_sampling to the main traces pipeline
       exporters: [ debug, datadog ]  # Directly exporting to debug and datadog
     logs:
       receivers: [ otlp ]

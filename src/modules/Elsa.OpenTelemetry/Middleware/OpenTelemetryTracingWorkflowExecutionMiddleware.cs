@@ -35,9 +35,6 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             return;
         }
 
-        if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            span.SetTag("correlationId", context.CorrelationId);
-
         span.SetTag("workflowInstance.id", workflowInstanceId);
         span.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
         span.SetTag("workflowDefinition.version", workflow.Identity.Version);
@@ -61,7 +58,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         if(context.Incidents.Any())
         {
             span.SetStatus(ActivityStatusCode.Error);
-            span.SetTag("hasIncidents", true);
+            span.SetTag("workflowInstance.hasIncidents", true);
             span.SetTag("error", true);
 
             if (context.Incidents.Count > 0)
@@ -69,7 +66,7 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         }
         
         if (!string.IsNullOrWhiteSpace(context.CorrelationId))
-            span.SetTag("correlationId", context.CorrelationId);
+            span.SetTag("workflowInstance.correlationId", context.CorrelationId);
         
         var now = systemClock.UtcNow;
         span.SetTag("workflowExecution.endTimeUtc", now);
