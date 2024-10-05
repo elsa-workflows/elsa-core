@@ -14,7 +14,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.MultiTenancy;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;

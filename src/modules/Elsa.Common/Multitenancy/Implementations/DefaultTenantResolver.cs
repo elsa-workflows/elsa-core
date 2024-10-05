@@ -1,7 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Entities;
-
-namespace Elsa.Common.Services;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// An implementation of <see cref="ITenantResolver"/> that always returns the default tenant.

@@ -1,5 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;

@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;

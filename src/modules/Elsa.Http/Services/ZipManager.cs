@@ -1,5 +1,5 @@
 using System.IO.Compression;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Http.Contracts;
 using Elsa.Http.Models;
 using Elsa.Http.Options;

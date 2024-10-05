@@ -1,4 +1,4 @@
-﻿using Elsa.Common.Entities;
+﻿using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
 
 namespace Elsa.Tenants.Models;

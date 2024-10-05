@@ -1,7 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 

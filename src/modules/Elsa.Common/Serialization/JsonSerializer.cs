@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using Elsa.Common.Contracts;
 
 namespace Elsa.Common.Serialization;
 

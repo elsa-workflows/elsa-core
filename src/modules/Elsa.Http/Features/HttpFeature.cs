@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common.Multitenancy;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;

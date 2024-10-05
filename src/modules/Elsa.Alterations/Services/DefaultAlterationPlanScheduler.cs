@@ -1,7 +1,7 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Workflows;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;

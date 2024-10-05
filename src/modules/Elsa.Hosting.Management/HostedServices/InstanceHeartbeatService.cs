@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
 using Elsa.KeyValues.Contracts;

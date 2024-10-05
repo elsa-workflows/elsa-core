@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;

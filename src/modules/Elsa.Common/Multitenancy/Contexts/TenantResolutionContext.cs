@@ -1,6 +1,4 @@
-using Elsa.Common.Entities;
-
-namespace Elsa.Common.Contexts;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Represents the context for resolving a tenant in a tenant resolution strategy pipeline.

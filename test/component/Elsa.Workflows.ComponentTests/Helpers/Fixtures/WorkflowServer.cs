@@ -13,7 +13,6 @@ using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;

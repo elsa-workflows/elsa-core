@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
