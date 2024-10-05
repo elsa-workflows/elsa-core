@@ -27,9 +27,9 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
     {
         var workflowInstanceId = context.Id;
         var workflow = context.Workflow;
-        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity($"WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
+        using var activity = ElsaOpenTelemetry.ActivitySource.StartActivity("WorkflowExecution", ActivityKind.Internal, Activity.Current?.Context ?? default);
 
-        if (activity == null)
+        if (activity == null) // No listener is registered.
         {
             await Next(context);
             return;
@@ -42,26 +42,18 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         activity.SetTag("workflowDefinition.definitionId", workflow.Identity.DefinitionId);
         activity.SetTag("workflowDefinition.version", workflow.Identity.Version);
         activity.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
-        activity.AddEvent(new ActivityEvent("Executing", tags: new ActivityTagsCollection(new Dictionary<string, object?>
-        {
-            ["workflowInstance.status"] = context.Status.ToString(),
-            ["workflowInstance.subStatus"] = context.SubStatus.ToString()
-        })));
+        activity.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
         await Next(context);
 
         if (context.SubStatus == WorkflowSubStatus.Faulted)
         {
-            activity.AddEvent(new ActivityEvent("Faulted"));
+            activity.AddEvent(new ActivityEvent("Faulted", tags: CreateStatusTags(context)));
             activity.SetStatus(ActivityStatusCode.Error);
             activity.SetTag("error", true);
         }
         else
         {
-            activity.AddEvent(new ActivityEvent("Executed", tags: new ActivityTagsCollection(new Dictionary<string, object?>
-            {
-                ["workflowInstance.status"] = context.Status.ToString(),
-                ["workflowInstance.subStatus"] = context.SubStatus.ToString()
-            })));
+            activity.AddEvent(new ActivityEvent("Executed", tags: CreateStatusTags(context)));
         }
         
         if(context.Incidents.Any())
@@ -78,6 +70,15 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
             activity.SetTag("correlationId", context.CorrelationId);
         
         activity.SetTag("workflowExecution.durationMs", (systemClock.UtcNow - activity.StartTimeUtc).TotalMilliseconds);
+    }
+    
+    private ActivityTagsCollection CreateStatusTags(WorkflowExecutionContext context)
+    {
+        return new ActivityTagsCollection(new Dictionary<string, object?>
+        {
+            ["workflowInstance.status"] = context.Status.ToString(),
+            ["workflowInstance.subStatus"] = context.SubStatus.ToString()
+        });
     }
 }
 
