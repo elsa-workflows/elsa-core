@@ -13,6 +13,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite\Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer\Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.EntityFrameworkCore.SqlServer\Elsa.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Quartz.EntityFrameworkCore.SqlServer\Elsa.Quartz.EntityFrameworkCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Caching.Distributed.MassTransit\Elsa.Caching.Distributed.MassTransit.csproj" />
