@@ -1,2 +1,1 @@
-const _ = require('lodash');
-module.exports = _;
+module.exports = require('lodash');

@@ -15,14 +15,14 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Remove="ClientLib\dist\lodash.js" />
-      <EmbeddedResource Include="ClientLib\dist\lodash.js">
+      <None Remove="ClientLib\dist\*.js" />
+      <EmbeddedResource Include="ClientLib\dist\*.js">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </EmbeddedResource>
-      <None Remove="ClientLib\dist\moment.js" />
-      <EmbeddedResource Include="ClientLib\dist\moment.js">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="ClientLib\dist\" />
     </ItemGroup>
 
 </Project>

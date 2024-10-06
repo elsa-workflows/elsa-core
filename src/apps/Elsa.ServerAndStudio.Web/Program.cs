@@ -105,7 +105,7 @@ services
             {
                 javaScriptFeature
                     .ConfigureJintOptions(jintOptions => jintOptions.AllowClrAccess = true)
-                    .UseLodash()
+                    .UseLodashFp()
                     .UseMoment();
             })
             .UseLiquid()
