@@ -58,8 +58,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         ConfigureObjectConverters(engineOptions);
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
-
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
+        _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
+        
         var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);

@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides the following JavaScript libraries for Elsa:
+            - lodash
+            - moment
+        </Description>
+        <PackageTags>elsa module expressions scripting javascript libraries</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+      <ProjectReference Include="..\Elsa.JavaScript\Elsa.JavaScript.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="ClientLib\dist\lodash.js" />
+      <EmbeddedResource Include="ClientLib\dist\lodash.js">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="ClientLib\dist\moment.js" />
+      <EmbeddedResource Include="ClientLib\dist\moment.js">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+
+</Project>
