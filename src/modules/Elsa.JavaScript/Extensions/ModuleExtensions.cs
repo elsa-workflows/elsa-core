@@ -24,6 +24,6 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule UseJavaScript(this IModule module, Action<JintOptions> configureJintOptions)
     {
-        return module.UseJavaScript(javaScript => javaScript.JintOptions = configureJintOptions);
+        return module.UseJavaScript(javaScript => javaScript.ConfigureJintOptions(configureJintOptions));
     }
 }

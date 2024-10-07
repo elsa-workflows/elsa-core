@@ -23,10 +23,10 @@
     <PackageVersion Include="DistributedLock.Postgres" Version="1.2.0" />
     <PackageVersion Include="DistributedLock.Redis" Version="1.0.3" />
     <PackageVersion Include="Elastic.Clients.Elasticsearch" Version="8.14.6" />
-    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.524" />
-    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.524" />
-    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.524" />
-    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.524" />
+    <PackageVersion Include="Elsa.Studio" Version="3.3.0-preview.561" />
+    <PackageVersion Include="Elsa.Studio.Core.BlazorWasm" Version="3.3.0-preview.561" />
+    <PackageVersion Include="Elsa.Studio.Login.BlazorWasm" Version="3.3.0-preview.561" />
+    <PackageVersion Include="Elsa.Studio.Agents" Version="3.3.0-preview.561" />
     <PackageVersion Include="FastEndpoints" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Security" Version="5.27.0" />
     <PackageVersion Include="FastEndpoints.Swagger" Version="5.27.0" />
@@ -95,6 +95,7 @@
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
     <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.4.3" />
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
     <PackageVersion Include="Testcontainers" Version="3.9.0" />
     <PackageVersion Include="Testcontainers.RabbitMq" Version="3.9.0" />
     <PackageVersion Include="Testcontainers.Redis" Version="3.9.0" />

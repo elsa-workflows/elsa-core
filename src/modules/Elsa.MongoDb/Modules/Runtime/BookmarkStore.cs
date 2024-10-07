@@ -39,7 +39,7 @@ public class MongoBookmarkStore : IBookmarkStore
     /// <inheritdoc />
     public async ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _mongoDbStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        return await _mongoDbStore.FindAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />

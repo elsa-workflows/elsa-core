@@ -4,9 +4,12 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.MassTransit.Options;
 using Elsa.Extensions;
+using Elsa.JavaScript.Libraries.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.MassTransit.Extensions;
 using Elsa.ServerAndStudio.Web.Enums;
+using Jint;
+using Jint.Runtime.Modules;
 using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
@@ -79,12 +82,12 @@ services
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlServer(sqlServerConnectionString));
                 else if (databaseProvider == "Sqlite")
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
-                
+
                 if (useMassTransit)
                 {
                     runtime.UseMassTransitDispatcher();
                 }
-                
+
                 if (useProtoActor)
                 {
                     runtime.UseProtoActor();
@@ -98,10 +101,16 @@ services
                 runtime.WorkflowDispatcherOptions = options => configuration.GetSection("Runtime:WorkflowDispatcher").Bind(options);
             })
             .UseScheduling()
-            .UseJavaScript(options => options.AllowClrAccess = true)
+            .UseJavaScript(javaScriptFeature =>
+            {
+                javaScriptFeature
+                    .ConfigureJintOptions(jintOptions => jintOptions.AllowClrAccess = true)
+                    .UseLodashFp()
+                    .UseMoment();
+            })
             .UseLiquid()
             .UseCSharp()
-            // .UsePython()
+            .UsePython()
             .UseHttp(http =>
             {
                 if (useCaching)
@@ -134,7 +143,7 @@ services
                 return new SqliteProvider(new SqliteConnectionStringBuilder(sqliteConnectionString));
             });
         }
-        
+
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>
