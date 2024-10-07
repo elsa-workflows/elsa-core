@@ -40,6 +40,15 @@ public class OpenTelemetryTracingWorkflowExecutionMiddleware(WorkflowMiddlewareD
         span.SetTag("workflowDefinition.version", workflow.Identity.Version);
         span.SetTag("workflowDefinition.name", workflow.WorkflowMetadata.Name);
         span.SetTag("workflowExecution.startTimeUtc", span.StartTimeUtc);
+        
+        if(context.TriggerActivityId != null)
+        {
+            var activity = context.FindActivityById(context.TriggerActivityId) ?? throw new Exception($"Trigger activity with ID {context.TriggerActivityId} not found. This should not happen.");
+            span.SetTag("workflowExecution.trigger.activityId", activity.Id);
+            span.SetTag("workflowExecution.trigger.activityName", activity.Name);
+            span.SetTag("workflowExecution.trigger.activityType", activity.Type);
+        }
+        
         span.AddEvent(new ActivityEvent("Executing", tags: CreateStatusTags(context)));
         await Next(context);
 
