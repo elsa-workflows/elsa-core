@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityExecutions.Get;
 /// Gets an individual execution for a given activity.
 /// </summary>
 [PublicAPI]
-internal class List(IActivityExecutionStore store) : ElsaEndpointWithoutRequest<ActivityExecutionRecord>
+internal class Endpoint(IActivityExecutionStore store) : ElsaEndpointWithoutRequest<ActivityExecutionRecord>
 {
     /// <inheritdoc />
     public override void Configure()

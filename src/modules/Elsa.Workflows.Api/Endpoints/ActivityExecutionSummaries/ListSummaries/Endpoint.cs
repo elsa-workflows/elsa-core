@@ -13,7 +13,7 @@ namespace Elsa.Workflows.Api.Endpoints.ActivityExecutionSummaries.ListSummaries;
 /// Lists a summary view of the executions for a given activity.
 /// </summary>
 [PublicAPI]
-internal class List(IActivityExecutionStore store) : ElsaEndpoint<Request, ListResponse<ActivityExecutionRecordSummary>>
+internal class Endpoint(IActivityExecutionStore store) : ElsaEndpoint<Request, ListResponse<ActivityExecutionRecordSummary>>
 {
     /// <inheritdoc />
     public override void Configure()
