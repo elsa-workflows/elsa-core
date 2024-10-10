@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
-using Elsa.Common.Entities;
-using Elsa.Workflows.Management.Entities;
+using Elsa.Api.Client.Resources.WorkflowInstances.Models;
+using Elsa.Api.Client.Shared.Models;
 
-namespace Elsa.Workflows.Runtime.Entities;
+namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;
 
 /// <summary>
 /// Represents a summarized view of a single activity execution of an activity instance.
@@ -65,27 +65,6 @@ public class ActivityExecutionRecordSummary : Entity
     public static ActivityExecutionRecordSummary FromRecord(ActivityExecutionRecord record)
     {
         return new ActivityExecutionRecordSummary
-        {
-            Id = record.Id,
-            WorkflowInstanceId = record.WorkflowInstanceId,
-            ActivityId = record.ActivityId,
-            ActivityNodeId = record.ActivityNodeId,
-            ActivityType = record.ActivityType,
-            ActivityTypeVersion = record.ActivityTypeVersion,
-            ActivityName = record.ActivityName,
-            StartedAt = record.StartedAt,
-            HasBookmarks = record.HasBookmarks,
-            Status = record.Status,
-            CompletedAt = record.CompletedAt
-        };
-    }
-    
-    /// <summary>
-    /// Returns a summary view of the specified <see cref="ActivityExecutionRecord"/>.
-    /// </summary>
-    public static Expression<Func<ActivityExecutionRecord, ActivityExecutionRecordSummary>> FromRecordExpression()
-    {
-        return record => new ActivityExecutionRecordSummary
         {
             Id = record.Id,
             WorkflowInstanceId = record.WorkflowInstanceId,
