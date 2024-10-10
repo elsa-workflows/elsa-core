@@ -102,7 +102,7 @@ public class EFCoreActivityExecutionStore(
 
         entity.ActivityState = await DeserializeActivityState(dbContext, entity, cancellationToken);
         entity.Outputs = Deserialize<IDictionary<string, object?>>(dbContext, entity, "SerializedOutputs");
-        entity.Properties = Deserialize<IDictionary<string, object>?>(dbContext, entity, "SerializedProperties") ?? new Dictionary<string, object>();
+        entity.Properties = DeserializePayload<IDictionary<string, object>?>(dbContext, entity, "SerializedProperties") ?? new Dictionary<string, object>();
         entity.Exception = DeserializePayload<ExceptionState>(dbContext, entity, "SerializedException");
         entity.Payload = DeserializePayload<IDictionary<string, object>>(dbContext, entity, "SerializedPayload");
     }
