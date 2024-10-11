@@ -470,6 +470,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Scripting", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.JavaScript.Libraries", "src\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj", "{5F80663C-B072-49DE-9A67-FD804BAD787E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1070,6 +1072,10 @@ Global
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1257,6 +1263,7 @@ Global
 		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{6C606FEB-9A1F-4816-ABE4-22AFA8CEE771} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{5F80663C-B072-49DE-9A67-FD804BAD787E} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
+		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
