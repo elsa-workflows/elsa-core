@@ -22,7 +22,7 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" VersionOverride="8.0.4" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
     <ItemGroup>
