@@ -1,4 +1,5 @@
 ﻿using Elsa.Common.Multitenancy;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Tenants.AspNetCore.Middleware;
@@ -6,13 +7,15 @@ namespace Elsa.Tenants.AspNetCore.Middleware;
 /// <summary>
 /// Middleware to initialize the tenant for each incoming HTTP request.
 /// </summary>
-public class TenantResolutionMiddleware(RequestDelegate next, ITenantResolverPipelineInvoker tenantResolverPipelineInvoker, ITenantAccessor tenantAccessor)
+[UsedImplicitly]
+public class TenantResolutionMiddleware(RequestDelegate next, ITenantAccessor tenantAccessor)
 {
     /// <summary>
     /// Invokes the middleware to ensure the tenant is initialized.
     /// </summary>
     /// <param name="context">The current HTTP context.</param>
-    public async Task InvokeAsync(HttpContext context)
+    /// <param name="tenantResolverPipelineInvoker"></param>
+    public async Task InvokeAsync(HttpContext context, ITenantResolverPipelineInvoker tenantResolverPipelineInvoker)
     {
         var tenant = await tenantResolverPipelineInvoker.InvokePipelineAsync();
         tenantAccessor.CurrentTenant = tenant;

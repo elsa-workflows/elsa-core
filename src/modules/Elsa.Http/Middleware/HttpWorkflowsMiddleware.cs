@@ -16,6 +16,9 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
+using Elsa.Common.Multitenancy;
+using Elsa.Tenants;
+using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -148,7 +151,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         {
             Hash = bookmarkHash,
             WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            TenantAgnostic = true
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
@@ -206,19 +210,30 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
+        var tenantScopeFactory = serviceProvider.GetRequiredService<ITenantScopeFactory>();
         var workflow = workflowGraph.Workflow;
+        Tenant? tenant = null;
 
-        if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
-            return;
-
-        var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-        var result = await ExecuteWithinTimeoutAsync(async ct =>
+        if (workflow.Identity.TenantId != null)
         {
-            if (workflowInstance == null)
-                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
-            return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
-        }, bookmarkPayload.RequestTimeout, httpContext);
-        await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+            var tenantsProvider = serviceProvider.GetRequiredService<ITenantsProvider>();
+            tenant = await tenantsProvider.FindByIdAsync(workflow.Identity.TenantId, cancellationToken);
+        }
+
+        using (tenantScopeFactory.Create(tenant))
+        {
+            if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+                return;
+
+            var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
+            var result = await ExecuteWithinTimeoutAsync(async ct =>
+            {
+                if (workflowInstance == null)
+                    return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
+                return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
+            }, bookmarkPayload.RequestTimeout, httpContext);
+            await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
+        }
     }
 
     private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
