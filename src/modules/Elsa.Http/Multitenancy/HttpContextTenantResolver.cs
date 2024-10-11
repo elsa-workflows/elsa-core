@@ -2,15 +2,15 @@ using Elsa.Common.Multitenancy;
 using Elsa.Http.Extensions;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Http.MultiTenancy;
+namespace Elsa.Http.Multitenancy;
 
 /// <summary>
 /// Resolves the tenant based on the Items collection of the current <see cref="HttpContext"/>.
 /// </summary>
-public class HttpContextTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolutionStrategyBase
+public class HttpContextTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolverBase
 {
     /// <inheritdoc />
-    protected override TenantResolutionResult Resolve(TenantResolutionContext context)
+    protected override TenantResolverResult Resolve(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
 

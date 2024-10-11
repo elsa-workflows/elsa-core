@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.Http.MultiTenancy;
+namespace Elsa.Http.Multitenancy;
 
 /// <summary>
 /// Resolves the tenant based on the route prefix in the request URL. The tenant ID is expected to be part of the route.
 /// </summary>
-public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider) : TenantResolutionStrategyBase
+public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider) : TenantResolverBase
 {
     /// <inheritdoc />
-    protected override async ValueTask<TenantResolutionResult> ResolveAsync(TenantResolutionContext context)
+    protected override TenantResolverResult Resolve(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
         

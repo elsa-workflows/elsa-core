@@ -14,14 +14,14 @@ public class MongoKeyValueStoreTests
     public MongoKeyValueStoreTests()
     {
         var mongoCollectionMock = Substitute.For<IMongoCollection<SerializedKeyValuePair>>();
-        var tenantResolverMock = Substitute.For<ITenantResolver>();
+        var tenantAccessorMock = Substitute.For<ITenantAccessor>();
         mongoCollectionMock.FindOneAndReplaceAsync(
                 Arg.Any<FilterDefinition<SerializedKeyValuePair>>(),
                 Arg.Any<SerializedKeyValuePair>(),
                 Arg.Any<FindOneAndReplaceOptions<SerializedKeyValuePair>>()
             )
             .Returns(new SerializedKeyValuePair());
-        _mongoDbStore = new MongoDbStore<SerializedKeyValuePair>(mongoCollectionMock, tenantResolverMock);
+        _mongoDbStore = new MongoDbStore<SerializedKeyValuePair>(mongoCollectionMock, tenantAccessorMock);
     }
 
     [Fact(DisplayName = "When saving a SerializedKeyValuePair document, don't throw an exception of missing ID property")]

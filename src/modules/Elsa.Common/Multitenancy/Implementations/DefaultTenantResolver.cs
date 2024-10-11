@@ -3,7 +3,7 @@ namespace Elsa.Common.Multitenancy;
 /// <summary>
 /// An implementation of <see cref="ITenantResolver"/> that always returns the default tenant.
 /// </summary>
-public class DefaultTenantResolver : ITenantResolver
+public class DefaultTenantResolver : TenantResolverBase
 {
     private readonly Tenant _defaultTenant = new()
     {
@@ -11,8 +11,8 @@ public class DefaultTenantResolver : ITenantResolver
         Name = "Default"
     };
 
-    public Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default)
+    protected override TenantResolverResult Resolve(TenantResolverContext context)
     {
-        return Task.FromResult<Tenant?>(_defaultTenant);
+        return Resolved(_defaultTenant.Id);
     }
 }

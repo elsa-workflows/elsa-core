@@ -109,7 +109,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.UseTenants(tenants =>
                 {
                     tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
-                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
+                    tenants.TenantsOptions = options => options.TenantResolverPipelineBuilder.Append<TestTenantResolver>();
                 });
             };
         }
