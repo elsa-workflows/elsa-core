@@ -35,8 +35,8 @@ public class TenantsFeature : FeatureBase
 
         Services
             .AddSingleton<ConfigurationTenantsProvider>()
-            .AddScoped<DefaultTenantResolverPipelineInvoker>()
-            .AddScoped<DefaultTenantResolver>()
+            .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<ITenantResolver, DefaultTenantResolver>()
             .AddScoped(TenantsProvider);
     }
 
