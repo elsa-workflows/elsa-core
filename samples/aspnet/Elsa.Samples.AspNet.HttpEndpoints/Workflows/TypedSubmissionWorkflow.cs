@@ -4,7 +4,6 @@ using Elsa.Samples.AspNet.HttpEndpoints.Activities;
 using Elsa.Samples.AspNet.HttpEndpoints.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.HttpEndpoints.Workflows;
 

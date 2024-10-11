@@ -1,6 +1,6 @@
 using System.Reflection;
 using Elsa.Http.Options;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.UIHints.SingleLine;
 using Microsoft.Extensions.Options;

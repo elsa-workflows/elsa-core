@@ -3,7 +3,7 @@ using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.Create;

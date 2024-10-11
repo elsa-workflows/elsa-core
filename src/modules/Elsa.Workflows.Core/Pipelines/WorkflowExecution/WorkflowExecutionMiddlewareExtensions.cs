@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Pipelines.WorkflowExecution;

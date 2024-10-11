@@ -13,7 +13,6 @@ using Elsa.MassTransit.Extensions;
 using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
@@ -35,7 +34,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         var client = CreateClient();
         client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
-        return RestService.For<TClient>(client, CreateRefitSettings());
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
 
     public HttpClient CreateHttpWorkflowClient()

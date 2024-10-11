@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
-namespace Elsa.Common.Contracts;
+namespace Elsa.Common;
 
 /// <summary>
 /// Provides JSON serialization services.

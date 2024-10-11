@@ -1,6 +1,5 @@
 using System.Reflection;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Workflows.UIHints.Dropdown;

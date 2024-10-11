@@ -1,8 +1,6 @@
-using Elsa.Common.Abstractions;
-using Elsa.Common.Contexts;
-using Elsa.Common.Results;
+using Elsa.Common.Multitenancy;
 
-namespace Elsa.Workflows.ComponentTests.Helpers.Services;
+namespace Elsa.Testing.Shared.Services;
 
 public class TestTenantResolutionStrategy : TenantResolutionStrategyBase
 {

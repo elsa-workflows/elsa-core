@@ -1,5 +1,5 @@
 using Elsa.Webhooks.Activities;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Humanizer;
 using WebhooksCore;

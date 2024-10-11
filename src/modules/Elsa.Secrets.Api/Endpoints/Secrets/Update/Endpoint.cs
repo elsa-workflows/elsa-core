@@ -1,5 +1,4 @@
 ﻿using Elsa.Abstractions;
-using Elsa.Common.Contracts;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;
 

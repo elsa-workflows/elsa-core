@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
 
@@ -31,14 +30,14 @@ public static class VariableExtensions
             new ExpandoObjectConverterFactory());
 
     /// <summary>
-    /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
+    /// Configures the variable to use the <see cref="WorkflowInstanceStorageDriver"/>.
     /// </summary>
-    public static Variable WithWorkflowStorage(this Variable variable) => variable.WithStorage<WorkflowStorageDriver>();
+    public static Variable WithWorkflowStorage(this Variable variable) => variable.WithStorage<WorkflowInstanceStorageDriver>();
 
     /// <summary>
-    /// Configures the variable to use the <see cref="WorkflowStorageDriver"/>.
+    /// Configures the variable to use the <see cref="WorkflowInstanceStorageDriver"/>.
     /// </summary>
-    public static Variable<T> WithWorkflowStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<WorkflowStorageDriver>();
+    public static Variable<T> WithWorkflowStorage<T>(this Variable<T> variable) => (Variable<T>)variable.WithStorage<WorkflowInstanceStorageDriver>();
 
     /// <summary>
     /// Configures the variable to use the <see cref="MemoryStorageDriver"/>.

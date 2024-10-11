@@ -1,11 +1,9 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 

@@ -6,7 +6,6 @@ using Elsa.Scheduling.Activities;
 using Elsa.WorkflowContexts.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.WorkflowContexts.Workflows;
 

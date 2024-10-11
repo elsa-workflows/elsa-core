@@ -1,7 +1,7 @@
 using Elsa.Caching;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 
 namespace Elsa.Http.Services;

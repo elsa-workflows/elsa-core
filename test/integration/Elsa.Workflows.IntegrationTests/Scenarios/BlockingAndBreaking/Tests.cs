@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.BlockingAndBreaking.Workflows;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;

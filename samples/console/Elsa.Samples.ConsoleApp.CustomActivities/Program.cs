@@ -1,7 +1,7 @@
 ﻿using Elsa.Extensions;
 using Elsa.Samples.ConsoleApp.CustomActivities.Activities;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

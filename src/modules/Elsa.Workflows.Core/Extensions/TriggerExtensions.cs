@@ -1,7 +1,6 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Microsoft.Extensions.Logging;
 

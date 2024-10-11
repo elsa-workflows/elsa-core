@@ -1,7 +1,6 @@
 using Elsa.JavaScript.Activities;
 using Elsa.JavaScript.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JavaScriptNativeVariables;
 

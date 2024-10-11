@@ -1,8 +1,8 @@
 ﻿using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 

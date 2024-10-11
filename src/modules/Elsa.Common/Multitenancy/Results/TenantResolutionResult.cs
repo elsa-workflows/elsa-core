@@ -1,4 +1,4 @@
-namespace Elsa.Common.Results;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Represents the result of a tenant resolution.

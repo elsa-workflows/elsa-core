@@ -1,5 +1,5 @@
 using System.Reflection;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
 namespace Elsa.Samples.AspNet.CustomUIHandler;
 

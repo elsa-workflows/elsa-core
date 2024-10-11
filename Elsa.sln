@@ -117,6 +117,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\docker-compose.yml = docker\docker-compose.yml
 		docker\docker-compose-datadog.yml = docker\docker-compose-datadog.yml
 		docker\ElsaServer-Datadog.Dockerfile = docker\ElsaServer-Datadog.Dockerfile
+		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 		docker\init-db.sh = docker\init-db.sh
 	EndProjectSection
 EndProject
@@ -361,8 +362,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ServerAndStudio.Web", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.Web", "src\apps\Elsa.Studio.Web\Elsa.Studio.Web.csproj", "{169A82A5-2DB3-40EA-801E-14C08D743DF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.OpenTelemetry", "src\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj", "{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ProtoActor.Core", "src\modules\Elsa.ProtoActor.Core\Elsa.ProtoActor.Core.csproj", "{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Caching.Distributed.ProtoActor", "src\modules\Elsa.Caching.Distributed.ProtoActor\Elsa.Caching.Distributed.ProtoActor.csproj", "{47FBCB04-0C2D-453C-BE2F-7052CAC22524}"
@@ -469,6 +468,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Scripting", "src\modules\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj", "{6C606FEB-9A1F-4816-ABE4-22AFA8CEE771}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.JavaScript.Libraries", "src\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj", "{5F80663C-B072-49DE-9A67-FD804BAD787E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.OpenTelemetry", "src\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj", "{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -982,10 +983,6 @@ Global
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Release|Any CPU.Build.0 = Release|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1070,6 +1067,10 @@ Global
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5F80663C-B072-49DE-9A67-FD804BAD787E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1216,7 +1217,6 @@ Global
 		{690B0274-291F-4D9E-BA76-54EFF7D3E4BC} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{060FD0BA-BD78-48E1-A8A7-4906A5AD5E39} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7} = {D92BEAB2-60D6-4BB4-885A-6BA681C6CCF1}
-		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{8A050229-DB79-4E0B-9AFF-7565E87F2954} = {58C59255-281C-4595-8732-808158F1DC6E}
 		{0D4A88A1-8AEE-49ED-BC2E-ED68C96F60AD} = {58C59255-281C-4595-8732-808158F1DC6E}
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
@@ -1257,6 +1257,7 @@ Global
 		{29D12ADC-55E9-40D0-9E4C-F0EBB6E098EC} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{6C606FEB-9A1F-4816-ABE4-22AFA8CEE771} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{5F80663C-B072-49DE-9A67-FD804BAD787E} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
+		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}

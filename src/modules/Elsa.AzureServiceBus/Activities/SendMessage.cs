@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;

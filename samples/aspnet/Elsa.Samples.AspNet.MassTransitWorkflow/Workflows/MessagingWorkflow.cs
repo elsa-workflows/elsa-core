@@ -2,7 +2,6 @@ using Elsa.MassTransit.Activities;
 using Elsa.Samples.AspNet.MassTransitWorkflow.Messages;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 
 namespace Elsa.Samples.AspNet.MassTransitWorkflow.Workflows;

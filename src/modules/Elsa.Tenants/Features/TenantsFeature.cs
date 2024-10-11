@@ -1,5 +1,5 @@
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Tenants.Options;

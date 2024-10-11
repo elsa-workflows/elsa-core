@@ -13,13 +13,13 @@ public interface IWorkflowDefinitionActivityRegistryUpdater
     Task AddToRegistry(string workflowDefinitionVersionId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Removes workflow definition activities from the <see cref="Elsa.Workflows.Contracts.IActivityRegistry"/>.
+    /// Removes workflow definition activities from the <see cref="IActivityRegistry"/>.
     /// </summary>
     /// <param name="workflowDefinitionId">The ID of the workflow definition to remove.</param>
     void RemoveDefinitionFromRegistry(string workflowDefinitionId);
     
     /// <summary>
-    /// Removes a workflow definition version activity from the <see cref="Elsa.Workflows.Contracts.IActivityRegistry"/>.
+    /// Removes a workflow definition version activity from the <see cref="IActivityRegistry"/>.
     /// </summary>
     /// <param name="workflowDefinitionVersionId">The ID of the workflow definition to remove.</param>
     void RemoveDefinitionVersionFromRegistry(string workflowDefinitionVersionId);

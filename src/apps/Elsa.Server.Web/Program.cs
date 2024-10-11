@@ -14,7 +14,7 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Http.MultiTenancy;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -32,7 +32,6 @@ using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -67,6 +66,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = true;
 const bool useSecrets = true;
+const bool useAzureServiceBus = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -372,6 +372,9 @@ services
         {
             elsa.UseRealTimeWorkflows();
         }
+
+        if (useAzureServiceBus)
+            elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
 
         if (useMassTransit)
         {

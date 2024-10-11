@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common.Multitenancy;
 
 namespace Elsa.Tenants;
 

@@ -1,8 +1,4 @@
-using Elsa.Common.Contexts;
-using Elsa.Common.Contracts;
-using Elsa.Common.Results;
-
-namespace Elsa.Common.Abstractions;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Base class for implementing a tenant resolution strategy.

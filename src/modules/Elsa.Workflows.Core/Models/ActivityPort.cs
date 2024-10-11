@@ -1,5 +1,3 @@
-using Elsa.Workflows.Contracts;
-
 namespace Elsa.Workflows.Models;
 
 /// Represents a binding between an owner activity's port and a child activity.

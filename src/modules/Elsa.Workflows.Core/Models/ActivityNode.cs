@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 

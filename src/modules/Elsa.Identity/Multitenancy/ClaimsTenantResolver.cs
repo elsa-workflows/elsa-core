@@ -1,11 +1,9 @@
-using Elsa.Common.Abstractions;
-using Elsa.Common.Contexts;
-using Elsa.Common.Results;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Identity.MultiTenancy;
+namespace Elsa.Identity.Multitenancy;
 
 /// <summary>
 /// Resolves the tenant from the user's claims.

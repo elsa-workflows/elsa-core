@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Implemented by trigger activities that generate events. For example, a timer activity is an event generator. 

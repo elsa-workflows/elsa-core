@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Activities;
 

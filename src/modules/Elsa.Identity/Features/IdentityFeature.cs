@@ -1,13 +1,13 @@
 using AspNetCore.Authentication.ApiKey;
-using Elsa.Common.Contracts;
 using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;

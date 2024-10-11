@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing the type.
 /// </summary>
-[PublicAPI]
+[UsedImplicitly]
 public class TypeJsonConverter : JsonConverter<Type>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;

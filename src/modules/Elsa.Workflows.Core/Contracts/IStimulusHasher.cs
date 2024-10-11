@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// Computes a hash for a given activity type name and bookmark payload.
 public interface IStimulusHasher

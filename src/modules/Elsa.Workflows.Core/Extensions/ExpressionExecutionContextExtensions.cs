@@ -3,12 +3,11 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Humanizer;
@@ -140,7 +139,7 @@ public static class ExpressionExecutionContextExtensions
 
         var variable = new Variable(name, value)
         {
-            StorageDriverType = storageDriverType ?? typeof(WorkflowStorageDriver)
+            StorageDriverType = storageDriverType ?? typeof(WorkflowInstanceStorageDriver)
         };
 
         // Find the first parent context that has a variable container.

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;

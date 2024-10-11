@@ -1,11 +1,9 @@
-using Elsa.Common.Abstractions;
-using Elsa.Common.Contexts;
-using Elsa.Common.Results;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Identity.MultiTenancy;
+namespace Elsa.Identity.Multitenancy;
 
 /// <summary>
 /// Resolves the tenant from the current user.
