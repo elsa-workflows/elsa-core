@@ -45,6 +45,12 @@ By default, you can access http://localhost:13000 and log in with:
 - [Features](#features)
 - [Roadmap](#roadmap)
 - [Use Cases](#use-cases)
+- [Programmatic Workflows](#programmatic-workflows)
+- [Designed Workflows](#designed-workflows)
+- [Contributing](#contributing)
+- [Support](#support)
+  - [Community Support](#community-support)
+  - [Enterprise Support](#enterprise-support)
 
 ## Documentation
 
@@ -174,6 +180,17 @@ Before you start working on your changes or submit a pull request, please open a
 
 This approach helps us streamline contributions and ensures that your efforts are aligned with the project's needs and priorities. We look forward to your contributions and are here to support you throughout the process. Thank you for contributing to the Elsa Workflow project!
 
----
+## Support
 
-Remember to replace any placeholder URLs or instructions with the specific details relevant to the Elsa Workflow project as necessary.
+There are various ways to get support for Elsa Workflows, ranging from community-driven channels to enterprise-level services.
+
+### Community Support
+
+Elsa has an active and helpful community where you can find support through multiple channels:
+- [GitHub Issues](https://github.com/elsa-workflows/elsa-core/issues) for bug reports and feature requests.
+- [GitHub Discussions](https://github.com/elsa-workflows/elsa-core/discussions) for open-ended conversations, questions, and community-driven support.
+- [Discord](https://discord.gg/hhChk5H472) for real-time support and interaction with the Elsa community.
+- [StackOverflow](https://stackoverflow.com/questions/tagged/elsa-workflows) for searching or asking technical questions.
+
+### Enterprise Support
+For organizations requiring professional support and long-term commitment, [ELSA-X](https://elsa-x.io) offers enterprise-level services and ensures continuity and future development of the Elsa framework, provides custom solutions, and develops commercial extensions tailored to enterprise needs.

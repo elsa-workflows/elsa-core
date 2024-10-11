@@ -36,7 +36,13 @@ public class JavaScriptFeature : FeatureBase
     /// <summary>
     /// Configures the Jint options.
     /// </summary>
-    public Action<JintOptions> JintOptions { get; set; } = _ => { };
+    private Action<JintOptions> JintOptions { get; set; } = _ => { };
+    
+    public JavaScriptFeature ConfigureJintOptions(Action<JintOptions> configure)
+    {
+        JintOptions += configure;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void ConfigureHostedServices()

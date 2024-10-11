@@ -18,6 +18,7 @@ using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
@@ -50,6 +51,12 @@ public class WorkflowsFeature : FeatureBase
     /// A handler for committing workflow execution state.
     public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
     
+    /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    public Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> WorkflowLoggerStateGenerator { get; set; } = sp => new WorkflowLoggerStateGenerator();
+
+    /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    public Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> ActivityLoggerStateGenerator { get; set; } = sp => new ActivityLoggerStateGenerator();
+
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
     public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
         .UseExceptionHandling()
@@ -58,9 +65,7 @@ public class WorkflowsFeature : FeatureBase
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
 
-    /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.
-    /// </summary>
     public WorkflowsFeature WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
     {
         StandardInStreamProvider = provider;
@@ -80,7 +85,21 @@ public class WorkflowsFeature : FeatureBase
         IdentityGenerator = generator;
         return this;
     }
-    
+
+    /// Fluent method to set <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    public WorkflowsFeature WithWorkflowLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> generator)
+    {
+        WorkflowLoggerStateGenerator = generator;
+        return this;
+    }
+
+    /// Fluent method to set <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    public WorkflowsFeature WithActivityLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> generator)
+    {
+        ActivityLoggerStateGenerator = generator;
+        return this;
+    }
+
     /// Fluent method to configure the <see cref="IWorkflowExecutionPipeline"/>.
     public WorkflowsFeature WithWorkflowExecutionPipeline(Action<IWorkflowExecutionPipelineBuilder> setup)
     {
@@ -175,6 +194,10 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
+
+            // Logger state generators
+            .AddSingleton(WorkflowLoggerStateGenerator)
+            .AddSingleton(ActivityLoggerStateGenerator)
 
             // Logging
             .AddLogging();

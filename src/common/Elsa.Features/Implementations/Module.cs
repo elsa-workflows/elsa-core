@@ -132,7 +132,7 @@ public class Module : IModule
         return
             from feature in features
             let featureType = feature.GetType()
-            let dependencyOfAttributes = featureType.GetCustomAttributes<DependencyOfAttribute>().ToList()
+            let dependencyOfAttributes = featureType.GetCustomAttributes<DependencyOfAttribute>(true).ToList()
             let missingDependencies = dependencyOfAttributes.Where(x => !_features.ContainsKey(x.Type)).ToList()
             where missingDependencies.Count == 0
             select feature;
@@ -158,13 +158,13 @@ public class Module : IModule
     {
         var featureTypes = _features.Keys.ToHashSet();
         var featureTypesWithDependencies = featureTypes.Concat(featureTypes.SelectMany(GetDependencyTypes)).ToHashSet();
-        return featureTypesWithDependencies.TSort(x => x.GetCustomAttributes<DependsOnAttribute>().Select(dependsOn => dependsOn.Type)).ToHashSet();
+        return featureTypesWithDependencies.TSort(x => x.GetCustomAttributes<DependsOnAttribute>(true).Select(dependsOn => dependsOn.Type)).ToHashSet();
     }
 
     // Recursively get dependency types.
     private IEnumerable<Type> GetDependencyTypes(Type type)
     {
-        var dependencies = type.GetCustomAttributes<DependsOnAttribute>().Select(dependsOn => dependsOn.Type).ToList();
+        var dependencies = type.GetCustomAttributes<DependsOnAttribute>(true).Select(dependsOn => dependsOn.Type).ToList();
         return dependencies.Concat(dependencies.SelectMany(GetDependencyTypes));
     }
 }
