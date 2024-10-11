@@ -1,4 +1,4 @@
-﻿    <Project Sdk="Microsoft.NET.Sdk">
+    <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Description>
@@ -20,7 +20,7 @@
 
     <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
     <ItemGroup>

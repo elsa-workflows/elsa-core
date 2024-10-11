@@ -3,18 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 'main'
-      - 'feature/*'
-      - 'feat/*'
-      - 'issue/*'
-      - 'bug/*'
-      - 'enhancement/*'
-      - 'enh/*'
-      - 'patch/*'
-      - 'fix/*'
-      - 'perf/*'
-      - 'hotfix/*'
-      - 'chore/*'
+      - 'blueberry'
   release:
     types: [ prereleased, published ]
 env:

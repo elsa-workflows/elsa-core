@@ -240,7 +240,7 @@ public static class ObjectConverter
     }
 
     /// <summary>
-    /// Returns true if the specified type is date-like type, false otherwise.
+    /// Returns true if the specified type is a date-like type, false otherwise.
     /// </summary>
     private static bool IsDateType(Type type)
     {

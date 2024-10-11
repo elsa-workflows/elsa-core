@@ -15,6 +15,10 @@
     </ItemGroup>
     
     <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore.Common\Elsa.EntityFrameworkCore.Common.csproj" />
         <ProjectReference Include="..\Elsa.Quartz\Elsa.Quartz.csproj" />
     </ItemGroup>

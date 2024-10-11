@@ -119,4 +119,12 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         await workflowClient.RunInstanceAsync(request, cancellationToken);
     }
+
+    private IDictionary<string, object>? DeserializeInput(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        return jsonSerializer.Deserialize<IDictionary<string, object>>(json);
+    }
 }

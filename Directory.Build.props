@@ -38,5 +38,6 @@
     </PropertyGroup>
     <PropertyGroup>
         <ElsaStudioVersion>3.3.0-preview.470</ElsaStudioVersion>
+        <SystemTextJsonVersion>8.0.5</SystemTextJsonVersion>
     </PropertyGroup>
 </Project>

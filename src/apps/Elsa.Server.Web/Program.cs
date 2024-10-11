@@ -373,6 +373,9 @@ services
             elsa.UseRealTimeWorkflows();
         }
 
+        if (useAzureServiceBus)
+            elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
+
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>

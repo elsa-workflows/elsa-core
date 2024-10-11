@@ -42,7 +42,7 @@ public class ActivityExecutionRecordSummary : Entity
     /// <summary>
     /// Gets or sets the time at which the activity execution began.
     /// </summary>
-    public DateTimeOffset StartedAt { get; set; } = default!;
+    public DateTimeOffset StartedAt { get; set; }
 
     /// <summary>
     /// Gets or sets whether the activity has any bookmarks.
@@ -60,7 +60,7 @@ public class ActivityExecutionRecordSummary : Entity
     public DateTimeOffset? CompletedAt { get; set; }
 
     /// <summary>
-    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// Returns a summary view of the specified <see cref="ActivityExecutionRecord"/>.
     /// </summary>
     public static ActivityExecutionRecordSummary FromRecord(ActivityExecutionRecord record)
     {
@@ -81,7 +81,7 @@ public class ActivityExecutionRecordSummary : Entity
     }
     
     /// <summary>
-    /// Returns a summary view of the specified <see cref="WorkflowInstance"/>.
+    /// Returns a summary view of the specified <see cref="ActivityExecutionRecord"/>.
     /// </summary>
     public static Expression<Func<ActivityExecutionRecord, ActivityExecutionRecordSummary>> FromRecordExpression()
     {

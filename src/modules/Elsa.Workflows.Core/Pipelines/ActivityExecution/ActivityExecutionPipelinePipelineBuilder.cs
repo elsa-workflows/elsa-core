@@ -22,6 +22,13 @@ public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider servicePr
     }
 
     /// <inheritdoc />
+    public IActivityExecutionPipelineBuilder Insert(int index, Func<ActivityMiddlewareDelegate, ActivityMiddlewareDelegate> middleware)
+    {
+        _components.Insert(index, middleware);
+        return this;
+    }
+
+    /// <inheritdoc />
     public ActivityMiddlewareDelegate Build()
     {
         ActivityMiddlewareDelegate pipeline = _ => new ValueTask();

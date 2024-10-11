@@ -101,7 +101,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
         }
     }
 
-    private async ValueTask<ActivityExecutionRecordRecord> Map(ActivityExecutionRecord source, CancellationToken cancellationToken)
+    private ActivityExecutionRecordRecord Map(ActivityExecutionRecord source, CancellationToken cancellationToken)
     {
         return new ActivityExecutionRecordRecord
         {
@@ -125,7 +125,7 @@ internal class DapperActivityExecutionRecordStore(Store<ActivityExecutionRecordR
         };
     }
 
-    private async ValueTask<ActivityExecutionRecord> MapAsync(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
+    private ActivityExecutionRecord Map(ActivityExecutionRecordRecord source, CancellationToken cancellationToken)
     {
         return new ActivityExecutionRecord
         {

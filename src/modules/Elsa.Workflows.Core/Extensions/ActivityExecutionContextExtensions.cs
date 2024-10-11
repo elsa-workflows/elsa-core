@@ -109,6 +109,47 @@ public static partial class ActivityExecutionContextExtensions
     public static IDictionary<string, object> GetVariableValues(this ActivityExecutionContext activityExecutionContext) => activityExecutionContext.ExpressionExecutionContext.ReadAndFlattenMemoryBlocks();
 
     /// <summary>
+    /// Evaluates each input property of the activity.
+    /// </summary>
+    public static async Task EvaluateInputPropertiesAsync(this ActivityExecutionContext context)
+    {
+        var activityDescriptor = context.ActivityDescriptor;
+        var inputDescriptors = activityDescriptor.Inputs.Where(x => x.AutoEvaluate).ToList();
+
+        // Evaluate inputs.
+        foreach (var inputDescriptor in inputDescriptors)
+            await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+
+        context.SetHasEvaluatedProperties();
+    }
+
+    /// <summary>
+    /// Evaluates the specified input property of the activity.
+    /// </summary>
+    public static async Task<T?> EvaluateInputPropertyAsync<TActivity, T>(this ActivityExecutionContext context, Expression<Func<TActivity, Input<T>>> propertyExpression)
+    {
+        var inputName = propertyExpression.GetProperty()!.Name;
+        var input = await EvaluateInputPropertyAsync(context, inputName);
+        return input.ConvertTo<T>();
+    }
+
+    /// <summary>
+    /// Evaluates a specific input property of the activity.
+    /// </summary>
+    public static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, string inputName)
+    {
+        var activity = context.Activity;
+        var activityRegistryLookup = context.GetRequiredService<IActivityRegistryLookupService>();
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type) ?? throw new Exception($"Activity descriptor \"{activity.Type}\" not found");
+        var inputDescriptor = activityDescriptor.GetWrappedInputPropertyDescriptor(activity, inputName);
+
+        if (inputDescriptor == null)
+            throw new Exception($"No input with name \"{inputName}\" could be found");
+
+        return await EvaluateInputPropertyAsync(context, activityDescriptor, inputDescriptor);
+    }
+
+    /// <summary>
     /// Returns a set of tuples containing the activity and its descriptor for all activities with outputs.
     /// </summary>
     /// <param name="activityExecutionContext">The <see cref="ActivityExecutionContext"/> being extended.</param>
@@ -162,6 +203,59 @@ public static partial class ActivityExecutionContextExtensions
         var containedNodes = workflowExecutionContext.Nodes.Where(x => x.Parents.Contains(currentContainerNode)).Distinct().ToList();
         var node = containedNodes.FirstOrDefault(x => x.Activity.Name == idOrName || x.Activity.Id == idOrName);
         return node?.Activity;
+    }
+
+    private static async Task<object?> EvaluateInputPropertyAsync(this ActivityExecutionContext context, ActivityDescriptor activityDescriptor, InputDescriptor inputDescriptor)
+    {
+        var activity = context.Activity;
+        var defaultValue = inputDescriptor.DefaultValue;
+        var value = defaultValue;
+        var input = inputDescriptor.ValueGetter(activity);
+
+        if (inputDescriptor.IsWrapped)
+        {
+            var wrappedInput = (Input?)input;
+
+            if (defaultValue != null && wrappedInput == null)
+            {
+                var typedInput = typeof(Input<>).MakeGenericType(inputDescriptor.Type);
+                var valueExpression = new Literal(defaultValue)
+                {
+                    Id = Guid.NewGuid().ToString()
+                };
+                wrappedInput = (Input)Activator.CreateInstance(typedInput, valueExpression)!;
+                inputDescriptor.ValueSetter(activity, wrappedInput);
+            }
+            else
+            {
+                var evaluator = context.GetRequiredService<IExpressionEvaluator>();
+                var expressionExecutionContext = context.ExpressionExecutionContext;
+                value = wrappedInput?.Expression != null ? await evaluator.EvaluateAsync(wrappedInput, expressionExecutionContext) : defaultValue;
+            }
+
+            var memoryReference = wrappedInput?.MemoryBlockReference();
+
+            // When input is created from an activity provider, there may be no memory block reference.
+            if (memoryReference?.Id != null!)
+            {
+                // Declare the input memory block on the current context. 
+                context.ExpressionExecutionContext.Set(memoryReference, value!);
+            }
+        }
+        else
+        {
+            value = input;
+        }
+
+        // Store the serialized input value in the activity state.
+        // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
+        if (inputDescriptor.IsSerializable != false)
+        {
+            var serializedValue = context.GetRequiredService<ISafeSerializer>().SerializeToElement(value);
+            context.ActivityState[inputDescriptor.Name] = serializedValue;
+        }
+
+        return value;
     }
 
     /// <summary>
@@ -297,7 +391,7 @@ public static partial class ActivityExecutionContextExtensions
             if (outputValue == null!)
                 continue;
 
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue, cancellationToken);
+            var serializedOutputValue = serializer.Serialize(outputValue, cancellationToken);
             context.JournalData[outputName] = serializedOutputValue;
         }
 

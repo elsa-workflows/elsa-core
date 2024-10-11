@@ -22,39 +22,59 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<string> SerializeAsync(object? value, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return ValueTask.FromResult(JsonSerializer.Serialize(value, options));
+        return ValueTask.FromResult(Serialize(value, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<JsonElement> SerializeToElementAsync(object? value, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return new(JsonSerializer.SerializeToElement(value, options));
+        return new(SerializeToElement(value, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default)
     {
-        var options = GetOptions();
-        return new(JsonSerializer.Deserialize<T>(json, options)!);
+        return new(Deserialize<T>(json, cancellationToken));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default)
     {
+        return new(Deserialize<T>(element, cancellationToken));
+    }
+
+    public string Serialize(object? value, CancellationToken cancellationToken = default)
+    {
         var options = GetOptions();
-        return new(element.Deserialize<T>(options)!);
+        return JsonSerializer.Serialize(value, options);
+    }
+
+    public JsonElement SerializeToElement(object? value, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.SerializeToElement(value, options);
+    }
+
+    public T Deserialize<T>(string json, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return JsonSerializer.Deserialize<T>(json, options)!;
+    }
+
+    public T Deserialize<T>(JsonElement element, CancellationToken cancellationToken = default)
+    {
+        var options = GetOptions();
+        return element.Deserialize<T>(options)!;
     }
 
     /// <inheritdoc />
     protected override void AddConverters(JsonSerializerOptions options)
     {
         var expressionDescriptorRegistry = ServiceProvider.GetRequiredService<IExpressionDescriptorRegistry>();
-        
+
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         options.Converters.Add(new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()));
         options.Converters.Add(new SafeValueConverterFactory());

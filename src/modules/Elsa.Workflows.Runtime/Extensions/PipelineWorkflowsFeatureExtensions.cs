@@ -1,10 +1,9 @@
-using Elsa.Extensions;
+using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Middleware.Activities;
 
 // ReSharper disable once CheckNamespace
-
-namespace Elsa.Workflows.Runtime.Extensions;
+namespace Elsa.Extensions;
 
 /// Adds an extension method to the <see cref="WorkflowsFeature"/> that installs a default workflow runtime execution pipeline.
 public static class PipelineWorkflowsFeatureExtensions

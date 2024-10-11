@@ -75,8 +75,8 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
         entity = entity.SanitizeLogMessage();
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? safeSerializer.Serialize(entity.ActivityState, cancellationToken) : null;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? safeSerializer.Serialize(entity.Payload, cancellationToken) : null;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)

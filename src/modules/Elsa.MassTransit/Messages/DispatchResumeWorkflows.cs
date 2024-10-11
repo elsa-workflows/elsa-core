@@ -14,6 +14,10 @@ public class DispatchResumeWorkflows(string activityTypeName, object stimulus)
     public string? CorrelationId { get; set; }
     public string? WorkflowInstanceId { get; set; }
     public string? ActivityInstanceId { get; set; }
+
+    [Obsolete("This property is no longer used and will be removed in a future version. Use the SerializedInput property instead.")]
     public IDictionary<string, object>? Input { get; set; }
+
+    public string? SerializedInput { get; set; }
     public IDictionary<string, object>? Properties { get; set; }
 }

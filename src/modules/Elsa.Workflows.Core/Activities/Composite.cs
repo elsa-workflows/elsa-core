@@ -17,7 +17,7 @@ namespace Elsa.Workflows.Activities;
 /// Represents a composite activity that has a single <see cref="Root"/> activity. Like a workflow, but without workflow-level properties.
 /// </summary>
 [PublicAPI]
-public abstract class Composite : Activity, IVariableContainer
+public abstract class Composite : Activity, IVariableContainer, IComposite
 {
     /// <inheritdoc />
     protected Composite(string? source = default, int? line = default) : base(source, line)
@@ -172,6 +172,10 @@ public abstract class Composite : Activity, IVariableContainer
     /// Creates a new <see cref="Activities.SetVariable"/> activity.
     /// </summary>
     protected static SetVariable<T> SetVariable<T>(Variable<T> variable, Variable<T> value, [CallerFilePath] string? source = default, [CallerLineNumber] int? line = default) => new(variable, value, source, line);
+
+    public virtual void Setup()
+    {
+    }
 }
 
 /// <summary>

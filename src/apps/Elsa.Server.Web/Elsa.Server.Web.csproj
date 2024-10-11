@@ -51,6 +51,7 @@
         <PackageReference Include="DistributedLock.Redis"/>
         <PackageReference Include="FluentStorage.Azure.Blobs"/>
         <PackageReference Include="Proto.Cluster.Kubernetes" />
+        <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
         <PackageReference Include="OpenTelemetry.AutoInstrumentation"/>
@@ -59,6 +60,10 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
+    </ItemGroup>
+    
     <ItemGroup>
       <Folder Include="App_Data\" />
     </ItemGroup>

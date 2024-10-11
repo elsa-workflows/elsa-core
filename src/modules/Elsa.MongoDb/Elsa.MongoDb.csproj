@@ -13,6 +13,11 @@
         <PackageReference Include="MongoDB.Driver.Core.Extensions.DiagnosticSources" />
         <PackageReference Include="MongoDB.Driver.Extensions" />
     </ItemGroup>
+    
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
