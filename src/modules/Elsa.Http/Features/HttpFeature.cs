@@ -210,7 +210,6 @@ public class HttpFeature : FeatureBase
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
         
         // Tenant resolvers.
-        Services.AddScoped<ITenantResolver, HttpContextTenantResolver>();
         Services.AddScoped<ITenantResolver, RoutePrefixTenantResolver>();
 
         // Add selectors.

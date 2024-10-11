@@ -458,9 +458,7 @@ services
                 {
                     configuration.GetSection("Multitenancy").Bind(options);
                     options.TenantResolverPipelineBuilder
-                        .Append<HttpContextTenantResolver>()
-                        .Append<ClaimsTenantResolver>()
-                        .Append<CurrentUserTenantResolver>();
+                        .Append<ClaimsTenantResolver>();
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
