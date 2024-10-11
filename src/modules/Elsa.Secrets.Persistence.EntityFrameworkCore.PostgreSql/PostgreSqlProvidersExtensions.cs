@@ -15,7 +15,7 @@ public static class SecretsPostgreSqlProvidersExtensions
     /// <summary>
     /// Configures the feature to use PostgreSql.
     /// </summary>
-    public static EFCoreSecretPersistenceFeature UsePostgreSql(this EFCoreSecretPersistenceFeature feature, string? connectionString = null, ElsaDbContextOptions? options = null)
+    public static EFCoreSecretPersistenceFeature UsePostgreSql(this EFCoreSecretPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = null)
     {
         feature.DbContextOptionsBuilder = (_, db) => db.UseElsaPostgreSql(Assembly, connectionString, options);
         return feature;

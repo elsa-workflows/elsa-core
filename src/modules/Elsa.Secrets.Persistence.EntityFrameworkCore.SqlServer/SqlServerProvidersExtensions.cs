@@ -15,7 +15,7 @@ public static class SecretsSqlServerProvidersExtensions
     /// <summary>
     /// Configures the feature to use SqlServer.
     /// </summary>
-    public static EFCoreSecretPersistenceFeature UsePostgreSql(this EFCoreSecretPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = null)
+    public static EFCoreSecretPersistenceFeature UseSqlServer(this EFCoreSecretPersistenceFeature feature, string connectionString, ElsaDbContextOptions? options = null)
     {
         feature.UseSqlServer(Assembly, connectionString, options);
         return feature;
