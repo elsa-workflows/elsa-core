@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,49 +21,49 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<string> SerializeAsync(object? value, CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(Serialize(value, cancellationToken));
+        return ValueTask.FromResult(Serialize(value));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<JsonElement> SerializeToElementAsync(object? value, CancellationToken cancellationToken = default)
     {
-        return new(SerializeToElement(value, cancellationToken));
+        return new(SerializeToElement(value));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default)
     {
-        return new(Deserialize<T>(json, cancellationToken));
+        return new(Deserialize<T>(json));
     }
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("The type T may be trimmed.")]
     public ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default)
     {
-        return new(Deserialize<T>(element, cancellationToken));
+        return new(Deserialize<T>(element));
     }
 
-    public string Serialize(object? value, CancellationToken cancellationToken = default)
+    public string Serialize(object? value)
     {
         var options = GetOptions();
         return JsonSerializer.Serialize(value, options);
     }
 
-    public JsonElement SerializeToElement(object? value, CancellationToken cancellationToken = default)
+    public JsonElement SerializeToElement(object? value)
     {
         var options = GetOptions();
         return JsonSerializer.SerializeToElement(value, options);
     }
 
-    public T Deserialize<T>(string json, CancellationToken cancellationToken = default)
+    public T Deserialize<T>(string json)
     {
         var options = GetOptions();
         return JsonSerializer.Deserialize<T>(json, options)!;
     }
 
-    public T Deserialize<T>(JsonElement element, CancellationToken cancellationToken = default)
+    public T Deserialize<T>(JsonElement element)
     {
         var options = GetOptions();
         return element.Deserialize<T>(options)!;

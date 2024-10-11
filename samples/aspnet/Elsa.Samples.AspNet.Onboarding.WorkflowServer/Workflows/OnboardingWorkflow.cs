@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Samples.AspNet.Onboarding.WorkflowServer.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Runtime.Activities;
 using Parallel = Elsa.Workflows.Activities.Parallel;
 

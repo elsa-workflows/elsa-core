@@ -16,7 +16,7 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;

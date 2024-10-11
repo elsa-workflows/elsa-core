@@ -2,7 +2,6 @@ using Elsa.Common;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 

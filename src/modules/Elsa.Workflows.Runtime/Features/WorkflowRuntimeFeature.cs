@@ -6,7 +6,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;

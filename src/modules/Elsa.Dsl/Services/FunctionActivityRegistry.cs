@@ -4,7 +4,7 @@ using Elsa.Dsl.Interpreters;
 using Elsa.Dsl.Models;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Dsl.Services;

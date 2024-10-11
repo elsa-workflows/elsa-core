@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 

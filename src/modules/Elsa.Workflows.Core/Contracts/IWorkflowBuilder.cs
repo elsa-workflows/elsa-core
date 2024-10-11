@@ -2,7 +2,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A workflow pipelineBuilder collects information about a workflow to be built programmatically.

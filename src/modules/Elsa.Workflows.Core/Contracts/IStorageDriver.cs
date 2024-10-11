@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a storage driver for workflows to write state to.

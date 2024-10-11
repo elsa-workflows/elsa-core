@@ -1,4 +1,4 @@
-﻿namespace Elsa.Workflows.Contracts;
+﻿namespace Elsa.Workflows;
 
 /// <summary>
 /// Generates logger state for the specified <typeparamref name="TContext"/>.

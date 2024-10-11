@@ -2,7 +2,6 @@ using Elsa.AzureServiceBus.Activities;
 using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.AzureServiceBus.ComponentTests.Workflows;
 

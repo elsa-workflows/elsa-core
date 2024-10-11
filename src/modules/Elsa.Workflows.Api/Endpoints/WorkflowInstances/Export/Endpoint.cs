@@ -6,7 +6,6 @@ using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Endpoints.WorkflowInstances.Get;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -123,8 +122,8 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
         var bookmarks = request.IncludeBookmarks ? await LoadBookmarksAsync(workflowState.Id, cancellationToken) : null;
         var workflowStateElement = _workflowStateSerializer.SerializeToElement(workflowState);
         var bookmarksElement = bookmarks != null ? SerializeBookmarks(bookmarks) : default(JsonElement?);
-        var executionLogRecordsElement = executionLogRecords != null ? _safeSerializer.SerializeToElement(executionLogRecords, cancellationToken) : default(JsonElement?);
-        var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? _safeSerializer.SerializeToElement(activityExecutionLogRecords, cancellationToken) : default(JsonElement?);
+        var executionLogRecordsElement = executionLogRecords != null ? _safeSerializer.SerializeToElement(executionLogRecords) : default(JsonElement?);
+        var activityExecutionLogRecordsElement = activityExecutionLogRecords != null ? _safeSerializer.SerializeToElement(activityExecutionLogRecords) : default(JsonElement?);
         var model = new ExportedWorkflowState(workflowStateElement, bookmarksElement, activityExecutionLogRecordsElement, executionLogRecordsElement);
         return model;
     }

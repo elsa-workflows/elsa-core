@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Hangfire.Annotations;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Multitenancy.Workflows;

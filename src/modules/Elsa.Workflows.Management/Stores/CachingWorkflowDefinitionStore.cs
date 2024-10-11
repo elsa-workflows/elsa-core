@@ -1,6 +1,5 @@
 using Elsa.Caching;
 using Elsa.Common.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;

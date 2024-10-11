@@ -18,7 +18,7 @@ using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.Http.UIHints;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using FluentStorage;

@@ -1,8 +1,8 @@
 ﻿using Antlr4.Runtime.Tree;
 using Elsa.Dsl.Contracts;
 using Elsa.Dsl.Models;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Dsl.Interpreters;
 

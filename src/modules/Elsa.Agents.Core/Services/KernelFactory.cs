@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 
 #pragma warning disable SKEXP0001
-
 #pragma warning disable SKEXP0010
 
 namespace Elsa.Agents;

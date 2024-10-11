@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Common.Entities;
 using Elsa.Testing.Shared.Extensions;
@@ -65,7 +66,7 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
     {
         var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync(workflowDefinitionId);
-        var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
+        var model = await response.ReadAsJsonAsync<ExecuteWorkflowDefinitionResponse>(WorkflowServer.Services);
         return model.WorkflowState;
     }
 

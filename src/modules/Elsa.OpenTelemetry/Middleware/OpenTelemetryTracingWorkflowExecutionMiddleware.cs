@@ -1,11 +1,10 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.OpenTelemetry.Helpers;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;

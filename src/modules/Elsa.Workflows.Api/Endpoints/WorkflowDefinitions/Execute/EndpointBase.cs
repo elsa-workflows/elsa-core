@@ -1,7 +1,6 @@
 using System.Net.Mime;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;

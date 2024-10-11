@@ -11,11 +11,9 @@ namespace Elsa.MassTransit.Consumers;
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
 [UsedImplicitly]
-public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime, IStimulusSender stimulusSender) :
+public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime) :
     IConsumer<DispatchWorkflowDefinition>,
-    IConsumer<DispatchWorkflowInstance>,
-    IConsumer<DispatchTriggerWorkflows>,
-    IConsumer<DispatchResumeWorkflows>
+    IConsumer<DispatchWorkflowInstance>
 {
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
@@ -40,41 +38,6 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         };
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         await workflowClient.RunInstanceAsync(request, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task Consume(ConsumeContext<DispatchTriggerWorkflows> context)
-    {
-        var message = context.Message;
-        var cancellationToken = context.CancellationToken;
-        var options = new StimulusMetadata
-        {
-            CorrelationId = message.CorrelationId,
-            WorkflowInstanceId = message.WorkflowInstanceId,
-            ActivityInstanceId = message.ActivityInstanceId,
-            Input = message.Input,
-            Properties = message.Properties
-        };
-
-        var stimulus = message.BookmarkPayload;
-        await stimulusSender.SendAsync(message.ActivityTypeName, stimulus, options, cancellationToken);
-    }
-
-    /// <inheritdoc />
-    public async Task Consume(ConsumeContext<DispatchResumeWorkflows> context)
-    {
-        var message = context.Message;
-
-        var stimulusMetadata = new StimulusMetadata
-        {
-            CorrelationId = message.CorrelationId,
-            WorkflowInstanceId = message.WorkflowInstanceId,
-            Input = message.Input,
-            Properties = message.Properties
-        };
-
-        var stimulus = message.BookmarkPayload;
-        await stimulusSender.SendAsync(message.ActivityTypeName, stimulus, stimulusMetadata, context.CancellationToken);
     }
 
     private async Task DispatchNewWorkflowInstanceAsync(DispatchWorkflowDefinition message, CancellationToken cancellationToken)
@@ -118,13 +81,5 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         await workflowClient.RunInstanceAsync(request, cancellationToken);
-    }
-
-    private IDictionary<string, object>? DeserializeInput(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            return null;
-
-        return jsonSerializer.Deserialize<IDictionary<string, object>>(json);
     }
 }

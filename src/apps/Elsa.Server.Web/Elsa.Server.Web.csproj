@@ -54,10 +54,6 @@
         <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
-        <PackageReference Include="OpenTelemetry.AutoInstrumentation"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis"/>
     </ItemGroup>
 
     <ItemGroup>

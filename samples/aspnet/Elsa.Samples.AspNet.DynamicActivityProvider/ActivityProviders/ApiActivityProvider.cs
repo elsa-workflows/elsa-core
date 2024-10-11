@@ -5,7 +5,6 @@ using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Samples.AspNet.DynamicActivityProvider.Models;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.UIHints;

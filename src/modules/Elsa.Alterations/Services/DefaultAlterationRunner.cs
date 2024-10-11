@@ -4,7 +4,6 @@ using Elsa.Alterations.Core.Results;
 using Elsa.Alterations.Middleware.Workflows;
 using Elsa.Common;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Runtime;

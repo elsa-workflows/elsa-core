@@ -1,6 +1,5 @@
 using Elsa.Dsl.Contracts;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Dsl.Extensions;

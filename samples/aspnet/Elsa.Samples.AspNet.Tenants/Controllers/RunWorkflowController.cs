@@ -1,5 +1,5 @@
 using Elsa.Http;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Elsa.Samples.AspNet.Tenants;

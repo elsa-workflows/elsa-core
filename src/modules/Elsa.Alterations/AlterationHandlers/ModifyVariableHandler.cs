@@ -5,7 +5,6 @@ using Elsa.Alterations.Core.Contexts;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;

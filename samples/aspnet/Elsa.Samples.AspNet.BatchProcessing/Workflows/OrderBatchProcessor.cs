@@ -3,7 +3,6 @@ using Elsa.Samples.AspNet.BatchProcessing.Activities;
 using Elsa.Samples.AspNet.BatchProcessing.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Samples.AspNet.BatchProcessing.Workflows;
 

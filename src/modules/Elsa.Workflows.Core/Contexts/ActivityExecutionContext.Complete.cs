@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Signals;
 
 namespace Elsa.Workflows;

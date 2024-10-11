@@ -1,7 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ImplicitJoins.Workflows;
 

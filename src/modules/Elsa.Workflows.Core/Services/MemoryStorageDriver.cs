@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows;
 

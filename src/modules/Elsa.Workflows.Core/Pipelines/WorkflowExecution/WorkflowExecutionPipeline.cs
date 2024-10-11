@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Middleware.Workflows;
 
 namespace Elsa.Workflows.Pipelines.WorkflowExecution;

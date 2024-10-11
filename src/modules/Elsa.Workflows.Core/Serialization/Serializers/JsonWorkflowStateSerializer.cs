@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Elsa.Workflows.State;
@@ -34,7 +33,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version Serialize instead.")]
     public Task<string> SerializeAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Serialize(workflowState, cancellationToken));
+        return Task.FromResult(Serialize(workflowState));
     }
 
     /// <inheritdoc />
@@ -42,7 +41,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version SerializeToUtfBytes instead.")]
     public Task<byte[]> SerializeToUtfBytesAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(SerializeToUtfBytes(workflowState, cancellationToken));
+        return Task.FromResult(SerializeToUtfBytes(workflowState));
     }
 
     /// <inheritdoc />
@@ -50,7 +49,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version SerializeToElement instead.")]
     public Task<JsonElement> SerializeToElementAsync(WorkflowState workflowState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(SerializeToElement(workflowState, cancellationToken));
+        return Task.FromResult(SerializeToElement(workflowState));
     }
 
     /// <inheritdoc />
@@ -58,7 +57,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version Serialize instead.")]
     public Task<string> SerializeAsync(object workflowState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Serialize(workflowState, cancellationToken));
+        return Task.FromResult(Serialize(workflowState));
     }
 
     /// <inheritdoc />
@@ -66,7 +65,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<WorkflowState> DeserializeAsync(string serializedState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Deserialize(serializedState, cancellationToken));
+        return Task.FromResult(Deserialize(serializedState));
     }
 
     /// <inheritdoc />
@@ -74,7 +73,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<WorkflowState> DeserializeAsync(JsonElement serializedState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Deserialize(serializedState, cancellationToken));
+        return Task.FromResult(Deserialize(serializedState));
     }
 
     /// <inheritdoc />
@@ -82,7 +81,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     [Obsolete("Use the non-async version Deserialize instead.")]
     public Task<T> DeserializeAsync<T>(string serializedState, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(Deserialize<T>(serializedState, cancellationToken));
+        return Task.FromResult(Deserialize<T>(serializedState));
     }
 
     public string Serialize(WorkflowState workflowState)

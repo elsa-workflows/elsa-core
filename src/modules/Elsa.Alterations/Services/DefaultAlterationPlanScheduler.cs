@@ -3,7 +3,7 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Workflows;
 using Elsa.Common;
 using Elsa.Common.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;

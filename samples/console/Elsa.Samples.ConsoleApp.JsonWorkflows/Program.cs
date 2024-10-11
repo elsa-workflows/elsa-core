@@ -1,6 +1,6 @@
 ﻿using Elsa.Extensions;
 using Elsa.Testing.Shared;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 

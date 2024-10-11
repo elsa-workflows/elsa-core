@@ -1,4 +1,4 @@
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Middleware.Activities;
 

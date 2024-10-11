@@ -1,6 +1,6 @@
 ﻿using Elsa.Extensions;
 using Elsa.Samples.ConsoleApp.OutboundHttpRequests.Workflows;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -2,7 +2,6 @@ using Elsa.Http.Contracts;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Caching.Memory;

@@ -2,7 +2,6 @@ using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -148,13 +147,13 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
         
         if (model.ActivityExecutionRecords != null)
         {
-            var activityExecutionRecords = _safeSerializer.Deserialize<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value, cancellationToken);
+            var activityExecutionRecords = _safeSerializer.Deserialize<ICollection<ActivityExecutionRecord>>(model.ActivityExecutionRecords.Value);
             await _activityExecutionStore.SaveManyAsync(activityExecutionRecords, cancellationToken);
         }
         
         if (model.WorkflowExecutionLogRecords != null)
         {
-            var workflowExecutionLogRecords = _safeSerializer.Deserialize<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value, cancellationToken);
+            var workflowExecutionLogRecords = _safeSerializer.Deserialize<ICollection<WorkflowExecutionLogRecord>>(model.WorkflowExecutionLogRecords.Value);
             await _workflowExecutionLogStore.SaveManyAsync(workflowExecutionLogRecords, cancellationToken);
         }
     }

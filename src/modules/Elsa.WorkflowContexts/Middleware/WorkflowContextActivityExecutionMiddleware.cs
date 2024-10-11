@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using JetBrains.Annotations;
 

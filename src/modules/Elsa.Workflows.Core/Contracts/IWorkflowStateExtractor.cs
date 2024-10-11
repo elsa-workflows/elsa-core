@@ -1,6 +1,6 @@
 using Elsa.Workflows.State;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Extracts workflow state from a workflow execution context and vice versa.

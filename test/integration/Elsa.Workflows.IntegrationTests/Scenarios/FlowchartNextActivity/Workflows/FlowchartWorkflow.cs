@@ -1,7 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity.Activities;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity.Workflows;

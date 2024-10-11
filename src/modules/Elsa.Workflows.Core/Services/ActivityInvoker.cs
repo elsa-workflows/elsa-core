@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.Logging;
 

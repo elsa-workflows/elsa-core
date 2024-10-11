@@ -1,5 +1,5 @@
 using Elsa.Common;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
 namespace Elsa.Secrets.Management;
 
