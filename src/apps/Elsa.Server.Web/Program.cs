@@ -441,6 +441,10 @@ services
                 {
                     management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
                     if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                        management.UseEntityFrameworkCore(ef =>
+                            ef.UseSqlServer(sqlServerConnectionString)
+                            );
+                    else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
                         management.UseEntityFrameworkCore(ef => 
                             ef.UsePostgreSql(postgresConnectionString)
                             );
