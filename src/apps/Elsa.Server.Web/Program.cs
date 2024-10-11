@@ -21,6 +21,7 @@ using Elsa.MongoDb.Modules.Alterations;
 using Elsa.MongoDb.Modules.Identity;
 using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
+using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
