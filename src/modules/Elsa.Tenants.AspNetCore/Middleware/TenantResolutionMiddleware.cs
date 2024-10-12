@@ -8,7 +8,7 @@ namespace Elsa.Tenants.AspNetCore.Middleware;
 /// Middleware to initialize the tenant for each incoming HTTP request.
 /// </summary>
 [UsedImplicitly]
-public class TenantResolutionMiddleware(RequestDelegate next, ITenantAccessor tenantAccessor)
+public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactory tenantScopeFactory)
 {
     /// <summary>
     /// Invokes the middleware to ensure the tenant is initialized.
@@ -18,7 +18,8 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantAccessor te
     public async Task InvokeAsync(HttpContext context, ITenantResolverPipelineInvoker tenantResolverPipelineInvoker)
     {
         var tenant = await tenantResolverPipelineInvoker.InvokePipelineAsync();
-        tenantAccessor.CurrentTenant = tenant;
-        await next(context);
+
+        using (tenantScopeFactory.CreateScope(tenant)) 
+            await next(context);
     }
 }

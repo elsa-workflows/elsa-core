@@ -21,7 +21,6 @@ public abstract class TenantResolverBase : ITenantResolver
     /// <summary>
     /// Implement this method to resolve the tenant.
     /// </summary>
-    /// <returns></returns>
     protected virtual TenantResolverResult Resolve(TenantResolverContext context)
     {
         return Unresolved();

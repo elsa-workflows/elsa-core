@@ -220,10 +220,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             tenant = await tenantsProvider.FindByIdAsync(workflow.Identity.TenantId, cancellationToken);
         }
 
-        using (tenantScopeFactory.Create(tenant))
+        using (tenantScopeFactory.CreateScope(tenant))
         {
-            if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+            if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+            {
+                httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
                 return;
+            }
 
             var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
             var result = await ExecuteWithinTimeoutAsync(async ct =>
@@ -374,15 +377,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
 
-        if (!(bookmarkPayload.Authorize ?? false))
-            return false;
+        if (bookmarkPayload.Authorize ?? false)
+            return true;
 
-        var authorized = await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
-
-        if (!authorized)
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-
-        return !authorized;
+        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)

@@ -7,5 +7,5 @@ public interface ITenantScopeFactory
     /// </summary>
     /// <param name="tenant">The tenant.</param>
     /// <returns>The tenant scope.</returns>
-    TenantScope Create(Tenant? tenant);
+    TenantScope CreateScope(Tenant? tenant);
 }

@@ -45,8 +45,9 @@ public class DefaultAccessTokenIssuer(IRoleProvider roleProvider, ISystemClock s
             claims.Add(tenantIdClaim);
         }
 
-        var accessTokenExpiresAt = systemClock.UtcNow.Add(accessTokenLifetime);
-        var refreshTokenExpiresAt = systemClock.UtcNow.Add(refreshTokenLifetime);
+        var now = systemClock.UtcNow;
+        var accessTokenExpiresAt = now.Add(accessTokenLifetime);
+        var refreshTokenExpiresAt = now.Add(refreshTokenLifetime);
         var accessToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, accessTokenExpiresAt.UtcDateTime));
         var refreshToken = JwtBearer.CreateToken(options => ConfigureTokenOptions(options, refreshTokenExpiresAt.UtcDateTime));
 
