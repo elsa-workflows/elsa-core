@@ -1,6 +1,7 @@
 ﻿using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Tenants.AspNetCore.Middleware;
 
@@ -19,7 +20,20 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
     {
         var tenant = await tenantResolverPipelineInvoker.InvokePipelineAsync();
 
-        using (tenantScopeFactory.CreateScope(tenant)) 
+        if (tenant != null)
+        {
+            var tenantPrefix = $"/{tenant.Id}";
+
+            if (context.Request.Path.StartsWithSegments(tenantPrefix))
+            {
+                context.Request.PathBase = tenantPrefix;
+                context.Request.Path = context.Request.Path.Value![tenantPrefix.Length..];
+            }
+        }
+
+        using (tenantScopeFactory.CreateScope(tenant))
+        {
             await next(context);
+        }
     }
 }

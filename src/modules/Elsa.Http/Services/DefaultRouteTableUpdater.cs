@@ -1,38 +1,35 @@
 using Elsa.Extensions;
 using Elsa.Http.Contracts;
+using Elsa.Http.Options;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class DefaultRouteTableUpdater : IRouteTableUpdater
+public class DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore triggerStore, IBookmarkStore bookmarkStore, IOptions<HttpActivityOptions> options)
+    : IRouteTableUpdater
 {
-    private readonly IRouteTable _routeTable;
-    private readonly ITriggerStore _triggerStore;
-    private readonly IBookmarkStore _bookmarkStore;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DefaultRouteTableUpdater"/> class.
-    /// </summary>
-    public DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore triggerStore, IBookmarkStore bookmarkStore)
-    {
-        _routeTable = routeTable;
-        _triggerStore = triggerStore;
-        _bookmarkStore = bookmarkStore;
-    }
-
     /// <inheritdoc />
     public async Task UpdateAsync(CancellationToken cancellationToken = default)
     {
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
-        var triggerFilter = new TriggerFilter { Name = bookmarkName };
-        var bookmarkFilter = new BookmarkFilter { ActivityTypeName = bookmarkName};
-        var triggers = (await _triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
-        var bookmarks = (await _bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).ToList();
+        var triggerFilter = new TriggerFilter
+        {
+            Name = bookmarkName,
+            TenantAgnostic = true
+        };
+        var bookmarkFilter = new BookmarkFilter
+        {
+            ActivityTypeName = bookmarkName,
+            TenantAgnostic = true
+        };
+        var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
+        var bookmarks = (await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).ToList();
 
-        _routeTable.AddRoutes(triggers);
-        _routeTable.AddRoutes(bookmarks);
+        routeTable.AddRoutes(triggers, options);
+        routeTable.AddRoutes(bookmarks);
     }
 }

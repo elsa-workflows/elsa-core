@@ -50,8 +50,7 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
         var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
         var filter = new WorkflowDefinitionFilter
         {
-            Id = workflowDefinitionVersionId,
-            TenantAgnostic = true
+            Id = workflowDefinitionVersionId
         };
         return await workflowDefinitionService.FindWorkflowGraphAsync(filter, cancellationToken);
     }

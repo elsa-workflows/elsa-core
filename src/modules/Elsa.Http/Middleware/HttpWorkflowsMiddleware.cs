@@ -366,7 +366,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
 
-        if (bookmarkPayload.Authorize ?? false)
+        if (bookmarkPayload.Authorize == false)
             return true;
 
         return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
