@@ -60,9 +60,4 @@
     <ItemGroup>
         <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="App_Data\" />
-    </ItemGroup>
-
 </Project>
