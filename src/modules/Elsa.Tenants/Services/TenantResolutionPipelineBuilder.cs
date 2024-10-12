@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Tenants.Services;
 
 /// <inheritdoc />
-public class TenantResolutionPipelineBuilder : ITenantResolutionPipelineBuilder
+public class TenantResolverPipelineBuilder : ITenantResolverPipelineBuilder
 {
     private readonly ISet<Type> _resolvers = new HashSet<Type>();
 
@@ -12,36 +12,36 @@ public class TenantResolutionPipelineBuilder : ITenantResolutionPipelineBuilder
     public IEnumerable<Type> Resolvers => _resolvers.ToList().AsReadOnly();
 
     /// <inheritdoc />
-    public ITenantResolutionPipelineBuilder Append<T>() where T : ITenantResolutionStrategy
+    public ITenantResolverPipelineBuilder Append<T>() where T : ITenantResolver
     {
         var strategyType = typeof(T);
         return Append(strategyType);
     }
 
     /// <inheritdoc />
-    public ITenantResolutionPipelineBuilder Append(Type resolverType)
+    public ITenantResolverPipelineBuilder Append(Type resolverType)
     {
-        if (typeof(ITenantResolutionStrategy).IsAssignableFrom(resolverType) == false)
-            throw new ArgumentException($"The type {resolverType} does not implement {nameof(ITenantResolutionStrategy)}.");
+        if (typeof(ITenantResolver).IsAssignableFrom(resolverType) == false)
+            throw new ArgumentException($"The type {resolverType} does not implement {nameof(ITenantResolver)}.");
 
         _resolvers.Add(resolverType);
         return this;
     }
 
     /// <inheritdoc />
-    public ITenantResolutionPipelineBuilder Clear()
+    public ITenantResolverPipelineBuilder Clear()
     {
         _resolvers.Clear();
         return this;
     }
 
     /// <inheritdoc />
-    public IEnumerable<ITenantResolutionStrategy> Build(IServiceProvider serviceProvider)
+    public IEnumerable<ITenantResolver> Build(IServiceProvider serviceProvider)
     {
         return _resolvers
             .Reverse()
             .Select(t => ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, t))
-            .Cast<ITenantResolutionStrategy>()
+            .Cast<ITenantResolver>()
             .ToList();
     }
 }

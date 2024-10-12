@@ -12,7 +12,7 @@ public class TenantFilter
     /// <summary>
     /// Gets or sets the tenant ID to filter for.
     /// </summary>
-    public string? TenantId { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// Applies the filter to the specified queryable.
@@ -21,7 +21,7 @@ public class TenantFilter
     /// <returns>The filtered queryable.</returns>
     public IQueryable<Tenant> Apply(IQueryable<Tenant> queryable)
     {
-        if (TenantId != null) queryable = queryable.Where(x => x.TenantId == TenantId);
+        if (Id != null) queryable = queryable.Where(x => x.Id == Id);
 
         return queryable;
     }

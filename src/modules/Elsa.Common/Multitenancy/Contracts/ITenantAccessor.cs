@@ -6,5 +6,5 @@ public interface ITenantAccessor
     /// Get the current <see cref="Tenant"/>.
     /// </summary>
     /// <returns>Current tenant or null.</returns>
-    Tenant? GetTenant();
+    Tenant? CurrentTenant { get; set; }
 }

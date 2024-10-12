@@ -13,7 +13,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Http.MultiTenancy;
+using Elsa.Http.Multitenancy;
 using Elsa.Identity.Multitenancy;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
@@ -63,7 +63,7 @@ const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 const bool useAgents = true;
 const bool useSecrets = true;
 const bool useAzureServiceBus = false;
@@ -457,10 +457,8 @@ services
                 tenants.TenantsOptions = options =>
                 {
                     configuration.GetSection("Multitenancy").Bind(options);
-                    options.TenantResolutionPipelineBuilder
-                        .Append<HttpContextTenantResolver>()
-                        .Append<ClaimsTenantResolver>()
-                        .Append<CurrentUserTenantResolver>();
+                    options.TenantResolverPipelineBuilder
+                        .Append<ClaimsTenantResolver>();
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
@@ -499,6 +497,10 @@ app.UseRouting();
 // Security.
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Multitenancy.
+if(useMultitenancy)
+    app.UseTenants();
 
 // Elsa API endpoints for designer.
 var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;

@@ -7,14 +7,14 @@ namespace Elsa.Common.Multitenancy;
 /// This class provides the necessary information for resolving a tenant, including a cancellation token
 /// to allow for cancelling the resolution process.
 /// </remarks>
-public class TenantResolutionContext
+public class TenantResolverContext
 {
     private readonly IDictionary<string, Tenant> _tenantsDictionary;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TenantResolutionContext"/> class.
+    /// Initializes a new instance of the <see cref="TenantResolverContext"/> class.
     /// </summary>
-    public TenantResolutionContext(IDictionary<string, Tenant> tenants, CancellationToken cancellationToken)
+    public TenantResolverContext(IDictionary<string, Tenant> tenants, CancellationToken cancellationToken)
     {
         CancellationToken = cancellationToken;
         _tenantsDictionary = tenants;

@@ -13,4 +13,9 @@ public class Tenant : Entity
     /// Gets or sets the name.
     /// </summary>
     public string Name { get; set; } = default!;
+    
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    IDictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
 }

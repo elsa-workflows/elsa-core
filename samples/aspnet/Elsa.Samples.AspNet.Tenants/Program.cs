@@ -47,7 +47,7 @@ builder.Services.AddElsa(elsa =>
         tenantsFeature.TenantsOptions = options =>
         {
             multiTenancySection.Bind(options);
-            options.TenantResolutionPipelineBuilder.Append<CurrentUserTenantResolver>();
+            options.TenantResolverPipelineBuilder.Append<CurrentUserTenantResolver>();
         };
         tenantsFeature.UseConfigurationBasedTenantsProvider();
     });
@@ -74,6 +74,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 app.UseAuthorization();
+app.UseTenants();
 app.MapControllers();
 app.UseWorkflows();
 app.UseWorkflowsApi();

@@ -8,10 +8,10 @@ namespace Elsa.Identity.Multitenancy;
 /// <summary>
 /// Resolves the tenant from the current user.
 /// </summary>
-public class CurrentUserTenantResolver(IUserProvider userProvider, IHttpContextAccessor httpContextAccessor) : TenantResolutionStrategyBase
+public class CurrentUserTenantResolver(IUserProvider userProvider, IHttpContextAccessor httpContextAccessor) : TenantResolverBase
 {
     /// <inheritdoc />
-    protected override async ValueTask<TenantResolutionResult> ResolveAsync(TenantResolutionContext context)
+    protected override async Task<TenantResolverResult> ResolveAsync(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
 

@@ -8,10 +8,10 @@ namespace Elsa.Identity.Multitenancy;
 /// <summary>
 /// Resolves the tenant from the user's claims.
 /// </summary>
-public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<IdentityTokenOptions> options) : TenantResolutionStrategyBase
+public class ClaimsTenantResolver(IHttpContextAccessor httpContextAccessor, IOptions<IdentityTokenOptions> options) : TenantResolverBase
 {
     /// <inheritdoc />
-    protected override TenantResolutionResult Resolve(TenantResolutionContext context)
+    protected override TenantResolverResult Resolve(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
 

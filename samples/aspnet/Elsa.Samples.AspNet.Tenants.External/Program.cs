@@ -41,7 +41,7 @@ builder.Services.AddElsa(elsa =>
         tenantsFeature.TenantsOptions = options =>
         {
             tenantsSection.Bind(options);
-            options.TenantResolutionPipelineBuilder.Append<ClaimsTenantResolver>();
+            options.TenantResolverPipelineBuilder.Append<ClaimsTenantResolver>();
         };
         tenantsFeature.UseConfigurationBasedTenantsProvider();
     });
@@ -128,6 +128,7 @@ var app = builder.Build();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
+app.UseTenants();
 app.MapControllers();
 app.UseCors();
 app.UseWorkflows();

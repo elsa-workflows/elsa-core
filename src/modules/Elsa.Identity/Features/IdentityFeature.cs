@@ -178,8 +178,8 @@ public class IdentityFeature : FeatureBase
 
         // Tenant resolution strategies.
         Services
-            .AddScoped<ITenantResolutionStrategy, ClaimsTenantResolver>()
-            .AddScoped<ITenantResolutionStrategy, CurrentUserTenantResolver>();
+            .AddScoped<ITenantResolver, ClaimsTenantResolver>()
+            .AddScoped<ITenantResolver, CurrentUserTenantResolver>();
 
         // Services.
         Services

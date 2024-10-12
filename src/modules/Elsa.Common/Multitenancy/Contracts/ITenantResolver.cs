@@ -1,13 +1,13 @@
 ﻿namespace Elsa.Common.Multitenancy;
 
 /// <summary>
-/// Provides access to the current tenant ID.
+/// A strategy for resolving the current tenant. This is called the tenant initializer.
 /// </summary>
 public interface ITenantResolver
 {
     /// <summary>
-    /// Get the current <see cref="Tenant"/>.
+    /// Attempts to resolve the current tenant.
     /// </summary>
     /// <returns>Current tenant or null.</returns>
-    Task<Tenant?> GetTenantAsync(CancellationToken cancellationToken = default);
+    Task<TenantResolverResult> ResolveAsync(TenantResolverContext context);
 }

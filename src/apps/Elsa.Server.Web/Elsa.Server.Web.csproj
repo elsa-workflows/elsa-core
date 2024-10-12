@@ -13,6 +13,7 @@
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj"/>

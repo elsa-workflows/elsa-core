@@ -1,13 +1,16 @@
 namespace Elsa.Common.Multitenancy;
 
+/// <summary>
+/// Default implementation of <see cref="ITenantAccessor"/>.
+/// </summary>
 public class DefaultTenantAccessor : ITenantAccessor
 {
-    public Tenant? GetTenant()
+    private static readonly AsyncLocal<Tenant?> CurrentTenantField = new();
+
+    /// <inheritdoc/>
+    public Tenant? CurrentTenant
     {
-        // Similar to how the HttpContextAccessor is implemented:
-        
-        return null;
-        
-        
+        get => CurrentTenantField.Value;
+        set => CurrentTenantField.Value = value;
     }
 }

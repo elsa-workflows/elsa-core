@@ -30,7 +30,7 @@ namespace Elsa.Workflows.Features;
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(DefaultFormattersFeature))]
-[DependsOn(typeof(TenantResolverFeature))]
+[DependsOn(typeof(MultitenancyFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />

@@ -3,6 +3,7 @@ using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,12 +60,18 @@ public class AutoUpdateTests : AppComponentTest
 
         var filter = new TriggerFilter
         {
-            Hash = hash
+            Hash = hash,
+            TenantAgnostic = true
         };
         var hashedFilter = _hasher.Hash(filter);
         Assert.True(_cache.TryGetValue($"IEnumerable`1:{hashedFilter}", out _));
 
-        var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowVersionCacheKey(ParentDefinitionVersionId);
+        var parentWorkflowDefinitionFilter = new WorkflowDefinitionFilter
+        {
+            Id = ParentDefinitionVersionId,
+            TenantAgnostic = true
+        };
+        var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowFilterCacheKey(parentWorkflowDefinitionFilter);
         Assert.True(_cache.TryGetValue(parentVersionCacheKey, out _));
 
         // Set change tokens.
