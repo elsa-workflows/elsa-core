@@ -145,7 +145,7 @@
     <PackageVersion Include="Oracle.EntityFrameworkCore" Version="7.21.13" />
     <PackageVersion Include="Polly" Version="7.2.4" />
     <PackageVersion Include="Pomelo.EntityFrameworkCore.MySql" Version="7.0.0" />
-    <PackageVersion Include="System.Text.Json" Version="8.0.5" />
+    <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="8.0.1" />
@@ -153,6 +153,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="8.0.10" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.10" />
     <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="8.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />
