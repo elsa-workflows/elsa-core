@@ -49,7 +49,9 @@ public class MongoDbFeature : FeatureBase
     {
         Services.Configure(Options);
 
-        Services.AddScoped(sp => CreateDatabase(sp, ConnectionString));
+        var mongoUrl = new MongoUrl(ConnectionString);
+        Services.AddSingleton(sp => CreateMongoClient(sp, mongoUrl));
+        Services.AddScoped(sp => CreateDatabase(sp, mongoUrl));
         
         Services.TryAddScoped<DefaultNamingStrategy>();
         Services.AddScoped(CollectionNamingStrategy);
@@ -95,11 +97,10 @@ public class MongoDbFeature : FeatureBase
        }
     }
     
-    private static IMongoDatabase CreateDatabase(IServiceProvider sp, string connectionString)
+    private static IMongoClient CreateMongoClient(IServiceProvider sp, MongoUrl mongoUrl)
     {
         var options = sp.GetRequiredService<IOptions<MongoDbOptions>>().Value;
 
-        var mongoUrl = new MongoUrl(connectionString);
         var settings = MongoClientSettings.FromUrl(mongoUrl);
 
         settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
@@ -111,8 +112,13 @@ public class MongoDbFeature : FeatureBase
         settings.RetryWrites = options.RetryWrites;
         settings.SslSettings = options.SslSettings;
 
-        var mongoClient = new MongoClient(settings);
-        return mongoClient.GetDatabase(mongoUrl.DatabaseName);
+        return new MongoClient(settings);
+    }
+
+    private static IMongoDatabase CreateDatabase(IServiceProvider sp, MongoUrl mongoUrl)
+    {
+        var client = sp.GetRequiredService<IMongoClient>();
+        return client.GetDatabase(mongoUrl.DatabaseName);
     }
 
     private static string GetApplicationName(MongoClientSettings settings) =>
