@@ -42,7 +42,7 @@
 
     <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
     <ItemGroup>
-        <PackageReference Include="System.Text.Json" VersionOverride="8.0.4" />
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
 </Project>
