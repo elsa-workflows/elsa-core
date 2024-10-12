@@ -1,5 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.MongoDb.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
 
@@ -24,8 +25,7 @@ public abstract class PersistenceFeatureBase : FeatureBase
     {
         Services
             .AddScoped<MongoDbStore<TDocument>>()
-            .AddScoped<TStore>()
-            ;
+            .AddScoped<TStore>();
     }
 
     /// <summary>
@@ -35,8 +35,13 @@ public abstract class PersistenceFeatureBase : FeatureBase
     /// <typeparam name="TDocument">The document type of the collection.</typeparam>
     protected void AddCollection<TDocument>(string collectionName) where TDocument : class
     {
-        Services.AddScoped(
-            sp => sp.GetRequiredService<IMongoDatabase>()
-                .GetCollection<TDocument>(collectionName));
+        Services.AddScoped(sp =>
+        {
+            var collectionNamingStrategy = sp.GetRequiredService<ICollectionNamingStrategy>();
+            var formattedCollectionName = collectionNamingStrategy.GetCollectionName(collectionName);
+
+            return sp.GetRequiredService<IMongoDatabase>()
+                .GetCollection<TDocument>(formattedCollectionName);
+        });
     }
 }
