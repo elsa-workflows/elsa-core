@@ -210,33 +210,22 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var serviceProvider = httpContext.RequestServices;
         var cancellationToken = httpContext.RequestAborted;
-        var tenantScopeFactory = serviceProvider.GetRequiredService<ITenantScopeFactory>();
         var workflow = workflowGraph.Workflow;
-        Tenant? tenant = null;
 
-        if (workflow.Identity.TenantId != null)
+        if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
         {
-            var tenantsProvider = serviceProvider.GetRequiredService<ITenantsProvider>();
-            tenant = await tenantsProvider.FindByIdAsync(workflow.Identity.TenantId, cancellationToken);
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            return;
         }
 
-        using (tenantScopeFactory.CreateScope(tenant))
+        var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
+        var result = await ExecuteWithinTimeoutAsync(async ct =>
         {
-            if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
-            {
-                httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                return;
-            }
-
-            var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
-            var result = await ExecuteWithinTimeoutAsync(async ct =>
-            {
-                if (workflowInstance == null)
-                    return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
-                return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
-            }, bookmarkPayload.RequestTimeout, httpContext);
-            await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
-        }
+            if (workflowInstance == null)
+                return await workflowRunner.RunAsync(workflowGraph, workflowOptions, ct);
+            return await workflowRunner.RunAsync(workflow, workflowInstance.WorkflowState, workflowOptions, ct);
+        }, bookmarkPayload.RequestTimeout, httpContext);
+        await HandleWorkflowFaultAsync(serviceProvider, httpContext, result, cancellationToken);
     }
 
     private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
