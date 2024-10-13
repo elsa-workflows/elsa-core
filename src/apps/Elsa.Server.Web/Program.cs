@@ -463,6 +463,8 @@ services
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
+
+            elsa.UseTenantsHttpRouting();
         }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));

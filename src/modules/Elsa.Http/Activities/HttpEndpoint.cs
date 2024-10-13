@@ -486,7 +486,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
         var requestSizeLimit = RequestSizeLimit.GetOrDefault(context);
 
         return methods
-            .Select(x => new HttpEndpointBookmarkStimulus(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
+            .Select(x => new HttpEndpointBookmarkPayload(normalizedRoute, x.ToLowerInvariant(), authorize, policy, requestTimeout, requestSizeLimit))
             .Cast<object>()
             .ToArray();
     }

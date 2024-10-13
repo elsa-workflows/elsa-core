@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
+using Elsa.Http.Contexts;
 using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using Elsa.Workflows;
@@ -13,7 +14,12 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore triggerStore, IBookmarkStore bookmarkStore, IOptions<HttpActivityOptions> options)
+public class DefaultRouteTableUpdater(
+    IRouteTable routeTable, 
+    ITriggerStore triggerStore, 
+    IBookmarkStore bookmarkStore, 
+    IHttpEndpointRoutesProvider httpEndpointRoutesProvider, 
+    IOptions<HttpActivityOptions> options)
     : IRouteTableUpdater
 {
     /// <inheritdoc />
@@ -43,19 +49,8 @@ public class DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore trig
 
         foreach (var trigger in httpEndpointTriggers)
         {
-            var path = trigger.GetPayload<HttpEndpointBookmarkStimulus>().Path;
-
-            if (string.IsNullOrWhiteSpace(path))
-                continue;
-
-            var route = trigger.TenantId != null
-                ? new[]
-                {
-                    "{tenantId}", options.Value.BasePath.ToString(), path
-                }.JoinSegments()
-                : path;
-
-            routeTable.Add(route);
+            var payload = trigger.GetPayload<HttpEndpointBookmarkPayload>();
+            await AddRoutesAsync(payload, trigger.TenantId, cancellationToken);
         }
     }
 
@@ -65,16 +60,8 @@ public class DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore trig
 
         foreach (var bookmark in httpEndpointBookmarks)
         {
-            var path = bookmark.GetPayload<HttpEndpointBookmarkStimulus>().Path;
-
-            if (string.IsNullOrWhiteSpace(path))
-                continue;
-
-            var tenantPath = new[]
-            {
-                "{tenantId}", options.Value.BasePath.ToString(), path
-            }.JoinSegments();
-            routeTable.Add(tenantPath);
+            var payload = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+            await AddRoutesAsync(payload, bookmark.TenantId, cancellationToken);
         }
     }
 
@@ -84,29 +71,30 @@ public class DefaultRouteTableUpdater(IRouteTable routeTable, ITriggerStore trig
 
         foreach (var bookmark in httpEndpointBookmarks)
         {
-            var path = bookmark.GetPayload<HttpEndpointBookmarkStimulus>().Path;
-
-            if (string.IsNullOrWhiteSpace(path))
-                continue;
-
-            var tenantPath = new[]
-            {
-                "{tenantId}", options.Value.BasePath.ToString(), path
-            }.JoinSegments();
-            routeTable.Add(tenantPath);
+            var payload = bookmark.GetPayload<HttpEndpointBookmarkPayload>();
+            await AddRoutesAsync(payload, workflowExecutionContext.Workflow.Identity.TenantId, cancellationToken);
         }
     }
 
     public void RemoveRoutes(IEnumerable<StoredTrigger> triggers)
     {
-        var paths = Filter(triggers).Select(x => x.GetPayload<HttpEndpointBookmarkStimulus>().Path).ToList();
+        var paths = Filter(triggers).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
         routeTable.RemoveRange(paths);
     }
 
     public void RemoveRoutes(IEnumerable<Bookmark> bookmarks)
     {
-        var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkStimulus>().Path).ToList();
+        var paths = Filter(bookmarks).Select(x => x.GetPayload<HttpEndpointBookmarkPayload>().Path).ToList();
         routeTable.RemoveRange(paths);
+    }
+
+    private async Task AddRoutesAsync(HttpEndpointBookmarkPayload payload, string? tenantId, CancellationToken cancellationToken)
+    {
+        var context = new HttpEndpointRouteProviderContext(payload, tenantId, cancellationToken);
+        var routes = await httpEndpointRoutesProvider.GetRoutesAsync(context);
+            
+        foreach (var route in routes)
+            routeTable.Add(route);
     }
 
     private static IEnumerable<StoredTrigger> Filter(IEnumerable<StoredTrigger> triggers)

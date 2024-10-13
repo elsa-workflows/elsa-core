@@ -4,4 +4,4 @@ using JetBrains.Annotations;
 namespace Elsa.Http.Contexts;
 
 [UsedImplicitly]
-public record HttpEndpointRouteProviderContext(HttpEndpointBookmarkStimulus Stimulus, string TenantId, CancellationToken CancellationToken);
+public record HttpEndpointRouteProviderContext(HttpEndpointBookmarkPayload Payload, string? TenantId, CancellationToken CancellationToken);

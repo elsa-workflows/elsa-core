@@ -22,7 +22,7 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
 
         if (tenant != null)
         {
-            var tenantPrefix = $"/{tenant.Id}";
+            var tenantPrefix = $"/{tenant.GetRoutePrefix()}";
 
             if (context.Request.Path.StartsWithSegments(tenantPrefix))
             {

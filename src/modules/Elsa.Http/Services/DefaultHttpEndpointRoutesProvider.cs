@@ -22,7 +22,7 @@ public class DefaultHttpEndpointRoutesProvider(IOptions<HttpActivityOptions> opt
     private IEnumerable<string> GetRoutes(HttpEndpointRouteProviderContext context)
     {
         var routes = new List<string>();
-        var path = context.Stimulus.Path;
+        var path = context.Payload.Path;
 
         if (string.IsNullOrWhiteSpace(path))
             return routes;

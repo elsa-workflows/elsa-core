@@ -35,7 +35,7 @@ public class HttpWorkflowsCacheManager(ICacheManager cache, IHasher bookmarkHash
     /// <inheritdoc />
     public string ComputeBookmarkHash(string path, string method)
     {
-        var bookmarkPayload = new HttpEndpointBookmarkStimulus(path, method);
+        var bookmarkPayload = new HttpEndpointBookmarkPayload(path, method);
         var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         return bookmarkHasher.Hash(activityTypeName, bookmarkPayload);
     }
