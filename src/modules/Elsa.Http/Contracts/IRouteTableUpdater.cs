@@ -1,10 +1,8 @@
-using Elsa.Http.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
-using Microsoft.Extensions.Options;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Updates the route table based on current workflow triggers and bookmarks.

@@ -1,5 +1,4 @@
-﻿using Elsa.Http.Contracts;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Http.HostedServices;

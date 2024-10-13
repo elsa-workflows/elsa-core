@@ -4,8 +4,8 @@ namespace Elsa.Tenants.AspNetCore;
 
 public static class TenantExtensions
 {
-    public static string GetRoutePrefix(this Tenant tenant)
+    public static string? GetRoutePrefix(this Tenant tenant)
     {
-        return tenant.Configuration.GetSection("Http")["Prefix"] ?? tenant.Id;
+        return tenant.Configuration.GetSection("Http")["Prefix"];
     }
 }

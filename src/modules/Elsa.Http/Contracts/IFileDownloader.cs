@@ -1,6 +1,6 @@
 using Elsa.Http.Options;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// A general-purpose downloader of files from a given URL.

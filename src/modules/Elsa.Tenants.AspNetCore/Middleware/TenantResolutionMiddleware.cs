@@ -22,12 +22,16 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
 
         if (tenant != null)
         {
-            var tenantPrefix = $"/{tenant.GetRoutePrefix()}";
+            var tenantPrefix = tenant.GetRoutePrefix();
 
-            if (context.Request.Path.StartsWithSegments(tenantPrefix))
+            if (!string.IsNullOrWhiteSpace(tenantPrefix))
             {
-                context.Request.PathBase = tenantPrefix;
-                context.Request.Path = context.Request.Path.Value![tenantPrefix.Length..];
+                var tenantPath = $"/{tenantPrefix}";
+                if (context.Request.Path.StartsWithSegments(tenantPath))
+                {
+                    context.Request.PathBase = tenantPath;
+                    context.Request.Path = context.Request.Path.Value![tenantPath.Length..];
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-using Elsa.Http.Contracts;
+using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Helpers;

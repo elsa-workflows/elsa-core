@@ -4,12 +4,10 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Contracts;
 using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
@@ -116,7 +114,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         Module.UseWorkflowManagement(management =>
         {
             management.AddVariableTypes([
-                typeof(RouteData),
+                typeof(HttpRouteData),
                 typeof(HttpRequest),
                 typeof(HttpResponse),
                 typeof(HttpResponseMessage),
@@ -229,7 +227,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             options.AddTypeAlias<HttpResponse>("HttpResponse");
             options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
             options.AddTypeAlias<HttpHeaders>("HttpHeaders");
-            options.AddTypeAlias<RouteData>("RouteData");
+            options.AddTypeAlias<HttpRouteData>("RouteData");
             options.AddTypeAlias<IFormFile>("FormFile");
             options.AddTypeAlias<IFormFile[]>("FormFile[]");
             options.AddTypeAlias<HttpFile>("HttpFile");

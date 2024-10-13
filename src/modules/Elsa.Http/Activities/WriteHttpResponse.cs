@@ -2,7 +2,6 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Models;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;

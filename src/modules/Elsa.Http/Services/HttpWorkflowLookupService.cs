@@ -1,5 +1,3 @@
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;

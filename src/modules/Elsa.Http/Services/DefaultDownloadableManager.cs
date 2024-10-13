@@ -1,6 +1,4 @@
 using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 
 namespace Elsa.Http.Services;

@@ -1,5 +1,3 @@
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 

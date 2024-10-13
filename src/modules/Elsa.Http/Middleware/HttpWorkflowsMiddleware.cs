@@ -1,7 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -56,7 +54,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             path = path[basePath.Length..];
         }
 
-        var matchingPath = GetMatchingRoute(serviceProvider, path);
+        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
@@ -249,23 +247,23 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         return result;
     }
 
-    private string GetMatchingRoute(IServiceProvider serviceProvider, string path)
+    private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
     {
         var routeMatcher = serviceProvider.GetRequiredService<IRouteMatcher>();
         var routeTable = serviceProvider.GetRequiredService<IRouteTable>();
 
         var matchingRouteQuery =
-            from route in routeTable
-            let routeValues = routeMatcher.Match(route, path)
+            from routeData in routeTable
+            let routeValues = routeMatcher.Match(routeData.Route, path)
             where routeValues != null
             select new
             {
-                route,
+                route = routeData,
                 routeValues
             };
 
         var matchingRoute = matchingRouteQuery.FirstOrDefault();
-        var routeTemplate = matchingRoute?.route ?? path;
+        var routeTemplate = matchingRoute?.route ?? new HttpRouteData(path);
 
         return routeTemplate;
     }

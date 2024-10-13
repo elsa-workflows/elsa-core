@@ -1,6 +1,4 @@
-using Elsa.Http.Models;
-
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a service that looks up HTTP workflows and triggers.

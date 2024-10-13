@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
@@ -13,21 +12,22 @@ namespace Elsa.Http.Services;
 [UsedImplicitly]
 public class DefaultHttpEndpointRoutesProvider(IOptions<HttpActivityOptions> options) : IHttpEndpointRoutesProvider
 {
-    public Task<IEnumerable<string>> GetRoutesAsync(HttpEndpointRouteProviderContext context)
+    public Task<IEnumerable<HttpRouteData>> GetRoutesAsync(HttpEndpointRouteProviderContext context)
     {
         var routes = GetRoutes(context);
         return Task.FromResult(routes);
     }
     
-    private IEnumerable<string> GetRoutes(HttpEndpointRouteProviderContext context)
+    private IEnumerable<HttpRouteData> GetRoutes(HttpEndpointRouteProviderContext context)
     {
-        var routes = new List<string>();
+        var routes = new List<HttpRouteData>();
         var path = context.Payload.Path;
 
         if (string.IsNullOrWhiteSpace(path))
             return routes;
 
-        routes.Add(new[]{options.Value.BasePath.ToString(), path}.JoinSegments());
+        var routeData = new HttpRouteData(new[]{options.Value.BasePath.ToString(), path}.JoinSegments());
+        routes.Add(routeData);
         return routes;
     }
 }

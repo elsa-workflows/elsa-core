@@ -1,7 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Http.Contracts;
 using Elsa.Http.Handlers;
 using Elsa.Http.Services;
 using Elsa.Workflows.Management.Features;

@@ -1,7 +1,7 @@
 using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Provides context about the faulted workflow.

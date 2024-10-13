@@ -1,5 +1,4 @@
-﻿using Elsa.Http.Contracts;
-using Elsa.Http.Options;
+﻿using Elsa.Http.Options;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
 using JetBrains.Annotations;
