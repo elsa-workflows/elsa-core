@@ -27,6 +27,7 @@ public class MultitenantHttpRoutingFeature(IModule module) : FeatureBase(module)
         Services
             .AddScoped<ITenantResolver, RoutePrefixTenantResolver>()
             .AddScoped<ITenantResolver, HeaderTenantResolver>()
+            .AddScoped<ITenantResolver, HostTenantResolver>()
             .AddScoped<TenantPrefixHttpEndpointRoutesProvider>();
     }
 }

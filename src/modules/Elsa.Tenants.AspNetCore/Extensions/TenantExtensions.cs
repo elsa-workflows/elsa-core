@@ -8,4 +8,9 @@ public static class TenantExtensions
     {
         return tenant.Configuration.GetSection("Http")["Prefix"];
     }
+    
+    public static string? GetHost(this Tenant tenant)
+    {
+        return tenant.Configuration.GetSection("Http")["Host"];
+    }
 }

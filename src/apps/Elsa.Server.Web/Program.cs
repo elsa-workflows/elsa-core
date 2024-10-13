@@ -459,6 +459,7 @@ services
                     configuration.GetSection("Multitenancy").Bind(options);
                     options.TenantResolverPipelineBuilder
                         .Append<RoutePrefixTenantResolver>()
+                        .Append<HostTenantResolver>()
                         .Append<HeaderTenantResolver>()
                         .Append<ClaimsTenantResolver>();
                 };
