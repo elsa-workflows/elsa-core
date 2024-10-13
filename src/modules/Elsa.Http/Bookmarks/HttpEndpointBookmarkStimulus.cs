@@ -6,23 +6,23 @@ namespace Elsa.Http.Bookmarks;
 /// <summary>
 /// A bookmark used by the <see cref="HttpEndpoint"/> activity.
 /// </summary>
-public record HttpEndpointBookmarkPayload
+public record HttpEndpointBookmarkStimulus
 {
     private readonly string _path = default!;
     private readonly string _method = default!;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="HttpEndpointBookmarkPayload"/> class.
+    /// Initializes a new instance of the <see cref="HttpEndpointBookmarkStimulus"/> class.
     /// </summary>
     [JsonConstructor]
-    public HttpEndpointBookmarkPayload()
+    public HttpEndpointBookmarkStimulus()
     {
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="HttpEndpointBookmarkPayload"/> class.
+    /// Initializes a new instance of the <see cref="HttpEndpointBookmarkStimulus"/> class.
     /// </summary>
-    public HttpEndpointBookmarkPayload(string path, string method, bool? authorize = default, string? policy = default, TimeSpan? requestTimeout = default, long? requestSizeLimit = default)
+    public HttpEndpointBookmarkStimulus(string path, string method, bool? authorize = default, string? policy = default, TimeSpan? requestTimeout = default, long? requestSizeLimit = default)
     {
         Path = path;
         Method = method;

@@ -1,8 +1,8 @@
-﻿using Elsa.Extensions;
-using Elsa.Http.Contracts;
+﻿using Elsa.Http.Contracts;
 using Elsa.Http.Options;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Notifications;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Handlers;
@@ -10,24 +10,23 @@ namespace Elsa.Http.Handlers;
 /// <summary>
 /// A handler that updates the route table when workflow triggers and bookmarks are indexed.
 /// </summary>
-public class UpdateRouteTable(IRouteTable routeTable, IOptions<HttpActivityOptions> options) :
+[UsedImplicitly]
+public class UpdateRouteTable(IRouteTableUpdater routeTableUpdater, IOptions<HttpActivityOptions> options) :
     INotificationHandler<WorkflowTriggersIndexed>,
     INotificationHandler<WorkflowBookmarksIndexed>
 {
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowTriggersIndexed notification, CancellationToken cancellationToken)
     {
-        routeTable.RemoveRoutes(notification.IndexedWorkflowTriggers.RemovedTriggers);
-        routeTable.AddRoutes(notification.IndexedWorkflowTriggers.AddedTriggers, options);
-        routeTable.AddRoutes(notification.IndexedWorkflowTriggers.UnchangedTriggers, options);
-        return Task.CompletedTask;
+        routeTableUpdater.RemoveRoutes(notification.IndexedWorkflowTriggers.RemovedTriggers);
+        await routeTableUpdater.AddRoutesAsync(notification.IndexedWorkflowTriggers.AddedTriggers, cancellationToken);
+        await routeTableUpdater.AddRoutesAsync(notification.IndexedWorkflowTriggers.UnchangedTriggers, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowBookmarksIndexed notification, CancellationToken cancellationToken)
     {
-        routeTable.RemoveRoutes(notification.IndexedWorkflowBookmarks.RemovedBookmarks);
-        routeTable.AddRoutes(notification.IndexedWorkflowBookmarks.AddedBookmarks, notification.IndexedWorkflowBookmarks.TenantId);
-        return Task.CompletedTask;
+        routeTableUpdater.RemoveRoutes(notification.IndexedWorkflowBookmarks.RemovedBookmarks);
+        await routeTableUpdater.AddRoutesAsync(notification.IndexedWorkflowBookmarks.AddedBookmarks, notification.IndexedWorkflowBookmarks.WorkflowExecutionContext, cancellationToken);
     }
 }

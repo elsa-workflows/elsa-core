@@ -10,8 +10,7 @@ namespace Elsa.Workflows.Runtime.Notifications;
 /// <param name="RemovedBookmarks">The bookmarks that were removed.</param>
 /// <param name="UnchangedBookmarks">The bookmarks that were unchanged.</param>
 public record IndexedWorkflowBookmarks(
-    string? TenantId,
-    string InstanceId,
+    WorkflowExecutionContext WorkflowExecutionContext,
     ICollection<Bookmark> AddedBookmarks, 
     ICollection<Bookmark> RemovedBookmarks, 
     ICollection<Bookmark> UnchangedBookmarks);

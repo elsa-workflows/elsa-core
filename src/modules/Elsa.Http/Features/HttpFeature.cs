@@ -32,12 +32,9 @@ namespace Elsa.Http.Features;
 /// Installs services related to HTTP services and activities.
 /// </summary>
 [DependsOn(typeof(HttpJavaScriptFeature))]
-public class HttpFeature : FeatureBase
+public class HttpFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public HttpFeature(IModule module) : base(module)
-    {
-    }
+    private Func<IServiceProvider, IHttpEndpointRoutesProvider> _httpEndpointRouteProvider = sp => sp.GetRequiredService<DefaultHttpEndpointRoutesProvider>();
 
     /// <summary>
     /// A delegate to configure <see cref="HttpActivityOptions"/>.
@@ -102,13 +99,23 @@ public class HttpFeature : FeatureBase
         typeof(QueryStringHttpWorkflowInstanceIdSelector)
     };
 
+    public HttpFeature WithHttpEndpointRoutesProvider<T>() where T : IHttpEndpointRoutesProvider
+    {
+        return WithHttpEndpointRoutesProvider(sp => sp.GetRequiredService<T>());
+    }
+
+    public HttpFeature WithHttpEndpointRoutesProvider(Func<IServiceProvider, IHttpEndpointRoutesProvider> httpEndpointRouteProvider)
+    {
+        _httpEndpointRouteProvider = httpEndpointRouteProvider;
+        return this;
+    }
+
     /// <inheritdoc />
     public override void Configure()
     {
         Module.UseWorkflowManagement(management =>
         {
-            management.AddVariableTypes(new[]
-            {
+            management.AddVariableTypes([
                 typeof(RouteData),
                 typeof(HttpRequest),
                 typeof(HttpResponse),
@@ -117,7 +124,7 @@ public class HttpFeature : FeatureBase
                 typeof(IFormFile),
                 typeof(HttpFile),
                 typeof(Downloadable)
-            }, "HTTP");
+            ], "HTTP");
 
             management.AddActivitiesFrom<HttpFeature>();
         });
@@ -182,8 +189,10 @@ public class HttpFeature : FeatureBase
             .AddScoped<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddScoped<AllowAnonymousHttpEndpointAuthorizationHandler>()
             .AddScoped<DefaultHttpEndpointFaultHandler>()
+            .AddScoped<DefaultHttpEndpointRoutesProvider>()
             .AddScoped(HttpEndpointWorkflowFaultHandler)
             .AddScoped(HttpEndpointAuthorizationHandler)
+            .AddScoped(_httpEndpointRouteProvider)
 
             // Downloadable content handlers.
             .AddScoped<IDownloadableManager, DefaultDownloadableManager>()

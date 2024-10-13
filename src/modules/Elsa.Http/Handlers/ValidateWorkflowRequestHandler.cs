@@ -33,18 +33,18 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
     public async Task<ValidateWorkflowResponse> HandleAsync(ValidateWorkflowRequest request, CancellationToken cancellationToken)
     {
         var workflow = request.Workflow;
-        var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
+        var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkStimulus).ToList();
         var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)), TenantAgnostic = true }, cancellationToken)).ToList();
         var validationErrors = new List<WorkflowValidationError>();
 
         foreach (var httpEndpointTrigger in httpEndpointTriggers)
         {
-            var triggerPayload = httpEndpointTrigger.GetPayload<HttpEndpointBookmarkPayload>();
+            var triggerPayload = httpEndpointTrigger.GetPayload<HttpEndpointBookmarkStimulus>();
 
             var otherWorkflowsWithSamePath = publishedWorkflowsTriggers
                 .Where(x =>
                     x.WorkflowDefinitionId != workflow.Identity.DefinitionId &&
-                    x.Payload is HttpEndpointBookmarkPayload payload &&
+                    x.Payload is HttpEndpointBookmarkStimulus payload &&
                     payload.Path == triggerPayload.Path &&
                     payload.Method == triggerPayload.Method)
                 .ToList();

@@ -2,7 +2,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Models;
 using JetBrains.Annotations;
 
-namespace Elsa.Tenants.Extensions;
+namespace Elsa.Tenants;
 
 [UsedImplicitly]
 public static class TenantsProviderExtensions

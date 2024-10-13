@@ -119,7 +119,7 @@ public class InvalidateHttpWorkflowsCache(
     {
         foreach (var trigger in triggers)
         {
-            if (trigger.Payload is HttpEndpointBookmarkPayload httpPayload)
+            if (trigger.Payload is HttpEndpointBookmarkStimulus httpPayload)
             {
                 var hash = httpWorkflowsCacheManager.ComputeBookmarkHash(httpPayload.Path, httpPayload.Method);
                 await httpWorkflowsCacheManager.EvictTriggerAsync(hash, cancellationToken);

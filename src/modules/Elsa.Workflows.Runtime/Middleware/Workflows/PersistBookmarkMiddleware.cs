@@ -20,7 +20,7 @@ public class PersistBookmarkMiddleware : WorkflowExecutionMiddleware
     public override async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
         await Next(context);
-        var bookmarkRequest = new UpdateBookmarksRequest(context.Workflow.Identity.TenantId, context.Id, context.BookmarksDiff, context.CorrelationId);
+        var bookmarkRequest = new UpdateBookmarksRequest(context, context.BookmarksDiff, context.CorrelationId);
         await _bookmarksPersister.PersistBookmarksAsync(bookmarkRequest);
     }
 }
