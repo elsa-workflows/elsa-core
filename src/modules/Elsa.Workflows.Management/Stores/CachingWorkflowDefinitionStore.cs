@@ -1,5 +1,6 @@
 using Elsa.Caching;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
@@ -10,7 +11,7 @@ namespace Elsa.Workflows.Management.Stores;
 /// <summary>
 /// A decorator for <see cref="IWorkflowDefinitionStore"/> that caches workflow definitions.
 /// </summary>
-public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedStore, ICacheManager cacheManager, IHasher hasher) : IWorkflowDefinitionStore
+public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedStore, ICacheManager cacheManager, IHasher hasher, ITenantAccessor tenantAccessor) : IWorkflowDefinitionStore
 {
     private static readonly string CacheInvalidationTokenKey = typeof(CachingWorkflowDefinitionStore).FullName!;
 
@@ -136,7 +137,8 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
 
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
-        var internalKey = $"{typeof(T).Name}:{key}";
+        var tenantId = tenantAccessor.CurrentTenant?.Id;
+        var internalKey = $"{tenantId}:{typeof(T).Name}:{key}";
         return await cacheManager.GetOrCreateAsync(internalKey, async entry =>
         {
             var invalidationRequestToken = cacheManager.GetToken(CacheInvalidationTokenKey);

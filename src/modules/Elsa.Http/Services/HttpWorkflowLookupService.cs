@@ -37,8 +37,7 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
     {
         var triggerFilter = new TriggerFilter
         {
-            Hash = bookmarkHash,
-            TenantAgnostic = true
+            Hash = bookmarkHash
         };
         return await triggerStore.FindManyAsync(triggerFilter, cancellationToken);
     }
