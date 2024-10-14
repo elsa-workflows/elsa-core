@@ -6,7 +6,6 @@ using Elsa.Expressions.Models;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
@@ -276,8 +275,6 @@ public static partial class ActivityExecutionContextExtensions
     /// </summary>
     public static async ValueTask ScheduleOutcomesAsync(this ActivityExecutionContext context, params string[] outcomes)
     {
-        var cancellationToken = context.CancellationToken;
-
         // Record the outcomes, if any.
         context.JournalData["Outcomes"] = outcomes;
 
@@ -297,7 +294,7 @@ public static partial class ActivityExecutionContextExtensions
             if (outputValue == null!)
                 continue;
 
-            var serializedOutputValue = await serializer.SerializeAsync(outputValue, cancellationToken);
+            var serializedOutputValue = serializer.Serialize(outputValue);
             context.JournalData[outputName] = serializedOutputValue;
         }
 

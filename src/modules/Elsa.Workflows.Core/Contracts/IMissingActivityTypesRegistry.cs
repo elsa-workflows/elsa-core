@@ -1,6 +1,6 @@
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A registry for activity types that are missing from the workflow definition.

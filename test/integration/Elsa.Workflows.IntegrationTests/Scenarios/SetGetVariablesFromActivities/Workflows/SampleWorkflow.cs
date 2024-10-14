@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IntegrationTests.Scenarios.SetGetVariablesFromActivities.Activities;
 using Elsa.Workflows.Memory;
 

@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 
 namespace Elsa.Secrets.Management;
 

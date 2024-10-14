@@ -13,8 +13,8 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Http.MultiTenancy;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Http.Multitenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -32,7 +32,6 @@ using Elsa.Workflows.Api;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
@@ -64,9 +63,10 @@ const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 const bool useAgents = true;
 const bool useSecrets = true;
+const bool useAzureServiceBus = false;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -373,6 +373,9 @@ services
             elsa.UseRealTimeWorkflows();
         }
 
+        if (useAzureServiceBus)
+            elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
+
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>
@@ -463,10 +466,8 @@ services
                 tenants.TenantsOptions = options =>
                 {
                     configuration.GetSection("Multitenancy").Bind(options);
-                    options.TenantResolutionPipelineBuilder
-                        .Append<HttpContextTenantResolver>()
-                        .Append<ClaimsTenantResolver>()
-                        .Append<CurrentUserTenantResolver>();
+                    options.TenantResolverPipelineBuilder
+                        .Append<ClaimsTenantResolver>();
                 };
                 tenants.UseConfigurationBasedTenantsProvider();
             });
@@ -505,6 +506,10 @@ app.UseRouting();
 // Security.
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Multitenancy.
+if(useMultitenancy)
+    app.UseTenants();
 
 // Elsa API endpoints for designer.
 var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;

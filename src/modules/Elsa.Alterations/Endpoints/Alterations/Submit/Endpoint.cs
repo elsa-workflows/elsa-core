@@ -1,8 +1,8 @@
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
-using Elsa.Common.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Common;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Alterations.Endpoints.Alterations.Submit;

@@ -1,5 +1,5 @@
 using Elsa.Labels.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using FastEndpoints;
 using JetBrains.Annotations;
 

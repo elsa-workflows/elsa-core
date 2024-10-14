@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Workflows.Models;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Stores all activity descriptors available to the system.

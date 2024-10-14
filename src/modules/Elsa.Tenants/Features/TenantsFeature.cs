@@ -1,10 +1,8 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Features;
+using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Tenants.Options;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Resolvers;
 using Elsa.Tenants.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,25 +28,16 @@ public class TenantsFeature : FeatureBase
     /// </summary>
     public Func<IServiceProvider, ITenantsProvider> TenantsProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
 
-    public override void Configure()
-    {
-        Module.Configure<TenantResolverFeature>(feature => feature.TenantResolver = sp => sp.GetRequiredService<PipelinedTenantResolver>());
-    }
-
     /// <inheritdoc />
     public override void Apply()
     {
         Services.Configure(TenantsOptions);
 
         Services
-            .AddTransient<PipelinedTenantResolver>()
             .AddSingleton<ConfigurationTenantsProvider>()
-            .AddSingleton<IAmbientTenantAccessor, AmbientTenantAccessor>()
-            .AddScoped(TenantsProvider)
-            .AddHttpContextAccessor();
-
-        Services
-            .AddScoped<ITenantResolutionStrategy, AmbientTenantResolver>();
+            .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
+            .AddScoped<ITenantResolver, DefaultTenantResolver>()
+            .AddScoped(TenantsProvider);
     }
 
     /// <summary>

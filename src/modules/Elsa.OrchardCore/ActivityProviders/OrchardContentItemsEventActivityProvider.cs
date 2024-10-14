@@ -1,6 +1,6 @@
 using Elsa.OrchardCore.Activities;
 using Elsa.OrchardCore.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Humanizer;
 using JetBrains.Annotations;

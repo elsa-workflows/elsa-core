@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Models;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;

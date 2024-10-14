@@ -1,6 +1,4 @@
-﻿using Elsa.Workflows.Contracts;
-
-namespace Elsa.Workflows.Services;
+﻿namespace Elsa.Workflows.Services;
 
 /// <summary>
 /// Generates logger state for the specified <see cref="ActivityExecutionContext"/>.

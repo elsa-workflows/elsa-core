@@ -1,5 +1,4 @@
 using System.Reflection;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 

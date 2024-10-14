@@ -1,5 +1,3 @@
-﻿version: '3.7'
-
 services:
   postgres:
     image: postgres:latest
@@ -12,24 +10,13 @@ services:
       - postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-        
-  cockroachdb:
-    image: cockroachdb/cockroach:v22.1.0
-    command: start-single-node --insecure
-    ports:
-      - "26257:26257" # CockroachDB SQL port
-      - "8080:8080"   # CockroachDB UI port
-    volumes:
-      - cockroachdb-data:/cockroach/cockroach-data
-    environment:
-      - COCKROACH_DATABASE=elsa
-    
+  
   rabbitmq:
     image: "rabbitmq:3-management"
     ports:
       - "15672:15672"
       - "5672:5672"
-        
+  
   redis:
     image: redis:latest
     ports:
@@ -44,7 +31,7 @@ services:
       - postgres
       - rabbitmq
       - redis
-      - datadog-agent
+      - otel-collector
     environment:
       DD_AGENT_HOST: datadog-agent
       DD_ENV: development
@@ -52,6 +39,21 @@ services:
       DD_TRACE_OTEL_ENABLED: true
       DD_SERVICE: "Elsa Server"
       DD_VERSION: "3.3.0"
+      # OpenTelemetry environment variables
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"  # Point to OpenTelemetry Collector
+      OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"  # Use gRPC for OTLP
+      OTEL_TRACES_EXPORTER: "otlp"
+      OTEL_METRICS_EXPORTER: "otlp"
+      OTEL_LOGS_EXPORTER: "otpl"
+      OTEL_RESOURCE_ATTRIBUTES: "service.name=elsa-server-local,service.version=3.2.1-blueberry,deployment.environment=development"
+      OTEL_DOTNET_AUTO_TRACES_ADDITIONAL_SOURCES: "Elsa.Workflows"
+      OTEL_DOTNET_AUTO_INSTRUMENTATION_ENABLED: "true"
+      OTEL_LOG_LEVEL: "debug"
+      OTEL_DOTNET_AUTO_RESOURCE_DETECTOR_ENABLED: "true"
+      OTEL_DOTNET_AUTO_LOGS_CONSOLE_EXPORTER_ENABLED: "true"
+      OTEL_DOTNET_AUTO_METRICS_CONSOLE_EXPORTER_ENABLED: "true"
+      OTEL_DOTNET_AUTO_TRACES_CONSOLE_EXPORTER_ENABLED: "true"
+      
       ASPNETCORE_ENVIRONMENT: Development
       PYTHONNET_PYDLL: /opt/homebrew/Cellar/python@3.11/3.11.6_1/Frameworks/Python.framework/Versions/3.11/bin/python3.11
       PYTHONNET_RUNTIME: coreclr
@@ -61,7 +63,7 @@ services:
       DISTRIBUTEDLOCKPROVIDER: "Postgres"
     ports:
       - "13000:8080"
-        
+  
   elsa-studio:
     pull_policy: always
     build:
@@ -73,24 +75,41 @@ services:
     ports:
       - "14000:8080"
   
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: [ "--config", "/etc/otel-collector-config.yaml", "--feature-gates", "-component.UseLocalHostAsDefaultHost" ]
+    environment:
+      DD_API_KEY: "secret api key"
+      DD_SITE: "datadoghq.eu"
+    ports:
+      - "13133:13133"
+      - "4317:4317"
+      - "4318:4318"
+  
   datadog-agent:
-    image: datadog/agent:7
+    image: datadog/agent:latest
     environment:
       DD_API_KEY: "<HIDDEN>"
       DD_SITE: "datadoghq.eu"
+      DD_HOSTNAME: "otel-collector"
       DD_LOGS_ENABLED: "true"
+      DD_OTLP_CONFIG_LOGS_ENABLED: "true"
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: "true"
       DD_APM_ENABLED: "true"
       DD_APM_NON_LOCAL_TRAFFIC: "true"
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT: 0.0.0.0:4317  # The Datadog Agent expects traces from OpenTelemetry Collector
+      DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT: 0.0.0.0:4318
+
+      # Service autodiscovery
       DD_AC_INCLUDE: "name:postgres,name:rabbitmq,name:redis,name:elsa-server"
       DD_AC_EXCLUDE: "name:datadog-agent"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /proc/:/host/proc/:ro
-      - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+
     ports:
       - "8126:8126"
+      - "14317:4317"
+      - "14318:4318"
 
 volumes:
   postgres-data:
-  cockroachdb-data:

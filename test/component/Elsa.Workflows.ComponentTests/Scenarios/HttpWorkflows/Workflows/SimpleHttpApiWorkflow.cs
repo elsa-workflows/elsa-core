@@ -1,6 +1,5 @@
 using Elsa.Http;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows.Workflows;

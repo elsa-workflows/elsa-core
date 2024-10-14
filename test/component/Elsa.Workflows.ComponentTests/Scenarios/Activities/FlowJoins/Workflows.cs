@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities.Flowchart.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.FlowJoins;
 

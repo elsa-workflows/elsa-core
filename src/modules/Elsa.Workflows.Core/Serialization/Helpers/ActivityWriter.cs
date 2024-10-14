@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Helpers;

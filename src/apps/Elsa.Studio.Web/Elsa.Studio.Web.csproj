@@ -17,6 +17,10 @@
     </ItemGroup>
     
     <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
+    </ItemGroup>
+
+    <ItemGroup>
         <Folder Include="wwwroot\" />
     </ItemGroup>
 

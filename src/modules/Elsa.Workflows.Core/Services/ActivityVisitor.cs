@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using ActivityNode = Elsa.Workflows.Models.ActivityNode;
 
 namespace Elsa.Workflows;

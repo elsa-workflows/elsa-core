@@ -62,8 +62,8 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
         }
     }
 
-    private IDictionary<string, object> GetVariablesDictionary(ActivityExecutionContextState context)
+    private VariablesDictionary GetVariablesDictionary(ActivityExecutionContextState context)
     {
-        return context.Properties.GetOrAdd(WorkflowStorageDriver.VariablesDictionaryStateKey, () => new Dictionary<string, object>());
+        return context.Properties.GetOrAdd(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey, () => new VariablesDictionary());
     }
 }

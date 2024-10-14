@@ -13,6 +13,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
+    </ItemGroup>
+    
+    <ItemGroup>
         <ProjectReference Include="..\Elsa.EntityFrameworkCore\Elsa.EntityFrameworkCore.csproj" />
     </ItemGroup>
 

@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows;
@@ -14,6 +13,8 @@ public class WorkflowInstanceStorageDriver : IStorageDriver
 {
     /// The key used to store the variables in the workflow state.
     public const string VariablesDictionaryStateKey = "Variables";
+
+    public double Priority => 5;
 
     /// <inheritdoc />
     public ValueTask WriteAsync(string id, object value, StorageDriverContext context)

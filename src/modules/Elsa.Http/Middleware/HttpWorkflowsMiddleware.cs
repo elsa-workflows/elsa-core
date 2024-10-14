@@ -16,7 +16,10 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
+using Elsa.Common.Multitenancy;
+using Elsa.Tenants;
+using Elsa.Tenants.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
@@ -148,7 +151,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         {
             Hash = bookmarkHash,
             WorkflowInstanceId = workflowInstanceId,
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            TenantAgnostic = true
         };
         return await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken);
     }
@@ -208,8 +212,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         var cancellationToken = httpContext.RequestAborted;
         var workflow = workflowGraph.Workflow;
 
-        if (await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+        if (!await AuthorizeAsync(serviceProvider, httpContext, workflow, bookmarkPayload, cancellationToken))
+        {
+            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             return;
+        }
 
         var workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
         var result = await ExecuteWithinTimeoutAsync(async ct =>
@@ -359,15 +366,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
 
-        if (!(bookmarkPayload.Authorize ?? false))
-            return false;
+        if (bookmarkPayload.Authorize ?? false)
+            return true;
 
-        var authorized = await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
-
-        if (!authorized)
-            httpContext.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-
-        return !authorized;
+        return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));
     }
 
     private string ComputeBookmarkHash(IServiceProvider serviceProvider, string path, string method)

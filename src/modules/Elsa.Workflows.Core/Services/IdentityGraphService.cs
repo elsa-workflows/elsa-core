@@ -1,26 +1,14 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Humanizer;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class IdentityGraphService : IIdentityGraphService
+public class IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistryLookupService activityRegistryLookup, ILogger<IdentityGraphService> logger) : IIdentityGraphService
 {
-    private readonly IActivityVisitor _activityVisitor;
-    private readonly IActivityRegistryLookupService _activityRegistryLookup;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public IdentityGraphService(IActivityVisitor activityVisitor, IActivityRegistryLookupService activityRegistryLookup)
-    {
-        _activityVisitor = activityVisitor;
-        _activityRegistryLookup = activityRegistryLookup;
-    }
-
     /// <inheritdoc />
     public async Task AssignIdentitiesAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
@@ -30,7 +18,7 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignIdentitiesAsync(IActivity root, CancellationToken cancellationToken = default)
     {
-        var graph = await _activityVisitor.VisitAsync(root, cancellationToken);
+        var graph = await activityVisitor.VisitAsync(root, cancellationToken);
         await AssignIdentitiesAsync(graph);
     }
 
@@ -56,7 +44,14 @@ public class IdentityGraphService : IIdentityGraphService
     /// <inheritdoc />
     public async Task AssignInputOutputsAsync(IActivity activity)
     {
-        var activityDescriptor = await _activityRegistryLookup.FindAsync(activity.Type, activity.Version) ?? throw new Exception("Activity descriptor not found");
+        var activityDescriptor = await activityRegistryLookup.FindAsync(activity.Type, activity.Version);
+        
+        if (activityDescriptor == null!)
+        {
+            logger.LogWarning("Activity descriptor not found for activity type {ActivityType}. Skipping identity assignment", activity.Type);
+            return;
+        }
+        
         var inputDictionary = activityDescriptor.GetWrappedInputProperties(activity); 
 
         foreach (var (inputName, input) in inputDictionary)

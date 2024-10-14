@@ -1,5 +1,5 @@
 using Elsa.Dsl.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
 namespace Elsa.Dsl.Contracts;
 

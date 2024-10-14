@@ -1,7 +1,7 @@
 using Elsa.Agents.Activities.ActivityProviders;
 using Elsa.Agents.Persistence.Notifications;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Activities.Handlers;

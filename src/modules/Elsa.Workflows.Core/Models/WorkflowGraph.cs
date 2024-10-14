@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.Models;
 

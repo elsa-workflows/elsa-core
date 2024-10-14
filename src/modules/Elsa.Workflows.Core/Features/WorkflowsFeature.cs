@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
@@ -8,7 +8,6 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
@@ -31,7 +30,7 @@ namespace Elsa.Workflows.Features;
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(DefaultFormattersFeature))]
-[DependsOn(typeof(TenantResolverFeature))]
+[DependsOn(typeof(MultitenancyFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />

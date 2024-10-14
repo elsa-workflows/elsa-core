@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.State;
 using ProtoJson = Elsa.Workflows.Runtime.ProtoActor.ProtoBuf.Json;
 

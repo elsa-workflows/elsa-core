@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common.Multitenancy;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -11,14 +11,14 @@ using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
 using Elsa.Http.HostedServices;
 using Elsa.Http.Models;
-using Elsa.Http.MultiTenancy;
+using Elsa.Http.Multitenancy;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
 using Elsa.Http.UIHints;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Management.Requests;
 using Elsa.Workflows.Management.Responses;
 using FluentStorage;
@@ -210,8 +210,7 @@ public class HttpFeature : FeatureBase
         Services.AddHttpClient<IFileDownloader, HttpClientFileDownloader>();
         
         // Tenant resolvers.
-        Services.AddScoped<ITenantResolutionStrategy, HttpContextTenantResolver>();
-        Services.AddScoped<ITenantResolutionStrategy, RoutePrefixTenantResolver>();
+        Services.AddScoped<ITenantResolver, RoutePrefixTenantResolver>();
 
         // Add selectors.
         foreach (var httpCorrelationIdSelectorType in HttpCorrelationIdSelectorTypes)

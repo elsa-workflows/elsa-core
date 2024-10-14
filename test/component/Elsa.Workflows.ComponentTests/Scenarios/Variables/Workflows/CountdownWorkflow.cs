@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Scenarios.Variables.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Variables.Workflows;
 
