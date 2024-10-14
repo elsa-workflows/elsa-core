@@ -1,6 +1,4 @@
-using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 
 namespace Elsa.Workflows.Runtime.ProtoActor.Mappers;

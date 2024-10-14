@@ -301,8 +301,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integration
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OrchardCore", "src\modules\Elsa.OrchardCore\Elsa.OrchardCore.csproj", "{B0460856-7E6D-4B1E-B243-8E20662FC32E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.OrchardCoreIntegration", "samples\aspnet\Elsa.Samples.AspNet.OrchardCoreIntegration\Elsa.Samples.AspNet.OrchardCoreIntegration.csproj", "{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{50470834-4CD8-479A-8B58-0A1869BA5D37}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Core", "src\modules\Elsa.Agents.Core\Elsa.Agents.Core.csproj", "{5BD671F0-9603-4C2F-8364-54B02986EAA2}"

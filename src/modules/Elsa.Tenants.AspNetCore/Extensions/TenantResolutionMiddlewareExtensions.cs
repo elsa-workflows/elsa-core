@@ -1,8 +1,5 @@
-using Elsa.Common.Multitenancy;
-using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.AspNetCore.Middleware;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.AspNetCore.Builder;

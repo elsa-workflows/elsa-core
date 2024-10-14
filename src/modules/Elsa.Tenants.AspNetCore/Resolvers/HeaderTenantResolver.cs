@@ -6,7 +6,6 @@ namespace Elsa.Tenants.AspNetCore;
 /// <summary>
 /// Resolves the tenant based on the header in the request.
 /// </summary>
-/// <param name="httpContextAccessor"></param>
 public class HeaderTenantResolver(IHttpContextAccessor httpContextAccessor) : TenantResolverBase
 {
     protected override TenantResolverResult Resolve(TenantResolverContext context)

@@ -1,6 +1,5 @@
 using Elsa.Extensions;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
-using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using JetBrains.Annotations;
 

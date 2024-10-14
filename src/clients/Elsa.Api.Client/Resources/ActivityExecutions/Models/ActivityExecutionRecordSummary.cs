@@ -1,5 +1,3 @@
-using System.Linq.Expressions;
-using Elsa.Api.Client.Resources.WorkflowInstances.Models;
 using Elsa.Api.Client.Shared.Models;
 
 namespace Elsa.Api.Client.Resources.ActivityExecutions.Models;

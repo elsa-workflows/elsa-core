@@ -7,7 +7,6 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
-using HttpHeaders = Elsa.Http.HttpHeaders;
 
 namespace Elsa.Http;
 

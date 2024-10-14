@@ -17,7 +17,7 @@ public class DefaultHttpEndpointRoutesProvider(IOptions<HttpActivityOptions> opt
         var routes = GetRoutes(context);
         return Task.FromResult(routes);
     }
-    
+
     private IEnumerable<HttpRouteData> GetRoutes(HttpEndpointRouteProviderContext context)
     {
         var routes = new List<HttpRouteData>();
@@ -26,7 +26,10 @@ public class DefaultHttpEndpointRoutesProvider(IOptions<HttpActivityOptions> opt
         if (string.IsNullOrWhiteSpace(path))
             return routes;
 
-        var routeData = new HttpRouteData(new[]{options.Value.BasePath.ToString(), path}.JoinSegments());
+        var routeData = new HttpRouteData(new[]
+        {
+            options.Value.BasePath.ToString(), path
+        }.JoinSegments());
         routes.Add(routeData);
         return routes;
     }

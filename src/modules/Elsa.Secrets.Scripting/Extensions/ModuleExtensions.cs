@@ -1,5 +1,4 @@
 using Elsa.Features.Services;
-using Elsa.Secrets.Management.Features;
 using Elsa.Secrets.Scripting.Features;
 
 // ReSharper disable once CheckNamespace

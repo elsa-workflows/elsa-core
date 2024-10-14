@@ -1,7 +1,6 @@
 using Elsa.Webhooks.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
-using Humanizer;
 using WebhooksCore;
 
 namespace Elsa.Webhooks.ActivityProviders;

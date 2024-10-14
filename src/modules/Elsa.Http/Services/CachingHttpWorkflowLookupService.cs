@@ -18,7 +18,8 @@ public class CachingHttpWorkflowLookupService(
     {
         var tenant = tenantAccessor.CurrentTenant;
         var tenantId = tenant?.Id;
-        var key = $"{tenantId}:http-workflow:{bookmarkHash}";
+        var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
+        var key = $"{tenantIdPrefix}http-workflow:{bookmarkHash}";
         var cache = cacheManager.Cache;
         return await cache.GetOrCreateAsync(key, async entry =>
         {

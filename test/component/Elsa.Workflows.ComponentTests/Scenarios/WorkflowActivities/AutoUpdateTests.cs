@@ -60,16 +60,14 @@ public class AutoUpdateTests : AppComponentTest
 
         var filter = new TriggerFilter
         {
-            Hash = hash,
-            TenantAgnostic = true
+            Hash = hash
         };
         var hashedFilter = _hasher.Hash(filter);
         Assert.True(_cache.TryGetValue($"IEnumerable`1:{hashedFilter}", out _));
 
         var parentWorkflowDefinitionFilter = new WorkflowDefinitionFilter
         {
-            Id = ParentDefinitionVersionId,
-            TenantAgnostic = true
+            Id = ParentDefinitionVersionId
         };
         var parentVersionCacheKey = _definitionCacheManager.CreateWorkflowFilterCacheKey(parentWorkflowDefinitionFilter);
         Assert.True(_cache.TryGetValue(parentVersionCacheKey, out _));

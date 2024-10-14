@@ -5,7 +5,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Humanizer;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Agents.Activities.ActivityProviders;
 

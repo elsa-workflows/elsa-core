@@ -1,7 +1,6 @@
 ﻿using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Tenants.AspNetCore.Middleware;
 
