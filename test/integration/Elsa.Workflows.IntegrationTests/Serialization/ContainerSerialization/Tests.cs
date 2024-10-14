@@ -6,7 +6,6 @@ using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.ContainerSerialization;

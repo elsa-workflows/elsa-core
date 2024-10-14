@@ -19,7 +19,24 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
     {
         var tenant = await tenantResolverPipelineInvoker.InvokePipelineAsync();
 
-        using (tenantScopeFactory.CreateScope(tenant)) 
+        if (tenant != null)
+        {
+            var tenantPrefix = tenant.GetRoutePrefix();
+
+            if (!string.IsNullOrWhiteSpace(tenantPrefix))
+            {
+                var tenantPath = $"/{tenantPrefix}";
+                if (context.Request.Path.StartsWithSegments(tenantPath))
+                {
+                    context.Request.PathBase = tenantPath;
+                    context.Request.Path = context.Request.Path.Value![tenantPath.Length..];
+                }
+            }
+        }
+
+        using (tenantScopeFactory.CreateScope(tenant))
+        {
             await next(context);
+        }
     }
 }

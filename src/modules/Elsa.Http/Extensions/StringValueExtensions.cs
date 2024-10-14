@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Primitives;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
 /// <summary>

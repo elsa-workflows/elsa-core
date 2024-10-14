@@ -1,6 +1,6 @@
 using System.Text.Json.Nodes;
 using Elsa.Extensions;
-using Elsa.Http.Models;
+using Elsa.Http;
 using Elsa.OrchardCore.Client;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;

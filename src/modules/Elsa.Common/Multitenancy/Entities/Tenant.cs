@@ -1,5 +1,6 @@
 ﻿using Elsa.Common.Entities;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Configuration;
 
 namespace Elsa.Common.Multitenancy;
 
@@ -13,9 +14,9 @@ public class Tenant : Entity
     /// Gets or sets the name.
     /// </summary>
     public string Name { get; set; } = default!;
-    
+
     /// <summary>
     /// Gets or sets the configuration.
     /// </summary>
-    IDictionary<string, object> Configuration { get; set; } = new Dictionary<string, object>();
+    public IConfiguration Configuration { get; set; } = new ConfigurationBuilder().Build();
 }

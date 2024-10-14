@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
-using Elsa.Studio.Models;
 
 // Build the host.
 var builder = WebAssemblyHostBuilder.CreateDefault(args);

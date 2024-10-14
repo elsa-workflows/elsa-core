@@ -1,5 +1,4 @@
 ﻿using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
 
 namespace Elsa.Http.Parsers;
 

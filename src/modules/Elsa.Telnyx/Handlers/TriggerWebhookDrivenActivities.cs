@@ -8,7 +8,6 @@ using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
 
 namespace Elsa.Telnyx.Handlers;

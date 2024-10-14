@@ -1,7 +1,5 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Http.Options;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -17,8 +15,6 @@ using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common.Multitenancy;
-using Elsa.Tenants;
-using Elsa.Tenants.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -33,7 +29,7 @@ namespace Elsa.Http.Middleware;
 /// An ASP.NET middleware component that tries to match the inbound request path to an associated workflow and then run that workflow.
 /// </summary>
 [PublicAPI]
-public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivityOptions> options)
+public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenantAccessor, IOptions<HttpActivityOptions> options)
 {
     private readonly string _activityTypeName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
 
@@ -59,7 +55,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
             path = path[basePath.Length..];
         }
 
-        var matchingPath = GetMatchingRoute(serviceProvider, path);
+        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
@@ -252,23 +248,23 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
         return result;
     }
 
-    private string GetMatchingRoute(IServiceProvider serviceProvider, string path)
+    private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
     {
         var routeMatcher = serviceProvider.GetRequiredService<IRouteMatcher>();
         var routeTable = serviceProvider.GetRequiredService<IRouteTable>();
 
         var matchingRouteQuery =
-            from route in routeTable
-            let routeValues = routeMatcher.Match(route, path)
+            from routeData in routeTable
+            let routeValues = routeMatcher.Match(routeData.Route, path)
             where routeValues != null
             select new
             {
-                route,
+                route = routeData,
                 routeValues
             };
 
         var matchingRoute = matchingRouteQuery.FirstOrDefault();
-        var routeTemplate = matchingRoute?.route ?? path;
+        var routeTemplate = matchingRoute?.route ?? new HttpRouteData(path);
 
         return routeTemplate;
     }
@@ -366,7 +362,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, IOptions<HttpActivity
     {
         var httpEndpointAuthorizationHandler = serviceProvider.GetRequiredService<IHttpEndpointAuthorizationHandler>();
 
-        if (bookmarkPayload.Authorize ?? false)
+        if (bookmarkPayload.Authorize == false)
             return true;
 
         return await httpEndpointAuthorizationHandler.AuthorizeAsync(new AuthorizeHttpEndpointContext(httpContext, workflow, bookmarkPayload.Policy));

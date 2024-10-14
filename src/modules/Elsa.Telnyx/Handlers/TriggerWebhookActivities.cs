@@ -8,9 +8,7 @@ using Elsa.Telnyx.Events;
 using Elsa.Telnyx.Extensions;
 using Elsa.Telnyx.Payloads.Abstractions;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Telnyx.Handlers;
 

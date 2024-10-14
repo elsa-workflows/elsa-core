@@ -8,8 +8,6 @@ using Elsa.JavaScript.Libraries.Extensions;
 using Elsa.ServerAndStudio.Web.Extensions;
 using Elsa.MassTransit.Extensions;
 using Elsa.ServerAndStudio.Web.Enums;
-using Jint;
-using Jint.Runtime.Modules;
 using Medallion.Threading.FileSystem;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;

@@ -1,5 +1,4 @@
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
+using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -11,12 +10,16 @@ namespace Elsa.Http.Services;
 [UsedImplicitly]
 public class CachingHttpWorkflowLookupService(
     IHttpWorkflowLookupService decoratedService,
-    IHttpWorkflowsCacheManager cacheManager) : IHttpWorkflowLookupService
+    IHttpWorkflowsCacheManager cacheManager,
+    ITenantAccessor tenantAccessor) : IHttpWorkflowLookupService
 {
     /// <inheritdoc />
     public async Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
-        var key = $"http-workflow:{bookmarkHash}";
+        var tenant = tenantAccessor.CurrentTenant;
+        var tenantId = tenant?.Id;
+        var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
+        var key = $"{tenantIdPrefix}http-workflow:{bookmarkHash}";
         var cache = cacheManager.Cache;
         return await cache.GetOrCreateAsync(key, async entry =>
         {

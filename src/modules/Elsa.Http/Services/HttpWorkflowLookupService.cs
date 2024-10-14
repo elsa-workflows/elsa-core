@@ -1,7 +1,4 @@
-using Elsa.Http.Contracts;
-using Elsa.Http.Models;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -39,8 +36,7 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
     {
         var triggerFilter = new TriggerFilter
         {
-            Hash = bookmarkHash,
-            TenantAgnostic = true
+            Hash = bookmarkHash
         };
         return await triggerStore.FindManyAsync(triggerFilter, cancellationToken);
     }
@@ -50,8 +46,7 @@ public class HttpWorkflowLookupService(ITriggerStore triggerStore, IWorkflowDefi
         var workflowDefinitionVersionId = trigger.WorkflowDefinitionVersionId;
         var filter = new WorkflowDefinitionFilter
         {
-            Id = workflowDefinitionVersionId,
-            TenantAgnostic = true
+            Id = workflowDefinitionVersionId
         };
         return await workflowDefinitionService.FindWorkflowGraphAsync(filter, cancellationToken);
     }

@@ -3,14 +3,12 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Elsa.Extensions;
 using Elsa.Http.ContentWriters;
-using Elsa.Http.Models;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
-using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
 
