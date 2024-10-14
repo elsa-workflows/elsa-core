@@ -443,7 +443,16 @@ services
                 .UseSecretsManagement(management =>
                 {
                     management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
-                    management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                        management.UseEntityFrameworkCore(ef =>
+                            ef.UseSqlServer(sqlServerConnectionString)
+                            );
+                    else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                        management.UseEntityFrameworkCore(ef => 
+                            ef.UsePostgreSql(postgresConnectionString)
+                            );
+                    else
+                        management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
                 })
                 .UseSecretsApi()
                 .UseSecretsScripting()
