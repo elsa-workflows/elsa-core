@@ -1,7 +1,7 @@
 using Elsa.Agents.Persistence.Contracts;
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Filters;
-using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Persistence.EntityFrameworkCore;

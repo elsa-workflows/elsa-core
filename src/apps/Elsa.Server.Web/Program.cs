@@ -3,6 +3,7 @@ using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
 using Elsa.Common.DistributedLocks.Noop;
+using Elsa.Common.Multitenancy;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -166,7 +167,13 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp =>
+                            {
+                                var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
+                                var tenant = tenantAccessor.CurrentTenant;
+                                var connectionString = tenant?.GetConnectionString("Sqlite") ?? sqliteConnectionString;
+                                return connectionString;
+                            });
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });

@@ -1,4 +1,4 @@
-using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Secrets.Management;

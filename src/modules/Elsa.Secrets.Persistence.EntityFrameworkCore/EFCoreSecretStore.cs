@@ -1,5 +1,5 @@
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore;
 using Elsa.Extensions;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;

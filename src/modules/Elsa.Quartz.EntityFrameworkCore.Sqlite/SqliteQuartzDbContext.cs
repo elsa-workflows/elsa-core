@@ -1,6 +1,6 @@
 using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.SQLite;
-using Elsa.EntityFrameworkCore.Common.Abstractions;
+using Elsa.EntityFrameworkCore.Abstractions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 

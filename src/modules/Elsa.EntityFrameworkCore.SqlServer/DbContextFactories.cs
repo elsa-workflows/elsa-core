@@ -1,4 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common.Abstractions;
+﻿using Elsa.EntityFrameworkCore.Abstractions;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;

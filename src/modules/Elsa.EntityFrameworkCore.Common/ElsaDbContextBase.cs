@@ -1,11 +1,11 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.

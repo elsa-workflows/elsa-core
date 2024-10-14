@@ -1,4 +1,4 @@
-using Elsa.EntityFrameworkCore.Common;
+using Elsa.EntityFrameworkCore;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

@@ -1,6 +1,6 @@
 ﻿#nullable disable
 
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Identity
