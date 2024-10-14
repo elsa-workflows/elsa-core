@@ -89,8 +89,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E54
 		docker\ElsaServer.Dockerfile = docker\ElsaServer.Dockerfile
 		docker\ElsaServerAndStudio.Dockerfile = docker\ElsaServerAndStudio.Dockerfile
 		docker\ElsaStudio.Dockerfile = docker\ElsaStudio.Dockerfile
-		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 		docker\init-db.sh = docker\init-db.sh
+		docker\otel-collector-config.yaml = docker\otel-collector-config.yaml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Elasticsearch", "src\modules\Elsa.Elasticsearch\Elsa.Elasticsearch.csproj", "{3246883E-2FA7-4B4A-BDC5-99039A2869BC}"
@@ -301,6 +301,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integrations", "integration
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.OrchardCore", "src\modules\Elsa.OrchardCore\Elsa.OrchardCore.csproj", "{B0460856-7E6D-4B1E-B243-8E20662FC32E}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Samples.AspNet.OrchardCoreIntegration", "samples\aspnet\Elsa.Samples.AspNet.OrchardCoreIntegration\Elsa.Samples.AspNet.OrchardCoreIntegration.csproj", "{1451B84D-F224-4D5D-9A0D-985A8BD23D7B}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{50470834-4CD8-479A-8B58-0A1869BA5D37}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Agents.Core", "src\modules\Elsa.Agents.Core\Elsa.Agents.Core.csproj", "{5BD671F0-9603-4C2F-8364-54B02986EAA2}"
@@ -369,13 +371,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Scripting", "s
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.JavaScript.Libraries", "src\modules\Elsa.JavaScript.Libraries\Elsa.JavaScript.Libraries.csproj", "{5F80663C-B072-49DE-9A67-FD804BAD787E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj", "{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer.csproj", "{59E7614A-3630-4C39-9C7F-9E12BC95D37E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer", "src\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer.csproj", "{59E7614A-3630-4C39-9C7F-9E12BC95D37E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "multitenancy", "multitenancy", "{2F3E1026-5054-4E1F-899B-F1A7F70F9912}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Tenants.AspNetCore", "src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj", "{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -487,10 +489,6 @@ Global
 		{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{086A7E2A-6CE7-41DA-927B-C033638060B1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E9652738-2B3D-4357-B84B-54F0EA161382}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E9652738-2B3D-4357-B84B-54F0EA161382}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E9652738-2B3D-4357-B84B-54F0EA161382}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -709,6 +707,10 @@ Global
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{169A82A5-2DB3-40EA-801E-14C08D743DF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2CDF3E1C-267D-4198-B1C7-7E1F548FC120}.Release|Any CPU.Build.0 = Release|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01B96BB9-35E8-4364-ACB8-6D12A14D8DBA}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -797,10 +799,6 @@ Global
 		{59E7614A-3630-4C39-9C7F-9E12BC95D37E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59E7614A-3630-4C39-9C7F-9E12BC95D37E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59E7614A-3630-4C39-9C7F-9E12BC95D37E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -838,7 +836,6 @@ Global
 		{1E5BD8D9-55BE-41E2-B389-6AB9F26C22AF} = {EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}
 		{3246883E-2FA7-4B4A-BDC5-99039A2869BC} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{2BBFDE36-28A7-4875-8EBE-CC25C76B97FF} = {EBD0CF78-C5D7-4B4B-94C9-C5D8C20B6F59}
-		{086A7E2A-6CE7-41DA-927B-C033638060B1} = {56C2FFB8-EA54-45B5-A095-4A78142EB4B5}
 		{18453B51-25EB-4317-A4B3-B10518252E92} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
 		{1B8D5897-902E-4632-8698-E89CAF3DDF54} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
 		{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
@@ -878,6 +875,7 @@ Global
 		{49D8D2CF-AF68-40FA-951F-018247C97443} = {9B4F139F-7D26-435C-A561-89E65A67A8E5}
 		{732BF088-6AD7-4C4D-9A48-8074253596D4} = {B818988E-639C-4E6E-85C1-B231BCAD9DAB}
 		{B818988E-639C-4E6E-85C1-B231BCAD9DAB} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{29638A67-E79F-44FE-AC05-DA499EBA929E} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 		{24331E82-D7AF-45B1-ACF0-CA6C3B0B77DC} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{790E94F2-5393-47DF-AC52-D9247F5B243A} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{169BEA3D-2A81-47EE-A6C1-3F8719EEC1F6} = {DD089B8B-DA73-492A-9010-F772D1C178DA}
@@ -943,9 +941,7 @@ Global
 		{5F80663C-B072-49DE-9A67-FD804BAD787E} = {6EF07978-A6D2-40EB-891D-7D70C5F37E76}
 		{630E2D93-7F7D-4A8A-BB52-D8095A1F24D9} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
 		{59E7614A-3630-4C39-9C7F-9E12BC95D37E} = {8CEEC194-820A-4C8D-AB9E-E51E6D3E9CC1}
-		{5B23549F-2DF4-4774-8499-F6C69AE3BCB4} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{2F3E1026-5054-4E1F-899B-F1A7F70F9912} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
-		{29638A67-E79F-44FE-AC05-DA499EBA929E} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 		{D5720DBC-8C2B-42D5-9D9F-2FF6EAD4001C} = {2F3E1026-5054-4E1F-899B-F1A7F70F9912}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
