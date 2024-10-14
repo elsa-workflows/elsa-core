@@ -57,7 +57,7 @@
     </ItemGroup>
     
     <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
-    <ItemGroup>
+    <ItemGroup Label="Overrides">
         <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
