@@ -6,20 +6,8 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Api.Endpoints.ActivityDescriptors.List;
 
 [PublicAPI]
-internal class List : ElsaEndpointWithoutRequest<Response>
+internal class List(IActivityRegistry registry, IActivityRegistryPopulator registryPopulator) : ElsaEndpointWithoutRequest<Response>
 {
-    private readonly IActivityRegistry _registry;
-    private readonly IActivityRegistryPopulator _registryPopulator;
-    private readonly ITenantAccessor _tenantAccessor;
-
-    public List(IActivityRegistry registry, IActivityRegistryPopulator registryPopulator, ITenantAccessor tenantAccessor)
-    {
-        _registry = registry;
-        _registryPopulator = registryPopulator;
-        _tenantAccessor = tenantAccessor;
-        var tenant = _tenantAccessor.CurrentTenant;
-    }
-
     public override void Configure()
     {
         Get("/descriptors/activities");
@@ -31,9 +19,9 @@ internal class List : ElsaEndpointWithoutRequest<Response>
         var forceRefresh = Query<bool>("refresh", false);
 
         if (forceRefresh)
-            await _registryPopulator.PopulateRegistryAsync(cancellationToken);
+            await registryPopulator.PopulateRegistryAsync(cancellationToken);
 
-        var descriptors = _registry.ListAll().ToList();
+        var descriptors = registry.ListAll().ToList();
         var response = new Response(descriptors);
 
         return response;

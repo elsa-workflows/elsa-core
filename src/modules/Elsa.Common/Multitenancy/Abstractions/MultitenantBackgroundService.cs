@@ -6,7 +6,6 @@ namespace Elsa.Common.Multitenancy;
 /// <summary>
 /// A hosted service that executes a task for each tenant. 
 /// </summary>
-/// <param name="serviceScopeFactory"></param>
 public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
