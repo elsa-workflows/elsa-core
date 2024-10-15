@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using Elsa.Agents.Persistence.EntityFrameworkCore;
-using Elsa.EntityFrameworkCore.Common;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;

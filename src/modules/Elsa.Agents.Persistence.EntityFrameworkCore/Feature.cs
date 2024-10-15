@@ -1,7 +1,7 @@
 using Elsa.Agents.Persistence.Entities;
 using Elsa.Agents.Persistence.Features;
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore;
+using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,4 @@
-﻿using Elsa.Common.Multitenancy;
-using Elsa.Tenants.Models;
-
-namespace Elsa.Tenants;
+﻿namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Represents a tenant provider.

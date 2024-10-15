@@ -1,22 +1,26 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime.Options;
 using JetBrains.Annotations;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.HostedServices;
 
 /// Updates the workflow store from <see cref="IWorkflowsProvider"/> implementations, creates triggers and updates the <see cref="IActivityRegistry"/>.
 [UsedImplicitly]
-public class PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options) : IHostedService
+public class PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory, IOptions<DistributedLockingOptions> options) : MultitenantHostedService(scopeFactory)
 {
     private readonly DistributedLockingOptions _options = options.Value;
 
     /// <inheritdoc />
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task StartAsync(TenantScope tenantScope, CancellationToken cancellationToken)
     {
-        await using var scope = scopeFactory.CreateAsyncScope();
+        await PopulateRegistriesAsync(tenantScope, cancellationToken);
+    }
+    
+    private async Task PopulateRegistriesAsync(TenantScope scope, CancellationToken cancellationToken)
+    {
         var distributedLockProvider = scope.ServiceProvider.GetRequiredService<IDistributedLockProvider>();
         var lockAcquisitionTimeout = _options.LockAcquisitionTimeout;
         await using (await distributedLockProvider.AcquireLockAsync("PopulateRegistries", lockAcquisitionTimeout, cancellationToken))
@@ -25,7 +29,4 @@ public class PopulateRegistriesHostedService(IServiceScopeFactory scopeFactory, 
             await registriesPopulator.PopulateAsync(cancellationToken);
         }
     }
-
-    /// <inheritdoc />
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

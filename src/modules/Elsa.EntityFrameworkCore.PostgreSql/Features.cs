@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;

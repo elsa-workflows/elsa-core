@@ -7,22 +7,11 @@ using Microsoft.Extensions.Logging;
 namespace Elsa.Http.Services;
 
 /// <inheritdoc />
-public class RouteTable : IRouteTable
+public class RouteTable(IMemoryCache cache, ILogger<RouteTable> logger) : IRouteTable
 {
     private static readonly object Key = new();
-    private readonly IMemoryCache _cache;
-    private readonly ILogger<RouteTable> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="RouteTable"/> class.
-    /// </summary>
-    public RouteTable(IMemoryCache cache, ILogger<RouteTable> logger)
-    {
-        _cache = cache;
-        _logger = logger;
-    }
-
-    private ConcurrentDictionary<string, HttpRouteData> Routes => _cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, HttpRouteData>())!;
+    private ConcurrentDictionary<string, HttpRouteData> Routes => cache.GetOrCreate(Key, _ => new ConcurrentDictionary<string, HttpRouteData>())!;
 
     /// <inheritdoc />
     public void Add(string route)
@@ -36,7 +25,7 @@ public class RouteTable : IRouteTable
         var route = httpRouteData.Route;
         if (route.Contains("//"))
         {
-            _logger.LogWarning("Path cannot contain double slashes. Ignoring path: {Path}", route);
+            logger.LogWarning("Path cannot contain double slashes. Ignoring path: {Path}", route);
             return;
         }
 

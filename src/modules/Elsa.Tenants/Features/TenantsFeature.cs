@@ -1,3 +1,4 @@
+using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -11,22 +12,23 @@ namespace Elsa.Tenants.Features;
 /// <summary>
 /// Configures multi-tenancy features.
 /// </summary>
-public class TenantsFeature : FeatureBase
+public class TenantsFeature(IModule serviceConfiguration) : FeatureBase(serviceConfiguration)
 {
-    /// <inheritdoc />
-    public TenantsFeature(IModule serviceConfiguration) : base(serviceConfiguration)
-    {
-    }
-
     /// <summary>
     /// Configures the Tenants options.
     /// </summary>
-    public Action<MultitenancyOptions> TenantsOptions { get; set; } = _ => { };
-
-    /// <summary>
-    /// A delegate that creates an instance of an implementation of <see cref="ITenantsProvider"/>.
-    /// </summary>
-    public Func<IServiceProvider, ITenantsProvider> TenantsProvider { get; set; } = sp => sp.GetRequiredService<ConfigurationTenantsProvider>();
+    private Action<MultitenancyOptions> TenantsOptions { get; set; } = _ => { };
+    
+    public TenantsFeature ConfigureOptions(Action<MultitenancyOptions> configure)
+    {
+        Services.Configure(configure);
+        return this;
+    }
+    
+    public void UseConfigurationBasedTenantsProvider()
+    {
+        Module.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider<ConfigurationTenantsProvider>());
+    }
 
     /// <inheritdoc />
     public override void Apply()
@@ -34,26 +36,7 @@ public class TenantsFeature : FeatureBase
         Services.Configure(TenantsOptions);
 
         Services
-            .AddSingleton<ConfigurationTenantsProvider>()
             .AddScoped<ITenantResolverPipelineInvoker, DefaultTenantResolverPipelineInvoker>()
-            .AddScoped<ITenantResolver, DefaultTenantResolver>()
-            .AddScoped(TenantsProvider);
-    }
-
-    /// <summary>
-    /// Configures the feature to use <see cref="ConfigurationTenantsProvider"/>.
-    /// </summary>
-    public TenantsFeature UseConfigurationBasedTenantsProvider()
-    {
-        return UseTenantsProvider(sp => sp.GetRequiredService<ConfigurationTenantsProvider>());
-    }
-
-    /// <summary>
-    /// Configures the feature to use the specified <see cref="ITenantsProvider"/>.
-    /// </summary>
-    public TenantsFeature UseTenantsProvider(Func<IServiceProvider, ITenantsProvider> provider)
-    {
-        TenantsProvider = provider;
-        return this;
+            .AddScoped<ITenantResolver, DefaultTenantResolver>();
     }
 }

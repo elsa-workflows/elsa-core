@@ -6,12 +6,12 @@ public class SignalManager
 {
     private readonly ConcurrentDictionary<object, TaskCompletionSource<object?>> _signals = new();
 
-    public async Task<T> WaitAsync<T>(object signal, int millisecondsTimeout = 5000)
+    public async Task<T> WaitAsync<T>(object signal, int millisecondsTimeout = 8000)
     {
         return await WaitAsync(signal, millisecondsTimeout) is T result ? result : throw new InvalidCastException($"Signal '{signal}' was not of type '{typeof(T).Name}'.");
     }
 
-    public async Task<object?> WaitAsync(object signal, int millisecondsTimeout = 5000)
+    public async Task<object?> WaitAsync(object signal, int millisecondsTimeout = 8000)
     {
         var taskCompletionSource = GetOrCreate(signal);
         using var cancellationTokenSource = new CancellationTokenSource(millisecondsTimeout);

@@ -1,5 +1,4 @@
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;

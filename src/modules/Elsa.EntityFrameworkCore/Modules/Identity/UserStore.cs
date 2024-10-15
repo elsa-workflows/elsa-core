@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;

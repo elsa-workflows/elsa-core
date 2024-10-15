@@ -19,4 +19,10 @@ public class Tenant : Entity
     /// Gets or sets the configuration.
     /// </summary>
     public IConfiguration Configuration { get; set; } = new ConfigurationBuilder().Build();
+    
+    public static readonly Tenant Default = new()
+    {
+        Id = null!,
+        Name = "Default"
+    };
 }

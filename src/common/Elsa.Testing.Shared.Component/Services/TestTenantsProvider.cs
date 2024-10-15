@@ -1,6 +1,5 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Tenants;
-using Elsa.Tenants.Models;
 
 namespace Elsa.Testing.Shared.Services;
 

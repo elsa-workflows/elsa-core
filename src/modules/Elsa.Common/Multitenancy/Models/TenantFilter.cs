@@ -1,7 +1,6 @@
-﻿using Elsa.Common.Multitenancy;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 
-namespace Elsa.Tenants.Models;
+namespace Elsa.Common.Multitenancy;
 
 /// <summary>
 /// Represents a tenant filter.

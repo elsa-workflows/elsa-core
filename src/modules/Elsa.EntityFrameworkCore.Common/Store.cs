@@ -1,14 +1,14 @@
+using System.Linq.Expressions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
-using Open.Linq.AsyncExtensions;
-using System.Linq.Expressions;
 using Microsoft.Extensions.DependencyInjection;
+using Open.Linq.AsyncExtensions;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// A generic repository class around EF Core for accessing entities.

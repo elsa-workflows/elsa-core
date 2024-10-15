@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Secrets.Persistence.EntityFrameworkCore;
 
 // ReSharper disable once CheckNamespace
