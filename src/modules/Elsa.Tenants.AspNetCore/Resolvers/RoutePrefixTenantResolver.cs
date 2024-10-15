@@ -11,8 +11,10 @@ namespace Elsa.Tenants.AspNetCore;
 /// </summary>
 public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider) : TenantResolverBase
 {
+    private Dictionary<string, Tenant>? _tenantRoutePrefixLookup;
+    
     /// <inheritdoc />
-    protected override TenantResolverResult Resolve(TenantResolverContext context)
+    protected override async Task<TenantResolverResult> ResolveAsync(TenantResolverContext context)
     {
         var httpContext = httpContextAccessor.HttpContext;
         
@@ -31,11 +33,26 @@ public class RoutePrefixTenantResolver(IHttpContextAccessor httpContextAccessor,
         if (string.IsNullOrWhiteSpace(tenantPrefix))
             return Unresolved();
         
-        var tenantId = routeData.DataTokens["tenantId"] as string;
+        var tenant = await FindTenantByPrefix(tenantPrefix);
+        var tenantId = tenant?.Id;
         return AutoResolve(tenantId);
     }
     
+    private async Task<Tenant?> FindTenantByPrefix(string tenantPrefix)
+    {
+        _tenantRoutePrefixLookup ??= await GetTenantRoutePrefixLookup();
+        return _tenantRoutePrefixLookup.TryGetValue(tenantPrefix, out var tenant) ? tenant : null;
+    }
+
+    private async Task<Dictionary<string,Tenant>> GetTenantRoutePrefixLookup()
+    {
+        var tenantsProvider = serviceProvider.GetRequiredService<ITenantsProvider>();
+        var tenants = await tenantsProvider.ListAsync();
+        return tenants.ToDictionary(x => x.GetRoutePrefix()!);
+    }
+
     private string GetPath(HttpContext httpContext) => httpContext.Request.Path.Value!.NormalizeRoute();
+    
     private HttpRouteData? GetMatchingRouteValues(string path)
     {
         var routeMatcher = serviceProvider.GetRequiredService<IRouteMatcher>();

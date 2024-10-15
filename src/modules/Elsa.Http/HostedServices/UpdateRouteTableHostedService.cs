@@ -1,28 +1,18 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Elsa.Common.Multitenancy;
+using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Http.HostedServices;
 
 /// <summary>
 /// Update the route table based on workflow triggers and bookmarks.
 /// </summary>
-public class UpdateRouteTableHostedService : BackgroundService
+[UsedImplicitly]
+public class UpdateRouteTableHostedService(IServiceScopeFactory scopeFactory) : MultitenantBackgroundService(scopeFactory)
 {
-    private readonly IServiceScopeFactory _scopeFactory;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="UpdateRouteTableHostedService"/> class.
-    /// </summary>
-    public UpdateRouteTableHostedService(IServiceScopeFactory scopeFactory)
+    protected override async Task ExecuteAsync(TenantScope tenantScope, CancellationToken stoppingToken)
     {
-        _scopeFactory = scopeFactory;
-    }
-
-    /// <inheritdoc />
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var routeTableUpdater = scope.ServiceProvider.GetRequiredService<IRouteTableUpdater>();
+        var routeTableUpdater = tenantScope.ServiceProvider.GetRequiredService<IRouteTableUpdater>();
         await routeTableUpdater.UpdateAsync(stoppingToken);
     }
 }

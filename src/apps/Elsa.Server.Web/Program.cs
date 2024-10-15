@@ -25,6 +25,7 @@ using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
@@ -135,7 +136,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -167,13 +168,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sp =>
-                            {
-                                var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
-                                var tenant = tenantAccessor.CurrentTenant;
-                                var connectionString = tenant?.GetConnectionString("Sqlite") ?? sqliteConnectionString;
-                                return connectionString;
-                            });
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -236,7 +231,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -357,7 +352,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -436,7 +431,7 @@ services
         {
             elsa
                 .UseAgentActivities()
-                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sp => sp.GetSqliteConnectionString())))
                 .UseAgentsApi()
                 ;
             
@@ -459,7 +454,10 @@ services
                             ef.UsePostgreSql(postgresConnectionString)
                             );
                     else
-                        management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
+                        management.UseEntityFrameworkCore(ef =>
+                        {
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
+                        });
                 })
                 .UseSecretsApi()
                 .UseSecretsScripting()
@@ -470,7 +468,7 @@ services
         {
             elsa.UseTenants(tenants =>
             {
-                tenants.TenantsOptions = options =>
+                tenants.ConfigureOptions(options =>
                 {
                     configuration.GetSection("Multitenancy").Bind(options);
                     options.TenantResolverPipelineBuilder
@@ -478,7 +476,7 @@ services
                         .Append<RoutePrefixTenantResolver>()
                         .Append<HeaderTenantResolver>()
                         .Append<ClaimsTenantResolver>();
-                };
+                });
                 tenants.UseConfigurationBasedTenantsProvider();
             });
 

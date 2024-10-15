@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Common.Multitenancy;
 
 /// <summary>
@@ -6,18 +8,23 @@ namespace Elsa.Common.Multitenancy;
 /// </summary>
 public class TenantScope : IDisposable
 {
+    private readonly IServiceScope _serviceScope;
     private readonly ITenantAccessor _tenantAccessor;
     private readonly Tenant? _originalTenant;
 
-    public TenantScope(ITenantAccessor tenantAccessor, Tenant? tenant)
+    public TenantScope(IServiceScope serviceScope, ITenantAccessor tenantAccessor, Tenant? tenant)
     {
+        _serviceScope = serviceScope;
         _tenantAccessor = tenantAccessor;
         _originalTenant = tenantAccessor.CurrentTenant;
         _tenantAccessor.CurrentTenant = tenant;
     }
+    
+    public IServiceProvider ServiceProvider => _serviceScope.ServiceProvider;
 
     public void Dispose()
     {
         _tenantAccessor.CurrentTenant = _originalTenant;
+        _serviceScope.Dispose();
     }
 }

@@ -24,4 +24,5 @@ public static class DbContextOptionsBuilderExtensions
 
                 configure?.Invoke(db);
             });
+    
 }

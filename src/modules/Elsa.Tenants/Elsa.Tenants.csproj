@@ -12,4 +12,8 @@
         <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Models\" />
+    </ItemGroup>
+
 </Project>

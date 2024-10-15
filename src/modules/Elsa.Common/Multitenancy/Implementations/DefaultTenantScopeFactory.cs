@@ -1,9 +1,12 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace Elsa.Common.Multitenancy;
 
-public class DefaultTenantScopeFactory(ITenantAccessor tenantAccessor) : ITenantScopeFactory
+public class DefaultTenantScopeFactory(ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory) : ITenantScopeFactory
 {
     public TenantScope CreateScope(Tenant? tenant)
     {
-        return new TenantScope(tenantAccessor, tenant);
+        var serviceScope = serviceScopeFactory.CreateScope();
+        return new TenantScope(serviceScope, tenantAccessor, tenant);
     }
 }

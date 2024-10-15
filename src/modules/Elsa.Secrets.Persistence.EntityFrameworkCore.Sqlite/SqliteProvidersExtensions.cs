@@ -19,4 +19,10 @@ public static class SecretsSqliteProvidersExtensions
         feature.UseSqlite(Assembly, connectionString, options);
         return feature;
     }
+    
+    public static EFCoreSecretPersistenceFeature UseSqlite(this EFCoreSecretPersistenceFeature feature, Func<IServiceProvider, string> connectionStringFunc, ElsaDbContextOptions? options = null)
+    {
+        feature.UseSqlite(Assembly, connectionStringFunc, options);
+        return feature;
+    }
 }

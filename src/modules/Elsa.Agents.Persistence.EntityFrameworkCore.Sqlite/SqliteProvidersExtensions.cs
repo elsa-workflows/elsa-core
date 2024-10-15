@@ -19,4 +19,10 @@ public static class AgentsSqliteProvidersExtensions
         feature.UseSqlite(Assembly, connectionString, options);
         return feature;
     }
+    
+    public static EFCoreAgentPersistenceFeature UseSqlite(this EFCoreAgentPersistenceFeature feature, Func<IServiceProvider, string> connectionStringFunc, ElsaDbContextOptions? options = null)
+    {
+        feature.UseSqlite(Assembly, connectionStringFunc, options);
+        return feature;
+    }
 }
