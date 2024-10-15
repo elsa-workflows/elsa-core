@@ -11,10 +11,9 @@ namespace Elsa.Common.Multitenancy;
 public abstract class MultitenantHostedService(IServiceScopeFactory serviceScopeFactory) : IHostedService
 {
     public virtual async Task StartAsync(CancellationToken cancellationToken) => await RunThroughTenantsAsync(StartAsync, cancellationToken);
-    public virtual async Task StopAsync(CancellationToken cancellationToken) => await RunThroughTenantsAsync(StopAsync, cancellationToken);
+    public virtual Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     protected virtual Task StartAsync(TenantScope tenantScope, CancellationToken cancellationToken) => Task.CompletedTask;
-    protected virtual Task StopAsync(TenantScope tenantScope, CancellationToken cancellationToken) => Task.CompletedTask;
     
     private async Task RunThroughTenantsAsync(Func<TenantScope, CancellationToken, Task> action, CancellationToken cancellationToken)
     {
