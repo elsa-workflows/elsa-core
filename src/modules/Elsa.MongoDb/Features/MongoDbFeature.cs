@@ -80,6 +80,7 @@ public class MongoDbFeature : FeatureBase
         {
             map.AutoMap();
             map.SetIgnoreExtraElements(true); // Needed for missing ID property
+            map.MapProperty(x => x.Key); // Needed for non-setter property
         });
     }
 
