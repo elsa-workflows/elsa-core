@@ -23,7 +23,8 @@ public class HttpEndpointPathUIHandler(IOptions<HttpActivityOptions> options) : 
         {
             [InputUIHints.SingleLine] = new SingleLineProps
             {
-                AdornmentText = completeBaseUrl.ToString().TrimEnd('/') + '/'
+                AdornmentText = completeBaseUrl.ToString().TrimEnd('/') + '/',
+                EnableCopyAdornment = true
             },
         });
     }
