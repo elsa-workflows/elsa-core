@@ -46,7 +46,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
         
         var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
-        TenantId = tenantAccessor?.CurrentTenant?.Id;
+        TenantId = tenantAccessor?.Tenant?.Id;
     }
     
     /// <inheritdoc/>

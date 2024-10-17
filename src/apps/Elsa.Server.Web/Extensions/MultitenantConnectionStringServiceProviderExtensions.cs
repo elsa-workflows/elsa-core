@@ -14,7 +14,7 @@ public static class MultitenantConnectionStringServiceProviderExtensions
     {
         var tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-        var tenant = tenantAccessor.CurrentTenant;
+        var tenant = tenantAccessor.Tenant;
         var defaultConnectionString = configuration.GetConnectionString(name)!;
         var connectionString = tenant?.GetConnectionString(name) ?? defaultConnectionString;
         return connectionString;

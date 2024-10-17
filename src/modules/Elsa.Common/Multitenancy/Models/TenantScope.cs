@@ -16,15 +16,15 @@ public class TenantScope : IDisposable
     {
         _serviceScope = serviceScope;
         _tenantAccessor = tenantAccessor;
-        _originalTenant = tenantAccessor.CurrentTenant;
-        _tenantAccessor.CurrentTenant = tenant;
+        _originalTenant = tenantAccessor.Tenant;
+        _tenantAccessor.Tenant = tenant;
     }
     
     public IServiceProvider ServiceProvider => _serviceScope.ServiceProvider;
 
     public void Dispose()
     {
-        _tenantAccessor.CurrentTenant = _originalTenant;
+        _tenantAccessor.Tenant = _originalTenant;
         _serviceScope.Dispose();
     }
 }

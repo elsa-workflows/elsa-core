@@ -21,6 +21,7 @@ using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Features;
@@ -32,6 +33,7 @@ namespace Elsa.Http.Features;
 public class HttpFeature(IModule module) : FeatureBase(module)
 {
     private Func<IServiceProvider, IHttpEndpointRoutesProvider> _httpEndpointRouteProvider = sp => sp.GetRequiredService<DefaultHttpEndpointRoutesProvider>();
+    private Func<IServiceProvider, IHttpEndpointBasePathProvider> _httpEndpointBasePathProvider = sp => sp.GetRequiredService<DefaultHttpEndpointBasePathProvider>();
 
     /// <summary>
     /// A delegate to configure <see cref="HttpActivityOptions"/>.
@@ -106,6 +108,18 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         _httpEndpointRouteProvider = httpEndpointRouteProvider;
         return this;
     }
+    
+    public HttpFeature WithHttpEndpointBasePathProvider<T>() where T : class, IHttpEndpointBasePathProvider
+    {
+        Services.TryAddScoped<T>();
+        return WithHttpEndpointBasePathProvider(sp => sp.GetRequiredService<T>());
+    }
+    
+    public HttpFeature WithHttpEndpointBasePathProvider(Func<IServiceProvider, IHttpEndpointBasePathProvider> httpEndpointBasePathProvider)
+    {
+        _httpEndpointBasePathProvider = httpEndpointBasePathProvider;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void Configure()
@@ -178,6 +192,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()
+            .AddScoped(_httpEndpointBasePathProvider)
 
             // Port resolvers.
             .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()

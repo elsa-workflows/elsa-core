@@ -18,6 +18,7 @@ public class MultitenantHttpRoutingFeature(IModule module) : FeatureBase(module)
         Module.Configure<HttpFeature>(feature =>
         {
             feature.WithHttpEndpointRoutesProvider<TenantPrefixHttpEndpointRoutesProvider>();
+            feature.WithHttpEndpointBasePathProvider<TenantPrefixHttpEndpointBasePathProvider>();
         });
     }
 
