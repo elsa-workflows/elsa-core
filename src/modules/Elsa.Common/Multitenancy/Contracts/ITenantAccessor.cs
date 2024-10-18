@@ -3,8 +3,8 @@ namespace Elsa.Common.Multitenancy;
 public interface ITenantAccessor
 {
     /// <summary>
-    /// Get the current <see cref="Tenant"/>.
+    /// Get the current <see cref="Multitenancy.Tenant"/>.
     /// </summary>
     /// <returns>Current tenant or null.</returns>
-    Tenant? CurrentTenant { get; set; }
+    Tenant? Tenant { get; set; }
 }

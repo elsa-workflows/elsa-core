@@ -137,7 +137,7 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
 
     private async Task<T?> GetOrCreateAsync<T>(string key, Func<Task<T>> factory)
     {
-        var tenantId = tenantAccessor.CurrentTenant?.Id;
+        var tenantId = tenantAccessor.Tenant?.Id;
         var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
         var internalKey = $"{tenantIdPrefix}{typeof(T).Name}:{key}";
         return await cacheManager.GetOrCreateAsync(internalKey, async entry =>

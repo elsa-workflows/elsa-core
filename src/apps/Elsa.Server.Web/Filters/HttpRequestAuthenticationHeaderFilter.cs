@@ -18,7 +18,7 @@ public class HttpRequestAuthenticationHeaderFilter : ActivityStateFilterBase
 
         if (activity is not SendHttpRequestBase || inputDescriptor.Name is not nameof(SendHttpRequestBase.Authorization))
             return ActivityStateFilterResult.Pass();
-
+        
         var contextValue = context.Value.GetString();
 
         if (contextValue == null)

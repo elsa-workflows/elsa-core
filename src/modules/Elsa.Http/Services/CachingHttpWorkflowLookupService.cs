@@ -16,7 +16,7 @@ public class CachingHttpWorkflowLookupService(
     /// <inheritdoc />
     public async Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default)
     {
-        var tenant = tenantAccessor.CurrentTenant;
+        var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
         var tenantIdPrefix = !string.IsNullOrEmpty(tenantId) ? $"{tenantId}:" : string.Empty;
         var key = $"{tenantIdPrefix}http-workflow:{bookmarkHash}";
