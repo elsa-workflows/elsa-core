@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.KeyValues.Entities;
@@ -8,6 +9,7 @@ using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -67,6 +69,7 @@ public class MongoDbFeature : FeatureBase
         TryRegisterSerializerOrSkipWhenExist(typeof(Variable), new VariableSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(Version), new VersionSerializer());
         TryRegisterSerializerOrSkipWhenExist(typeof(JsonElement), new JsonElementSerializer());
+        TryRegisterSerializerOrSkipWhenExist(typeof(JsonNode), new JsonNodeBsonConverter());
     }
 
     private static void RegisterClassMaps()
