@@ -195,10 +195,9 @@ public class BulkDispatchWorkflows : Activity
             Arguments = itemDictionary
         };
 
-        var inputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>();
+        var inputDictionary = item as IDictionary<string, object> ?? itemDictionary;
         input["ParentInstanceId"] = parentInstanceId;
         input.Merge(inputDictionary);
-        input.Merge(itemDictionary);
 
         var workflowDispatcher = context.GetRequiredService<IWorkflowDispatcher>();
         var identityGenerator = context.GetRequiredService<IIdentityGenerator>();

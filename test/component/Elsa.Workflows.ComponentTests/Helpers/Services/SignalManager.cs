@@ -8,7 +8,12 @@ public class SignalManager : ISignalManager
 
     public async Task<T> WaitAsync<T>(object signal, int millisecondsTimeout = 5000)
     {
-        return await WaitAsync(signal, millisecondsTimeout) is T result ? result : throw new InvalidCastException($"Signal '{signal}' was not of type '{typeof(T).Name}'.");
+        var result = await WaitAsync(signal, millisecondsTimeout);
+        
+        if(result is not T typedResult)
+            throw new InvalidCastException($"Signal '{signal}' was not of type '{typeof(T).Name}'.");
+
+        return typedResult;
     }
 
     public async Task<object?> WaitAsync(object signal, int millisecondsTimeout = 5000)
