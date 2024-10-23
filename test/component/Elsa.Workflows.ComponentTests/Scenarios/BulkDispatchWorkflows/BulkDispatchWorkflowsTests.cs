@@ -9,7 +9,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     private readonly IWorkflowEvents _workflowEvents;
     private readonly ISignalManager _signalManager;
     private readonly IWorkflowRuntime _workflowRuntime;
-    private static readonly object ParentWorkflowCompletedSignal = new();
+    private static readonly object GreetEmployeesWorkflowCompletedSignal = new();
 
     public BulkDispatchWorkflowsTests(App app) : base(app)
     {
@@ -26,9 +26,21 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         await _workflowRuntime.StartWorkflowAsync(GreetEmployeesWorkflow.DefinitionId);
-        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(ParentWorkflowCompletedSignal);
+        var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(GreetEmployeesWorkflowCompletedSignal);
         
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);
+    }
+    
+    /// <summary>
+    /// Individual items are sent as input to child workflows.
+    /// </summary>
+    [Fact]
+    public async Task DispatchWorkflows_ChildWorkflowsShouldReceiveCurrentItem()
+    {
+        await _workflowRuntime.StartWorkflowAsync(MixFruitsWorkflow.DefinitionId);
+        await _signalManager.WaitAsync("Apple");
+        await _signalManager.WaitAsync("Banana");
+        await _signalManager.WaitAsync("Cherry");
     }
 
     private void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs e)
@@ -37,7 +49,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             return;
         
         if(e.WorkflowInstance.DefinitionId == GreetEmployeesWorkflow.DefinitionId)
-            _signalManager.Trigger(ParentWorkflowCompletedSignal, e);
+            _signalManager.Trigger(GreetEmployeesWorkflowCompletedSignal, e);
     }
 
     protected override void OnDispose()
