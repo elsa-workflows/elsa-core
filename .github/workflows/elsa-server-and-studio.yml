@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - apps/elsa-demo
 
 jobs:
   push_to_registry:
