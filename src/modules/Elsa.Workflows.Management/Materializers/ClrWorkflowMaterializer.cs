@@ -42,7 +42,7 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
     public async ValueTask<Workflow> MaterializeAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var providerContext = _payloadSerializer.Deserialize<ClrWorkflowMaterializerContext>(definition.MaterializerContext!);
-        var workflowBuilderType = providerContext.WorkflowBuilderType;
+        var workflowBuilderType = providerContext.WorkflowBuilderType == null! ? typeof(NotFoundWorkflowbuilder) : providerContext.WorkflowBuilderType;
         var workflowBuilder = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(_serviceProvider, workflowBuilderType);
         var workflowDefinitionBuilder = _workflowBuilderFactory.CreateBuilder();
         var workflow = await workflowDefinitionBuilder.BuildWorkflowAsync(workflowBuilder, cancellationToken);
@@ -59,3 +59,10 @@ public class ClrWorkflowMaterializer : IWorkflowMaterializer
 /// </summary>
 /// <param name="WorkflowBuilderType">The type of the workflow builder.</param>
 public record ClrWorkflowMaterializerContext(Type WorkflowBuilderType);
+
+/// <summary>
+/// A workflow builder that is used when the workflow builder type is not found.
+/// </summary>
+public class NotFoundWorkflowbuilder : WorkflowBase
+{
+}
