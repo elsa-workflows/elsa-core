@@ -65,8 +65,8 @@ const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = true;
-const bool useAgents = true;
+const bool useMultitenancy = false;
+const bool useAgents = false;
 const bool useSecrets = true;
 const bool useAzureServiceBus = false;
 
