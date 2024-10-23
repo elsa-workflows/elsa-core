@@ -1,4 +1,4 @@
-﻿namespace Elsa.EntityFrameworkCore.Contracts;
+﻿namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Interface to provide custom Elsa Db Context Schema in Migration

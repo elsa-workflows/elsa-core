@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using System.Reflection;
+using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
 using Elsa.EntityFrameworkCore.Extensions;
@@ -104,6 +105,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
+                elsa.UseAgents();
+                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
             };
         }
 

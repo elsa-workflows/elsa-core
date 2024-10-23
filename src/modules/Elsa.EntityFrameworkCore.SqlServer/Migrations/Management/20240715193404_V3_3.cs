@@ -1,6 +1,5 @@
 #nullable disable
 
-using Elsa.EntityFrameworkCore.Contracts;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Management

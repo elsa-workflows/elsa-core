@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Contracts;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 

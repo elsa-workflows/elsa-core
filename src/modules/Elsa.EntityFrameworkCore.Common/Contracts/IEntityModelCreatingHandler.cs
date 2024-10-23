@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-namespace Elsa.EntityFrameworkCore.Contracts;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Represents handler for entity model creation.

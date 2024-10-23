@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;

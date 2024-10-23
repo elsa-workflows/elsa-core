@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.Workflows.Exceptions;
 using JetBrains.Annotations;
 using Npgsql;

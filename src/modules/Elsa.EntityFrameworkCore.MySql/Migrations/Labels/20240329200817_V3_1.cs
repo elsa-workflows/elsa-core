@@ -7,10 +7,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
     /// <inheritdoc />
     public partial class V3_1 : Migration
     {
-        private readonly Elsa.EntityFrameworkCore.Contracts.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
         /// <inheritdoc />
-        public V3_1(Elsa.EntityFrameworkCore.Contracts.IElsaDbContextSchema schema)
+        public V3_1(IElsaDbContextSchema schema)
         {
             _schema = schema;
         }

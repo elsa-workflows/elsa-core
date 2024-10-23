@@ -1,6 +1,5 @@
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
-using Elsa.EntityFrameworkCore.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;

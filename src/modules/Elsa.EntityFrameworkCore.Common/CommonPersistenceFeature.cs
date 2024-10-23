@@ -1,4 +1,3 @@
-using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.EntityFrameworkCore.EntityHandlers;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;

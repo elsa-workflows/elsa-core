@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Elsa.EntityFrameworkCore.Contracts;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Represents handler for entities before saving changes.

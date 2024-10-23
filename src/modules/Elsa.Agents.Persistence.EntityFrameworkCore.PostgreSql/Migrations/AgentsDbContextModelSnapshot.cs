@@ -2,42 +2,45 @@
 using Elsa.Agents.Persistence.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.Migrations
+namespace Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.Migrations
 {
     [DbContext(typeof(AgentsDbContext))]
-    [Migration("20241015184140_V3_3")]
-    partial class V3_3
+    partial class AgentsDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "7.0.20");
+            modelBuilder
+                .HasDefaultSchema("Elsa")
+                .HasAnnotation("ProductVersion", "7.0.20")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.AgentDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("AgentConfig")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -47,24 +50,24 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_AgentDefinition_TenantId");
 
-                    b.ToTable("AgentDefinitions");
+                    b.ToTable("AgentDefinitions", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ApiKeyDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Value")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -74,28 +77,28 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_ApiKeyDefinition_TenantId");
 
-                    b.ToTable("ApiKeysDefinitions");
+                    b.ToTable("ApiKeysDefinitions", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ServiceDefinition", b =>
                 {
                     b.Property<string>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Settings")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -105,7 +108,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.Sqlite.Migrations
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_ServiceDefinition_TenantId");
 
-                    b.ToTable("ServicesDefinitions");
+                    b.ToTable("ServicesDefinitions", "Elsa");
                 });
 #pragma warning restore 612, 618
         }

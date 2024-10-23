@@ -1,4 +1,4 @@
-namespace Elsa.EntityFrameworkCore.Contracts;
+namespace Elsa.EntityFrameworkCore;
 
 /// Defines the contract for an exception handler in a database context.
 /// <remarks>

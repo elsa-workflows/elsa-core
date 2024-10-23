@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.EntityFrameworkCore.EntityHandlers;
 using Microsoft.Extensions.DependencyInjection;
 

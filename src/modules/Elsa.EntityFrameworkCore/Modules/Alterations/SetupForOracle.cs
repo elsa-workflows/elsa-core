@@ -1,5 +1,4 @@
 using Elsa.Alterations.Core.Entities;
-using Elsa.EntityFrameworkCore.Contracts;
 using Elsa.EntityFrameworkCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
