@@ -364,13 +364,13 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
-                            if (key == RefPropertyName)
+                            if (referenceResolver != null && key == RefPropertyName)
                             {
                                 var referenceId = reader.GetString();
                                 var reference = referenceResolver.ResolveReference(referenceId!);
                                 dict.Add(key, reference);
                             }
-                            else if (key == IdPropertyName)
+                            else if (referenceResolver != null && key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
 
