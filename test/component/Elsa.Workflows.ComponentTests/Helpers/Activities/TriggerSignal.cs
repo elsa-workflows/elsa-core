@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 
@@ -48,7 +49,7 @@ public class TriggerSignal : CodeActivity
 
     protected override void Execute(ActivityExecutionContext context)
     {
-        var testEventManager = context.GetRequiredService<ISignalManager>();
+        var testEventManager = context.GetRequiredService<SignalManager>();
         var eventName = EventName.Get(context);
         testEventManager.Trigger(eventName);
     }

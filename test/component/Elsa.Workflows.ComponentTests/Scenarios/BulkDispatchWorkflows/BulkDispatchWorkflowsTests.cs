@@ -24,7 +24,7 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
         _workflowEvents.WorkflowInstanceSaved += OnWorkflowInstanceSaved;
     }
-    
+
     /// Dispatches and waits for child workflows to complete.
     [Fact]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
@@ -36,17 +36,23 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         });
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var parentWorkflowInstanceArgs = await _signalManager.WaitAsync<WorkflowInstanceSavedEventArgs>(GreetEmployeesWorkflowCompletedSignal);
-        
+
         Assert.Equal(WorkflowStatus.Finished, parentWorkflowInstanceArgs.WorkflowInstance.Status);
     }
-    
+
     /// <summary>
     /// Individual items are sent as input to child workflows.
     /// </summary>
     [Fact]
     public async Task DispatchWorkflows_ChildWorkflowsShouldReceiveCurrentItem()
     {
-        await _workflowRuntime.StartWorkflowAsync(MixFruitsWorkflow.DefinitionId);
+        var workflowClient = await _workflowRuntime.CreateClientAsync();
+        var request = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(MixFruitsWorkflow.DefinitionId, VersionOptions.Published)
+        };
+        await workflowClient.CreateAndRunInstanceAsync(request);
+
         await _signalManager.WaitAsync("Apple");
         await _signalManager.WaitAsync("Banana");
         await _signalManager.WaitAsync("Cherry");
@@ -54,10 +60,10 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
 
     private void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs e)
     {
-        if(e.WorkflowInstance.Status != WorkflowStatus.Finished)
+        if (e.WorkflowInstance.Status != WorkflowStatus.Finished)
             return;
-        
-        if(e.WorkflowInstance.DefinitionId == GreetEmployeesWorkflow.DefinitionId)
+
+        if (e.WorkflowInstance.DefinitionId == GreetEmployeesWorkflow.DefinitionId)
             _signalManager.Trigger(GreetEmployeesWorkflowCompletedSignal, e);
     }
 

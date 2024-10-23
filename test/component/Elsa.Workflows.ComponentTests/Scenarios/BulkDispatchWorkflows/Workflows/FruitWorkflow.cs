@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Activities;
-using Elsa.Workflows.Contracts;
 using Hangfire.Annotations;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatchWorkflows.Workflows;

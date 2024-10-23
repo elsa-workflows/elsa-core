@@ -37,7 +37,7 @@
         <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
     </PropertyGroup>
     <PropertyGroup>
-        <ElsaStudioVersion>3.3.0-preview.470</ElsaStudioVersion>
+        <ElsaStudioVersion>3.3.0-preview.584</ElsaStudioVersion>
         <SystemTextJsonVersion>8.0.5</SystemTextJsonVersion>
     </PropertyGroup>
 </Project>
