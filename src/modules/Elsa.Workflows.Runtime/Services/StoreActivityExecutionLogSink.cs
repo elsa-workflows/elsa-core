@@ -1,6 +1,7 @@
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
+using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Workflows.Runtime.Services;
 
@@ -13,7 +14,7 @@ public class StoreActivityExecutionLogSink(IActivityExecutionStore activityExecu
     /// <inheritdoc />
     public async Task PersistExecutionLogsAsync(WorkflowExecutionContext context, CancellationToken cancellationToken = default)
     {
-        var records = extractor.ExtractLogRecords(context).ToList();
+        var records = await extractor.ExtractLogRecordsAsync(context).ToList();
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
         await notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, records), cancellationToken);
     }
