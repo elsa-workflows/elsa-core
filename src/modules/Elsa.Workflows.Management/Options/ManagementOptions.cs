@@ -1,3 +1,4 @@
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Workflows.Management.Options;

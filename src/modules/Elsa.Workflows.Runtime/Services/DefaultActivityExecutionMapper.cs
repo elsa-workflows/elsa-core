@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
