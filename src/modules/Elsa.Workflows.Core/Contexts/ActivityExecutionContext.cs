@@ -195,7 +195,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Stores the evaluated inputs, serialized, for the current activity for historical purposes.
     /// </summary>
-    public IDictionary<string, object> ActivityState { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object?> ActivityState { get; set; } = new Dictionary<string, object?>();
 
     /// <summary>
     /// Schedules the specified activity to be executed.

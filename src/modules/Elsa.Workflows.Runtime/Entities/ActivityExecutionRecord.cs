@@ -42,7 +42,7 @@ public class ActivityExecutionRecord : Entity, ILogRecord
     /// <summary>
     /// The state of the activity at the time this record is created or last updated.
     /// </summary>
-    public IDictionary<string, object>? ActivityState { get; set; }
+    public IDictionary<string, object?>? ActivityState { get; set; }
     
     /// <summary>
     /// Any additional payload associated with the log record.

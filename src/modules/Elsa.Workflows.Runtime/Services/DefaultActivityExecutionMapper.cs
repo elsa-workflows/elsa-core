@@ -15,7 +15,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
 {
     private readonly IOptions<ManagementOptions> _options;
     private readonly IDictionary<string, ILogPersistenceStrategy> _logPersistenceStrategies;
-    
+
     public DefaultActivityExecutionMapper(IOptions<ManagementOptions> options, ILogPersistenceStrategyService logPersistenceStrategyService)
     {
         _options = options;
@@ -37,7 +37,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
          *          }
          *  }
          */
-        
+
         /* The following JSON structure is expected to be found in the custom properties of the workflow and activity:
          * {
          *      "logPersistenceStrategy": {
@@ -51,8 +51,9 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var cancellationToken = source.WorkflowExecutionContext.CancellationToken;
         var workflow = (Workflow?)source.GetAncestors().FirstOrDefault(x => x.Activity is Workflow)?.Activity ?? source.WorkflowExecutionContext.Workflow;
         var workflowPersistenceProperty = await GetDefaultPersistenceModeAsync(workflow.CustomProperties, () => _options.Value.LogPersistenceMode, cancellationToken);
-        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
+        var legacyActivityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
+        var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceStrategyKey, () => new Dictionary<string, object?>());
 
         // Get any outcomes that were added to the activity execution context.
         var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
@@ -83,8 +84,19 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return default;
         });
 
-        outputs = StorePropertyUsingPersistenceMode(outputs, activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
-        var inputs = StorePropertyUsingPersistenceMode(source.ActivityState, activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!, activityPersistencePropertyDefault);
+        outputs = await StorePropertyUsingPersistenceMode(
+            outputs,
+            legacyActivityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
+            activityPersistenceProperties!.GetValueOrDefault("outputs", () => new Dictionary<string, object>())!,
+            activityPersistencePropertyDefault,
+            cancellationToken);
+
+        var inputs = await StorePropertyUsingPersistenceMode(
+            source.ActivityState, 
+            legacyActivityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
+            activityPersistenceProperties!.GetValueOrDefault("inputs", () => new Dictionary<string, object>())!,
+            activityPersistencePropertyDefault,
+            cancellationToken);
 
         return new ActivityExecutionRecord
         {
@@ -121,25 +133,42 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
                 return defaultFactory();
             return legacyPersistencePropertyDefault;
         }
-        
+
         var strategy = _logPersistenceStrategies.TryGetValue(defaultPersistenceStrategyTypeName, out var v) ? v : null;
-        
+
         if (strategy == null)
             return defaultFactory();
-        
+
         var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
         return await strategy.ShouldPersistAsync(strategyContext);
     }
 
-    private static Dictionary<string, object?> StorePropertyUsingPersistenceMode(IDictionary<string, object?> state, IDictionary<string, object> persistenceModeConfiguration, LogPersistenceMode defaultLogPersistenceMode)
+    private async Task<Dictionary<string, object?>> StorePropertyUsingPersistenceMode(
+        IDictionary<string, object?> state,
+        IDictionary<string, object> persistenceModeConfiguration,
+        IDictionary<string, object> persistenceStrategyConfiguration,
+        LogPersistenceMode defaultLogPersistenceMode,
+        CancellationToken cancellationToken)
     {
         var result = new Dictionary<string, object?>();
 
         foreach (var value in state)
         {
-            var persistence = persistenceModeConfiguration.GetValueOrDefault(value.Key.Camelize(), () => defaultLogPersistenceMode);
-            if (persistence.Equals(LogPersistenceMode.Include)
-                || (persistence.Equals(LogPersistenceMode.Inherit) && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit))
+            var propKey = value.Key.Camelize();
+            var strategy = persistenceStrategyConfiguration.GetValueOrDefault(propKey) is string strategyTypeName ? _logPersistenceStrategies.TryGetValue(strategyTypeName, out var v) ? v : null : null;
+            var mode = defaultLogPersistenceMode;
+
+            if (strategy != null)
+            {
+                var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
+                mode = await strategy.ShouldPersistAsync(strategyContext);
+            }
+            else
+            {
+                mode = persistenceModeConfiguration.GetValueOrDefault(propKey, () => defaultLogPersistenceMode);
+            }
+
+            if (mode == LogPersistenceMode.Include || mode == LogPersistenceMode.Inherit && defaultLogPersistenceMode is LogPersistenceMode.Include or LogPersistenceMode.Inherit)
                 result.Add(value.Key, value.Value);
         }
 
