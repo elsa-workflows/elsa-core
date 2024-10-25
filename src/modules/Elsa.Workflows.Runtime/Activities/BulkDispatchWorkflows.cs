@@ -109,7 +109,6 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
-            //context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
             await DispatchChildWorkflowAsync(context, item);
             dispatchedInstancesCount++;
         }
