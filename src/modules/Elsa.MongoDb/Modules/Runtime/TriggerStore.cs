@@ -57,8 +57,8 @@ public class MongoTriggerStore(MongoDbStore<StoredTrigger> mongoDbStore) : ITrig
         return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, filter.TenantAgnostic, cancellationToken);
     }
 
-    private static IMongoQueryable<StoredTrigger> Filter(IMongoQueryable<StoredTrigger> queryable, TriggerFilter filter)
+    private static IQueryable<StoredTrigger> Filter(IQueryable<StoredTrigger> queryable, TriggerFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<StoredTrigger>)!;
+        return filter.Apply(queryable);
     }
 }

@@ -74,7 +74,7 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         var collection = mongoDbStore.GetCollection();
         var queryable = Order(Filter(collection.AsQueryable(), filter), order);
         var count = queryable.LongCount();
-        var mongoQueryable = (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
+        var mongoQueryable = queryable.Paginate(pageArgs);
         var documents = await mongoQueryable.Select(ExpressionHelpers.WorkflowInstanceSummary).ToListAsync(cancellationToken);
 
         return Page.Of(documents, count);
@@ -146,23 +146,23 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     }
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
-    private IMongoQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> queryable, WorkflowInstanceFilter filter)
+    private IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> queryable, WorkflowInstanceFilter filter)
     {
-        return (filter.Apply(queryable.Select(i => i)) as IMongoQueryable<WorkflowInstance>)!;
+        return filter.Apply(queryable.Select(i => i));
     }
 
-    private IMongoQueryable<WorkflowInstance> Order<TOrderBy>(IMongoQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order)
+    private IQueryable<WorkflowInstance> Order<TOrderBy>(IQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order)
     {
-        return (queryable.OrderBy(order) as IMongoQueryable<WorkflowInstance>)!;
+        return queryable.OrderBy(order);
     }
 
-    private IMongoQueryable<WorkflowInstance> Paginate(IMongoQueryable<WorkflowInstance> queryable, PageArgs pageArgs)
+    private IQueryable<WorkflowInstance> Paginate(IQueryable<WorkflowInstance> queryable, PageArgs pageArgs)
     {
-        return (queryable.Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
+        return queryable.Paginate(pageArgs);
     }
 
-    private IMongoQueryable<WorkflowInstance> OrderAndPaginate<TOrderBy>(IMongoQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order, PageArgs pageArgs)
+    private IQueryable<WorkflowInstance> OrderAndPaginate<TOrderBy>(IQueryable<WorkflowInstance> queryable, WorkflowInstanceOrder<TOrderBy> order, PageArgs pageArgs)
     {
-        return (queryable.OrderBy(order).Paginate(pageArgs) as IMongoQueryable<WorkflowInstance>)!;
+        return queryable.OrderBy(order).Paginate(pageArgs);
     }
 }
