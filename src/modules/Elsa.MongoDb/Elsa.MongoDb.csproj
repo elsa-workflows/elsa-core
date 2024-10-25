@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
         <Description>
             Provides MongoDB implementations of various abstractions from various modules.
         </Description>
