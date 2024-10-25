@@ -9,6 +9,8 @@ using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.LogPersistence;
+using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -194,9 +196,16 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
 
-            // Logger state generators
+            // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)
             .AddSingleton(ActivityLoggerStateGenerator)
+            
+            // Log Persistence Strategies.
+            .AddScoped<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>()
+            .AddScoped<ILogPersistenceStrategy, Include>()
+            .AddScoped<ILogPersistenceStrategy, Exclude>()
+            .AddScoped<ILogPersistenceStrategy, Inherit>()
+            .AddScoped<ILogPersistenceStrategy, Configuration>()
 
             // Logging
             .AddLogging();

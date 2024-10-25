@@ -21,6 +21,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Agents.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.AzureServiceBus\Elsa.AzureServiceBus.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>

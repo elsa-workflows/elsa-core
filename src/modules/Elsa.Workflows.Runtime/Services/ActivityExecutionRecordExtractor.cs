@@ -6,9 +6,10 @@ namespace Elsa.Workflows.Runtime;
 public class ActivityExecutionRecordExtractor(IActivityExecutionMapper activityExecutionMapper) : ILogRecordExtractor<ActivityExecutionRecord>
 {
     /// <inheritdoc />
-    public IEnumerable<ActivityExecutionRecord> ExtractLogRecords(WorkflowExecutionContext context)
+    public async Task<IEnumerable<ActivityExecutionRecord>> ExtractLogRecordsAsync(WorkflowExecutionContext context)
     {
         var activityExecutionContexts = context.ActivityExecutionContexts;
-        return activityExecutionContexts.Select(activityExecutionMapper.Map).ToList();
+        var tasks = activityExecutionContexts.Select(activityExecutionMapper.MapAsync).ToList();
+        return await Task.WhenAll(tasks);
     }
 }

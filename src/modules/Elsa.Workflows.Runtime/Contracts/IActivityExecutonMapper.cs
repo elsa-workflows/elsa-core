@@ -10,5 +10,5 @@ public interface IActivityExecutionMapper
     /// <summary>
     /// Maps an activity execution context to an activity execution record.
     /// </summary>
-    ActivityExecutionRecord Map(ActivityExecutionContext source);
+    Task<ActivityExecutionRecord> MapAsync(ActivityExecutionContext source);
 }

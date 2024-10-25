@@ -3,6 +3,7 @@ using System.Reflection;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -106,7 +107,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     http.UseCache();
                 });
                 elsa.UseAgents();
-                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString)));
+                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(typeof(AgentsPostgreSqlProvidersExtensions).Assembly, dbConnectionString)));
             };
         }
 

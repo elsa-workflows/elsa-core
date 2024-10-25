@@ -12,6 +12,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Contracts;
