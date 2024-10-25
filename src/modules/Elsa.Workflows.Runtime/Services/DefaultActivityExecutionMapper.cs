@@ -140,7 +140,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return defaultFactory();
 
         var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-        return await strategy.ShouldPersistAsync(strategyContext);
+        return await strategy.GetPersistenceModeAsync(strategyContext);
     }
 
     private async Task<Dictionary<string, object?>> StorePropertyUsingPersistenceMode(
@@ -161,7 +161,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             if (strategy != null)
             {
                 var strategyContext = new LogPersistenceStrategyContext(cancellationToken);
-                mode = await strategy.ShouldPersistAsync(strategyContext);
+                mode = await strategy.GetPersistenceModeAsync(strategyContext);
             }
             else
             {

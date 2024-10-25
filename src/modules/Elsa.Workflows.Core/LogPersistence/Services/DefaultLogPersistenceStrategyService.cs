@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.LogPersistence.Services;
+namespace Elsa.Workflows.LogPersistence;
 
 [UsedImplicitly]
 public class DefaultLogPersistenceStrategyService(IEnumerable<ILogPersistenceStrategy> strategies) : ILogPersistenceStrategyService

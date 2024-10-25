@@ -1,11 +1,13 @@
 using Elsa.Api.Client.Shared.Models;
+using JetBrains.Annotations;
 using Refit;
 
 namespace Elsa.Api.Client.Resources.LogPersistenceStrategies;
 
 /// <summary>
-/// Represents a client for the variable types API.
+/// Represents a client API for managing log persistence strategies.
 /// </summary>
+[UsedImplicitly]
 public interface ILogPersistenceStrategiesApi
 {
     /// <summary>

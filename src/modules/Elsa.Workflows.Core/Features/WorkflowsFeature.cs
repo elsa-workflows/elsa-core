@@ -10,7 +10,6 @@ using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
-using Elsa.Workflows.LogPersistence.Services;
 using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
