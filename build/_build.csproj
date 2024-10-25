@@ -24,11 +24,11 @@
 
   <!--Overridden for vulnerability reasons with dependencies referencing older versions.-->
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.12.0" />
-    <PackageReference Include="NuGet.Packaging" Version="6.10.1" />
+    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+    <PackageReference Include="NuGet.Packaging" Version="6.11.1" />
     <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
-    <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.65.0" />
+    <PackageReference Include="Microsoft.Identity.Client" VersionOverride="4.66.1" />
   </ItemGroup>
 
 </Project>
