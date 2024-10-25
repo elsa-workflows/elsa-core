@@ -9,7 +9,6 @@ using Elsa.MongoDb.Options;
 using Elsa.MongoDb.Serializers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -17,20 +16,14 @@ using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
-using MongoDB.Driver.Core.Extensions.DiagnosticSources;
 
 namespace Elsa.MongoDb.Features;
 
 /// <summary>
 /// Configures MongoDb.
 /// </summary>
-public class MongoDbFeature : FeatureBase
+public class MongoDbFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public MongoDbFeature(IModule module) : base(module)
-    {
-    }
-
     /// <summary>
     /// The MongoDB connection string.
     /// </summary>
@@ -104,7 +97,9 @@ public class MongoDbFeature : FeatureBase
 
         var settings = MongoClientSettings.FromUrl(mongoUrl);
 
-        settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
+        // TODO: Uncomment once https://github.com/jbogard/MongoDB.Driver.Core.Extensions.DiagnosticSources/pull/41 is merged and deployed.
+        //settings.ClusterConfigurator = cb => cb.Subscribe(new DiagnosticsActivityEventSubscriber());
+        
         settings.ApplicationName = GetApplicationName(settings);
         settings.WriteConcern = options.WriteConcern;
         settings.ReadConcern = options.ReadConcern;
@@ -122,6 +117,8 @@ public class MongoDbFeature : FeatureBase
         return client.GetDatabase(mongoUrl.DatabaseName);
     }
 
-    private static string GetApplicationName(MongoClientSettings settings) =>
-        string.IsNullOrWhiteSpace(settings.ApplicationName) ? "elsa_workflows" : settings.ApplicationName;
+    private static string GetApplicationName(MongoClientSettings settings)
+    {
+        return string.IsNullOrWhiteSpace(settings.ApplicationName) ? "elsa_workflows" : settings.ApplicationName;
+    }
 }
