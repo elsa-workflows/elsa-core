@@ -54,35 +54,8 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         var activityPersistencePropertyDefault = await GetDefaultPersistenceModeAsync(source.Activity.CustomProperties, () => workflowPersistenceProperty, cancellationToken);
         var legacyActivityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LegacyLogPersistenceModeKey, () => new Dictionary<string, object?>());
         var activityPersistenceProperties = source.Activity.CustomProperties.GetValueOrDefault<IDictionary<string, object?>>(LogPersistenceStrategyKey, () => new Dictionary<string, object?>());
-
-        // Get any outcomes that were added to the activity execution context.
-        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
-        var payload = new Dictionary<string, object>();
-
-        if (outcomes != null)
-            payload.Add("Outcomes", outcomes);
-
-        // Get any outputs that were added to the activity execution context.
-        var activity = source.Activity;
-        var expressionExecutionContext = source.ExpressionExecutionContext;
-        var activityDescriptor = source.ActivityDescriptor;
-        var outputDescriptors = activityDescriptor.Outputs;
-
-        var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
-        {
-            if (x.IsSerializable == false)
-                return "(not serializable)";
-
-            var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
-
-            if (cachedValue != default)
-                return cachedValue;
-
-            if (x.ValueGetter(activity) is Output output && source.TryGet(output.MemoryBlockReference(), out var outputValue))
-                return outputValue;
-
-            return default;
-        });
+        var payload = GetPayload(source);
+        var outputs = GetOutputs(source);
 
         outputs = await StorePropertyUsingPersistenceMode(
             outputs,
@@ -175,7 +148,7 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
         return result;
     }
 
-    private ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
+    private static ActivityStatus GetAggregateStatus(ActivityExecutionContext context)
     {
         // If any child activity is faulted, the aggregate status is faulted.
         var descendantContexts = context.GetDescendants().ToList();
@@ -184,5 +157,43 @@ public class DefaultActivityExecutionMapper : IActivityExecutionMapper
             return ActivityStatus.Faulted;
 
         return context.Status;
+    }
+    
+    private static IDictionary<string, object> GetPayload(ActivityExecutionContext source)
+    {
+        var outcomes = source.JournalData.TryGetValue("Outcomes", out var resultValue) ? resultValue as string[] : default;
+        var payload = new Dictionary<string, object>();
+
+        if (outcomes != null)
+            payload.Add("Outcomes", outcomes);
+        
+        return payload;
+    }
+
+    // Get the outputs of the activity execution context.
+    private static IDictionary<string, object?> GetOutputs(ActivityExecutionContext source)
+    {
+        var activity = source.Activity;
+        var expressionExecutionContext = source.ExpressionExecutionContext;
+        var activityDescriptor = source.ActivityDescriptor;
+        var outputDescriptors = activityDescriptor.Outputs;
+
+        var outputs = outputDescriptors.ToDictionary(x => x.Name, x =>
+        {
+            if (x.IsSerializable == false)
+                return "(not serializable)";
+
+            var cachedValue = activity.GetOutput(expressionExecutionContext, x.Name);
+
+            if (cachedValue != default)
+                return cachedValue;
+
+            if (x.ValueGetter(activity) is Output output && source.TryGet(output.MemoryBlockReference(), out var outputValue))
+                return outputValue;
+
+            return default;
+        });
+        
+        return outputs;
     }
 }
