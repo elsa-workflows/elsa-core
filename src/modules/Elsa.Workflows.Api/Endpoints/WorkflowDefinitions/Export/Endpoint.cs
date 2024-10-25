@@ -72,7 +72,7 @@ internal class Export : ElsaEndpoint<Request>
             foreach (var definition in definitions)
             {
                 var model = await CreateWorkflowModelAsync(definition, cancellationToken);
-                var binaryJson = SerializeWorkflowDefinition(model);
+                var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
                 var fileName = GetFileName(model);
                 var entry = zipArchive.CreateEntry(fileName, CompressionLevel.Optimal);
                 await using var entryStream = entry.Open();
@@ -101,7 +101,7 @@ internal class Export : ElsaEndpoint<Request>
         }
 
         var model = await CreateWorkflowModelAsync(definition, cancellationToken);
-        var binaryJson = SerializeWorkflowDefinition(model);
+        var binaryJson = await SerializeWorkflowDefinitionAsync(model, cancellationToken);
         var fileName = GetFileName(model);
 
         await SendBytesAsync(binaryJson, fileName, cancellation: cancellationToken);
@@ -115,10 +115,25 @@ internal class Export : ElsaEndpoint<Request>
         return fileName;
     }
 
-    private byte[] SerializeWorkflowDefinition(WorkflowDefinitionModel model)
+    private async Task<byte[]> SerializeWorkflowDefinitionAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken)
     {
-        JsonSerializerOptions serializerOptions = _serializer.GetOptions();
-        var binaryJson = JsonSerializer.SerializeToUtf8Bytes(model, serializerOptions);
+        var serializerOptions = _serializer.GetOptions();
+        var document = JsonSerializer.SerializeToDocument(model, serializerOptions);
+        var rootElement = document.RootElement;
+
+        using var output = new MemoryStream();
+        await using var writer = new Utf8JsonWriter(output);
+
+        writer.WriteStartObject();
+        writer.WriteString("$schema", "https://elsaworkflows.io/schemas/workflow-definition/v3.0.0/schema.json");
+
+        foreach (var property in rootElement.EnumerateObject())
+            property.WriteTo(writer);
+
+        writer.WriteEndObject();
+
+        await writer.FlushAsync(cancellationToken);
+        var binaryJson = output.ToArray();
         return binaryJson;
     }
 
