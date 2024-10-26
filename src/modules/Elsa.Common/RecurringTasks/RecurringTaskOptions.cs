@@ -2,5 +2,5 @@ namespace Elsa.Common.RecurringTasks;
 
 public class RecurringTaskOptions
 {
-    public RecurringTasksSchedule Schedule { get; } = new();
+    public RecurringTaskSchedule Schedule { get; } = new();
 }

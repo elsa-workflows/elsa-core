@@ -28,6 +28,7 @@ namespace Elsa.Workflows.Runtime.Features;
 
 /// Installs and configures workflow runtime features.
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(RecurringTasksFeature))]
 public class WorkflowRuntimeFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -146,7 +147,7 @@ public class WorkflowRuntimeFeature : FeatureBase
 
         Services.Configure<RecurringTaskOptions>(options =>
         {
-            options.Schedule.ConfigureScheduledTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
+            options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
         });
     }
 

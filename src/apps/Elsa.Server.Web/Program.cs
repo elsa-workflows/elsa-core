@@ -496,7 +496,7 @@ services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 // Configure recurring tasks.
 services.Configure<RecurringTaskOptions>(options =>
 {
-    options.Schedule.ConfigureScheduledTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
+    options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
 });
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
