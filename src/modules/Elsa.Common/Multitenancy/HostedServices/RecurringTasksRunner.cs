@@ -12,11 +12,15 @@ public class RecurringTasksRunner(IServiceScopeFactory serviceScopeFactory, Recu
     protected override async Task StartAsync(TenantScope tenantScope, CancellationToken stoppingToken)
     {
         var tasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
+        var taskExecutor = tenantScope.ServiceProvider.GetRequiredService<TaskExecutor>();
         
         foreach (var task in tasks)
         {
             var schedule = scheduleManager.GetScheduleFor(task.GetType());
-            var timer = schedule.CreateTimer(async () => await task.ExecuteAsync(stoppingToken));
+            var timer = schedule.CreateTimer(async () =>
+            {
+                await taskExecutor.ExecuteTaskAsync(task, stoppingToken);
+            });
             _scheduledTimers.Add(timer);
             await task.StartAsync(stoppingToken);
         }

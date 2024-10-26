@@ -23,6 +23,7 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Management.Tasks;
 using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
@@ -497,6 +498,7 @@ services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 services.Configure<RecurringTaskOptions>(options =>
 {
     options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
+    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromSeconds(10));
 });
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
@@ -510,7 +512,6 @@ var app = builder.Build();
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
-
 
 // CORS.
 app.UseCors();

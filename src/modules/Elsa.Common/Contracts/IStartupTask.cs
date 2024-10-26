@@ -4,7 +4,6 @@ namespace Elsa.Common;
 /// Represents a task that is executed during application startup.
 /// In multi-tenant applications, this task is executed for each tenant.
 /// </summary>
-public interface IStartupTask
+public interface IStartupTask : ITask
 {
-    Task ExecuteAsync(CancellationToken cancellationToken);
 }
