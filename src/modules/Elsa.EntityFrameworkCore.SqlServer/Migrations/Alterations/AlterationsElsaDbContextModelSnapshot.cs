@@ -25,6 +25,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
@@ -48,14 +51,11 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationJob_CompletedAt");
@@ -83,6 +83,9 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
@@ -105,10 +108,7 @@ namespace Elsa.EntityFrameworkCore.SqlServer.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationPlan_CompletedAt");

@@ -12,6 +12,11 @@ public class Configurations : IEntityTypeConfiguration<ApiKeyDefinition>, IEntit
 {
     public void Configure(EntityTypeBuilder<ApiKeyDefinition> builder)
     {
+        builder.HasKey(x => new
+        {
+            x.TenantId,
+            x.Id
+        });
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(ApiKeyDefinition)}_{nameof(ApiKeyDefinition.Name)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(ApiKeyDefinition)}_{nameof(ApiKeyDefinition.TenantId)}");
     }
@@ -19,6 +24,11 @@ public class Configurations : IEntityTypeConfiguration<ApiKeyDefinition>, IEntit
     public void Configure(EntityTypeBuilder<ServiceDefinition> builder)
     {
         builder.Property(x => x.Settings).HasJsonValueConversion();
+        builder.HasKey(x => new
+        {
+            x.TenantId,
+            x.Id
+        });
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(ServiceDefinition)}_{nameof(ServiceDefinition.Name)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(ServiceDefinition)}_{nameof(ServiceDefinition.TenantId)}");
     }
@@ -26,6 +36,11 @@ public class Configurations : IEntityTypeConfiguration<ApiKeyDefinition>, IEntit
     public void Configure(EntityTypeBuilder<AgentDefinition> builder)
     {
         builder.Property(x => x.AgentConfig).HasJsonValueConversion();
+        builder.HasKey(x => new
+        {
+            x.TenantId,
+            x.Id
+        });
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(AgentDefinition)}_{nameof(AgentDefinition.Name)}");
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(AgentDefinition)}_{nameof(AgentDefinition.TenantId)}");
     }

@@ -10,12 +10,12 @@ providers=("MySql" "SqlServer" "Sqlite" "PostgreSql" "Oracle")
 for module in "${mods[@]}"; do
     # Loop through each provider
     for provider in "${providers[@]}"; do
-        providerPath="../src/modules/Elsa.EntityFrameworkCore.$provider"
+        providerPath="../../src/modules/Elsa.EntityFrameworkCore.$provider"
         migrationsPath="Migrations/$module"
     
         echo "Updating migrations for $provider..."
         echo "Provider path: ${providerPath:?}/${migrationsPath}"
         echo "Migrations path: $migrationsPath"
-        ef-migration-runtime-schema --interface Elsa.EntityFrameworkCore.Common.Contracts.IElsaDbContextSchema --efOptions "migrations add V3_3 -c ""$module""ElsaDbContext -p ""$providerPath""  -o ""$migrationsPath"""
+        ef-migration-runtime-schema --interface Elsa.EntityFrameworkCore.IElsaDbContextSchema --efOptions "migrations add V3_3 -c ""$module""ElsaDbContext -p ""$providerPath""  -o ""$migrationsPath"""
     done
 done

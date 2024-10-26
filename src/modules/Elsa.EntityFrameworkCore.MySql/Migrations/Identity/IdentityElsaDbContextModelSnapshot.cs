@@ -21,6 +21,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -53,10 +56,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("ClientId")
                         .IsUnique()
@@ -74,6 +74,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -86,10 +89,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Permissions");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -103,6 +103,9 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -123,10 +126,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Identity
                         .HasColumnType("longtext")
                         .HasColumnName("Roles");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Name")
                         .IsUnique()

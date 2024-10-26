@@ -10,7 +10,7 @@ public class DefaultRegistriesPopulator : IRegistriesPopulator
     private readonly IActivityRegistryPopulator _activityRegistryPopulator;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="PopulateRegistriesHostedService"/> class.
+    /// Initializes a new instance of the <see cref="PopulateRegistriesStartupTask"/> class.
     /// </summary>
     public DefaultRegistriesPopulator(IWorkflowDefinitionStorePopulator workflowDefinitionStorePopulator, IActivityRegistryPopulator activityRegistryPopulator)
     {

@@ -24,6 +24,9 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.AgentDefinition", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
@@ -39,10 +42,7 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_AgentDefinition_Name");
@@ -55,6 +55,9 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ApiKeyDefinition", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
@@ -62,14 +65,11 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_ApiKeyDefinition_Name");
@@ -82,6 +82,9 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ServiceDefinition", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
@@ -93,14 +96,11 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.SqlServer.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_ServiceDefinition_Name");

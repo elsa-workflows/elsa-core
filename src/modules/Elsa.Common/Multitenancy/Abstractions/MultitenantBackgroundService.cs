@@ -8,19 +8,43 @@ namespace Elsa.Common.Multitenancy;
 /// </summary>
 public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected IServiceScope ServiceScope { get; private set; } = default!;
+    protected ICollection<Tenant> Tenants { get; private set; } = default!;
+    protected IDictionary<Tenant, TenantScope> TenantScopes { get; private set; } =  default!;
+    
+    public override async Task StartAsync(CancellationToken cancellationToken)
     {
-        using var serviceScope = serviceScopeFactory.CreateScope();
-        var tenantScopeFactory = serviceScope.ServiceProvider.GetRequiredService<ITenantScopeFactory>();
-        var tenantsProvider = serviceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-        var tenants = (await tenantsProvider.ListAsync(stoppingToken)).ToList();
+        ServiceScope = serviceScopeFactory.CreateScope();
+        var tenantScopeFactory = ServiceScope.ServiceProvider.GetRequiredService<ITenantScopeFactory>();
+        var tenantsProvider = ServiceScope.ServiceProvider.GetRequiredService<ITenantsProvider>();
+        Tenants = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+        TenantScopes = Tenants.ToDictionary(x => x, x => tenantScopeFactory.CreateScope(x));
 
-        foreach (var tenant in tenants)
-        {
-            using var tenantScope = tenantScopeFactory.CreateScope(tenant);
-            await ExecuteAsync(tenantScope, stoppingToken);
-        }
+        foreach (var entry in TenantScopes) 
+            await StartAsync(entry.Value, cancellationToken);
+        
+        await base.StartAsync(cancellationToken);
+    }
+    
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        foreach (var entry in TenantScopes) 
+            await StopAsync(entry.Value, cancellationToken);
+        
+        foreach (var entry in TenantScopes) 
+            entry.Value.Dispose();
+        
+        ServiceScope.Dispose();
+        await base.StopAsync(cancellationToken);
     }
 
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        foreach (var entry in TenantScopes) 
+            await ExecuteAsync(entry.Value, stoppingToken);
+    }
+
+    protected virtual Task StartAsync(TenantScope tenantScope, CancellationToken stoppingToken) => Task.CompletedTask;
     protected virtual Task ExecuteAsync(TenantScope tenantScope, CancellationToken stoppingToken) => Task.CompletedTask;
+    protected virtual Task StopAsync(TenantScope tenantScope, CancellationToken stoppingToken) => Task.CompletedTask;
 }

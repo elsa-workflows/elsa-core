@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,15 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
     {
         _tenantsProviderFactory = tenantsProviderFactory;
         return this;
+    }
+
+    public override void ConfigureHostedServices()
+    {
+        Module
+            .ConfigureHostedService<StartupTasksRunner>(1)
+            .ConfigureHostedService<BackgroundTasksRunner>(1)
+            .ConfigureHostedService<RecurringTasksRunner>(1)
+            ;
     }
 
     public override void Apply()

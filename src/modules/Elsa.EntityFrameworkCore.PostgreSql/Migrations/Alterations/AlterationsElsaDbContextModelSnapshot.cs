@@ -25,6 +25,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
@@ -48,14 +51,11 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationJob_CompletedAt");
@@ -83,6 +83,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
@@ -105,10 +108,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationPlan_CompletedAt");

@@ -25,6 +25,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.KeyValues.Entities.SerializedKeyValuePair", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -32,10 +35,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex(new[] { "TenantId" }, "IX_SerializedKeyValuePair_TenantId");
 
@@ -44,6 +44,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.ActivityExecutionRecord", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -96,14 +99,11 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("ActivityId")
                         .HasDatabaseName("IX_ActivityExecutionRecord_ActivityId");
@@ -146,6 +146,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -170,13 +173,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<string>("StimulusHash")
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("WorkflowInstanceId")
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueItem_ActivityInstanceId");
 
@@ -199,6 +199,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredBookmark", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -225,14 +228,11 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex(new[] { "ActivityInstanceId" }, "IX_StoredBookmark_ActivityInstanceId");
 
@@ -255,6 +255,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.StoredTrigger", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -272,9 +275,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<string>("SerializedPayload")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("WorkflowDefinitionId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
@@ -283,7 +283,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("Hash")
                         .HasDatabaseName("IX_StoredTrigger_Hash");
@@ -305,6 +305,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
 
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.WorkflowExecutionLogRecord", b =>
                 {
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -351,9 +354,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<string>("Source")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
@@ -372,7 +372,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Runtime
                     b.Property<int>("WorkflowVersion")
                         .HasColumnType("NUMBER(10)");
 
-                    b.HasKey("Id");
+                    b.HasKey("TenantId", "Id");
 
                     b.HasIndex("ActivityId")
                         .HasDatabaseName("IX_WorkflowExecutionLogRecord_ActivityId");

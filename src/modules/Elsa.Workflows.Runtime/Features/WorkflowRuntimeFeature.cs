@@ -144,14 +144,6 @@ public class WorkflowRuntimeFeature : FeatureBase
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        Module
-            .ConfigureHostedService<PopulateRegistriesHostedService>(1)
-            .ConfigureHostedService<TriggerBookmarkQueueWorker>(1);
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         // Options.
@@ -178,8 +170,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
-            .AddSingleton<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
-            .AddSingleton<IBookmarkQueueWorker, BookmarkQueueWorker>()
+            .AddScoped<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
+            .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -237,6 +229,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
+            
+            // Startup tasks, background tasks, and recurring tasks.
+            .AddStartupTask<PopulateRegistriesStartupTask>()
+            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
