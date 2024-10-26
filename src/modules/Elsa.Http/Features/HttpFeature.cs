@@ -142,12 +142,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
     }
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<UpdateRouteTableHostedService>();
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         var configureOptions = ConfigureHttpOptions ?? (options =>
@@ -206,6 +200,9 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped(HttpEndpointWorkflowFaultHandler)
             .AddScoped(HttpEndpointAuthorizationHandler)
             .AddScoped(_httpEndpointRouteProvider)
+            
+            // Startup tasks.
+            .AddScoped<UpdateRouteTableStartupTask>()
 
             // Downloadable content handlers.
             .AddScoped<IDownloadableManager, DefaultDownloadableManager>()

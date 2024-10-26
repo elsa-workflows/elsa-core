@@ -34,7 +34,7 @@ public class ValidateWorkflowRequestHandler : IRequestHandler<ValidateWorkflowRe
     {
         var workflow = request.Workflow;
         var httpEndpointTriggers = (await _triggerIndexer.GetTriggersAsync(workflow, cancellationToken)).Where(x => x.Payload is HttpEndpointBookmarkPayload).ToList();
-        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)), TenantAgnostic = true }, cancellationToken)).ToList();
+        var publishedWorkflowsTriggers = (await _triggerStore.FindManyAsync(new TriggerFilter { Name = ActivityTypeNameHelper.GenerateTypeName(typeof(HttpEndpoint)) }, cancellationToken)).ToList();
         var validationErrors = new List<WorkflowValidationError>();
 
         foreach (var httpEndpointTrigger in httpEndpointTriggers)
