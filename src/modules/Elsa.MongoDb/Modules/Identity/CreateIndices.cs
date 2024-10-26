@@ -33,6 +33,22 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<Application>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.ClientId), new CreateIndexOptions
                         {
                             Unique = true
@@ -58,6 +74,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<User>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.Name),
                             new CreateIndexOptions
                             {
@@ -80,6 +104,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<Role>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.Name),
                             new CreateIndexOptions
                             {

@@ -1,11 +1,10 @@
 ﻿using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Models;
+using Elsa.MongoDb.Common;
 
 namespace Elsa.MongoDb.Modules.Alterations.Documents;
-internal class AlterationPlanDocument
+internal class AlterationPlanDocument : Document
 {
-    public string Id { get; init; } = default!;
-
     public string Alterations { get; init; } = default!;
 
     public AlterationWorkflowInstanceFilter WorkflowInstanceFilter { get; init; } = default!;

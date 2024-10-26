@@ -40,6 +40,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<WorkflowExecutionLogRecord>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Sequence)),
@@ -70,6 +78,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<ActivityExecutionRecord>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.StartedAt)),
                         new(indexBuilder.Ascending(x => x.ActivityId)),
                         new(indexBuilder.Ascending(x => x.ActivityType)),
@@ -95,6 +111,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<StoredBookmark>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder
                             .Ascending(x => x.ActivityTypeName)
                             .Ascending(x => x.Hash)),
@@ -121,6 +145,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<BookmarkQueueItem>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.CorrelationId)),
                         new(indexBuilder.Ascending(x => x.ActivityTypeName)),
@@ -144,6 +176,14 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<StoredTrigger>>
                     {
+                        new(indexBuilder.Ascending(x => new
+                        {
+                            x.Id,
+                            x.TenantId
+                        }), new CreateIndexOptions
+                        {
+                            Unique = true
+                        }),
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionId)),
                         new(indexBuilder.Ascending(x => x.WorkflowDefinitionVersionId)),
                         new(indexBuilder.Ascending(x => x.Name)),
