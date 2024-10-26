@@ -51,14 +51,14 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
 
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
                     b.Property<string>("LabelId")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -69,7 +69,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");

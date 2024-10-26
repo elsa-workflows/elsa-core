@@ -12,11 +12,6 @@ public class Configurations : IEntityTypeConfiguration<Label>, IEntityTypeConfig
 
     public void Configure(EntityTypeBuilder<WorkflowDefinitionLabel> builder)
     {
-        builder.HasKey(x => new
-        {
-            x.TenantId,
-            x.Id
-        });
         builder.HasIndex(x => x.WorkflowDefinitionId).HasDatabaseName($"{nameof(WorkflowDefinitionLabel)}_{nameof(WorkflowDefinitionLabel.WorkflowDefinitionId)}");
         builder.HasIndex(x => x.WorkflowDefinitionVersionId).HasDatabaseName($"{nameof(WorkflowDefinitionLabel)}_{nameof(WorkflowDefinitionLabel.WorkflowDefinitionVersionId)}");
         builder.HasIndex(x => x.LabelId).HasDatabaseName($"{nameof(WorkflowDefinitionLabel)}_{nameof(WorkflowDefinitionLabel.LabelId)}");

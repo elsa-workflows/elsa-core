@@ -21,12 +21,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Property<string>("Data");
         builder.Property<bool?>("UsableAsActivity");
         builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
-
-        builder.HasKey(x => new
-        {
-            x.TenantId,
-            x.Id
-        });
         builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.Version)}").IsUnique();
         builder.HasIndex(x => x.Version).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Version)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Name)}");
@@ -44,11 +38,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Property<string>("DataCompressionAlgorithm");
         builder.Property(x => x.Status).HasConversion<string>();
         builder.Property(x => x.SubStatus).HasConversion<string>();
-        builder.HasKey(x => new
-        {
-            x.TenantId,
-            x.Id
-        });
         builder.HasIndex(x => new { x.Status, x.SubStatus, x.DefinitionId, x.Version }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}_{nameof(WorkflowInstance.DefinitionId)}_{nameof(WorkflowInstance.Version)}");
         builder.HasIndex(x => new { x.Status, x.SubStatus }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.SubStatus)}");
         builder.HasIndex(x => new { x.Status, x.DefinitionId }).HasDatabaseName($"IX_{nameof(WorkflowInstance)}_{nameof(WorkflowInstance.Status)}_{nameof(WorkflowInstance.DefinitionId)}");

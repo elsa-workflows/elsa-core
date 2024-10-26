@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using MongoDB.Driver;
 
 namespace Elsa.MongoDb.Modules.Alterations;
-
 internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
 {
     public Task StartAsync(CancellationToken cancellationToken)
@@ -33,14 +32,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
             async (collection, indexBuilder) =>
                 await collection.Indexes.CreateManyAsync(
                     [
-                        new(indexBuilder.Ascending(x => new
-                        {
-                            x.Id,
-                            x.TenantId
-                        }), new CreateIndexOptions
-                        {
-                            Unique = true
-                        }),
                         new(indexBuilder.Ascending(x => x.Status)),
                         new(indexBuilder.Ascending(x => x.CreatedAt)),
                         new(indexBuilder.Ascending(x => x.StartedAt)),
@@ -59,14 +50,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
             async (collection, indexBuilder) =>
                 await collection.Indexes.CreateManyAsync(
                     [
-                        new(indexBuilder.Ascending(x => new
-                        {
-                            x.Id,
-                            x.TenantId
-                        }), new CreateIndexOptions
-                        {
-                            Unique = true
-                        }),
                         new(indexBuilder.Ascending(x => x.PlanId)),
                         new(indexBuilder.Ascending(x => x.WorkflowInstanceId)),
                         new(indexBuilder.Ascending(x => x.Status)),

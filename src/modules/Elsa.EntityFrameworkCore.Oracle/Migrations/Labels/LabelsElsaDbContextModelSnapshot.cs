@@ -51,14 +51,14 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Labels
 
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("LabelId")
                         .IsRequired()
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -69,7 +69,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");

@@ -32,14 +32,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<WorkflowDefinition>>
                     {
-                        new(indexBuilder.Ascending(x => new
-                        {
-                            x.Id,
-                            x.TenantId
-                        }), new CreateIndexOptions
-                        {
-                            Unique = true
-                        }),
                         new(indexBuilder.Ascending(x => x.DefinitionId).Ascending(x => x.Version), new CreateIndexOptions
                         {
                             Unique = true
@@ -65,14 +57,6 @@ internal class CreateIndices(IServiceProvider serviceProvider) : IHostedService
                 await collection.Indexes.CreateManyAsync(
                     new List<CreateIndexModel<WorkflowInstance>>
                     {
-                        new(indexBuilder.Ascending(x => new
-                        {
-                            x.Id,
-                            x.TenantId
-                        }), new CreateIndexOptions
-                        {
-                            Unique = true
-                        }),
                         new(indexBuilder
                             .Ascending(x => x.DefinitionId)
                             .Ascending(x => x.Version)

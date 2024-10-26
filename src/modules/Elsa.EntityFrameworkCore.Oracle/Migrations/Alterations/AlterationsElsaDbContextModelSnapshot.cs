@@ -25,9 +25,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -51,11 +48,14 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationJob_CompletedAt");
@@ -83,9 +83,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -108,7 +105,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationPlan_CompletedAt");

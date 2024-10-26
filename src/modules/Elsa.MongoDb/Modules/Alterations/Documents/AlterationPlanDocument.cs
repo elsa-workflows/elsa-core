@@ -9,11 +9,11 @@ internal class AlterationPlanDocument : Document
 
     public AlterationWorkflowInstanceFilter WorkflowInstanceFilter { get; init; } = default!;
 
-    public AlterationPlanStatus Status { get; init; } = default!;
+    public AlterationPlanStatus Status { get; init; }
 
-    public DateTimeOffset CreatedAt { get; init; } = default!;
+    public DateTimeOffset CreatedAt { get; init; }
 
-    public DateTimeOffset? StartedAt { get; init; } = default!;
+    public DateTimeOffset? StartedAt { get; init; }
 
-    public DateTimeOffset? CompletedAt { get; init; } = default!;
+    public DateTimeOffset? CompletedAt { get; init; }
 }

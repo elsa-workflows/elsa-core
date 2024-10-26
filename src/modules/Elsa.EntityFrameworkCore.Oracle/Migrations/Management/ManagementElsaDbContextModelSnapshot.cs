@@ -25,9 +25,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -75,6 +72,9 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("NVARCHAR2(2000)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("ToolVersion")
                         .HasColumnType("NVARCHAR2(2000)");
 
@@ -84,7 +84,7 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                     b.Property<int>("Version")
                         .HasColumnType("NUMBER(10)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("IsLatest")
                         .HasDatabaseName("IX_WorkflowDefinition_IsLatest");
@@ -116,9 +116,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -165,13 +162,16 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Management
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.Property<int>("Version")
                         .HasColumnType("NUMBER(10)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("CorrelationId")
                         .HasDatabaseName("IX_WorkflowInstance_CorrelationId");

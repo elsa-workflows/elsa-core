@@ -21,9 +21,6 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.AgentDefinition", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -39,7 +36,10 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_AgentDefinition_Name");
@@ -52,9 +52,6 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ApiKeyDefinition", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -62,11 +59,14 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_ApiKeyDefinition_Name");
@@ -79,9 +79,6 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
 
             modelBuilder.Entity("Elsa.Agents.Persistence.Entities.ServiceDefinition", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -93,11 +90,14 @@ namespace Elsa.Agents.Persistence.EntityFrameworkCore.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("IX_ServiceDefinition_Name");

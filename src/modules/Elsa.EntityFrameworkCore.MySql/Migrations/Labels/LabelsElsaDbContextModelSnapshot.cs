@@ -48,14 +48,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
 
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("LabelId")
                         .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -66,7 +66,7 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");

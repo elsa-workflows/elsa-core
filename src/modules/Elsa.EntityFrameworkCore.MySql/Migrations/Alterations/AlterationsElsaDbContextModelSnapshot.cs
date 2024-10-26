@@ -22,9 +22,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationJob", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -48,11 +45,14 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("WorkflowInstanceId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationJob_CompletedAt");
@@ -80,9 +80,6 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
 
             modelBuilder.Entity("Elsa.Alterations.Core.Entities.AlterationPlan", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -105,7 +102,10 @@ namespace Elsa.EntityFrameworkCore.MySql.Migrations.Alterations
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("CompletedAt")
                         .HasDatabaseName("IX_AlterationPlan_CompletedAt");

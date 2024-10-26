@@ -45,14 +45,14 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
 
             modelBuilder.Entity("Elsa.Labels.Entities.WorkflowDefinitionLabel", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LabelId")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WorkflowDefinitionId")
@@ -63,7 +63,7 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Labels
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("LabelId")
                         .HasDatabaseName("WorkflowDefinitionLabel_LabelId");

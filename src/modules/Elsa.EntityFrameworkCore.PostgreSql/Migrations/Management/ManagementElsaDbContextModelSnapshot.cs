@@ -25,9 +25,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinition", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
@@ -75,6 +72,9 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<string>("StringData")
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("ToolVersion")
                         .HasColumnType("text");
 
@@ -84,7 +84,7 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("IsLatest")
                         .HasDatabaseName("IX_WorkflowDefinition_IsLatest");
@@ -116,9 +116,6 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowInstance", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("text");
-
                     b.Property<string>("Id")
                         .HasColumnType("text");
 
@@ -165,13 +162,16 @@ namespace Elsa.EntityFrameworkCore.PostgreSql.Migrations.Management
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Version")
                         .HasColumnType("integer");
 
-                    b.HasKey("TenantId", "Id");
+                    b.HasKey("Id");
 
                     b.HasIndex("CorrelationId")
                         .HasDatabaseName("IX_WorkflowInstance_CorrelationId");

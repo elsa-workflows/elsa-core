@@ -18,9 +18,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
@@ -53,7 +50,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ClientId")
                         .IsUnique()
@@ -71,9 +71,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
@@ -86,7 +83,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Permissions");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -100,9 +100,6 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
@@ -123,7 +120,10 @@ namespace Elsa.EntityFrameworkCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT")
                         .HasColumnName("Roles");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()

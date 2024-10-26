@@ -24,9 +24,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -59,7 +56,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
                         .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Roles");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ClientId")
                         .IsUnique()
@@ -77,9 +77,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.Role", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -92,7 +89,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
                         .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Permissions");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
@@ -106,9 +106,6 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
 
             modelBuilder.Entity("Elsa.Identity.Entities.User", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(450)");
-
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -129,7 +126,10 @@ namespace Elsa.EntityFrameworkCore.Oracle.Migrations.Identity
                         .HasColumnType("NVARCHAR2(2000)")
                         .HasColumnName("Roles");
 
-                    b.HasKey("TenantId", "Id");
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique()
