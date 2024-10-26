@@ -2,7 +2,8 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
-using Elsa.Common.DistributedLocks.Noop;
+using Elsa.Common.DistributedHosting.DistributedLocks;
+using Elsa.Common.RecurringTasks;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -34,6 +35,7 @@ using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -491,6 +493,12 @@ services
 // Obfuscate HTTP request headers.
 services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
 
+// Configure recurring tasks.
+services.Configure<RecurringTaskOptions>(options =>
+{
+    options.Schedule.ConfigureScheduledTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
+});
+
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
 services.AddControllers();
@@ -502,6 +510,7 @@ var app = builder.Build();
 // Configure the pipeline.
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
+
 
 // CORS.
 app.UseCors();

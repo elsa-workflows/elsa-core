@@ -1,5 +1,5 @@
+using Elsa.Common.DistributedHosting;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.State;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,7 @@
 using Elsa.Common;
 using JetBrains.Annotations;
 
-namespace Elsa.Workflows.Runtime.HostedServices;
+namespace Elsa.Workflows.Runtime.Tasks;
 
 /// Periodically signals the bookmark queue processor to check for new items. This is a reliability measure that ensures stimuli never gets missed.
 [UsedImplicitly]

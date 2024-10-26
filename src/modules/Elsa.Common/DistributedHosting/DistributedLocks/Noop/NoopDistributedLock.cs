@@ -1,6 +1,6 @@
 using Medallion.Threading;
 
-namespace Elsa.Common.DistributedLocks.Noop;
+namespace Elsa.Common.DistributedHosting.DistributedLocks;
 
 /// <summary>
 /// Represents a Noop (No-Operation) implementation of the <see cref="IDistributedLock"/> interface.

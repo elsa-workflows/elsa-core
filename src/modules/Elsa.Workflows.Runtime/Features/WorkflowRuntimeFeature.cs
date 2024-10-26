@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
+using Elsa.Common.RecurringTasks;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -13,11 +15,11 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
-using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Runtime.Tasks;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -140,6 +142,11 @@ public class WorkflowRuntimeFeature : FeatureBase
         Module.Configure<WorkflowsFeature>(workflows =>
         {
             workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
+        });
+
+        Services.Configure<RecurringTaskOptions>(options =>
+        {
+            options.Schedule.ConfigureScheduledTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
         });
     }
 
