@@ -28,6 +28,7 @@ using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
 using Elsa.Server.Web.Extensions;
 using Elsa.Server.Web.Filters;
+using Elsa.Server.Web.Messages;
 using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
 using Elsa.Workflows.Api;
@@ -66,7 +67,7 @@ const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
-const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
+const MassTransitBroker massTransitBroker = MassTransitBroker.RabbitMq;
 const bool useMultitenancy = true;
 const bool useAgents = true;
 const bool useSecrets = true;
@@ -409,6 +410,8 @@ services
                         // etc.
                     });
                 }
+
+                massTransit.AddMessageType<OrderReceived>();
             });
         }
 
