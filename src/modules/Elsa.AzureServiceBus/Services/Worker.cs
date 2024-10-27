@@ -1,6 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,16 +15,18 @@ namespace Elsa.AzureServiceBus.Services;
 public class Worker : IAsyncDisposable
 {
     private readonly ServiceBusProcessor _processor;
+    private readonly ITenantAccessor _tenantAccessor;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ILogger _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Worker"/> class.
     /// </summary>
-    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, IServiceScopeFactory serviceScopeFactory, ILogger<Worker> logger)
+    public Worker(string queueOrTopic, string? subscription, ServiceBusClient client, ITenantAccessor tenantAccessor, IServiceScopeFactory serviceScopeFactory, ILogger<Worker> logger)
     {
         QueueOrTopic = queueOrTopic;
         Subscription = subscription == "" ? default : subscription;
+        _tenantAccessor = tenantAccessor;
         _serviceScopeFactory = serviceScopeFactory;
         _logger = logger;
 
@@ -54,7 +57,12 @@ public class Worker : IAsyncDisposable
     /// <summary>
     /// Disposes the worker.
     /// </summary>
-    public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        _processor.ProcessMessageAsync -= OnMessageReceivedAsync;
+        _processor.ProcessErrorAsync -= OnErrorAsync;
+        await _processor.DisposeAsync();
+    }
 
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 
@@ -66,6 +74,7 @@ public class Worker : IAsyncDisposable
 
     private async Task InvokeWorkflowsAsync(ServiceBusReceivedMessage message, CancellationToken cancellationToken)
     {
+        var tenant = _tenantAccessor.Tenant;
         var input = new Dictionary<string, object>
         {
             [MessageReceived.InputKey] = CreateMessageModel(message)
