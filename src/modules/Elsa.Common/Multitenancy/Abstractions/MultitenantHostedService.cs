@@ -24,7 +24,7 @@ public abstract class MultitenantHostedService(IServiceScopeFactory serviceScope
         
         foreach (var tenant in tenants)
         {
-            using var tenantScope = tenantScopeFactory.CreateScope(tenant);
+            await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
             await action(tenantScope, cancellationToken);
         }
     }

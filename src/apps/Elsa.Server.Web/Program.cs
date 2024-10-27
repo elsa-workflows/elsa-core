@@ -70,7 +70,7 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = true;
 const bool useAgents = true;
 const bool useSecrets = true;
-const bool useAzureServiceBus = false;
+const bool useAzureServiceBus = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

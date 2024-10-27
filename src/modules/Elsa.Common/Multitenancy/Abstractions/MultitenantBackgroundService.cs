@@ -32,7 +32,7 @@ public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceS
             await StopAsync(entry.Value, cancellationToken);
         
         foreach (var entry in TenantScopes) 
-            entry.Value.Dispose();
+            await entry.Value.DisposeAsync();
         
         ServiceScope.Dispose();
         await base.StopAsync(cancellationToken);

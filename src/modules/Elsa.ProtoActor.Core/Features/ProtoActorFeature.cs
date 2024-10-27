@@ -1,6 +1,8 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.ProtoActor.HostedServices;
+using Elsa.Tenants;
 using Elsa.Workflows.Runtime.ProtoActor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,6 +21,7 @@ namespace Elsa.ProtoActor.Features;
 /// Installs the Proto Actor feature.
 public class ProtoActorFeature(IModule module) : FeatureBase(module)
 {
+    private const string TenantHeaderName = "TenantId";
     private LogLevel _diagnosticsLogLevel = LogLevel.Information;
     private bool _enableMetrics;
     private bool _enableTracing;
@@ -31,7 +34,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     /// By default, the cluster name is set to "elsa-cluster".
     /// </remarks>
     public string ClusterName { get; set; } = "elsa-cluster";
-    
+
     /// A delegate that returns an instance of a concrete implementation of <see cref="IClusterProvider"/>. 
     public Func<IServiceProvider, IClusterProvider> CreateClusterProvider { get; set; } = _ => new TestProvider(new TestProviderOptions(), new InMemAgent());
 
@@ -94,8 +97,13 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
             if (_enableMetrics)
                 actorSystemConfig = actorSystemConfig.WithMetrics();
 
-            if (_enableTracing)
-                actorSystemConfig = actorSystemConfig.WithConfigureProps(props => props.WithTracing());
+            actorSystemConfig = actorSystemConfig.WithConfigureProps(props =>
+            {
+                if (_enableTracing)
+                    props = props.WithTracing();
+                
+                return props;
+            });
 
             ConfigureActorSystemConfig(sp, actorSystemConfig);
 
@@ -108,13 +116,13 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 .WithActorSpawnVerificationTimeout(TimeSpan.FromHours(1))
                 .WithActorActivationTimeout(TimeSpan.FromHours(1))
                 .WithGossipRequestTimeout(TimeSpan.FromHours(1));
-            
+
             var remoteConfig = ConfigureRemoteConfig(sp);
             clusterConfig = AddVirtualActors(sp, system, clusterConfig);
 
-            if(ConfigureClusterConfig != null)
+            if (ConfigureClusterConfig != null)
                 clusterConfig = ConfigureClusterConfig(sp, clusterConfig);
-            
+
             system
                 .WithRemote(remoteConfig)
                 .WithCluster(clusterConfig);
@@ -137,9 +145,9 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     private ClusterConfig AddVirtualActors(IServiceProvider sp, ActorSystem system, ClusterConfig clusterConfig)
     {
         var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
-
+        var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
         var remoteConfig = ConfigureRemoteConfig(sp);
-            
+
         foreach (var virtualActorProvider in virtualActorProviders)
         {
             var clusterKinds = virtualActorProvider.GetClusterKinds(system).ToList();
@@ -150,13 +158,36 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
                 if (_enableTracing)
                     kind = kind.WithProps(props => props.WithTracing());
 
+                kind = kind.WithProps(props =>
+                {
+                    var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
+                    props = props.WithReceiverMiddleware(next => async (context, envelope) =>
+                    {
+                        var tenantId = envelope.Header.GetValueOrDefault(TenantHeaderName);
+                        if (tenantId != null)
+                        {
+                            using var scope = scopeFactory.CreateScope();
+                            var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
+                            var tenant = await tenantsProvider.FindByIdAsync(tenantId);
+                            tenantAccessor.Tenant = tenant;
+                        }
+
+                        await next(context, envelope);
+                    }).WithSenderMiddleware(next => async (context, target, envelope) =>
+                    {
+                        if (tenantAccessor.Tenant != null) envelope.WithHeader(TenantHeaderName, tenantAccessor.Tenant.Id);
+                        await next(context, target, envelope);
+                    });
+
+                    return props;
+                });
                 clusterConfig = clusterConfig.WithClusterKind(kind);
             }
 
             var messageDescriptors = virtualActorProvider.GetFileDescriptors().ToArray();
             remoteConfig = remoteConfig.WithProtoMessages(messageDescriptors);
         }
-        
+
         return clusterConfig;
     }
 
