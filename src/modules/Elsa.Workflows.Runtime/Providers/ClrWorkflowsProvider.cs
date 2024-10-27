@@ -37,9 +37,9 @@ public class ClrWorkflowsProvider(
         var tenantPrefix = !string.IsNullOrEmpty(tenant?.Id) ? $"{tenant.Id}:" : string.Empty;
         await workflowBuilder.BuildAsync(builder, cancellationToken);
         var workflow = await builder.BuildWorkflowAsync(cancellationToken);
-        var versionSuffix = $":{workflow.Version}";
+        var versionSuffix = $"v{workflow.Version}";
         var definitionId = string.IsNullOrEmpty(workflow.Identity.DefinitionId) ? tenantPrefix + workflowBuilderType.Name : $"{tenantPrefix}{workflow.Identity.DefinitionId}";
-        var id = string.IsNullOrEmpty(workflow.Identity.Id) ? $"{tenantPrefix}{workflowBuilderType.Name}v{versionSuffix}" : $"{tenantPrefix}{workflow.Identity.Id}";
+        var id = string.IsNullOrEmpty(workflow.Identity.Id) ? $"{tenantPrefix}{workflowBuilderType.Name}:{versionSuffix}" : $"{tenantPrefix}{workflow.Identity.Id}";
         var tenantId = string.IsNullOrEmpty(workflow.Identity.TenantId) ? tenant?.Id : workflow.Identity.TenantId;
         
         workflow.Identity = workflow.Identity with
