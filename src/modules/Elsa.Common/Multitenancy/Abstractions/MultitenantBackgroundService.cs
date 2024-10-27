@@ -8,6 +8,7 @@ namespace Elsa.Common.Multitenancy;
 /// </summary>
 public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceScopeFactory) : BackgroundService
 {
+    private bool _disposed;
     protected IServiceScope ServiceScope { get; private set; } = default!;
     protected ICollection<Tenant> Tenants { get; private set; } = default!;
     protected IDictionary<Tenant, TenantScope> TenantScopes { get; private set; } =  default!;
@@ -28,6 +29,9 @@ public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceS
     
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        if(_disposed)
+            return;
+        
         foreach (var entry in TenantScopes) 
             await StopAsync(entry.Value, cancellationToken);
         
@@ -36,6 +40,8 @@ public abstract class MultitenantBackgroundService(IServiceScopeFactory serviceS
         
         ServiceScope.Dispose();
         await base.StopAsync(cancellationToken);
+        
+        _disposed = true;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -62,7 +62,7 @@ const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
-const bool useAzureServiceBusModule = false;
+const bool useAzureServiceBus = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
@@ -71,7 +71,6 @@ const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
 const bool useMultitenancy = false;
 const bool useAgents = true;
 const bool useSecrets = true;
-const bool useAzureServiceBus = true;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -378,9 +377,6 @@ services
             elsa.UseRealTimeWorkflows();
         }
 
-        if (useAzureServiceBus)
-            elsa.UseAzureServiceBus(asb => asb.AzureServiceBusOptions += options => configuration.GetSection("AzureServiceBus").Bind(options));
-
         if (useMassTransit)
         {
             elsa.UseMassTransit(massTransit =>
@@ -424,7 +420,7 @@ services
             });
         }
 
-        if (useAzureServiceBusModule)
+        if (useAzureServiceBus)
         {
             elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
             {
