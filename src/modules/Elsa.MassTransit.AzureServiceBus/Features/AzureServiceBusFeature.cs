@@ -1,4 +1,5 @@
 using Azure.Messaging.ServiceBus.Administration;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -121,6 +122,15 @@ public class AzureServiceBusFeature : FeatureBase
                     }
 
                     configurator.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("Elsa", false));
+                    
+                    configurator.ConfigureJsonSerializerOptions(serializerOptions =>
+                    {
+                        var serializer = context.GetRequiredService<IJsonSerializer>();
+                        serializer.ApplyOptions(serializerOptions);
+                        return serializerOptions;
+                    });
+                    
+                    configurator.ConfigureTenantMiddleware(context);
                 });
             };
         });

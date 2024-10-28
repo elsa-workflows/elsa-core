@@ -6,6 +6,7 @@ using Elsa.AzureServiceBus.HostedServices;
 using Elsa.AzureServiceBus.Options;
 using Elsa.AzureServiceBus.Providers;
 using Elsa.AzureServiceBus.Services;
+using Elsa.AzureServiceBus.Tasks;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -50,8 +51,6 @@ public class AzureServiceBusFeature : FeatureBase
     {
         if (CreateQueuesTopicsAndSubscriptions)
             Module.ConfigureHostedService<CreateQueuesTopicsAndSubscriptions>();
-
-        Module.ConfigureHostedService<StartWorkers>();
     }
 
     /// <inheritdoc />
@@ -70,9 +69,11 @@ public class AzureServiceBusFeature : FeatureBase
             .AddSingleton(ServiceBusAdministrationClientFactory)
             .AddSingleton(ServiceBusClientFactory)
             .AddSingleton<ConfigurationQueueTopicAndSubscriptionProvider>()
-            .AddSingleton<IServiceBusInitializer, ServiceBusInitializer>()
             .AddSingleton<IWorkerManager, WorkerManager>()
-            ;
+            .AddScoped<IServiceBusInitializer, ServiceBusInitializer>();
+        
+        // Tasks.
+        Services.AddBackgroundTask<StartWorkers>();
 
         // Definition providers.
         Services

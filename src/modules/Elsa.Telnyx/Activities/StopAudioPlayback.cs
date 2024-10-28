@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Telnyx.Activities;
 

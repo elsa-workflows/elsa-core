@@ -7,4 +7,4 @@ namespace Elsa.JavaScript.Notifications;
 /// <summary>
 /// This notification is published every time a JavaScript expression has been evaluated.
 /// </summary>
-public record EvaluatedJavaScript(Engine Engine, ExpressionExecutionContext Context, object? Result) : INotification;
+public record EvaluatedJavaScript(Engine Engine, ExpressionExecutionContext Context, string Expression, object? Result) : INotification;

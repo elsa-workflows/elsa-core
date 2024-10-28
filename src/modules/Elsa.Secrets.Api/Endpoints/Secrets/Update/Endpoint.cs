@@ -1,5 +1,4 @@
 ﻿using Elsa.Abstractions;
-using Elsa.Common.Contracts;
 using Elsa.Secrets.Management;
 using JetBrains.Annotations;
 
@@ -28,7 +27,7 @@ public class Endpoint(ISecretManager manager, ISecretNameValidator nameValidator
             return null!;
         }
 
-        var isNameDuplicate = !await nameValidator.IsNameUniqueAsync(req.Name, id, ct);
+        var isNameDuplicate = !await nameValidator.IsNameUniqueAsync(req.Name, entity.SecretId, ct);
 
         if (isNameDuplicate)
         {

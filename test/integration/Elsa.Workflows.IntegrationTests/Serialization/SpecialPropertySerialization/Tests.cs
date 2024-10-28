@@ -1,7 +1,6 @@
 ﻿using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Nodes;
-using Elsa.Workflows.Contracts;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.SpecialPropertySerialization

@@ -43,8 +43,8 @@ public class MongoRoleStore(MongoDbStore<Role> roleMongoDbStore) : IRoleStore
         return roleMongoDbStore.FindManyAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
-    private static IMongoQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter)
+    private static IQueryable<Role> Filter(IQueryable<Role> query, RoleFilter filter)
     {
-        return (filter.Apply(query) as IMongoQueryable<Role>)!;
+        return filter.Apply(query);
     }
 }

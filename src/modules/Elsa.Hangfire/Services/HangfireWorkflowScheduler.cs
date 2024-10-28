@@ -1,7 +1,6 @@
 using Elsa.Hangfire.Extensions;
 using Elsa.Hangfire.Jobs;
 using Elsa.Scheduling;
-using Elsa.Workflows.Runtime.Requests;
 using Hangfire;
 using Hangfire.Storage;
 

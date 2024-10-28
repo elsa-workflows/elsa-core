@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using Elsa.WorkflowContexts;
 using Elsa.WorkflowContexts.Contracts;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace

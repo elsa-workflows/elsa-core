@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Http.Serialization;
 
-namespace Elsa.Http.Models;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents the headers of an HTTP message.

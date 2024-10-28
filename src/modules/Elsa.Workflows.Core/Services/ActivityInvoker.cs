@@ -1,20 +1,15 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Options;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
 
 /// <inheritdoc />
-public class ActivityInvoker : IActivityInvoker
+public class ActivityInvoker(
+    IActivityExecutionPipeline pipeline,
+    ILoggerStateGenerator<ActivityExecutionContext> loggerStateGenerator,
+    ILogger<ActivityInvoker> logger)
+    : IActivityInvoker
 {
-    private readonly IActivityExecutionPipeline _pipeline;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ActivityInvoker(IActivityExecutionPipeline pipeline)
-    {
-        _pipeline = pipeline;
-    }
 
     /// <inheritdoc />
     public async Task InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = default)
@@ -43,7 +38,10 @@ public class ActivityInvoker : IActivityInvoker
     /// <inheritdoc />
     public async Task InvokeAsync(ActivityExecutionContext activityExecutionContext)
     {
+        var loggerState = loggerStateGenerator.GenerateLoggerState(activityExecutionContext);
+        using var loggingScope = logger.BeginScope(loggerState);
+
         // Execute the activity execution pipeline.
-        await _pipeline.ExecuteAsync(activityExecutionContext);
+        await pipeline.ExecuteAsync(activityExecutionContext);
     }
 }

@@ -1,6 +1,5 @@
-using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Tenants.Providers;
-using Elsa.Tenants.Resolvers;
 using Elsa.Tenants.Services;
 
 namespace Elsa.Tenants.Options;
@@ -18,5 +17,5 @@ public class MultitenancyOptions
     /// <summary>
     /// Gets or sets the tenant resolution pipeline builder.
     /// </summary>
-    public ITenantResolutionPipelineBuilder TenantResolutionPipelineBuilder { get; set; } = new TenantResolutionPipelineBuilder().Append<AmbientTenantResolver>();
+    public ITenantResolverPipelineBuilder TenantResolverPipelineBuilder { get; set; } = new TenantResolverPipelineBuilder().Append<DefaultTenantResolver>();
 }

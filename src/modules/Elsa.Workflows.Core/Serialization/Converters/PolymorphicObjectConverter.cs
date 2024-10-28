@@ -93,9 +93,9 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
         if (isDictionary)
         {
             // Remove the _type property name from the JSON, if any.
-            var parsedModel = (JsonObject)JsonNode.Parse(ref reader)!;
-            parsedModel.Remove(TypePropertyName);
-            return parsedModel.Deserialize(targetType, newOptions)!;
+            var parsedNode = JsonNode.Parse(ref reader)!;
+            if (parsedNode is JsonObject parsedModel) parsedModel.Remove(TypePropertyName);
+            return parsedNode.Deserialize(targetType, newOptions)!;
         }
 
         var isCollection = typeof(ICollection).IsAssignableFrom(targetType);
@@ -291,6 +291,9 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
 
     private Type? ReadType(Utf8JsonReader reader)
     {
+        if (reader.TokenType != JsonTokenType.StartObject)
+            return null;
+
         reader.Read(); // Move to the first token inside the object.
         string? typeName = null;
 
@@ -387,13 +390,13 @@ public class PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegi
                         case JsonTokenType.PropertyName:
                             var key = reader.GetString()!;
                             reader.Read();
-                            if (key == RefPropertyName)
+                            if (referenceResolver != null && key == RefPropertyName)
                             {
                                 var referenceId = reader.GetString();
                                 var reference = referenceResolver.ResolveReference(referenceId!);
                                 dict.Add(key, reference);
                             }
-                            else if (key == IdPropertyName)
+                            else if (referenceResolver != null && key == IdPropertyName)
                             {
                                 var referenceId = reader.GetString()!;
 

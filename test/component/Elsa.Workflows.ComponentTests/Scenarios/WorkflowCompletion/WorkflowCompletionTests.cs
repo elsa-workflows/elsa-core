@@ -15,7 +15,7 @@ public class WorkflowCompletionTests(App app) : AppComponentTest(app)
     {
         var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync(workflowDefinitionId);
-        var model = await response.ReadAsJsonAsync<Response>();
+        var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
     }

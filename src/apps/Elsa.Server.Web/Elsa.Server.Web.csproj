@@ -11,7 +11,11 @@
         <ProjectReference Include="..\..\modules\Elsa.MassTransit.AzureServiceBus\Elsa.MassTransit.AzureServiceBus.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.OpenTelemetry\Elsa.OpenTelemetry.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Api\Elsa.Secrets.Api.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql\Elsa.Secrets.Persistence.EntityFrameworkCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite\Elsa.Secrets.Persistence.EntityFrameworkCore.Sqlite.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer\Elsa.Secrets.Persistence.EntityFrameworkCore.SqlServer.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Secrets.Scripting\Elsa.Secrets.Scripting.csproj" />
+        <ProjectReference Include="..\..\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
         <ProjectReference Include="..\..\modules\Elsa\Elsa.csproj"/>
         <ProjectReference Include="..\..\common\Elsa.DropIns\Elsa.DropIns.csproj"/>
         <ProjectReference Include="..\..\modules\Elsa.Alterations.MassTransit\Elsa.Alterations.MassTransit.csproj"/>
@@ -50,16 +54,17 @@
         <PackageReference Include="DistributedLock.Redis"/>
         <PackageReference Include="FluentStorage.Azure.Blobs"/>
         <PackageReference Include="Proto.Cluster.Kubernetes" />
+        <PackageReference Include="Grpc.Net.Client" />
         <PackageReference Include="Proto.Persistence.Sqlite"/>
         <PackageReference Include="Proto.Persistence.SqlServer"/>
-        <PackageReference Include="OpenTelemetry.AutoInstrumentation"/>
-        <PackageReference Include="OpenTelemetry.Extensions.Hosting"/>
-        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol"/>
-        <PackageReference Include="OpenTelemetry.Instrumentation.StackExchangeRedis"/>
+    </ItemGroup>
+    
+    <!--Overridden for vulnaribility reasons with dependencies referencing older versions.-->
+    <ItemGroup Label="Overrides">
+        <PackageReference Include="System.Text.Json" VersionOverride="$(SystemTextJsonVersion)" />
     </ItemGroup>
 
     <ItemGroup>
       <Folder Include="App_Data\" />
     </ItemGroup>
-
 </Project>

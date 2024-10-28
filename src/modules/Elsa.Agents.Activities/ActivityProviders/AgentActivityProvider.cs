@@ -2,11 +2,9 @@ using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Humanizer;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Logging;
 
 namespace Elsa.Agents.Activities.ActivityProviders;
 

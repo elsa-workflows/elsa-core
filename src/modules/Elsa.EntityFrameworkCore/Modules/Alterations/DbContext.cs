@@ -1,6 +1,5 @@
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

@@ -1,10 +1,10 @@
 using Elsa.Common.Entities;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// An optional base class to implement with some opinions on certain converters to install for certain DB providers.
@@ -43,6 +43,12 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 
         // ReSharper disable once VirtualMemberCallInConstructor
         Schema = !string.IsNullOrWhiteSpace(elsaDbContextOptions?.SchemaName) ? elsaDbContextOptions.SchemaName : ElsaSchema;
+        
+        var tenantAccessor = serviceProvider.GetService<ITenantAccessor>();
+        var tenantId = tenantAccessor?.Tenant?.Id;
+        
+        if(!string.IsNullOrWhiteSpace(tenantId))
+            TenantId = tenantId;
     }
     
     /// <inheritdoc/>

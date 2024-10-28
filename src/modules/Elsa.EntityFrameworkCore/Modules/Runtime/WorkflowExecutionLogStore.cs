@@ -1,8 +1,7 @@
 using System.Text.Json;
 using Elsa.Common.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Extensions;
@@ -75,8 +74,8 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     private async ValueTask OnSaveAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord entity, CancellationToken cancellationToken)
     {
         entity = entity.SanitizeLogMessage();
-        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? await safeSerializer.SerializeAsync(entity.ActivityState, cancellationToken) : default;
-        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? await safeSerializer.SerializeAsync(entity.Payload, cancellationToken) : default;
+        dbContext.Entry(entity).Property("SerializedActivityState").CurrentValue = entity.ActivityState?.Any() == true ? safeSerializer.Serialize(entity.ActivityState) : null;
+        dbContext.Entry(entity).Property("SerializedPayload").CurrentValue = entity.Payload != null ? safeSerializer.Serialize(entity.Payload) : null;
     }
 
     private async ValueTask OnLoadAsync(RuntimeElsaDbContext dbContext, WorkflowExecutionLogRecord? entity, CancellationToken cancellationToken)

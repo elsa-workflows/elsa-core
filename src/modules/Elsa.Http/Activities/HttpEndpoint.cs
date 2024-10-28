@@ -3,7 +3,6 @@ using System.Text.Json;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
@@ -208,7 +207,6 @@ public class HttpEndpoint : Trigger<HttpRequest>
         // Read route data, if any.
         var path = context.GetWorkflowInput<PathString>(RequestPathInputKey);
         var routeData = GetRouteData(httpContext, path);
-
         var routeDictionary = routeData.Values.ToDictionary(route => route.Key, route => route.Value!);
         var queryStringDictionary = httpContext.Request.Query.ToObjectDictionary();
         var headersDictionary = httpContext.Request.Headers.ToObjectDictionary();
@@ -499,7 +497,7 @@ public class HttpEndpoint : Trigger<HttpRequest>
 
         var matchingRouteQuery =
             from route in routeTable
-            let routeValues = routeMatcher.Match(route, path)
+            let routeValues = routeMatcher.Match(route.Route, path)
             where routeValues != null
             select new { route, routeValues };
 

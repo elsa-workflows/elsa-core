@@ -7,7 +7,6 @@ using Elsa.Workflows.Attributes;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
-using HttpHeaders = Elsa.Http.Models.HttpHeaders;
 
 namespace Elsa.Http;
 
@@ -15,18 +14,12 @@ namespace Elsa.Http;
 /// Base class for activities that send HTTP requests.
 /// </summary>
 [Output(IsSerializable = false)]
-public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
+public abstract class SendHttpRequestBase(string? source = default, int? line = default) : Activity<HttpResponseMessage>(source, line)
 {
-    /// <inheritdoc />
-    protected SendHttpRequestBase(string? source = default, int? line = default) : base(source, line)
-    {
-    }
-
     /// <summary>
     /// The URL to send the request to.
     /// </summary>
-    [Input]
-    public Input<Uri?> Url { get; set; } = default!;
+    [Input] public Input<Uri?> Url { get; set; } = default!;
 
     /// <summary>
     /// The HTTP method to use when sending the request.
@@ -62,7 +55,10 @@ public abstract class SendHttpRequestBase : Activity<HttpResponseMessage>
     /// The Authorization header value to send with the request.
     /// </summary>
     /// <example>Bearer {some-access-token}</example>
-    [Input(Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}", Category = "Security")]
+    [Input(
+        Description = "The Authorization header value to send with the request. For example: Bearer {some-access-token}",
+        Category = "Security",
+        CanContainSecrets = true)]
     public Input<string?> Authorization { get; set; } = default!;
 
     /// <summary>

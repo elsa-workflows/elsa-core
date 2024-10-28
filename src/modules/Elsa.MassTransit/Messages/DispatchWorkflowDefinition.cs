@@ -32,8 +32,14 @@ public record DispatchWorkflowDefinition
     /// The ID of the parent workflow instance.
     public string? ParentWorkflowInstanceId { get; init; }
 
+    /// Deprecated. Use the <see cref="SerializedInput"/> property instead.
+    [Obsolete("This property is no longer used and will be removed in a future version. Use the SerializedInput property instead.")]
+    public IDictionary<string, object>? Input { get; set; }
+
+    /// <summary>
     /// Any input to pass to the workflow.
-    public IDictionary<string, object>? Input { get; init; }
+    /// </summary>
+    public string? SerializedInput { get; set; }
 
     /// Any properties to attach to the workflow.
     public IDictionary<string, object>? Properties { get; init; }

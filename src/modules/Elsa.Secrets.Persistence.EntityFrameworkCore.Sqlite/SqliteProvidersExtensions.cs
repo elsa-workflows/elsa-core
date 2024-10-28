@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.Secrets.Persistence.EntityFrameworkCore;
 
 // ReSharper disable once CheckNamespace
@@ -18,6 +17,12 @@ public static class SecretsSqliteProvidersExtensions
     public static EFCoreSecretPersistenceFeature UseSqlite(this EFCoreSecretPersistenceFeature feature, string? connectionString = null, ElsaDbContextOptions? options = null)
     {
         feature.UseSqlite(Assembly, connectionString, options);
+        return feature;
+    }
+    
+    public static EFCoreSecretPersistenceFeature UseSqlite(this EFCoreSecretPersistenceFeature feature, Func<IServiceProvider, string> connectionStringFunc, ElsaDbContextOptions? options = null)
+    {
+        feature.UseSqlite(Assembly, connectionStringFunc, options);
         return feature;
     }
 }

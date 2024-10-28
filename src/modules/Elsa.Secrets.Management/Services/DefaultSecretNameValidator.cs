@@ -7,7 +7,7 @@ public class DefaultSecretNameValidator(ISecretStore store) : ISecretNameValidat
         var filter = new SecretFilter
         {
             Name = name,
-            NotId = notId
+            NotSecretId = notId
         };
         return await store.FindAsync(filter, cancellationToken) == null;
     }

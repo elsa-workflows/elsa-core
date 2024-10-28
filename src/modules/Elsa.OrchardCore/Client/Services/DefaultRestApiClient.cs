@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Elsa.Http.Models;
+using Elsa.Http;
 
 namespace Elsa.OrchardCore.Client;
 

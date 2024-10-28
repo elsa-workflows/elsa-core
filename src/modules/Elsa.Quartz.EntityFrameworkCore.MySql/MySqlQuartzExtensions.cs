@@ -1,5 +1,4 @@
-﻿using Elsa.EntityFrameworkCore.Common;
-using Elsa.Quartz.EntityFrameworkCore.MySql;
+﻿using Elsa.Quartz.EntityFrameworkCore.MySql;
 using Elsa.Quartz.Features;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

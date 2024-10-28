@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;

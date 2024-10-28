@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Entities;
 
 namespace Elsa.Workflows.Runtime.Entities;
@@ -26,7 +26,7 @@ public class WorkflowExecutionLogRecord : Entity, ILogRecord
     /// <summary>
     /// The version of the workflow definition.
     /// </summary>
-    public int WorkflowVersion { get; init; }
+    public int WorkflowVersion { get; set; }
     
     /// <summary>
     /// The ID of the activity instance.

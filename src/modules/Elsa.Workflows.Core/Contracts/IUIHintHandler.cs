@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents an interface for handling UI hint information and retrieving property UI handlers.

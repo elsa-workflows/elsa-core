@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
 using Microsoft.Extensions.DependencyInjection;

@@ -1,7 +1,6 @@
 // Taken & adapted from https://github.com/markvincze/Stubbery/blob/main/src/Stubbery/RequestMatching/RouteMatcher.cs
 
 using Elsa.Extensions;
-using Elsa.Http.Contracts;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Routing.Template;
 

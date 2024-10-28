@@ -2,7 +2,6 @@ using System.Dynamic;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.JavaScript.Helpers;
-using Elsa.JavaScript.Models;
 using Elsa.JavaScript.Notifications;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;

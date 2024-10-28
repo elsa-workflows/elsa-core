@@ -15,7 +15,7 @@ using Elsa.JavaScript.Services;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Providers;
 using Elsa.JavaScript.TypeDefinitions.Services;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.JavaScript.Features;
@@ -36,7 +36,13 @@ public class JavaScriptFeature : FeatureBase
     /// <summary>
     /// Configures the Jint options.
     /// </summary>
-    public Action<JintOptions> JintOptions { get; set; } = _ => { };
+    private Action<JintOptions> JintOptions { get; set; } = _ => { };
+    
+    public JavaScriptFeature ConfigureJintOptions(Action<JintOptions> configure)
+    {
+        JintOptions += configure;
+        return this;
+    }
 
     /// <inheritdoc />
     public override void ConfigureHostedServices()

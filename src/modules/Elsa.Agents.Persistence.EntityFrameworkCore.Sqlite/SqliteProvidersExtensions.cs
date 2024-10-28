@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using Elsa.Agents.Persistence.EntityFrameworkCore;
-using Elsa.EntityFrameworkCore.Common;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.EntityFrameworkCore.Extensions;
@@ -18,6 +17,12 @@ public static class AgentsSqliteProvidersExtensions
     public static EFCoreAgentPersistenceFeature UseSqlite(this EFCoreAgentPersistenceFeature feature, string? connectionString = null, ElsaDbContextOptions? options = null)
     {
         feature.UseSqlite(Assembly, connectionString, options);
+        return feature;
+    }
+    
+    public static EFCoreAgentPersistenceFeature UseSqlite(this EFCoreAgentPersistenceFeature feature, Func<IServiceProvider, string> connectionStringFunc, ElsaDbContextOptions? options = null)
+    {
+        feature.UseSqlite(Assembly, connectionStringFunc, options);
         return feature;
     }
 }

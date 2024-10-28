@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Implementors should provide an in-stream from which a consumer can read.

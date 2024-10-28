@@ -1,5 +1,4 @@
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.BulkDispatchWorkflows.Workflows;
 

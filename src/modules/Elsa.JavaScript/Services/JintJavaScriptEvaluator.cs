@@ -37,9 +37,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         CancellationToken cancellationToken = default)
     {
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
-        await mediator.SendAsync(new EvaluatingJavaScript(engine, context), cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression), cancellationToken);
         var result = ExecuteExpressionAndGetResult(engine, expression);
-        await mediator.SendAsync(new EvaluatedJavaScript(engine, context, result), cancellationToken);
+        await mediator.SendAsync(new EvaluatedJavaScript(engine, context, expression, result), cancellationToken);
 
         return result.ConvertTo(returnType);
     }
@@ -58,8 +58,9 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         ConfigureObjectConverters(engineOptions);
 
         engineOptions.Interop.ObjectConverters.Add(new ByteArrayConverter());
-
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
+        _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
+        
         var engine = new Engine(engineOptions);
 
         configureEngine?.Invoke(engine);

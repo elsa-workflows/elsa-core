@@ -1,9 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Elsa.AzureServiceBus.Activities;
 using Elsa.AzureServiceBus.Models;
-using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -56,7 +54,12 @@ public class Worker : IAsyncDisposable
     /// <summary>
     /// Disposes the worker.
     /// </summary>
-    public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        _processor.ProcessMessageAsync -= OnMessageReceivedAsync;
+        _processor.ProcessErrorAsync -= OnErrorAsync;
+        await _processor.DisposeAsync();
+    }
 
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 

@@ -1,12 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations.Internal;
 using Microsoft.EntityFrameworkCore.Migrations;
-using System.Reflection;
-using Elsa.EntityFrameworkCore.Common.Contracts;
+using Microsoft.EntityFrameworkCore.Migrations.Internal;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Class That enable Schema change for Migration

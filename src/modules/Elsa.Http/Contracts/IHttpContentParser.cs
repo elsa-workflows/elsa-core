@@ -1,6 +1,6 @@
 using Elsa.Http.Contexts;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// A strategy that reads a <see cref="HttpResponseMessage"/> of a given content type.

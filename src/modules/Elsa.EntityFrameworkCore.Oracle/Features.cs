@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using Elsa.EntityFrameworkCore.Common;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
 using Elsa.EntityFrameworkCore.Modules.Labels;

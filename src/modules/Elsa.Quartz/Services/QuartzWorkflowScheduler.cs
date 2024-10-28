@@ -1,4 +1,5 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Quartz.Jobs;
 using Elsa.Scheduling;
@@ -9,7 +10,7 @@ namespace Elsa.Quartz.Services;
 /// <summary>
 /// An implementation of <see cref="IWorkflowScheduler"/> that uses Quartz.NET.
 /// </summary>
-public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer) : IWorkflowScheduler
+public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer, ITenantAccessor tenantAccessor) : IWorkflowScheduler
 {
     /// <inheritdoc />
     public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
@@ -36,8 +37,8 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
             .WithIdentity(taskName)
             .StartAt(at)
             .Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
             await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
@@ -68,8 +69,8 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
             .StartAt(startAt)
             .WithSimpleSchedule(schedule => schedule.WithInterval(interval).RepeatForever())
             .Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
             await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
@@ -92,8 +93,8 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
             .UsingJobData(CreateJobDataMap(request))
             .WithIdentity(taskName)
             .WithCronSchedule(cronExpression).Build();
-        
-        if(!await scheduler.CheckExists(trigger.Key, cancellationToken))
+
+        if (!await scheduler.CheckExists(trigger.Key, cancellationToken))
             await scheduler.ScheduleJob(trigger, cancellationToken);
     }
 
@@ -108,20 +109,22 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
     private JobDataMap CreateJobDataMap(ScheduleNewWorkflowInstanceRequest request)
     {
         return new JobDataMap()
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId), request.WorkflowDefinitionHandle.DefinitionVersionId)
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId), request.TriggerActivityId)
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.ParentId), request.ParentId)
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Input), request.Input)
-            .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Properties), request.Properties)
+                .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId), request.WorkflowDefinitionHandle.DefinitionVersionId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId), request.TriggerActivityId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.ParentId), request.ParentId)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Input), request.Input)
+                .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.Properties), request.Properties)
             ;
     }
-    
+
     private JobDataMap CreateJobDataMap(ScheduleExistingWorkflowInstanceRequest request)
     {
         var serializedActivityHandle = request.ActivityHandle != null ? jsonSerializer.Serialize(request.ActivityHandle) : null;
-        
+
         return new JobDataMap()
+            .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId), request.WorkflowInstanceId)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Input), request.Input)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Properties), request.Properties)

@@ -5,7 +5,6 @@ using Elsa.Workflows.Activities.Flowchart.Contracts;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;

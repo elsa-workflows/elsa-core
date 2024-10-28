@@ -1,5 +1,4 @@
-using Elsa.Common.Contracts;
-using Elsa.Common.Models;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;

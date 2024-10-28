@@ -1,4 +1,4 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A strategy for handling workflow incidents

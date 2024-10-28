@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Http.Contexts;
-using Elsa.Http.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Http.Parsers;

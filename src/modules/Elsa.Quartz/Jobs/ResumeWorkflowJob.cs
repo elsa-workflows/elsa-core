@@ -1,4 +1,5 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Scheduling;
 using Elsa.Workflows.Models;
@@ -11,7 +12,7 @@ namespace Elsa.Quartz.Jobs;
 /// <summary>
 /// A job that resumes a workflow.
 /// </summary>
-public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer jsonSerializer) : IJob
+public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer jsonSerializer, ITenantFinder tenantFinder, ITenantAccessor tenantAccessor) : IJob
 {
     /// <summary>
     /// The job key.
@@ -21,6 +22,7 @@ public class ResumeWorkflowJob(IWorkflowRuntime workflowRuntime, IJsonSerializer
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
+        tenantAccessor.Tenant = await context.GetTenantAsync(tenantFinder);
         var map = context.MergedJobDataMap;
         var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
         var activityHandle = serializedActivityHandle != null ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;

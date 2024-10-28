@@ -2,7 +2,6 @@ using Elsa.JavaScript.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Abstractions;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Management;
 using Humanizer;
 using JetBrains.Annotations;
 

@@ -1,6 +1,6 @@
 using Elsa.Workflows.Activities;
 
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// A workflow activation validator controls whether new instances are allowed to be created given certain conditions.

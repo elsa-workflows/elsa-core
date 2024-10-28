@@ -10,6 +10,16 @@ namespace Elsa.JavaScript.Options;
 public class JintOptions
 {
     /// <summary>
+    /// A list of callbacks that are invoked when the Jint engine options is created. Use this to configure the engine options.
+    /// </summary>
+    internal Action<Jint.Options, ExpressionExecutionContext> ConfigureEngineOptionsCallback = (_, _) => { };
+    
+    /// <summary>
+    /// A list of callbacks that are invoked when the Jint engine is created. Use this to configure the engine.
+    /// </summary>
+    internal Action<Engine, ExpressionExecutionContext> ConfigureEngineCallback = (_, _) => { };
+    
+    /// <summary>
     /// Enables access to any .NET class. Do not enable if you are executing workflows from untrusted sources (e.g. user defined workflows).
     ///
     /// See Jint docs for more: https://github.com/sebastienros/jint#accessing-net-assemblies-and-classes
@@ -30,11 +40,26 @@ public class JintOptions
     /// If the value of <c>ScriptCacheTimeout</c> is <c>null</c>, the scripts are cached indefinitely. If a time value is specified, the scripts will be recompiled after the specified duration has elapsed.
     /// </remarks>
     public TimeSpan? ScriptCacheTimeout { get; set; } = TimeSpan.FromDays(1);
-
+    
     /// <summary>
-    /// A list of callbacks that are invoked when the Jint engine is created. Use this to configure the engine.
+    /// Configures the Jint engine options.
     /// </summary>
-    public Action<Engine, ExpressionExecutionContext> ConfigureEngineCallback = (_, _) => { };
+    /// <param name="configurator">A callback that is invoked when the Jint engine options are created. Use this to configure the options.</param>
+    public JintOptions ConfigureEngineOptions(Action<Jint.Options> configurator)
+    {
+        ConfigureEngineOptionsCallback += (options, _) => configurator(options);
+        return this;
+    }
+    
+    /// <summary>
+    /// Configures the Jint engine options.
+    /// </summary>
+    /// <param name="configurator">A callback that is invoked when the Jint engine options are created. Use this to configure the options.</param>
+    public JintOptions ConfigureEngineOptions(Action<Jint.Options, ExpressionExecutionContext> configurator)
+    {
+        ConfigureEngineOptionsCallback += configurator;
+        return this;
+    }
     
     /// <summary>
     /// Configures the Jint engine.

@@ -1,10 +1,9 @@
 using System.Collections.ObjectModel;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;

@@ -3,11 +3,9 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.ContainerSerialization;

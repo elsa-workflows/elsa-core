@@ -2,7 +2,8 @@ using System.Text.Encodings.Web;
 using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.MassTransit.Extensions;
-using Elsa.Common.DistributedLocks.Noop;
+using Elsa.Common.DistributedHosting.DistributedLocks;
+using Elsa.Common.RecurringTasks;
 using Elsa.Dapper.Extensions;
 using Elsa.Dapper.Services;
 using Elsa.DropIns.Extensions;
@@ -13,8 +14,7 @@ using Elsa.EntityFrameworkCore.Modules.Management;
 using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Features.Services;
-using Elsa.Http.MultiTenancy;
-using Elsa.Identity.MultiTenancy;
+using Elsa.Identity.Multitenancy;
 using Elsa.MassTransit.Extensions;
 using Elsa.MongoDb.Extensions;
 using Elsa.MongoDb.Modules.Alterations;
@@ -23,16 +23,21 @@ using Elsa.MongoDb.Modules.Management;
 using Elsa.MongoDb.Modules.Runtime;
 using Elsa.OpenTelemetry.Middleware;
 using Elsa.Secrets.Extensions;
+using Elsa.Secrets.Management.Tasks;
 using Elsa.Secrets.Persistence;
 using Elsa.Server.Web;
+using Elsa.Server.Web.Extensions;
+using Elsa.Server.Web.Filters;
+using Elsa.Server.Web.Messages;
+using Elsa.Tenants.AspNetCore;
 using Elsa.Tenants.Extensions;
-using Elsa.Workflows;
 using Elsa.Workflows.Api;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Management.Compression;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
-using Elsa.Workflows.Runtime.Extensions;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading.Postgres;
@@ -57,13 +62,13 @@ const bool useZipCompression = false;
 const bool runEFCoreMigrations = true;
 const bool useMemoryStores = false;
 const bool useCaching = true;
-const bool useAzureServiceBusModule = false;
+const bool useAzureServiceBus = false;
 const bool useReadOnlyMode = false;
 const bool useSignalR = true;
 const WorkflowRuntime workflowRuntime = WorkflowRuntime.ProtoActor;
 const DistributedCachingTransport distributedCachingTransport = DistributedCachingTransport.ProtoActor;
 const MassTransitBroker massTransitBroker = MassTransitBroker.Memory;
-const bool useMultitenancy = false;
+const bool useMultitenancy = true;
 const bool useAgents = true;
 const bool useSecrets = true;
 
@@ -133,7 +138,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -165,7 +170,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -228,7 +233,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -349,7 +354,7 @@ services
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString!);
                         else
-                            ef.UseSqlite(sqliteConnectionString);
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
 
                         ef.RunMigrations = runEFCoreMigrations;
                     });
@@ -401,6 +406,8 @@ services
                         // etc.
                     });
                 }
+
+                massTransit.AddMessageType<OrderReceived>();
             });
         }
 
@@ -413,7 +420,7 @@ services
             });
         }
 
-        if (useAzureServiceBusModule)
+        if (useAzureServiceBus)
         {
             elsa.UseAzureServiceBus(azureServiceBusConnectionString, asb =>
             {
@@ -425,7 +432,7 @@ services
         {
             elsa
                 .UseAgentActivities()
-                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseAgentPersistence(persistence => persistence.UseEntityFrameworkCore(ef => ef.UseSqlite(sp => sp.GetSqliteConnectionString())))
                 .UseAgentsApi()
                 ;
             
@@ -436,8 +443,25 @@ services
         {
             elsa
                 .UseSecrets()
-                .UseSecretsManagement(management => management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString)))
+                .UseSecretsManagement(management =>
+                {
+                    management.ConfigureOptions(options => configuration.GetSection("Secrets:Management").Bind(options));
+                    if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                        management.UseEntityFrameworkCore(ef =>
+                            ef.UseSqlServer(sqlServerConnectionString)
+                            );
+                    else if (sqlDatabaseProvider == SqlDatabaseProvider.PostgreSql)
+                        management.UseEntityFrameworkCore(ef => 
+                            ef.UsePostgreSql(postgresConnectionString)
+                            );
+                    else
+                        management.UseEntityFrameworkCore(ef =>
+                        {
+                            ef.UseSqlite(sp => sp.GetSqliteConnectionString());
+                        });
+                })
                 .UseSecretsApi()
+                .UseSecretsScripting()
                 ;
         }
 
@@ -445,16 +469,19 @@ services
         {
             elsa.UseTenants(tenants =>
             {
-                tenants.TenantsOptions = options =>
+                tenants.ConfigureOptions(options =>
                 {
                     configuration.GetSection("Multitenancy").Bind(options);
-                    options.TenantResolutionPipelineBuilder
-                        .Append<HttpContextTenantResolver>()
-                        .Append<ClaimsTenantResolver>()
-                        .Append<CurrentUserTenantResolver>();
-                };
+                    options.TenantResolverPipelineBuilder
+                        .Append<HostTenantResolver>()
+                        .Append<RoutePrefixTenantResolver>()
+                        .Append<HeaderTenantResolver>()
+                        .Append<ClaimsTenantResolver>();
+                });
                 tenants.UseConfigurationBasedTenantsProvider();
             });
+
+            elsa.UseTenantHttpRouting();
         }
 
         elsa.InstallDropIns(options => options.DropInRootDirectory = Path.Combine(Directory.GetCurrentDirectory(), "App_Data", "DropIns"));
@@ -462,6 +489,16 @@ services
         elsa.AddFastEndpointsAssembly<Program>();
         ConfigureForTest?.Invoke(elsa);
     });
+
+// Obfuscate HTTP request headers.
+services.AddActivityStateFilter<HttpRequestAuthenticationHeaderFilter>();
+
+// Configure recurring tasks.
+services.Configure<RecurringTaskOptions>(options =>
+{
+    options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(30));
+    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromSeconds(10));
+});
 
 //services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.AddHealthChecks();
@@ -487,6 +524,10 @@ app.UseRouting();
 // Security.
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Multitenancy.
+if(useMultitenancy)
+    app.UseTenants();
 
 // Elsa API endpoints for designer.
 var routePrefix = app.Services.GetRequiredService<IOptions<ApiEndpointOptions>>().Value.RoutePrefix;

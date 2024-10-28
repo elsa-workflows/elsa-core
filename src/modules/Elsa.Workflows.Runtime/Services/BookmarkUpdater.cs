@@ -11,7 +11,7 @@ public class BookmarkUpdater(IBookmarkManager bookmarkManager, IBookmarkStore bo
     /// <inheritdoc />
     public async Task UpdateBookmarksAsync(UpdateBookmarksRequest request, CancellationToken cancellationToken = default)
     {
-        var instanceId = request.WorkflowInstanceId;
+        var instanceId = request.WorkflowExecutionContext.Id;
         await RemoveBookmarksAsync(instanceId, request.Diff.Removed, cancellationToken);
         await StoreBookmarksAsync(instanceId, request.Diff.Added, request.CorrelationId, cancellationToken);
     }

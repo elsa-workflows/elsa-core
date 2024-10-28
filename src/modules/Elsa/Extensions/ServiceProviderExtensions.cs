@@ -1,5 +1,4 @@
 using Elsa.Workflows;
-using Elsa.Workflows.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Extensions;

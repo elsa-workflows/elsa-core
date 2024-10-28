@@ -1,12 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
+using Elsa.Common.RecurringTasks;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
@@ -14,11 +15,11 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
-using Elsa.Workflows.Runtime.HostedServices;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
+using Elsa.Workflows.Runtime.Tasks;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ namespace Elsa.Workflows.Runtime.Features;
 
 /// Installs and configures workflow runtime features.
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(BackgroundTasksFeature))]
 public class WorkflowRuntimeFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -142,14 +144,11 @@ public class WorkflowRuntimeFeature : FeatureBase
         {
             workflows.CommitStateHandler = sp => sp.GetRequiredService<StoreCommitStateHandler>();
         });
-    }
 
-    /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        Module
-            .ConfigureHostedService<PopulateRegistriesHostedService>(1)
-            .ConfigureHostedService<TriggerBookmarkQueueWorker>(1);
+        Services.Configure<RecurringTaskOptions>(options =>
+        {
+            options.Schedule.ConfigureTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10));
+        });
     }
 
     /// <inheritdoc />
@@ -179,8 +178,8 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
             .AddSingleton<RandomLongIdentityGenerator>()
-            .AddSingleton<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
-            .AddSingleton<IBookmarkQueueWorker, BookmarkQueueWorker>()
+            .AddScoped<IBookmarkQueueSignaler, BookmarkQueueSignaler>()
+            .AddScoped<IBookmarkQueueWorker, BookmarkQueueWorker>()
             .AddScoped<IBookmarkManager, DefaultBookmarkManager>()
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
@@ -238,6 +237,10 @@ public class WorkflowRuntimeFeature : FeatureBase
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
+            
+            // Startup tasks, background tasks, and recurring tasks.
+            .AddStartupTask<PopulateRegistriesStartupTask>()
+            .AddRecurringTask<TriggerBookmarkQueueRecurringTask>()
 
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)

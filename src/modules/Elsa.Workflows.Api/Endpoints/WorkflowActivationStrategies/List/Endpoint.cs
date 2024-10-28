@@ -4,7 +4,6 @@ using System.Reflection;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Models;
-using Elsa.Workflows.Contracts;
 using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies.List;

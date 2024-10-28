@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
 
@@ -71,7 +70,7 @@ public class WorkflowStateExtractor : IWorkflowStateExtractor
     private IDictionary<string, object> GetPersistableInput(WorkflowExecutionContext workflowExecutionContext)
     {
         // TODO: This is a temporary solution. We need to find a better way to handle this.
-        var persistableInput = workflowExecutionContext.Workflow.Inputs.Where(x => x.StorageDriverType == typeof(WorkflowStorageDriver)).ToList();
+        var persistableInput = workflowExecutionContext.Workflow.Inputs.Where(x => x.StorageDriverType == typeof(WorkflowStorageDriver) || x.StorageDriverType == typeof(WorkflowInstanceStorageDriver)).ToList();
         var input = workflowExecutionContext.Input;
         var filteredInput = new Dictionary<string, object>();
 

@@ -45,18 +45,18 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         return await mongoDbStore.DeleteWhereAsync<string>(query => Filter(query, filter), x => x.Id, cancellationToken);
     }
 
-    private IMongoQueryable<BookmarkQueueItem> Filter(IMongoQueryable<BookmarkQueueItem> queryable, BookmarkQueueFilter filter)
+    private IQueryable<BookmarkQueueItem> Filter(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueFilter filter)
     {
-        return (filter.Apply(queryable) as IMongoQueryable<BookmarkQueueItem>)!;
+        return filter.Apply(queryable);
     }
     
-    private IMongoQueryable<BookmarkQueueItem> Order<TOrderBy>(IMongoQueryable<BookmarkQueueItem> queryable, BookmarkQueueItemOrder<TOrderBy> order)
+    private IQueryable<BookmarkQueueItem> Order<TOrderBy>(IQueryable<BookmarkQueueItem> queryable, BookmarkQueueItemOrder<TOrderBy> order)
     {
-        return (queryable.OrderBy(order) as IMongoQueryable<BookmarkQueueItem>)!;
+        return queryable.OrderBy(order);
     }
 
-    private IMongoQueryable<BookmarkQueueItem> Paginate(IMongoQueryable<BookmarkQueueItem> queryable, PageArgs pageArgs)
+    private IQueryable<BookmarkQueueItem> Paginate(IQueryable<BookmarkQueueItem> queryable, PageArgs pageArgs)
     {
-        return (queryable.Paginate(pageArgs) as IMongoQueryable<BookmarkQueueItem>)!;
+        return queryable.Paginate(pageArgs);
     }
 }

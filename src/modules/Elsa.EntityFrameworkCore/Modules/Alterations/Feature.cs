@@ -1,7 +1,5 @@
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Features;
-using Elsa.EntityFrameworkCore.Common;
-using Elsa.EntityFrameworkCore.Common.Contracts;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;

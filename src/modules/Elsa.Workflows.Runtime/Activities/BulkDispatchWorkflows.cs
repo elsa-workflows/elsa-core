@@ -6,7 +6,6 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -110,7 +109,6 @@ public class BulkDispatchWorkflows : Activity
 
         await foreach (var item in items)
         {
-            //context.DeferTask(async () => await DispatchChildWorkflowAsync(context, item));
             await DispatchChildWorkflowAsync(context, item);
             dispatchedInstancesCount++;
         }
@@ -163,7 +161,7 @@ public class BulkDispatchWorkflows : Activity
             Arguments = itemDictionary
         };
 
-        var inputDictionary = item as IDictionary<string, object> ?? new Dictionary<string, object>();
+        var inputDictionary = item as IDictionary<string, object> ?? itemDictionary;
         input["ParentInstanceId"] = parentInstanceId;
         input.Merge(inputDictionary);
 
@@ -206,7 +204,7 @@ public class BulkDispatchWorkflows : Activity
 
         var childInstanceId = new Variable<string>("ChildInstanceId", workflowInstanceId)
         {
-            StorageDriverType = typeof(WorkflowStorageDriver)
+            StorageDriverType = typeof(WorkflowInstanceStorageDriver)
         };
 
         var variables = new List<Variable>

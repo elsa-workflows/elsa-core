@@ -2,10 +2,8 @@
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Helpers;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Contracts;
 using Humanizer;
 using Microsoft.Extensions.DependencyInjection;
 

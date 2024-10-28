@@ -1,7 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Options;
@@ -19,6 +18,7 @@ public class WorkflowRunner(
     IWorkflowGraphBuilder workflowGraphBuilder,
     IIdentityGenerator identityGenerator,
     INotificationSender notificationSender,
+    ILoggerStateGenerator<WorkflowExecutionContext> loggerStateGenerator,
     ICommitStateHandler commitStateHandler,
     ILogger<WorkflowRunner> logger)
     : IWorkflowRunner
@@ -163,16 +163,11 @@ public class WorkflowRunner(
         return await RunAsync(workflowExecutionContext);
     }
 
-
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
-        var workflowInstanceId = workflowExecutionContext.Id;
-        var logContext = new Dictionary<string, object>
-        {
-            ["WorkflowInstanceId"] = workflowInstanceId
-        };
-        using var loggingScope = logger.BeginScope(logContext);
+        var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
+        using var loggingScope = logger.BeginScope(loggerState);
         var workflow = workflowExecutionContext.Workflow;
         var cancellationToken = workflowExecutionContext.CancellationToken;
 

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.WorkflowContexts.Models;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;

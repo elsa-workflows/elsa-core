@@ -6,7 +6,7 @@ using Elsa.Quartz.Jobs;
 using Elsa.Quartz.Services;
 using Elsa.Scheduling;
 using Elsa.Scheduling.Features;
-using Elsa.Workflows.Contracts;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -16,13 +16,8 @@ namespace Elsa.Quartz.Features;
 /// A feature that installs Quartz.NET implementations for <see cref="IWorkflowScheduler"/>.
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
-public class QuartzSchedulerFeature : FeatureBase
+public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public QuartzSchedulerFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {

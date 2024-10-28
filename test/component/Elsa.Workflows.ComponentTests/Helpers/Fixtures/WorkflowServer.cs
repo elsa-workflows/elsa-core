@@ -1,7 +1,9 @@
 using System.Net.Http.Headers;
 using System.Reflection;
+using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.Caching;
+using Elsa.EntityFrameworkCore;
 using Elsa.EntityFrameworkCore.Extensions;
 using Elsa.EntityFrameworkCore.Modules.Alterations;
 using Elsa.EntityFrameworkCore.Modules.Identity;
@@ -10,12 +12,9 @@ using Elsa.EntityFrameworkCore.Modules.Runtime;
 using Elsa.Extensions;
 using Elsa.Identity.Providers;
 using Elsa.MassTransit.Extensions;
-using Elsa.Tenants.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
-using Elsa.Workflows.ComponentTests.Helpers.Services;
 using Elsa.Workflows.Management;
-using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -35,7 +34,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
         var client = CreateClient();
         client.BaseAddress = new Uri(client.BaseAddress!, "/elsa/api");
         client.Timeout = TimeSpan.FromMinutes(1);
-        return RestService.For<TClient>(client, CreateRefitSettings());
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
     }
 
     public HttpClient CreateHttpWorkflowClient()
@@ -107,11 +106,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 {
                     http.UseCache();
                 });
-                elsa.UseTenants(tenants =>
-                {
-                    tenants.UseTenantsProvider(_ => new TestTenantsProvider("Tenant1", "Tenant2"));
-                    tenants.TenantsOptions = options => options.TenantResolutionPipelineBuilder.Append<TestTenantResolutionStrategy>();
-                });
+                elsa.UseAgents();
+                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(typeof(AgentsPostgreSqlProvidersExtensions).Assembly, dbConnectionString)));
             };
         }
 

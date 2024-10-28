@@ -1,6 +1,6 @@
 using JetBrains.Annotations;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// Provides options for configuring Elsa's Entity Framework Core integration.

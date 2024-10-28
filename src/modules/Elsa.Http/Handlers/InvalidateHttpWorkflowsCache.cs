@@ -1,5 +1,4 @@
 ﻿using Elsa.Http.Bookmarks;
-using Elsa.Http.Contracts;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Notifications;

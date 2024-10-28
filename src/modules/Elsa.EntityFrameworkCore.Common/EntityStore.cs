@@ -1,8 +1,7 @@
 using Elsa.Common.Entities;
-using Elsa.EntityFrameworkCore.Common.Contracts;
 using Microsoft.EntityFrameworkCore;
 
-namespace Elsa.EntityFrameworkCore.Common;
+namespace Elsa.EntityFrameworkCore;
 
 /// <summary>
 /// A generic repository class around EF Core for accessing entities that inherit from <see cref="Entity"/>.

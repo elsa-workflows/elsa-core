@@ -1,6 +1,5 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
-using Elsa.Agents.Persistence.Filters;
 using JetBrains.Annotations;
 
 namespace Elsa.Agents.Api.Endpoints.Agents.IsUniqueName;

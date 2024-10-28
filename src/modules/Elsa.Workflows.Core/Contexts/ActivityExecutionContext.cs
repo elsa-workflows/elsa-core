@@ -1,11 +1,10 @@
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -196,7 +195,7 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <summary>
     /// Stores the evaluated inputs, serialized, for the current activity for historical purposes.
     /// </summary>
-    public IDictionary<string, object> ActivityState { get; set; } = new Dictionary<string, object>();
+    public IDictionary<string, object?> ActivityState { get; set; } = new Dictionary<string, object?>();
 
     /// <summary>
     /// Schedules the specified activity to be executed.

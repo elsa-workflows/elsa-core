@@ -1,6 +1,6 @@
 using FluentStorage.Blobs;
 
-namespace Elsa.Http.Contracts;
+namespace Elsa.Http;
 
 /// <summary>
 /// Represents a provider of a file cache storage.

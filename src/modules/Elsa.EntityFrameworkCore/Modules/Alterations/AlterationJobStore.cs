@@ -3,7 +3,6 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
-using Elsa.EntityFrameworkCore.Common;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.EntityFrameworkCore.Modules.Alterations;

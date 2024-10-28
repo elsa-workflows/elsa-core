@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using Elsa.Workflows.Contracts;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace

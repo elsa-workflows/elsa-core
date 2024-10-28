@@ -1,7 +1,5 @@
 ﻿using Elsa.Abstractions;
 using Elsa.Agents.Persistence.Contracts;
-using Elsa.Agents.Persistence.Entities;
-using Elsa.Agents.Persistence.Filters;
 using Elsa.Extensions;
 using JetBrains.Annotations;
 

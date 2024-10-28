@@ -31,7 +31,6 @@ public class Configurations :
         builder.Property<string>("SerializedOutputs");
         builder.Property<string>("SerializedProperties");
         builder.Property(x => x.Status).HasConversion<string>();
-
         builder.HasIndex(x => x.WorkflowInstanceId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.WorkflowInstanceId)}");
         builder.HasIndex(x => x.ActivityId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityId)}");
         builder.HasIndex(x => x.ActivityNodeId).HasDatabaseName($"IX_{nameof(ActivityExecutionRecord)}_{nameof(ActivityExecutionRecord.ActivityNodeId)}");
@@ -54,7 +53,6 @@ public class Configurations :
     {
         builder.Ignore(x => x.Options);
         builder.Property<string>("SerializedOptions");
-        builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.StimulusHash, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.StimulusHash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.WorkflowInstanceId)}");
         builder.HasIndex(x => x.CorrelationId, $"IX_{nameof(BookmarkQueueItem)}_{nameof(BookmarkQueueItem.CorrelationId)}");
@@ -79,7 +77,6 @@ public class Configurations :
         builder.Ignore(x => x.Metadata);
         builder.Property<string>("SerializedPayload");
         builder.Property<string>("SerializedMetadata");
-        builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.ActivityTypeName, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.ActivityTypeName)}");
         builder.HasIndex(x => x.Hash, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.Hash)}");
         builder.HasIndex(x => x.WorkflowInstanceId, $"IX_{nameof(StoredBookmark)}_{nameof(StoredBookmark.WorkflowInstanceId)}");
@@ -118,7 +115,6 @@ public class Configurations :
         builder.Ignore(x => x.Payload);
         builder.Property<string>("SerializedActivityState");
         builder.Property<string>("SerializedPayload");
-
         builder.HasIndex(x => x.Timestamp).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Timestamp)}");
         builder.HasIndex(x => x.Sequence).HasDatabaseName($"IX_{nameof(WorkflowExecutionLogRecord)}_{nameof(WorkflowExecutionLogRecord.Sequence)}");
         builder.HasIndex(x => new

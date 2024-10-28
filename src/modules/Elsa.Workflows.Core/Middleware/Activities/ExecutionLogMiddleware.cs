@@ -1,4 +1,3 @@
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using JetBrains.Annotations;
@@ -20,18 +19,8 @@ public static class ExecutionLogMiddlewareExtensions
 /// An activity execution middleware component that extracts execution details as <see cref="WorkflowExecutionLogEntry"/> objects.
 /// </summary>
 [UsedImplicitly]
-public class ExecutionLogMiddleware : IActivityExecutionMiddleware
+public class ExecutionLogMiddleware(ActivityMiddlewareDelegate next) : IActivityExecutionMiddleware
 {
-    private readonly ActivityMiddlewareDelegate _next;
-
-    /// <summary>
-    /// Constructor.
-    /// </summary>
-    public ExecutionLogMiddleware(ActivityMiddlewareDelegate next)
-    {
-        _next = next;
-    }
-
     /// <inheritdoc />
     public async ValueTask InvokeAsync(ActivityExecutionContext context)
     {
@@ -39,7 +28,7 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
 
         try
         {
-            await _next(context);
+            await next(context);
 
             if (context.Status == ActivityStatus.Running)
             {
@@ -65,6 +54,8 @@ public class ExecutionLogMiddleware : IActivityExecutionMiddleware
         }
     }
 
-    private static bool IsActivityBookmarked(ActivityExecutionContext context) =>
-        context.WorkflowExecutionContext.Bookmarks.Any(b => b.ActivityNodeId.Equals(context.ActivityNode.NodeId));
+    private static bool IsActivityBookmarked(ActivityExecutionContext context)
+    {
+        return context.WorkflowExecutionContext.Bookmarks.Any(b => b.ActivityNodeId.Equals(context.ActivityNode.NodeId));
+    }
 }

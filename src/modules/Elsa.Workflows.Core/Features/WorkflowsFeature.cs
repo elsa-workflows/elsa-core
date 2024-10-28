@@ -1,4 +1,4 @@
-using Elsa.Common.Contracts;
+using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
@@ -8,8 +8,9 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.LogPersistence;
+using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -18,6 +19,7 @@ using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
@@ -30,7 +32,7 @@ namespace Elsa.Workflows.Features;
 [DependsOn(typeof(ExpressionsFeature))]
 [DependsOn(typeof(MediatorFeature))]
 [DependsOn(typeof(DefaultFormattersFeature))]
-[DependsOn(typeof(TenantResolverFeature))]
+[DependsOn(typeof(MultitenancyFeature))]
 public class WorkflowsFeature : FeatureBase
 {
     /// <inheritdoc />
@@ -50,6 +52,12 @@ public class WorkflowsFeature : FeatureBase
     /// A handler for committing workflow execution state.
     public Func<IServiceProvider, ICommitStateHandler> CommitStateHandler { get; set; } = sp => new NoopCommitStateHandler();
     
+    /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    public Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> WorkflowLoggerStateGenerator { get; set; } = sp => new WorkflowLoggerStateGenerator();
+
+    /// A factory that instantiates a concrete <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    public Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> ActivityLoggerStateGenerator { get; set; } = sp => new ActivityLoggerStateGenerator();
+
     /// A delegate to configure the <see cref="IWorkflowExecutionPipeline"/>.
     public Action<IWorkflowExecutionPipelineBuilder> WorkflowExecutionPipeline { get; set; } = builder => builder
         .UseExceptionHandling()
@@ -58,9 +66,7 @@ public class WorkflowsFeature : FeatureBase
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
 
-    /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.
-    /// </summary>
     public WorkflowsFeature WithStandardInStreamProvider(Func<IServiceProvider, IStandardInStreamProvider> provider)
     {
         StandardInStreamProvider = provider;
@@ -80,7 +86,21 @@ public class WorkflowsFeature : FeatureBase
         IdentityGenerator = generator;
         return this;
     }
-    
+
+    /// Fluent method to set <see cref="ILoggerStateGenerator{WorkflowExecutionContext}"/>.
+    public WorkflowsFeature WithWorkflowLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<WorkflowExecutionContext>> generator)
+    {
+        WorkflowLoggerStateGenerator = generator;
+        return this;
+    }
+
+    /// Fluent method to set <see cref="ILoggerStateGenerator{ActivityExecutionContext}"/>.
+    public WorkflowsFeature WithActivityLoggerStateGenerator(Func<IServiceProvider, ILoggerStateGenerator<ActivityExecutionContext>> generator)
+    {
+        ActivityLoggerStateGenerator = generator;
+        return this;
+    }
+
     /// Fluent method to configure the <see cref="IWorkflowExecutionPipeline"/>.
     public WorkflowsFeature WithWorkflowExecutionPipeline(Action<IWorkflowExecutionPipelineBuilder> setup)
     {
@@ -129,6 +149,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IWorkflowBuilderFactory, WorkflowBuilderFactory>()
             .AddScoped<IVariablePersistenceManager, VariablePersistenceManager>()
             .AddScoped<IIncidentStrategyResolver, DefaultIncidentStrategyResolver>()
+            .AddScoped<IActivityStateFilterManager, DefaultActivityStateFilterManager>()
 
             // Incident Strategies.
             .AddTransient<IIncidentStrategy, FaultStrategy>()
@@ -174,6 +195,17 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IUIHintHandler, DropDownUIHintHandler>()
             .AddScoped<IUIHintHandler, CheckListUIHintHandler>()
             .AddScoped<IUIHintHandler, JsonEditorUIHintHandler>()
+
+            // Logger state generators.
+            .AddSingleton(WorkflowLoggerStateGenerator)
+            .AddSingleton(ActivityLoggerStateGenerator)
+            
+            // Log Persistence Strategies.
+            .AddScoped<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>()
+            .AddScoped<ILogPersistenceStrategy, Include>()
+            .AddScoped<ILogPersistenceStrategy, Exclude>()
+            .AddScoped<ILogPersistenceStrategy, Inherit>()
+            .AddScoped<ILogPersistenceStrategy, Configuration>()
 
             // Logging
             .AddLogging();

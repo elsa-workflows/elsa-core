@@ -18,6 +18,7 @@ public class WebhooksFeature : FeatureBase
     }
 
     public Action<IOptions<WebhookSinksOptions>> ConfigureSinks { get; set; } = options => { };
+    public Action<IHttpClientBuilder> ConfigureHttpClient { get; set; } = builder => { };
 
     /// Registers the specified webhook with <see cref="WebhookSinksOptions"/>
     public WebhooksFeature RegisterWebhookSink(Uri endpoint)
@@ -62,7 +63,7 @@ public class WebhooksFeature : FeatureBase
     public override void Apply()
     {
         Services
-            .AddWebhooksCore()
+            .AddWebhooksCore(ConfigureHttpClient)
             .AddActivityProvider<WebhookEventActivityProvider>();
     }
 }

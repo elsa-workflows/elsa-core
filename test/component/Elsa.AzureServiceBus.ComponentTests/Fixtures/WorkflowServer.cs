@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using Elsa.Agents;
 using Elsa.Alterations.Extensions;
 using Elsa.AzureServiceBus.ComponentTests.Extensions;
 using Elsa.EntityFrameworkCore.Extensions;
@@ -75,6 +76,8 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     http.UseCache();
                 });
                 elsa.UseAzureServiceBus();
+                elsa.UseAgents();
+                elsa.UseAgentPersistence(feature => feature.UseEntityFrameworkCore(ef => ef.UsePostgreSql(typeof(AgentsPostgreSqlProvidersExtensions).Assembly, dbConnectionString)));
             };
         }
 

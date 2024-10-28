@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,14 +24,14 @@ public class JsonPayloadSerializer : IPayloadSerializer
     /// <inheritdoc />
     public string Serialize(object payload)
     {
-        var options = GetPayloadSerializerOptions();
+        var options = GetOptions();
         return JsonSerializer.Serialize(payload, options);
     }
 
     /// <inheritdoc />
     public JsonElement SerializeToElement(object payload)
     {
-        var options = GetPayloadSerializerOptions();
+        var options = GetOptions();
         return JsonSerializer.SerializeToElement(payload, options);
     }
 
@@ -51,18 +50,19 @@ public class JsonPayloadSerializer : IPayloadSerializer
     /// <inheritdoc />
     public T Deserialize<T>(string payload)
     {
-        var options = GetPayloadSerializerOptions();
+        var options = GetOptions();
         return JsonSerializer.Deserialize<T>(payload, options)!;
     }
 
     /// <inheritdoc />
     public T Deserialize<T>(JsonElement payload)
     {
-        var options = GetPayloadSerializerOptions();
+        var options = GetOptions();
         return payload.Deserialize<T>(options)!;
     }
 
-    private JsonSerializerOptions GetPayloadSerializerOptions()
+    /// <inheritdoc />
+    public JsonSerializerOptions GetOptions()
     {
         var options = new JsonSerializerOptions
         {

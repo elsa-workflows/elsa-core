@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Behaviors;
-using Elsa.Workflows.Contracts;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;

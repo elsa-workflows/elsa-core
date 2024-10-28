@@ -1,10 +1,15 @@
-namespace Elsa.Workflows.Contracts;
+namespace Elsa.Workflows;
 
 /// <summary>
 /// Represents a storage driver for workflows to write state to.
 /// </summary>
 public interface IStorageDriver
 {
+    /// <summary>
+    /// The priority of the storage driver. Drivers with higher priority are used before drivers with lower priority.
+    /// </summary>
+    double Priority { get; }
+    
     /// <summary>
     /// Writes a value to the storage driver.
     /// </summary>
