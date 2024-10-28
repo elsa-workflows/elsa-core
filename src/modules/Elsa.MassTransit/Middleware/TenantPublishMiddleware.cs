@@ -15,7 +15,7 @@ public class TenantPublishMiddleware(ITenantAccessor tenantAccessor) : IFilter<P
         var tenantId = tenantAccessor.Tenant?.Id;
 
         if (!string.IsNullOrEmpty(tenantId))
-            context.Headers.Set("TenantId", tenantId);
+            context.Headers.Set(HeaderNames.TenantId, tenantId);
 
         await next.Send(context);
     }

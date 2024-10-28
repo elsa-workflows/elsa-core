@@ -125,7 +125,7 @@ public class MassTransitFeature : FeatureBase
         // Consumers need to be added before the UsingInMemory statement to prevent exceptions.
         foreach (var consumer in temporaryConsumers)
             configure.AddConsumer(consumer.ConsumerType).ExcludeFromConfigureEndpoints();
-        
+
         configure.UsingInMemory((context, bus) =>
         {
             var options = context.GetRequiredService<IOptions<MassTransitWorkflowDispatcherOptions>>().Value;
@@ -155,7 +155,7 @@ public class MassTransitFeature : FeatureBase
             });
 
             if (PrefetchCount != null) bus.PrefetchCount = PrefetchCount.Value;
-            
+
             bus.ConfigureTenantMiddleware(context);
         });
     }

@@ -10,7 +10,7 @@ public static class MultitenancyPipeConfigurationExtensions
     public static void ConfigureTenantMiddleware(this IBusFactoryConfigurator bus, IBusRegistrationContext context)
     {
         var tenantAccessor = context.GetRequiredService<ITenantAccessor>();
-        bus.ConfigureSend(pipeCfg => pipeCfg.UseTenantSendMiddleware(tenantAccessor));
+        bus.ConfigureSend(pipe => pipe.UseTenantSendMiddleware(tenantAccessor));
         bus.ConfigurePublish(pipe => pipe.UseTenantPublishMiddleware(tenantAccessor));
         bus.UseConsumeFilter(typeof(TenantConsumeMiddleware<>), context);
     }

@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy.Extensions;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Http.Contexts;

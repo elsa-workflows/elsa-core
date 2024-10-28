@@ -4,7 +4,6 @@ using Elsa.Scheduling;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
 namespace Elsa.Quartz.Jobs;
@@ -12,7 +11,7 @@ namespace Elsa.Quartz.Jobs;
 /// <summary>
 /// A job that runs a workflow.
 /// </summary>
-public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantAccessor tenantAccessor, IServiceScopeFactory scopeFactory) : IJob
+public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantAccessor tenantAccessor, ITenantFinder tenantFinder) : IJob
 {
     /// The job key.
     public static readonly JobKey JobKey = new(nameof(RunWorkflowJob));
@@ -20,7 +19,7 @@ public class RunWorkflowJob(IWorkflowRuntime workflowRuntime, ITenantAccessor te
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
-        tenantAccessor.Tenant = await context.GetTenantAsync(scopeFactory);
+        tenantAccessor.Tenant = await context.GetTenantAsync(tenantFinder);
         var map = context.MergedJobDataMap;
         var cancellationToken = context.CancellationToken;
         var workflowClient = await workflowRuntime.CreateClientAsync(cancellationToken);

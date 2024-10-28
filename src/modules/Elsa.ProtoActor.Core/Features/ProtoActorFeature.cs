@@ -2,7 +2,6 @@ using Elsa.Common.Multitenancy;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.ProtoActor.HostedServices;
-using Elsa.Tenants;
 using Elsa.Workflows.Runtime.ProtoActor.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -101,7 +100,7 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
             {
                 if (_enableTracing)
                     props = props.WithTracing();
-                
+
                 return props;
             });
 
@@ -145,7 +144,6 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
     private ClusterConfig AddVirtualActors(IServiceProvider sp, ActorSystem system, ClusterConfig clusterConfig)
     {
         var virtualActorProviders = sp.GetServices<IVirtualActorsProvider>().ToList();
-        var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
         var remoteConfig = ConfigureRemoteConfig(sp);
 
         foreach (var virtualActorProvider in virtualActorProviders)
@@ -160,21 +158,19 @@ public class ProtoActorFeature(IModule module) : FeatureBase(module)
 
                 kind = kind.WithProps(props =>
                 {
-                    var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
                     props = props.WithReceiverMiddleware(next => async (context, envelope) =>
                     {
                         var tenantId = envelope.Header.GetValueOrDefault(TenantHeaderName);
                         if (tenantId != null)
                         {
-                            using var scope = scopeFactory.CreateScope();
-                            var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-                            var tenant = await tenantsProvider.FindByIdAsync(tenantId);
-                            tenantAccessor.Tenant = tenant;
+                            var tenantContextInitializer = sp.GetRequiredService<ITenantContextInitializer>();
+                            await tenantContextInitializer.InitializeAsync(tenantId);
                         }
 
                         await next(context, envelope);
                     }).WithSenderMiddleware(next => async (context, target, envelope) =>
                     {
+                        var tenantAccessor = sp.GetRequiredService<ITenantAccessor>();
                         if (tenantAccessor.Tenant != null) envelope.WithHeader(TenantHeaderName, tenantAccessor.Tenant.Id);
                         await next(context, target, envelope);
                     });
