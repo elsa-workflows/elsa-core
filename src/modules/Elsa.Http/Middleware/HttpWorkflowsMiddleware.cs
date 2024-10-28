@@ -39,8 +39,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     public async Task InvokeAsync(HttpContext httpContext, IServiceProvider serviceProvider)
     {
-        var fullPath = GetPath(httpContext);
-        var path = fullPath;
+        var path = GetPath(httpContext);
         var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
@@ -63,7 +62,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next, ITenantAccessor tenan
         var input = new Dictionary<string, object>
         {
             [HttpEndpoint.HttpContextInputKey] = true,
-            [HttpEndpoint.RequestPathInputKey] = fullPath
+            [HttpEndpoint.RequestPathInputKey] = path
         };
 
         var cancellationToken = httpContext.RequestAborted;
