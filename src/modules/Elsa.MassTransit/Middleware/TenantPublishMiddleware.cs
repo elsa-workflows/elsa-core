@@ -7,7 +7,7 @@ public class TenantPublishMiddleware(ITenantAccessor tenantAccessor) : IFilter<P
 {
     public void Probe(ProbeContext context)
     {
-        context.CreateFilterScope("tenantSend");
+        context.CreateFilterScope("tenantPublish");
     }
 
     public async Task Send(PublishContext context, IPipe<PublishContext> next)
