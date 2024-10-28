@@ -2,7 +2,6 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Quartz.Handlers;
-using Elsa.Quartz.HostedServices;
 using Elsa.Quartz.Jobs;
 using Elsa.Quartz.Services;
 using Elsa.Scheduling;
@@ -17,13 +16,8 @@ namespace Elsa.Quartz.Features;
 /// A feature that installs Quartz.NET implementations for <see cref="IWorkflowScheduler"/>.
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
-public class QuartzSchedulerFeature : FeatureBase
+public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public QuartzSchedulerFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -35,11 +29,6 @@ public class QuartzSchedulerFeature : FeatureBase
             // Configure the cron parser to use the Quartz cron parser.
             scheduling.CronParser = sp => sp.GetRequiredService<QuartzCronParser>();
         });
-    }
-
-    public override void ConfigureHostedServices()
-    {
-        Module.ConfigureHostedService<ConfigureSchedulerHostedService>();
     }
 
     /// <inheritdoc />
