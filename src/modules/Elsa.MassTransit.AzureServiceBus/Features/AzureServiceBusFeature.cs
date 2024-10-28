@@ -129,6 +129,8 @@ public class AzureServiceBusFeature : FeatureBase
                         serializer.ApplyOptions(serializerOptions);
                         return serializerOptions;
                     });
+                    
+                    configurator.ConfigureTenantMiddleware(context);
                 });
             };
         });

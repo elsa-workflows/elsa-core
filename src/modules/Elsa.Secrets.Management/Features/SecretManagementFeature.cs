@@ -1,10 +1,11 @@
+using Elsa.Common.RecurringTasks;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Features;
-using Elsa.Secrets.Management.HostedService;
+using Elsa.Secrets.Management.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Management.Features;
@@ -21,7 +22,7 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
         _secretStoreFactory = secretStoreFactory;
         return this;
     }
-    
+
     public SecretManagementFeature ConfigureOptions(Action<SecretManagementOptions> configureOptions)
     {
         Services.Configure(configureOptions);
@@ -34,11 +35,11 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
         {
             secrets.UseSecretsProvider(sp => sp.GetRequiredService<StoreSecretProvider>());
         });
-    }
 
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<ExpiredSecretsHostedService>();
+        Services.Configure<RecurringTaskOptions>(options =>
+        {
+            options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>(TimeSpan.FromHours(4));
+        });
     }
 
     public override void Apply()
@@ -56,6 +57,7 @@ public class SecretManagementFeature(IModule module) : FeatureBase(module)
             .AddScoped<ISecretUpdater, DefaultSecretUpdater>()
             .AddScoped<ISecretManager, DefaultSecretManager>()
             .AddScoped<IExpiredSecretsUpdater, DefaultExpiredSecretsUpdater>()
+            .AddRecurringTask<UpdateExpiredSecretsRecurringTask>()
             ;
     }
 }

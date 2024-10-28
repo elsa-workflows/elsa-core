@@ -34,7 +34,7 @@ public class TenantResolutionMiddleware(RequestDelegate next, ITenantScopeFactor
             }
         }
 
-        using var tenantScope = tenantScopeFactory.CreateScope(tenant);
+        await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
         var originalServiceProvider = context.RequestServices;
         context.RequestServices = tenantScope.ServiceProvider;
         await next(context);

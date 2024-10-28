@@ -21,7 +21,6 @@ internal class Configurations : IEntityTypeConfiguration<WorkflowDefinition>, IE
         builder.Property<string>("Data");
         builder.Property<bool?>("UsableAsActivity");
         builder.Property(x => x.ToolVersion).HasConversion(VersionToStringConverter, StringToVersionConverter);
-
         builder.HasIndex(x => new {x.DefinitionId, x.Version}).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.DefinitionId)}_{nameof(WorkflowDefinition.Version)}").IsUnique();
         builder.HasIndex(x => x.Version).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Version)}");
         builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(WorkflowDefinition)}_{nameof(WorkflowDefinition.Name)}");

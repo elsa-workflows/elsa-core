@@ -1,14 +1,12 @@
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Contexts;
-using Elsa.Http.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Http.Services;
 
@@ -17,8 +15,7 @@ public class DefaultRouteTableUpdater(
     IRouteTable routeTable, 
     ITriggerStore triggerStore, 
     IBookmarkStore bookmarkStore, 
-    IHttpEndpointRoutesProvider httpEndpointRoutesProvider, 
-    IOptions<HttpActivityOptions> options)
+    IHttpEndpointRoutesProvider httpEndpointRoutesProvider)
     : IRouteTableUpdater
 {
     /// <inheritdoc />
@@ -27,13 +24,11 @@ public class DefaultRouteTableUpdater(
         var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<HttpEndpoint>();
         var triggerFilter = new TriggerFilter
         {
-            Name = bookmarkName,
-            TenantAgnostic = true
+            Name = bookmarkName
         };
         var bookmarkFilter = new BookmarkFilter
         {
-            ActivityTypeName = bookmarkName,
-            TenantAgnostic = true
+            ActivityTypeName = bookmarkName
         };
         var triggers = (await triggerStore.FindManyAsync(triggerFilter, cancellationToken)).ToList();
         var bookmarks = (await bookmarkStore.FindManyAsync(bookmarkFilter, cancellationToken)).ToList();

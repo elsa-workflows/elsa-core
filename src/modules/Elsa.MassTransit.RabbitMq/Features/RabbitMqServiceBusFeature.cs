@@ -95,6 +95,8 @@ public class RabbitMqServiceBusFeature : FeatureBase
                         serializer.ApplyOptions(serializerOptions);
                         return serializerOptions;
                     });
+                    
+                    configurator.ConfigureTenantMiddleware(context);
                 });
             };
         });

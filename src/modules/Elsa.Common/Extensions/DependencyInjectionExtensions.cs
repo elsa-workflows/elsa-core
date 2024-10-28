@@ -29,4 +29,19 @@ public static class DependencyInjectionExtensions
         services.AddSingleton<ISerializationOptionsConfigurator, T>();
         return services;
     }
+    
+    public static IServiceCollection AddStartupTask<T>(this IServiceCollection services) where T : class, IStartupTask
+    {
+        return services.AddScoped<IStartupTask, T>();
+    }
+    
+    public static IServiceCollection AddBackgroundTask<T>(this IServiceCollection services) where T : class, IBackgroundTask
+    {
+        return services.AddScoped<IBackgroundTask, T>();
+    }
+    
+    public static IServiceCollection AddRecurringTask<T>(this IServiceCollection services) where T : class, IRecurringTask
+    {
+        return services.AddScoped<IRecurringTask, T>();
+    }
 }

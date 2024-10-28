@@ -54,7 +54,12 @@ public class Worker : IAsyncDisposable
     /// <summary>
     /// Disposes the worker.
     /// </summary>
-    public async ValueTask DisposeAsync() => await _processor.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        _processor.ProcessMessageAsync -= OnMessageReceivedAsync;
+        _processor.ProcessErrorAsync -= OnErrorAsync;
+        await _processor.DisposeAsync();
+    }
 
     private async Task OnMessageReceivedAsync(ProcessMessageEventArgs args) => await InvokeWorkflowsAsync(args.Message, args.CancellationToken);
 

@@ -1,4 +1,5 @@
 using Elsa.Common.Features;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -32,12 +33,6 @@ public class SchedulingFeature : FeatureBase
     public Func<IServiceProvider, ICronParser> CronParser { get; set; } = sp => sp.GetRequiredService<CronosCronParser>();
 
     /// <inheritdoc />
-    public override void ConfigureHostedServices()
-    {
-        Module.ConfigureHostedService<CreateSchedulesHostedService>();
-    }
-
-    /// <inheritdoc />
     public override void Apply()
     {
         Services
@@ -51,6 +46,7 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)
             .AddScoped(WorkflowScheduler)
+            .AddBackgroundTask<CreateSchedulesBackgroundTask>()
             .AddHandlersFrom<ScheduleWorkflows>();
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

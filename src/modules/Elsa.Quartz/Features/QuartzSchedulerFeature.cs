@@ -16,13 +16,8 @@ namespace Elsa.Quartz.Features;
 /// A feature that installs Quartz.NET implementations for <see cref="IWorkflowScheduler"/>.
 /// </summary>
 [DependsOn(typeof(SchedulingFeature))]
-public class QuartzSchedulerFeature : FeatureBase
+public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
 {
-    /// <inheritdoc />
-    public QuartzSchedulerFeature(IModule module) : base(module)
-    {
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {

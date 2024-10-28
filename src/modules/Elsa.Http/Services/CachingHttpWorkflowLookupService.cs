@@ -31,6 +31,9 @@ public class CachingHttpWorkflowLookupService(
 
             if (result == null)
                 return null;
+            
+            if(result.WorkflowGraph == null)
+                return result;
 
             var workflowGraph = result.WorkflowGraph!;
             var changeTokenKey = cacheManager.GetWorkflowChangeTokenKey(workflowGraph.Workflow.Identity.DefinitionId);
