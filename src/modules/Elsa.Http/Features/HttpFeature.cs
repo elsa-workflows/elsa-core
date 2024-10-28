@@ -7,12 +7,12 @@ using Elsa.Http.ContentWriters;
 using Elsa.Http.DownloadableContentHandlers;
 using Elsa.Http.FileCaches;
 using Elsa.Http.Handlers;
-using Elsa.Http.HostedServices;
 using Elsa.Http.Options;
 using Elsa.Http.Parsers;
 using Elsa.Http.PortResolvers;
 using Elsa.Http.Selectors;
 using Elsa.Http.Services;
+using Elsa.Http.Tasks;
 using Elsa.Http.UIHints;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Requests;
@@ -202,7 +202,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             .AddScoped(_httpEndpointRouteProvider)
             
             // Startup tasks.
-            .AddScoped<UpdateRouteTableStartupTask>()
+            .AddStartupTask<UpdateRouteTableStartupTask>()
 
             // Downloadable content handlers.
             .AddScoped<IDownloadableManager, DefaultDownloadableManager>()

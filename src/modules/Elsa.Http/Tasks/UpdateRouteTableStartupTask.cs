@@ -1,7 +1,7 @@
 ﻿using Elsa.Common;
 using JetBrains.Annotations;
 
-namespace Elsa.Http.HostedServices;
+namespace Elsa.Http.Tasks;
 
 /// <summary>
 /// Update the route table based on workflow triggers and bookmarks.
