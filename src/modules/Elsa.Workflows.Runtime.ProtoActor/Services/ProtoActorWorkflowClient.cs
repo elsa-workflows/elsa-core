@@ -59,7 +59,7 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         var response = await _actorClient.CreateAndRun(protoRequest, CreateHeaders(), cancellationToken);
         return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
     }
-    
+
     /// <inheritdoc />
     public async Task CancelAsync(CancellationToken cancellationToken = default)
     {
