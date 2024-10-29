@@ -9,7 +9,7 @@ public class DefaultSecretNameGenerator(ISecretNameValidator validator) : ISecre
 
         while (attempt < maxAttempts)
         {
-            var name = $"Secret {++attempt}";
+            var name = $"Secret{++attempt}";
             var isUnique = await validator.IsNameUniqueAsync(name, null, cancellationToken);
 
             if (isUnique)

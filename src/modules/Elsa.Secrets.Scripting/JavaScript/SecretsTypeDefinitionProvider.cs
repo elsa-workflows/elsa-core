@@ -2,6 +2,7 @@ using Elsa.JavaScript.TypeDefinitions.Builders;
 using Elsa.JavaScript.TypeDefinitions.Contracts;
 using Elsa.JavaScript.TypeDefinitions.Models;
 using Elsa.Secrets.Management;
+using Humanizer;
 using JetBrains.Annotations;
 
 namespace Elsa.Secrets.Scripting.JavaScript;
@@ -26,10 +27,10 @@ internal class SecretsTypeDefinitionProvider(ISecretManager secretManager) : ITy
 
         foreach (var secret in secrets)
         {
-            secretsContainerClass.Properties.Add(new PropertyDefinition
+            secretsContainerClass.Methods.Add(new FunctionDefinition
             {
-                Name = secret.Name,
-                Type = "string"
+                Name = $"get{secret.Name.Pascalize()}Async",
+                ReturnType = "Promise<string>"
             });
         }
         
