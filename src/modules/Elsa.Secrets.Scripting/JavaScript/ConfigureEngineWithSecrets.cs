@@ -26,10 +26,16 @@ public class ConfigureEngineWithSecrets(ISecretManager secretManager, IDecryptor
 
         foreach (var secret in secrets)
         {
-            // E.g. secrets.getMySecretAsync()
-            secretsContainer[$"get{secret.Name.Pascalize()}Async"] = () => decryptor.DecryptAsync(secret.EncryptedValue, cancellationToken);
+            secretsContainer[$"get{secret.Name.Pascalize()}Async"] = () => ResolveSecretAsync(secret, cancellationToken);
         }
-        
+
         engine.SetValue("secrets", secretsContainer);
+    }
+
+    private async Task<string> ResolveSecretAsync(Secret secret, CancellationToken cancellationToken)
+    {
+        if (secret.Status != SecretStatus.Active)
+            throw new InvalidOperationException($"Secret '{secret.Name}' is not active.");
+        return await decryptor.DecryptAsync(secret.EncryptedValue, cancellationToken);
     }
 }
