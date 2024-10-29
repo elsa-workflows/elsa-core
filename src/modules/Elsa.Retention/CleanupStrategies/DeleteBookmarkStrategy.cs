@@ -9,29 +9,20 @@ namespace Elsa.Retention.CleanupStrategies;
 /// <summary>
 ///     Deletes a collection of bookmarks
 /// </summary>
-public class DeleteBookmarkStrategy : IDeletionCleanupStrategy<StoredBookmark>
+public class DeleteBookmarkStrategy(IBookmarkStore store, ILogger<DeleteBookmarkStrategy> logger) : IDeletionCleanupStrategy<StoredBookmark>
 {
-    private readonly ILogger<DeleteBookmarkStrategy> _logger;
-    private readonly IBookmarkStore _store;
-
-    public DeleteBookmarkStrategy(IBookmarkStore store, ILogger<DeleteBookmarkStrategy> logger)
-    {
-        _store = store;
-        _logger = logger;
-    }
-
     public async Task Cleanup(ICollection<StoredBookmark> collection)
     {
-        BookmarkFilter bookmarkFilter = new()
+        var bookmarkFilter = new BookmarkFilter
         {
             BookmarkIds = collection.Select(x => x.Id).ToList()
         };
 
-        long deletedRecords = await _store.DeleteAsync(bookmarkFilter);
+        var deletedRecords = await store.DeleteAsync(bookmarkFilter);
 
         if (deletedRecords != collection.Count)
         {
-            _logger.LogWarning("Expected to delete {Expected} bookmarks, actually deleted {Actual} bookmarks", collection.Count, deletedRecords);
+            logger.LogWarning("Expected to delete {Expected} bookmarks, actually deleted {Actual} bookmarks", collection.Count, deletedRecords);
         }
     }
 }

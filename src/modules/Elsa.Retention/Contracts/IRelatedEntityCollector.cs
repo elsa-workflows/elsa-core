@@ -18,7 +18,7 @@ public interface IRelatedEntityCollector<TEntity> : IRelatedEntityCollector wher
 {
     async IAsyncEnumerable<ICollection<object>> IRelatedEntityCollector.GetRelatedEntitiesGeneric(ICollection<WorkflowInstance> workflowInstances)
     {
-        await foreach (ICollection<TEntity> entity in GetRelatedEntities(workflowInstances).ConfigureAwait(false))
+        await foreach (var entity in GetRelatedEntities(workflowInstances).ConfigureAwait(false))
         {
             yield return entity.Select(x => (object)x).ToArray();
         }

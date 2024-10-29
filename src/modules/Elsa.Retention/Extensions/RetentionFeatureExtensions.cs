@@ -19,7 +19,7 @@ public static class RetentionFeatureExtensions
     /// <returns></returns>
     public static RetentionFeature AddDeletePolicy(this RetentionFeature feature, string name, Func<IServiceProvider, RetentionWorkflowInstanceFilter> filterFactory)
     {
-        List<IRetentionPolicy> policies = feature.Module.Properties.GetOrAdd(PoliciesKey, () => new List<IRetentionPolicy>());
+        var policies = feature.Module.Properties.GetOrAdd(PoliciesKey, () => new List<IRetentionPolicy>());
         policies.Add(new DeletionRetentionPolicy(name, filterFactory));
         return feature;
     }

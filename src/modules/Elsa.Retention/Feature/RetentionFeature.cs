@@ -1,10 +1,10 @@
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Retention.CleanupStrategies;
 using Elsa.Retention.Collectors;
 using Elsa.Retention.Contracts;
 using Elsa.Retention.Extensions;
-using Elsa.Retention.HostedServices;
 using Elsa.Retention.Jobs;
 using Elsa.Retention.Options;
 using Elsa.Workflows.Runtime.Entities;
@@ -44,15 +44,11 @@ public class RetentionFeature : FeatureBase
         Services.AddScoped<IRelatedEntityCollector, ActivityExecutionRecordCollector>();
         Services.AddScoped<IRelatedEntityCollector, WorkflowExecutionLogRecordCollector>();
 
-        foreach (IRetentionPolicy policy in this.GetPolicies())
+        Services.AddRecurringTask<CleanupRecurringTask>(TimeSpan.FromHours(4));
+
+        foreach (var policy in this.GetPolicies())
         {
             Services.AddSingleton(policy);
         }
-    }
-
-    /// <inheritdoc cref="FeatureBase" />
-    public override void ConfigureHostedServices()
-    {
-        ConfigureHostedService<CleanupHostedService>();
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.RecurringTasks;
 using Elsa.Common.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -43,5 +44,11 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddRecurringTask<T>(this IServiceCollection services) where T : class, IRecurringTask
     {
         return services.AddScoped<IRecurringTask, T>();
+    }
+    
+    public static IServiceCollection AddRecurringTask<T>(this IServiceCollection services, TimeSpan interval) where T : class, IRecurringTask
+    {
+        services.Configure<RecurringTaskOptions>(options => options.Schedule.ConfigureTask<T>(interval));
+        return services.AddRecurringTask<T>();
     }
 }

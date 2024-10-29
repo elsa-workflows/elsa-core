@@ -9,27 +9,20 @@ namespace Elsa.Retention.Collectors;
 /// <summary>
 ///     Collects all <see cref="ActivityExecutionRecord" /> related to the <see cref="WorkflowInstance" />
 /// </summary>
-public class ActivityExecutionRecordCollector : IRelatedEntityCollector<ActivityExecutionRecord>
+public class ActivityExecutionRecordCollector(IActivityExecutionStore store) : IRelatedEntityCollector<ActivityExecutionRecord>
 {
-    private readonly IActivityExecutionStore _store;
-
-    public ActivityExecutionRecordCollector(IActivityExecutionStore store)
-    {
-        _store = store;
-    }
-
     public async IAsyncEnumerable<ICollection<ActivityExecutionRecord>> GetRelatedEntities(ICollection<WorkflowInstance> workflowInstances)
     {
-        IEnumerable<WorkflowInstance[]> chunks = workflowInstances.Chunk(5);
+        var chunks = workflowInstances.Chunk(5);
 
-        foreach (WorkflowInstance[] chunk in chunks)
+        foreach (var chunk in chunks)
         {
-            ActivityExecutionRecordFilter filter = new()
+            var filter = new ActivityExecutionRecordFilter()
             {
                 WorkflowInstanceIds = chunk.Select(x => x.Id).ToArray()
             };
 
-            IEnumerable<ActivityExecutionRecord> records = await _store.FindManyAsync(filter);
+            var records = await store.FindManyAsync(filter);
             yield return records.ToArray();
         }
     }

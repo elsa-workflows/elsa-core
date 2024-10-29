@@ -9,27 +9,20 @@ namespace Elsa.Retention.Collectors;
 /// <summary>
 ///     Collects all <see cref="StoredBookmark" /> related to the <see cref="WorkflowInstance" />
 /// </summary>
-public class BookmarkCollector : IRelatedEntityCollector<StoredBookmark>
+public class BookmarkCollector(IBookmarkStore store) : IRelatedEntityCollector<StoredBookmark>
 {
-    private readonly IBookmarkStore _store;
-
-    public BookmarkCollector(IBookmarkStore store)
-    {
-        _store = store;
-    }
-
     public async IAsyncEnumerable<ICollection<StoredBookmark>> GetRelatedEntities(ICollection<WorkflowInstance> workflowInstances)
     {
-        IEnumerable<WorkflowInstance[]> batches = workflowInstances.Chunk(25);
+        var batches = workflowInstances.Chunk(25);
 
-        foreach (WorkflowInstance[] batch in batches)
+        foreach (var batch in batches)
         {
-            BookmarkFilter filter = new()
+            var filter = new BookmarkFilter()
             {
                 WorkflowInstanceIds = batch.Select(x => x.Id).ToArray()
             };
 
-            IEnumerable<StoredBookmark> bookmarks = await _store.FindManyAsync(filter);
+            var bookmarks = await store.FindManyAsync(filter);
             yield return bookmarks.ToArray();
         }
     }

@@ -15,31 +15,15 @@ namespace Elsa.Retention.Jobs;
 ///     Deletes all workflow instances that match any of the defined <see cref="IRetentionPolicy" />
 /// </summary>
 [SuppressMessage("Trimming", "IL2055:Either the type on which the MakeGenericType is called can\'t be statically determined, or the type parameters to be used for generic arguments can\'t be statically determined.")]
-public class CleanupJob
+public class CleanupJob(
+    IWorkflowInstanceStore workflowInstanceStore,
+    IEnumerable<IRetentionPolicy> policies,
+    IOptions<CleanupOptions> options,
+    IServiceProvider serviceProvider,
+    ILogger<CleanupJob> logger)
 {
-    private readonly ILogger _logger;
-    private readonly CleanupOptions _options;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-
-    /// <summary>
-    ///     Creates a new cleanup job
-    /// </summary>
-    /// <param name="workflowInstanceStore"></param>
-    /// <param name="options"></param>
-    /// <param name="serviceProvider"></param>
-    /// <param name="logger"></param>
-    public CleanupJob(
-        IWorkflowInstanceStore workflowInstanceStore,
-        IOptions<CleanupOptions> options,
-        IServiceProvider serviceProvider,
-        ILogger<CleanupJob> logger)
-    {
-        _workflowInstanceStore = workflowInstanceStore;
-        _options = options.Value;
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
+    private readonly ILogger _logger = logger;
+    private readonly CleanupOptions _options = options.Value;
 
     /// <summary>
     ///     Executes the cleanup job
@@ -47,34 +31,28 @@ public class CleanupJob
     /// <param name="cancellationToken"></param>
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
-        await using AsyncServiceScope scope = _serviceProvider.CreateAsyncScope();
-
-        IEnumerable<IRetentionPolicy> policies = scope.ServiceProvider.GetServices<IRetentionPolicy>();
-        Dictionary<Type, object> collectors = GetServices(typeof(IRelatedEntityCollector), typeof(IRelatedEntityCollector<>));
-
-
-        foreach (IRetentionPolicy policy in policies)
+        var collectors = GetServices(typeof(IRelatedEntityCollector), typeof(IRelatedEntityCollector<>));
+        var deletedWorkflowInstances = 0L;
+        
+        foreach (var policy in policies)
         {
-            WorkflowInstanceFilter filter = policy.FilterFactory(scope.ServiceProvider).Build();
-            PageArgs pageArgs = PageArgs.FromPage(0, _options.PageSize);
-
-            long deletedWorkflowInstances = 0;
+            var filter = policy.FilterFactory(serviceProvider).Build();
+            var pageArgs = PageArgs.FromPage(0, _options.PageSize);
 
             while (true)
             {
-                Page<WorkflowInstance> page = await _workflowInstanceStore.FindManyAsync(filter, pageArgs, cancellationToken);
+                var page = await workflowInstanceStore.FindManyAsync(filter, pageArgs, cancellationToken);
 
                 if (page.Items.Count == 0)
                 {
                     break;
                 }
 
-                foreach (KeyValuePair<Type, object> collectorService in collectors)
+                foreach (var collectorService in collectors)
                 {
-                    Type cleanupStrategyConcreteType = policy.CleanupStrategy.MakeGenericType(collectorService.Key);
-
-                    IRelatedEntityCollector? collector = collectorService.Value as IRelatedEntityCollector;
-                    ICleanupStrategy? cleanupService = _serviceProvider.GetService(cleanupStrategyConcreteType) as ICleanupStrategy;
+                    var cleanupStrategyConcreteType = policy.CleanupStrategy.MakeGenericType(collectorService.Key);
+                    var collector = collectorService.Value as IRelatedEntityCollector;
+                    var cleanupService = serviceProvider.GetService(cleanupStrategyConcreteType) as ICleanupStrategy;
 
                     if (collector == null)
                     {
@@ -88,13 +66,13 @@ public class CleanupJob
                         continue;
                     }
 
-                    await foreach (ICollection<object> entities in collector.GetRelatedEntitiesGeneric(page.Items).WithCancellation(cancellationToken))
+                    await foreach (var entities in collector.GetRelatedEntitiesGeneric(page.Items).WithCancellation(cancellationToken))
                     {
                         await cleanupService.Cleanup(entities);
                     }
                 }
 
-                deletedWorkflowInstances += await _workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter
+                deletedWorkflowInstances += await workflowInstanceStore.DeleteAsync(new WorkflowInstanceFilter
                 {
                     Ids = page.Items.Select(x => x.Id).ToArray()
                 }, cancellationToken);
@@ -111,7 +89,7 @@ public class CleanupJob
 
     private Dictionary<Type, object> GetServices(Type baseType, Type openType)
     {
-        IEnumerable<object?> services = _serviceProvider.GetServices(baseType);
+        var services = serviceProvider.GetServices(baseType);
 
         return services
             .Where(x => x?.GetType() != null)
