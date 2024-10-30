@@ -15,6 +15,7 @@ using Elsa.MassTransit.Extensions;
 using Elsa.Testing.Shared.Handlers;
 using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
 using FluentStorage;
 using Hangfire.Annotations;
 using Microsoft.AspNetCore.Hosting;
@@ -87,8 +88,11 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     runtime.UseEntityFrameworkCore(ef => ef.UsePostgreSql(dbConnectionString));
                     runtime.UseCache();
                     runtime.UseMassTransitDispatcher();
-                    runtime.UseProtoActor();
-                    //runtime.UseDistributedRuntime();
+                    runtime.UseDistributedRuntime();
+                });
+                elsa.UseDistributedCache(distributedCaching =>
+                {
+                    distributedCaching.UseMassTransit();
                 });
                 elsa.UseJavaScript(options =>
                 {

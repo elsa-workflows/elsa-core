@@ -6,7 +6,7 @@ public class SignalManager
 {
     private readonly ConcurrentDictionary<object, TaskCompletionSource<object?>> _signals = new();
 
-    public async Task<T> WaitAsync<T>(object signal, int millisecondsTimeout = 10000)
+    public async Task<T> WaitAsync<T>(object signal, int millisecondsTimeout = 60000)
     {
         var result = await WaitAsync(signal, millisecondsTimeout);
         
@@ -16,7 +16,7 @@ public class SignalManager
         return typedResult;
     }
 
-    public async Task<object?> WaitAsync(object signal, int millisecondsTimeout = 10000)
+    public async Task<object?> WaitAsync(object signal, int millisecondsTimeout = 60000)
     {
         var taskCompletionSource = GetOrCreate(signal);
         using var cancellationTokenSource = new CancellationTokenSource(millisecondsTimeout);
